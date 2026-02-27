@@ -1,0 +1,63 @@
+name: freebay
+description: "FreeBay — C2C Hybrid Marketplace"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Navigation
+  go_router: ^15.1.2
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # HTTP
+  dio: ^5.8.0+1
+
+  # Local Storage
+  shared_preferences: ^2.5.3
+
+  # Image
+  cached_network_image: ^3.4.1
+  flutter_svg: ^2.1.0
+  image_picker: ^1.1.2
+  camera: ^0.11.1
+
+  # Utils
+  intl: ^0.20.2
+  share_plus: ^10.1.4
+
+  # Biometry
+  local_auth: ^2.3.0
+
+  # WebSocket
+  web_socket_channel: ^3.0.3
+  flutter_secure_storage: ^10.0.0
+  flutter_hooks: ^0.21.3+1
+  hooks_riverpod: ^2.6.1
+  dartz: ^0.10.1
+  equatable: ^2.0.8
+  json_annotation: ^4.11.0
+  animated_tree_view: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
+  build_runner: ^2.11.1
+  json_serializable: ^6.13.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/freebay-removebg-preview.png
+    - assets/freebay-textonly.png

@@ -1,0 +1,9 @@
+export { PrismaUserRepository } from './prisma-user.repository';
+export { PrismaProductRepository } from './prisma-product.repository';
+export { PrismaOrderRepository } from './prisma-order.repository';
+export { PrismaWalletRepository } from './prisma-wallet.repository';
+export { PrismaPostRepository } from './prisma-post.repository';
+export { PrismaStoryRepository } from './prisma-story.repository';
+export { PrismaCategoryRepository } from './prisma-category.repository';
+export { PrismaLikeRepository } from './prisma-like.repository';
+export { PrismaCommentRepository } from './prisma-comment.repository';

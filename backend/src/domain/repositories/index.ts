@@ -1,0 +1,9 @@
+export { IUserRepository } from './user.repository';
+export { IProductRepository } from './product.repository';
+export { IOrderRepository } from './order.repository';
+export { IWalletRepository } from './wallet.repository';
+export { IPostRepository } from './post.repository';
+export { IStoryRepository } from './story.repository';
+export { ICategoryRepository } from './category.repository';
+export { ILikeRepository } from './like.repository';
+export { ICommentRepository } from './comment.repository';
