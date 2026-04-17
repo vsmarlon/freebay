@@ -1,5 +1,9 @@
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'category_entity.g.dart';
+
+@JsonSerializable()
 class CategoryEntity extends Equatable {
   final String id;
   final String name;
@@ -15,18 +19,10 @@ class CategoryEntity extends Equatable {
     this.children = const [],
   });
 
-  factory CategoryEntity.fromJson(Map<String, dynamic> json) {
-    return CategoryEntity(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
-      parentId: json['parentId'] as String?,
-      children: (json['children'] as List?)
-              ?.map((c) => CategoryEntity.fromJson(c as Map<String, dynamic>))
-              .toList() ??
-          [],
-    );
-  }
+  factory CategoryEntity.fromJson(Map<String, dynamic> json) =>
+      _$CategoryEntityFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CategoryEntityToJson(this);
 
   @override
   List<Object?> get props => [id, name, slug, parentId, children];

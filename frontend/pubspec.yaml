@@ -1,6 +1,6 @@
 name: freebay
 description: "FreeBay — C2C Hybrid Marketplace"
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -26,6 +26,7 @@ dependencies:
   # Image
   cached_network_image: ^3.4.1
   flutter_svg: ^2.1.0
+  flutter_image_compress: ^2.4.0
   image_picker: ^1.1.2
   camera: ^0.11.1
 
@@ -46,6 +47,11 @@ dependencies:
   json_annotation: ^4.11.0
   animated_tree_view: ^2.3.0
 
+  # Firebase
+  firebase_core: ^4.4.0
+  firebase_messaging: ^16.0.0
+  flutter_local_notifications: ^19.4.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -61,3 +67,11 @@ flutter:
   assets:
     - assets/freebay-removebg-preview.png
     - assets/freebay-textonly.png
+
+  fonts:
+    - family: SpaceGrotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk[wght].ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter[opsz,wght].ttf

@@ -86,9 +86,15 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     }
   }
 
-  void _activateReply(String nodeKey) {
+  void _activateReply(String nodeKey, {String? displayName}) {
     _replyController.clear();
     setState(() => _activeReplyId = nodeKey);
+    if (displayName != null) {
+      _replyController.text = '@$displayName ';
+      _replyController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _replyController.text.length),
+      );
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _replyFocusNode.requestFocus();
     });
@@ -162,11 +168,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
       body: Column(
         children: [
           _buildNewCommentInput(isDark),
-          Divider(
-            height: 1,
-            thickness: 0.5,
-            color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
-          ),
+          const SizedBox(height: 2),
           Expanded(child: _buildBody(isDark)),
         ],
       ),
@@ -179,12 +181,11 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
       color: isDark ? AppColors.surfaceDark : AppColors.white,
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor:
-                isDark ? AppColors.backgroundDark : AppColors.lightGray,
-            child:
-                const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
+          Container(
+            width: 32,
+            height: 32,
+            color: isDark ? AppColors.backgroundDark : AppColors.lightGray,
+            child: const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -196,8 +197,8 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                   color: AppColors.mediumGray,
                   fontSize: 14,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
@@ -223,10 +224,9 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                 : () => _sendComment(_newCommentController.text),
             child: Container(
               padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: AppColors.primaryPurple,
-                shape: BoxShape.circle,
-              ),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.brutalistGradient,
+                ),
               child: _isSending
                   ? const SizedBox(
                       width: 16,
@@ -286,10 +286,10 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 15,
-                backgroundColor:
-                    isDark ? AppColors.surfaceDark : AppColors.lightGray,
+              Container(
+                width: 30,
+                height: 30,
+                color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
                 child: const Icon(
                   Icons.person,
                   size: 15,
@@ -335,7 +335,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                     GestureDetector(
                       onTap: () => isReplying
                           ? _cancelReply()
-                          : _activateReply(node.key),
+                          : _activateReply(node.key, displayName: comment.user?.displayName),
                       child: Text(
                         isReplying ? 'Cancelar' : 'Responder',
                         style: TextStyle(
@@ -369,8 +369,8 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                           color: AppColors.mediumGray,
                           fontSize: 13,
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.zero,
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
@@ -403,8 +403,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                     child: Container(
                       padding: const EdgeInsets.all(7),
                       decoration: const BoxDecoration(
-                        color: AppColors.primaryPurple,
-                        shape: BoxShape.circle,
+                        gradient: AppColors.brutalistGradient,
                       ),
                       child: _isSending
                           ? const SizedBox(
@@ -445,9 +444,24 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
             ),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () => _loadComments(refresh: true),
-            child: const Text('Tentar novamente'),
+          InkWell(
+            onTap: () => _loadComments(refresh: true),
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: const BoxDecoration(
+                gradient: AppColors.brutalistGradient,
+              ),
+              child: const Center(
+                child: Text(
+                  'Tentar novamente',
+                  style: TextStyle(
+                    color: AppColors.onPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

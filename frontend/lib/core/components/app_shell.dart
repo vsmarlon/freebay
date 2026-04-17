@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
@@ -53,6 +54,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _onDestinationSelected(BuildContext context, int index) {
+    HapticFeedback.lightImpact();
+
     _pageController.jumpToPage(index);
     switch (index) {
       case 0:
@@ -71,6 +74,7 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _getSelectedIndex(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (_pageController.hasClients &&
         _pageController.page?.round() != selectedIndex) {
@@ -101,44 +105,193 @@ class _AppShellState extends State<AppShell> {
         },
         children: _pages,
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: _BrutalistNavBar(
         selectedIndex: selectedIndex,
-        indicatorColor: AppColors.primaryPurple.withAlpha(30),
         onDestinationSelected: (index) =>
             _onDestinationSelected(context, index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: AppColors.primaryPurple),
-            label: 'Feed',
+        isDark: isDark,
+      ),
+      floatingActionButton: (selectedIndex == 0 || selectedIndex == 1)
+          ? _CreateProductFab(onTap: () => context.push('/products/create'))
+          : null,
+    );
+  }
+}
+
+class _BrutalistNavBar extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+  final bool isDark;
+
+  const _BrutalistNavBar({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color:
+            isDark ? AppColors.surfaceDark : AppColors.surfaceContainerLowest,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.onSurface,
+            width: 2,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search, color: AppColors.primaryPurple),
-            label: 'Explorar',
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              _NavItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home,
+                label: 'HOME',
+                isSelected: selectedIndex == 0,
+                onTap: () => onDestinationSelected(0),
+                isDark: isDark,
+              ),
+              _NavItem(
+                icon: Icons.search,
+                selectedIcon: Icons.search,
+                label: 'SEARCH',
+                isSelected: selectedIndex == 1,
+                onTap: () => onDestinationSelected(1),
+                isDark: isDark,
+              ),
+              _NavItem(
+                icon: Icons.account_balance_wallet_outlined,
+                selectedIcon: Icons.account_balance_wallet,
+                label: 'WALLET',
+                isSelected: selectedIndex == 2,
+                onTap: () => onDestinationSelected(2),
+                isDark: isDark,
+                isWallet: true,
+              ),
+              _NavItem(
+                icon: Icons.chat_bubble_outline,
+                selectedIcon: Icons.chat_bubble,
+                label: 'CHAT',
+                isSelected: selectedIndex == 3,
+                onTap: () => onDestinationSelected(3),
+                isDark: isDark,
+              ),
+              _NavItem(
+                icon: Icons.person_outline,
+                selectedIcon: Icons.person,
+                label: 'PERFIL',
+                isSelected: selectedIndex == 4,
+                onTap: () => onDestinationSelected(4),
+                isDark: isDark,
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(
-              Icons.account_balance_wallet,
-              color: AppColors.primaryPurple,
-            ),
-            label: 'Carteira',
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool isDark;
+  final bool isWallet;
+
+  const _NavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    required this.isDark,
+    this.isWallet = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          height: 64,
+          color: isSelected
+              ? (isWallet ? AppColors.accentGreen : AppColors.primaryContainer)
+              : Colors.transparent,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isSelected ? selectedIcon : icon,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark
+                        ? AppColors.inverseOnSurface
+                        : AppColors.onSurface),
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? AppColors.inverseOnSurface
+                          : AppColors.onSurface),
+                ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(
-              Icons.chat_bubble,
-              color: AppColors.primaryPurple,
-            ),
-            label: 'Chat',
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateProductFab extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _CreateProductFab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: AppColors.brutalistGradient,
+          border: Border.all(
+            color: AppColors.onSurface,
+            width: 2,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person, color: AppColors.primaryPurple),
-            label: 'Perfil',
-          ),
-        ],
+        ),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
     );
   }

@@ -1,0 +1,47 @@
+# Firebase
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase-adminsdk*.json
+*.pem
+
+# Environment
+.env
+.env.local
+
+# IDE / Tooling Secrets
+opencode.json
+*.credentials.json
+
+# Dependencies
+node_modules/
+.dart_tool/
+.packages
+.pub-cache/
+
+# Build
+build/
+android/.gradle/
+android/app/build/
+ios/.symlinks/
+ios/Pods/
+
+# Coverage
+coverage/
+coverage-integration/
+*.lcov
+*.coverage
+
+# Flutter web build
+web/
+
+# Dist
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

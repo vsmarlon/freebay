@@ -1,10 +1,12 @@
-import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
@@ -17,8 +19,8 @@ class CreatePostPage extends ConsumerStatefulWidget {
 class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   final _contentController = TextEditingController();
   final _imagePicker = ImagePicker();
-  String? _selectedImageBase64;
-  String _postType = 'REGULAR';
+
+  String? _selectedImagePath;
   bool _isLoading = false;
 
   @override
@@ -36,15 +38,14 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     );
 
     if (pickedFile != null) {
-      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _selectedImageBase64 = base64Encode(bytes);
+        _selectedImagePath = pickedFile.path;
       });
     }
   }
 
   Future<void> _createPost() async {
-    if (_contentController.text.isEmpty && _selectedImageBase64 == null) {
+    if (_contentController.text.isEmpty && _selectedImagePath == null) {
       AppSnackbar.warning(context, 'Adicione um texto ou imagem');
       return;
     }
@@ -56,8 +57,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       final result = await repository.createPost(
         content:
             _contentController.text.isNotEmpty ? _contentController.text : null,
-        imageUrl: _selectedImageBase64,
-        type: _postType,
+        imagePath: _selectedImagePath,
+        type: 'REGULAR',
       );
 
       result.fold(
@@ -66,7 +67,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         },
         (post) {
           ref.read(feedProvider.notifier).addPost(post);
-          AppSnackbar.success(context, 'Post publicado com sucesso!');
+          AppSnackbar.success(context, 'Publicacao social criada com sucesso!');
           context.pop();
         },
       );
@@ -86,44 +87,54 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
-          'Criar Post',
+          'Nova publicacao',
           style: TextStyle(
+            fontFamily: 'SpaceGrotesk',
             fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            fontWeight: FontWeight.w700,
+            color: isDark ? AppColors.white : AppColors.onSurface,
           ),
         ),
         backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.close,
-              color: isDark ? AppColors.white : AppColors.darkGray),
+          icon: Icon(
+            Icons.close,
+            color: isDark ? AppColors.white : AppColors.onSurface,
+          ),
           onPressed: () => context.pop(),
         ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _createPost,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryPurple,
-                foregroundColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
+            child: InkWell(
+              onTap: _isLoading ? null : _createPost,
+              child: Container(
+                height: 40,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.brutalistGradient,
+                ),
+                child: Center(
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Publicar',
+                          style: TextStyle(
+                            color: AppColors.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                ),
               ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.white,
-                      ),
-                    )
-                  : const Text('Publicar'),
             ),
           ),
         ],
@@ -133,64 +144,67 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildSeparationCard(context, isDark),
+            const SizedBox(height: 16),
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor:
-                      isDark ? AppColors.surfaceDark : AppColors.lightGray,
+                Container(
+                  width: 40,
+                  height: 40,
+                  color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
                   child: const Icon(Icons.person, color: AppColors.mediumGray),
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Você',
+                  'Publicacao social',
                   style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.white : AppColors.darkGray,
+                    fontFamily: 'SpaceGrotesk',
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.white : AppColors.onSurface,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _contentController,
-              maxLines: null,
-              minLines: 5,
+            Container(
+              color: isDark
+                  ? AppColors.surfaceContainerDark
+                  : AppColors.surfaceContainerLowest,
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _contentController,
+                maxLines: null,
+                minLines: 5,
               style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.darkGray,
-              ),
-              decoration: InputDecoration(
-                hintText: 'No que você está pensando ou vendendo?',
-                hintStyle: TextStyle(
-                  color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                  color: isDark ? AppColors.white : AppColors.onSurface,
                 ),
-                border: InputBorder.none,
+                decoration: InputDecoration(
+                  hintText: 'Compartilhe uma atualizacao, ideia ou bastidor.',
+                  hintStyle: TextStyle(
+                    color: isDark ? AppColors.mediumGray : AppColors.outline,
+                  ),
+                  border: InputBorder.none,
+                ),
               ),
             ),
-            if (_selectedImageBase64 != null) ...[
+            if (_selectedImagePath != null) ...[
               const SizedBox(height: 16),
               Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(
-                      base64Decode(_selectedImageBase64!),
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
-                    ),
+                  Image.file(
+                    File(_selectedImagePath!),
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
                   ),
                   Positioned(
                     top: 8,
                     right: 8,
                     child: GestureDetector(
-                      onTap: () => setState(() => _selectedImageBase64 = null),
+                      onTap: () => setState(() => _selectedImagePath = null),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
+                        color: Colors.black54,
                         child: const Icon(
                           Icons.close,
                           color: Colors.white,
@@ -202,100 +216,31 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 ],
               ),
             ],
-            const SizedBox(height: 24),
-            Text(
-              'Tipo de post',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.darkGray,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _buildTypeChip(
-                  isDark,
-                  'REGULAR',
-                  'Padrão',
-                  Icons.article_outlined,
-                ),
-                const SizedBox(width: 8),
-                _buildTypeChip(
-                  isDark,
-                  'PRODUCT',
-                  'Produto',
-                  Icons.sell_outlined,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            if (_postType == 'PRODUCT') ...[
-              Text(
-                'Adicionar imagem do produto',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                ),
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: double.infinity,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppColors.primaryPurple,
-                      width: 2,
-                      style: BorderStyle.solid,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    color: AppColors.primaryPurple.withAlpha(26),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_photo_alternate_outlined,
-                        size: 40,
-                        color: AppColors.primaryPurple,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Selecionar imagem',
-                        style: TextStyle(
-                          color: AppColors.primaryPurple,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
             const SizedBox(height: 16),
-            GestureDetector(
+            InkWell(
               onTap: _pickImage,
               child: Container(
+                width: double.infinity,
                 padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : AppColors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                color: isDark
+                    ? AppColors.surfaceContainerDark
+                    : AppColors.surfaceContainer,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.image_outlined,
-                      color: AppColors.primaryPurple,
+                      color: AppColors.primaryContainer,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Adicionar imagem',
+                      _selectedImagePath == null
+                          ? 'Adicionar imagem ao post'
+                          : 'Trocar imagem',
                       style: TextStyle(
-                        color: AppColors.primaryPurple,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.white : AppColors.onSurface,
                       ),
                     ),
                   ],
@@ -308,44 +253,61 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     );
   }
 
-  Widget _buildTypeChip(bool isDark, String type, String label, IconData icon) {
-    final isSelected = _postType == type;
-    return GestureDetector(
-      onTap: () => setState(() => _postType = type),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryPurple
-              : (isDark ? AppColors.surfaceDark : AppColors.white),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryPurple
-                : AppColors.mediumGray.withAlpha(77),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected
-                  ? AppColors.white
-                  : (isDark ? AppColors.white : AppColors.darkGray),
+  Widget _buildSeparationCard(BuildContext context, bool isDark) {
+    return Container(
+      color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainer,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'SOCIAL E VENDA AGORA FICAM SEPARADOS',
+            style: TextStyle(
+              fontFamily: 'SpaceGrotesk',
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.white : AppColors.onSurface,
             ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected
-                    ? AppColors.white
-                    : (isDark ? AppColors.white : AppColors.darkGray),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use esta tela para posts do feed. Para vender um item, crie um anuncio separado para manter a experiencia mais limpa.',
+            style: TextStyle(
+              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () => context.push('/create-product'),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.onSurface, width: 2),
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : AppColors.surfaceContainerLowest,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.sell_outlined, color: AppColors.primaryContainer),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Criar anuncio de venda',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.white : AppColors.onSurface,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward, color: AppColors.primaryContainer),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -80,7 +80,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       ),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.zero,
       ),
       child: SafeArea(
         child: Column(
@@ -92,17 +92,17 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
               margin: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: AppColors.mediumGray,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.zero,
               ),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor:
-                        isDark ? AppColors.surfaceDark : AppColors.lightGray,
+                  Container(
+                    width: 36,
+                    height: 36,
+                    color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
                     child: const Icon(Icons.person, size: 20),
                   ),
                   const SizedBox(width: 12),
@@ -111,8 +111,8 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                       controller: _commentController,
                       decoration: InputDecoration(
                         hintText: 'Adicione um comentário...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.zero,
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
@@ -129,16 +129,24 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send),
-                    color: AppColors.primaryPurple,
-                    onPressed: _isLoading ? null : _submitComment,
+                  InkWell(
+                    onTap: _isLoading ? null : _submitComment,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.brutalistGradient,
+                      ),
+                      child: Center(
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.send, color: AppColors.onPrimary),
+                      ),
+                    ),
                   ),
                 ],
               ),

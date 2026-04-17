@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Typography tokens using Inter font family
+/// Typography tokens for the Digital Brutalist design system.
+/// Headlines use Space Grotesk; body/UI text uses Inter.
 class AppTypography {
   AppTypography._();
 
   static const String fontFamily = 'Inter';
+  static const String headlineFontFamily = 'SpaceGrotesk';
 
-  // ─── Headings ─────────────────────────────────────────
+  // ─── Headings (Space Grotesk) ──────────────────────────
   static const TextStyle h1 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headlineFontFamily,
     fontSize: 32,
     fontWeight: FontWeight.w700,
     color: AppColors.darkGray,
@@ -17,7 +19,7 @@ class AppTypography {
   );
 
   static const TextStyle h2 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headlineFontFamily,
     fontSize: 24,
     fontWeight: FontWeight.w600,
     color: AppColors.darkGray,
@@ -25,7 +27,7 @@ class AppTypography {
   );
 
   static const TextStyle h3 = TextStyle(
-    fontFamily: fontFamily,
+    fontFamily: headlineFontFamily,
     fontSize: 20,
     fontWeight: FontWeight.w600,
     color: AppColors.darkGray,

@@ -16,6 +16,7 @@ PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => PostEntity(
       commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
       sharesCount: (json['sharesCount'] as num?)?.toInt() ?? 0,
       isLiked: json['isLiked'] as bool? ?? false,
+      isSaved: json['isSaved'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
       user: UserEntity.fromJson(json['user'] as Map<String, dynamic>),
       product: json['product'] == null
@@ -34,6 +35,7 @@ Map<String, dynamic> _$PostEntityToJson(PostEntity instance) =>
       'commentsCount': instance.commentsCount,
       'sharesCount': instance.sharesCount,
       'isLiked': instance.isLiked,
+      'isSaved': instance.isSaved,
       'createdAt': instance.createdAt.toIso8601String(),
       'user': instance.user,
       'product': instance.product,

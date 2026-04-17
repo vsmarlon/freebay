@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
 class SocialPost extends StatefulWidget {
@@ -12,7 +15,9 @@ class SocialPost extends StatefulWidget {
   final int commentsCount;
   final int sharesCount;
   final bool isLiked;
+  final bool isSaved;
   final Future<bool> Function()? onLike;
+  final Future<bool> Function()? onSave;
   final VoidCallback? onComment;
   final VoidCallback? onShare;
   final VoidCallback? onTap;
@@ -32,7 +37,9 @@ class SocialPost extends StatefulWidget {
     this.commentsCount = 0,
     this.sharesCount = 0,
     this.isLiked = false,
+    this.isSaved = false,
     this.onLike,
+    this.onSave,
     this.onComment,
     this.onShare,
     this.onTap,
@@ -47,13 +54,17 @@ class SocialPost extends StatefulWidget {
 
 class _SocialPostState extends State<SocialPost> {
   bool _isLiked = false;
+  bool _isSaved = false;
   int _likesCount = 0;
+  bool _isLikeLoading = false;
   bool _isImagePressed = false;
+  bool _isCardPressed = false;
 
   @override
   void initState() {
     super.initState();
     _isLiked = widget.isLiked;
+    _isSaved = widget.isSaved;
     _likesCount = widget.likesCount;
   }
 
@@ -64,29 +75,41 @@ class _SocialPostState extends State<SocialPost> {
       _isLiked = widget.isLiked;
       _likesCount = widget.likesCount;
     }
+    if (oldWidget.isSaved != widget.isSaved) {
+      _isSaved = widget.isSaved;
+    }
   }
 
   void _handleLike() async {
-    final previousLiked = _isLiked;
-    final previousCount = _likesCount;
-
-    setState(() {
-      _isLiked = !_isLiked;
-      _likesCount = _isLiked ? _likesCount + 1 : _likesCount - 1;
-    });
+    if (_isLikeLoading) return;
+    HapticFeedback.lightImpact();
+    setState(() => _isLikeLoading = true);
 
     if (widget.onLike != null) {
       final success = await widget.onLike!();
-      if (!success) {
+      if (success && mounted) {
         setState(() {
-          _isLiked = previousLiked;
-          _likesCount = previousCount;
+          _isLiked = !_isLiked;
+          _likesCount = _isLiked ? _likesCount + 1 : _likesCount - 1;
         });
+      }
+    }
+
+    if (mounted) setState(() => _isLikeLoading = false);
+  }
+
+  void _handleSave() async {
+    HapticFeedback.lightImpact();
+    if (widget.onSave != null) {
+      final success = await widget.onSave!();
+      if (success && mounted) {
+        setState(() => _isSaved = !_isSaved);
       }
     }
   }
 
   void _handleShare() {
+    HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -136,21 +159,25 @@ class _SocialPostState extends State<SocialPost> {
 
     return GestureDetector(
       onTap: widget.onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
+      onTapDown: (_) => setState(() => _isCardPressed = true),
+      onTapUp: (_) => setState(() => _isCardPressed = false),
+      onTapCancel: () => setState(() => _isCardPressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.linear,
+        transform: Matrix4.translationValues(
+          _isCardPressed ? 2 : 0,
+          _isCardPressed ? 2 : 0,
+          0,
+        ),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: isDark
+              ? AppColors.surfaceContainerDark
+              : AppColors.surfaceContainerLowest,
+          border: Border.all(
+            color: AppColors.onSurface,
+            width: 2,
+          ),
         ),
         child:
             hasImage ? _buildProductLayout(isDark) : _buildTextLayout(isDark),
@@ -164,156 +191,52 @@ class _SocialPostState extends State<SocialPost> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image on left - clickable with hover effect
-            GestureDetector(
-              onTap: _openFullScreenImage,
-              onLongPressStart: (_) => setState(() => _isImagePressed = true),
-              onLongPressEnd: (_) => setState(() => _isImagePressed = false),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: hasPrice ? 120 : 200,
-                height: hasPrice ? 120 : 220,
-                transform: _isImagePressed
-                    ? (Matrix4.identity()
-                      ..setEntry(0, 0, 1.05)
-                      ..setEntry(1, 1, 1.05))
-                    : Matrix4.identity(),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.backgroundDark
-                      : const Color(0xFFF3E8FF),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    widget.imageUrl!,
-                    fit: BoxFit.cover,
-                    width: hasPrice ? 120 : 200,
-                    height: hasPrice ? 120 : 220,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.image,
-                        color: AppColors.mediumGray,
-                        size: 48),
+        _buildCardHeader(isDark),
+        AspectRatio(
+          aspectRatio: 1,
+          child: Stack(
+            children: [
+              GestureDetector(
+                onTap: _openFullScreenImage,
+                onLongPressStart: (_) => setState(() => _isImagePressed = true),
+                onLongPressEnd: (_) => setState(() => _isImagePressed = false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  curve: Curves.linear,
+                  transform: _isImagePressed
+                      ? (Matrix4.identity()
+                        ..setEntry(0, 0, 1.02)
+                        ..setEntry(1, 1, 1.02))
+                      : Matrix4.identity(),
+                  child: Container(
+                    color: AppColors.surfaceContainer,
+                    child: Image.network(
+                      widget.imageUrl!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: AppColors.surfaceContainer,
+                        child: Icon(
+                          Icons.image,
+                          color: AppColors.outline,
+                          size: 48,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 16),
-            // User info and Price on right
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Clickable user profile
-                  GestureDetector(
-                    onTap: widget.onUserTap,
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundColor: isDark
-                              ? AppColors.lightGray
-                              : AppColors.lightGray,
-                          backgroundImage: widget.userAvatarUrl != null
-                              ? NetworkImage(widget.userAvatarUrl!)
-                              : null,
-                          child: widget.userAvatarUrl == null
-                              ? const Icon(Icons.person,
-                                  size: 16, color: AppColors.mediumGray)
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.userName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                  color: isDark
-                                      ? AppColors.white
-                                      : AppColors.darkGray,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (widget.userRole != null)
-                                Text(
-                                  widget.userRole!,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isDark
-                                        ? AppColors.mediumGray
-                                        : AppColors.mediumGray,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (hasPrice) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'Preço',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark
-                            ? AppColors.mediumGray
-                            : AppColors.mediumGray,
-                      ),
-                    ),
-                    Text(
-                      'R\$ ${widget.price!.toStringAsFixed(2).replaceAll('.', ',')}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryPurple,
-                      ),
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.content ?? '',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                        height: 1.4,
-                      ),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (hasPrice &&
-            widget.content != null &&
-            widget.content!.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            widget.content!,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? AppColors.white : AppColors.darkGray,
-              height: 1.4,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+              if (hasPrice)
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: _PriceTag(price: widget.price!),
+                ),
+            ],
           ),
-        ],
-        const SizedBox(height: 12),
-        _buildActionsRow(isDark),
-        const SizedBox(height: 8),
-        _buildFooter(isDark),
+        ),
+        _buildCardContent(isDark),
       ],
     );
   }
@@ -322,107 +245,228 @@ class _SocialPostState extends State<SocialPost> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildCardHeader(isDark),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primaryPurple, AppColors.primaryPurpleLight],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
+            gradient: AppColors.brutalistGradient,
           ),
           child: Text(
             widget.content ?? '',
-            style: const TextStyle(
-              color: AppColors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium.copyWith(color: Colors.white),
           ),
         ),
-        const SizedBox(height: 12),
         _buildActionsRow(isDark),
-        const SizedBox(height: 8),
-        _buildFooter(isDark),
+      ],
+    );
+  }
+
+  Widget _buildCardHeader(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.onSurface,
+            width: 2,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              widget.onUserTap?.call();
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer,
+                borderRadius: BorderRadius.zero,
+              ),
+              child: widget.userAvatarUrl != null &&
+                      widget.userAvatarUrl!.isNotEmpty
+                  ? Image.network(
+                      widget.userAvatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.userName,
+                  style: TextStyle(
+                    fontFamily: 'SpaceGrotesk',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: isDark
+                        ? AppColors.inverseOnSurface
+                        : AppColors.onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'TIME AGO',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.1,
+                    color: AppColors.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {},
+            child: Icon(
+              Icons.more_vert,
+              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+              size: 20,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardContent(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Text(
+            widget.content ?? '',
+            style: AppTypography.bodyMedium.copyWith(
+              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        _buildActionsRow(isDark),
       ],
     );
   }
 
   Widget _buildActionsRow(bool isDark) {
-    return Row(
-      children: [
-        IconButton(
-          constraints: const BoxConstraints(),
-          padding: const EdgeInsets.only(right: 12),
-          icon: Icon(
-            _isLiked ? Icons.favorite : Icons.favorite_border,
-            color: _isLiked
-                ? AppColors.primaryPurple
-                : (isDark ? AppColors.white : AppColors.darkGray),
-            size: 22,
-          ),
-          onPressed: _handleLike,
-        ),
-        IconButton(
-          constraints: const BoxConstraints(),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          icon: Icon(
-            Icons.chat_bubble_outline,
-            color: isDark ? AppColors.white : AppColors.darkGray,
-            size: 22,
-          ),
-          onPressed: widget.onComment,
-        ),
-        IconButton(
-          constraints: const BoxConstraints(),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          icon: Icon(
-            Icons.send_outlined,
-            color: isDark ? AppColors.white : AppColors.darkGray,
-            size: 22,
-          ),
-          onPressed: _handleShare,
-        ),
-        const Spacer(),
-        IconButton(
-          constraints: const BoxConstraints(),
-          padding: EdgeInsets.zero,
-          icon: Icon(
-            Icons.bookmark_border,
-            color: isDark ? AppColors.white : AppColors.darkGray,
-            size: 22,
-          ),
-          onPressed: () {},
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFooter(bool isDark) {
-    return Row(
-      children: [
-        Text(
-          '$_likesCount Curtidas',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: AppColors.onSurface.withAlpha(26),
+            width: 1,
           ),
         ),
-        const SizedBox(width: 8),
-        if (widget.commentsCount > 0)
-          Text(
-            'Ver ${widget.commentsCount} comentários',
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+      ),
+      child: Row(
+        children: [
+          Opacity(
+            opacity: _isLikeLoading ? 0.5 : 1.0,
+            child: _ActionButton(
+              icon: _isLiked ? Icons.favorite : Icons.favorite_border,
+              iconColor: _isLiked ? AppColors.primaryContainer : null,
+              onTap: _handleLike,
             ),
           ),
-      ],
+          const SizedBox(width: 16),
+          _ActionButton(
+            icon: Icons.chat_bubble_outline,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              widget.onComment?.call();
+            },
+          ),
+          const SizedBox(width: 16),
+          _ActionButton(
+            icon: Icons.send_outlined,
+            onTap: _handleShare,
+          ),
+          const Spacer(),
+          _ActionButton(
+            icon: _isSaved ? Icons.bookmark : Icons.bookmark_border,
+            onTap: _handleSave,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color? iconColor;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    this.iconColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final defaultColor =
+        isDark ? AppColors.inverseOnSurface : AppColors.onSurface;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Icon(
+          icon,
+          color: iconColor ?? defaultColor,
+          size: 24,
+        ),
+      ),
+    );
+  }
+}
+
+class _PriceTag extends StatelessWidget {
+  final double price;
+
+  const _PriceTag({required this.price});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        border: Border.all(color: AppColors.onSurface, width: 2),
+      ),
+      child: Text(
+        CurrencyUtils.formatReais(price),
+        style: const TextStyle(
+          fontFamily: 'SpaceGrotesk',
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: AppColors.primaryContainer,
+          height: 1,
+        ),
+      ),
     );
   }
 }
@@ -466,10 +510,12 @@ class _FullScreenImage extends StatelessWidget {
               child: GestureDetector(
                 onTap: onClose,
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppColors.onSurface,
+                    border: Border.all(
+                        color: AppColors.surfaceContainerLowest, width: 2),
                   ),
                   child: const Icon(
                     Icons.close,
@@ -484,11 +530,19 @@ class _FullScreenImage extends StatelessWidget {
               left: 0,
               right: 0,
               child: Center(
-                child: Text(
-                  'Deslize para fechar',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 14,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: AppColors.onSurface.withAlpha(179),
+                  child: Text(
+                    'SWIPE TO CLOSE',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.1,
+                    ),
                   ),
                 ),
               ),
@@ -519,8 +573,9 @@ class _ShareBottomSheet extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: isDark
+            ? AppColors.surfaceContainerDark
+            : AppColors.surfaceContainerLowest,
       ),
       child: SafeArea(
         child: Column(
@@ -530,32 +585,68 @@ class _ShareBottomSheet extends StatelessWidget {
               width: 40,
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.mediumGray,
-                borderRadius: BorderRadius.circular(2),
-              ),
+              color: AppColors.outline,
             ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
-                'Compartilhar post',
+                'COMPARTILHAR POST',
                 style: TextStyle(
+                  fontFamily: 'SpaceGrotesk',
                   fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+                  fontWeight: FontWeight.w700,
+                  color:
+                      isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
                 ),
               ),
             ),
+            const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.link),
-              title: const Text('Compartilhar externamente'),
-              subtitle: const Text('WhatsApp, Instagram, etc.'),
+              leading: Icon(
+                Icons.link,
+                color:
+                    isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+              ),
+              title: Text(
+                'Compartilhar externamente',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  color:
+                      isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                'WhatsApp, Instagram, etc.',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  color: AppColors.outline,
+                  fontSize: 12,
+                ),
+              ),
               onTap: onShareExternal,
             ),
             ListTile(
-              leading: const Icon(Icons.article_outlined),
-              title: const Text('Compartilhar no perfil'),
-              subtitle: Text('Criar post com "Compartilhado de @$userName"'),
+              leading: Icon(
+                Icons.article_outlined,
+                color:
+                    isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+              ),
+              title: Text(
+                'Compartilhar no perfil',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  color:
+                      isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+                ),
+              ),
+              subtitle: Text(
+                'Criar post com "Compartilhado de @$userName"',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  color: AppColors.outline,
+                  fontSize: 12,
+                ),
+              ),
               onTap: onShareAsPost,
             ),
             const SizedBox(height: 16),

@@ -6,17 +6,41 @@ import 'package:freebay/features/auth/presentation/pages/login_page.dart';
 import 'package:freebay/features/auth/presentation/pages/register_page.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_details_page.dart';
+import 'package:freebay/features/social/presentation/pages/post_search_page.dart';
 import 'package:freebay/features/social/presentation/pages/create_post_page.dart';
 import 'package:freebay/features/social/presentation/pages/comments_page.dart';
 import 'package:freebay/features/social/presentation/pages/story_viewer_wrapper.dart';
 import 'package:freebay/features/social/presentation/pages/create_story_page.dart';
+import 'package:freebay/features/social/presentation/pages/my_stories_page.dart';
+import 'package:freebay/features/social/presentation/pages/my_posts_page.dart';
+import 'package:freebay/features/social/presentation/pages/liked_posts_page.dart';
 import 'package:freebay/features/product/presentation/pages/product_list_page.dart';
+import 'package:freebay/features/product/presentation/pages/explorar_page.dart';
 import 'package:freebay/features/product/presentation/pages/product_detail_page.dart';
 import 'package:freebay/features/product/presentation/pages/create_product_page.dart';
+import 'package:freebay/features/product/presentation/pages/edit_product_page.dart';
+import 'package:freebay/features/product/presentation/pages/my_products_page.dart';
+import 'package:freebay/features/product/presentation/pages/cart_page.dart';
 import 'package:freebay/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:freebay/features/profile/presentation/pages/profile_page.dart';
 import 'package:freebay/features/profile/presentation/pages/user_profile_page.dart';
+import 'package:freebay/features/profile/presentation/pages/blocked_users_page.dart';
+import 'package:freebay/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:freebay/features/profile/presentation/pages/followers_page.dart';
+import 'package:freebay/features/profile/presentation/pages/following_page.dart';
+import 'package:freebay/features/profile/presentation/pages/favorites_page.dart';
+import 'package:freebay/features/profile/presentation/pages/saved_posts_page.dart';
+import 'package:freebay/features/profile/presentation/pages/wishlist_page.dart';
+import 'package:freebay/features/profile/presentation/pages/purchases_page.dart';
+import 'package:freebay/features/profile/presentation/pages/payment_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_page.dart';
+import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
+import 'package:freebay/features/chat/presentation/pages/new_chat_page.dart';
+import 'package:freebay/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:freebay/features/reviews/presentation/pages/user_reviews_page.dart';
+import 'package:freebay/features/reviews/presentation/pages/create_review_page.dart';
+import 'package:freebay/features/cart/presentation/pages/cart_checkout_page.dart';
+import 'package:freebay/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:freebay/core/components/app_shell.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -95,8 +119,17 @@ final GoRouter appRouter = GoRouter(
       ],
     ),
     GoRoute(
+      path: '/posts/search',
+      builder: (context, state) => const PostSearchPage(),
+    ),
+    GoRoute(
       path: '/products/create',
       builder: (context, state) => const CreateProductPage(),
+    ),
+    GoRoute(
+      path: '/products/:id/edit',
+      builder: (context, state) =>
+          EditProductPage(productId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/products/:id',
@@ -136,7 +169,7 @@ final GoRouter appRouter = GoRouter(
           pageBuilder: (context, state) => _buildPageWithSlideTransition(
             context: context,
             state: state,
-            child: const ProductListPage(),
+            child: const ExplorarPage(),
           ),
         ),
         GoRoute(
@@ -162,6 +195,24 @@ final GoRouter appRouter = GoRouter(
             state: state,
             child: const ChatListPage(),
           ),
+          routes: [
+            GoRoute(
+              path: ':chatId',
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>?;
+                return ChatConversationPage(
+                  chatId: state.pathParameters['chatId']!,
+                  oderName: extra?['oderName'] ?? 'Chat',
+                  oderAvatarUrl: extra?['oderAvatarUrl'],
+                  chatType: extra?['chatType'] ?? 'order',
+                );
+              },
+            ),
+            GoRoute(
+              path: 'new',
+              builder: (context, state) => const NewChatPage(),
+            ),
+          ],
         ),
         GoRoute(
           path: '/profile',
@@ -172,6 +223,110 @@ final GoRouter appRouter = GoRouter(
           ),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/profile/blocked',
+      builder: (context, state) => const BlockedUsersPage(),
+    ),
+    GoRoute(
+      path: '/notifications',
+      pageBuilder: (context, state) => _buildPageWithSlideTransition(
+        context: context,
+        state: state,
+        child: const NotificationsPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/profile/posts',
+      builder: (context, state) {
+        final userId = state.uri.queryParameters['userId'] ?? 'me';
+        return MyPostsPage(userId: userId);
+      },
+    ),
+    GoRoute(
+      path: '/profile/stories',
+      builder: (context, state) {
+        final userId = state.uri.queryParameters['userId'] ?? 'me';
+        return MyStoriesPage(userId: userId);
+      },
+    ),
+    GoRoute(
+      path: '/profile/products',
+      builder: (context, state) => const MyProductsPage(),
+    ),
+    GoRoute(
+      path: '/profile/liked',
+      builder: (context, state) => const LikedPostsPage(),
+    ),
+    GoRoute(
+      path: '/profile/favorites',
+      builder: (context, state) => const FavoritesPage(),
+    ),
+    GoRoute(
+      path: '/profile/saved',
+      builder: (context, state) => const SavedPostsPage(),
+    ),
+    GoRoute(
+      path: '/profile/wishlist',
+      builder: (context, state) => const WishlistPage(),
+    ),
+    GoRoute(
+      path: '/profile/purchases',
+      builder: (context, state) => const PurchasesPage(),
+    ),
+    GoRoute(
+      path: '/profile/payment',
+      builder: (context, state) => const PaymentPage(),
+    ),
+    GoRoute(
+      path: '/profile/edit',
+      builder: (context, state) => const EditProfilePage(),
+    ),
+    GoRoute(
+      path: '/profile/followers',
+      builder: (context, state) =>
+          FollowersPage(userId: state.uri.queryParameters['userId'] ?? 'me'),
+    ),
+    GoRoute(
+      path: '/profile/following',
+      builder: (context, state) =>
+          FollowingPage(userId: state.uri.queryParameters['userId'] ?? 'me'),
+    ),
+    GoRoute(
+      path: '/cart',
+      builder: (context, state) => const CartPage(),
+    ),
+    GoRoute(
+      path: '/checkout/cart',
+      builder: (context, state) => const CartCheckoutPage(),
+    ),
+    GoRoute(
+      path: '/orders/:orderId',
+      builder: (context, state) =>
+          OrderDetailPage(orderId: state.pathParameters['orderId']!),
+    ),
+    GoRoute(
+      path: '/user/:id/reviews',
+      builder: (context, state) {
+        final userName = state.uri.queryParameters['name'];
+        return UserReviewsPage(
+          userId: state.pathParameters['id']!,
+          userName: userName,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/reviews/create',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return CreateReviewPage(
+          orderId: extra['orderId'] as String,
+          reviewedId: extra['reviewedId'] as String,
+          reviewedName: extra['reviewedName'] as String,
+          reviewedAvatarUrl: extra['reviewedAvatarUrl'] as String?,
+          reviewType: extra['reviewType'] as String,
+        );
+      },
     ),
     GoRoute(
       path: '/:path(.*)',

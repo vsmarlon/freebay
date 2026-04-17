@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
@@ -23,7 +24,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
     _animationController.forward();
@@ -128,6 +129,17 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                     ),
               ],
             ),
+      floatingActionButton: InkWell(
+        onTap: () => context.push('/chat/new'),
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: const BoxDecoration(
+            gradient: AppColors.brutalistGradient,
+          ),
+          child: const Icon(Icons.add, color: AppColors.onPrimary),
+        ),
+      ),
     );
   }
 
@@ -155,8 +167,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
               filled: true,
               fillColor:
                   isDark ? AppColors.backgroundDark : AppColors.lightGray,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.zero,
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -187,7 +199,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                   ? AppColors.primaryPurpleLight
                   : AppColors.primaryPurple)
               : (isDark ? AppColors.backgroundDark : AppColors.lightGray),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.zero,
         ),
         child: Text(
           label,
@@ -263,9 +275,24 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => ref.invalidate(chatsProvider),
-              child: const Text('Tentar novamente'),
+            InkWell(
+              onTap: () => ref.invalidate(chatsProvider),
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: const BoxDecoration(
+                  gradient: AppColors.brutalistGradient,
+                ),
+                child: const Center(
+                  child: Text(
+                    'Tentar novamente',
+                    style: TextStyle(
+                      color: AppColors.onPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -280,7 +307,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.zero,
           border: Border.all(
             color: isDark
                 ? AppColors.mediumGray.withAlpha(51)
@@ -290,9 +317,10 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: isDark
+            Container(
+              width: 56,
+              height: 56,
+              color: isDark
                   ? AppColors.mediumGray.withAlpha(51)
                   : AppColors.lightGray,
             ),
@@ -308,7 +336,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                       color: isDark
                           ? AppColors.mediumGray.withAlpha(51)
                           : AppColors.lightGray,
-                      borderRadius: BorderRadius.circular(4),
+                       borderRadius: BorderRadius.zero,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -319,7 +347,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                       color: isDark
                           ? AppColors.mediumGray.withAlpha(51)
                           : AppColors.lightGray,
-                      borderRadius: BorderRadius.circular(4),
+                       borderRadius: BorderRadius.zero,
                     ),
                   ),
                 ],
@@ -348,7 +376,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         child: Container(
           decoration: BoxDecoration(
             color: isDark ? AppColors.surfaceDark : AppColors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.zero,
             border: Border.all(
               color: chat.unread
                   ? (isDark
@@ -359,29 +387,26 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                       : AppColors.mediumGray.withAlpha(102)),
               width: chat.unread ? 2 : 1,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? AppColors.black.withAlpha(51)
-                    : AppColors.black.withAlpha(20),
-                blurRadius: isDark ? 8 : 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: ListTile(
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: Stack(
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundImage: chat.oderAvatarUrl != null
-                      ? NetworkImage(chat.oderAvatarUrl!)
-                      : null,
-                  backgroundColor: isDark
-                      ? AppColors.mediumGray.withAlpha(51)
-                      : AppColors.lightGray,
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    image: chat.oderAvatarUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(chat.oderAvatarUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    color: isDark
+                        ? AppColors.mediumGray.withAlpha(51)
+                        : AppColors.lightGray,
+                  ),
                   child: chat.oderAvatarUrl == null
                       ? Icon(Icons.person,
                           color:
@@ -397,7 +422,6 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                       height: 14,
                       decoration: BoxDecoration(
                         color: AppColors.accentGreen,
-                        shape: BoxShape.circle,
                         border: Border.all(
                           color:
                               isDark ? AppColors.surfaceDark : AppColors.white,
@@ -450,7 +474,16 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                 fontSize: 13,
               ),
             ),
-            onTap: () {},
+            onTap: () {
+              context.push(
+                '/chat/${chat.id}',
+                extra: {
+                  'oderName': chat.oderName,
+                  'oderAvatarUrl': chat.oderAvatarUrl,
+                  'chatType': chat.status.name,
+                },
+              );
+            },
           ),
         ),
       ),

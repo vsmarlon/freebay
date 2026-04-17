@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
+import '../utils/currency_utils.dart';
 
 enum AppCardVariant { compact, full, skeleton }
 
@@ -37,24 +39,21 @@ class AppCard extends StatelessWidget {
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final price = (priceInCents / 100).toStringAsFixed(2).replaceAll('.', ',');
+    final price = CurrencyUtils.formatCents(priceInCents);
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.zero,
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? AppColors.black.withValues(alpha: 0.3)
-                  : AppColors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.zero,
+          border: Border.all(
+            color: isDark
+                ? AppColors.mediumGray.withValues(alpha: 0.2)
+                : AppColors.lightGray,
+            width: 1,
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -69,10 +68,8 @@ class AppCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
+                    style: AppTypography.bodyMedium.copyWith(
                       fontWeight: FontWeight.w500,
-                      fontSize: 14,
                       color: isDark ? AppColors.white : AppColors.darkGray,
                     ),
                     maxLines: variant == AppCardVariant.compact ? 1 : 2,
@@ -83,34 +80,25 @@ class AppCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'R\$ $price',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
+                        price,
+                        style: AppTypography.bodyLarge.copyWith(
                           fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: isDark
-                              ? AppColors.accentGreenLight
-                              : AppColors.black,
+                          color: isDark ? AppColors.accentGreenLight : AppColors.black,
                         ),
                       ),
                       if (score != null) ...[
                         Row(
                           children: [
                             const Icon(
-                              Icons.star_rounded,
+                              Icons.star_outline,
                               size: 16,
                               color: AppColors.warning,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               score!.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontSize: 12,
+                              style: AppTypography.bodySmall.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.mediumGray,
                               ),
                             ),
                           ],
@@ -167,7 +155,7 @@ class AppCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.zero,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

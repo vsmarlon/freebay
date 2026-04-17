@@ -9,8 +9,12 @@ class CategoryRepository {
       final response = await HttpClient.instance.get('/categories');
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as List;
-        final categories = data
+        final payload = response.data as Map<String, dynamic>;
+        final categoriesData = payload['categories'] as List<dynamic>? ??
+            ((payload['data'] as Map<String, dynamic>?)?['categories']
+                    as List<dynamic>? ??
+                <dynamic>[]);
+        final categories = categoriesData
             .map(
                 (json) => CategoryEntity.fromJson(json as Map<String, dynamic>))
             .toList();

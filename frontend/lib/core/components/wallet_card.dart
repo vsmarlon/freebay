@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 
 class WalletCard extends StatelessWidget {
   final int availableBalanceInCents;
@@ -15,10 +17,6 @@ class WalletCard extends StatelessWidget {
     this.onTap,
   });
 
-  String _formatCurrency(int cents) {
-    return (cents / 100).toStringAsFixed(2).replaceAll('.', ',');
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -32,21 +30,8 @@ class WalletCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [AppColors.primaryPurpleDark, AppColors.primaryPurple]
-                : [AppColors.primaryPurple, AppColors.primaryPurpleLight],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryPurple.withAlpha(76),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          gradient: AppColors.brutalistGradient,
+          borderRadius: BorderRadius.zero,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +48,7 @@ class WalletCard extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.account_balance_wallet,
+                  Icons.account_balance_wallet_outlined,
                   color: Colors.white.withAlpha(204),
                   size: 24,
                 ),
@@ -71,7 +56,7 @@ class WalletCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'R\$ ${_formatCurrency(availableBalanceInCents + pendingBalanceInCents)}',
+              CurrencyUtils.formatCents(availableBalanceInCents + pendingBalanceInCents),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 28,
@@ -79,27 +64,19 @@ class WalletCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const Divider(color: Colors.white24, height: 1),
-            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: _buildBalanceItem(
                     'Disponível',
-                    'R\$ ${_formatCurrency(availableBalanceInCents)}',
-                    isDark: true,
+                    CurrencyUtils.formatCents(availableBalanceInCents),
                   ),
                 ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: Colors.white24,
-                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildBalanceItem(
                     'Pendente',
-                    'R\$ ${_formatCurrency(pendingBalanceInCents)}',
-                    isDark: true,
+                    CurrencyUtils.formatCents(pendingBalanceInCents),
                   ),
                 ),
               ],
@@ -117,16 +94,7 @@ class WalletCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? AppColors.black.withAlpha(51)
-                  : AppColors.black.withAlpha(13),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.zero,
         ),
         child: Row(
           children: [
@@ -134,10 +102,10 @@ class WalletCard extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppColors.accentGreen.withAlpha(25),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
-                Icons.account_balance_wallet,
+                Icons.account_balance_wallet_outlined,
                 color: AppColors.accentGreen,
                 size: 20,
               ),
@@ -147,19 +115,11 @@ class WalletCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Saldo',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                    ),
-                  ),
+                  Text('Saldo', style: AppTypography.bodySmall),
                   const SizedBox(height: 2),
                   Text(
-                    'R\$ ${_formatCurrency(availableBalanceInCents)}',
-                    style: TextStyle(
-                      fontSize: 16,
+                    CurrencyUtils.formatCents(availableBalanceInCents),
+                    style: AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark ? AppColors.white : AppColors.darkGray,
                     ),
@@ -167,10 +127,10 @@ class WalletCard extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+              color: AppColors.mediumGray,
             ),
           ],
         ),
@@ -178,22 +138,18 @@ class WalletCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceItem(String label, String value, {required bool isDark}) {
+  Widget _buildBalanceItem(String label, String value) {
     return Column(
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
-          ),
+          style: AppTypography.bodySmall.copyWith(color: Colors.white70),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: AppTypography.bodyLarge.copyWith(
             color: Colors.white,
-            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),

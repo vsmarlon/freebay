@@ -145,10 +145,21 @@ class RegisterPage extends HookConsumerWidget {
                         color: isDark ? AppColors.white : AppColors.darkGray,
                       ),
                     ),
-                    AppButton(
-                      label: 'Entrar',
-                      variant: AppButtonVariant.ghost,
-                      onPressed: () => context.pop(),
+                    InkWell(
+                      onTap: () => context.pop(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 4),
+                        child: Text(
+                          'Entrar',
+                          style: TextStyle(
+                            color: isDark
+                                ? AppColors.primaryPurpleLight
+                                : AppColors.primaryPurple,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

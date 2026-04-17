@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -40,7 +39,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
 
         _cameraController = CameraController(
           camera,
-          ResolutionPreset.high,
+          ResolutionPreset.medium,
           enableAudio: false,
         );
 
@@ -90,7 +89,12 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
 
   Future<void> _pickFromGallery() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 82,
+    );
 
     if (image != null) {
       setState(() {
@@ -107,14 +111,8 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
     });
 
     try {
-      // Read image and convert to base64
-      final file = File(_capturedImagePath!);
-      final bytes = await file.readAsBytes();
-      final base64Image = base64Encode(bytes);
-      final base64WithPrefix = 'data:image/jpeg;base64,$base64Image';
-
       final repository = ref.read(socialRepositoryProvider);
-      final result = await repository.createStory(base64WithPrefix);
+      final result = await repository.createStory(_capturedImagePath!);
 
       if (mounted) {
         result.fold(
@@ -236,13 +234,11 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 4),
                       ),
                       child: Container(
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
                           color: _isTakingPicture ? Colors.grey : Colors.white,
                         ),
                       ),
@@ -290,13 +286,24 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                           color: AppColors.primaryPurple,
                         )
                       else
-                        ElevatedButton(
-                          onPressed: _uploadStory,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryPurple,
-                            foregroundColor: Colors.white,
+                        InkWell(
+                          onTap: _uploadStory,
+                          child: Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            decoration: const BoxDecoration(
+                              gradient: AppColors.brutalistGradient,
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'Publicar',
+                                style: TextStyle(
+                                  color: AppColors.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
                           ),
-                          child: const Text('Publicar'),
                         ),
                     ],
                   ),

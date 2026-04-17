@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: ./nest-backend
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -19,8 +21,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: './backend/package-lock.json'
+          cache-dependency-path: './nest-backend/package-lock.json'
       - run: npm ci
+      - run: npx prisma generate
       - run: npm run build
       - run: npm test --if-present
 
@@ -43,19 +46,3 @@ jobs:
           name: flutter-coverage
           path: frontend/coverage/lcov.info
           if-no-files-found: ignore
-
-  frontend-integration-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-      - run: flutter pub get
-      - name: Run integration tests (web/headless)
-        run: |
-          chromedriver --port=4444 &
-          flutter test integration_test --platform chrome

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 import '../../../../shared/errors/failures/failures.dart';
@@ -7,151 +8,51 @@ import '../../domain/repositories/i_auth_repository.dart';
 import '../entities/user_entity.dart';
 
 class AuthRepository implements IAuthRepository {
-  String _extractErrorMessage(dynamic error) {
-    if (error is DioException) {
-      final responseData = error.response?.data;
-      if (responseData != null && responseData is Map) {
-        final errorObj = responseData['error'];
-        if (errorObj != null && errorObj is Map) {
-          final message = errorObj['message'];
-          if (message != null) return message.toString();
-          final code = errorObj['code'];
-          if (code != null) {
-            return _mapErrorCode(code.toString());
-          }
-        }
-      }
-
-      switch (error.type) {
-        case DioExceptionType.connectionTimeout:
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          return 'Tempo de conexão esgotado. Tente novamente.';
-        case DioExceptionType.connectionError:
-          return 'Sem conexão com o servidor. Verifique sua internet.';
-        case DioExceptionType.badResponse:
-          final statusCode = error.response?.statusCode;
-          if (statusCode == 401) return 'E-mail ou senha incorretos.';
-          if (statusCode == 400) return 'Dados inválidos. Verifique os campos.';
-          if (statusCode == 409) return 'E-mail já cadastrado.';
-          if (statusCode != null && statusCode >= 500) {
-            return 'Erro no servidor. Tente novamente mais tarde.';
-          }
-        default:
-          break;
-      }
-    }
-    return 'Erro ao fazer login. Tente novamente.';
-  }
-
-  String _mapErrorCode(String code) {
-    switch (code) {
-      case 'INVALID_CREDENTIALS':
-        return 'E-mail ou senha incorretos.';
-      case 'EMAIL_ALREADY_EXISTS':
-        return 'E-mail já cadastrado.';
-      case 'VALIDATION_ERROR':
-        return 'Dados inválidos. Verifique os campos.';
-      default:
-        return 'Erro ao fazer login. Tente novamente.';
-    }
-  }
-
-  @override
-  Future<Either<Failure, UserEntity>> login(
-      String email, String password, bool rememberMe) async {
-    try {
-      final response = await HttpClient.instance.post(
-        '/auth/login',
-        data: {'email': email, 'password': password},
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        await StorageService.saveToken(data['token']);
-        await StorageService.saveRefreshToken(data['refreshToken']);
-        await StorageService.saveRememberMe(rememberMe);
-        await StorageService.saveIsGuest(false);
-
-        return Right(UserEntity.fromJson(data['user']));
-      } else {
-        return const Left(InvalidCredentialsFailure());
-      }
-    } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
-    }
-  }
-
-  @override
-  Future<Either<Failure, UserEntity>> getCurrentUser() async {
-    try {
-      final response = await HttpClient.instance.get('/users/me');
-
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        return Right(UserEntity.fromJson(data));
-      } else {
-        return const Left(UnauthorizedFailure('Sessão expirada'));
-      }
-    } catch (e) {
-      if (e is DioException && e.response?.statusCode == 401) {
-        return const Left(UnauthorizedFailure('Sessão expirada'));
-      }
-      return Left(ServerFailure(_extractErrorMessage(e)));
-    }
-  }
-
-  @override
-  Future<Either<Failure, UserEntity>> register(
-      String email, String password, String displayName) async {
-    try {
-      final response = await HttpClient.instance.post(
-        '/auth/register',
-        data: {
-          'email': email,
-          'password': password,
-          'displayName': displayName
-        },
-      );
-
-      if (response.statusCode == 201 && response.data != null) {
-        final data = response.data['data'];
-        await StorageService.saveToken(data['token']);
-        if (data['refreshToken'] != null) {
-          await StorageService.saveRefreshToken(data['refreshToken']);
-        }
-        await StorageService.saveIsGuest(false);
-
-        return Right(UserEntity.fromJson(data['user']));
-      } else {
-        return Left(
-            ServerFailure(_extractErrorMessage('Falha ao registrar usuário.')));
-      }
-    } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
-    }
-  }
-
   @override
   Future<Either<Failure, UserEntity>> loginAsGuest() async {
     try {
-      final response = await HttpClient.instance.post(
-        '/auth/guest',
-        options: Options(headers: {'Content-Type': 'text/plain'}),
-      );
+      if (kDebugMode) {
+        debugPrint('[AUTH] Iniciando login como guest...');
+      }
+
+      final response = await HttpClient.instance.post('/auth/guest');
+
+      if (kDebugMode) {
+        debugPrint('[AUTH] Response status: ${response.statusCode}');
+        debugPrint('[AUTH] Response data: ${response.data}');
+        debugPrint('[AUTH] Response data type: ${response.data.runtimeType}');
+      }
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'];
+
+        if (kDebugMode) {
+          debugPrint('[AUTH] data field: $data');
+          debugPrint('[AUTH] data type: ${data.runtimeType}');
+        }
+
         await StorageService.saveToken(data['token']);
         await StorageService.saveIsGuest(true);
 
+        if (kDebugMode) {
+          debugPrint('[AUTH] Token salvo com sucesso');
+        }
+
         return Right(UserEntity.fromJson(data['user']));
       } else {
-        return Left(ServerFailure(
-            _extractErrorMessage('Falha ao entrar como convidado.')));
+        return const Left(ServerFailure('Falha ao entrar como convidado.'));
       }
-    } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] DioException: ${e.type} - ${e.message}');
+      }
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] ERRO: $e');
+        debugPrint('[AUTH] STACK: $stackTrace');
+      }
+      return const Left(UnknownFailure());
     }
   }
 
@@ -178,6 +79,133 @@ class AuthRepository implements IAuthRepository {
       return Right(rememberMe);
     } catch (e) {
       return const Left(CacheFailure('Erro ao ler token de acesso.'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> login(
+      String email, String password, bool rememberMe) async {
+    try {
+      if (kDebugMode) {
+        debugPrint('[AUTH] Iniciando login...');
+      }
+
+      final response = await HttpClient.instance.post(
+        '/auth/login',
+        data: {'email': email, 'password': password},
+      );
+
+      if (kDebugMode) {
+        debugPrint('[AUTH] Response status: ${response.statusCode}');
+        debugPrint('[AUTH] Response data: ${response.data}');
+      }
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'];
+        await StorageService.saveToken(data['token']);
+        await StorageService.saveRefreshToken(data['refreshToken']);
+        await StorageService.saveRememberMe(rememberMe);
+        await StorageService.saveIsGuest(false);
+        return Right(UserEntity.fromJson(data['user']));
+      } else {
+        return const Left(InvalidCredentialsFailure());
+      }
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] DioException login: ${e.type} - ${e.message}');
+      }
+      // Special handling for 401 on login = invalid credentials
+      if (e.response?.statusCode == 401) {
+        return const Left(InvalidCredentialsFailure());
+      }
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] ERRO login: $e');
+        debugPrint('[AUTH] STACK: $stackTrace');
+      }
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> getCurrentUser() async {
+    try {
+      if (kDebugMode) {
+        debugPrint('[AUTH] Buscando usuário atual...');
+      }
+
+      final response = await HttpClient.instance.get('/users/me');
+
+      if (kDebugMode) {
+        debugPrint('[AUTH] Response status: ${response.statusCode}');
+        debugPrint('[AUTH] Response data: ${response.data}');
+      }
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'];
+        return Right(UserEntity.fromJson(data));
+      } else {
+        return const Left(UnauthorizedFailure());
+      }
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] DioException getCurrentUser: ${e.type}');
+      }
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] ERRO getCurrentUser: $e');
+        debugPrint('[AUTH] STACK: $stackTrace');
+      }
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> register(
+      String email, String password, String displayName) async {
+    try {
+      if (kDebugMode) {
+        debugPrint('[AUTH] Iniciando registro...');
+      }
+
+      final response = await HttpClient.instance.post(
+        '/auth/register',
+        data: {
+          'email': email,
+          'password': password,
+          'displayName': displayName
+        },
+      );
+
+      if (kDebugMode) {
+        debugPrint('[AUTH] Response status: ${response.statusCode}');
+        debugPrint('[AUTH] Response data: ${response.data}');
+      }
+
+      if (response.statusCode == 201 && response.data != null) {
+        final data = response.data['data'];
+        await StorageService.saveToken(data['token']);
+        if (data['refreshToken'] != null) {
+          await StorageService.saveRefreshToken(data['refreshToken']);
+        }
+        await StorageService.saveIsGuest(false);
+        return Right(UserEntity.fromJson(data['user']));
+      } else {
+        return const Left(ServerFailure('Falha ao registrar usuário.'));
+      }
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] DioException register: ${e.type}');
+      }
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] ERRO register: $e');
+        debugPrint('[AUTH] STACK: $stackTrace');
+      }
+      return const Left(UnknownFailure());
     }
   }
 }

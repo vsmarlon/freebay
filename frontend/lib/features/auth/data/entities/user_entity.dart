@@ -6,7 +6,7 @@ part 'user_entity.g.dart';
 @JsonSerializable()
 class UserEntity extends Equatable {
   final String id;
-  final String displayName;
+  final String? displayName;
   final String? email;
   final String? avatarUrl;
   final String? bio;
@@ -16,10 +16,14 @@ class UserEntity extends Equatable {
   final bool isGuest;
   final num reputationScore;
   final int totalReviews;
+  final int salesCount;
+  final int purchasesCount;
+  final int followersCount;
+  final int followingCount;
 
   const UserEntity({
     required this.id,
-    required this.displayName,
+    this.displayName,
     this.email,
     this.avatarUrl,
     this.bio,
@@ -29,7 +33,14 @@ class UserEntity extends Equatable {
     this.isGuest = false,
     this.reputationScore = 0,
     this.totalReviews = 0,
+    this.salesCount = 0,
+    this.purchasesCount = 0,
+    this.followersCount = 0,
+    this.followingCount = 0,
   });
+
+  String get displayNameOrDefault =>
+      displayName ?? (isGuest ? 'Convidado' : 'Usuário');
 
   factory UserEntity.fromJson(Map<String, dynamic> json) =>
       _$UserEntityFromJson(json);
@@ -49,5 +60,9 @@ class UserEntity extends Equatable {
         isGuest,
         reputationScore,
         totalReviews,
+        salesCount,
+        purchasesCount,
+        followersCount,
+        followingCount,
       ];
 }

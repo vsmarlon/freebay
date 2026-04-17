@@ -14,6 +14,7 @@ class PostEntity extends Equatable {
   final int commentsCount;
   final int sharesCount;
   final bool isLiked;
+  final bool isSaved;
   final DateTime createdAt;
   final UserEntity user;
   final ProductInfo? product;
@@ -28,6 +29,7 @@ class PostEntity extends Equatable {
     this.commentsCount = 0,
     this.sharesCount = 0,
     this.isLiked = false,
+    this.isSaved = false,
     required this.createdAt,
     required this.user,
     this.product,
@@ -47,6 +49,7 @@ class PostEntity extends Equatable {
     int? commentsCount,
     int? sharesCount,
     bool? isLiked,
+    bool? isSaved,
     DateTime? createdAt,
     UserEntity? user,
     ProductInfo? product,
@@ -61,6 +64,7 @@ class PostEntity extends Equatable {
       commentsCount: commentsCount ?? this.commentsCount,
       sharesCount: sharesCount ?? this.sharesCount,
       isLiked: isLiked ?? this.isLiked,
+      isSaved: isSaved ?? this.isSaved,
       createdAt: createdAt ?? this.createdAt,
       user: user ?? this.user,
       product: product ?? this.product,
@@ -78,6 +82,7 @@ class PostEntity extends Equatable {
         commentsCount,
         sharesCount,
         isLiked,
+        isSaved,
         createdAt,
         product,
       ];

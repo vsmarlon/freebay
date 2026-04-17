@@ -10,6 +10,11 @@ abstract class IProductRepository {
     int? maxPrice,
     String? cursor,
   });
+  Future<Either<Failure, ProductEntity>> getProductById(String id);
   Future<Either<Failure, ProductEntity>> createProduct(
       Map<String, dynamic> productData);
+  Future<Either<Failure, ProductEntity>> updateProduct(
+    String id,
+    Map<String, dynamic> productData,
+  );
 }

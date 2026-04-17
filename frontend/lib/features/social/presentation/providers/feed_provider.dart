@@ -7,6 +7,15 @@ final socialRepositoryProvider = Provider<ISocialRepository>((ref) {
   return SocialRepository();
 });
 
+enum FeedType { explore, following }
+
+enum FeedContentFilter { all, socialOnly, sellingOnly }
+
+final feedTypeProvider = StateProvider<FeedType>((ref) => FeedType.explore);
+
+final feedContentFilterProvider =
+    StateProvider<FeedContentFilter>((ref) => FeedContentFilter.all);
+
 class FeedState {
   final List<PostEntity> posts;
   final bool isLoading;
@@ -44,7 +53,8 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   FeedNotifier(this._repository) : super(const FeedState());
 
-  Future<void> loadFeed({bool refresh = false}) async {
+  Future<void> loadFeed(
+      {bool refresh = false, String feedType = 'explore'}) async {
     if (state.isLoading) return;
 
     final cursor = refresh ? null : state.cursor;
@@ -55,7 +65,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
       posts: refresh ? [] : state.posts,
     );
 
-    final result = await _repository.getFeed(cursor: cursor);
+    final result = await _repository.getFeed(cursor: cursor, type: feedType);
 
     result.fold(
       (failure) => state = state.copyWith(

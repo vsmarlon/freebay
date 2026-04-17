@@ -11,6 +11,8 @@ class CommentEntity extends Equatable {
   final String userId;
   final String postId;
   final String? parentId;
+  final int likesCount;
+  final bool isLiked;
   final DateTime createdAt;
   final UserEntity? user; // Backend might optionally join user data
 
@@ -23,6 +25,8 @@ class CommentEntity extends Equatable {
     required this.userId,
     required this.postId,
     this.parentId,
+    this.likesCount = 0,
+    this.isLiked = false,
     required this.createdAt,
     this.user,
     this.replies = const [],
@@ -38,6 +42,8 @@ class CommentEntity extends Equatable {
     String? userId,
     String? postId,
     String? parentId,
+    int? likesCount,
+    bool? isLiked,
     DateTime? createdAt,
     UserEntity? user,
     List<CommentEntity>? replies,
@@ -48,6 +54,8 @@ class CommentEntity extends Equatable {
       userId: userId ?? this.userId,
       postId: postId ?? this.postId,
       parentId: parentId ?? this.parentId,
+      likesCount: likesCount ?? this.likesCount,
+      isLiked: isLiked ?? this.isLiked,
       createdAt: createdAt ?? this.createdAt,
       user: user ?? this.user,
       replies: replies ?? this.replies,
@@ -61,6 +69,8 @@ class CommentEntity extends Equatable {
         userId,
         postId,
         parentId,
+        likesCount,
+        isLiked,
         createdAt,
         user,
         replies,

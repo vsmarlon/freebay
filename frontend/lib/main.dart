@@ -1,11 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/theme_provider.dart';
+import 'shared/config/app_config.dart';
 import 'shared/services/http_client.dart';
+import 'shared/services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('[CONFIG] Firebase initialization skipped: $e');
+  }
+
+  debugPrint('[CONFIG] API base URL: ${AppConfig.apiBaseUrl}');
+  if (!AppConfig.isUsingApiOverride) {
+    debugPrint(
+      '[CONFIG] Using platform default API host. For physical devices, run with --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
+    );
+  }
+
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+
   runApp(const ProviderScope(child: FreeBayApp()));
 }
 

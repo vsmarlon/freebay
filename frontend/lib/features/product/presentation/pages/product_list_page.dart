@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/components/app_card.dart';
+import '../../../../core/components/app_dialog.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/entities/category_entity.dart';
 import '../../domain/usecases/get_products_usecase.dart';
@@ -79,15 +80,6 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
               });
             },
           ),
-          IconButton(
-            icon: Icon(
-              Icons.add_box_outlined,
-              color: isDark
-                  ? AppColors.primaryPurpleLight
-                  : AppColors.primaryPurpleDark,
-            ),
-            onPressed: () => context.push('/products/create'),
-          )
         ],
       ),
       body: Column(
@@ -111,8 +103,8 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
                     : null,
                 filled: true,
                 fillColor: isDark ? AppColors.surfaceDark : AppColors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -148,43 +140,12 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
             child: productsAsync.when(
               data: (products) {
                 if (products.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.mediumGray,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Nenhum produto encontrado.',
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.mediumGray
-                                : AppColors.mediumGray,
-                            fontSize: 16,
-                          ),
-                        ),
-                        if (searchQuery.isNotEmpty ||
-                            selectedCategory != null) ...[
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              ref.read(searchQueryProvider.notifier).state = '';
-                              ref
-                                  .read(selectedCategoryProvider.notifier)
-                                  .state = null;
-                            },
-                            child: const Text('Limpar filtros'),
-                          ),
-                        ],
-                      ],
-                    ),
+                  return _buildEmptyState(
+                    isDark,
+                    message: 'Nenhum produto encontrado.',
+                    subtitle: searchQuery.isNotEmpty || selectedCategory != null
+                        ? 'Tente limpar os filtros'
+                        : null,
                   );
                 }
 
@@ -209,6 +170,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
                     itemBuilder: (context, index) {
                       final product = products[index];
                       return AppCard(
+                        imageUrl: product.imageUrl,
                         title: product.title,
                         priceInCents: product.price,
                         variant: AppCardVariant.compact,
@@ -229,34 +191,61 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
                 itemCount: 6,
                 itemBuilder: (context, index) => const AppCard.skeleton(),
               ),
-              error: (err, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: AppColors.error, size: 48),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Erro ao carregar\nerro: $err',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: isDark ? AppColors.white : AppColors.darkGray),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => ref.invalidate(productsFeedProvider(
-                        GetProductsParams(
-                          search: searchQuery.isEmpty ? null : searchQuery,
-                          category: selectedCategory,
-                        ),
-                      )),
-                      child: const Text('Tentar novamente'),
-                    )
-                  ],
-                ),
-              ),
+              error: (err, stack) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  AppDialog.showError(
+                    context: context,
+                    title: 'Erro ao carregar',
+                    subtitle: err.toString(),
+                    onOk: () => ref.invalidate(productsFeedProvider(
+                      GetProductsParams(
+                        search: searchQuery.isEmpty ? null : searchQuery,
+                        category: selectedCategory,
+                      ),
+                    )),
+                  );
+                });
+
+                return _buildEmptyState(isDark,
+                    message: 'Não há nenhum produto',
+                    subtitle: 'Tente novamente mais tarde');
+              },
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isDark, {String? message, String? subtitle}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message ?? 'Nenhum produto encontrado.',
+            style: TextStyle(
+              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+              fontSize: 16,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
       ),
     );

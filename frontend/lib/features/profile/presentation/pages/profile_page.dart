@@ -102,7 +102,7 @@ class ProfilePage extends HookConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  user.displayName,
+                  user.displayNameOrDefault,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -147,25 +147,19 @@ class ProfilePage extends HookConsumerWidget {
                     ),
                   ),
                 const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStatCol(
-                        'Reputação', '${user.reputationScore} ★', isDark),
-                    _buildStatCol('Vendas', '12', isDark),
-                    _buildStatCol('Compras', '5', isDark),
-                  ],
-                ),
+                _buildStatsRow(context, ref, isDark),
+                const SizedBox(height: 16),
+                _buildFollowRow(context, ref, isDark),
                 const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color:
-                        isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
+                 Container(
+                   padding: const EdgeInsets.all(16),
+                   decoration: BoxDecoration(
+                     color:
+                         isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                    borderRadius: BorderRadius.zero,
+                   ),
+                   child: Column(
+                     children: [
                       _buildMenuItem(
                         icon: Icons.grid_view_rounded,
                         label: 'Meus posts',
@@ -202,7 +196,7 @@ class ProfilePage extends HookConsumerWidget {
                         onTap: () => context.push('/profile/saved'),
                         isDark: isDark,
                       ),
-                      const Divider(),
+                      const SizedBox(height: 16),
                       _buildMenuItem(
                         icon: Icons.shopping_cart_outlined,
                         label: 'Carrinho',
@@ -215,7 +209,7 @@ class ProfilePage extends HookConsumerWidget {
                         onTap: () => context.push('/profile/wishlist'),
                         isDark: isDark,
                       ),
-                      const Divider(),
+                      const SizedBox(height: 16),
                       _buildMenuItem(
                         icon: Icons.history,
                         label: 'Histórico de compras',
@@ -223,18 +217,24 @@ class ProfilePage extends HookConsumerWidget {
                         isDark: isDark,
                       ),
                       _buildMenuItem(
-                        icon: Icons.credit_card,
-                        label: 'Métodos de pagamento',
-                        onTap: () => context.push('/profile/payment'),
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: 'Carteira e custódia',
+                        onTap: () => context.push('/wallet'),
                         isDark: isDark,
                       ),
                       _buildMenuItem(
                         icon: Icons.notifications_outlined,
                         label: 'Notificações',
-                        onTap: () => context.push('/profile/notifications'),
+                        onTap: () => context.push('/notifications'),
                         isDark: isDark,
                       ),
-                      const Divider(),
+                      const SizedBox(height: 16),
+                      _buildMenuItem(
+                        icon: Icons.block,
+                        label: 'Usuários bloqueados',
+                        onTap: () => context.push('/profile/blocked'),
+                        isDark: isDark,
+                      ),
                       _buildMenuItem(
                         icon: Icons.logout,
                         label: 'Sair',
@@ -264,7 +264,8 @@ class ProfilePage extends HookConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                const Icon(Icons.error_outline,
+                    size: 48, color: AppColors.error),
                 const SizedBox(height: 16),
                 Text(
                   'Erro ao carregar perfil',
@@ -314,6 +315,117 @@ class ProfilePage extends HookConsumerWidget {
     );
   }
 
+  Widget _buildStatsRow(BuildContext context, WidgetRef ref, bool isDark) {
+    final statsAsync = ref.watch(profileStatsProvider);
+
+    return statsAsync.when(
+      data: (stats) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatCol('Reputação', '${stats.followersCount} ★', isDark),
+          _buildStatCol('Vendas', '${stats.salesCount}', isDark),
+          _buildStatCol('Compras', '${stats.purchasesCount}', isDark),
+        ],
+      ),
+      loading: () => const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ],
+      ),
+      error: (_, __) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatCol('Reputação', '0 ★', isDark),
+          _buildStatCol('Vendas', '0', isDark),
+          _buildStatCol('Compras', '0', isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFollowRow(BuildContext context, WidgetRef ref, bool isDark) {
+    final statsAsync = ref.watch(profileStatsProvider);
+
+    return statsAsync.when(
+      data: (stats) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildClickableStat(
+            '${stats.followersCount}',
+            'seguidores',
+            isDark,
+            () => context.push('/profile/followers'),
+          ),
+          const SizedBox(width: 32),
+          _buildClickableStat(
+            '${stats.followingCount}',
+            'seguindo',
+            isDark,
+            () => context.push('/profile/following'),
+          ),
+        ],
+      ),
+      loading: () => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildClickableStat('...', 'seguidores', isDark, () {}),
+          const SizedBox(width: 32),
+          _buildClickableStat('...', 'seguindo', isDark, () {}),
+        ],
+      ),
+      error: (_, __) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildClickableStat('0', 'seguidores', isDark, () {}),
+          const SizedBox(width: 32),
+          _buildClickableStat('0', 'seguindo', isDark, () {}),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClickableStat(
+      String value, String label, bool isDark, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? AppColors.white : AppColors.darkGray,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMenuItem({
     required IconData icon,
     required String label,
@@ -349,7 +461,7 @@ class ProfilePage extends HookConsumerWidget {
       context: context,
       backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.zero,
       ),
       builder: (sheetContext) {
         return Consumer(
@@ -370,7 +482,7 @@ class ProfilePage extends HookConsumerWidget {
                       height: 4,
                       decoration: BoxDecoration(
                         color: AppColors.mediumGray.withAlpha(77),
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.zero,
                       ),
                     ),
                   ),
@@ -380,8 +492,7 @@ class ProfilePage extends HookConsumerWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color:
-                          sheetIsDark ? AppColors.white : AppColors.darkGray,
+                      color: sheetIsDark ? AppColors.white : AppColors.darkGray,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -392,8 +503,7 @@ class ProfilePage extends HookConsumerWidget {
                           : currentThemeMode == ThemeMode.light
                               ? Icons.light_mode
                               : Icons.brightness_auto,
-                      color:
-                          sheetIsDark ? AppColors.white : AppColors.darkGray,
+                      color: sheetIsDark ? AppColors.white : AppColors.darkGray,
                     ),
                     title: Text(
                       'Tema',
@@ -441,8 +551,7 @@ class ProfilePage extends HookConsumerWidget {
                   ListTile(
                     leading: Icon(
                       Icons.fingerprint,
-                      color:
-                          sheetIsDark ? AppColors.white : AppColors.darkGray,
+                      color: sheetIsDark ? AppColors.white : AppColors.darkGray,
                     ),
                     title: Text(
                       'Biometria',
@@ -469,17 +578,17 @@ class ProfilePage extends HookConsumerWidget {
                       },
                     ),
                     trailing: FutureBuilder<bool>(
-                      future: consumerRef
-                          .read(biometryServiceProvider)
-                          .isAvailable(),
+                      future:
+                          consumerRef.read(biometryServiceProvider).isEnabled(),
                       builder: (context, snapshot) {
                         if (snapshot.data == true) {
                           return Switch(
-                            value: false,
+                            value: snapshot.data ?? false,
                             onChanged: (value) async {
                               await consumerRef
                                   .read(biometryServiceProvider)
                                   .setEnabled(value);
+                              consumerRef.invalidate(biometryServiceProvider);
                             },
                             activeTrackColor: AppColors.primaryPurple,
                           );
@@ -488,12 +597,11 @@ class ProfilePage extends HookConsumerWidget {
                       },
                     ),
                   ),
-                  const Divider(),
+                  const SizedBox(height: 16),
                   ListTile(
                     leading: Icon(
                       Icons.edit,
-                      color:
-                          sheetIsDark ? AppColors.white : AppColors.darkGray,
+                      color: sheetIsDark ? AppColors.white : AppColors.darkGray,
                     ),
                     title: Text(
                       'Editar perfil',
@@ -510,8 +618,7 @@ class ProfilePage extends HookConsumerWidget {
                   ListTile(
                     leading: Icon(
                       Icons.help_outline,
-                      color:
-                          sheetIsDark ? AppColors.white : AppColors.darkGray,
+                      color: sheetIsDark ? AppColors.white : AppColors.darkGray,
                     ),
                     title: Text(
                       'Ajuda e suporte',
@@ -539,7 +646,7 @@ class ProfilePage extends HookConsumerWidget {
       context: context,
       backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.zero,
       ),
       builder: (context) {
         return Padding(
@@ -553,7 +660,7 @@ class ProfilePage extends HookConsumerWidget {
                   height: 4,
                   decoration: BoxDecoration(
                     color: AppColors.mediumGray.withAlpha(77),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.zero,
                   ),
                 ),
               ),
@@ -571,16 +678,9 @@ class ProfilePage extends HookConsumerWidget {
                 leading: Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AppColors.primaryPurple,
-                        AppColors.primaryPurpleLight
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.brutalistGradient,
+                    borderRadius: BorderRadius.zero,
                   ),
                   child: const Icon(
                     Icons.add,
@@ -672,38 +772,46 @@ class ProfilePage extends HookConsumerWidget {
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => context.go('/login'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryPurple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () => context.go('/login'),
+                  child: Container(
+                    height: 52,
+                    decoration: const BoxDecoration(
+                      gradient: AppColors.brutalistGradient,
                     ),
-                  ),
-                  child: const Text(
-                    'Entrar',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    child: const Center(
+                      child: Text(
+                        'Entrar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onPrimary,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => context.go('/register'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryPurple,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: AppColors.primaryPurple),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () => context.go('/register'),
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.primaryPurple),
                     ),
-                  ),
-                  child: const Text(
-                    'Cadastrar',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    child: const Center(
+                      child: Text(
+                        'Cadastrar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryPurple,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

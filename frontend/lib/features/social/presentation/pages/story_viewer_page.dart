@@ -60,8 +60,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
       // Tap on left side - go to previous story
       if (_currentIndex > 0) {
         _pageController.previousPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.linear,
         );
       } else {
         Navigator.pop(context);
@@ -70,8 +70,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
       // Tap on right side - go to next story
       if (_currentIndex < widget.stories.length - 1) {
         _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.linear,
         );
       } else {
         Navigator.pop(context);
@@ -120,17 +120,14 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 2),
               height: 2,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(1),
-                child: LinearProgressIndicator(
-                  value: index < _currentIndex
-                      ? 1.0
-                      : index == _currentIndex
-                          ? (_isPaused ? 0.0 : null)
-                          : 0.0,
-                  backgroundColor: Colors.white.withValues(alpha: 0.3),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
+              child: LinearProgressIndicator(
+                value: index < _currentIndex
+                    ? 1.0
+                    : index == _currentIndex
+                        ? (_isPaused ? 0.0 : null)
+                        : 0.0,
+                backgroundColor: Colors.white.withValues(alpha: 0.3),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
           );
@@ -151,13 +148,18 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor:
-                  isDark ? AppColors.surfaceDark : AppColors.lightGray,
-              backgroundImage: story.user.avatarUrl != null
-                  ? NetworkImage(story.user.avatarUrl!)
-                  : null,
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+                image: story.user.avatarUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(story.user.avatarUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
               child: story.user.avatarUrl == null
                   ? const Icon(Icons.person, size: 20)
                   : null,

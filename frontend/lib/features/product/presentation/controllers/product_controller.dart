@@ -20,6 +20,18 @@ final getProductsUsecaseProvider =
 final createProductUsecaseProvider = Provider(
     (ref) => CreateProductUsecase(ref.watch(productRepositoryProvider)));
 
+// Single product provider
+final productByIdProvider =
+    FutureProvider.family<ProductEntity, String>((ref, productId) async {
+  final repository = ref.watch(productRepositoryProvider);
+  final result = await repository.getProductById(productId);
+
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (product) => product,
+  );
+});
+
 final productsFeedProvider =
     FutureProvider.family<List<ProductEntity>, GetProductsParams>(
         (ref, params) async {

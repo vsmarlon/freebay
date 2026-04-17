@@ -1,188 +1,287 @@
-SET search_path TO public;
+-- ─── Categories ────────────────────────────────────────────
 
-INSERT INTO "User" ("id", "displayName", "email", "emailVerified", "passwordHash", "city", "state", "isVerified", "reputationScore", "totalReviews", "updatedAt")
+INSERT INTO "Category" ("id", "name", "slug", "parentId", "createdAt", "updatedAt")
 VALUES
-  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Maria Silva',   'maria@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'São Paulo',      'SP', TRUE, 4.8, 45, NOW()),
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'João Santos',   'joao@example.com',  TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Rio de Janeiro', 'RJ', FALSE, 3.5, 12, NOW()),
-  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Ana Oliveira',  'ana@example.com',   TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Belo Horizonte', 'MG', TRUE, 4.9, 78, NOW()),
-  ('d4e5f6a7-b8c9-0123-defa-234567890123', 'Carlos Pereira', 'carlos@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Curitiba',       'PR', TRUE, 4.6, 32, NOW()),
-  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'Juliana Costa', 'juliana@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Salvador',      'BA', FALSE, 4.2, 18, NOW()),
-  ('f6a7b8c9-d0e1-2345-fabc-456789012345', 'Pedro Almeida', 'pedro@example.com',  TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Fortaleza',     'CE', FALSE, 3.8, 8, NOW()),
-  ('a7b8c9d0-e1f2-3456-abcd-567890123456', 'Fernanda Lima', 'fernanda@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Brasília',      'DF', TRUE, 4.7, 56, NOW()),
-  ('b8c9d0e1-f2a3-4567-bcde-678901234567', 'Lucas Rodrigues','lucas@example.com',  TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Manaus',        'AM', FALSE, 4.0, 22, NOW()),
-  ('c9d0e1f2-a3b4-5678-cdef-789012345678', 'Patrícia Souza','patricia@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Recife',        'PE', TRUE, 4.5, 34, NOW()),
-  ('d0e1f2a3-b4c5-6789-defa-890123456789', 'Ricardo Ferreira','ricardo@example.com',TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Porto Alegre',  'RS', FALSE, 3.9, 15, NOW()),
-  ('e1f2a3b4-c5d6-7890-efab-901234567890', 'Camila Dias',   'camila@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'São Luís',      'MA', TRUE, 4.4, 28, NOW()),
-  ('f2a3b4c5-d6e7-8901-fabc-012345678901', 'Gabriel Martins','gabriel@example.com',TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Natal',         'RN', FALSE, 4.1, 19, NOW()),
-  ('a3b4c5d6-e7f8-9012-abcd-123456789012', 'Beatriz Araujo','beatriz@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Goiânia',       'GO', TRUE, 4.8, 42, NOW()),
-  ('b4c5d6e7-f8a9-0123-bcde-234567890123', 'Marcos Vieira', 'marcos@example.com', TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'Campinas',      'SP', FALSE, 3.7, 9, NOW()),
-  ('c5d6e7f8-a9b0-1234-cdef-345678901234', 'Larissa Castro','larissa@example.com',TRUE, '$2b$12$eUKF3KMS82bf38BZIimJ.e9KMduQlOysfIQ/g5ViCuO9NzMTxAq12', 'São José dos Campos','SP', TRUE, 4.6, 51, NOW())
+  ('cat001-0000-0000-0000-000000000001', 'Eletrônicos',           'eletronicos',           NULL, NOW(), NOW()),
+  ('cat002-0000-0000-0000-000000000002', 'Moda',                  'moda',                  NULL, NOW(), NOW()),
+  ('cat003-0000-0000-0000-000000000003', 'Games',                 'games',                 NULL, NOW(), NOW()),
+  ('cat004-0000-0000-0000-000000000004', 'Instrumentos Musicais', 'instrumentos-musicais', NULL, NOW(), NOW()),
+  ('cat005-0000-0000-0000-000000000005', 'Móveis e Decoração',    'moveis-decoracao',      NULL, NOW(), NOW()),
+  ('cat006-0000-0000-0000-000000000006', 'Livros',                'livros',                NULL, NOW(), NOW()),
+  ('cat007-0000-0000-0000-000000000007', 'Esportes',              'esportes',              NULL, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
--- ─── Categories ───────────────────────────────────────────
+-- ─── Users ─────────────────────────────────────────────────
 
-INSERT INTO "Category" ("id", "name", "slug", "createdAt", "updatedAt")
+INSERT INTO "User" ("id", "displayName", "email", "emailVerified", "passwordHash", "isVerified", "isGuest", "role", "reputationScore", "totalReviews", "createdAt", "updatedAt")
 VALUES
-  ('cat001-0000-0000-0000-000000000001', 'Eletrônicos',       'eletronicos',       NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000002', 'Roupas',            'roupas',            NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000003', 'Calçados',          'calcados',          NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000004', 'Acessórios',        'acessorios',        NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000005', 'Celulares',         'celulares',         NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000006', 'Informática',       'informatica',       NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000007', 'Móveis',             'moveis',            NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000008', 'Livros',            'livros',            NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000009', 'Esportes',          'esportes',          NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000010', 'Beleza',            'beleza',            NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000011', 'Games',             'games',             NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000012', 'Instrumentos Musicais','instrumentos',   NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000013', 'Pets',              'pets',              NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000014', 'Decoração',         'decoracao',         NOW(), NOW()),
-  ('cat001-0000-0000-0000-000000000015', 'Veículos',          'veiculos',          NOW(), NOW())
+  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Carlos Silva',    'carlos.silva@email.com',    true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.8, 12, NOW() - INTERVAL '180 days', NOW()),
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Ana Beatriz',     'ana.beatriz@email.com',     true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.5,  5, NOW() - INTERVAL '120 days', NOW()),
+  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Rafael Mendes',   'rafael.mendes@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.2,  8, NOW() - INTERVAL '90 days',  NOW()),
+  ('d4e5f6a7-b8c9-0123-defa-234567890123', 'Juliana Costa',   'juliana.costa@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.9, 20, NOW() - INTERVAL '200 days', NOW()),
+  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'Mateus Oliveira', 'mateus.oliveira@email.com', true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.8,  4, NOW() - INTERVAL '60 days',  NOW()),
+  ('f6a7b8c9-d0e1-2345-fabc-456789012345', 'Fernanda Lima',   'fernanda.lima@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.7, 15, NOW() - INTERVAL '150 days', NOW()),
+  ('a7b8c9d0-e1f2-3456-abcd-567890123456', 'Pedro Alves',     'pedro.alves@email.com',     true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.1,  3, NOW() - INTERVAL '45 days',  NOW()),
+  ('b8c9d0e1-f2a3-4567-bcde-678901234567', 'Larissa Santos',  'larissa.santos@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.0,  6, NOW() - INTERVAL '75 days',  NOW()),
+  ('c9d0e1f2-a3b4-5678-cdef-789012345678', 'Diego Ferreira',  'diego.ferreira@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.3,  9, NOW() - INTERVAL '100 days', NOW()),
+  ('d0e1f2a3-b4c5-6789-defa-890123456789', 'Gabriela Rocha',  'gabriela.rocha@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.6, 11, NOW() - INTERVAL '130 days', NOW()),
+  ('e1f2a3b4-c5d6-7890-efab-901234567890', 'Lucas Martins',   'lucas.martins@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.5,  2, NOW() - INTERVAL '30 days',  NOW()),
+  ('f2a3b4c5-d6e7-8901-fabc-012345678901', 'Thiago Barbosa',  'thiago.barbosa@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.4,  7, NOW() - INTERVAL '85 days',  NOW()),
+  ('a3b4c5d6-e7f8-9012-abcd-123456789012', 'Camila Pereira',  'camila.pereira@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.0,  4, NOW() - INTERVAL '55 days',  NOW()),
+  ('b4c5d6e7-f8a9-0123-bcde-234567890123', 'Henrique Souza',  'henrique.souza@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.2,  6, NOW() - INTERVAL '70 days',  NOW()),
+  ('c5d6e7f8-a9b0-1234-cdef-345678901234', 'Isabela Gomes',   'isabela.gomes@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.9,  5, NOW() - INTERVAL '65 days',  NOW())
 ON CONFLICT DO NOTHING;
 
--- ─── Wallets ────────────────────────────────────────────
+-- ─── Products ──────────────────────────────────────────────
 
-INSERT INTO "Wallet" ("id", "userId", "availableBalance", "pendingBalance", "totalEarned")
+INSERT INTO "Product" ("id", "title", "description", "price", "condition", "categoryId", "status", "sellerId", "createdAt", "updatedAt")
 VALUES
-  ('w1000000-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 50000, 0,     150000),
-  ('w2000000-0000-0000-0000-000000000002', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 0,     0,     0),
-  ('w3000000-0000-0000-0000-000000000003', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 25000, 10000, 75000),
-  ('w4000000-0000-0000-0000-000000000004', 'd4e5f6a7-b8c9-0123-defa-234567890123', 80000, 15000, 200000),
-  ('w5000000-0000-0000-0000-000000000005', 'e5f6a7b8-c9d0-1234-efab-345678901234', 15000, 5000, 45000),
-  ('w6000000-0000-0000-0000-000000000006', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 5000,  0,     12000),
-  ('w7000000-0000-0000-0000-000000000007', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 120000, 25000, 380000),
-  ('w8000000-0000-0000-0000-000000000008', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 30000, 8000, 95000),
-  ('w9000000-0000-0000-0000-000000000009', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 45000, 12000, 156000),
-  ('w1000000-0000-0000-0000-000000000010', 'd0e1f2a3-b4c5-6789-defa-890123456789', 20000, 0,     65000),
-  ('w1100000-0000-0000-0000-000000000011', 'e1f2a3b4-c5d6-7890-efab-901234567890', 65000, 18000, 210000),
-  ('w1200000-0000-0000-0000-000000000012', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 18000, 3000, 52000),
-  ('w1300000-0000-0000-0000-000000000013', 'a3b4c5d6-e7f8-9012-abcd-123456789012', 95000, 22000, 320000),
-  ('w1400000-0000-0000-0000-000000000014', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 8000,  0,     18000),
-  ('w1500000-0000-0000-0000-000000000015', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 78000, 15000, 275000)
+  ('prod001-0000-0000-0000-000000000001', 'iPhone 13 Pro Max 256GB',       'iPhone 13 Pro Max na cor grafite, 256GB. Bateria com 89% de saúde. Acompanha carregador original e caixa.',                  650000, 'USED', 'cat001-0000-0000-0000-000000000001', 'SOLD',   'a1b2c3d4-e5f6-7890-abcd-ef1234567890', NOW() - INTERVAL '30 days', NOW()),
+  ('prod001-0000-0000-0000-000000000002', 'Tênis Nike Air Max 270',         'Tênis Nike Air Max 270 tamanho 42, cor branco. Usado poucas vezes, em ótimo estado.',                                          45000, 'USED', 'cat002-0000-0000-0000-000000000002', 'SOLD',   'c3d4e5f6-a7b8-9012-cdef-123456789012', NOW() - INTERVAL '25 days', NOW()),
+  ('prod001-0000-0000-0000-000000000003', 'MacBook Pro M1 2021',            'MacBook Pro M1 com 16GB RAM e 512GB SSD. Em perfeito estado, sem arranhões. Acompanha carregador original.',                   750000, 'USED', 'cat001-0000-0000-0000-000000000001', 'SOLD',   'd4e5f6a7-b8c9-0123-defa-234567890123', NOW() - INTERVAL '40 days', NOW()),
+  ('prod001-0000-0000-0000-000000000004', 'Vestido Floral Midi',            'Vestido floral midi tamanho M, nunca usado, ainda com etiqueta.',                                                               15000, 'NEW',  'cat002-0000-0000-0000-000000000002', 'SOLD',   'e5f6a7b8-c9d0-1234-efab-345678901234', NOW() - INTERVAL '20 days', NOW()),
+  ('prod001-0000-0000-0000-000000000005', 'PS5 + 2 Controles DualSense',   'PlayStation 5 edição padrão com 2 controles DualSense. Todos os jogos funcionando perfeitamente.',                             320000, 'USED', 'cat003-0000-0000-0000-000000000003', 'SOLD',   'f6a7b8c9-d0e1-2345-fabc-456789012345', NOW() - INTERVAL '35 days', NOW()),
+  ('prod001-0000-0000-0000-000000000006', 'Headset Sony WH-1000XM4',       'Headset Sony WH-1000XM4 com cancelamento de ruído ativo. Seminovo, acompanha case e cabo.',                                   120000, 'USED', 'cat001-0000-0000-0000-000000000001', 'ACTIVE', 'a7b8c9d0-e1f2-3456-abcd-567890123456', NOW() - INTERVAL '15 days', NOW()),
+  ('prod001-0000-0000-0000-000000000007', 'Kit Livros de Programação',     'Kit com 5 livros técnicos: Clean Code, Clean Architecture, DDD, SICP e Pragmatic Programmer.',                                  18000, 'USED', 'cat006-0000-0000-0000-000000000006', 'ACTIVE', 'c9d0e1f2-a3b4-5678-cdef-789012345678', NOW() - INTERVAL '18 days', NOW()),
+  ('prod001-0000-0000-0000-000000000008', 'iPad Pro 12.9" M2',             'iPad Pro 12.9" com chip M2, 256GB Wi-Fi + Cellular. Acompanha Apple Pencil 2ª geração.',                                      120000, 'USED', 'cat001-0000-0000-0000-000000000001', 'ACTIVE', 'd0e1f2a3-b4c5-6789-defa-890123456789', NOW() - INTERVAL '22 days', NOW()),
+  ('prod001-0000-0000-0000-000000000009', 'Guitarra Fender Stratocaster',  'Guitarra Fender Stratocaster Player Series em cor sunburst. Excelente estado, com case incluído.',                             380000, 'USED', 'cat004-0000-0000-0000-000000000004', 'ACTIVE', 'f2a3b4c5-d6e7-8901-fabc-012345678901', NOW() - INTERVAL '28 days', NOW()),
+  ('prod001-0000-0000-0000-000000000010', 'Bicicleta Trek FX3 Disc',       'Bicicleta Trek FX3 Disc aro 700c, tamanho M. Perfeita para uso na cidade e ciclovias.',                                        220000, 'USED', 'cat007-0000-0000-0000-000000000007', 'ACTIVE', 'b4c5d6e7-f8a9-0123-bcde-234567890123', NOW() - INTERVAL '12 days', NOW()),
+  ('prod001-0000-0000-0000-000000000011', 'Mesa de Jantar Madeira 6L',     'Mesa de jantar em madeira maciça para 6 pessoas. Pequeno risco na lateral conforme fotos.',                                    85000, 'USED', 'cat005-0000-0000-0000-000000000005', 'ACTIVE', 'c5d6e7f8-a9b0-1234-cdef-345678901234', NOW() - INTERVAL '50 days', NOW()),
+  ('prod001-0000-0000-0000-000000000012', 'Nintendo Switch OLED + Jogos',  'Nintendo Switch OLED na cor branca. Acompanha 5 jogos físicos. Zerado, sem marcas de uso.',                                    480000, 'NEW',  'cat003-0000-0000-0000-000000000003', 'SOLD',   'a1b2c3d4-e5f6-7890-abcd-ef1234567890', NOW() - INTERVAL '60 days', NOW()),
+  ('prod001-0000-0000-0000-000000000013', 'Câmera Canon EOS R5',           'Câmera mirrorless Canon EOS R5 corpo. Apenas 5.000 disparos. Acompanha bateria e carregador.',                                 950000, 'USED', 'cat001-0000-0000-0000-000000000001', 'ACTIVE', 'b8c9d0e1-f2a3-4567-bcde-678901234567', NOW() - INTERVAL '10 days', NOW()),
+  ('prod001-0000-0000-0000-000000000014', 'Sofá 3 Lugares Veludo',         'Sofá 3 lugares em veludo cinza. Bom estado, pequenos desgastes normais de uso.',                                                280000, 'USED', 'cat005-0000-0000-0000-000000000005', 'ACTIVE', 'e1f2a3b4-c5d6-7890-efab-901234567890', NOW() - INTERVAL '8 days',  NOW()),
+  ('prod001-0000-0000-0000-000000000015', 'Vestido de Festa Longo',        'Vestido de festa longo na cor vinho, tamanho P. Usado apenas uma vez em casamento.',                                             25000, 'USED', 'cat002-0000-0000-0000-000000000002', 'ACTIVE', 'a3b4c5d6-e7f8-9012-abcd-123456789012', NOW() - INTERVAL '5 days',  NOW())
 ON CONFLICT DO NOTHING;
 
--- ─── Posts ───────────────────────────────────────────────
+-- ─── ProductImages ────────────────────────────────────────
 
-INSERT INTO "Post" ("id", "content", "imageUrl", "type", "userId", "likesCount", "commentsCount", "updatedAt")
+INSERT INTO "ProductImage" ("id", "url", "order", "productId")
 VALUES
-  ('p0010000-0000-0000-0000-000000000001', 'Vendendo iPhone 14 Pro Max 256GB! Estado perfeito, quase novo.', 'https://picsum.photos/400/400?random=1', 'PRODUCT', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 45, 12, NOW()),
-  ('p0010000-0000-0000-0000-000000000002', 'Tênis Nike Air Max 90 tamanho 42, usado apenas 2 vezes. Original!', 'https://picsum.photos/400/400?random=2', 'PRODUCT', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 23, 8, NOW()),
-  ('p0010000-0000-0000-0000-000000000003', 'Alguém conhece bons brechós em São Paulo?', 'https://picsum.photos/400/400?random=3', 'REGULAR', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 12, 25, NOW()),
-  ('p0010000-0000-0000-0000-000000000004', 'MacBook Pro 2021 M1 16GB RAM - venda ou troco', 'https://picsum.photos/400/400?random=4', 'PRODUCT', 'd4e5f6a7-b8c9-0123-defa-234567890123', 67, 19, NOW()),
-  ('p0010000-0000-0000-0000-000000000005', 'Vestido vintage anos 80 - linda peça!', 'https://picsum.photos/400/400?random=5', 'PRODUCT', 'e5f6a7b8-c9d0-1234-efab-345678901234', 34, 6, NOW()),
-  ('p0010000-0000-0000-0000-000000000006', 'PS5 com 2 jogos + controle adicional', 'https://picsum.photos/400/400?random=6', 'PRODUCT', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 89, 31, NOW()),
-  ('p0010000-0000-0000-0000-000000000007', 'Bom dia pessoal! Alguém indic um lugar bom pra comprar móveis usados?', 'https://picsum.photos/400/400?random=7', 'REGULAR', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 8, 14, NOW()),
-  ('p0010000-0000-0000-0000-000000000008', 'iPad Air 4 geração 64GB WiFi - like new', 'https://picsum.photos/400/400?random=8', 'PRODUCT', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 41, 11, NOW()),
-  ('p0010000-0000-0000-0000-000000000009', 'Coleção de livros de Harry Potter - todos os volumes', 'https://picsum.photos/400/400?random=9', 'PRODUCT', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 56, 22, NOW()),
-  ('p0010000-0000-0000-0000-000000000010', 'Bicicleta mountain bike Aro 29 - perfeita para trilhas', 'https://picsum.photos/400/400?random=10', 'PRODUCT', 'd0e1f2a3-b4c5-6789-defa-890123456789', 72, 18, NOW()),
-  ('p0010000-0000-0000-0000-000000000011', 'O que vocês acham do novo iPhone 16?', 'https://picsum.photos/400/400?random=11', 'REGULAR', 'e1f2a3b4-c5d6-7890-efab-901234567890', 156, 89, NOW()),
-  ('p0010000-0000-0000-0000-000000000012', 'Guitarra Fender Stratocaster - som incrível!', 'https://picsum.photos/400/400?random=12', 'PRODUCT', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 38, 9, NOW()),
-  ('p0010000-0000-0000-0000-000000000013', 'Meu setup de home office completa', 'https://picsum.photos/400/400?random=13', 'REGULAR', 'a3b4c5d6-e7f8-9012-abcd-123456789012', 201, 45, NOW()),
-  ('p0010000-0000-0000-0000-000000000014', 'Vendo Watch Series 9 45mm - funcionando perfeitamente', 'https://picsum.photos/400/400?random=14', 'PRODUCT', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 29, 7, NOW()),
-  ('p0010000-0000-0000-0000-000000000015', 'Mesa de jantar 6 cadeiras - madeira maciça', 'https://picsum.photos/400/400?random=15', 'PRODUCT', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 15, 4, NOW())
+  ('pimg001-0000-0000-0000-0000000001', 'https://picsum.photos/800/800?random=101', 0, 'prod001-0000-0000-0000-000000000001'),
+  ('pimg001-0000-0000-0000-0000000002', 'https://picsum.photos/800/800?random=102', 1, 'prod001-0000-0000-0000-000000000001'),
+  ('pimg001-0000-0000-0000-0000000003', 'https://picsum.photos/800/800?random=103', 2, 'prod001-0000-0000-0000-000000000001'),
+  ('pimg001-0000-0000-0000-0000000004', 'https://picsum.photos/800/800?random=104', 0, 'prod001-0000-0000-0000-000000000002'),
+  ('pimg001-0000-0000-0000-0000000005', 'https://picsum.photos/800/800?random=105', 1, 'prod001-0000-0000-0000-000000000002'),
+  ('pimg001-0000-0000-0000-0000000006', 'https://picsum.photos/800/800?random=106', 0, 'prod001-0000-0000-0000-000000000003'),
+  ('pimg001-0000-0000-0000-0000000007', 'https://picsum.photos/800/800?random=107', 1, 'prod001-0000-0000-0000-000000000003'),
+  ('pimg001-0000-0000-0000-0000000008', 'https://picsum.photos/800/800?random=108', 2, 'prod001-0000-0000-0000-000000000003'),
+  ('pimg001-0000-0000-0000-0000000009', 'https://picsum.photos/800/800?random=109', 3, 'prod001-0000-0000-0000-000000000003'),
+  ('pimg001-0000-0000-0000-0000000010', 'https://picsum.photos/800/800?random=110', 0, 'prod001-0000-0000-0000-000000000004'),
+  ('pimg001-0000-0000-0000-0000000011', 'https://picsum.photos/800/800?random=111', 1, 'prod001-0000-0000-0000-000000000004'),
+  ('pimg001-0000-0000-0000-0000000012', 'https://picsum.photos/800/800?random=112', 0, 'prod001-0000-0000-0000-000000000005'),
+  ('pimg001-0000-0000-0000-0000000013', 'https://picsum.photos/800/800?random=113', 1, 'prod001-0000-0000-0000-000000000005'),
+  ('pimg001-0000-0000-0000-0000000014', 'https://picsum.photos/800/800?random=114', 2, 'prod001-0000-0000-0000-000000000005'),
+  ('pimg001-0000-0000-0000-0000000015', 'https://picsum.photos/800/800?random=115', 0, 'prod001-0000-0000-0000-000000000006'),
+  ('pimg001-0000-0000-0000-0000000016', 'https://picsum.photos/800/800?random=116', 1, 'prod001-0000-0000-0000-000000000006'),
+  ('pimg001-0000-0000-0000-0000000017', 'https://picsum.photos/800/800?random=117', 0, 'prod001-0000-0000-0000-000000000007'),
+  ('pimg001-0000-0000-0000-0000000018', 'https://picsum.photos/800/800?random=118', 1, 'prod001-0000-0000-0000-000000000007'),
+  ('pimg001-0000-0000-0000-0000000019', 'https://picsum.photos/800/800?random=119', 2, 'prod001-0000-0000-0000-000000000007'),
+  ('pimg001-0000-0000-0000-0000000020', 'https://picsum.photos/800/800?random=120', 0, 'prod001-0000-0000-0000-000000000008'),
+  ('pimg001-0000-0000-0000-0000000021', 'https://picsum.photos/800/800?random=121', 1, 'prod001-0000-0000-0000-000000000008'),
+  ('pimg001-0000-0000-0000-0000000022', 'https://picsum.photos/800/800?random=122', 0, 'prod001-0000-0000-0000-000000000009'),
+  ('pimg001-0000-0000-0000-0000000023', 'https://picsum.photos/800/800?random=123', 1, 'prod001-0000-0000-0000-000000000009'),
+  ('pimg001-0000-0000-0000-0000000024', 'https://picsum.photos/800/800?random=124', 0, 'prod001-0000-0000-0000-000000000010'),
+  ('pimg001-0000-0000-0000-0000000025', 'https://picsum.photos/800/800?random=125', 1, 'prod001-0000-0000-0000-000000000010'),
+  ('pimg001-0000-0000-0000-0000000026', 'https://picsum.photos/800/800?random=126', 0, 'prod001-0000-0000-0000-000000000011'),
+  ('pimg001-0000-0000-0000-0000000027', 'https://picsum.photos/800/800?random=127', 1, 'prod001-0000-0000-0000-000000000011'),
+  ('pimg001-0000-0000-0000-0000000028', 'https://picsum.photos/800/800?random=128', 2, 'prod001-0000-0000-0000-000000000011'),
+  ('pimg001-0000-0000-0000-0000000029', 'https://picsum.photos/800/800?random=129', 0, 'prod001-0000-0000-0000-000000000012'),
+  ('pimg001-0000-0000-0000-0000000030', 'https://picsum.photos/800/800?random=130', 1, 'prod001-0000-0000-0000-000000000012'),
+  ('pimg001-0000-0000-0000-0000000031', 'https://picsum.photos/800/800?random=131', 0, 'prod001-0000-0000-0000-000000000013'),
+  ('pimg001-0000-0000-0000-0000000032', 'https://picsum.photos/800/800?random=132', 1, 'prod001-0000-0000-0000-000000000013'),
+  ('pimg001-0000-0000-0000-0000000033', 'https://picsum.photos/800/800?random=133', 0, 'prod001-0000-0000-0000-000000000014'),
+  ('pimg001-0000-0000-0000-0000000034', 'https://picsum.photos/800/800?random=134', 1, 'prod001-0000-0000-0000-000000000014'),
+  ('pimg001-0000-0000-0000-0000000035', 'https://picsum.photos/800/800?random=135', 2, 'prod001-0000-0000-0000-000000000014'),
+  ('pimg001-0000-0000-0000-0000000036', 'https://picsum.photos/800/800?random=136', 0, 'prod001-0000-0000-0000-000000000015'),
+  ('pimg001-0000-0000-0000-0000000037', 'https://picsum.photos/800/800?random=137', 1, 'prod001-0000-0000-0000-000000000015')
 ON CONFLICT DO NOTHING;
 
--- ─── Products ───────────────────────────────────────────
+-- ─── Orders ───────────────────────────────────────────────
 
-INSERT INTO "Product" ("id", "title", "description", "price", "condition", "categoryId", "status", "sellerId", "postId", "updatedAt")
+INSERT INTO "Order" ("id", "buyerId", "sellerId", "productId", "amount", "platformFee", "sellerAmount", "status", "escrowStatus", "meetingScheduledAt", "deliveryConfirmedAt", "createdAt", "updatedAt")
 VALUES
-  ('prod001-0000-0000-0000-000000000001', 'iPhone 14 Pro Max 256GB', 'iPhone 14 Pro Max em estado perfeito, 95% bateria, acompanha capinha e película.', 650000, 'USED', 'cat001-0000-0000-0000-000000000005', 'ACTIVE', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('prod001-0000-0000-0000-000000000002', 'Nike Air Max 90', 'Tamanho 42, usado apenas 2 vezes, originais com nota fiscal.', 45000, 'USED', 'cat001-0000-0000-0000-000000000003', 'ACTIVE', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'p0010000-0000-0000-0000-000000000002', NOW()),
-  ('prod001-0000-0000-0000-000000000003', 'MacBook Pro 2021 M1', '16GB RAM, 512GB SSD, teclado PT-BR, sem detalhes.', 750000, 'USED', 'cat001-0000-0000-0000-000000000006', 'ACTIVE', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'p0010000-0000-0000-0000-000000000004', NOW()),
-  ('prod001-0000-0000-0000-000000000004', 'Vestido Vintage Anos 80', 'Lindíssimo vestido retrô, tamanho M, tecido de alta qualidade.', 15000, 'USED', 'cat001-0000-0000-0000-000000000002', 'ACTIVE', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'p0010000-0000-0000-0000-000000000005', NOW()),
-  ('prod001-0000-0000-0000-000000000005', 'PlayStation 5 + 2 Jogos', 'PS5 padrão, jogos inclusos: God of War e Spider-Man.', 320000, 'USED', 'cat001-0000-0000-0000-000000000011', 'ACTIVE', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'p0010000-0000-0000-0000-000000000006', NOW()),
-  ('prod001-0000-0000-0000-000000000006', 'iPad Air 4 64GB', '4ª geração, WiFi, espaço cinza, com Magic Keyboard.', 280000, 'USED', 'cat001-0000-0000-0000-000000000005', 'ACTIVE', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 'p0010000-0000-0000-0000-000000000008', NOW()),
-  ('prod001-0000-0000-0000-000000000007', 'Coleção Harry Potter', 'Todos os 7 volumes, edição hardcover, condições mínimas de uso.', 18000, 'USED', 'cat001-0000-0000-0000-000000000008', 'ACTIVE', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'p0010000-0000-0000-0000-000000000009', NOW()),
-  ('prod001-0000-0000-0000-000000000008', 'Bicicleta Mountain Bike Aro 29', 'Quadro alumínio, suspensão DiBL, freios a disco hidráulicos.', 120000, 'USED', 'cat001-0000-0000-0000-000000000009', 'ACTIVE', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'p0010000-0000-0000-0000-000000000010', NOW()),
-  ('prod001-0000-0000-0000-000000000009', 'Guitarra Fender Stratocaster', 'Stratocaster Standard, sonora, case rígido inclusso.', 380000, 'USED', 'cat001-0000-0000-0000-000000000012', 'ACTIVE', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'p0010000-0000-0000-0000-000000000012', NOW()),
-  ('prod001-0000-0000-0000-000000000010', 'Apple Watch Series 9 45mm', 'Caixa de alumínio midnight, bracelete esportiva, funcionando 100%.', 220000, 'USED', 'cat001-0000-0000-0000-000000000005', 'ACTIVE', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 'p0010000-0000-0000-0000-000000000014', NOW()),
-  ('prod001-0000-0000-0000-000000000011', 'Mesa de Jantar 6 Cadeiras', 'Mesa de madeira maciça, 6 cadeiras estofadas,的状态良好.', 85000, 'USED', 'cat001-0000-0000-0000-000000000007', 'ACTIVE', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 'p0010000-0000-0000-0000-000000000015', NOW()),
-  ('prod001-0000-0000-0000-000000000012', 'Samsung Galaxy S23 Ultra', '256GB, estado excelente, sem riscos, bateria 95%.', 480000, 'USED', 'cat001-0000-0000-0000-000000000005', 'ACTIVE', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('prod001-0000-0000-0000-000000000013', 'Jaqueta de Couro Vintage', 'Jaqueta de couro legítimo tamanho G, estilo motociclista.', 22000, 'USED', 'cat001-0000-0000-0000-000000000002', 'ACTIVE', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'p0010000-0000-0000-0000-000000000002', NOW()),
-  ('prod001-0000-0000-0000-000000000014', 'Fone Sony WH-1000XM4', 'Cancelamento de ruído, bateria excelente, completo.', 35000, 'USED', 'cat001-0000-0000-0000-000000000001', 'ACTIVE', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'p0010000-0000-0000-0000-000000000004', NOW()),
-  ('prod001-0000-0000-0000-000000000015', 'Mochila Nike Original', 'Mochila esportiva, capacidade 30L, resistente à água.', 8000, 'NEW', 'cat001-0000-0000-0000-000000000004', 'ACTIVE', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'p0010000-0000-0000-0000-000000000005', NOW())
+  -- Completed orders
+  ('ord001-0000-0000-0000-0000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'prod001-0000-0000-0000-000000000001', 650000, 65000, 585000, 'COMPLETED', 'RELEASED', NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days', NOW() - INTERVAL '7 days'),
+  ('ord001-0000-0000-0000-0000000002', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'prod001-0000-0000-0000-000000000002', 45000, 4500, 40500, 'COMPLETED', 'RELEASED', NULL, NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days', NOW() - INTERVAL '5 days'),
+  ('ord001-0000-0000-0000-0000000003', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'prod001-0000-0000-0000-000000000003', 750000, 75000, 675000, 'COMPLETED', 'RELEASED', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day', NOW() - INTERVAL '10 days', NOW() - INTERVAL '1 day'),
+  ('ord001-0000-0000-0000-0000000004', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'prod001-0000-0000-0000-000000000004', 15000, 1500, 13500, 'COMPLETED', 'RELEASED', NULL, NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days', NOW() - INTERVAL '6 days'),
+  ('ord001-0000-0000-0000-0000000005', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'prod001-0000-0000-0000-000000000005', 320000, 32000, 288000, 'COMPLETED', 'RELEASED', NOW() - INTERVAL '7 days', NOW() - INTERVAL '6 days', NOW() - INTERVAL '12 days', NOW() - INTERVAL '6 days'),
+  -- Confirmed (in progress)
+  ('ord001-0000-0000-0000-0000000006', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'prod001-0000-0000-0000-000000000007', 18000, 1800, 16200, 'CONFIRMED', 'HELD', NOW() + INTERVAL '2 days', NULL, NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
+  ('ord001-0000-0000-0000-0000000007', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'prod001-0000-0000-0000-000000000008', 120000, 12000, 108000, 'CONFIRMED', 'HELD', NOW() + INTERVAL '1 day', NULL, NOW() - INTERVAL '1 day', NOW()),
+  -- Pending
+  ('ord001-0000-0000-0000-0000000008', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'prod001-0000-0000-0000-000000000009', 380000, 38000, 342000, 'PENDING', 'HELD', NULL, NULL, NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours'),
+  ('ord001-0000-0000-0000-0000000009', 'e1f2a3b4-c5d6-7890-efab-901234567890', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 'prod001-0000-0000-0000-000000000010', 220000, 22000, 198000, 'PENDING', 'HELD', NULL, NULL, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours'),
+  -- Disputed
+  ('ord001-0000-0000-0000-0000000010', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 'prod001-0000-0000-0000-000000000011', 85000, 8500, 76500, 'DISPUTED', 'HELD', NULL, NULL, NOW() - INTERVAL '4 days', NOW() - INTERVAL '2 days'),
+  -- Cancelled
+  ('ord001-0000-0000-0000-0000000011', 'a3b4c5d6-e7f8-9012-abcd-123456789012', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'prod001-0000-0000-0000-000000000012', 480000, 48000, 432000, 'CANCELLED', 'REFUNDED', NULL, NULL, NOW() - INTERVAL '8 days', NOW() - INTERVAL '7 days')
 ON CONFLICT DO NOTHING;
 
--- ─── Stories ─────────────────────────────────────────────
+-- ─── Transactions ─────────────────────────────────────────
 
-INSERT INTO "Story" ("id", "userId", "imageUrl", "expiresAt", "createdAt")
+INSERT INTO "Transaction" ("id", "orderId", "externalId", "amount", "platformFee", "sellerAmount", "paymentMethod", "provider", "status", "idempotencyKey", "pixQrCode", "pixExpiresAt", "paidAt", "releasedAt", "createdAt", "updatedAt")
 VALUES
-  ('stry001-0000-0000-0000-0000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'https://picsum.photos/300/500?random=21', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000002', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'https://picsum.photos/300/500?random=22', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000003', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'https://picsum.photos/300/500?random=23', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000004', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'https://picsum.photos/300/500?random=24', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000005', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 'https://picsum.photos/300/500?random=25', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000006', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 'https://picsum.photos/300/500?random=26', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000007', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'https://picsum.photos/300/500?random=27', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000008', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'https://picsum.photos/300/500?random=28', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000009', 'e1f2a3b4-c5d6-7890-efab-901234567890', 'https://picsum.photos/300/500?random=29', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000010', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'https://picsum.photos/300/500?random=30', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000011', 'a3b4c5d6-e7f8-9012-abcd-123456789012', 'https://picsum.photos/300/500?random=31', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000012', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 'https://picsum.photos/300/500?random=32', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000013', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 'https://picsum.photos/300/500?random=33', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000014', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'https://picsum.photos/300/500?random=34', NOW() + INTERVAL '24 hours', NOW()),
-  ('stry001-0000-0000-0000-0000000015', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'https://picsum.photos/300/500?random=35', NOW() + INTERVAL '24 hours', NOW())
+  ('txn001-0000-0000-0000-0000000001', 'ord001-0000-0000-0000-0000000001', 'ext_abc123', 650000, 65000, 585000, 'PIX', 'PAGARME', 'RELEASED', 'idem_abc123', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '7 days', NOW() - INTERVAL '5 days', NOW() - INTERVAL '7 days', NOW() - INTERVAL '5 days'),
+  ('txn001-0000-0000-0000-0000000002', 'ord001-0000-0000-0000-0000000002', 'ext_def456', 45000, 4500, 40500, 'PIX', 'PAGARME', 'RELEASED', 'idem_def456', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '5 days', NOW() - INTERVAL '3 days', NOW() - INTERVAL '5 days', NOW() - INTERVAL '3 days'),
+  ('txn001-0000-0000-0000-0000000003', 'ord001-0000-0000-0000-0000000003', 'ext_ghi789', 750000, 75000, 675000, 'CREDIT_CARD', 'PAGARME', 'RELEASED', 'idem_ghi789', NULL, NULL, NOW() - INTERVAL '10 days', NOW() - INTERVAL '1 day', NOW() - INTERVAL '10 days', NOW() - INTERVAL '1 day'),
+  ('txn001-0000-0000-0000-0000000004', 'ord001-0000-0000-0000-0000000004', 'ext_jkl012', 15000, 1500, 13500, 'PIX', 'WOOVI', 'RELEASED', 'idem_jkl012', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '6 days', NOW() - INTERVAL '4 days', NOW() - INTERVAL '6 days', NOW() - INTERVAL '4 days'),
+  ('txn001-0000-0000-0000-0000000005', 'ord001-0000-0000-0000-0000000005', 'ext_mno345', 320000, 32000, 288000, 'PIX', 'PAGARME', 'RELEASED', 'idem_mno345', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '12 days', NOW() - INTERVAL '6 days', NOW() - INTERVAL '12 days', NOW() - INTERVAL '6 days'),
+  ('txn001-0000-0000-0000-0000000006', 'ord001-0000-0000-0000-0000000006', 'ext_pqr678', 18000, 1800, 16200, 'PIX', 'WOOVI', 'HELD', 'idem_pqr678', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '2 days', NULL, NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
+  ('txn001-0000-0000-0000-0000000007', 'ord001-0000-0000-0000-0000000007', 'ext_stu901', 120000, 12000, 108000, 'PIX', 'PAGARME', 'HELD', 'idem_stu901', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '1 day', NULL, NOW() - INTERVAL '1 day', NOW()),
+  ('txn001-0000-0000-0000-0000000008', 'ord001-0000-0000-0000-0000000008', 'ext_vwx234', 380000, 38000, 342000, 'PIX', 'PAGARME', 'PENDING', 'idem_vwx234', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NULL, NULL, NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours'),
+  ('txn001-0000-0000-0000-0000000009', 'ord001-0000-0000-0000-0000000009', 'ext_yza567', 220000, 22000, 198000, 'PIX', 'WOOVI', 'PENDING', 'idem_yza567', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NULL, NULL, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours'),
+  ('txn001-0000-0000-0000-0000000010', 'ord001-0000-0000-0000-0000000010', 'ext_bcd890', 85000, 8500, 76500, 'PIX', 'PAGARME', 'HELD', 'idem_bcd890', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '4 days', NULL, NOW() - INTERVAL '4 days', NOW() - INTERVAL '2 days'),
+  ('txn001-0000-0000-0000-0000000011', 'ord001-0000-0000-0000-0000000011', 'ext_efg123', 480000, 48000, 432000, 'PIX', 'PAGARME', 'REFUNDED', 'idem_efg123', '00020126580014br.gov.bcb.pix', NOW() + INTERVAL '1 day', NOW() - INTERVAL '8 days', NOW() - INTERVAL '7 days', NOW() - INTERVAL '8 days', NOW() - INTERVAL '7 days')
 ON CONFLICT DO NOTHING;
 
--- ─── Follows ────────────────────────────────────────────
+-- ─── ChatMessages ─────────────────────────────────────────
 
-INSERT INTO "Follow" ("id", "followerId", "followingId")
+INSERT INTO "ChatMessage" ("id", "orderId", "senderId", "content", "readAt", "createdAt")
 VALUES
-  ('flw001-0000-0000-0000-0000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
-  ('flw001-0000-0000-0000-0000000002', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'c3d4e5f6-a7b8-9012-cdef-123456789012'),
-  ('flw001-0000-0000-0000-0000000003', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'c3d4e5f6-a7b8-9012-cdef-123456789012'),
-  ('flw001-0000-0000-0000-0000000004', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
-  ('flw001-0000-0000-0000-0000000005', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
-  ('flw001-0000-0000-0000-0000000006', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'c3d4e5f6-a7b8-9012-cdef-123456789012'),
-  ('flw001-0000-0000-0000-0000000007', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 'd4e5f6a7-b8c9-0123-defa-234567890123'),
-  ('flw001-0000-0000-0000-0000000008', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 'e5f6a7b8-c9d0-1234-efab-345678901234'),
-  ('flw001-0000-0000-0000-0000000009', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'f6a7b8c9-d0e1-2345-fabc-456789012345'),
-  ('flw001-0000-0000-0000-0000000010', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'a7b8c9d0-e1f2-3456-abcd-567890123456'),
-  ('flw001-0000-0000-0000-0000000011', 'e1f2a3b4-c5d6-7890-efab-901234567890', 'b8c9d0e1-f2a3-4567-bcde-678901234567'),
-  ('flw001-0000-0000-0000-0000000012', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'c9d0e1f2-a3b4-5678-cdef-789012345678'),
-  ('flw001-0000-0000-0000-0000000013', 'a3b4c5d6-e7f8-9012-abcd-123456789012', 'd0e1f2a3-b4c5-6789-defa-890123456789'),
-  ('flw001-0000-0000-0000-0000000014', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 'e1f2a3b4-c5d6-7890-efab-901234567890'),
-  ('flw001-0000-0000-0000-0000000015', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890')
+  -- Order 1 (completed)
+  ('msg001-0000-0000-0000-0000000001', 'ord001-0000-0000-0000-0000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Olá! Gostaria de comprar o iPhone.', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days'),
+  ('msg001-0000-0000-0000-0000000002', 'ord001-0000-0000-0000-0000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Olá! Sim, ainda está disponível. Pode fazer o pagamento via PIX.', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days'),
+  ('msg001-0000-0000-0000-0000000003', 'ord001-0000-0000-0000-0000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Ok, já realizei o pagamento!', NOW() - INTERVAL '6 days', NOW() - INTERVAL '6 days'),
+  ('msg001-0000-0000-0000-0000000004', 'ord001-0000-0000-0000-0000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Perfeito! Vou confirmar e enviar o produto amanhã.', NOW() - INTERVAL '6 days', NOW() - INTERVAL '6 days'),
+  ('msg001-0000-0000-0000-0000000005', 'ord001-0000-0000-0000-0000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Recebi! Tudo certo, muito obrigado!', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+  -- Order 2 (completed)
+  ('msg001-0000-0000-0000-0000000006', 'ord001-0000-0000-0000-0000000002', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'O tênis ainda está disponível no tamanho 42?', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+  ('msg001-0000-0000-0000-0000000007', 'ord001-0000-0000-0000-0000000002', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'Sim, está disponível!', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+  ('msg001-0000-0000-0000-0000000008', 'ord001-0000-0000-0000-0000000002', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'Perfeito! Vou comprar.', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+  -- Order 3 (completed - with meeting)
+  ('msg001-0000-0000-0000-0000000009', 'ord001-0000-0000-0000-0000000003', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'Oi,vim buscar o notebook. Onde podemos nos encontrar?', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days'),
+  ('msg001-0000-0000-0000-0000000010', 'ord001-0000-0000-0000-0000000003', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'Podemos nos encontrar na Av. Paulista às 15h. Está bom?', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days'),
+  ('msg001-0000-0000-0000-0000000011', 'ord001-0000-0000-0000-0000000003', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'Perfeito! Vou estar lá.', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days'),
+  ('msg001-0000-0000-0000-0000000012', 'ord001-0000-0000-0000-0000000003', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'Já recebi o notebook, está tudo funcionando perfeitamente!', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'),
+  -- Order 6 (confirmed - with scheduled meeting)
+  ('msg001-0000-0000-0000-0000000013', 'ord001-0000-0000-0000-0000000006', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 'Olá! Posso buscar os livros amanhã?', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+  ('msg001-0000-0000-0000-0000000014', 'ord001-0000-0000-0000-0000000006', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'Claro! Que horário?', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+  ('msg001-0000-0000-0000-0000000015', 'ord001-0000-0000-0000-0000000006', 'b8c9d0e1-f2a3-4567-bcde-678901234567', '14h está bom?', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days'),
+  ('msg001-0000-0000-0000-0000000016', 'ord001-0000-0000-0000-0000000006', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'Perfeito! Até amanhã então.', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'),
+  -- Order 8 (pending - just started)
+  ('msg001-0000-0000-0000-0000000017', 'ord001-0000-0000-0000-0000000008', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'Olá! Tenho interesse na guitarra.', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours'),
+  ('msg001-0000-0000-0000-0000-0000000018', 'ord001-0000-0000-0000-0000000008', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'Olá! Sim, ainda tenho. Já toca algum instrumento?', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '5 hours'),
+  ('msg001-0000-0000-0000-0000000019', 'ord001-0000-0000-0000-0000000008', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'Toco violão, sempre quis aprender guitarra!', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '4 hours'),
+  -- Order 10 (disputed)
+  ('msg001-0000-0000-0000-0000000020', 'ord001-0000-0000-0000-0000000010', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'A mesa veio com um raya, não estava descrito.', NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days'),
+  ('msg001-0000-0000-0000-0000000021', 'ord001-0000-0000-0000-0000000010', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 'Entendo, posso oferecer um desconto ou você pode devolver.', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days'),
+  ('msg001-0000-0000-0000-0000000022', 'ord001-0000-0000-0000-0000000010', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'Prefiro abrir disputa e devolver. O produto não corresponde ao anúncio.', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days')
 ON CONFLICT DO NOTHING;
 
--- ─── Likes ──────────────────────────────────────────────
+-- ─── Reviews ───────────────────────────────────────────────
+
+INSERT INTO "Review" ("id", "reviewerId", "reviewedId", "orderId", "type", "score", "comment", "createdAt")
+VALUES
+  -- Order 1 reviews
+  ('rev001-0000-0000-0000-0000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ord001-0000-0000-0000-0000000001', 'BUYER_REVIEWING_SELLER', 5, 'Produto exatamente como descrito, vendedor muito atencioso!', NOW() - INTERVAL '5 days'),
+  ('rev001-0000-0000-0000-0000000002', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'ord001-0000-0000-0000-0000000001', 'SELLER_REVIEWING_BUYER', 5, 'Pagamento rápido, buyer muito educado!', NOW() - INTERVAL '5 days'),
+  -- Order 2 reviews
+  ('rev001-0000-0000-0000-0000000003', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'ord001-0000-0000-0000-0000000002', 'BUYER_REVIEWING_SELLER', 4, 'Tênis bonito, mas demorou um pouco para enviar.', NOW() - INTERVAL '3 days'),
+  ('rev001-0000-0000-0000-0000000004', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'ord001-0000-0000-0000-0000000002', 'SELLER_REVIEWING_BUYER', 5, 'Ótimo buyer, recomendo!', NOW() - INTERVAL '3 days'),
+  -- Order 3 reviews
+  ('rev001-0000-0000-0000-0000000005', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'ord001-0000-0000-0000-0000000003', 'BUYER_REVIEWING_SELLER', 5, 'MacBook Perfeito! Funciona muito bem.', NOW() - INTERVAL '1 day'),
+  ('rev001-0000-0000-0000-0000000006', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'ord001-0000-0000-0000-0000000003', 'SELLER_REVIEWING_BUYER', 5, 'Excelente buyer, pontual e educado!', NOW() - INTERVAL '1 day'),
+  -- Order 4 reviews
+  ('rev001-0000-0000-0000-0000000007', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'ord001-0000-0000-0000-0000000004', 'BUYER_REVIEWING_SELLER', 4, 'Vestido lindo, mas pequeno.', NOW() - INTERVAL '4 days'),
+  -- Order 5 reviews
+  ('rev001-0000-0000-0000-0000000008', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'ord001-0000-0000-0000-0000000005', 'BUYER_REVIEWING_SELLER', 5, 'PS5 Original, jogos funcionando. Recomendo!', NOW() - INTERVAL '6 days'),
+  ('rev001-0000-0000-0000-0000000009', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 'ord001-0000-0000-0000-0000000005', 'SELLER_REVIEWING_BUYER', 5, 'Buyer muito educado, realizou o pagamento rapidamente!', NOW() - INTERVAL '6 days')
+ON CONFLICT DO NOTHING;
+-- ─── Wallets ───────────────────────────────────────────────
+
+INSERT INTO "Wallet" ("id", "userId", "availableBalance", "pendingBalance", "totalEarned", "recipientId")
+VALUES
+  ('wal001-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 150000, 0, 585000, 'rec_123456'),
+  ('wal001-0000-0000-0000-000000000002', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 40500, 0, 40500, 'rec_234567'),
+  ('wal001-0000-0000-0000-000000000003', 'd4e5f6a7-b8c9-0123-defa-234567890123', 600000, 0, 675000, 'rec_345678'),
+  ('wal001-0000-0000-0000-000000000004', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 0, 16200, 0, NULL),
+  ('wal001-0000-0000-0000-000000000005', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 0, 342000, 0, NULL)
+ON CONFLICT DO NOTHING;
+
+-- ─── Withdrawals ───────────────────────────────────────────
+
+INSERT INTO "Withdrawal" ("id", "walletId", "amount", "status", "createdAt")
+VALUES
+  ('wth001-0000-0000-0000-000000000001', 'wal001-0000-0000-0000-000000000001', 435000, 'COMPLETED', NOW() - INTERVAL '4 days'),
+  ('wth001-0000-0000-0000-000000000002', 'wal001-0000-0000-0000-000000000003', 75000, 'PENDING', NOW() - INTERVAL '1 day')
+ON CONFLICT DO NOTHING;
+
+-- ─── Posts ─────────────────────────────────────────────────
+
+INSERT INTO "Post" ("id", "content", "imageUrl", "type", "userId", "likesCount", "commentsCount", "sharesCount", "createdAt", "updatedAt")
+VALUES
+  ('pst001-0000-0000-0000-000000000001', 'Acabei de postar um iPhone 13 novinho! Confiram na minha loja.', 'https://picsum.photos/800/800?random=201', 'PRODUCT', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 5, 2, 1, NOW() - INTERVAL '30 days', NOW()),
+  ('pst001-0000-0000-0000-000000000002', 'Alguém procurando um MacBook M1 em perfeito estado?', NULL, 'PRODUCT', 'd4e5f6a7-b8c9-0123-defa-234567890123', 12, 1, 3, NOW() - INTERVAL '40 days', NOW()),
+  ('pst001-0000-0000-0000-000000000003', 'Muito feliz com as vendas deste mês! Agradeço a todos os clientes.', NULL, 'REGULAR', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 8, 0, 0, NOW() - INTERVAL '2 days', NOW())
+ON CONFLICT DO NOTHING;
+
+-- (Optional) Link the Products to their respective Posts
+UPDATE "Product" SET "postId" = 'pst001-0000-0000-0000-000000000001' WHERE "id" = 'prod001-0000-0000-0000-000000000001';
+UPDATE "Product" SET "postId" = 'pst001-0000-0000-0000-000000000002' WHERE "id" = 'prod001-0000-0000-0000-000000000003';
+
+-- ─── Comments ──────────────────────────────────────────────
+
+INSERT INTO "Comment" ("id", "content", "userId", "postId", "parentId", "createdAt")
+VALUES
+  ('cmt001-0000-0000-0000-000000000001', 'Aceita troca?', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'pst001-0000-0000-0000-000000000001', NULL, NOW() - INTERVAL '29 days'),
+  ('cmt001-0000-0000-0000-000000000002', 'Apenas venda, amigo.', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'pst001-0000-0000-0000-000000000001', 'cmt001-0000-0000-0000-000000000001', NOW() - INTERVAL '29 days'),
+  ('cmt001-0000-0000-0000-000000000003', 'Qual a duração da bateria?', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'pst001-0000-0000-0000-000000000002', NULL, NOW() - INTERVAL '39 days')
+ON CONFLICT DO NOTHING;
+
+-- ─── Likes ─────────────────────────────────────────────────
 
 INSERT INTO "Like" ("id", "userId", "postId", "createdAt")
 VALUES
-  ('lik001-0000-0000-0000-0000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('lik001-0000-0000-0000-0000000002', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('lik001-0000-0000-0000-0000000003', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('lik001-0000-0000-0000-0000000004', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'p0010000-0000-0000-0000-000000000003', NOW()),
-  ('lik001-0000-0000-0000-0000000005', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'p0010000-0000-0000-0000-000000000006', NOW()),
-  ('lik001-0000-0000-0000-0000000006', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'p0010000-0000-0000-0000-000000000009', NOW()),
-  ('lik001-0000-0000-0000-0000000007', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'p0010000-0000-0000-0000-000000000010', NOW()),
-  ('lik001-0000-0000-0000-0000000008', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 'p0010000-0000-0000-0000-000000000011', NOW()),
-  ('lik001-0000-0000-0000-0000000009', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 'p0010000-0000-0000-0000-000000000011', NOW()),
-  ('lik001-0000-0000-0000-0000000010', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'p0010000-0000-0000-0000-000000000011', NOW()),
-  ('lik001-0000-0000-0000-0000000011', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'p0010000-0000-0000-0000-000000000013', NOW()),
-  ('lik001-0000-0000-0000-0000000012', 'e1f2a3b4-c5d6-7890-efab-901234567890', 'p0010000-0000-0000-0000-000000000013', NOW()),
-  ('lik001-0000-0000-0000-0000000013', 'a3b4c5d6-e7f8-9012-abcd-123456789012', 'p0010000-0000-0000-0000-000000000013', NOW()),
-  ('lik001-0000-0000-0000-0000000014', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 'p0010000-0000-0000-0000-000000000004', NOW()),
-  ('lik001-0000-0000-0000-0000000015', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 'p0010000-0000-0000-0000-000000000005', NOW())
+  ('lik001-0000-0000-0000-000000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'pst001-0000-0000-0000-000000000001', NOW() - INTERVAL '29 days'),
+  ('lik001-0000-0000-0000-000000000002', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'pst001-0000-0000-0000-000000000002', NOW() - INTERVAL '39 days'),
+  ('lik001-0000-0000-0000-000000000003', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'pst001-0000-0000-0000-000000000002', NOW() - INTERVAL '38 days')
 ON CONFLICT DO NOTHING;
 
--- ─── Comments ───────────────────────────────────────────
+-- ─── Follows ───────────────────────────────────────────────
 
-INSERT INTO "Comment" ("id", "content", "userId", "postId", "createdAt")
+INSERT INTO "Follow" ("id", "followerId", "followingId", "createdAt")
 VALUES
-  ('cmt001-0000-0000-0000-0000000001', 'Interessado! Qual o menor preço?', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('cmt001-0000-0000-0000-0000000002', 'Parcela no cartão?', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('cmt001-0000-0000-0000-0000000003', 'Linda peça! ainda disponível?', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'p0010000-0000-0000-0000-000000000002', NOW()),
-  ('cmt001-0000-0000-0000-0000000004', 'Recomendo o brechó da Rua Augusta!', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'p0010000-0000-0000-0000-000000000003', NOW()),
-  ('cmt001-0000-0000-0000-0000000005', 'Show de setup!', 'c3d4e5f6-a7b8-9012-cdef-123456789012', 'p0010000-0000-0000-0000-000000000013', NOW()),
-  ('cmt001-0000-0000-0000-0000000006', 'Muito bonito!', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'p0010000-0000-0000-0000-000000000013', NOW()),
-  ('cmt001-0000-0000-0000-0000000007', 'Qual o tamanho?', 'f6a7b8c9-d0e1-2345-fabc-456789012345', 'p0010000-0000-0000-0000-000000000005', NOW()),
-  ('cmt001-0000-0000-0000-0000000008', 'Bateria original?', 'a7b8c9d0-e1f2-3456-abcd-567890123456', 'p0010000-0000-0000-0000-000000000001', NOW()),
-  ('cmt001-0000-0000-0000-0000000009', 'Vem com Nota Fiscal?', 'b8c9d0e1-f2a3-4567-bcde-678901234567', 'p0010000-0000-0000-0000-000000000004', NOW()),
-  ('cmt001-0000-0000-0000-0000000010', 'Qual a marca do quadro?', 'c9d0e1f2-a3b4-5678-cdef-789012345678', 'p0010000-0000-0000-0000-000000000010', NOW()),
-  ('cmt001-0000-0000-0000-0000000011', 'Me interesa!', 'd0e1f2a3-b4c5-6789-defa-890123456789', 'p0010000-0000-0000-0000-000000000006', NOW()),
-  ('cmt001-0000-0000-0000-0000000012', 'Qual a cor?', 'e1f2a3b4-c5d6-7890-efab-901234567890', 'p0010000-0000-0000-0000-000000000014', NOW()),
-  ('cmt001-0000-0000-0000-0000000013', 'Tem interesse em troca?', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'p0010000-0000-0000-0000-000000000012', NOW()),
-  ('cmt001-0000-0000-0000-0000000014', 'Lindão!', 'a3b4c5d6-e7f8-9012-abcd-123456789012', 'p0010000-0000-0000-0000-000000000002', NOW()),
-  ('cmt001-0000-0000-0000-0000000015', 'Show de laptop!', 'b4c5d6e7-f8a9-0123-bcde-234567890123', 'p0010000-0000-0000-0000-000000000004', NOW())
+  ('fol001-0000-0000-0000-000000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', NOW() - INTERVAL '60 days'),
+  ('fol001-0000-0000-0000-000000000002', 'e5f6a7b8-c9d0-1234-efab-345678901234', 'd4e5f6a7-b8c9-0123-defa-234567890123', NOW() - INTERVAL '50 days'),
+  ('fol001-0000-0000-0000-000000000003', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'c5d6e7f8-a9b0-1234-cdef-345678901234', NOW() - INTERVAL '10 days')
+ON CONFLICT DO NOTHING;
+
+-- ─── Disputes ──────────────────────────────────────────────
+
+-- Resolving the disputed order #10 between Thiago (buyer) and Isabela (seller)
+INSERT INTO "Dispute" ("id", "orderId", "openedById", "status", "reason", "buyerEvidence", "sellerEvidence", "resolution", "resolvedAt", "createdAt", "expiresAt")
+VALUES
+  ('dsp001-0000-0000-0000-000000000001', 'ord001-0000-0000-0000-0000000010', 'f2a3b4c5-d6e7-8901-fabc-012345678901', 'OPEN', 'Mesa danificada / Diferente do anúncio', '{"photos": ["https://picsum.photos/id/1/200/300"]}', NULL, NULL, NULL, NOW() - INTERVAL '2 days', NOW() + INTERVAL '5 days')
+ON CONFLICT DO NOTHING;
+
+-- ─── Stories ───────────────────────────────────────────────
+
+INSERT INTO "Story" ("id", "userId", "imageUrl", "expiresAt", "createdAt")
+VALUES
+  ('sty001-0000-0000-0000-000000000001', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'https://picsum.photos/1080/1920?random=301', NOW() + INTERVAL '12 hours', NOW() - INTERVAL '12 hours'),
+  ('sty001-0000-0000-0000-000000000002', 'd4e5f6a7-b8c9-0123-defa-234567890123', 'https://picsum.photos/1080/1920?random=302', NOW() + INTERVAL '20 hours', NOW() - INTERVAL '4 hours')
+ON CONFLICT DO NOTHING;
+
+-- ─── StoryViews ────────────────────────────────────────────
+
+INSERT INTO "StoryView" ("id", "storyId", "viewerId", "viewedAt")
+VALUES
+  ('svw001-0000-0000-0000-000000000001', 'sty001-0000-0000-0000-000000000001', 'b2c3d4e5-f6a7-8901-bcde-f12345678901', NOW() - INTERVAL '10 hours'),
+  ('svw001-0000-0000-0000-000000000002', 'sty001-0000-0000-0000-000000000001', 'f6a7b8c9-d0e1-2345-fabc-456789012345', NOW() - INTERVAL '5 hours')
+ON CONFLICT DO NOTHING;
+
+-- ─── Blocks ────────────────────────────────────────────────
+
+INSERT INTO "Block" ("id", "blockerId", "blockedId", "createdAt")
+VALUES
+  ('blk001-0000-0000-0000-000000000001', 'c5d6e7f8-a9b0-1234-cdef-345678901234', 'f2a3b4c5-d6e7-8901-fabc-012345678901', NOW() - INTERVAL '1 day') -- Seller blocked buyer after dispute
+ON CONFLICT DO NOTHING;
+
+-- ─── Reports ───────────────────────────────────────────────
+
+INSERT INTO "Report" ("id", "reporterId", "reportedUserId", "reportedPostId", "reason", "description", "hideFromUser", "status", "createdAt", "reviewedAt")
+VALUES
+  ('rpt001-0000-0000-0000-000000000001', 'e1f2a3b4-c5d6-7890-efab-901234567890', 'b4c5d6e7-f8a9-0123-bcde-234567890123', NULL, 'FAKE_ACCOUNT', 'Usuário parou de responder após eu pedir mais fotos do produto.', false, 'PENDING', NOW() - INTERVAL '2 hours', NULL),
+  ('rpt001-0000-0000-0000-000000000002', 'a3b4c5d6-e7f8-9012-abcd-123456789012', NULL, 'pst001-0000-0000-0000-000000000001', 'SPAM', 'Postagem duplicada em vários feeds.', true, 'RESOLVED', NOW() - INTERVAL '20 days', NOW() - INTERVAL '19 days')
 ON CONFLICT DO NOTHING;

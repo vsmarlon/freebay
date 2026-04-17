@@ -29,12 +29,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: Curves.linear,
     );
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
@@ -130,7 +130,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       hint: '*********',
                       obscureText: true,
                       showPasswordToggle: true,
-                      clearOnFocusLost: true,
                       prefixIcon: Icons.lock_outline,
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Informe sua senha';
@@ -161,14 +160,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
                     ),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          'Esqueceu a senha?',
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.primaryPurpleLight
-                                : AppColors.primaryPurple,
+                      child: InkWell(
+                        onTap: () {},
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 6),
+                          child: Text(
+                            'Esqueceu a senha?',
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppColors.primaryPurpleLight
+                                  : AppColors.primaryPurple,
+                            ),
                           ),
                         ),
                       ),
@@ -191,8 +194,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       onPressed: _handleLogin,
                     ),
                     const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: authState.isLoading
+                    InkWell(
+                      onTap: authState.isLoading
                           ? null
                           : () async {
                               setState(() => _errorMessage = null);
@@ -200,13 +203,17 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   .read(authControllerProvider.notifier)
                                   .loginAsGuest();
                             },
-                      child: Text(
-                        'Entrar como convidado',
-                        style: TextStyle(
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.mediumGray,
-                          fontSize: 14,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          'Entrar como convidado',
+                          style: TextStyle(
+                            color: isDark
+                                ? AppColors.mediumGray
+                                : AppColors.mediumGray,
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
@@ -221,10 +228,21 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 isDark ? AppColors.white : AppColors.darkGray,
                           ),
                         ),
-                        AppButton(
-                          label: 'Criar conta',
-                          variant: AppButtonVariant.ghost,
-                          onPressed: () => context.push('/register'),
+                        InkWell(
+                          onTap: () => context.push('/register'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 4),
+                            child: Text(
+                              'Criar conta',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.primaryPurpleLight
+                                    : AppColors.primaryPurple,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),

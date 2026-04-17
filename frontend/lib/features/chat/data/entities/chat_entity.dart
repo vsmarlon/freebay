@@ -46,4 +46,4 @@ class ChatEntity extends Equatable {
       [id, oderId, oderName, lastMessage, timestamp, unread, status];
 }
 
-enum ChatStatus { active, archived }
+enum ChatStatus { active, archived, order, direct }

@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
 class LoggingInterceptor extends Interceptor {
@@ -7,6 +10,9 @@ class LoggingInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (kDebugMode) {
       debugPrint('[HTTP] ${options.method} ${options.uri}');
+      if (options.data != null) {
+        debugPrint('[BODY] ${_prettyJson(options.data)}');
+      }
     }
     handler.next(options);
   }
@@ -14,7 +20,11 @@ class LoggingInterceptor extends Interceptor {
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('[HTTP] ${response.statusCode} ${response.requestOptions.uri}');
+      debugPrint(
+          '[HTTP] ${response.statusCode} ${response.requestOptions.uri}');
+      if (response.data != null) {
+        debugPrint('[BODY] ${_prettyJson(response.data)}');
+      }
     }
     handler.next(response);
   }
@@ -22,9 +32,28 @@ class LoggingInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('[HTTP ERROR] ${err.response?.statusCode} ${err.requestOptions.uri}');
+      debugPrint(
+          '[HTTP ERROR] ${err.response?.statusCode} ${err.requestOptions.uri}');
+      debugPrint('[HTTP ERROR TYPE] ${err.type}');
+      if (err.type == DioExceptionType.connectionError) {
+        debugPrint(
+          '[HTTP ERROR HINT] If you are on a physical device, do not use localhost. Run with --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
+        );
+      }
+      if (err.response?.data != null) {
+        debugPrint('[ERROR_BODY] ${_prettyJson(err.response?.data)}');
+      }
     }
     handler.next(err);
+  }
+
+  String _prettyJson(dynamic json) {
+    try {
+      final encoder = JsonEncoder.withIndent('  ');
+      return encoder.convert(json);
+    } catch (_) {
+      return json.toString();
+    }
   }
 }
 
@@ -41,7 +70,7 @@ class HttpClient {
   static Dio _createDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: 'http://192.168.1.2:3333',
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {
@@ -78,8 +107,7 @@ class HttpClient {
                     'Authorization': 'Bearer $refreshToken',
                   },
                 ));
-                final response =
-                    await refreshDio.post('/auth/refresh');
+                final response = await refreshDio.post('/auth/refresh');
                 final data = response.data['data'];
                 final newToken = data['token'] as String;
                 final newRefreshToken = data['refreshToken'] as String;
