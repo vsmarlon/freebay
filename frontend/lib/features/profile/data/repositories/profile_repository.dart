@@ -2,10 +2,10 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import '../../../../shared/errors/failures/failures.dart';
-import '../../domain/repositories/i_profile_repository.dart';
-import '../entities/user_stats_entity.dart';
-import '../entities/follower_entity.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/features/profile/domain/repositories/i_profile_repository.dart';
+import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
+import 'package:freebay/features/profile/data/entities/follower_entity.dart';
 
 class ProfileRepository implements IProfileRepository {
   @override

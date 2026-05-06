@@ -3,9 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
-import '../../../../shared/errors/failures/failures.dart';
-import '../../domain/repositories/i_product_repository.dart';
-import '../entities/product_entity.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
+import 'package:freebay/features/product/data/entities/product_entity.dart';
 
 class ProductRepository implements IProductRepository {
   @override

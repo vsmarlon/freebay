@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/profile_repository.dart';
-import '../../domain/repositories/i_profile_repository.dart';
-import '../../domain/usecases/get_profile_usecase.dart';
-import '../../data/entities/user_stats_entity.dart';
+import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
+import 'package:freebay/features/profile/domain/repositories/i_profile_repository.dart';
+import 'package:freebay/features/profile/domain/usecases/get_profile_usecase.dart';
+import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 

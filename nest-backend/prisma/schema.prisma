@@ -138,6 +138,27 @@ model User {
   @@index([createdAt])
 }
 
+model PasswordRecoveryCode {
+  id               String   @id @default(uuid())
+  userId           String
+  codeHash         String
+  attempts         Int      @default(0)
+  maxAttempts      Int      @default(5)
+  requestedAt      DateTime @default(now())
+  sentAt           DateTime?
+  expiresAt        DateTime
+  usedAt           DateTime?
+  requestedIp      String?
+  userAgent        String?
+  resendMessageId  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([userId, usedAt, expiresAt])
+  @@index([codeHash])
+}
+
 model Category {
   id        String     @id @default(uuid())
   name      String

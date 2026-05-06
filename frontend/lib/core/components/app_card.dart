@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_typography.dart';
-import '../utils/currency_utils.dart';
+import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 
 enum AppCardVariant { compact, full, skeleton }
 

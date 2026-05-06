@@ -7,12 +7,12 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/components/app_button.dart';
-import '../../../../core/components/app_snackbar.dart';
-import '../../../../core/components/app_text_field.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../data/entities/category_entity.dart';
-import '../controllers/product_controller.dart';
+import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});

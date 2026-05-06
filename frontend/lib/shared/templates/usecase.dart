@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import '../errors/failures/failures.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 
 typedef UsecaseResponse<Failure, Output> = Future<Either<Failure, Output>>;
 

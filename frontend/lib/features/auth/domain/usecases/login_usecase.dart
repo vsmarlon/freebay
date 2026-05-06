@@ -1,7 +1,7 @@
-import '../../../../shared/errors/failures/failures.dart';
-import '../../../../shared/templates/usecase.dart';
-import '../repositories/i_auth_repository.dart';
-import '../../data/entities/user_entity.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/templates/usecase.dart';
+import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
 class LoginParams {
   final String email;

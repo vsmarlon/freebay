@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/components/app_card.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../product/data/entities/category_entity.dart';
-import '../../../product/domain/usecases/get_products_usecase.dart';
-import '../../../product/presentation/controllers/product_controller.dart';
-import '../../../social/presentation/providers/user_search_provider.dart';
-import '../../../social/presentation/widgets/user_search_list.dart';
+import 'package:freebay/core/components/app_card.dart';
+import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
+import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
 
 class ExplorarPage extends ConsumerStatefulWidget {
   const ExplorarPage({super.key});

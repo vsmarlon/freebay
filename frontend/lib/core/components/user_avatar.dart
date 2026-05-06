@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../theme/app_colors.dart';
+import 'package:freebay/core/theme/app_colors.dart';
 
 enum AppAvatarSize {
   small(32),

@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
-import '../models/wallet_model.dart';
+import 'package:freebay/features/wallet/data/models/wallet_model.dart';
 
 class WalletService {
   Future<Either<Failure, WalletModel>> getWallet() async {

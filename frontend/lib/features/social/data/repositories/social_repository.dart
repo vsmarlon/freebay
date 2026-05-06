@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
-import '../../../../shared/errors/failures/failures.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:dartz/dartz.dart';
-import '../entities/post_entity.dart';
-import '../entities/story_entity.dart';
-import '../entities/comment_entity.dart';
-import '../entities/user_search_entity.dart';
-import '../../domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/features/social/data/entities/story_entity.dart';
+import 'package:freebay/features/social/data/entities/comment_entity.dart';
+import 'package:freebay/features/social/data/entities/user_search_entity.dart';
+import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
 
 class SocialRepository implements ISocialRepository {
   @override

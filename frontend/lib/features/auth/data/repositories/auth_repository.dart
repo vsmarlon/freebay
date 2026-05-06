@@ -3,9 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/storage_service.dart';
-import '../../../../shared/errors/failures/failures.dart';
-import '../../domain/repositories/i_auth_repository.dart';
-import '../entities/user_entity.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
 class AuthRepository implements IAuthRepository {
   @override
@@ -205,6 +205,66 @@ class AuthRepository implements IAuthRepository {
         debugPrint('[AUTH] ERRO register: $e');
         debugPrint('[AUTH] STACK: $stackTrace');
       }
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> requestPasswordRecovery(String email) async {
+    try {
+      final response = await HttpClient.instance.post(
+        '/auth/forgot-password',
+        data: {'email': email},
+      );
+
+      if (response.statusCode == 200) {
+        return const Right(null);
+      }
+
+      return const Left(ServerFailure('Falha ao solicitar recuperação de senha.'));
+    } on DioException catch (e) {
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> verifyPasswordRecoveryCode(String email, String code) async {
+    try {
+      final response = await HttpClient.instance.post(
+        '/auth/verify-reset-code',
+        data: {'email': email, 'code': code},
+      );
+
+      if (response.statusCode == 200) {
+        return const Right(true);
+      }
+
+      return const Left(ServerFailure('Falha ao verificar o código.'));
+    } on DioException catch (e) {
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetPassword(String email, String code, String newPassword) async {
+    try {
+      final response = await HttpClient.instance.post(
+        '/auth/reset-password',
+        data: {'email': email, 'code': code, 'newPassword': newPassword},
+      );
+
+      if (response.statusCode == 200) {
+        return const Right(null);
+      }
+
+      return const Left(ServerFailure('Falha ao redefinir a senha.'));
+    } on DioException catch (e) {
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e) {
       return const Left(UnknownFailure());
     }
   }

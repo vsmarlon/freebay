@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/notification_model.dart';
-import '../../data/repositories/notification_repository.dart';
+import 'package:freebay/features/notifications/data/models/notification_model.dart';
+import 'package:freebay/features/notifications/data/repositories/notification_repository.dart';
 
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository();

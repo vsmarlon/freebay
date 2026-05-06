@@ -1,7 +1,7 @@
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import '../../../../shared/errors/failures/failures.dart';
-import '../../../../shared/templates/usecase.dart';
-import '../repositories/i_profile_repository.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/templates/usecase.dart';
+import 'package:freebay/features/profile/domain/repositories/i_profile_repository.dart';
 
 class GetProfileUsecase implements Usecase<UserEntity, String> {
   final IProfileRepository _repository;
