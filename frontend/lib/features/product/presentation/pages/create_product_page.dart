@@ -11,9 +11,8 @@ import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import '../../data/entities/category_entity.dart';
-import '../controllers/product_controller.dart';
+import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});

@@ -1,5 +1,5 @@
 import 'package:freebay/shared/services/http_client.dart';
-import '../models/notification_model.dart';
+import 'package:freebay/features/notifications/models/notification_model.dart';
 
 class NotificationRepository {
   Future<List<NotificationModel>> getNotifications(

@@ -76,8 +76,26 @@ export class AlreadyExistsError extends AppError {
   }
 }
 
-export class InvalidResetTokenError extends AppError {
+export class RecoveryCodeNotFoundError extends AppError {
   constructor() {
-    super('INVALID_RESET_TOKEN', 'Token inválido ou expirado', 400);
+    super('RECOVERY_CODE_NOT_FOUND', 'Código de recuperação inválido ou expirado', 404);
+  }
+}
+
+export class RecoveryCodeExpiredError extends AppError {
+  constructor() {
+    super('RECOVERY_CODE_EXPIRED', 'Código de recuperação expirado', 410);
+  }
+}
+
+export class RecoveryCodeAttemptsExceededError extends AppError {
+  constructor() {
+    super('RECOVERY_CODE_ATTEMPTS_EXCEEDED', 'Limite de tentativas excedido', 429);
+  }
+}
+
+export class RecoveryCodeAlreadyUsedError extends AppError {
+  constructor() {
+    super('RECOVERY_CODE_ALREADY_USED', 'Código de recuperação já utilizado', 409);
   }
 }

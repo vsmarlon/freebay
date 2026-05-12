@@ -7,8 +7,13 @@ import { GuestUseCase } from './usecases/guest.usecase';
 import { ForgotPasswordUseCase } from './usecases/forgot-password.usecase';
 import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
 import { PrismaUserRepository } from './repositories/prisma-user.repository';
+import { PrismaPasswordRecoveryRepository } from './repositories/password-recovery.repository';
 import { JwtStrategy } from './guards/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
+import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
+import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
+import { ResendService } from './services/resend.service';
 
 @Module({
   imports: [
@@ -19,12 +24,15 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     RegisterUseCase,
     LoginUseCase,
     GuestUseCase,
-    ForgotPasswordUseCase,
+    RequestPasswordRecoveryUseCase,
+    VerifyPasswordRecoveryCodeUseCase,
     ResetPasswordUseCase,
     PrismaUserRepository,
+    PrismaPasswordRecoveryRepository,
+    ResendService,
     JwtStrategy,
     JwtAuthGuard,
   ],
-  exports: [PrismaUserRepository, JwtAuthGuard],
+  exports: [PrismaUserRepository, PrismaPasswordRecoveryRepository, JwtAuthGuard],
 })
 export class AuthModule {}

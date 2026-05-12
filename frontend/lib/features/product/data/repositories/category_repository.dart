@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:freebay/shared/services/http_client.dart';
-import '../../../../shared/errors/failures/failures.dart';
-import '../entities/category_entity.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/features/product/data/entities/category_entity.dart';
 
 class CategoryRepository {
   Future<Either<Failure, List<CategoryEntity>>> getCategories() async {

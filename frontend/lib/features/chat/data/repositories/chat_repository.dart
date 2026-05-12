@@ -1,8 +1,8 @@
 import 'package:freebay/shared/services/http_client.dart';
-import '../../../../shared/errors/failures/failures.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:dartz/dartz.dart';
-import '../entities/chat_entity.dart';
-import '../../domain/repositories/i_chat_repository.dart';
+import 'package:freebay/features/chat/data/entities/chat_entity.dart';
+import 'package:freebay/features/chat/domain/repositories/i_chat_repository.dart';
 
 class ChatRepository implements IChatRepository {
   @override

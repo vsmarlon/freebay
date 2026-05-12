@@ -1,8 +1,8 @@
 import 'package:dartz/dartz.dart';
-import '../../../../shared/errors/failures/failures.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import '../../data/entities/user_stats_entity.dart';
-import '../../data/entities/follower_entity.dart';
+import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
+import 'package:freebay/features/profile/data/entities/follower_entity.dart';
 
 abstract class IProfileRepository {
   Future<Either<Failure, UserEntity>> getProfile(String userId);

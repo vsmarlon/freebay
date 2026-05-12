@@ -1,30 +1,53 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, InvalidResetTokenError } from '@/shared/core/errors';
+import {
+  AppError,
+  RecoveryCodeAlreadyUsedError,
+  RecoveryCodeExpiredError,
+  RecoveryCodeNotFoundError,
+} from '@/shared/core/errors';
+import { PrismaPasswordRecoveryRepository } from '../repositories/password-recovery.repository';
 import { PrismaUserRepository } from '../repositories/prisma-user.repository';
-import { RedisService } from '@/shared/infra/redis/redis.service';
-import { ResetPasswordDTO } from '../dtos/auth.dto';
+import { ResetPasswordDTO } from '../dtos/password-recovery.dto';
 
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
     private userRepository: PrismaUserRepository,
-    private redisService: RedisService,
+    private recoveryRepository: PrismaPasswordRecoveryRepository,
   ) {}
 
-  async execute(input: ResetPasswordDTO): Promise<Either<AppError, void>> {
-    const redisKey = `password_reset:${input.token}`;
-    const userId = await this.redisService.get(redisKey);
+  async execute(input: ResetPasswordDTO): Promise<Either<AppError, { reset: boolean }>> {
+    const recovery = await this.recoveryRepository.findLatestByEmail(input.email);
 
-    if (!userId) {
-      return left(new InvalidResetTokenError());
+    if (!recovery) {
+      return left(new RecoveryCodeNotFoundError());
     }
 
-    const passwordHash = await bcrypt.hash(input.password, 12);
-    await this.userRepository.update(userId, { passwordHash });
-    await this.redisService.del(redisKey);
+    if (recovery.usedAt) {
+      return left(new RecoveryCodeAlreadyUsedError());
+    }
 
-    return right(undefined);
+    if (recovery.expiresAt <= new Date()) {
+      return left(new RecoveryCodeExpiredError());
+    }
+
+    const matches = await bcrypt.compare(input.code, recovery.codeHash);
+    if (!matches) {
+      return left(new RecoveryCodeNotFoundError());
+    }
+
+    const passwordHash = await bcrypt.hash(input.newPassword, 12);
+    const user = await this.userRepository.findByEmail(input.email);
+
+    if (!user) {
+      return left(new RecoveryCodeNotFoundError());
+    }
+
+    await this.userRepository.update(user.id, { passwordHash });
+    await this.recoveryRepository.markUsed(recovery.id);
+
+    return right({ reset: true });
   }
 }

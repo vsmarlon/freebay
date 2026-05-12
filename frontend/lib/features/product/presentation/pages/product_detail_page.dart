@@ -9,8 +9,9 @@ import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
-import '../../data/entities/product_entity.dart';
-import '../controllers/product_controller.dart';
+import 'package:freebay/features/wishlist/presentation/providers/wishlist_provider.dart';
+import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
 class ProductDetailPage extends ConsumerWidget {
   final String productId;

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:freebay/core/theme/app_colors.dart';
-import '../../data/models/notification_model.dart';
-import '../providers/notifications_provider.dart';
+import 'package:freebay/features/notifications/data/models/notification_model.dart';
+import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});

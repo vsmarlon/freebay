@@ -3,9 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/storage_service.dart';
-import '../../../../shared/errors/failures/failures.dart';
-import '../../domain/repositories/i_auth_repository.dart';
-import '../entities/user_entity.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
 class AuthRepository implements IAuthRepository {
   @override
@@ -210,77 +210,61 @@ class AuthRepository implements IAuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> forgotPassword(String email) async {
+  Future<Either<Failure, void>> requestPasswordRecovery(String email) async {
     try {
-      if (kDebugMode) {
-        debugPrint('[AUTH] Enviando solicitação de esqueci a senha...');
-      }
-
       final response = await HttpClient.instance.post(
         '/auth/forgot-password',
         data: {'email': email},
       );
 
-      if (kDebugMode) {
-        debugPrint('[AUTH] Response status: ${response.statusCode}');
-      }
-
       if (response.statusCode == 200) {
         return const Right(null);
-      } else {
-        return const Left(ServerFailure('Erro ao enviar solicitação.'));
       }
+
+      return const Left(ServerFailure('Falha ao solicitar recuperação de senha.'));
     } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('[AUTH] DioException forgotPassword: ${e.type} - ${e.message}');
-      }
       return Left(mapDioExceptionToFailure(e));
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('[AUTH] ERRO forgotPassword: $e');
-        debugPrint('[AUTH] STACK: $stackTrace');
-      }
+    } catch (e) {
       return const Left(UnknownFailure());
     }
   }
 
   @override
-  Future<Either<Failure, void>> resetPassword(
-      String token, String password) async {
+  Future<Either<Failure, bool>> verifyPasswordRecoveryCode(String email, String code) async {
     try {
-      if (kDebugMode) {
-        debugPrint('[AUTH] Redefinindo senha...');
-      }
-
       final response = await HttpClient.instance.post(
-        '/auth/reset-password',
-        data: {'token': token, 'password': password},
+        '/auth/verify-reset-code',
+        data: {'email': email, 'code': code},
       );
 
-      if (kDebugMode) {
-        debugPrint('[AUTH] Response status: ${response.statusCode}');
-        debugPrint('[AUTH] Response data: ${response.data}');
+      if (response.statusCode == 200) {
+        return const Right(true);
       }
+
+      return const Left(ServerFailure('Falha ao verificar o código.'));
+    } on DioException catch (e) {
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e) {
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetPassword(String email, String code, String newPassword) async {
+    try {
+      final response = await HttpClient.instance.post(
+        '/auth/reset-password',
+        data: {'email': email, 'code': code, 'newPassword': newPassword},
+      );
 
       if (response.statusCode == 200) {
         return const Right(null);
-      } else {
-        final data = response.data;
-        if (data != null && data['code'] == 'INVALID_RESET_TOKEN') {
-          return const Left(ValidationFailure('Token inválido ou expirado.'));
-        }
-        return Left(mapDioExceptionToFailure(response.data));
       }
+
+      return const Left(ServerFailure('Falha ao redefinir a senha.'));
     } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('[AUTH] DioException resetPassword: ${e.type} - ${e.message}');
-      }
       return Left(mapDioExceptionToFailure(e));
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('[AUTH] ERRO resetPassword: $e');
-        debugPrint('[AUTH] STACK: $stackTrace');
-      }
+    } catch (e) {
       return const Left(UnknownFailure());
     }
   }

@@ -13,18 +13,8 @@ import { randomUUID } from 'crypto';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
 import { GuestUseCase } from './usecases/guest.usecase';
-import { ForgotPasswordUseCase } from './usecases/forgot-password.usecase';
-import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
-import {
-  loginSchema,
-  registerSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  RegisterDTO,
-  LoginDTO,
-  ForgotPasswordDTO,
-  ResetPasswordDTO,
-} from './dtos/auth.dto';
+import { loginSchema, registerSchema, RegisterDTO, LoginDTO } from './dtos/auth.dto';
+import { requestPasswordRecoverySchema, resetPasswordSchema, verifyPasswordRecoveryCodeSchema, RequestPasswordRecoveryDTO, ResetPasswordDTO, VerifyPasswordRecoveryCodeDTO } from './dtos/password-recovery.dto';
 import { ZodValidationPipe } from '@/shared/pipes/zod-validation.pipe';
 import { Public } from '@/shared/decorators/public.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
@@ -33,6 +23,9 @@ import { AuthUser } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
+import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
+import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
+import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
 
 @Controller('auth')
 export class AuthController {
@@ -40,7 +33,8 @@ export class AuthController {
     private readonly registerUseCase: RegisterUseCase,
     private readonly loginUseCase: LoginUseCase,
     private readonly guestUseCase: GuestUseCase,
-    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly requestPasswordRecoveryUseCase: RequestPasswordRecoveryUseCase,
+    private readonly verifyPasswordRecoveryCodeUseCase: VerifyPasswordRecoveryCodeUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
@@ -151,11 +145,28 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @UsePipes(new ZodValidationPipe(forgotPasswordSchema))
+  @UsePipes(new ZodValidationPipe(requestPasswordRecoverySchema))
   @Public()
-  async forgotPassword(@Body() body: ForgotPasswordDTO) {
-    await this.forgotPasswordUseCase.execute(body);
-    return { message: 'Se este e-mail estiver cadastrado, você receberá um link em breve.' };
+  async forgotPassword(@Body() body: RequestPasswordRecoveryDTO) {
+    const result = await this.requestPasswordRecoveryUseCase.execute(body);
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+
+    return result.isRight() ? { sent: true } : left(new AppError('UNEXPECTED_ERROR', 'Erro inesperado'));
+  }
+
+  @Post('verify-reset-code')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ZodValidationPipe(verifyPasswordRecoveryCodeSchema))
+  @Public()
+  async verifyResetCode(@Body() body: VerifyPasswordRecoveryCodeDTO) {
+    const result = await this.verifyPasswordRecoveryCodeUseCase.execute(body);
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+
+    return { verified: true };
   }
 
   @Post('reset-password')
@@ -165,9 +176,9 @@ export class AuthController {
   async resetPassword(@Body() body: ResetPasswordDTO) {
     const result = await this.resetPasswordUseCase.execute(body);
     if (result.isLeft()) {
-      const err = result.value;
-      return { statusCode: err.statusCode, code: err.code, message: err.message };
+      return left(new AppError(result.value.code, result.value.message));
     }
-    return { message: 'Senha redefinida com sucesso.' };
+
+    return { reset: true };
   }
 }

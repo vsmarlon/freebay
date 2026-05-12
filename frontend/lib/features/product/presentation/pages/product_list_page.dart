@@ -2,15 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/components/app_card.dart';
-import '../../../../core/components/app_dialog.dart';
-import '../../../../core/components/app_text_field.dart';
-import '../../../../core/components/empty_state.dart';
-import '../../../../core/theme/theme_extension.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/usecases/get_products_usecase.dart';
-import '../controllers/product_controller.dart';
-import '../widgets/category_filter_panel.dart';
+import 'package:freebay/core/components/app_card.dart';
+import 'package:freebay/core/components/app_dialog.dart';
+import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
+import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
 class ProductListPage extends ConsumerStatefulWidget {
   const ProductListPage({super.key});

@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/product_repository.dart';
-import '../../data/repositories/category_repository.dart';
-import '../../domain/repositories/i_product_repository.dart';
-import '../../domain/usecases/get_products_usecase.dart';
-import '../../domain/usecases/create_product_usecase.dart';
-import '../../data/entities/product_entity.dart';
-import '../../data/entities/category_entity.dart';
+import 'package:freebay/features/product/data/repositories/product_repository.dart';
+import 'package:freebay/features/product/data/repositories/category_repository.dart';
+import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
+import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
+import 'package:freebay/features/product/domain/usecases/create_product_usecase.dart';
+import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/data/entities/category_entity.dart';
 
 final productRepositoryProvider = Provider<IProductRepository>((ref) {
   return ProductRepository();

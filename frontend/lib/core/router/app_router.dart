@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/features/auth/presentation/pages/splash_page.dart';
 import 'package:freebay/features/auth/presentation/pages/login_page.dart';
 import 'package:freebay/features/auth/presentation/pages/register_page.dart';
-import 'package:freebay/features/auth/presentation/pages/forgot_password_page.dart';
-import 'package:freebay/features/auth/presentation/pages/reset_password_page.dart';
+import 'package:freebay/features/auth/presentation/pages/password_recovery_page.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_details_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_search_page.dart';
@@ -104,23 +103,12 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/forgot-password',
+      path: '/recover-password',
       pageBuilder: (context, state) => _buildPageWithSlideTransition(
         context: context,
         state: state,
-        child: const ForgotPasswordPage(),
+        child: const PasswordRecoveryPage(),
       ),
-    ),
-    GoRoute(
-      path: '/reset-password',
-      pageBuilder: (context, state) {
-        final token = state.uri.queryParameters['token'] ?? '';
-        return _buildPageWithSlideTransition(
-          context: context,
-          state: state,
-          child: ResetPasswordPage(token: token),
-        );
-      },
     ),
     GoRoute(
       path: '/create-post',

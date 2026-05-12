@@ -215,6 +215,13 @@ describe('RegisterUseCase', () => {
 
 ## 3. Flutter Best Practices
 
+### Import Style
+
+- **ALWAYS use absolute imports** with `package:freebay/` prefix
+- **NEVER use relative imports** (`../` or `./`)
+- Correct: `import 'package:freebay/core/theme/app_colors.dart';`
+- Wrong: `import '../../core/theme/app_colors.dart';`
+
 ### DO
 
 - Use widgets for every UI element
