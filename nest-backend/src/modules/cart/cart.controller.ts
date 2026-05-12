@@ -6,8 +6,6 @@ import { AuthUser } from '@/shared/core/types';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaCartRepository } from './repositories/cart.repository';
-import { ZodValidationPipe } from '@/shared/pipes/zod-validation.pipe';
-import { CheckoutCartDTO, checkoutCartSchema } from './dtos/cart.dto';
 import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
 
 @Controller('cart')
@@ -38,13 +36,9 @@ export class CartController {
   }
 
   @Post('checkout')
-  async checkout(
-    @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(checkoutCartSchema)) body: CheckoutCartDTO,
-  ) {
+  async checkout(@CurrentUser() user: AuthUser) {
     const result = await this.checkoutCartUseCase.execute({
       userId: user.userId,
-      ...body,
     });
 
     if (result.isLeft()) {

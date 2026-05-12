@@ -68,20 +68,9 @@ class CartService {
     }
   }
 
-  Future<Either<Failure, CartCheckoutEntity>> checkoutCart({
-    required String customerName,
-    required String customerTaxId,
-    required String customerEmail,
-  }) async {
+  Future<Either<Failure, CartCheckoutEntity>> checkoutCart() async {
     try {
-      final response = await HttpClient.instance.post(
-        '/cart/checkout',
-        data: {
-          'customerName': customerName,
-          'customerTaxId': customerTaxId,
-          'customerEmail': customerEmail,
-        },
-      );
+      final response = await HttpClient.instance.post('/cart/checkout');
 
       final data = response.data['data'] as Map<String, dynamic>;
       return Right(CartCheckoutEntity.fromJson(data));

@@ -189,6 +189,40 @@ class SocialRepository implements ISocialRepository {
   }
 
   @override
+  Future<Either<Failure, int>> repost(String postId) async {
+    try {
+      final response = await HttpClient.instance.post(
+        '/social/posts/$postId/share',
+      );
+      if (response.statusCode == 201 && response.data != null) {
+        final data = response.data['data'] as Map<String, dynamic>?;
+        final sharesCount = data?['sharesCount'] as int? ?? 0;
+        return Right(sharesCount);
+      }
+      return const Right(0);
+    } catch (e) {
+      return const Left(ServerFailure('Erro ao repostar'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, int>> unrepost(String postId) async {
+    try {
+      final response = await HttpClient.instance.delete(
+        '/social/posts/$postId/share',
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] as Map<String, dynamic>?;
+        final sharesCount = data?['sharesCount'] as int? ?? 0;
+        return Right(sharesCount);
+      }
+      return const Right(0);
+    } catch (e) {
+      return const Left(ServerFailure('Erro ao remover repost'));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> sharePost(
       String postId, String? content) async {
     try {

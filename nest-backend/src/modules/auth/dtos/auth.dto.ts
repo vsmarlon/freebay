@@ -15,3 +15,15 @@ export const loginSchema = z.object({
 
 export type RegisterDTO = z.infer<typeof registerSchema>;
 export type LoginDTO = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(64).max(64),
+  password: z.string().min(8).max(100),
+});
+
+export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;

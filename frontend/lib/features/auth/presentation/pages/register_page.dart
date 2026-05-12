@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/components/app_button.dart';
 import '../../../../core/components/app_text_field.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/theme_extension.dart';
 import '../controllers/auth_controller.dart';
 import '../../data/entities/user_entity.dart';
 
@@ -13,10 +14,10 @@ class RegisterPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final nameController = useTextEditingController();
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
+    final confirmPasswordController = useTextEditingController();
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final errorMessage = useState<String?>(null);
     final authState = ref.watch(authControllerProvider);
@@ -27,14 +28,14 @@ class RegisterPage extends HookConsumerWidget {
           if (user != null) context.go('/feed');
         },
         error: (err, _) {
-          errorMessage.value = err is String ? err : 'Erro ao criar conta. Tente novamente.';
+          errorMessage.value =
+              err is String ? err : 'Erro ao criar conta. Tente novamente.';
         },
       );
     });
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Criar Conta'),
         backgroundColor: Colors.transparent,
@@ -53,7 +54,7 @@ class RegisterPage extends HookConsumerWidget {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.white : AppColors.darkGray,
+                    color: context.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -61,7 +62,7 @@ class RegisterPage extends HookConsumerWidget {
                   'Junte-se à comunidade FreeBay',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                    color: AppColors.mediumGray,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -100,12 +101,27 @@ class RegisterPage extends HookConsumerWidget {
                   hint: 'Mínimo 8 caracteres',
                   obscureText: true,
                   showPasswordToggle: true,
-                  clearOnFocusLost: true,
                   prefixIcon: Icons.lock_outline,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Informe sua senha';
                     if (v.length < 8) {
                       return 'Senha deve ter pelo menos 8 caracteres';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: confirmPasswordController,
+                  label: 'Confirmar senha',
+                  hint: 'Repita sua senha',
+                  obscureText: true,
+                  showPasswordToggle: true,
+                  prefixIcon: Icons.lock_outline,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Confirme sua senha';
+                    if (v != passwordController.text) {
+                      return 'As senhas não coincidem';
                     }
                     return null;
                   },
@@ -116,8 +132,8 @@ class RegisterPage extends HookConsumerWidget {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
                       errorMessage.value!,
-                      style:
-                          const TextStyle(color: AppColors.error, fontSize: 13),
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -142,7 +158,7 @@ class RegisterPage extends HookConsumerWidget {
                     Text(
                       'Já tem conta? ',
                       style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
+                        color: context.textPrimary,
                       ),
                     ),
                     InkWell(
@@ -153,9 +169,7 @@ class RegisterPage extends HookConsumerWidget {
                         child: Text(
                           'Entrar',
                           style: TextStyle(
-                            color: isDark
-                                ? AppColors.primaryPurpleLight
-                                : AppColors.primaryPurple,
+                            color: AppColors.primaryPurple,
                             fontWeight: FontWeight.w700,
                           ),
                         ),

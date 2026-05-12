@@ -83,8 +83,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -99,11 +97,11 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
             SafeArea(
               child: Column(
                 children: [
-                  _buildHeader(isDark),
+                  _buildHeader(),
                   Expanded(
-                    child: _buildMainContent(isDark),
+                    child: _buildMainContent(),
                   ),
-                  _buildFooter(isDark),
+                  _buildFooter(),
                 ],
               ),
             ),
@@ -113,7 +111,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Row(
@@ -141,7 +139,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildMainContent(bool isDark) {
+  Widget _buildMainContent() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -214,7 +212,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                   HapticFeedback.mediumImpact();
                   context.go('/login');
                 },
-                isDark: isDark,
               ),
             ),
           ),
@@ -223,7 +220,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
             position: _slideAnimation,
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: _buildStats(isDark),
+              child: _buildStats(),
             ),
           ),
         ],
@@ -231,47 +228,27 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildStats(bool isDark) {
+  Widget _buildStats() {
     return Row(
       children: [
-        Expanded(
-          child: _StatBlock(
-            value: '0%',
-            label: 'Trading Fees',
-            isDark: isDark,
-          ),
-        ),
+        const Expanded(child: _StatBlock(value: '0%', label: 'Trading Fees')),
         Container(
-          width: 1,
-          height: 40,
+          width: 1, height: 40,
           color: Colors.white.withAlpha(26),
           margin: const EdgeInsets.symmetric(horizontal: 16),
         ),
-        Expanded(
-          child: _StatBlock(
-            value: 'Instant',
-            label: 'Verification',
-            isDark: isDark,
-          ),
-        ),
+        const Expanded(child: _StatBlock(value: 'Instant', label: 'Verification')),
         Container(
-          width: 1,
-          height: 40,
+          width: 1, height: 40,
           color: Colors.white.withAlpha(26),
           margin: const EdgeInsets.symmetric(horizontal: 16),
         ),
-        Expanded(
-          child: _StatBlock(
-            value: 'Global',
-            label: 'Reach Access',
-            isDark: isDark,
-          ),
-        ),
+        const Expanded(child: _StatBlock(value: 'Global', label: 'Reach Access')),
       ],
     );
   }
 
-  Widget _buildFooter(bool isDark) {
+  Widget _buildFooter() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
       child: FadeTransition(
@@ -408,13 +385,11 @@ class _BrutalistButton extends StatefulWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-  final bool isDark;
 
   const _BrutalistButton({
     required this.label,
     required this.icon,
     required this.onTap,
-    required this.isDark,
   });
 
   @override
@@ -480,12 +455,10 @@ class _BrutalistButtonState extends State<_BrutalistButton> {
 class _StatBlock extends StatelessWidget {
   final String value;
   final String label;
-  final bool isDark;
 
   const _StatBlock({
     required this.value,
     required this.label,
-    required this.isDark,
   });
 
   @override

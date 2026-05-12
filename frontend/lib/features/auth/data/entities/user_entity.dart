@@ -14,6 +14,7 @@ class UserEntity extends Equatable {
   final String? state;
   final bool isVerified;
   final bool isGuest;
+  final bool hasCpf;
   final num reputationScore;
   final int totalReviews;
   final int salesCount;
@@ -31,6 +32,7 @@ class UserEntity extends Equatable {
     this.state,
     this.isVerified = false,
     this.isGuest = false,
+    this.hasCpf = false,
     this.reputationScore = 0,
     this.totalReviews = 0,
     this.salesCount = 0,
@@ -58,6 +60,7 @@ class UserEntity extends Equatable {
         state,
         isVerified,
         isGuest,
+        hasCpf,
         reputationScore,
         totalReviews,
         salesCount,

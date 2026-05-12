@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 
 export const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(50).optional(),
@@ -6,6 +7,7 @@ export const updateProfileSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   avatarUrl: z.string().url().optional(),
+  cpf: z.string().refine((v) => isValidCpfOrCnpj(v), 'CPF ou CNPJ inválido').optional(),
 });
 
 export const updateFcmTokenSchema = z.object({

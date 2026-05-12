@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/profile/data/services/block_service.dart';
 
@@ -22,21 +23,20 @@ class BlockedUsersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final blockedUsersAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Usuários bloqueados',
           style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.black,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         iconTheme: IconThemeData(
           color: isDark ? AppColors.white : AppColors.black,

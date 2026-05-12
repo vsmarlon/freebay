@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/components/reputation_stars.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
@@ -17,13 +18,11 @@ class ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final dateFormat = DateFormat('dd/MM/yyyy');
 
     return Container(
-      color: isDark
-          ? AppColors.surfaceContainerDark
-          : AppColors.surfaceContainerLowest,
+      color: context.surfaceColor,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

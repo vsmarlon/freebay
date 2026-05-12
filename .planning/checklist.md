@@ -1,8 +1,8 @@
 # Wishlist, Favorites, Cart & Share Implementation Checklist
 
-> **Status**: 🔴 Not Started  
-> **Last Updated**: 2026-03-27  
-> **Estimated Time**: ~7 hours
+> **Status**: 🟢 Shipped (Favorites + Cart + Share) · ⚫ Dropped (Wishlist)
+> **Last Updated**: 2026-04-20
+> **Note**: Wishlist was dropped — Favorites covers the "save for later" use case. All Wishlist phases (3, 7, 11) are superseded; see `IMPLEMENTATION_PLAN.md` → Known Gaps.
 
 ---
 
@@ -520,19 +520,19 @@ lib/features/product/presentation/pages/cart_page.dart
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Database Schema | 🟡 In Progress |
+| 1 | Database Schema | 🟢 Complete |
 | 2 | Backend - Favorites | 🟢 Complete |
-| 3 | Backend - Wishlist | 🟢 Complete |
+| 3 | Backend - Wishlist | ⚫ Dropped (superseded by Favorites) |
 | 4 | Backend - Cart | 🟢 Complete |
 | 5 | Register Modules | 🟢 Complete |
 | 6 | Frontend - Favorites | 🟢 Complete |
-| 7 | Frontend - Wishlist | 🟢 Complete |
+| 7 | Frontend - Wishlist | ⚫ Dropped |
 | 8 | Frontend - Cart | 🟢 Complete |
 | 9 | Product Detail Page | 🟢 Complete |
 | 10 | Favorites Page | 🟢 Complete |
-| 11 | Wishlist Page | 🟢 Complete |
+| 11 | Wishlist Page | ⚫ Dropped |
 | 12 | Cart Page | 🟢 Complete |
 | 13 | Share Functionality | 🟢 Complete |
-| 14 | Final Verification | 🟡 In Progress |
+| 14 | Final Verification | 🟢 Complete |
 
 **Legend**: 🔴 Not Started | 🟡 In Progress | 🟢 Complete

@@ -4,7 +4,31 @@
       "Bash(flutter analyze:*)",
       "Bash(npx tsc:*)",
       "Bash(flutter test:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(cp \"C:\\\\Users\\\\Qiyana\\\\.claude\\\\projects\\\\C--Users-Qiyana-Documents-GitHub-ME-freebay\\\\12d17d79-5910-4b95-99bc-58a659db34a9\\\\tool-results\\\\webfetch-1776466571904-sxumcv.bin\" /tmp/design_file.gz)",
+      "Bash(gunzip -l /tmp/design_file.gz)",
+      "Bash(gunzip -c /tmp/design_file.gz)",
+      "Read(//tmp/**)",
+      "Bash(xxd)",
+      "Bash(tar *)",
+      "Bash(xargs grep *)",
+      "Bash(npx prisma *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(awk '{print $2}')",
+      "PowerShell(flutter *)",
+      "Bash(fvm flutter *)",
+      "Bash(npm test *)",
+      "Bash(head -n 450 lib/core/components/social_post.dart)",
+      "Bash(mv /tmp/sp_head.dart lib/core/components/social_post.dart)",
+      "Bash(grep -v \":0$\")",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(grep -oE \"'[0-9a-f-]{30,}'\" db/seeds/001_seed_dev.sql)",
+      "Bash(awk '{ gsub\\(/[^-]/,\"\"\\); print length, $0 }')",
+      "Bash(awk '{print length}')",
+      "Bash(command -v flutter.bat)",
+      "Bash(PGPASSWORD=holdback psql -h localhost -U postgres -d postgres -f ../db/seeds/001_seed_dev.sql)"
     ]
   }
 }

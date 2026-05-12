@@ -51,17 +51,29 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
     });
   }
 
+  bool _computeIsDarkMode(ThemeMode mode) {
+    if (mode == ThemeMode.system) {
+      return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark;
+    }
+    return mode == ThemeMode.dark;
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    final isDark = _computeIsDarkMode(themeMode);
 
-    return MaterialApp.router(
-      title: 'FreeBay',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: themeMode,
-      routerConfig: appRouter,
+    return DarkModeInherited(
+      isDarkMode: isDark,
+      child: MaterialApp.router(
+        title: 'FreeBay',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: themeMode,
+        routerConfig: appRouter,
+      ),
     );
   }
 }

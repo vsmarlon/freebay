@@ -30,6 +30,14 @@ export class CreatePixPaymentUseCase {
       return left(new BadRequestError('Order does not belong to this user'));
     }
 
+    const customerName = input.customerName ?? (await this.prisma.user.findUnique({ where: { id: input.userId }, select: { displayName: true } }))?.displayName ?? '';
+    const customerEmail = input.customerEmail ?? (await this.prisma.user.findUnique({ where: { id: input.userId }, select: { email: true } }))?.email ?? '';
+    const customerTaxId = input.customerTaxId ?? (await this.prisma.user.findUnique({ where: { id: input.userId }, select: { cpf: true } }))?.cpf;
+
+    if (!customerTaxId) {
+      return left(new BadRequestError('Adicione seu CPF no perfil antes de realizar uma compra'));
+    }
+
     const idempotencyKey = input.idempotencyKey || `${input.orderId}-pix-${input.userId}`;
 
     const existingTransaction = await this.prisma.transaction.findFirst({
@@ -51,9 +59,9 @@ export class CreatePixPaymentUseCase {
       comment: `FreeBay - Order ${input.orderId}`,
       expiresIn: 3600,
       customer: {
-        name: input.customerName,
-        taxID: input.customerTaxId,
-        email: input.customerEmail,
+        name: customerName,
+        taxID: customerTaxId,
+        email: customerEmail,
       },
     });
 

@@ -173,10 +173,8 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (_capturedImagePath != null) {
-      return _buildPreviewScreen(isDark);
+      return _buildPreviewScreen(context);
     }
 
     return Scaffold(
@@ -253,7 +251,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
     );
   }
 
-  Widget _buildPreviewScreen(bool isDark) {
+  Widget _buildPreviewScreen(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(

@@ -80,28 +80,10 @@ class PostDetailsNotifier extends StateNotifier<PostDetailsState> {
       (data) => comments = data,
     );
 
-    // Build tree if necessary
-    List<CommentEntity> rootComments = [];
-    if (comments.isNotEmpty) {
-      final commentMap = {
-        for (var c in comments) c.id: c.copyWith(replies: [])
-      };
-      for (var c in comments) {
-        if (c.parentId != null && commentMap.containsKey(c.parentId)) {
-          final parent = commentMap[c.parentId!];
-          parent!.replies.add(commentMap[c.id]!);
-        } else {
-          rootComments.add(commentMap[c.id]!);
-        }
-      }
-    }
-
     state = state.copyWith(
       isLoading: false,
       post: post,
-      comments: rootComments.isEmpty
-          ? comments
-          : rootComments, // fallback to flat if no tree logic needed
+      comments: comments,
       error: errorMessage,
     );
   }

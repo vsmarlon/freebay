@@ -21,6 +21,15 @@ export class CheckoutCartUseCase {
   async execute(
     input: CheckoutCartInput,
   ): Promise<Either<AppError, CheckoutCartOutput>> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { displayName: true, email: true, cpf: true },
+    });
+
+    if (!user?.cpf) {
+      return left(new BadRequestError('Adicione seu CPF no perfil antes de realizar uma compra'));
+    }
+
     const cartItems = await this.cartRepository.getUserCart(input.userId);
 
     if (cartItems.length === 0) {
@@ -74,9 +83,9 @@ export class CheckoutCartUseCase {
       const pixResult = await this.createPixPaymentUseCase.execute({
         orderId: order.id,
         userId: input.userId,
-        customerName: input.customerName,
-        customerTaxId: input.customerTaxId,
-        customerEmail: input.customerEmail,
+        customerName: user.displayName,
+        customerTaxId: user.cpf,
+        customerEmail: user.email,
         idempotencyKey: `cart-${input.userId}-${order.id}`,
       });
 

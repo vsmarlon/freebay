@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
@@ -39,17 +40,16 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final productAsync = ref.watch(productByIdProvider(widget.productId));
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Editar anúncio',
           style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.onSurface,
+            color: context.textPrimary,
             fontFamily: 'SpaceGrotesk',
             fontWeight: FontWeight.w700,
           ),

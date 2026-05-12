@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
 import 'package:freebay/features/profile/data/entities/follower_entity.dart';
@@ -23,21 +24,19 @@ class FollowingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final followingAsync = ref.watch(followingProvider(userId));
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Seguindo'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),

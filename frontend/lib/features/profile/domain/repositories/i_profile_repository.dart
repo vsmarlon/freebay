@@ -14,5 +14,6 @@ abstract class IProfileRepository {
     String? bio,
     String? city,
     String? state,
+    String? cpf,
   });
 }

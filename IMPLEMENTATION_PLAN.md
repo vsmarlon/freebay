@@ -2457,6 +2457,23 @@ describe('Order Flow E2E', () => {
 
 ---
 
-**Plan Created:** March 27, 2026  
-**Target MVP Launch:** Week of May 5, 2026  
+**Plan Created:** March 27, 2026
+**Target MVP Launch:** Week of May 5, 2026
 **Maintained By:** Development Team
+
+---
+
+## Known Gaps (as of 2026-04-20)
+
+Transparent list of items mentioned elsewhere in the docs that are **not yet fully shipped**. These are acknowledged debt, not hidden work.
+
+| Area | Status | Notes |
+|---|---|---|
+| **Wishlist** | ❌ Dropped | Superseded by Favorites. Backend module + Prisma model + frontend page removed. Checklist Phase 3/7/11 no longer apply. |
+| **KYC verification (CPF + selfie)** | ⚠️ Stub | Flagged HIGH in original plan. No UI or backend flow. Sellers currently listed as "pending verification". |
+| **Cloud image upload** | ⚠️ Partial | Images go through `FileStorageService` (base64 → local disk). No S3/CDN wiring. |
+| **Admin panel** | ❌ Not started | Listed MEDIUM in original plan. Admin actions (resolve report, disable user) exist as API only. |
+| **Search & category UI polish** | ⚠️ Partial | Backend endpoints exist; frontend search delegate and category filters are minimal. |
+| **PaymentProvider enum labels** | ⚠️ Legacy | Prisma enum still says `PAGARME`/`WOOVI` but adapters target AbacatePay + PagBank. Rename is a future migration. |
+
+See `CLAUDE.md` and this file's phase sections for everything that **is** shipped.

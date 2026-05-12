@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
@@ -80,11 +81,9 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final isDark = context.isDark;
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Nova publicacao',
@@ -92,7 +91,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             fontFamily: 'SpaceGrotesk',
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.white : AppColors.onSurface,
+            color: context.textPrimary,
           ),
         ),
         backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,

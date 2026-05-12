@@ -4,10 +4,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/components/app_card.dart';
 import '../../../../core/components/app_dialog.dart';
+import '../../../../core/components/app_text_field.dart';
+import '../../../../core/components/empty_state.dart';
+import '../../../../core/theme/theme_extension.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../data/entities/category_entity.dart';
 import '../../domain/usecases/get_products_usecase.dart';
 import '../controllers/product_controller.dart';
+import '../widgets/category_filter_panel.dart';
 
 class ProductListPage extends ConsumerStatefulWidget {
   const ProductListPage({super.key});
@@ -37,13 +40,11 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
 
   void _onSearch() {
     _debounceTimer?.cancel();
-    final query = _searchController.text;
-    ref.read(searchQueryProvider.notifier).state = query;
+    ref.read(searchQueryProvider.notifier).state = _searchController.text;
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final searchQuery = ref.watch(searchQueryProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -56,74 +57,56 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
     ));
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Explorar',
           style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.primaryPurple,
+            color: context.isDark ? AppColors.white : AppColors.primaryPurple,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         actions: [
           IconButton(
             icon: Icon(
               _showFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: isDark ? AppColors.white : AppColors.primaryPurple,
+              color: context.isDark ? AppColors.white : AppColors.primaryPurple,
             ),
-            onPressed: () {
-              setState(() {
-                _showFilters = !_showFilters;
-              });
-            },
+            onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Search bar
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
+            child: AppTextField(
               controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar produtos...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearch();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: isDark ? AppColors.surfaceDark : AppColors.white,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onSubmitted: (_) => _onSearch(),
+              label: '',
+              hint: 'Buscar produtos...',
+              prefixIcon: Icons.search,
+              onFieldSubmitted: (_) => _onSearch(),
               onChanged: _onSearchDebounced,
             ),
           ),
-
-          // Category filters
           if (_showFilters)
             categoriesAsync.when(
               data: (categories) {
                 if (categories.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('Nenhuma categoria disponível'),
+                  return EmptyState(
+                    icon: Icons.category_outlined,
+                    title: 'SEM CATEGORIAS',
+                    subtitle: 'Nenhuma categoria disponível',
                   );
                 }
-                return _buildCategoryTree(categories, selectedCategory, isDark);
+                return CategoryFilterPanel(
+                  categories: categories,
+                  selectedCategory: selectedCategory,
+                  onCategorySelected: (id) =>
+                      ref.read(selectedCategoryProvider.notifier).state = id,
+                );
               },
               loading: () => const Padding(
                 padding: EdgeInsets.all(16),
@@ -134,21 +117,18 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
                 child: Text('Erro ao carregar categorias: $err'),
               ),
             ),
-
-          // Products grid
           Expanded(
             child: productsAsync.when(
               data: (products) {
                 if (products.isEmpty) {
-                  return _buildEmptyState(
-                    isDark,
-                    message: 'Nenhum produto encontrado.',
+                  return EmptyState(
+                    icon: Icons.search_off,
+                    title: 'NENHUM PRODUTO',
                     subtitle: searchQuery.isNotEmpty || selectedCategory != null
                         ? 'Tente limpar os filtros'
-                        : null,
+                        : 'Nenhum produto encontrado.',
                   );
                 }
-
                 return RefreshIndicator(
                   onRefresh: () => ref.refresh(productsFeedProvider(
                     GetProductsParams(
@@ -205,118 +185,16 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
                     )),
                   );
                 });
-
-                return _buildEmptyState(isDark,
-                    message: 'Não há nenhum produto',
-                    subtitle: 'Tente novamente mais tarde');
+                return EmptyState(
+                  icon: Icons.search_off,
+                  title: 'ERRO',
+                  subtitle: 'Tente novamente mais tarde',
+                );
               },
             ),
           ),
         ],
       ),
     );
-  }
-
-  Widget _buildEmptyState(bool isDark, {String? message, String? subtitle}) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.search_off,
-            size: 64,
-            color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message ?? 'Nenhum produto encontrado.',
-            style: TextStyle(
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              fontSize: 16,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryTree(
-      List<CategoryEntity> categories, String? selectedCategory, bool isDark) {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? AppColors.mediumGray.withValues(alpha: 0.2)
-                : AppColors.lightGray,
-          ),
-        ),
-      ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilterChip(
-                label: const Text('Todos'),
-                selected: selectedCategory == null,
-                onSelected: (_) {
-                  ref.read(selectedCategoryProvider.notifier).state = null;
-                },
-                selectedColor: AppColors.primaryPurple.withValues(alpha: 0.2),
-                checkmarkColor: AppColors.primaryPurple,
-              ),
-              ..._flattenCategories(categories),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _flattenCategories(List<CategoryEntity> categories,
-      {int indent = 0}) {
-    final widgets = <Widget>[];
-
-    for (final cat in categories) {
-      final isSelected = ref.watch(selectedCategoryProvider) == cat.id;
-
-      widgets.add(
-        Padding(
-          padding: EdgeInsets.only(left: indent * 12.0),
-          child: FilterChip(
-            label: Text(cat.name),
-            selected: isSelected,
-            onSelected: (_) {
-              ref.read(selectedCategoryProvider.notifier).state =
-                  isSelected ? null : cat.id;
-            },
-            selectedColor: AppColors.primaryPurple.withValues(alpha: 0.2),
-            checkmarkColor: AppColors.primaryPurple,
-          ),
-        ),
-      );
-
-      if (cat.children.isNotEmpty) {
-        widgets.addAll(_flattenCategories(cat.children, indent: indent + 1));
-      }
-    }
-
-    return widgets;
   }
 }

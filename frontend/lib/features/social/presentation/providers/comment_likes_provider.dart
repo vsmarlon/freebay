@@ -3,26 +3,28 @@ import 'package:freebay/features/social/domain/repositories/i_social_repository.
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
 class CommentLikesState {
-  final Set<String> likedCommentIds;
-  final Map<String, int> likeCounts;
+  /// Map of comment IDs to their liked status override (null means use entity value)
+  final Map<String, bool> likedOverrides;
+  /// Map of comment IDs to their like count override (null means use entity value)
+  final Map<String, int> countOverrides;
 
   const CommentLikesState({
-    this.likedCommentIds = const {},
-    this.likeCounts = const {},
+    this.likedOverrides = const {},
+    this.countOverrides = const {},
   });
 
   CommentLikesState copyWith({
-    Set<String>? likedCommentIds,
-    Map<String, int>? likeCounts,
+    Map<String, bool>? likedOverrides,
+    Map<String, int>? countOverrides,
   }) {
     return CommentLikesState(
-      likedCommentIds: likedCommentIds ?? this.likedCommentIds,
-      likeCounts: likeCounts ?? this.likeCounts,
+      likedOverrides: likedOverrides ?? this.likedOverrides,
+      countOverrides: countOverrides ?? this.countOverrides,
     );
   }
 
-  bool isLiked(String commentId) => likedCommentIds.contains(commentId);
-  int getLikeCount(String commentId) => likeCounts[commentId] ?? 0;
+  bool? getLikedOverride(String commentId) => likedOverrides[commentId];
+  int? getCountOverride(String commentId) => countOverrides[commentId];
 }
 
 class CommentLikesNotifier extends StateNotifier<CommentLikesState> {
@@ -30,112 +32,47 @@ class CommentLikesNotifier extends StateNotifier<CommentLikesState> {
 
   CommentLikesNotifier(this._repository) : super(const CommentLikesState());
 
-  void initializeFromComments(List<dynamic> comments) {
-    final likedIds = <String>{};
-    final counts = <String, int>{};
+  /// Toggles like status. If no override exists, it uses initial values from the entity.
+  Future<bool> toggleLike(String commentId, {required bool initialIsLiked, required int initialCount}) async {
+    final currentLiked = state.likedOverrides[commentId] ?? initialIsLiked;
+    final currentCount = state.countOverrides[commentId] ?? initialCount;
 
-    void processComment(dynamic comment) {
-      if (comment.isLiked == true) {
-        likedIds.add(comment.id);
-      }
-      counts[comment.id] = comment.likesCount ?? 0;
+    final newIsLiked = !currentLiked;
+    final newCount = newIsLiked ? currentCount + 1 : currentCount - 1;
 
-      if (comment.replies != null) {
-        for (final reply in comment.replies) {
-          processComment(reply);
-        }
-      }
-    }
-
-    for (final comment in comments) {
-      processComment(comment);
-    }
-
+    // Apply optimistic update
     state = state.copyWith(
-      likedCommentIds: likedIds,
-      likeCounts: counts,
-    );
-  }
-
-  void initializeSingleComment(String commentId, bool isLiked, int likeCount) {
-    final newLikedIds = Set<String>.from(state.likedCommentIds);
-    final newCounts = Map<String, int>.from(state.likeCounts);
-
-    if (isLiked) {
-      newLikedIds.add(commentId);
-    } else {
-      newLikedIds.remove(commentId);
-    }
-    newCounts[commentId] = likeCount;
-
-    state = state.copyWith(
-      likedCommentIds: newLikedIds,
-      likeCounts: newCounts,
-    );
-  }
-
-  Future<bool> toggleLike(String commentId) async {
-    final wasLiked = state.isLiked(commentId);
-    final previousCount = state.getLikeCount(commentId);
-
-    final newLikedIds = Set<String>.from(state.likedCommentIds);
-    final newCounts = Map<String, int>.from(state.likeCounts);
-
-    if (wasLiked) {
-      newLikedIds.remove(commentId);
-      newCounts[commentId] = previousCount - 1;
-    } else {
-      newLikedIds.add(commentId);
-      newCounts[commentId] = previousCount + 1;
-    }
-
-    state = state.copyWith(
-      likedCommentIds: newLikedIds,
-      likeCounts: newCounts,
+      likedOverrides: {...state.likedOverrides, commentId: newIsLiked},
+      countOverrides: {...state.countOverrides, commentId: newCount},
     );
 
     try {
-      if (wasLiked) {
-        final result = await _repository.unlikeComment(commentId);
-        if (result.isLeft()) {
-          state = state.copyWith(
-            likedCommentIds: wasLiked
-                ? {...state.likedCommentIds, commentId}
-                : state.likedCommentIds.difference({commentId}),
-            likeCounts: {...state.likeCounts, commentId: previousCount},
-          );
-          return false;
-        }
-      } else {
-        final result = await _repository.likeComment(commentId);
-        if (result.isLeft()) {
-          state = state.copyWith(
-            likedCommentIds: wasLiked
-                ? {...state.likedCommentIds, commentId}
-                : state.likedCommentIds.difference({commentId}),
-            likeCounts: {...state.likeCounts, commentId: previousCount},
-          );
-          return false;
-        }
+      final result = newIsLiked 
+          ? await _repository.likeComment(commentId)
+          : await _repository.unlikeComment(commentId);
+
+      if (result.isLeft()) {
+        // Rollback on failure
+        state = state.copyWith(
+          likedOverrides: {...state.likedOverrides, commentId: currentLiked},
+          countOverrides: {...state.countOverrides, commentId: currentCount},
+        );
+        return false;
       }
       return true;
     } catch (e) {
+      // Rollback on exception
       state = state.copyWith(
-        likedCommentIds: wasLiked
-            ? {...state.likedCommentIds, commentId}
-            : state.likedCommentIds.difference({commentId}),
-        likeCounts: {...state.likeCounts, commentId: previousCount},
+        likedOverrides: {...state.likedOverrides, commentId: currentLiked},
+        countOverrides: {...state.countOverrides, commentId: currentCount},
       );
       return false;
     }
   }
-
-  bool isLiked(String commentId) => state.isLiked(commentId);
-  int getLikeCount(String commentId) => state.getLikeCount(commentId);
 }
 
 final commentLikesProvider =
     StateNotifierProvider<CommentLikesNotifier, CommentLikesState>((ref) {
-  final repository = ref.watch(socialRepositoryProvider);
+  final repository = ref.read(socialRepositoryProvider);
   return CommentLikesNotifier(repository);
 });

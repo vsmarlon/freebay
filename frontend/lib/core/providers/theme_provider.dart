@@ -2,11 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+class DarkModeInherited extends InheritedWidget {
+  final bool isDarkMode;
+
+  const DarkModeInherited({
+    super.key,
+    required this.isDarkMode,
+    required super.child,
+  });
+
+  static DarkModeInherited? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<DarkModeInherited>();
+  }
+
+  static DarkModeInherited of(BuildContext context) {
+    final result = maybeOf(context);
+    assert(result != null, 'No DarkModeInherited found in context');
+    return result!;
+  }
+
+  @override
+  bool updateShouldNotify(DarkModeInherited oldWidget) {
+    return isDarkMode != oldWidget.isDarkMode;
+  }
+}
+
+extension DarkModeExtension on BuildContext {
+  bool get isDarkMode =>
+      DarkModeInherited.maybeOf(this)?.isDarkMode ??
+      Theme.of(this).brightness == Brightness.dark;
+}
+
 const String _themeModeKey = 'theme_mode';
 
 final themeModeProvider =
     StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   return ThemeModeNotifier();
+});
+
+final isDarkModeProvider = Provider<bool>((ref) {
+  final themeMode = ref.watch(themeModeProvider);
+  if (themeMode == ThemeMode.system) {
+    return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+        Brightness.dark;
+  }
+  return themeMode == ThemeMode.dark;
 });
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {

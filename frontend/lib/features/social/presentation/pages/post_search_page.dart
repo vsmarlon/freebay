@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/social_post.dart';
 import '../providers/post_search_provider.dart';
 import '../providers/user_search_provider.dart';
@@ -50,21 +51,20 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final searchState = ref.watch(postSearchProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Buscar Posts',
           style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.primaryPurple,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
+        backgroundColor: context.appBarColor,
         elevation: 0,
       ),
       body: Column(
@@ -125,14 +125,15 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: _buildContent(searchState, isDark),
+            child: _buildContent(searchState),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent(PostSearchState state, bool isDark) {
+  Widget _buildContent(PostSearchState state) {
+    final isDark = context.isDark;
     if (state.posts.isEmpty && !state.isLoading) {
       return Center(
         child: Column(
@@ -233,8 +234,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final isDark = context.isDark;
     return GestureDetector(
       onTap: onSelected,
       child: Container(
@@ -242,12 +242,12 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryPurple.withValues(alpha: 0.2)
-              : (isDark ? AppColors.surfaceDark : AppColors.white),
+              : context.surfaceMidColor,
           borderRadius: BorderRadius.zero,
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryPurple
-                : (isDark ? AppColors.mediumGray : AppColors.lightGray),
+                : context.borderColor,
           ),
         ),
         child: Text(

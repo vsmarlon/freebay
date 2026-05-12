@@ -1,8 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePostUseCase, LikePostUseCase, UnlikePostUseCase, CommentUseCase, CreateStoryUseCase } from './social.usecase';
 import { NotFoundError } from '@/shared/core/errors';
-import { PrismaPostRepository, PrismaStoryRepository } from '../repositories/social.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import {
+  PrismaPostRepository,
+  PrismaCommentRepository,
+  PrismaLikeRepository,
+  PrismaStoryRepository,
+} from '../repositories/social.repository';
 
 describe('CreatePostUseCase', () => {
   let sut: CreatePostUseCase;
@@ -71,28 +75,24 @@ describe('CreatePostUseCase', () => {
 describe('LikePostUseCase', () => {
   let sut: LikePostUseCase;
   let mockPostRepository: any;
-  let mockPrisma: any;
+  let mockLikeRepository: any;
 
   beforeEach(async () => {
     mockPostRepository = {
       findById: jest.fn(),
+      incrementLikesCount: jest.fn().mockResolvedValue({}),
     };
 
-    mockPrisma = {
-      like: {
-        findFirst: jest.fn().mockResolvedValue(null),
-        create: jest.fn().mockResolvedValue({}),
-      },
-      post: {
-        update: jest.fn().mockResolvedValue({}),
-      },
+    mockLikeRepository = {
+      findPostLike: jest.fn().mockResolvedValue(null),
+      createLike: jest.fn().mockResolvedValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LikePostUseCase,
         { provide: PrismaPostRepository, useValue: mockPostRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
@@ -109,28 +109,20 @@ describe('LikePostUseCase', () => {
       content: 'Test',
     });
 
-    const input = {
-      userId: 'user-123',
-      postId: 'post-123',
-    };
-
-    const result = await sut.execute(input);
+    const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       expect(result.value.liked).toBe(true);
     }
+    expect(mockLikeRepository.createLike).toHaveBeenCalled();
+    expect(mockPostRepository.incrementLikesCount).toHaveBeenCalledWith('post-123');
   });
 
   it('should return error if post not found', async () => {
     mockPostRepository.findById.mockResolvedValue(null);
 
-    const input = {
-      userId: 'user-123',
-      postId: 'post-123',
-    };
-
-    const result = await sut.execute(input);
+    const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) {
@@ -142,28 +134,23 @@ describe('LikePostUseCase', () => {
 describe('UnlikePostUseCase', () => {
   let sut: UnlikePostUseCase;
   let mockPostRepository: any;
-  let mockPrisma: any;
+  let mockLikeRepository: any;
 
   beforeEach(async () => {
     mockPostRepository = {
-      findById: jest.fn(),
+      decrementLikesCount: jest.fn().mockResolvedValue({}),
     };
 
-    mockPrisma = {
-      like: {
-        findFirst: jest.fn().mockResolvedValue({ id: 'like-123' }),
-        delete: jest.fn().mockResolvedValue({}),
-      },
-      post: {
-        update: jest.fn().mockResolvedValue({}),
-      },
+    mockLikeRepository = {
+      findPostLike: jest.fn().mockResolvedValue({ id: 'like-123' }),
+      deletePostLikeByUser: jest.fn().mockResolvedValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UnlikePostUseCase,
         { provide: PrismaPostRepository, useValue: mockPostRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
@@ -175,43 +162,42 @@ describe('UnlikePostUseCase', () => {
   });
 
   it('should unlike a post', async () => {
-    const input = {
-      userId: 'user-123',
-      postId: 'post-123',
-    };
-
-    const result = await sut.execute(input);
+    const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       expect(result.value.unliked).toBe(true);
     }
+    expect(mockLikeRepository.deletePostLikeByUser).toHaveBeenCalledWith('user-123', 'post-123');
+    expect(mockPostRepository.decrementLikesCount).toHaveBeenCalledWith('post-123');
   });
 });
 
 describe('CommentUseCase', () => {
   let sut: CommentUseCase;
-  let mockPrisma: any;
+  let mockCommentRepository: any;
+  let mockPostRepository: any;
 
   beforeEach(async () => {
-    mockPrisma = {
-      comment: {
-        create: jest.fn().mockResolvedValue({
-          id: 'comment-123',
-          content: 'Test comment',
-          postId: 'post-123',
-          userId: 'user-123',
-        }),
-      },
-      post: {
-        update: jest.fn().mockResolvedValue({}),
-      },
+    mockCommentRepository = {
+      create: jest.fn().mockResolvedValue({
+        id: 'comment-123',
+        content: 'Test comment',
+        postId: 'post-123',
+        userId: 'user-123',
+        createdAt: new Date(),
+      }),
+    };
+
+    mockPostRepository = {
+      incrementCommentsCount: jest.fn().mockResolvedValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CommentUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaCommentRepository, useValue: mockCommentRepository },
+        { provide: PrismaPostRepository, useValue: mockPostRepository },
       ],
     }).compile();
 
@@ -237,13 +223,13 @@ describe('CommentUseCase', () => {
       expect(result.value.postId).toBe('post-123');
       expect(result.value.userId).toBe('user-123');
     }
+    expect(mockPostRepository.incrementCommentsCount).toHaveBeenCalledWith('post-123');
   });
 });
 
 describe('CreateStoryUseCase', () => {
   let sut: CreateStoryUseCase;
   let mockStoryRepository: any;
-  let mockPrisma: any;
 
   beforeEach(async () => {
     mockStoryRepository = {
@@ -256,23 +242,10 @@ describe('CreateStoryUseCase', () => {
       }),
     };
 
-    mockPrisma = {
-      story: {
-        create: jest.fn().mockResolvedValue({
-          id: 'story-123',
-          userId: 'user-123',
-          imageUrl: 'http://example.com/image.jpg',
-          expiresAt: new Date(),
-          createdAt: new Date(),
-        }),
-      },
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateStoryUseCase,
         { provide: PrismaStoryRepository, useValue: mockStoryRepository },
-        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 

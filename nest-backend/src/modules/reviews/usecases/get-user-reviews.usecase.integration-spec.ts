@@ -160,7 +160,7 @@ describe('GetUserReviewsUseCase Integration', () => {
       // Arrange
       const seller = await userFactory.create();
       const buyer1 = await userFactory.create();
-      await userFactory.create(); // buyer2 — unused but sets up data context
+      const buyer2 = await userFactory.create();
 
       const product1 = await productFactory.create(seller.id);
       const product2 = await productFactory.create(seller.id);

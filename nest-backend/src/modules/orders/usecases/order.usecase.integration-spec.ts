@@ -1,6 +1,5 @@
 import { CreateOrderUseCase } from './order.usecase';
 import { PrismaOrderRepository } from '../repositories/order.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
 import { isLeft, isRight } from '@/shared/core/either';
@@ -9,16 +8,14 @@ import { CreateOrderInput } from '../dtos/order.dto';
 describe('CreateOrderUseCase Integration', () => {
   let sut: CreateOrderUseCase;
   let orderRepository: PrismaOrderRepository;
-  let prismaService: PrismaService;
   let userFactory: UserFactory;
   let productFactory: ProductFactory;
 
   beforeEach(() => {
-    prismaService = new PrismaService();
-    orderRepository = new PrismaOrderRepository(prismaService);
+    orderRepository = new PrismaOrderRepository(prisma);
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
-    sut = new CreateOrderUseCase(orderRepository, prismaService);
+    sut = new CreateOrderUseCase(orderRepository, prisma);
   });
 
   describe('Business Rules', () => {
@@ -42,7 +39,7 @@ describe('CreateOrderUseCase Integration', () => {
       // Assert
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
-        const order = result.right;
+        const order = result.value;
         expect(order.amount).toBe(10000);
 
         // Verify splits in database
@@ -52,7 +49,7 @@ describe('CreateOrderUseCase Integration', () => {
 
         expect(dbOrder?.platformFee).toBe(1000); // 10%
         expect(dbOrder?.sellerAmount).toBe(9000); // 90%
-        expect(dbOrder?.platformFee + dbOrder?.sellerAmount).toBe(dbOrder?.amount);
+        expect((dbOrder?.platformFee ?? 0) + (dbOrder?.sellerAmount ?? 0)).toBe(dbOrder?.amount);
       }
     });
 
@@ -77,13 +74,13 @@ describe('CreateOrderUseCase Integration', () => {
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
         const dbOrder = await prisma.order.findUnique({
-          where: { id: result.right.id },
+          where: { id: result.value.id },
         });
 
         // Math.round(1055 * 0.10) = 106
         expect(dbOrder?.platformFee).toBe(106);
         expect(dbOrder?.sellerAmount).toBe(949); // 1055 - 106
-        expect(dbOrder?.platformFee + dbOrder?.sellerAmount).toBe(dbOrder?.amount);
+        expect((dbOrder?.platformFee ?? 0) + (dbOrder?.sellerAmount ?? 0)).toBe(dbOrder?.amount);
       }
     });
 
@@ -106,8 +103,8 @@ describe('CreateOrderUseCase Integration', () => {
       // Assert
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.left.code).toBe('NOT_FOUND');
-        expect(result.left.message).toContain('Product');
+        expect(result.value.code).toBe('NOT_FOUND');
+        expect(result.value.message).toContain('Product');
       }
     });
 
@@ -131,8 +128,8 @@ describe('CreateOrderUseCase Integration', () => {
       // Assert
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.left.code).toBe('INVALID_ORDER_STATE');
-        expect(result.left.message).toContain('already sold');
+        expect(result.value.code).toBe('INVALID_ORDER_STATE');
+        expect(result.value.message).toContain('already sold');
       }
     });
 
@@ -155,8 +152,8 @@ describe('CreateOrderUseCase Integration', () => {
       // Assert
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.left.code).toBe('BAD_REQUEST');
-        expect(result.left.message).toContain('Cannot buy your own product');
+        expect(result.value.code).toBe('BAD_REQUEST');
+        expect(result.value.message).toContain('Cannot buy your own product');
       }
     });
 
@@ -181,7 +178,7 @@ describe('CreateOrderUseCase Integration', () => {
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
         const dbOrder = await prisma.order.findUnique({
-          where: { id: result.right.id },
+          where: { id: result.value.id },
         });
 
         expect(dbOrder?.status).toBe('PENDING');
@@ -274,7 +271,7 @@ describe('CreateOrderUseCase Integration', () => {
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
         const dbOrder = await prisma.order.findUnique({
-          where: { id: result.right.id },
+          where: { id: result.value.id },
         });
 
         // Math.round(1 * 0.10) = 0
@@ -299,7 +296,7 @@ describe('CreateOrderUseCase Integration', () => {
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
         const dbOrder = await prisma.order.findUnique({
-          where: { id: result.right.id },
+          where: { id: result.value.id },
         });
 
         expect(dbOrder?.platformFee).toBe(100000); // R$1,000.00

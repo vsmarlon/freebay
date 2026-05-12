@@ -29,6 +29,8 @@ abstract class ISocialRepository {
       {int limit = 20, String? cursor});
   Future<Either<Failure, void>> likeComment(String commentId);
   Future<Either<Failure, void>> unlikeComment(String commentId);
+  Future<Either<Failure, int>> repost(String postId);
+  Future<Either<Failure, int>> unrepost(String postId);
   Future<Either<Failure, void>> sharePost(String postId, String? content);
 
   Future<Either<Failure, StoriesResponse>> getStories();

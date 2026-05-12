@@ -17,7 +17,6 @@ import { DisputesModule } from './modules/disputes/disputes.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
-import { WishlistModule } from './modules/wishlist/wishlist.module';
 import { CartModule } from './modules/cart/cart.module';
 
 @Module({
@@ -64,7 +63,6 @@ import { CartModule } from './modules/cart/cart.module';
     ReportsModule,
     ReviewsModule,
     FavoritesModule,
-    WishlistModule,
     CartModule,
   ],
   providers: [

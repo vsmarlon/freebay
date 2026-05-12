@@ -75,3 +75,9 @@ export class AlreadyExistsError extends AppError {
     super('ALREADY_EXISTS', `${resource} já existe`, 409);
   }
 }
+
+export class InvalidResetTokenError extends AppError {
+  constructor() {
+    super('INVALID_RESET_TOKEN', 'Token inválido ou expirado', 400);
+  }
+}

@@ -3,7 +3,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaReviewRepository } from '../repositories/review.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { CreateReviewDto } from '../dtos/review.dto';
+import { CreateReviewDto, CreateReviewOutput } from '../dtos/review.dto';
 import { OrderStatus, ReviewType } from '@prisma/client';
 
 class InvalidOrderStateError extends AppError {
@@ -31,7 +31,7 @@ export class CreateReviewUseCase {
     private prisma: PrismaService,
   ) {}
 
-  async execute(input: CreateReviewDto): Promise<Either<AppError, any>> {
+  async execute(input: CreateReviewDto): Promise<Either<AppError, CreateReviewOutput>> {
     // Validate score range
     if (input.score < 1 || input.score > 5) {
       return left(new BadRequestError('Score deve ser entre 1 e 5'));

@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaOrderRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaClient) {}
 
   async findById(id: string) {
     return this.prisma.order.findUnique({
@@ -31,6 +30,14 @@ export class PrismaOrderRepository {
       orderBy: { createdAt: 'desc' },
       include: { product: { include: { images: true } } },
     });
+  }
+
+  async countBySellerId(sellerId: string) {
+    return this.prisma.order.count({ where: { sellerId } });
+  }
+
+  async countByBuyerId(buyerId: string) {
+    return this.prisma.order.count({ where: { buyerId } });
   }
 
   async create(data: Prisma.OrderCreateInput) {

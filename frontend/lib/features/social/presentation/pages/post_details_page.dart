@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/comment_input.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
 import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
+import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
+import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
 import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
@@ -23,76 +29,78 @@ class PostDetailsPage extends ConsumerStatefulWidget {
 
 class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   final _commentController = TextEditingController();
-  bool _isSending = false;
+  final _replyController = TextEditingController();
+  final _replyFocusNode = FocusNode();
+  bool _isCommentSending = false;
+  bool _isReplySending = false;
   String? _replyToId;
 
   @override
   void dispose() {
     _commentController.dispose();
+    _replyController.dispose();
+    _replyFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _sendComment() async {
-    final content = _commentController.text.trim();
-    if (content.isEmpty) return;
+    final isReply = _replyToId != null;
+    if (isReply ? _isReplySending : _isCommentSending) return;
 
-    setState(() => _isSending = true);
+    final activeController = isReply ? _replyController : _commentController;
 
-    try {
-      final repository = ref.read(socialRepositoryProvider);
-      final result = await repository.commentPost(
-        widget.postId,
-        content,
-        parentId: _replyToId,
-      );
+    setState(() {
+      if (isReply) {
+        _isReplySending = true;
+      } else {
+        _isCommentSending = true;
+      }
+    });
+    final controller = ref.read(postDetailsControllerProvider(widget.postId));
+    final sent = await controller.sendComment(
+      context,
+      activeController,
+      parentId: _replyToId,
+    );
 
-      result.fold(
-        (failure) {
-          if (mounted) {
-            AppSnackbar.error(context, failure.message);
-          }
-        },
-        (_) {
-          _commentController.clear();
-          setState(() {
-            _replyToId = null;
-          });
-          ref.read(postDetailsProvider(widget.postId).notifier).refresh();
-          ref.invalidate(feedProvider);
-        },
-      );
-    } finally {
-      if (mounted) setState(() => _isSending = false);
+    if (sent && mounted) {
+      setState(() => _replyToId = null);
+      _replyController.clear();
+    }
+    if (mounted) {
+      setState(() {
+        if (isReply) {
+          _isReplySending = false;
+        } else {
+          _isCommentSending = false;
+        }
+      });
     }
   }
 
   void _setReplyTo(CommentEntity comment) {
-    setState(() {
-      _replyToId = comment.id;
-    });
+    setState(() => _replyToId = comment.id);
+    // Seed only the reply controller, leaving the main input untouched.
     final username = comment.user?.displayName ?? 'usuário';
-    _commentController.text = '@$username ';
-    _commentController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _commentController.text.length),
+    _replyController.text = '@$username ';
+    _replyController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _replyController.text.length),
     );
-    // Focus the text field
-    FocusScope.of(context).requestFocus(FocusNode());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(FocusNode());
-    });
+    // Bring up keyboard focused on the reply field.
+    Future.microtask(() => _replyFocusNode.requestFocus());
   }
 
   TreeNode<CommentEntity> _buildTree(List<CommentEntity> rootComments) {
-    TreeNode<CommentEntity> rootNode = TreeNode.root();
-    for (var comment in rootComments) {
-      rootNode.add(_createNode(comment));
+    final root = TreeNode<CommentEntity>.root();
+    for (final comment in rootComments) {
+      root.add(_createNode(comment));
     }
-    return rootNode;
+    return root;
   }
 
   TreeNode<CommentEntity> _createNode(CommentEntity comment) {
-    var node = TreeNode<CommentEntity>(key: comment.id, data: comment);
-    for (var reply in comment.replies) {
+    final node = TreeNode<CommentEntity>(key: comment.id, data: comment);
+    for (final reply in comment.replies) {
       node.add(_createNode(reply));
     }
     return node;
@@ -101,30 +109,29 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(postDetailsProvider(widget.postId));
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Post'),
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
+        backgroundColor: context.appBarColor,
         elevation: 0,
       ),
       body: Column(
         children: [
-          Expanded(child: _buildBody(context, state, isDark)),
+          Expanded(child: _buildBody(context, state)),
         ],
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, PostDetailsState state, bool isDark) {
+  Widget _buildBody(BuildContext context, PostDetailsState state) {
     if (state.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primaryPurple),
       );
     }
+
     if (state.error != null) {
       return Center(
         child: Column(
@@ -132,30 +139,20 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           children: [
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: 16),
-            Text(
-              state.error!,
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.darkGray,
-              ),
-            ),
+            Text(state.error!, style: TextStyle(color: context.textPrimary)),
             const SizedBox(height: 16),
             InkWell(
-              onTap: () => ref
-                  .read(postDetailsProvider(widget.postId).notifier)
-                  .refresh(),
+              onTap: () =>
+                  ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
               child: Container(
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.brutalistGradient,
-                ),
+                decoration: const BoxDecoration(gradient: AppColors.brutalistGradient),
                 child: const Center(
                   child: Text(
                     'Tentar novamente',
                     style: TextStyle(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                        color: AppColors.onPrimary, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -164,27 +161,24 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
         ),
       );
     }
+
     if (state.post == null) {
       return const Center(child: Text('Post não encontrado'));
     }
 
     final post = state.post!;
     final treeNode = _buildTree(state.comments);
-
+    
     final likesState = ref.watch(likesProvider);
-    final isLiked = likesState.isLiked(post.id);
-    final likesCount = likesState.getLikeCount(post.id);
+    final isLiked = likesState.getLikedOverride(post.id) ?? post.isLiked;
+    final likesCount = likesState.getCountOverride(post.id) ?? post.likesCount;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(likesProvider.notifier).initializeSinglePost(
-            post.id,
-            post.isLiked,
-            post.likesCount,
-          );
-      ref
-          .read(commentLikesProvider.notifier)
-          .initializeFromComments(state.comments);
-    });
+    final savesState = ref.watch(savesProvider);
+    final isSaved = savesState.getSavedOverride(post.id) ?? post.isSaved;
+
+    final repostsState = ref.watch(repostsProvider);
+    final isReposted = repostsState.getRepostedOverride(post.id) ?? post.hasReposted;
+    final sharesCount = repostsState.getCountOverride(post.id) ?? post.sharesCount;
 
     return RefreshIndicator(
       onRefresh: () =>
@@ -200,36 +194,105 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               imageUrl: post.imageUrl,
               likesCount: likesCount,
               commentsCount: post.commentsCount,
-              sharesCount: post.sharesCount,
+              sharesCount: sharesCount,
               isLiked: isLiked,
+              isSaved: isSaved,
+              isReposted: isReposted,
+              isVerified: post.user.isVerified,
+              onUserTap: () => context.push('/user/${post.user.id}'),
               onLike: () async {
-                final authState = ref.read(authControllerProvider);
-                final user = authState.valueOrNull;
-
+                final user =
+                    ref.read(authControllerProvider).valueOrNull;
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
                     AppSnackbar.warning(context, 'Faça login para curtir');
                   }
                   return false;
                 }
-
                 final success =
-                    await ref.read(likesProvider.notifier).toggleLike(post.id);
+                    await ref.read(likesProvider.notifier).toggleLike(
+                          post.id,
+                          initialIsLiked: post.isLiked,
+                          initialCount: post.likesCount,
+                        );
                 if (success) {
+                  final newLikesState = ref.read(likesProvider);
+                  ref.read(feedProvider.notifier).updatePostLike(
+                        post.id,
+                        newLikesState.getLikedOverride(post.id) ?? post.isLiked,
+                        newLikesState.getCountOverride(post.id) ??
+                            post.likesCount,
+                      );
                   ref
                       .read(postDetailsProvider(widget.postId).notifier)
                       .refresh();
                 }
                 return success;
               },
-              onComment: () {
-                // Focus the inline comment input
-                FocusScope.of(context).unfocus();
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  FocusScope.of(context).requestFocus(FocusNode());
-                });
+              onSave: () async {
+                final user = ref.read(authControllerProvider).valueOrNull;
+                if (user == null || user.isGuest) {
+                  if (context.mounted) {
+                    AppSnackbar.warning(context, 'Faça login para salvar');
+                  }
+                  return false;
+                }
+                return ref.read(savesProvider.notifier).toggleSave(
+                      post.id,
+                      initialIsSaved: post.isSaved,
+                    );
               },
-              onShare: () {},
+              onRepost: () async {
+                final user = ref.read(authControllerProvider).valueOrNull;
+                if (user == null || user.isGuest) {
+                  if (context.mounted) {
+                    AppSnackbar.warning(context, 'Faça login para repostar');
+                  }
+                  return false;
+                }
+                final success = await ref.read(repostsProvider.notifier).toggleRepost(
+                      post.id,
+                      initialIsReposted: post.hasReposted,
+                      initialCount: post.sharesCount,
+                    );
+                if (success) {
+                  final newRepostsState = ref.read(repostsProvider);
+                  ref.read(feedProvider.notifier).updateSharesCount(
+                        post.id,
+                        newRepostsState.getCountOverride(post.id) ?? post.sharesCount,
+                      );
+                  ref
+                      .read(postDetailsProvider(widget.postId).notifier)
+                      .refresh();
+                }
+                return success;
+              },
+              onComment: () => FocusScope.of(context).unfocus(),
+              onShare: () async {
+                final user = ref.read(authControllerProvider).valueOrNull;
+                if (user == null || user.isGuest) {
+                  if (context.mounted) {
+                    AppSnackbar.warning(context, 'Faça login para compartilhar');
+                  }
+                  return;
+                }
+                final result = await ref
+                    .read(socialRepositoryProvider)
+                    .sharePost(post.id, null);
+                if (!context.mounted) return;
+                result.fold(
+                  (failure) => AppSnackbar.error(
+                    context,
+                    'Não foi possível compartilhar',
+                  ),
+                  (_) {
+                    AppSnackbar.success(context, 'Compartilhado no seu perfil');
+                    ref
+                        .read(postDetailsProvider(widget.postId).notifier)
+                        .refresh();
+                  },
+                );
+              },
             ),
           ),
           SliverToBoxAdapter(
@@ -240,7 +303,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+                  color: context.textPrimary,
                 ),
               ),
             ),
@@ -248,7 +311,11 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: _buildTopLevelCommentInput(isDark),
+              child: CommentInput(
+                controller: _commentController,
+                isSending: _isCommentSending,
+                onSend: _sendComment,
+              ),
             ),
           ),
           if (state.comments.isEmpty)
@@ -260,10 +327,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   child: Text(
                     'Nenhum comentário ainda. Seja o primeiro!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                    ),
+                    style: TextStyle(color: context.textSecondary),
                   ),
                 ),
               ),
@@ -271,9 +335,6 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           else
             SliverToBoxAdapter(
               child: SizedBox(
-                // Use a finite height or shrink wrap tree view. If there are many nodes, treeview requires bounded height.
-                // We'll wrap TreeView in a fixed height or handle its expandability.
-                // TreeView implements scrollable natively, so we might need constraints
                 height: MediaQuery.of(context).size.height * 0.6,
                 child: TreeView.simple<CommentEntity>(
                   tree: treeNode,
@@ -281,7 +342,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   expansionIndicatorBuilder: (context, node) =>
                       ChevronIndicator.rightDown(
                     tree: node,
-                    color: isDark ? AppColors.white : AppColors.darkGray,
+                    color: context.textPrimary,
                     padding: const EdgeInsets.all(8),
                   ),
                   indentation:
@@ -289,7 +350,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   builder: (context, node) {
                     final comment = node.data;
                     if (comment == null) return const SizedBox.shrink();
-                    return _buildCommentItem(comment, isDark);
+                    return _buildCommentNode(context, comment);
                   },
                 ),
               ),
@@ -299,272 +360,53 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     );
   }
 
-  Widget _buildCommentItem(CommentEntity comment, bool isDark) {
+  Widget _buildCommentNode(BuildContext context, CommentEntity comment) {
     final isReplying = _replyToId == comment.id;
     final commentLikesState = ref.watch(commentLikesProvider);
-    final isCommentLiked = commentLikesState.isLiked(comment.id);
-    final commentLikesCount = commentLikesState.getLikeCount(comment.id);
+    final isCommentLiked = commentLikesState.getLikedOverride(comment.id) ?? comment.isLiked;
+    final commentLikesCount = commentLikesState.getCountOverride(comment.id) ?? comment.likesCount;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  if (comment.user != null) {
-                    context.push('/user/${comment.user!.id}');
-                  }
-                },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
-                    image: comment.user?.avatarUrl != null
-                        ? DecorationImage(
-                            image: NetworkImage(comment.user!.avatarUrl!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                  child: comment.user?.avatarUrl == null
-                      ? Icon(Icons.person,
-                          size: 16,
-                          color:
-                              isDark ? AppColors.white : AppColors.mediumGray)
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        if (comment.user != null) {
-                          context.push('/user/${comment.user!.id}');
-                        }
-                      },
-                      child: Text(
-                        comment.user?.displayName ?? 'Usuário',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      comment.content,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          _formatDate(comment.createdAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? AppColors.mediumGray
-                                : AppColors.mediumGray,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        GestureDetector(
-                          onTap: () => _setReplyTo(comment),
-                          child: Text(
-                            'Responder',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.primaryPurpleLight
-                                  : AppColors.primaryPurple,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        GestureDetector(
-                          onTap: () async {
-                            final authState = ref.read(authControllerProvider);
-                            final user = authState.valueOrNull;
-
-                            if (user == null || user.isGuest) {
-                              if (context.mounted) {
-                                AppSnackbar.warning(
-                                    context, 'Faça login para curtir');
-                              }
-                              return;
-                            }
-
-                            await ref
-                                .read(commentLikesProvider.notifier)
-                                .toggleLike(comment.id);
-                          },
-                          child: Row(
-                            children: [
-                              Icon(
-                                isCommentLiked
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                size: 14,
-                                color: isCommentLiked
-                                    ? Colors.red
-                                    : (isDark
-                                        ? AppColors.mediumGray
-                                        : AppColors.mediumGray),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                commentLikesCount > 0
-                                    ? commentLikesCount.toString()
-                                    : '',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isCommentLiked
-                                      ? Colors.red
-                                      : (isDark
-                                          ? AppColors.mediumGray
-                                          : AppColors.mediumGray),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (isReplying) ...[
-            const SizedBox(height: 8),
-            _buildInlineReplyInput(isDark),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInlineReplyInput(bool isDark) {
-    return Row(
+    return Column(
       children: [
-        const SizedBox(width: 40),
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Escreva sua resposta...',
-              hintStyle: TextStyle(color: AppColors.mediumGray),
-               border: const OutlineInputBorder(
-                 borderRadius: BorderRadius.zero,
-                 borderSide: BorderSide.none,
-               ),
-              filled: true,
-              fillColor:
-                  isDark ? AppColors.backgroundDark : AppColors.lightGray,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              isDense: true,
-            ),
-            style:
-                TextStyle(color: isDark ? AppColors.white : AppColors.darkGray),
-            maxLines: null,
-            textInputAction: TextInputAction.send,
-            onSubmitted: (_) => _sendComment(),
-          ),
+        CommentItem(
+          comment: comment,
+          isReplying: isReplying,
+          isLiked: isCommentLiked,
+          likesCount: commentLikesCount,
+          onReply: () => _setReplyTo(comment),
+          onLike: () async {
+            final user = ref.read(authControllerProvider).valueOrNull;
+            if (user == null || user.isGuest) {
+              if (context.mounted) {
+                AppSnackbar.warning(context, 'Faça login para curtir');
+              }
+              return;
+            }
+            await ref
+                .read(commentLikesProvider.notifier)
+                .toggleLike(
+                  comment.id,
+                  initialIsLiked: comment.isLiked,
+                  initialCount: comment.likesCount,
+                );
+          },
+          onUserTap: comment.user != null
+              ? () => context.push('/user/${comment.user!.id}')
+              : null,
         ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: _isSending ? null : _sendComment,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              gradient: AppColors.brutalistGradient,
+        if (isReplying)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: CommentInput(
+              controller: _replyController,
+              focusNode: _replyFocusNode,
+              isSending: _isReplySending,
+              onSend: _sendComment,
+              hint: 'Respondendo...',
+              compact: true,
             ),
-            child: _isSending
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.send, color: Colors.white, size: 16),
           ),
-        ),
       ],
     );
-  }
-
-  Widget _buildTopLevelCommentInput(bool isDark) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            decoration: InputDecoration(
-              hintText: 'Adicionar comentário...',
-              hintStyle: TextStyle(color: AppColors.mediumGray),
-               border: const OutlineInputBorder(
-                 borderRadius: BorderRadius.zero,
-                 borderSide: BorderSide.none,
-               ),
-              filled: true,
-              fillColor:
-                  isDark ? AppColors.backgroundDark : AppColors.lightGray,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            style:
-                TextStyle(color: isDark ? AppColors.white : AppColors.darkGray),
-            maxLines: null,
-            textInputAction: TextInputAction.send,
-            onSubmitted: (_) => _sendComment(),
-          ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: _isSending ? null : _sendComment,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              gradient: AppColors.brutalistGradient,
-            ),
-            child: _isSending
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.send, color: Colors.white, size: 20),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inDays > 0) return '${diff.inDays} d';
-    if (diff.inHours > 0) return '${diff.inHours} h';
-    if (diff.inMinutes > 0) return '${diff.inMinutes} m';
-    return 'agora';
   }
 }

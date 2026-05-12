@@ -50,3 +50,14 @@ export interface GetUserReviewsOutput {
   page: number;
   limit: number;
 }
+
+export interface CreateReviewOutput {
+  id: string;
+  reviewerId: string;
+  reviewedId: string;
+  orderId: string;
+  type: ReviewType;
+  score: number;
+  comment: string | null;
+  createdAt: Date;
+}

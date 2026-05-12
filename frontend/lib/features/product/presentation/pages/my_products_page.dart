@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/product/data/repositories/product_repository.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
@@ -19,21 +21,19 @@ class MyProductsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final productsAsync = ref.watch(myProductsProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Meus anúncios'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),
@@ -50,53 +50,37 @@ class MyProductsPage extends ConsumerWidget {
       body: productsAsync.when(
         data: (products) {
           if (products.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 64,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+            return EmptyState(
+              icon: Icons.shopping_bag_outlined,
+              title: 'NENHUM ANÚNCIO',
+              subtitle: 'Nenhum anúncio ainda',
+              action: InkWell(
+                onTap: () => context.push('/products/create'),
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.brutalistGradient,
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum anúncio ainda',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => context.push('/products/create'),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.brutalistGradient,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, color: AppColors.onPrimary),
+                      SizedBox(width: 8),
+                      Text(
+                        'Criar anúncio',
+                        style: TextStyle(
+                          color: AppColors.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add, color: AppColors.onPrimary),
-                          SizedBox(width: 8),
-                          Text(
-                            'Criar anúncio',
-                            style: TextStyle(
-                              color: AppColors.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                ],
+),
               ),
             );
           }
+
           return GridView.builder(
             padding: const EdgeInsets.all(16),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

@@ -14,12 +14,30 @@ class PurchasesPage extends ConsumerStatefulWidget {
 }
 
 class _PurchasesPageState extends ConsumerState<PurchasesPage> {
+  final _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(purchasesListProvider.notifier).loadPurchases(refresh: true);
-    });
+    ref.read(purchasesListProvider.notifier).loadPurchases(refresh: true);
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final state = ref.read(purchasesListProvider);
+      if (state.hasMore && !state.isLoading) {
+        ref.read(purchasesListProvider.notifier).loadPurchases();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -129,15 +147,11 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
       color: AppColors.primaryContainer,
       onRefresh: () => ref.read(purchasesListProvider.notifier).refresh(),
       child: ListView.builder(
+        controller: _scrollController,
         padding: const EdgeInsets.all(0),
         itemCount: state.orders.length + (state.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == state.orders.length) {
-            if (!state.isLoading) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ref.read(purchasesListProvider.notifier).loadPurchases();
-              });
-            }
             return const Padding(
               padding: EdgeInsets.all(24),
               child: Center(

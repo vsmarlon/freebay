@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_typography.dart';
-import '../utils/currency_utils.dart';
+import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 
 enum AppCardVariant { compact, full, skeleton }
 
@@ -38,7 +39,6 @@ class AppCard extends StatelessWidget {
       return _buildSkeleton(context);
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final price = CurrencyUtils.formatCents(priceInCents);
 
     return InkWell(
@@ -46,10 +46,10 @@ class AppCard extends StatelessWidget {
       borderRadius: BorderRadius.zero,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          color: context.surfaceMidColor,
           borderRadius: BorderRadius.zero,
           border: Border.all(
-            color: isDark
+            color: context.isDark
                 ? AppColors.mediumGray.withValues(alpha: 0.2)
                 : AppColors.lightGray,
             width: 1,
@@ -70,7 +70,7 @@ class AppCard extends StatelessWidget {
                     title,
                     style: AppTypography.bodyMedium.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      color: context.textPrimary,
                     ),
                     maxLines: variant == AppCardVariant.compact ? 1 : 2,
                     overflow: TextOverflow.ellipsis,
@@ -83,7 +83,7 @@ class AppCard extends StatelessWidget {
                         price,
                         style: AppTypography.bodyLarge.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.accentGreenLight : AppColors.black,
+                          color: context.isDark ? AppColors.accentGreenLight : AppColors.black,
                         ),
                       ),
                       if (score != null) ...[
@@ -150,11 +150,10 @@ class AppCard extends StatelessWidget {
   }
 
   Widget _buildSkeleton(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final height = variant == AppCardVariant.compact ? 120.0 : 160.0;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+        color: context.isDark ? AppColors.surfaceDark : AppColors.lightGray,
         borderRadius: BorderRadius.zero,
       ),
       child: Column(

@@ -16,9 +16,8 @@ import { Public } from '@/shared/decorators/public.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { WebhookGuard } from '@/shared/guards/webhook.guard';
-import { ZodValidationPipe } from '@/shared/pipes/zod-validation.pipe';
 import { CreatePixPaymentUseCase, ProcessWebhookUseCase } from './usecases/payment.usecase';
-import { createPixPaymentSchema, CreatePixPaymentDTO, ProcessWebhookInput } from './dtos/payment.dto';
+import { ProcessWebhookInput } from './dtos/payment.dto';
 
 @Controller('payments')
 export class PaymentsController {
@@ -36,14 +35,12 @@ export class PaymentsController {
   async createPixPayment(
     @Param('orderId') orderId: string,
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(createPixPaymentSchema)) body: CreatePixPaymentDTO,
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
     const result = await this.createPixPaymentUseCase.execute({
       orderId,
       userId: user.userId,
       idempotencyKey,
-      ...body,
     });
 
     if (result.isLeft()) {

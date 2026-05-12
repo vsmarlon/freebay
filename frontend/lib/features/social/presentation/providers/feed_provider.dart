@@ -95,6 +95,16 @@ class FeedNotifier extends StateNotifier<FeedState> {
     state = state.copyWith(posts: updatedPosts);
   }
 
+  void updateSharesCount(String postId, int newCount) {
+    final updatedPosts = state.posts.map((post) {
+      if (post.id == postId) {
+        return post.copyWith(sharesCount: newCount);
+      }
+      return post;
+    }).toList();
+    state = state.copyWith(posts: updatedPosts);
+  }
+
   void addPost(PostEntity post) {
     state = state.copyWith(posts: [post, ...state.posts]);
   }

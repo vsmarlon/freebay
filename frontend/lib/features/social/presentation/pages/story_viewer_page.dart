@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
@@ -137,8 +138,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
   }
 
   Widget _buildHeader() {
+    final isDark = context.isDark;
     final story = widget.stories[_currentIndex];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Positioned(
       top: MediaQuery.of(context).padding.top + 20,

@@ -105,6 +105,7 @@ class ProfileRepository implements IProfileRepository {
     String? bio,
     String? city,
     String? state,
+    String? cpf,
   }) async {
     try {
       final response = await HttpClient.instance.patch(
@@ -114,6 +115,7 @@ class ProfileRepository implements IProfileRepository {
           if (bio != null) 'bio': bio,
           if (city != null) 'city': city,
           if (state != null) 'state': state,
+          if (cpf != null) 'cpf': cpf,
         },
       );
       if (response.statusCode == 200 && response.data != null) {

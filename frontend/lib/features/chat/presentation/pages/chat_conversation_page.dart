@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/http_client.dart';
 
@@ -95,13 +96,12 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final currentUserId = authState.valueOrNull?.id;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Row(
           children: [

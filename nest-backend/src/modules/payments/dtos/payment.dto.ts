@@ -1,19 +1,15 @@
 import { z } from 'zod';
 
-export const createPixPaymentSchema = z.object({
-  customerName: z.string().min(1),
-  customerTaxId: z.string().min(11).max(14),
-  customerEmail: z.string().email(),
-});
+export const createPixPaymentSchema = z.object({});
 
 export type CreatePixPaymentDTO = z.infer<typeof createPixPaymentSchema>;
 
 export interface CreatePixPaymentInput {
   orderId: string;
   userId: string;
-  customerName: string;
-  customerTaxId: string;
-  customerEmail: string;
+  customerName?: string;
+  customerTaxId?: string;
+  customerEmail?: string;
   idempotencyKey?: string;
 }
 

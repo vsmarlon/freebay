@@ -2,6 +2,12 @@
 
 > Marketplace Social · Carteira Digital · Split Payment Justo · Escrow In-House
 
+> **⚠️ Documento histórico — visão original do produto.** A implementação atual diverge em dois pontos:
+> - **Provedores de pagamento**: a plataforma usa **AbacatePay** (PIX) e **PagBank** (payouts). Referências a Pagar.me/Woovi neste documento são históricas.
+> - **Cor primária**: a identidade atual usa `#8A1083` (magenta). A paleta `#7C3AED`/`#10B981` listada abaixo foi substituída — ver `CLAUDE.md` para o design system vigente ("Digital Brutalist").
+>
+> Os demais capítulos (regras de negócio, escrow, arquitetura) continuam válidos.
+
 ---
 
 ## Índice

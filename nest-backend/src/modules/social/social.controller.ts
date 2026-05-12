@@ -69,23 +69,42 @@ export class SocialController {
     @Query('limit') limit?: string,
     @Query('type') type?: string,
   ) {
-    const userId = user?.userId || '';
+    const currentUserId = user?.userId || '';
     const feedType = (type === 'following' ? 'following' : 'explore') as 'explore' | 'following';
     const posts = await this.postRepository.findFeed({
-      userId,
+      userId: currentUserId,
       limit: limit ? parseInt(limit) : 20,
       type: feedType,
     });
-    return { posts };
+
+    let hasRepostedMap: Record<string, boolean> = {};
+    if (currentUserId) {
+      const postIds = posts.map(p => p.id);
+      for (const postId of postIds) {
+        hasRepostedMap[postId] = await this.shareRepository.exists(currentUserId, postId);
+      }
+    }
+
+    const postsWithReposted = posts.map(post => ({
+      ...post,
+      hasReposted: hasRepostedMap[post.id] || false,
+    }));
+
+    return { posts: postsWithReposted };
   }
 
   @Get('posts/:id')
-  async getPost(@Param('id') id: string) {
+  async getPost(@Param('id') id: string, @CurrentUser() user?: AuthUser) {
     const post = await this.postRepository.findById(id);
     if (!post) {
       return left(new AppError('NOT_FOUND', 'Post não encontrado'));
     }
-    return { post };
+    const currentUserId = user?.userId;
+    let hasReposted = false;
+    if (currentUserId) {
+      hasReposted = await this.shareRepository.exists(currentUserId, id);
+    }
+    return { post: { ...post, hasReposted } };
   }
 
   @Post('posts')
@@ -115,13 +134,50 @@ export class SocialController {
   @Get('posts/user/:userId')
   async getUserPosts(
     @Param('userId') userId: string,
+    @CurrentUser() user?: AuthUser,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    const posts = await this.postRepository.findByUserId(userId, {
-      limit: limit ? parseInt(limit) : 20,
+    const limitNum = limit ? parseInt(limit) : 20;
+
+    const ownPosts = await this.postRepository.findByUserId(userId, {
+      limit: limitNum,
       cursor,
     });
+
+    const repostedPosts = await this.shareRepository.findPostsRepostedByUser(userId, {
+      limit: limitNum,
+      cursor,
+    });
+
+    const mergedPosts = [
+      ...ownPosts.map(post => ({
+        ...post,
+        repostedAt: null,
+        repostedBy: null,
+        isReposted: false,
+      })),
+      ...repostedPosts.map(share => ({
+        ...share.post,
+        sharesCount: share.post.sharesCount,
+        repostedAt: share.createdAt,
+        repostedBy: {
+          id: userId,
+          displayName: '',
+          avatarUrl: null,
+        },
+        isReposted: true,
+      })),
+    ];
+
+    mergedPosts.sort((a, b) => {
+      const aDate = a.repostedAt ?? a.createdAt;
+      const bDate = b.repostedAt ?? b.createdAt;
+      return bDate.getTime() - aDate.getTime();
+    });
+
+    const posts = mergedPosts.slice(0, limitNum);
+
     return { posts };
   }
 
@@ -133,15 +189,29 @@ export class SocialController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    const userId = user?.userId || '';
+    const currentUserId = user?.userId || '';
     const posts = await this.postRepository.searchPosts({
       query: q || '',
       filter: (filter as 'all' | 'following' | 'followers') || 'all',
-      userId,
+      userId: currentUserId,
       limit: limit ? parseInt(limit) : 20,
       cursor,
     });
-    return { posts };
+
+    let hasRepostedMap: Record<string, boolean> = {};
+    if (currentUserId) {
+      const postIds = posts.map(p => p.id);
+      for (const postId of postIds) {
+        hasRepostedMap[postId] = await this.shareRepository.exists(currentUserId, postId);
+      }
+    }
+
+    const postsWithReposted = posts.map(post => ({
+      ...post,
+      hasReposted: hasRepostedMap[post.id] || false,
+    }));
+
+    return { posts: postsWithReposted };
   }
 
   @Post('posts/:id/like')
@@ -187,7 +257,7 @@ export class SocialController {
 
     const existingShare = await this.shareRepository.findByUserAndPost(user.userId, id);
     if (existingShare) {
-      return { shared: true, alreadyShared: true };
+      return { shared: true, alreadyShared: true, sharesCount: post.sharesCount };
     }
 
     await this.shareRepository.create({
@@ -196,8 +266,30 @@ export class SocialController {
     });
 
     await this.postRepository.incrementSharesCount(id);
+    const updatedPost = await this.postRepository.findById(id);
 
-    return { shared: true, alreadyShared: false };
+    return { shared: true, alreadyShared: false, sharesCount: updatedPost?.sharesCount ?? post.sharesCount + 1 };
+  }
+
+  @Delete('posts/:id/share')
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @HttpCode(HttpStatus.OK)
+  async unsharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    const post = await this.postRepository.findById(id);
+    if (!post) {
+      return left(new AppError('NOT_FOUND', 'Post não encontrado'));
+    }
+
+    const existingShare = await this.shareRepository.findByUserAndPost(user.userId, id);
+    if (!existingShare) {
+      return { unshared: true, sharesCount: post.sharesCount };
+    }
+
+    await this.shareRepository.delete(user.userId, id);
+    await this.postRepository.decrementSharesCount(id);
+    const updatedPost = await this.postRepository.findById(id);
+
+    return { unshared: true, sharesCount: updatedPost?.sharesCount ?? post.sharesCount - 1 };
   }
 
   @Post('posts/:id/comments')

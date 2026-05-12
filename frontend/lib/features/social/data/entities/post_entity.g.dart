@@ -17,6 +17,13 @@ PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => PostEntity(
       sharesCount: (json['sharesCount'] as num?)?.toInt() ?? 0,
       isLiked: json['isLiked'] as bool? ?? false,
       isSaved: json['isSaved'] as bool? ?? false,
+      hasReposted: json['hasReposted'] as bool? ?? false,
+      repostedAt: json['repostedAt'] == null
+          ? null
+          : DateTime.parse(json['repostedAt'] as String),
+      repostedBy: json['repostedBy'] == null
+          ? null
+          : UserMiniEntity.fromJson(json['repostedBy'] as Map<String, dynamic>),
       createdAt: DateTime.parse(json['createdAt'] as String),
       user: UserEntity.fromJson(json['user'] as Map<String, dynamic>),
       product: json['product'] == null
@@ -36,6 +43,9 @@ Map<String, dynamic> _$PostEntityToJson(PostEntity instance) =>
       'sharesCount': instance.sharesCount,
       'isLiked': instance.isLiked,
       'isSaved': instance.isSaved,
+      'hasReposted': instance.hasReposted,
+      'repostedAt': instance.repostedAt?.toIso8601String(),
+      'repostedBy': instance.repostedBy,
       'createdAt': instance.createdAt.toIso8601String(),
       'user': instance.user,
       'product': instance.product,
@@ -75,4 +85,18 @@ Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
       'isVerified': instance.isVerified,
       'reputationScore': instance.reputationScore,
       'totalReviews': instance.totalReviews,
+    };
+
+UserMiniEntity _$UserMiniEntityFromJson(Map<String, dynamic> json) =>
+    UserMiniEntity(
+      id: json['id'] as String,
+      displayName: json['displayName'] as String,
+      avatarUrl: json['avatarUrl'] as String?,
+    );
+
+Map<String, dynamic> _$UserMiniEntityToJson(UserMiniEntity instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'displayName': instance.displayName,
+      'avatarUrl': instance.avatarUrl,
     };

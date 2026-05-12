@@ -7,10 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/components/app_button.dart';
-import '../../../../core/components/app_snackbar.dart';
-import '../../../../core/components/app_text_field.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import '../../data/entities/category_entity.dart';
 import '../controllers/product_controller.dart';
 
@@ -19,10 +20,10 @@ class CreateProductPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = context.isDark;
     final titleController = useTextEditingController();
     final descriptionController = useTextEditingController();
     final priceController = useTextEditingController();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isNewProduct = useState<bool>(true);
     final isLoading = useState<bool>(false);
     final selectedCategoryId = useState<String?>(null);
@@ -35,8 +36,7 @@ class CreateProductPage extends HookConsumerWidget {
         .firstOrNull;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Novo anúncio',
@@ -87,7 +87,7 @@ class CreateProductPage extends HookConsumerWidget {
             ),
             const SizedBox(height: 24),
             _buildPreviewCard(
-              isDark: isDark,
+              context: context,
               title: titleController.text.trim(),
               description: descriptionController.text.trim(),
               pricePreview: pricePreview,
@@ -129,7 +129,6 @@ class CreateProductPage extends HookConsumerWidget {
                 onTap: () => _showCategoryPicker(
                   context,
                   categories,
-                  isDark,
                   selectedCategoryId.value,
                   (value) => selectedCategoryId.value = value,
                 ),
@@ -383,13 +382,14 @@ class CreateProductPage extends HookConsumerWidget {
   }
 
   Widget _buildPreviewCard({
-    required bool isDark,
+    required BuildContext context,
     required String title,
     required String description,
     required String pricePreview,
     required String? categoryName,
     required String? imagePath,
   }) {
+    final isDark = context.isDark;
     return Container(
       color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainerLowest,
       padding: const EdgeInsets.all(16),
@@ -535,10 +535,10 @@ class CreateProductPage extends HookConsumerWidget {
   Future<void> _showCategoryPicker(
     BuildContext context,
     List<CategoryEntity> categories,
-    bool isDark,
     String? selectedCategoryId,
     void Function(String) onSelected,
   ) async {
+    final isDark = context.isDark;
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,

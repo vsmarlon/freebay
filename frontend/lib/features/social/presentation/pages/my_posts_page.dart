@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 
@@ -22,21 +23,18 @@ class MyPostsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final postsAsync = ref.watch(userPostsProvider(userId));
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Meus posts'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        backgroundColor: context.bgColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),
@@ -44,7 +42,7 @@ class MyPostsPage extends ConsumerWidget {
           IconButton(
             icon: Icon(
               Icons.add,
-              color: isDark ? AppColors.white : AppColors.darkGray,
+              color: context.textPrimary,
             ),
             onPressed: () => context.push('/create-post'),
           ),
@@ -57,18 +55,17 @@ class MyPostsPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.grid_view_rounded,
                     size: 64,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                    color: AppColors.mediumGray,
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  const Text(
                     'Nenhum post ainda',
                     style: TextStyle(
                       fontSize: 16,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                      color: AppColors.mediumGray,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -110,7 +107,7 @@ class MyPostsPage extends ConsumerWidget {
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final post = posts[index];
-              return _buildPostTile(context, post, isDark);
+              return _buildPostTile(context, post);
             },
           );
         },
@@ -126,7 +123,7 @@ class MyPostsPage extends ConsumerWidget {
               Text(
                 'Erro ao carregar posts',
                 style: TextStyle(
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+                  color: context.textPrimary,
                 ),
               ),
             ],
@@ -136,44 +133,80 @@ class MyPostsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildPostTile(BuildContext context, PostEntity post, bool isDark) {
+  Widget _buildPostTile(BuildContext context, PostEntity post) {
     final content = post.content ?? '';
     final imageUrl = post.imageUrl;
+    final isReposted = post.repostedAt != null;
 
     return GestureDetector(
       onTap: () => context.push('/post/${post.id}'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
-        ),
-        child: imageUrl != null && imageUrl.isNotEmpty
-            ? Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.image,
-                  color: AppColors.mediumGray,
-                ),
-              )
-            : content.isNotEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text(
-                        content,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: context.surfaceMidColor,
+            ),
+            child: imageUrl != null && imageUrl.isNotEmpty
+                ? Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.image,
+                      color: AppColors.mediumGray,
                     ),
                   )
-                : const Icon(
-                    Icons.article_outlined,
-                    color: AppColors.mediumGray,
-                  ),
+                : content.isNotEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(
+                            content,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.textPrimary,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                    : const Icon(
+                        Icons.article_outlined,
+                        color: AppColors.mediumGray,
+                      ),
+          ),
+          if (isReposted)
+            Positioned(
+              top: 4,
+              left: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryPurple.withAlpha(204),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.repeat,
+                      size: 10,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      'Reposted',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

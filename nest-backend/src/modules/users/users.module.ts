@@ -12,12 +12,13 @@ import {
   SearchUsersUseCase,
   GetSuggestionsUseCase,
 } from './usecases/user.usecase';
-import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
+import { AuthModule } from '@/modules/auth/auth.module';
 import { FollowRepository } from './repositories/follow.repository';
 import { BlockRepository } from './repositories/block.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
 
 @Module({
+  imports: [AuthModule],
   controllers: [UsersController],
   providers: [
     GetProfileUseCase,
@@ -30,10 +31,9 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
     UnblockUserUseCase,
     SearchUsersUseCase,
     GetSuggestionsUseCase,
-    PrismaUserRepository,
     FollowRepository,
     BlockRepository,
-    PrismaService,
+    PrismaOrderRepository,
   ],
   exports: [FollowRepository, BlockRepository],
 })

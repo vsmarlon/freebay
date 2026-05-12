@@ -17,8 +17,6 @@ class ReputationStars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -35,9 +33,7 @@ class ReputationStars extends StatelessWidget {
             color = AppColors.warning;
           } else {
             icon = Icons.star_outline_rounded;
-            color = isDark
-                ? AppColors.mediumGray.withAlpha(128)
-                : AppColors.mediumGray;
+            color = AppColors.mediumGray.withAlpha(128);
           }
 
           return Icon(icon, size: size, color: color);
@@ -48,7 +44,7 @@ class ReputationStars extends StatelessWidget {
             '($reviewCount)',
             style: TextStyle(
               fontSize: size * 0.75,
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+              color: AppColors.mediumGray,
               fontWeight: FontWeight.w500,
             ),
           ),

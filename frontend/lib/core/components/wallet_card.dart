@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class WalletCard extends StatelessWidget {
+class WalletCard extends StatefulWidget {
   final int availableBalanceInCents;
   final int pendingBalanceInCents;
   final bool isMinimized;
@@ -18,18 +20,46 @@ class WalletCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<WalletCard> createState() => _WalletCardState();
+}
 
-    if (isMinimized) {
-      return _buildMinimized(context, isDark);
+class _WalletCardState extends State<WalletCard> {
+  bool _valuesHidden = false;
+  static const _prefKey = 'wallet_values_hidden';
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) setState(() => _valuesHidden = prefs.getBool(_prefKey) ?? false);
+    });
+  }
+
+  void _toggleHidden() {
+    final next = !_valuesHidden;
+    setState(() => _valuesHidden = next);
+    SharedPreferences.getInstance().then((prefs) => prefs.setBool(_prefKey, next));
+  }
+
+  String _masked(String value) => _valuesHidden ? 'R\$ •••' : value;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isMinimized) {
+      return _buildMinimized(context);
     }
 
+    final total = CurrencyUtils.formatCents(
+      widget.availableBalanceInCents + widget.pendingBalanceInCents,
+    );
+    final available = CurrencyUtils.formatCents(widget.availableBalanceInCents);
+    final pending = CurrencyUtils.formatCents(widget.pendingBalanceInCents);
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: AppColors.brutalistGradient,
           borderRadius: BorderRadius.zero,
         ),
@@ -40,27 +70,36 @@ class WalletCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Saldo Total',
+                  'SALDO TOTAL',
                   style: TextStyle(
+                    fontFamily: 'Inter',
                     color: Colors.white70,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
                   ),
                 ),
-                Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: Colors.white.withAlpha(204),
-                  size: 24,
+                GestureDetector(
+                  onTap: _toggleHidden,
+                  child: Icon(
+                    _valuesHidden
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              CurrencyUtils.formatCents(availableBalanceInCents + pendingBalanceInCents),
+              _masked(total),
               style: const TextStyle(
+                fontFamily: 'SpaceGrotesk',
                 color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+                fontSize: 40,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 20),
@@ -68,15 +107,17 @@ class WalletCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildBalanceItem(
-                    'Disponível',
-                    CurrencyUtils.formatCents(availableBalanceInCents),
+                    'DISPONÍVEL',
+                    _masked(available),
+                    solid: true,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildBalanceItem(
-                    'Pendente',
-                    CurrencyUtils.formatCents(pendingBalanceInCents),
+                    'PENDENTE',
+                    _masked(pending),
+                    solid: false,
                   ),
                 ),
               ],
@@ -87,13 +128,13 @@ class WalletCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMinimized(BuildContext context, bool isDark) {
+  Widget _buildMinimized(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          color: context.surfaceColor,
           borderRadius: BorderRadius.zero,
         ),
         child: Row(
@@ -118,10 +159,11 @@ class WalletCard extends StatelessWidget {
                   Text('Saldo', style: AppTypography.bodySmall),
                   const SizedBox(height: 2),
                   Text(
-                    CurrencyUtils.formatCents(availableBalanceInCents),
+                    _masked(
+                        CurrencyUtils.formatCents(widget.availableBalanceInCents)),
                     style: AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      color: context.textPrimary,
                     ),
                   ),
                 ],
@@ -138,22 +180,40 @@ class WalletCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: AppTypography.bodySmall.copyWith(color: Colors.white70),
+  Widget _buildBalanceItem(String label, String value, {required bool solid}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: solid ? Colors.white : Colors.white38,
+          width: 2,
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppTypography.bodyLarge.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+              color: Colors.white70,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'SpaceGrotesk',
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

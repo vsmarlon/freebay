@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, InvalidOrderStateError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../repositories/order.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { OrderStatus, EscrowStatus } from '@prisma/client';
+import { PrismaClient, OrderStatus, EscrowStatus } from '@prisma/client';
 import { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput } from '../dtos/order.dto';
 
 export type { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput };
@@ -12,7 +11,7 @@ export type { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput };
 export class CreateOrderUseCase {
   constructor(
     private orderRepository: PrismaOrderRepository,
-    private prisma: PrismaService,
+    private prisma: PrismaClient,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Either<AppError, CreateOrderOutput>> {
@@ -81,7 +80,7 @@ export class CreateOrderUseCase {
 export class ConfirmDeliveryUseCase {
   constructor(
     private orderRepository: PrismaOrderRepository,
-    private prisma: PrismaService,
+    private prisma: PrismaClient,
   ) {}
 
   async execute(input: ConfirmDeliveryInput): Promise<Either<AppError, { confirmed: boolean; sellerAmount: number }>> {
@@ -135,7 +134,7 @@ export class ConfirmDeliveryUseCase {
 export class ActivateEscrowUseCase {
   constructor(
     private orderRepository: PrismaOrderRepository,
-    private prisma: PrismaService,
+    private prisma: PrismaClient,
   ) {}
 
   async execute(orderId: string): Promise<Either<AppError, { activated: boolean }>> {

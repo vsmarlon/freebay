@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/wallet_card.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
 
@@ -13,21 +14,37 @@ class WalletPage extends ConsumerStatefulWidget {
 }
 
 class _WalletPageState extends ConsumerState<WalletPage> {
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Ajuda e suporte'),
+        content: const Text(
+          'Em caso de dúvidas ou problemas, entre em contato:\n\nmarlonstein260404@gmail.com',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authState = ref.read(authControllerProvider);
-      final user = authState.valueOrNull;
-      if (user != null && !user.isGuest) {
-        ref.read(walletProvider.notifier).loadWallet();
-      }
-    });
+    final authState = ref.read(authControllerProvider);
+    final user = authState.valueOrNull;
+    if (user != null && !user.isGuest) {
+      ref.read(walletProvider.notifier).loadWallet();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final walletState = ref.watch(walletProvider);
     final user = authState.valueOrNull;
@@ -37,8 +54,7 @@ class _WalletPageState extends ConsumerState<WalletPage> {
     final pendingBalance = walletState.valueOrNull?.pendingBalance ?? 0;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Carteira',
@@ -55,7 +71,7 @@ class _WalletPageState extends ConsumerState<WalletPage> {
               Icons.help_outline,
               color: isDark ? AppColors.white : AppColors.darkGray,
             ),
-            onPressed: () {},
+            onPressed: () => _showHelpDialog(context),
           ),
         ],
       ),
@@ -117,19 +133,16 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                         _buildInfoLine(
                           label: 'Disponível',
                           value: 'Saldo já liberado para o vendedor.',
-                          isDark: isDark,
                         ),
                         const SizedBox(height: 16),
                         _buildInfoLine(
                           label: 'Em custódia',
                           value: 'Valor aguardando confirmação do pedido.',
-                          isDark: isDark,
                         ),
                         const SizedBox(height: 16),
                         _buildInfoLine(
                           label: 'Saques',
                           value: 'Saques automáticos ficam para a próxima etapa do produto.',
-                          isDark: isDark,
                         ),
                       ],
                     ),
@@ -146,16 +159,17 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                   ),
                   const SizedBox(height: 12),
                   if (isGuest)
-                    _buildEmptyState(context, isDark)
+                    _buildEmptyState(context)
                   else
-                    _buildEmptyState(context, isDark),
+                    _buildEmptyState(context),
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, bool isDark) {
+  Widget _buildEmptyState(BuildContext context) {
+    final isDark = context.isDark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -195,8 +209,8 @@ class _WalletPageState extends ConsumerState<WalletPage> {
   Widget _buildInfoLine({
     required String label,
     required String value,
-    required bool isDark,
   }) {
+    final isDark = context.isDark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

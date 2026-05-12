@@ -1,4 +1,4 @@
-import { PrismaClient, Order, OrderStatus, EscrowStatus } from '@prisma/client';
+import { PrismaClient, Order, OrderStatus, EscrowStatus, TransactionStatus } from '@prisma/client';
 
 export class OrderFactory {
   private readonly PLATFORM_FEE_PERCENTAGE = 0.1; // 10%
@@ -147,7 +147,7 @@ export class OrderFactory {
         sellerAmount: order.sellerAmount,
         paymentMethod: 'PIX',
         provider: 'PAGARME',
-        status: transactionStatus as any,
+        status: transactionStatus as TransactionStatus,
         idempotencyKey: `test-${Date.now()}-${Math.random().toString(36).substring(7)}`,
         paidAt: transactionStatus === 'PAID' ? new Date() : null,
       },

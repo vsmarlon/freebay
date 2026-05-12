@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 
@@ -19,21 +20,19 @@ class LikedPostsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final postsAsync = ref.watch(likedPostsProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Posts curtidos'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),

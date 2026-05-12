@@ -208,4 +208,80 @@ class AuthRepository implements IAuthRepository {
       return const Left(UnknownFailure());
     }
   }
+
+  @override
+  Future<Either<Failure, void>> forgotPassword(String email) async {
+    try {
+      if (kDebugMode) {
+        debugPrint('[AUTH] Enviando solicitação de esqueci a senha...');
+      }
+
+      final response = await HttpClient.instance.post(
+        '/auth/forgot-password',
+        data: {'email': email},
+      );
+
+      if (kDebugMode) {
+        debugPrint('[AUTH] Response status: ${response.statusCode}');
+      }
+
+      if (response.statusCode == 200) {
+        return const Right(null);
+      } else {
+        return const Left(ServerFailure('Erro ao enviar solicitação.'));
+      }
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] DioException forgotPassword: ${e.type} - ${e.message}');
+      }
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] ERRO forgotPassword: $e');
+        debugPrint('[AUTH] STACK: $stackTrace');
+      }
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetPassword(
+      String token, String password) async {
+    try {
+      if (kDebugMode) {
+        debugPrint('[AUTH] Redefinindo senha...');
+      }
+
+      final response = await HttpClient.instance.post(
+        '/auth/reset-password',
+        data: {'token': token, 'password': password},
+      );
+
+      if (kDebugMode) {
+        debugPrint('[AUTH] Response status: ${response.statusCode}');
+        debugPrint('[AUTH] Response data: ${response.data}');
+      }
+
+      if (response.statusCode == 200) {
+        return const Right(null);
+      } else {
+        final data = response.data;
+        if (data != null && data['code'] == 'INVALID_RESET_TOKEN') {
+          return const Left(ValidationFailure('Token inválido ou expirado.'));
+        }
+        return Left(mapDioExceptionToFailure(response.data));
+      }
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] DioException resetPassword: ${e.type} - ${e.message}');
+      }
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[AUTH] ERRO resetPassword: $e');
+        debugPrint('[AUTH] STACK: $stackTrace');
+      }
+      return const Left(UnknownFailure());
+    }
+  }
 }

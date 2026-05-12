@@ -4,6 +4,7 @@ import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
 import { FollowRepository } from '../repositories/follow.repository';
 import { BlockRepository } from '../repositories/block.repository';
+import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import {
   UserResponse,
@@ -42,14 +43,14 @@ export class GetProfileUseCase {
 @Injectable()
 export class GetUserStatsUseCase {
   constructor(
-    private prisma: PrismaService,
+    private orderRepository: PrismaOrderRepository,
     private followRepository: FollowRepository,
   ) {}
 
   async execute(input: GetUserStatsInput): Promise<UserStatsResponse> {
     const [salesCount, purchasesCount, followersCount, followingCount] = await Promise.all([
-      this.prisma.order.count({ where: { sellerId: input.userId } }),
-      this.prisma.order.count({ where: { buyerId: input.userId } }),
+      this.orderRepository.countBySellerId(input.userId),
+      this.orderRepository.countByBuyerId(input.userId),
       this.followRepository.getFollowersCount(input.userId),
       this.followRepository.getFollowingCount(input.userId),
     ]);

@@ -15,6 +15,9 @@ class PostEntity extends Equatable {
   final int sharesCount;
   final bool isLiked;
   final bool isSaved;
+  final bool hasReposted;
+  final DateTime? repostedAt;
+  final UserMiniEntity? repostedBy;
   final DateTime createdAt;
   final UserEntity user;
   final ProductInfo? product;
@@ -30,6 +33,9 @@ class PostEntity extends Equatable {
     this.sharesCount = 0,
     this.isLiked = false,
     this.isSaved = false,
+    this.hasReposted = false,
+    this.repostedAt,
+    this.repostedBy,
     required this.createdAt,
     required this.user,
     this.product,
@@ -50,6 +56,9 @@ class PostEntity extends Equatable {
     int? sharesCount,
     bool? isLiked,
     bool? isSaved,
+    bool? hasReposted,
+    DateTime? repostedAt,
+    UserMiniEntity? repostedBy,
     DateTime? createdAt,
     UserEntity? user,
     ProductInfo? product,
@@ -65,6 +74,9 @@ class PostEntity extends Equatable {
       sharesCount: sharesCount ?? this.sharesCount,
       isLiked: isLiked ?? this.isLiked,
       isSaved: isSaved ?? this.isSaved,
+      hasReposted: hasReposted ?? this.hasReposted,
+      repostedAt: repostedAt ?? this.repostedAt,
+      repostedBy: repostedBy ?? this.repostedBy,
       createdAt: createdAt ?? this.createdAt,
       user: user ?? this.user,
       product: product ?? this.product,
@@ -83,6 +95,9 @@ class PostEntity extends Equatable {
         sharesCount,
         isLiked,
         isSaved,
+        hasReposted,
+        repostedAt,
+        repostedBy,
         createdAt,
         product,
       ];
@@ -137,4 +152,24 @@ class UserEntity extends Equatable {
   @override
   List<Object?> get props =>
       [id, displayName, avatarUrl, isVerified, reputationScore, totalReviews];
+}
+
+@JsonSerializable()
+class UserMiniEntity extends Equatable {
+  final String id;
+  final String displayName;
+  final String? avatarUrl;
+
+  const UserMiniEntity({
+    required this.id,
+    required this.displayName,
+    this.avatarUrl,
+  });
+
+  factory UserMiniEntity.fromJson(Map<String, dynamic> json) =>
+      _$UserMiniEntityFromJson(json);
+  Map<String, dynamic> toJson() => _$UserMiniEntityToJson(this);
+
+  @override
+  List<Object?> get props => [id, displayName, avatarUrl];
 }

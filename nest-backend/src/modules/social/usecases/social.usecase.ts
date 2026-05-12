@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError } from '@/shared/core/errors';
-import { PrismaPostRepository, PrismaStoryRepository } from '../repositories/social.repository';
+import {
+  PrismaPostRepository,
+  PrismaCommentRepository,
+  PrismaLikeRepository,
+  PrismaStoryRepository,
+} from '../repositories/social.repository';
 import {
   CreatePostInput,
   CreatePostOutput,
@@ -11,7 +16,6 @@ import {
   CreateStoryInput,
   CreateStoryOutput,
 } from '../dtos/social.dto';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
 export type {
   CreatePostInput,
@@ -50,7 +54,7 @@ export class CreatePostUseCase {
 export class LikePostUseCase {
   constructor(
     private postRepository: PrismaPostRepository,
-    private prisma: PrismaService,
+    private likeRepository: PrismaLikeRepository,
   ) {}
 
   async execute(input: LikePostInput): Promise<Either<AppError, { liked: boolean }>> {
@@ -59,24 +63,16 @@ export class LikePostUseCase {
       return left(new NotFoundError('Post'));
     }
 
-    const existingLike = await this.prisma.like.findFirst({
-      where: { postId: input.postId, userId: input.userId },
-    });
-
+    const existingLike = await this.likeRepository.findPostLike(input.userId, input.postId);
     if (existingLike) {
       return right({ liked: true });
     }
 
-    await this.prisma.like.create({
-      data: {
-        user: { connect: { id: input.userId } },
-        post: { connect: { id: input.postId } },
-      },
+    await this.likeRepository.createLike({
+      user: { connect: { id: input.userId } },
+      post: { connect: { id: input.postId } },
     });
-    await this.prisma.post.update({
-      where: { id: input.postId },
-      data: { likesCount: { increment: 1 } },
-    });
+    await this.postRepository.incrementLikesCount(input.postId);
     return right({ liked: true });
   }
 }
@@ -85,44 +81,35 @@ export class LikePostUseCase {
 export class UnlikePostUseCase {
   constructor(
     private postRepository: PrismaPostRepository,
-    private prisma: PrismaService,
+    private likeRepository: PrismaLikeRepository,
   ) {}
 
   async execute(input: LikePostInput): Promise<Either<AppError, { unliked: boolean }>> {
-    const existingLike = await this.prisma.like.findFirst({
-      where: { postId: input.postId, userId: input.userId },
-    });
+    const existingLike = await this.likeRepository.findPostLike(input.userId, input.postId);
     if (!existingLike) {
       return right({ unliked: true });
     }
-    await this.prisma.like.delete({
-      where: { userId_postId: { userId: input.userId, postId: input.postId } },
-    });
-    await this.prisma.post.update({
-      where: { id: input.postId },
-      data: { likesCount: { decrement: 1 } },
-    });
+    await this.likeRepository.deletePostLikeByUser(input.userId, input.postId);
+    await this.postRepository.decrementLikesCount(input.postId);
     return right({ unliked: true });
   }
 }
 
 @Injectable()
 export class CommentUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private commentRepository: PrismaCommentRepository,
+    private postRepository: PrismaPostRepository,
+  ) {}
 
   async execute(input: CreateCommentInput): Promise<Either<AppError, CreateCommentOutput>> {
-    const comment = await this.prisma.comment.create({
-      data: {
-        content: input.content,
-        post: { connect: { id: input.postId } },
-        user: { connect: { id: input.userId } },
-      },
+    const comment = await this.commentRepository.create({
+      content: input.content,
+      post: { connect: { id: input.postId } },
+      user: { connect: { id: input.userId } },
     });
 
-    await this.prisma.post.update({
-      where: { id: input.postId },
-      data: { commentsCount: { increment: 1 } },
-    });
+    await this.postRepository.incrementCommentsCount(input.postId);
 
     return right({
       id: comment.id,
@@ -157,10 +144,7 @@ export class UnlikeCommentUseCase {
 
 @Injectable()
 export class CreateStoryUseCase {
-  constructor(
-    private storyRepository: PrismaStoryRepository,
-    private prisma: PrismaService,
-  ) {}
+  constructor(private storyRepository: PrismaStoryRepository) {}
 
   async execute(input: CreateStoryInput): Promise<Either<AppError, CreateStoryOutput>> {
     const expiresAt = new Date();
@@ -183,42 +167,22 @@ export class CreateStoryUseCase {
 
 @Injectable()
 export class GetStoriesUseCase {
-  constructor(
-    private storyRepository: PrismaStoryRepository,
-    private prisma: PrismaService,
-  ) {}
+  constructor(private storyRepository: PrismaStoryRepository) {}
 
   async execute(userId?: string) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const stories = await this.prisma.story.findMany({
-      where: {
-        createdAt: { gte: yesterday },
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
-        _count: { select: { views: true } },
-      },
-    });
+    const stories = await this.storyRepository.findActiveWithViews();
 
     let userHasStory = false;
     if (userId) {
-      const userStory = stories.find(s => s.userId === userId);
-      userHasStory = !!userStory;
+      userHasStory = stories.some(s => s.userId === userId);
     }
 
     const groupedByUser = stories.reduce<Record<string, { user: unknown; stories: unknown[] }>>((acc, story) => {
-      const userId = story.userId;
-      if (!acc[userId]) {
-        acc[userId] = {
-          user: story.user,
-          stories: [],
-        };
+      const uid = story.userId;
+      if (!acc[uid]) {
+        acc[uid] = { user: story.user, stories: [] };
       }
-      acc[userId].stories.push({
+      acc[uid].stories.push({
         id: story.id,
         imageUrl: story.imageUrl,
         createdAt: story.createdAt,
@@ -249,20 +213,16 @@ export class GetUserStoriesUseCase {
 
 @Injectable()
 export class ViewStoryUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private storyRepository: PrismaStoryRepository) {}
 
   async execute(input: { storyId: string; viewerId: string }): Promise<Either<AppError, { viewed: boolean }>> {
-    const story = await this.prisma.story.findUnique({ where: { id: input.storyId } });
+    const story = await this.storyRepository.findById(input.storyId);
     if (!story) {
       return left(new NotFoundError('Story'));
     }
 
     if (input.viewerId) {
-      await this.prisma.storyView.upsert({
-        where: { storyId_viewerId: { storyId: input.storyId, viewerId: input.viewerId } },
-        create: { story: { connect: { id: input.storyId } }, viewerId: input.viewerId },
-        update: { viewedAt: new Date() },
-      });
+      await this.storyRepository.upsertView(input.storyId, input.viewerId);
     }
 
     return right({ viewed: true });
@@ -271,7 +231,7 @@ export class ViewStoryUseCase {
 
 @Injectable()
 export class DeleteStoryUseCase {
-  constructor(private storyRepository: PrismaStoryRepository, private prisma: PrismaService) {}
+  constructor(private storyRepository: PrismaStoryRepository) {}
 
   async execute(input: { storyId: string; userId: string }): Promise<Either<AppError, { deleted: boolean }>> {
     const story = await this.storyRepository.findById(input.storyId);

@@ -3,26 +3,28 @@ import 'package:freebay/features/social/domain/repositories/i_social_repository.
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
 class LikesState {
-  final Set<String> likedPostIds;
-  final Map<String, int> likeCounts;
+  /// Map of post IDs to their liked status override (null means use entity value)
+  final Map<String, bool> likedOverrides;
+  /// Map of post IDs to their like count override (null means use entity value)
+  final Map<String, int> countOverrides;
 
   const LikesState({
-    this.likedPostIds = const {},
-    this.likeCounts = const {},
+    this.likedOverrides = const {},
+    this.countOverrides = const {},
   });
 
   LikesState copyWith({
-    Set<String>? likedPostIds,
-    Map<String, int>? likeCounts,
+    Map<String, bool>? likedOverrides,
+    Map<String, int>? countOverrides,
   }) {
     return LikesState(
-      likedPostIds: likedPostIds ?? this.likedPostIds,
-      likeCounts: likeCounts ?? this.likeCounts,
+      likedOverrides: likedOverrides ?? this.likedOverrides,
+      countOverrides: countOverrides ?? this.countOverrides,
     );
   }
 
-  bool isLiked(String postId) => likedPostIds.contains(postId);
-  int getLikeCount(String postId) => likeCounts[postId] ?? 0;
+  bool? getLikedOverride(String postId) => likedOverrides[postId];
+  int? getCountOverride(String postId) => countOverrides[postId];
 }
 
 class LikesNotifier extends StateNotifier<LikesState> {
@@ -30,101 +32,46 @@ class LikesNotifier extends StateNotifier<LikesState> {
 
   LikesNotifier(this._repository) : super(const LikesState());
 
-  void initializeFromPosts(List<dynamic> posts) {
-    final likedIds = <String>{};
-    final counts = <String, int>{};
+  /// Toggles like status. If no override exists, it uses initial values from the entity.
+  Future<bool> toggleLike(String postId, {required bool initialIsLiked, required int initialCount}) async {
+    final currentLiked = state.likedOverrides[postId] ?? initialIsLiked;
+    final currentCount = state.countOverrides[postId] ?? initialCount;
 
-    for (final post in posts) {
-      if (post.isLiked == true) {
-        likedIds.add(post.id);
-      }
-      counts[post.id] = post.likesCount ?? 0;
-    }
+    final newIsLiked = !currentLiked;
+    final newCount = newIsLiked ? currentCount + 1 : currentCount - 1;
 
+    // Apply optimistic update
     state = state.copyWith(
-      likedPostIds: likedIds,
-      likeCounts: counts,
-    );
-  }
-
-  void initializeSinglePost(String postId, bool isLiked, int likeCount) {
-    final newLikedIds = Set<String>.from(state.likedPostIds);
-    final newCounts = Map<String, int>.from(state.likeCounts);
-
-    if (isLiked) {
-      newLikedIds.add(postId);
-    } else {
-      newLikedIds.remove(postId);
-    }
-    newCounts[postId] = likeCount;
-
-    state = state.copyWith(
-      likedPostIds: newLikedIds,
-      likeCounts: newCounts,
-    );
-  }
-
-  Future<bool> toggleLike(String postId) async {
-    final wasLiked = state.isLiked(postId);
-    final previousCount = state.getLikeCount(postId);
-
-    final newLikedIds = Set<String>.from(state.likedPostIds);
-    final newCounts = Map<String, int>.from(state.likeCounts);
-
-    if (wasLiked) {
-      newLikedIds.remove(postId);
-      newCounts[postId] = previousCount - 1;
-    } else {
-      newLikedIds.add(postId);
-      newCounts[postId] = previousCount + 1;
-    }
-
-    state = state.copyWith(
-      likedPostIds: newLikedIds,
-      likeCounts: newCounts,
+      likedOverrides: {...state.likedOverrides, postId: newIsLiked},
+      countOverrides: {...state.countOverrides, postId: newCount},
     );
 
     try {
-      if (wasLiked) {
-        final result = await _repository.unlikePost(postId);
-        if (result.isLeft()) {
-          state = state.copyWith(
-            likedPostIds: wasLiked
-                ? {...state.likedPostIds, postId}
-                : state.likedPostIds.difference({postId}),
-            likeCounts: {...state.likeCounts, postId: previousCount},
-          );
-          return false;
-        }
-      } else {
-        final result = await _repository.likePost(postId);
-        if (result.isLeft()) {
-          state = state.copyWith(
-            likedPostIds: wasLiked
-                ? {...state.likedPostIds, postId}
-                : state.likedPostIds.difference({postId}),
-            likeCounts: {...state.likeCounts, postId: previousCount},
-          );
-          return false;
-        }
+      final result = newIsLiked 
+          ? await _repository.likePost(postId)
+          : await _repository.unlikePost(postId);
+
+      if (result.isLeft()) {
+        // Rollback on failure
+        state = state.copyWith(
+          likedOverrides: {...state.likedOverrides, postId: currentLiked},
+          countOverrides: {...state.countOverrides, postId: currentCount},
+        );
+        return false;
       }
       return true;
     } catch (e) {
+      // Rollback on exception
       state = state.copyWith(
-        likedPostIds: wasLiked
-            ? {...state.likedPostIds, postId}
-            : state.likedPostIds.difference({postId}),
-        likeCounts: {...state.likeCounts, postId: previousCount},
+        likedOverrides: {...state.likedOverrides, postId: currentLiked},
+        countOverrides: {...state.countOverrides, postId: currentCount},
       );
       return false;
     }
   }
-
-  bool isLiked(String postId) => state.isLiked(postId);
-  int getLikeCount(String postId) => state.getLikeCount(postId);
 }
 
 final likesProvider = StateNotifierProvider<LikesNotifier, LikesState>((ref) {
-  final repository = ref.watch(socialRepositoryProvider);
+  final repository = ref.read(socialRepositoryProvider);
   return LikesNotifier(repository);
 });

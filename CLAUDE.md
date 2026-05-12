@@ -178,7 +178,7 @@ Prisma schema (`backend/prisma/schema.prisma`) is the source of truth. After any
 1. `npm run prisma:migrate` — creates and applies migration
 2. `npm run prisma:generate` — regenerates the Prisma client
 
-Payment providers: **Pagar.me** (credit card) and **Woovi** (PIX). Escrow flow: `HELD → RELEASED | REFUNDED`.
+Payment providers: **AbacatePay** (PIX) and **PagBank** (payouts to sellers). The `PaymentProvider` Prisma enum still uses legacy labels `PAGARME`/`WOOVI` for historical reasons — the adapters behind them target AbacatePay/PagBank. Escrow flow: `HELD → RELEASED | REFUNDED`.
 
 ---
 

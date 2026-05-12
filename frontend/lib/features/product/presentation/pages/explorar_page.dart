@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/components/app_card.dart';
+import '../../../../core/components/app_text_field.dart';
+import '../../../../core/components/empty_state.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/theme_extension.dart';
 import '../../../product/data/entities/category_entity.dart';
 import '../../../product/domain/usecases/get_products_usecase.dart';
 import '../../../product/presentation/controllers/product_controller.dart';
+import '../../../product/presentation/widgets/category_filter_panel.dart';
 import '../../../social/presentation/providers/user_search_provider.dart';
 import '../../../social/presentation/widgets/user_search_list.dart';
 
@@ -64,28 +68,25 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Explorar',
           style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.primaryPurple,
+            color: context.isDark ? AppColors.white : AppColors.primaryPurple,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: isDark ? AppColors.white : AppColors.primaryPurple,
-          unselectedLabelColor:
-              isDark ? AppColors.mediumGray : AppColors.mediumGray,
+          labelColor: context.isDark ? AppColors.white : AppColors.primaryPurple,
+          unselectedLabelColor: AppColors.mediumGray,
           indicatorColor: AppColors.primaryPurple,
           tabs: const [
             Tab(text: 'Produtos'),
@@ -96,20 +97,14 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           IconButton(
             icon: Icon(
               _showFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: isDark ? AppColors.white : AppColors.primaryPurple,
+              color: context.isDark ? AppColors.white : AppColors.primaryPurple,
             ),
-            onPressed: () {
-              setState(() {
-                _showFilters = !_showFilters;
-              });
-            },
+            onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
           IconButton(
             icon: Icon(
               Icons.add_box_outlined,
-              color: isDark
-                  ? AppColors.primaryPurpleLight
-                  : AppColors.primaryPurpleDark,
+              color: AppColors.primaryPurpleDark,
             ),
             onPressed: () => context.push('/products/create'),
           )
@@ -119,30 +114,14 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
+            child: AppTextField(
               controller: _searchController,
-              decoration: InputDecoration(
-                hintText: _tabController.index == 1
-                    ? 'Buscar pessoas...'
-                    : 'Buscar produtos...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearch();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: isDark ? AppColors.surfaceDark : AppColors.white,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onSubmitted: (_) => _onSearch(),
+              label: '',
+              hint: _tabController.index == 1
+                  ? 'Buscar pessoas...'
+                  : 'Buscar produtos...',
+              prefixIcon: Icons.search,
+              onFieldSubmitted: (_) => _onSearch(),
               onChanged: _onSearchDebounced,
             ),
           ),
@@ -150,8 +129,8 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildProdutosTab(isDark, selectedCategory, categoriesAsync),
-                _buildPessoasTab(isDark),
+                _buildProdutosTab(selectedCategory, categoriesAsync),
+                _buildPessoasTab(),
               ],
             ),
           ),
@@ -160,7 +139,8 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
     );
   }
 
-  Widget _buildProdutosTab(bool isDark, String? selectedCategory,
+  Widget _buildProdutosTab(
+      String? selectedCategory,
       AsyncValue<List<CategoryEntity>> categoriesAsync) {
     final searchQuery = ref.watch(searchQueryProvider);
 
@@ -177,12 +157,18 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           categoriesAsync.when(
             data: (categories) {
               if (categories.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('Nenhuma categoria disponível'),
+                return EmptyState(
+                  icon: Icons.category_outlined,
+                  title: 'NENHUMA CATEGORIA',
+                  subtitle: 'Nenhuma categoria disponível',
                 );
               }
-              return _buildCategoryTree(categories, selectedCategory, isDark);
+              return CategoryFilterPanel(
+                categories: categories,
+                selectedCategory: selectedCategory,
+                onCategorySelected: (id) =>
+                    ref.read(selectedCategoryProvider.notifier).state = id,
+              );
             },
             loading: () => const Padding(
               padding: EdgeInsets.all(16),
@@ -197,58 +183,38 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           child: productsAsync.when(
             data: (products) {
               if (products.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.search_off,
-                        size: 64,
-                        color: isDark
-                            ? AppColors.mediumGray
-                            : AppColors.mediumGray,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Nenhum produto encontrado.',
-                        style: TextStyle(
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.mediumGray,
-                          fontSize: 16,
-                        ),
-                      ),
-                      if (searchQuery.isNotEmpty ||
-                          selectedCategory != null) ...[
-                        const SizedBox(height: 8),
-                        InkWell(
-                          onTap: () {
-                            _searchController.clear();
-                            ref.read(searchQueryProvider.notifier).state = '';
-                            ref.read(selectedCategoryProvider.notifier).state =
-                                null;
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            color: isDark
-                                ? AppColors.surfaceContainerDark
-                                : AppColors.surfaceContainerHighest,
-                            child: Text(
-                              'Limpar filtros',
-                              style: TextStyle(
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? AppColors.white : AppColors.onSurface,
-                              ),
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    EmptyState(
+                      icon: Icons.search_off,
+                      title: 'NENHUM PRODUTO',
+                      subtitle: 'Nenhum produto encontrado.',
+                    ),
+                    if (searchQuery.isNotEmpty || selectedCategory != null) ...[
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () {
+                          _searchController.clear();
+                          ref.read(searchQueryProvider.notifier).state = '';
+                          ref.read(selectedCategoryProvider.notifier).state = null;
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          color: context.surfaceColor,
+                          child: Text(
+                            'Limpar filtros',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w700,
+                              color: context.textPrimary,
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ],
-                  ),
+                  ],
                 );
               }
 
@@ -303,8 +269,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                   Text(
                     'Erro ao carregar\nerro: $err',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray),
+                    style: TextStyle(color: context.textPrimary),
                   ),
                   const SizedBox(height: 16),
                   InkWell(
@@ -318,8 +283,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                       height: 48,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: const BoxDecoration(
-                        gradient: AppColors.brutalistGradient,
-                      ),
+                          gradient: AppColors.brutalistGradient),
                       child: const Center(
                         child: Text(
                           'Tentar novamente',
@@ -341,27 +305,20 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
     );
   }
 
-  Widget _buildPessoasTab(bool isDark) {
+  Widget _buildPessoasTab() {
     final searchState = ref.watch(userSearchProvider);
     final searchQuery = _searchController.text;
 
     if (searchQuery.isEmpty && searchState.users.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.person_search,
-              size: 64,
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-            ),
-            const SizedBox(height: 16),
+            Icon(Icons.person_search, size: 64, color: AppColors.mediumGray),
+            SizedBox(height: 16),
             Text(
               'Busque por pessoas...',
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
             ),
           ],
         ),
@@ -378,85 +335,12 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
       },
       onFollow: (userId) async {
         await ref.read(socialRepositoryProvider).followUser(userId);
-        setState(() {
-          _followingMap[userId] = true;
-        });
+        setState(() => _followingMap[userId] = true);
       },
       onUnfollow: (userId) async {
         await ref.read(socialRepositoryProvider).unfollowUser(userId);
-        setState(() {
-          _followingMap[userId] = false;
-        });
+        setState(() => _followingMap[userId] = false);
       },
     );
-  }
-
-  Widget _buildCategoryTree(
-      List<CategoryEntity> categories, String? selectedCategory, bool isDark) {
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? AppColors.mediumGray.withValues(alpha: 0.2)
-                : AppColors.lightGray,
-          ),
-        ),
-      ),
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilterChip(
-                label: const Text('Todos'),
-                selected: selectedCategory == null,
-                onSelected: (_) {
-                  ref.read(selectedCategoryProvider.notifier).state = null;
-                },
-                selectedColor: AppColors.primaryPurple.withValues(alpha: 0.2),
-                checkmarkColor: AppColors.primaryPurple,
-              ),
-              ..._flattenCategories(categories),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _flattenCategories(List<CategoryEntity> categories,
-      {int indent = 0}) {
-    final widgets = <Widget>[];
-
-    for (final cat in categories) {
-      final isSelected = ref.watch(selectedCategoryProvider) == cat.id;
-
-      widgets.add(
-        Padding(
-          padding: EdgeInsets.only(left: indent * 12.0),
-          child: FilterChip(
-            label: Text(cat.name),
-            selected: isSelected,
-            onSelected: (_) {
-              ref.read(selectedCategoryProvider.notifier).state =
-                  isSelected ? null : cat.id;
-            },
-            selectedColor: AppColors.primaryPurple.withValues(alpha: 0.2),
-            checkmarkColor: AppColors.primaryPurple,
-          ),
-        ),
-      );
-
-      if (cat.children.isNotEmpty) {
-        widgets.addAll(_flattenCategories(cat.children, indent: indent + 1));
-      }
-    }
-
-    return widgets;
   }
 }

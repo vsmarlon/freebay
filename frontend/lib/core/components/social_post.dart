@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:freebay/core/components/post_actions.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -16,8 +18,10 @@ class SocialPost extends StatefulWidget {
   final int sharesCount;
   final bool isLiked;
   final bool isSaved;
+  final bool isReposted;
   final Future<bool> Function()? onLike;
   final Future<bool> Function()? onSave;
+  final Future<bool> Function()? onRepost;
   final VoidCallback? onComment;
   final VoidCallback? onShare;
   final VoidCallback? onTap;
@@ -25,6 +29,7 @@ class SocialPost extends StatefulWidget {
 
   final double? price;
   final String? userRole;
+  final bool isVerified;
 
   const SocialPost({
     super.key,
@@ -38,14 +43,17 @@ class SocialPost extends StatefulWidget {
     this.sharesCount = 0,
     this.isLiked = false,
     this.isSaved = false,
+    this.isReposted = false,
     this.onLike,
     this.onSave,
+    this.onRepost,
     this.onComment,
     this.onShare,
     this.onTap,
     this.onUserTap,
     this.price,
     this.userRole,
+    this.isVerified = false,
   });
 
   @override
@@ -53,67 +61,35 @@ class SocialPost extends StatefulWidget {
 }
 
 class _SocialPostState extends State<SocialPost> {
-  bool _isLiked = false;
-  bool _isSaved = false;
-  int _likesCount = 0;
   bool _isLikeLoading = false;
   bool _isImagePressed = false;
   bool _isCardPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _isLiked = widget.isLiked;
-    _isSaved = widget.isSaved;
-    _likesCount = widget.likesCount;
-  }
-
-  @override
-  void didUpdateWidget(SocialPost oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isLiked != widget.isLiked) {
-      _isLiked = widget.isLiked;
-      _likesCount = widget.likesCount;
-    }
-    if (oldWidget.isSaved != widget.isSaved) {
-      _isSaved = widget.isSaved;
-    }
-  }
 
   void _handleLike() async {
     if (_isLikeLoading) return;
     HapticFeedback.lightImpact();
     setState(() => _isLikeLoading = true);
-
     if (widget.onLike != null) {
-      final success = await widget.onLike!();
-      if (success && mounted) {
-        setState(() {
-          _isLiked = !_isLiked;
-          _likesCount = _isLiked ? _likesCount + 1 : _likesCount - 1;
-        });
-      }
+      await widget.onLike!();
     }
-
     if (mounted) setState(() => _isLikeLoading = false);
   }
 
   void _handleSave() async {
     HapticFeedback.lightImpact();
     if (widget.onSave != null) {
-      final success = await widget.onSave!();
-      if (success && mounted) {
-        setState(() => _isSaved = !_isSaved);
-      }
+      await widget.onSave!();
     }
   }
 
-  void _handleShare() {
+  @pragma('vm:entry-point')
+void _handleShareExternal() {
+    // External share functionality - can be triggered from overflow menu
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => _ShareBottomSheet(
+      builder: (context) => PostShareBottomSheet(
         userName: widget.userName,
         content: widget.content,
         onShareExternal: () async {
@@ -140,7 +116,7 @@ class _SocialPostState extends State<SocialPost> {
         opaque: false,
         barrierColor: Colors.black87,
         pageBuilder: (context, animation, secondaryAnimation) {
-          return _FullScreenImage(
+          return PostFullScreenImage(
             imageUrl: widget.imageUrl!,
             onClose: () => Navigator.of(context).pop(),
           );
@@ -154,7 +130,6 @@ class _SocialPostState extends State<SocialPost> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasImage = widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
 
     return GestureDetector(
@@ -171,27 +146,25 @@ class _SocialPostState extends State<SocialPost> {
           0,
         ),
         decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.surfaceContainerDark
-              : AppColors.surfaceContainerLowest,
+          color: context.surfaceColor,
           border: Border.all(
             color: AppColors.onSurface,
             width: 2,
           ),
         ),
         child:
-            hasImage ? _buildProductLayout(isDark) : _buildTextLayout(isDark),
+            hasImage ? _buildProductLayout(context) : _buildTextLayout(context),
       ),
     );
   }
 
-  Widget _buildProductLayout(bool isDark) {
+  Widget _buildProductLayout(BuildContext context) {
     final hasPrice = widget.price != null && widget.price! > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCardHeader(isDark),
+        _buildCardHeader(context),
         AspectRatio(
           aspectRatio: 1,
           child: Stack(
@@ -236,16 +209,16 @@ class _SocialPostState extends State<SocialPost> {
             ],
           ),
         ),
-        _buildCardContent(isDark),
+        _buildCardContent(context),
       ],
     );
   }
 
-  Widget _buildTextLayout(bool isDark) {
+  Widget _buildTextLayout(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildCardHeader(isDark),
+        _buildCardHeader(context),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
@@ -257,15 +230,15 @@ class _SocialPostState extends State<SocialPost> {
             style: AppTypography.bodyMedium.copyWith(color: Colors.white),
           ),
         ),
-        _buildActionsRow(isDark),
+        _buildActionsRow(),
       ],
     );
   }
 
-  Widget _buildCardHeader(bool isDark) {
+  Widget _buildCardHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(
             color: AppColors.onSurface,
@@ -283,7 +256,7 @@ class _SocialPostState extends State<SocialPost> {
             child: Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.primaryContainer,
                 borderRadius: BorderRadius.zero,
               ),
@@ -310,17 +283,33 @@ class _SocialPostState extends State<SocialPost> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.userName,
-                  style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: isDark
-                        ? AppColors.inverseOnSurface
-                        : AppColors.onSurface,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: widget.onUserTap,
+                        child: Text(
+                          widget.userName,
+                          style: TextStyle(
+                            fontFamily: 'SpaceGrotesk',
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: context.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    if (widget.isVerified) ...[
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.verified,
+                        size: 14,
+                        color: AppColors.primaryContainer,
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
                   'TIME AGO',
@@ -335,20 +324,13 @@ class _SocialPostState extends State<SocialPost> {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () {},
-            child: Icon(
-              Icons.more_vert,
-              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-              size: 20,
-            ),
-          ),
+          _PostTypePill(isProduct: widget.price != null && widget.price! > 0),
         ],
       ),
     );
   }
 
-  Widget _buildCardContent(bool isDark) {
+  Widget _buildCardContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -357,87 +339,63 @@ class _SocialPostState extends State<SocialPost> {
           child: Text(
             widget.content ?? '',
             style: AppTypography.bodyMedium.copyWith(
-              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+              color: context.textPrimary,
             ),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        _buildActionsRow(isDark),
+        _buildActionsRow(),
       ],
     );
   }
 
-  Widget _buildActionsRow(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            color: AppColors.onSurface.withAlpha(26),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Opacity(
-            opacity: _isLikeLoading ? 0.5 : 1.0,
-            child: _ActionButton(
-              icon: _isLiked ? Icons.favorite : Icons.favorite_border,
-              iconColor: _isLiked ? AppColors.primaryContainer : null,
-              onTap: _handleLike,
-            ),
-          ),
-          const SizedBox(width: 16),
-          _ActionButton(
-            icon: Icons.chat_bubble_outline,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              widget.onComment?.call();
-            },
-          ),
-          const SizedBox(width: 16),
-          _ActionButton(
-            icon: Icons.send_outlined,
-            onTap: _handleShare,
-          ),
-          const Spacer(),
-          _ActionButton(
-            icon: _isSaved ? Icons.bookmark : Icons.bookmark_border,
-            onTap: _handleSave,
-          ),
-        ],
-      ),
+  Widget _buildActionsRow() {
+    return PostActions(
+      isLiked: widget.isLiked,
+      isSaved: widget.isSaved,
+      isReposted: widget.isReposted,
+      isLikeLoading: _isLikeLoading,
+      likesCount: widget.likesCount,
+      commentsCount: widget.commentsCount,
+      sharesCount: widget.sharesCount,
+      onLike: _handleLike,
+      onSave: _handleSave,
+      onRepost: _handleRepost,
+      onComment: widget.onComment,
     );
+  }
+
+  void _handleRepost() async {
+    HapticFeedback.lightImpact();
+    if (widget.onRepost != null) {
+      await widget.onRepost!();
+    }
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final Color? iconColor;
-  final VoidCallback onTap;
+class _PostTypePill extends StatelessWidget {
+  final bool isProduct;
 
-  const _ActionButton({
-    required this.icon,
-    this.iconColor,
-    required this.onTap,
-  });
+  const _PostTypePill({required this.isProduct});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultColor =
-        isDark ? AppColors.inverseOnSurface : AppColors.onSurface;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Icon(
-          icon,
-          color: iconColor ?? defaultColor,
-          size: 24,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        gradient: isProduct ? AppColors.brutalistGradient : null,
+        color: isProduct ? null : AppColors.onSurface,
+        border: Border.all(color: AppColors.onSurface, width: 2),
+      ),
+      child: Text(
+        isProduct ? 'VENDA' : 'SOCIAL',
+        style: const TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+          color: Colors.white,
         ),
       ),
     );
@@ -471,188 +429,3 @@ class _PriceTag extends StatelessWidget {
   }
 }
 
-class _FullScreenImage extends StatelessWidget {
-  final String imageUrl;
-  final VoidCallback onClose;
-
-  const _FullScreenImage({
-    required this.imageUrl,
-    required this.onClose,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onClose,
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null &&
-            details.primaryVelocity!.abs() > 300) {
-          onClose();
-        }
-      },
-      child: Container(
-        color: Colors.transparent,
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              right: 16,
-              child: GestureDetector(
-                onTap: onClose,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.onSurface,
-                    border: Border.all(
-                        color: AppColors.surfaceContainerLowest, width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 32,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: AppColors.onSurface.withAlpha(179),
-                  child: Text(
-                    'SWIPE TO CLOSE',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.1,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ShareBottomSheet extends StatelessWidget {
-  final String userName;
-  final String? content;
-  final VoidCallback onShareExternal;
-  final VoidCallback onShareAsPost;
-
-  const _ShareBottomSheet({
-    required this.userName,
-    this.content,
-    required this.onShareExternal,
-    required this.onShareAsPost,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.surfaceContainerDark
-            : AppColors.surfaceContainerLowest,
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              color: AppColors.outline,
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'COMPARTILHAR POST',
-                style: TextStyle(
-                  fontFamily: 'SpaceGrotesk',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color:
-                      isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: Icon(
-                Icons.link,
-                color:
-                    isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-              ),
-              title: Text(
-                'Compartilhar externamente',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  color:
-                      isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-                ),
-              ),
-              subtitle: Text(
-                'WhatsApp, Instagram, etc.',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  color: AppColors.outline,
-                  fontSize: 12,
-                ),
-              ),
-              onTap: onShareExternal,
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.article_outlined,
-                color:
-                    isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-              ),
-              title: Text(
-                'Compartilhar no perfil',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  color:
-                      isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-                ),
-              ),
-              subtitle: Text(
-                'Criar post com "Compartilhado de @$userName"',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  color: AppColors.outline,
-                  fontSize: 12,
-                ),
-              ),
-              onTap: onShareAsPost,
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-}

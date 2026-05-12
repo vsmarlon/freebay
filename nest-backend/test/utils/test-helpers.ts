@@ -6,7 +6,7 @@ import * as bcrypt from 'bcryptjs';
  * Create a mock ConfigService for testing
  */
 export function createMockConfigService(): ConfigService {
-  const config = new Map<string, any>([
+  const config = new Map<string, string | undefined>([
     ['DATABASE_URL', process.env.DATABASE_URL],
     ['REDIS_URL', process.env.REDIS_URL],
     ['JWT_SECRET', process.env.JWT_SECRET],
@@ -16,7 +16,7 @@ export function createMockConfigService(): ConfigService {
   ]);
 
   return {
-    get: (key: string, defaultValue?: any) => config.get(key) ?? defaultValue,
+    get: (key: string, defaultValue?: string) => config.get(key) ?? defaultValue,
   } as ConfigService;
 }
 

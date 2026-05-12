@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/features/auth/presentation/pages/splash_page.dart';
 import 'package:freebay/features/auth/presentation/pages/login_page.dart';
 import 'package:freebay/features/auth/presentation/pages/register_page.dart';
+import 'package:freebay/features/auth/presentation/pages/forgot_password_page.dart';
+import 'package:freebay/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_details_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_search_page.dart';
@@ -30,7 +32,6 @@ import 'package:freebay/features/profile/presentation/pages/followers_page.dart'
 import 'package:freebay/features/profile/presentation/pages/following_page.dart';
 import 'package:freebay/features/profile/presentation/pages/favorites_page.dart';
 import 'package:freebay/features/profile/presentation/pages/saved_posts_page.dart';
-import 'package:freebay/features/profile/presentation/pages/wishlist_page.dart';
 import 'package:freebay/features/profile/presentation/pages/purchases_page.dart';
 import 'package:freebay/features/profile/presentation/pages/payment_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_page.dart';
@@ -101,6 +102,25 @@ final GoRouter appRouter = GoRouter(
         state: state,
         child: const RegisterPage(),
       ),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      pageBuilder: (context, state) => _buildPageWithSlideTransition(
+        context: context,
+        state: state,
+        child: const ForgotPasswordPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      pageBuilder: (context, state) {
+        final token = state.uri.queryParameters['token'] ?? '';
+        return _buildPageWithSlideTransition(
+          context: context,
+          state: state,
+          child: ResetPasswordPage(token: token),
+        );
+      },
     ),
     GoRoute(
       path: '/create-post',
@@ -265,10 +285,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/profile/saved',
       builder: (context, state) => const SavedPostsPage(),
-    ),
-    GoRoute(
-      path: '/profile/wishlist',
-      builder: (context, state) => const WishlistPage(),
     ),
     GoRoute(
       path: '/profile/purchases',

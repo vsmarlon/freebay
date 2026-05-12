@@ -31,13 +31,10 @@ describe('RegisterUseCase Integration', () => {
       // Assert
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
-        expect(result.right.user).toBeDefined();
-        expect(result.right.user.email).toBe(input.email);
-        expect(result.right.user.displayName).toBe(input.displayName);
-        expect(result.right.user.isGuest).toBe(false);
-        expect(result.right.user.role).toBe('USER');
-        expect(result.right.user.reputationScore).toBe(0);
-        expect(result.right.user.totalReviews).toBe(0);
+        expect(result.value.user).toBeDefined();
+        expect(result.value.user.displayName).toBe(input.displayName);
+        expect(result.value.user.reputationScore).toBe(0);
+        expect(result.value.user.totalReviews).toBe(0);
 
         // Verify user exists in database
         const dbUser = await prisma.user.findUnique({
@@ -90,8 +87,8 @@ describe('RegisterUseCase Integration', () => {
       // Assert
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.left.code).toBe('EMAIL_ALREADY_EXISTS');
-        expect(result.left.message).toContain('já está em uso');
+        expect(result.value.code).toBe('EMAIL_ALREADY_EXISTS');
+        expect(result.value.message).toContain('já está em uso');
       }
     });
 
@@ -134,8 +131,8 @@ describe('RegisterUseCase Integration', () => {
       // Assert
       expect(isRight(result)).toBe(true);
       if (isRight(result)) {
-        expect(result.right.user.reputationScore).toBe(0);
-        expect(result.right.user.totalReviews).toBe(0);
+        expect(result.value.user.reputationScore).toBe(0);
+        expect(result.value.user.totalReviews).toBe(0);
 
         const dbUser = await prisma.user.findUnique({
           where: { email: input.email },

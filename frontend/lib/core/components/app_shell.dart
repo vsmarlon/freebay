@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/product/presentation/pages/product_list_page.dart';
 import 'package:freebay/features/wallet/presentation/pages/wallet_page.dart';
@@ -74,7 +75,6 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _getSelectedIndex(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (_pageController.hasClients &&
         _pageController.page?.round() != selectedIndex) {
@@ -109,7 +109,6 @@ class _AppShellState extends State<AppShell> {
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) =>
             _onDestinationSelected(context, index),
-        isDark: isDark,
       ),
       floatingActionButton: (selectedIndex == 0 || selectedIndex == 1)
           ? _CreateProductFab(onTap: () => context.push('/products/create'))
@@ -121,12 +120,10 @@ class _AppShellState extends State<AppShell> {
 class _BrutalistNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
-  final bool isDark;
 
   const _BrutalistNavBar({
     required this.selectedIndex,
     required this.onDestinationSelected,
-    required this.isDark,
   });
 
   @override
@@ -134,7 +131,7 @@ class _BrutalistNavBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color:
-            isDark ? AppColors.surfaceDark : AppColors.surfaceContainerLowest,
+            context.isDark ? AppColors.surfaceDark : AppColors.surfaceContainerLowest,
         border: Border(
           top: BorderSide(
             color: AppColors.onSurface,
@@ -154,7 +151,6 @@ class _BrutalistNavBar extends StatelessWidget {
                 label: 'HOME',
                 isSelected: selectedIndex == 0,
                 onTap: () => onDestinationSelected(0),
-                isDark: isDark,
               ),
               _NavItem(
                 icon: Icons.search,
@@ -162,7 +158,6 @@ class _BrutalistNavBar extends StatelessWidget {
                 label: 'SEARCH',
                 isSelected: selectedIndex == 1,
                 onTap: () => onDestinationSelected(1),
-                isDark: isDark,
               ),
               _NavItem(
                 icon: Icons.account_balance_wallet_outlined,
@@ -170,7 +165,6 @@ class _BrutalistNavBar extends StatelessWidget {
                 label: 'WALLET',
                 isSelected: selectedIndex == 2,
                 onTap: () => onDestinationSelected(2),
-                isDark: isDark,
                 isWallet: true,
               ),
               _NavItem(
@@ -179,7 +173,6 @@ class _BrutalistNavBar extends StatelessWidget {
                 label: 'CHAT',
                 isSelected: selectedIndex == 3,
                 onTap: () => onDestinationSelected(3),
-                isDark: isDark,
               ),
               _NavItem(
                 icon: Icons.person_outline,
@@ -187,7 +180,6 @@ class _BrutalistNavBar extends StatelessWidget {
                 label: 'PERFIL',
                 isSelected: selectedIndex == 4,
                 onTap: () => onDestinationSelected(4),
-                isDark: isDark,
               ),
             ],
           ),
@@ -203,7 +195,6 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
-  final bool isDark;
   final bool isWallet;
 
   const _NavItem({
@@ -212,12 +203,12 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
-    required this.isDark,
     this.isWallet = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
     return Expanded(
       child: GestureDetector(
         onTap: () {

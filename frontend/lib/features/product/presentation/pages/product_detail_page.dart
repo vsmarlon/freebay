@@ -4,11 +4,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
-import 'package:freebay/features/wishlist/presentation/providers/wishlist_provider.dart';
 import '../../data/entities/product_entity.dart';
 import '../controllers/product_controller.dart';
 
@@ -19,30 +19,26 @@ class ProductDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final productAsync = ref.watch(productByIdProvider(productId));
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       body: productAsync.when(
-        data: (product) => _buildContent(context, ref, product, isDark),
-        loading: () => _buildLoadingSkeleton(context, isDark),
-        error: (err, _) => _buildError(context, ref, err, isDark),
+        data: (product) => _buildContent(context, ref, product),
+        loading: () => _buildLoadingSkeleton(context),
+        error: (err, stack) => _buildError(context, ref, err, stack),
       ),
     );
   }
 
   Widget _buildContent(
-      BuildContext context, WidgetRef ref, ProductEntity product, bool isDark) {
+      BuildContext context, WidgetRef ref, ProductEntity product) {
+    final isDark = context.isDark;
     final priceFormatted = CurrencyUtils.formatCents(product.price);
     final conditionLabel = product.condition == 'NEW' ? 'NOVO' : 'USADO';
     final favoriteAsync = ref.watch(isFavoritedProvider(product.id));
-    final wishlistAsync = ref.watch(isInWishlistProvider(product.id));
     final favoritesState = ref.watch(favoritesProvider);
-    final wishlistState = ref.watch(wishlistProvider);
     final isFavorited = favoritesState.isFavorited(product.id) || (favoriteAsync.value ?? false);
-    final isInWishlist = wishlistState.isInWishlist(product.id) || (wishlistAsync.value ?? false);
 
     return Scaffold(
       backgroundColor:
@@ -87,8 +83,8 @@ class ProductDetailPage extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
-                      decoration: const BoxDecoration(
-                        color: Colors.black54,
+                      decoration: BoxDecoration(
+                        color: AppColors.black.withValues(alpha: 0.54),
                         borderRadius: BorderRadius.zero,
                       ),
                       child: const Row(
@@ -143,27 +139,23 @@ class ProductDetailPage extends ConsumerWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isInWishlist ? Icons.bookmark : Icons.bookmark_border,
-                    color: isInWishlist
+                    isFavorited ? Icons.bookmark : Icons.bookmark_border,
+                    color: isFavorited
                         ? AppColors.primaryPurple
                         : (isDark ? Colors.white : Colors.black),
                   ),
                 ),
                 onPressed: () async {
-                  final ok = await ref.read(wishlistProvider.notifier).toggleWishlist(product.id);
-                  if (!context.mounted) {
-                    return;
-                  }
+                  final ok = await ref.read(favoritesProvider.notifier).toggleFavorite(product.id);
+                  if (!context.mounted) return;
                   if (!ok) {
-                    AppSnackbar.error(context, 'Não foi possível atualizar a wishlist');
+                    AppSnackbar.error(context, 'Não foi possível atualizar os favoritos');
                     return;
                   }
-                  final nowInWishlist = ref.read(wishlistProvider).isInWishlist(product.id);
+                  final nowFav = ref.read(favoritesProvider).isFavorited(product.id);
                   AppSnackbar.success(
                     context,
-                    nowInWishlist
-                        ? 'Produto adicionado à wishlist'
-                        : 'Produto removido da wishlist',
+                    nowFav ? 'Produto adicionado aos favoritos' : 'Produto removido dos favoritos',
                   );
                 },
               ),
@@ -401,17 +393,17 @@ class ProductDetailPage extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
                       border: Border.all(
-                        color: AppColors.onSurface,
+                        color: isDark ? AppColors.white : AppColors.onSurface,
                         width: 1,
                       ),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Adicionar',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w600,
-                          color: AppColors.onSurface,
+                          color: isDark ? AppColors.white : AppColors.onSurface,
                         ),
                       ),
                     ),
@@ -434,7 +426,8 @@ class ProductDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoadingSkeleton(BuildContext context, bool isDark) {
+  Widget _buildLoadingSkeleton(BuildContext context) {
+    final isDark = context.isDark;
     return CustomScrollView(
       slivers: [
         SliverAppBar(
@@ -498,7 +491,8 @@ class ProductDetailPage extends ConsumerWidget {
   }
 
   Widget _buildError(
-      BuildContext context, WidgetRef ref, Object err, bool isDark) {
+      BuildContext context, WidgetRef ref, Object err, StackTrace? stack) {
+    final isDark = context.isDark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),

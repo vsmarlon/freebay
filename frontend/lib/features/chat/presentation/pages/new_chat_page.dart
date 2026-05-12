@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
@@ -130,21 +131,20 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final searchState = ref.watch(userSearchProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Nova Conversa',
           style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
@@ -72,14 +73,13 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final isDark = context.isDark;
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
+        color: context.surfaceMidColor,
         borderRadius: BorderRadius.zero,
       ),
       child: SafeArea(

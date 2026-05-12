@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/components/app_button.dart';
 import '../../../../core/components/app_text_field.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/theme_extension.dart';
 import '../controllers/auth_controller.dart';
 import '../../data/entities/user_entity.dart';
 
@@ -41,7 +42,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutCubic,
+      curve: Curves.linear,
     ));
     _animationController.forward();
   }
@@ -67,7 +68,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authState = ref.watch(authControllerProvider);
 
     ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
@@ -82,11 +82,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
     });
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Entrar'),
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
+        backgroundColor: context.appBarColor,
         elevation: 0,
       ),
       body: FadeTransition(
@@ -106,7 +105,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       'assets/freebay-textonly.png',
                       height: 56,
                       fit: BoxFit.contain,
-                      color: isDark ? AppColors.white : AppColors.primaryPurple,
+                      color: context.isDark ? AppColors.white : AppColors.primaryPurple,
                     ),
                     const SizedBox(height: 32),
                     AppTextField(
@@ -152,8 +151,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         Text(
                           'Manter logado',
                           style: TextStyle(
-                            color:
-                                isDark ? AppColors.white : AppColors.darkGray,
+                            color: context.textPrimary,
                           ),
                         ),
                       ],
@@ -161,16 +159,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                     Align(
                       alignment: Alignment.centerRight,
                       child: InkWell(
-                        onTap: () {},
+                        onTap: () => context.push('/forgot-password'),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 6),
                           child: Text(
                             'Esqueceu a senha?',
                             style: TextStyle(
-                              color: isDark
-                                  ? AppColors.primaryPurpleLight
-                                  : AppColors.primaryPurple,
+                              color: AppColors.primaryPurple,
                             ),
                           ),
                         ),
@@ -208,9 +204,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         child: Text(
                           'Entrar como convidado',
                           style: TextStyle(
-                            color: isDark
-                                ? AppColors.mediumGray
-                                : AppColors.mediumGray,
+                            color: AppColors.mediumGray,
                             fontSize: 14,
                           ),
                           textAlign: TextAlign.center,
@@ -224,8 +218,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         Text(
                           'Não tem conta? ',
                           style: TextStyle(
-                            color:
-                                isDark ? AppColors.white : AppColors.darkGray,
+                            color: context.textPrimary,
                           ),
                         ),
                         InkWell(
@@ -236,9 +229,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             child: Text(
                               'Criar conta',
                               style: TextStyle(
-                                color: isDark
-                                    ? AppColors.primaryPurpleLight
-                                    : AppColors.primaryPurple,
+                                color: AppColors.primaryPurple,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

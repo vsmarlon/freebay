@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CreateOrderUseCase, ConfirmDeliveryUseCase } from './order.usecase';
 import { PrismaOrderRepository } from '../repositories/order.repository';
 import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
 
 describe('CreateOrderUseCase', () => {
   let sut: CreateOrderUseCase;
@@ -45,7 +45,7 @@ describe('CreateOrderUseCase', () => {
       providers: [
         CreateOrderUseCase,
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaClient, useValue: mockPrisma },
       ],
     }).compile();
 
@@ -130,7 +130,7 @@ describe('ConfirmDeliveryUseCase', () => {
       providers: [
         ConfirmDeliveryUseCase,
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaClient, useValue: mockPrisma },
       ],
     }).compile();
 
@@ -311,7 +311,7 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
       providers: [
         CreateOrderUseCase,
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: PrismaClient, useValue: mockPrisma },
       ],
     }).compile();
 

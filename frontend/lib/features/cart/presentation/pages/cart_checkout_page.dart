@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
@@ -17,12 +18,6 @@ class CartCheckoutPage extends ConsumerStatefulWidget {
 }
 
 class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _taxIdController = TextEditingController();
-  final _emailController = TextEditingController();
-
-  bool _didPrefill = false;
   bool _isSubmitting = false;
   CartCheckoutEntity? _checkout;
 
@@ -35,34 +30,18 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _taxIdController.dispose();
-    _emailController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final state = ref.watch(cartProvider);
     final cart = state.cart;
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull;
 
-    if (!_didPrefill && user != null) {
-      _nameController.text = user.displayNameOrDefault;
-      _emailController.text = user.email ?? '';
-      _didPrefill = true;
-    }
-
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Checkout do carrinho'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -147,65 +126,39 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                             );
                           }),
                           const SizedBox(height: 16),
-                          Text(
-                            'DADOS DO PAGADOR',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? AppColors.onPrimaryContainer
-                                  : AppColors.primary,
+                          if (!(user?.hasCpf ?? false))
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainerHighest,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Adicione seu CPF no perfil antes de comprar.',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 13,
+                                        color: isDark ? AppColors.white : AppColors.darkGray,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  InkWell(
+                                    onTap: () => context.push('/profile/edit'),
+                                    child: const Text(
+                                      'Adicionar',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.primaryContainer,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                _buildInput(
-                                  controller: _nameController,
-                                  hint: 'Nome completo',
-                                  isDark: isDark,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Informe o nome';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                _buildInput(
-                                  controller: _emailController,
-                                  hint: 'Email',
-                                  isDark: isDark,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty ||
-                                        !value.contains('@')) {
-                                      return 'Informe um email valido';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                _buildInput(
-                                  controller: _taxIdController,
-                                  hint: 'CPF ou CNPJ',
-                                  isDark: isDark,
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    final digits =
-                                        (value ?? '').replaceAll(RegExp(r'\D'), '');
-                                    if (digits.length < 11 || digits.length > 14) {
-                                      return 'Informe um CPF ou CNPJ valido';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -442,65 +395,12 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
     );
   }
 
-  Widget _buildInput({
-    required TextEditingController controller,
-    required String hint,
-    required bool isDark,
-    required String? Function(String?) validator,
-    TextInputType? keyboardType,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: TextStyle(
-        fontFamily: 'Inter',
-        color: isDark ? AppColors.white : AppColors.onSurface,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          fontFamily: 'Inter',
-          color: isDark ? AppColors.mediumGray : AppColors.onSurfaceVariant,
-        ),
-        filled: true,
-        fillColor: isDark
-            ? AppColors.surfaceContainerLowDark
-            : AppColors.surfaceContainerLowest,
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.outline),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.primaryContainer, width: 2),
-        ),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.error),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.error, width: 2),
-        ),
-      ),
-    );
-  }
-
   Future<void> _submitCheckout(BuildContext context) async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
     setState(() {
       _isSubmitting = true;
     });
 
-    final result = await ref.read(cartServiceProvider).checkoutCart(
-          customerName: _nameController.text.trim(),
-          customerTaxId: _taxIdController.text.replaceAll(RegExp(r'\D'), ''),
-          customerEmail: _emailController.text.trim(),
-        );
+    final result = await ref.read(cartServiceProvider).checkoutCart();
 
     result.fold(
       (failure) {

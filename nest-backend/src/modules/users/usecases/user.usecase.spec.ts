@@ -3,12 +3,14 @@ import { GetProfileUseCase, GetUserStatsUseCase, UpdateProfileUseCase, FollowUse
 import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
 import { FollowRepository } from '../repositories/follow.repository';
 import { BlockRepository } from '../repositories/block.repository';
+import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
 
 jest.mock('@/modules/auth/repositories/prisma-user.repository');
 jest.mock('../repositories/follow.repository');
 jest.mock('../repositories/block.repository');
+jest.mock('@/modules/orders/repositories/order.repository');
 jest.mock('@/shared/infra/prisma/prisma.service');
 
 const mockUserRepository = {
@@ -38,6 +40,11 @@ const mockPrisma = {
   order: {
     count: jest.fn(),
   },
+};
+
+const mockOrderRepository = {
+  countBySellerId: jest.fn(),
+  countByBuyerId: jest.fn(),
 };
 
 describe('Users UseCases', () => {
@@ -79,6 +86,7 @@ describe('Users UseCases', () => {
         { provide: PrismaUserRepository, useValue: mockUserRepository },
         { provide: FollowRepository, useValue: mockFollowRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
@@ -123,9 +131,8 @@ describe('Users UseCases', () => {
 
   describe('GetUserStatsUseCase', () => {
     it('should return user stats', async () => {
-      mockPrisma.order.count
-        .mockResolvedValueOnce(5)
-        .mockResolvedValueOnce(3);
+      mockOrderRepository.countBySellerId.mockResolvedValue(5);
+      mockOrderRepository.countByBuyerId.mockResolvedValue(3);
       mockFollowRepository.getFollowersCount.mockResolvedValue(100);
       mockFollowRepository.getFollowingCount.mockResolvedValue(50);
 

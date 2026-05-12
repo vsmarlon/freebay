@@ -11,6 +11,7 @@ export interface UserResponse {
   reputationScore: number;
   totalReviews: number;
   createdAt: Date;
+  hasCpf: boolean;
 }
 
 export interface UserStatsResponse {
@@ -66,4 +67,5 @@ export const toUserResponse = (user: User): UserResponse => ({
   reputationScore: user.reputationScore,
   totalReviews: user.totalReviews,
   createdAt: user.createdAt,
+  hasCpf: !!user.cpf,
 });

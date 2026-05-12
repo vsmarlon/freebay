@@ -2,7 +2,9 @@ import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
@@ -143,48 +145,46 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Comentários',
           style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
         ),
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
+        backgroundColor: context.surfaceMidColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),
       ),
       body: Column(
         children: [
-          _buildNewCommentInput(isDark),
+          _buildNewCommentInput(),
           const SizedBox(height: 2),
-          Expanded(child: _buildBody(isDark)),
+          Expanded(child: _buildBody(context)),
         ],
       ),
     );
   }
 
-  Widget _buildNewCommentInput(bool isDark) {
+  Widget _buildNewCommentInput() {
+    final isDark = context.isDark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: isDark ? AppColors.surfaceDark : AppColors.white,
+      color: context.surfaceMidColor,
       child: Row(
         children: [
           Container(
             width: 32,
             height: 32,
-            color: isDark ? AppColors.backgroundDark : AppColors.lightGray,
+            color: context.isDark ? AppColors.backgroundDark : AppColors.lightGray,
             child: const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
           ),
           const SizedBox(width: 10),
@@ -244,14 +244,15 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     );
   }
 
-  Widget _buildBody(bool isDark) {
+  Widget _buildBody(BuildContext context) {
+    final isDark = context.isDark;
     if (_isLoading && _comments.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primaryPurple),
       );
     }
-    if (_error != null && _comments.isEmpty) return _buildError(isDark);
-    if (_comments.isEmpty) return _buildEmpty(isDark);
+    if (_error != null && _comments.isEmpty) return _buildError(context);
+    if (_comments.isEmpty) return _buildEmpty(context);
 
     return RefreshIndicator(
       color: AppColors.primaryPurple,
@@ -430,7 +431,8 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     );
   }
 
-  Widget _buildError(bool isDark) {
+  Widget _buildError(BuildContext context) {
+    final isDark = context.isDark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -468,32 +470,11 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     );
   }
 
-  Widget _buildEmpty(bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.chat_bubble_outline,
-            size: 48,
-            color: AppColors.mediumGray,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Nenhum comentário ainda',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.darkGray,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Seja o primeiro a comentar!',
-            style: TextStyle(color: AppColors.mediumGray),
-          ),
-        ],
-      ),
+  Widget _buildEmpty(BuildContext context) {
+    return const EmptyState(
+      icon: Icons.chat_bubble_outline,
+      title: 'NENHUM COMENTÁRIO',
+      subtitle: 'Seja o primeiro a comentar!',
     );
   }
 

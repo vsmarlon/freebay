@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_colors.dart';
+import '../theme/theme_extension.dart';
 
 enum AppAvatarSize {
   small(32),
@@ -25,8 +26,6 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -35,12 +34,10 @@ class UserAvatar extends StatelessWidget {
           height: size.value,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+            color: context.surfaceMidColor,
             border: Border.all(
               color: isVerified
-                  ? (isDark
-                      ? AppColors.primaryPurpleLight
-                      : AppColors.primaryPurple)
+                  ? AppColors.primaryPurple
                   : AppColors.mediumGray.withValues(alpha: 0.2),
               width: 2,
             ),
@@ -50,11 +47,11 @@ class UserAvatar extends StatelessWidget {
                 ? CachedNetworkImage(
                     imageUrl: imageUrl!,
                     fit: BoxFit.cover,
-                    placeholder: (context, url) => _buildPlaceholder(isDark),
+                    placeholder: (context, url) => _buildPlaceholder(),
                     errorWidget: (context, url, error) =>
-                        _buildPlaceholder(isDark),
+                        _buildPlaceholder(),
                   )
-                : _buildPlaceholder(isDark),
+                : _buildPlaceholder(),
           ),
         ),
         if (isVerified)
@@ -64,14 +61,12 @@ class UserAvatar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.white,
+                color: context.surfaceColor,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.verified,
-                color: isDark
-                    ? AppColors.primaryPurpleLight
-                    : AppColors.primaryPurple,
+                color: AppColors.primaryPurple,
                 size: size == AppAvatarSize.small ? 12 : 16,
               ),
             ),
@@ -80,9 +75,9 @@ class UserAvatar extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder(bool isDark) {
+  Widget _buildPlaceholder() {
     return Icon(Icons.person,
-        color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+        color: AppColors.mediumGray,
         size: size.value * 0.5);
   }
 }

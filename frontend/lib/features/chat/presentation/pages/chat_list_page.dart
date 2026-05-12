@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
@@ -71,20 +73,19 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull;
     final isGuest = user == null || user.isGuest;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text(
           'Mensagens',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
         ),
         backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
@@ -217,36 +218,12 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
 
   Widget _buildEmptyState(bool isDark, bool noData) {
     return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              noData ? Icons.chat_bubble_outline : Icons.search_off,
-              size: 64,
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              noData ? 'Sem conversas' : 'Nenhum resultado',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.darkGray,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              noData
-                  ? 'Crie uma conversa ou receba uma mensagem para visualizar aqui.'
-                  : 'Tente buscar por outro nome',
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      child: EmptyState(
+        icon: noData ? Icons.chat_bubble_outline : Icons.search_off,
+        title: noData ? 'SEM CONVERSAS' : 'NENHUM RESULTADO',
+        subtitle: noData
+            ? 'Crie uma conversa ou receba uma mensagem para visualizar aqui.'
+            : 'Tente buscar por outro nome',
       ),
     );
   }
@@ -363,8 +340,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
       BuildContext context, bool isDark, ChatEntity chat, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: Duration(milliseconds: 300 + (index * 50)),
-      curve: Curves.easeOutCubic,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.linear,
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(30 * (1 - value), 0),

@@ -13,7 +13,18 @@ import { randomUUID } from 'crypto';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
 import { GuestUseCase } from './usecases/guest.usecase';
-import { loginSchema, registerSchema, RegisterDTO, LoginDTO } from './dtos/auth.dto';
+import { ForgotPasswordUseCase } from './usecases/forgot-password.usecase';
+import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
+import {
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  RegisterDTO,
+  LoginDTO,
+  ForgotPasswordDTO,
+  ResetPasswordDTO,
+} from './dtos/auth.dto';
 import { ZodValidationPipe } from '@/shared/pipes/zod-validation.pipe';
 import { Public } from '@/shared/decorators/public.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
@@ -29,6 +40,8 @@ export class AuthController {
     private readonly registerUseCase: RegisterUseCase,
     private readonly loginUseCase: LoginUseCase,
     private readonly guestUseCase: GuestUseCase,
+    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
@@ -134,5 +147,27 @@ export class AuthController {
     }
 
     return { message: 'Logout realizado' };
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ZodValidationPipe(forgotPasswordSchema))
+  @Public()
+  async forgotPassword(@Body() body: ForgotPasswordDTO) {
+    await this.forgotPasswordUseCase.execute(body);
+    return { message: 'Se este e-mail estiver cadastrado, você receberá um link em breve.' };
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @UsePipes(new ZodValidationPipe(resetPasswordSchema))
+  @Public()
+  async resetPassword(@Body() body: ResetPasswordDTO) {
+    const result = await this.resetPasswordUseCase.execute(body);
+    if (result.isLeft()) {
+      const err = result.value;
+      return { statusCode: err.statusCode, code: err.code, message: err.message };
+    }
+    return { message: 'Senha redefinida com sucesso.' };
   }
 }

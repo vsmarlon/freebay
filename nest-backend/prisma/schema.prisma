@@ -91,6 +91,7 @@ model User {
   emailVerified   Boolean  @default(false)
   passwordHash    String
   cpfHash         String?  @unique
+  cpf             String?
   phone           String?
   phoneVerified   Boolean  @default(false)
   city            String?
@@ -125,7 +126,6 @@ model User {
   stories         Story[]
   commentLikes    CommentLike[]
   favorites       Favorite[]
-  wishlistItems   Wishlist[]
   cartItems       CartItem[]
   convosAsUser1   DirectConversation[] @relation("User1Convos")
   convosAsUser2   DirectConversation[] @relation("User2Convos")
@@ -173,7 +173,6 @@ model Product {
   images   ProductImage[]
   orders   Order[]
   favorites Favorite[]
-  wishlistItems Wishlist[]
   cartItems CartItem[]
 
   @@index([sellerId, createdAt])
@@ -411,20 +410,6 @@ model ChatMessage {
 }
 
 model Favorite {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, productId])
-  @@index([userId])
-  @@index([productId])
-}
-
-model Wishlist {
   id        String   @id @default(uuid())
   userId    String
   productId String

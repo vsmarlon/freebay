@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 
 class AppTextField extends StatefulWidget {
   final String label;
@@ -15,6 +16,7 @@ class AppTextField extends StatefulWidget {
   final int maxLines;
   final bool enabled;
   final void Function(String)? onChanged;
+  final void Function(String)? onFieldSubmitted;
   final FocusNode? focusNode;
 
   const AppTextField({
@@ -32,6 +34,7 @@ class AppTextField extends StatefulWidget {
     this.maxLines = 1,
     this.enabled = true,
     this.onChanged,
+    this.onFieldSubmitted,
     this.focusNode,
   });
 
@@ -82,14 +85,12 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     Widget? effectiveSuffixIcon = widget.suffixIcon;
     if (widget.showPasswordToggle && widget.obscureText) {
       effectiveSuffixIcon = IconButton(
         icon: Icon(
           _obscureText ? Icons.visibility_off : Icons.visibility,
-          color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+          color: AppColors.mediumGray,
         ),
         onPressed: () {
           setState(() {
@@ -107,20 +108,20 @@ class _AppTextFieldState extends State<AppTextField> {
       maxLines: widget.showPasswordToggle ? 1 : widget.maxLines,
       enabled: widget.enabled,
       onChanged: widget.onChanged,
+      onFieldSubmitted: widget.onFieldSubmitted,
       focusNode: _focusNode,
       style: TextStyle(
-        color: isDark ? AppColors.white : AppColors.darkGray,
+        color: context.textPrimary,
       ),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
         prefixIcon: widget.prefixIcon != null
-            ? Icon(widget.prefixIcon,
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray)
+            ? Icon(widget.prefixIcon, color: AppColors.mediumGray)
             : null,
         suffixIcon: effectiveSuffixIcon,
         filled: true,
-        fillColor: isDark ? AppColors.surfaceDark : AppColors.white,
+        fillColor: context.surfaceMidColor,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/orders/data/services/order_service.dart';
@@ -42,7 +43,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final query = GoRouterState.of(context).uri.queryParameters;
     final source = query['source'];
     final productId = query['productId'];
@@ -73,14 +74,15 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         ),
       ),
       body: isCartCheckout
-          ? _buildCartUnavailable(context, isDark)
+          ? _buildCartUnavailable(context)
           : productId == null
-              ? _buildInvalidState(context, isDark)
-              : _buildProductCheckout(context, productId, isDark),
+              ? _buildInvalidState(context)
+              : _buildProductCheckout(context, productId),
     );
   }
 
-  Widget _buildCartUnavailable(BuildContext context, bool isDark) {
+  Widget _buildCartUnavailable(BuildContext context) {
+    final isDark = context.isDark;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -151,7 +153,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     );
   }
 
-  Widget _buildInvalidState(BuildContext context, bool isDark) {
+  Widget _buildInvalidState(BuildContext context) {
+    final isDark = context.isDark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -170,24 +173,24 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   Widget _buildProductCheckout(
     BuildContext context,
     String productId,
-    bool isDark,
   ) {
     final productAsync = ref.watch(productByIdProvider(productId));
 
     return productAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => _buildInvalidState(context, isDark),
+      error: (_, __) => _buildInvalidState(context),
       data: (product) {
         if (_pixPayment != null) {
-          return _buildPixState(context, product, isDark, _pixPayment!);
+          return _buildPixState(context, product, _pixPayment!);
         }
 
-        return _buildCheckoutForm(context, product, isDark);
+        return _buildCheckoutForm(context, product);
       },
     );
   }
 
-  Widget _buildCheckoutForm(BuildContext context, ProductEntity product, bool isDark) {
+  Widget _buildCheckoutForm(BuildContext context, ProductEntity product) {
+    final isDark = context.isDark;
     final formattedPrice = CurrencyUtils.formatCents(product.price);
 
     return ListView(
@@ -241,12 +244,11 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildLabel(isDark, 'DADOS DO PAGADOR'),
+              _buildLabel('DADOS DO PAGADOR'),
               const SizedBox(height: 12),
               _buildInput(
                 controller: _nameController,
                 hint: 'Nome completo',
-                isDark: isDark,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Informe o nome';
@@ -258,7 +260,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               _buildInput(
                 controller: _emailController,
                 hint: 'Email',
-                isDark: isDark,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty || !value.contains('@')) {
@@ -271,7 +272,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               _buildInput(
                 controller: _taxIdController,
                 hint: 'CPF ou CNPJ',
-                isDark: isDark,
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
@@ -326,9 +326,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   Widget _buildPixState(
     BuildContext context,
     ProductEntity product,
-    bool isDark,
     PixPaymentEntity pixPayment,
   ) {
+    final isDark = context.isDark;
     final expiresAt =
         '${pixPayment.expiresAt.day.toString().padLeft(2, '0')}/${pixPayment.expiresAt.month.toString().padLeft(2, '0')} ${pixPayment.expiresAt.hour.toString().padLeft(2, '0')}:${pixPayment.expiresAt.minute.toString().padLeft(2, '0')}';
 
@@ -372,7 +372,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           ),
         ),
         const SizedBox(height: 24),
-        _buildLabel(isDark, 'CODIGO PIX'),
+        _buildLabel('CODIGO PIX'),
         const SizedBox(height: 12),
         Container(
           color: isDark ? AppColors.surfaceContainerLowDark : AppColors.surfaceContainerLowest,
@@ -437,7 +437,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     );
   }
 
-  Widget _buildLabel(bool isDark, String text) {
+  Widget _buildLabel(String text) {
+    final isDark = context.isDark;
     return Text(
       text,
       style: TextStyle(
@@ -452,10 +453,10 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   Widget _buildInput({
     required TextEditingController controller,
     required String hint,
-    required bool isDark,
     required String? Function(String?) validator,
     TextInputType? keyboardType,
   }) {
+    final isDark = context.isDark;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,

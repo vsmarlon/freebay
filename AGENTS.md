@@ -249,10 +249,12 @@ describe('RegisterUseCase', () => {
 
 | Color | Hex | Usage |
 |-------|-----|-------|
-| Primary Purple | `#7C3AED` | Brand, CTAs, headers |
-| Emerald Green | `#10B981` | Balance, success, positive |
+| Primary Magenta | `#8A1083` | Brand, CTAs, headers — used sparingly ("a laser, not a paint bucket") |
+| Gradient (buttons) | `#660062 → #8A1083` | Signature CTA gradient |
+| Surface hierarchy | `#F9F9F9 → #F3F3F3 → #EEEEEE → #E2E2E2` | Tonal depth (no shadows) |
 | Dark Gray | `#1F2937` | Text, dark backgrounds |
-| Light Gray | `#F9FAFB` | Light backgrounds |
+
+See `freebay-design-system` skill for the full "Digital Brutalist" rules (0px radius, no shadows, Space Grotesk + Inter).
 
 **Dark Mode:** Required. Implement dark theme variant of all colors.
 
@@ -262,7 +264,24 @@ describe('RegisterUseCase', () => {
 lib/
 ├── core/
 │   ├── theme/           # Colors, typography, spacing, dark mode
-│   ├── components/      # Design System (AppButton, AppTextField, etc.)
+│   ├── components/      # Design System primitives (see below)
+```
+
+### Design System Primitives (Use First!)
+
+Before implementing any UI pattern, check if a primitive exists in `lib/core/components/`:
+
+| Pattern | Primitive |
+|---------|-----------|
+| Container with 2px onSurface border | `BrutalistBox` |
+| Filter/segment chip | `BrutalistFilterChip` |
+| Bottom sheet | `showBrutalistSheet()` |
+| Empty/error state | `EmptyState` |
+| Section heading ("FEED") | `SectionTitle` |
+| Menu list item | `MenuListTile` |
+| Stats column | `StatColumn` |
+
+**DO NOT inline these patterns.** If a variant is needed, extend the primitive, don't copy-paste.
 │   └── router/         # go_router configuration
 ├── features/
 │   ├── auth/           # Login, register

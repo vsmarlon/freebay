@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 
 class UserSearchList extends StatelessWidget {
@@ -21,23 +22,21 @@ class UserSearchList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (users.isEmpty && !isLoading) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.person_search,
               size: 64,
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+              color: AppColors.mediumGray,
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Nenhum usuário encontrado',
               style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                color: AppColors.mediumGray,
                 fontSize: 16,
               ),
             ),
@@ -101,8 +100,6 @@ class _UserSearchItemState extends State<_UserSearchItem> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return InkWell(
       onTap: () => context.push('/user/${widget.user.id}'),
       child: Padding(
@@ -119,7 +116,7 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                         fit: BoxFit.cover,
                       )
                     : null,
-                color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+                color: context.surfaceMidColor,
               ),
               child: widget.user.avatarUrl == null
                   ? Center(
@@ -142,8 +139,7 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                           widget.user.displayName,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color:
-                                isDark ? AppColors.white : AppColors.darkGray,
+                            color: context.textPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -161,11 +157,9 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                   if (widget.user.bio != null && widget.user.bio!.isNotEmpty)
                     Text(
                       widget.user.bio!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
-                        color: isDark
-                            ? AppColors.mediumGray
-                            : AppColors.mediumGray,
+                        color: AppColors.mediumGray,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -173,10 +167,9 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                   const SizedBox(height: 4),
                   Text(
                     '${widget.user.followersCount} seguidores',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                      color: AppColors.mediumGray,
                     ),
                   ),
                 ],

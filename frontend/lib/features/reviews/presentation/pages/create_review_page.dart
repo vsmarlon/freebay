@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/reviews/data/services/review_service.dart';
 import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.dart';
@@ -88,19 +89,18 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final isBuyerReviewing = widget.reviewType == 'BUYER_REVIEWING_SELLER';
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surface,
+      backgroundColor: context.surfaceMidColor,
       appBar: AppBar(
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.surface,
+        backgroundColor: context.surfaceMidColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.close,
-            color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),

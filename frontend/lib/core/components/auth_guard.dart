@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
 class AuthGuard extends ConsumerWidget {
@@ -27,8 +28,6 @@ class AuthGuard extends ConsumerWidget {
   }
 
   Widget _buildWithSkeleton(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Stack(
       children: [
         AbsorbPointer(
@@ -50,7 +49,7 @@ class AuthGuard extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.white,
+              color: context.surfaceColor,
               boxShadow: [
                 BoxShadow(
                   color: AppColors.primaryContainer.withValues(alpha: 0.08),
@@ -63,7 +62,7 @@ class AuthGuard extends ConsumerWidget {
               children: [
                 Icon(
                   _getFeatureIcon(),
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+                  color: context.textPrimary,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -75,7 +74,7 @@ class AuthGuard extends ConsumerWidget {
                         'Faça login para acessar $featureName',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
+                          color: context.textPrimary,
                         ),
                       ),
                       Text(

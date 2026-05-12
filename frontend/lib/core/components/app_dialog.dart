@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 
 class AppDialog extends StatelessWidget {
   final String? logoAsset;
@@ -132,10 +133,8 @@ class AppDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? AppColors.surfaceContainerDark
-        : AppColors.surfaceContainerLowest;
+    final isDark = context.isDark;
+    final backgroundColor = context.surfaceColor;
     final borderColor = AppColors.onSurface;
 
     return Center(
@@ -271,7 +270,6 @@ class AppDialog extends StatelessWidget {
                 onDismiss?.call();
               },
               isPrimary: false,
-              isDark: isDark,
             ),
           ),
           if (hasOk) const SizedBox(width: 12),
@@ -286,7 +284,6 @@ class AppDialog extends StatelessWidget {
                 onOk?.call();
               },
               isPrimary: true,
-              isDark: isDark,
               isError: isError,
               isSuccess: isSuccess,
             ),
@@ -300,10 +297,10 @@ class AppDialog extends StatelessWidget {
     required String text,
     required VoidCallback onPressed,
     required bool isPrimary,
-    required bool isDark,
     bool isError = false,
     bool isSuccess = false,
   }) {
+    final isDark = context.isDark;
     Color backgroundColor;
     Color textColor;
 

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 
@@ -17,29 +18,25 @@ class _CartPageState extends ConsumerState<CartPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(cartProvider.notifier).loadCart();
-    });
+    ref.read(cartProvider.notifier).loadCart();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final state = ref.watch(cartProvider);
     final cart = state.cart;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: Text('Carrinho (${cart.totalItems})'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),
@@ -301,20 +298,19 @@ class _QuantityButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       child: Container(
         width: 28,
         height: 28,
         color: onTap == null
-            ? (isDark ? AppColors.surfaceContainerDark : AppColors.lightGray)
+            ? context.surfaceColor
             : AppColors.primaryContainer,
         child: Icon(
           icon,
           size: 16,
           color: onTap == null
-              ? (isDark ? AppColors.mediumGray : AppColors.mediumGray)
+              ? AppColors.mediumGray
               : AppColors.white,
         ),
       ),

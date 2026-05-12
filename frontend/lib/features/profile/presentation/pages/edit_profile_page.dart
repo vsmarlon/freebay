@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
@@ -18,6 +20,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _bioController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
+  final _cpfController = TextEditingController();
   bool _isLoading = false;
 
   @override
@@ -42,6 +45,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _bioController.dispose();
     _cityController.dispose();
     _stateController.dispose();
+    _cpfController.dispose();
     super.dispose();
   }
 
@@ -52,6 +56,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
     try {
       final repository = ref.read(profileRepositoryProvider);
+      final cpfDigits = _cpfController.text.replaceAll(RegExp(r'\D'), '');
       final result = await repository.updateProfile(
         displayName: _displayNameController.text.trim(),
         bio: _bioController.text.trim().isEmpty
@@ -63,6 +68,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         state: _stateController.text.trim().isEmpty
             ? null
             : _stateController.text.trim(),
+        cpf: cpfDigits.isEmpty ? null : cpfDigits,
       );
 
       result.fold(
@@ -86,21 +92,19 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final profileAsync = ref.watch(profileFutureProvider('me'));
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       appBar: AppBar(
         title: const Text('Editar perfil'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+        backgroundColor: context.appBarColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
           onPressed: () => context.pop(),
         ),
@@ -231,6 +235,56 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       borderSide: BorderSide.none,
                     ),
                   ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Text(
+                      'CPF / CNPJ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.white : AppColors.darkGray,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      color: AppColors.primaryContainer,
+                      child: const Text(
+                        'Obrigatório para compras',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _cpfController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(14)],
+                  decoration: InputDecoration(
+                    hintText: 'Somente números (CPF: 11 dígitos, CNPJ: 14)',
+                    filled: true,
+                    fillColor:
+                        isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.zero,
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return null;
+                    final digits = value.replaceAll(RegExp(r'\D'), '');
+                    if (digits.length != 11 && digits.length != 14) {
+                      return 'CPF deve ter 11 dígitos, CNPJ 14 dígitos';
+                    }
+                    return null;
+                  },
                 ),
               ],
             ),

@@ -14,6 +14,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
 import { FollowRepository } from './repositories/follow.repository';
 import { BlockRepository } from './repositories/block.repository';
+import { GetUserStatsUseCase } from './usecases/user.usecase';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { updateProfileSchema, UpdateProfileDTO, UpdateFcmTokenDTO } from './dtos/user.dto';
@@ -30,6 +31,7 @@ export class UsersController {
     private readonly userRepository: PrismaUserRepository,
     private readonly followRepository: FollowRepository,
     private readonly blockRepository: BlockRepository,
+    private readonly getUserStatsUseCase: GetUserStatsUseCase,
   ) {}
 
   @Get('me')
@@ -46,15 +48,7 @@ export class UsersController {
   @Get('me/stats')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
   async getMyStats(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const [salesCount, purchasesCount, followersCount, followingCount] = await Promise.all([
-      this.prisma.order.count({ where: { sellerId: userId } }),
-      this.prisma.order.count({ where: { buyerId: userId } }),
-      this.followRepository.getFollowersCount(userId),
-      this.followRepository.getFollowingCount(userId),
-    ]);
-
-    return { salesCount, purchasesCount, followersCount, followingCount };
+    return this.getUserStatsUseCase.execute({ userId: user.userId });
   }
 
   @Patch('me')
@@ -66,7 +60,9 @@ export class UsersController {
       return left(new AppError('VALIDATION_ERROR', parsed.error.issues[0]?.message || 'Validation failed'));
     }
 
-    const updated = await this.userRepository.update(userId, parsed.data);
+    const data = { ...parsed.data };
+    if (data.cpf) data.cpf = data.cpf.replace(/\D/g, '');
+    const updated = await this.userRepository.update(userId, data);
     return toUserResponse(updated);
   }
 
