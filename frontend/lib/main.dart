@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/theme_provider.dart';
 import 'shared/config/app_config.dart';
 import 'shared/services/http_client.dart';
 import 'shared/services/notification_service.dart';
+import 'core/components/spacing.dart';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +30,40 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.initialize();
 
-  runApp(const ProviderScope(child: FreeBayApp()));
+  ErrorWidget.builder = (details) {
+    return Material(
+      color: AppColors.surfaceContainerLowest,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Color(0xFF8A1083)),
+              Spacing.vMd,
+              Text(
+                'Algo deu errado',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              Spacing.vSm,
+              Text(
+                details.exception.toString(),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
+
+  runZonedGuarded(
+    () => runApp(const ProviderScope(child: FreeBayApp())),
+    (error, stack) {
+      debugPrint('[FATAL] Uncaught error: $error\n$stack');
+    },
+  );
 }
 
 class FreeBayApp extends ConsumerStatefulWidget {

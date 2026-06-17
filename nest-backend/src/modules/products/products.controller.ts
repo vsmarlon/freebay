@@ -14,19 +14,22 @@ import {
   UseInterceptors,
   Logger,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CreateProductUseCase, DeleteProductUseCase, UpdateProductUseCase } from './usecases/product.usecase';
-import { CreateProductDTO, UpdateProductDTO, createProductSchema, updateProductSchema } from './dtos/product.dto';
+import { CreateProductDTO, UpdateProductDTO } from './dtos/product.dto';
 import { PrismaProductRepository } from './repositories/product.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { ZodValidationPipe } from '@/shared/pipes/zod-validation.pipe';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
+import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
+import { validateImageFile } from '@/shared/utils/image-upload.utils';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   private readonly logger = new Logger(ProductsController.name);
@@ -39,6 +42,18 @@ export class ProductsController {
   ) {}
 
   @Get()
+  @ApiDoc({
+    summary: 'List products',
+    description: 'Search and filter products with cursor pagination',
+    queries: [
+      { name: 'cursor', required: false, description: 'Pagination cursor' },
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+      { name: 'search', required: false, description: 'Search query' },
+      { name: 'category', required: false, description: 'Category UUID filter' },
+      { name: 'minPrice', required: false, description: 'Minimum price in cents' },
+      { name: 'maxPrice', required: false, description: 'Maximum price in cents' },
+    ],
+  })
   async findAll(
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
@@ -57,15 +72,20 @@ export class ProductsController {
     });
 
     return {
-        products,
-        nextCursor:
-          products.length === (limit ? parseInt(limit) : 20)
-            ? products[products.length - 1]?.id
-            : null,
-      };
+      products,
+      nextCursor:
+        products.length === (limit ? parseInt(limit) : 20)
+          ? products[products.length - 1]?.id
+          : null,
+    };
   }
 
   @Get(':id')
+  @ApiDoc({
+    summary: 'Get product by ID',
+    params: [{ name: 'id', description: 'Product UUID' }],
+    errors: [{ status: 404, description: 'Product not found' }],
+  })
   async findOne(@Param('id') id: string) {
     const product = await this.productRepository.findById(id);
     if (!product) {
@@ -83,14 +103,27 @@ export class ProductsController {
     }),
   )
   @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Create a product',
+    description: 'Creates a new product listing with image',
+    bodyType: CreateProductDTO,
+    auth: true,
+    responseStatus: 201,
+  })
   async create(
     @CurrentUser() user: AuthUser,
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Body(new ZodValidationPipe(createProductSchema)) body: CreateProductDTO,
+    @Body() body: CreateProductDTO,
   ) {
     if (!file) {
       this.logger.warn('Create product called without image file');
       return left(new AppError('BAD_REQUEST', 'Imagem do produto é obrigatória'));
+    }
+
+    const mimeError = validateImageFile(file);
+    if (mimeError) {
+      return left(new AppError('BAD_REQUEST', mimeError));
     }
 
     this.logger.debug(
@@ -119,6 +152,13 @@ export class ProductsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Delete a product',
+    auth: true,
+    params: [{ name: 'id', description: 'Product UUID' }],
+    errors: [{ status: 404, description: 'Product not found' }],
+  })
   async delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const result = await this.deleteProductUseCase.execute({ productId: id, userId });
@@ -132,10 +172,18 @@ export class ProductsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Update a product',
+    bodyType: UpdateProductDTO,
+    auth: true,
+    params: [{ name: 'id', description: 'Product UUID' }],
+    errors: [{ status: 404, description: 'Product not found' }],
+  })
   async update(
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(updateProductSchema)) body: UpdateProductDTO,
+    @Body() body: UpdateProductDTO,
   ) {
     const result = await this.updateProductUseCase.execute({
       productId: id,
@@ -152,6 +200,12 @@ export class ProductsController {
 
   @Get('mine/all')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get my products',
+    description: 'Returns all products for the current authenticated user',
+    auth: true,
+  })
   async findMyProducts(@CurrentUser() user: AuthUser) {
     const sellerId = user.userId;
     const products = await this.productRepository.findBySellerId(sellerId);

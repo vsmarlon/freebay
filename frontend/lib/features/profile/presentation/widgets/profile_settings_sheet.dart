@@ -6,6 +6,7 @@ import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 final biometryServiceProvider = Provider<BiometryService>((ref) {
   return BiometryService();
@@ -105,14 +106,14 @@ void showProfileSettingsSheet(BuildContext context) {
                               .setEnabled(value);
                           consumerRef.invalidate(biometryServiceProvider);
                         },
-                        activeTrackColor: AppColors.primaryPurple,
+                        activeTrackColor: AppColors.primaryContainer,
                       );
                     }
                     return const SizedBox.shrink();
                   },
                 ),
               ),
-              const SizedBox(height: 16),
+              Spacing.vMd,
               ListTile(
                 leading: Icon(
                   Icons.edit,
@@ -159,7 +160,7 @@ void showProfileSettingsSheet(BuildContext context) {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              Spacing.vMd,
             ],
           );
         },

@@ -7,6 +7,8 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class CommentsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -166,6 +168,10 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
       ),
       body: Column(
         children: [
+          BrutalistBreadcrumb(items: [
+            BreadcrumbItem(label: 'Post', onTap: () => context.pop()),
+            const BreadcrumbItem(label: 'Comentários'),
+          ]),
           _buildNewCommentInput(),
           const SizedBox(height: 2),
           Expanded(child: _buildBody(context)),
@@ -217,7 +223,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
               onSubmitted: _sendComment,
             ),
           ),
-          const SizedBox(width: 8),
+          Spacing.hSm,
           GestureDetector(
             onTap: _isSending
                 ? null
@@ -233,10 +239,10 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                       ),
                     )
-                  : const Icon(Icons.send, color: Colors.white, size: 16),
+                  : const Icon(Icons.send, color: AppColors.onPrimary, size: 16),
             ),
           ),
         ],
@@ -248,14 +254,14 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     final isDark = context.isDark;
     if (_isLoading && _comments.isEmpty) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryPurple),
+        child: CircularProgressIndicator(color: AppColors.primaryContainer),
       );
     }
     if (_error != null && _comments.isEmpty) return _buildError(context);
     if (_comments.isEmpty) return _buildEmpty(context);
 
     return RefreshIndicator(
-      color: AppColors.primaryPurple,
+      color: AppColors.primaryContainer,
       onRefresh: () => _loadComments(refresh: true),
       child: TreeView.simple<CommentEntity>(
         key: ValueKey(_treeVersion),
@@ -297,7 +303,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                   color: AppColors.mediumGray,
                 ),
               ),
-              const SizedBox(width: 8),
+              Spacing.hSm,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +350,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                           fontWeight: FontWeight.w600,
                           color: isReplying
                               ? AppColors.error
-                              : AppColors.primaryPurple,
+                              : AppColors.primaryContainer,
                         ),
                       ),
                     ),
@@ -354,7 +360,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
             ],
           ),
           if (isReplying) ...[
-            const SizedBox(height: 8),
+            Spacing.vSm,
             Padding(
               padding: const EdgeInsets.only(left: 38),
               child: Row(
@@ -412,12 +418,12 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                               height: 14,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.onPrimary,
                               ),
                             )
                           : const Icon(
                               Icons.send,
-                              color: Colors.white,
+                              color: AppColors.onPrimary,
                               size: 14,
                             ),
                     ),
@@ -438,14 +444,14 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           Text(
             _error ?? 'Erro ao carregar comentários',
             style: TextStyle(
               color: isDark ? AppColors.white : AppColors.darkGray,
             ),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           InkWell(
             onTap: () => _loadComments(refresh: true),
             child: Container(

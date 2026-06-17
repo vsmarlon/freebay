@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -126,11 +128,11 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
             child: Text(
               'SYSTEM STATUS: ACTIVE',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.15,
-                color: Colors.white.withAlpha(102),
+                color: AppColors.onPrimary.withAlpha(102),
               ),
             ),
           ),
@@ -156,24 +158,24 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                   Text(
                     'THE MARKETPLACE REBUILT',
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: AppTypography.fontFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.3,
-                      color: Colors.white.withAlpha(179),
+                      color: AppColors.onPrimary.withAlpha(179),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  Spacing.vMd,
                   ShaderMask(
                     shaderCallback: (bounds) => LinearGradient(
-                      colors: [Colors.white, Colors.white.withAlpha(230)],
+                      colors: [AppColors.onPrimary, AppColors.onPrimary.withAlpha(230)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ).createShader(bounds),
                     child: Text(
                       'freebay',
                       style: TextStyle(
-                        fontFamily: 'SpaceGrotesk',
+                        fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 72,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -2,
@@ -181,26 +183,26 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                         foreground: Paint()
                           ..style = PaintingStyle.stroke
                           ..strokeWidth = 2
-                          ..color = Colors.white.withAlpha(204),
+                          ..color = AppColors.onPrimary.withAlpha(204),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vSm,
                   Text(
                     'TRADE YOUR WORLD',
                     style: TextStyle(
-                      fontFamily: 'SpaceGrotesk',
+                      fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.5,
-                      color: Colors.white.withAlpha(179),
+                      color: AppColors.onPrimary.withAlpha(179),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 48),
+          Spacing.vXxl,
           SlideTransition(
             position: _slideAnimation,
             child: FadeTransition(
@@ -215,7 +217,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               ),
             ),
           ),
-          const SizedBox(height: 48),
+          Spacing.vXxl,
           SlideTransition(
             position: _slideAnimation,
             child: FadeTransition(
@@ -234,13 +236,13 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
         const Expanded(child: _StatBlock(value: '0%', label: 'Trading Fees')),
         Container(
           width: 1, height: 40,
-          color: Colors.white.withAlpha(26),
+          color: AppColors.onPrimary.withAlpha(26),
           margin: const EdgeInsets.symmetric(horizontal: 16),
         ),
         const Expanded(child: _StatBlock(value: 'Instant', label: 'Verification')),
         Container(
           width: 1, height: 40,
-          color: Colors.white.withAlpha(26),
+          color: AppColors.onPrimary.withAlpha(26),
           margin: const EdgeInsets.symmetric(horizontal: 16),
         ),
         const Expanded(child: _StatBlock(value: 'Global', label: 'Reach Access')),
@@ -262,25 +264,25 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               decoration: BoxDecoration(
                 color: AppColors.primaryContainer.withAlpha(51),
                 border: Border.all(
-                  color: Colors.white.withAlpha(51),
+                  color: AppColors.onPrimary.withAlpha(51),
                   width: 1,
                 ),
               ),
               child: const Icon(
                 Icons.token,
                 size: 14,
-                color: Colors.white,
+                color: AppColors.onPrimary,
               ),
             ),
             const SizedBox(width: 12),
             Text(
               'v1.0.0',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.1,
-                color: Colors.white.withAlpha(77),
+                color: AppColors.onPrimary.withAlpha(77),
               ),
             ),
           ],
@@ -308,7 +310,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white
+      ..color = AppColors.onPrimary
       ..strokeWidth = 1;
 
     const gridSize = 40.0;
@@ -337,7 +339,7 @@ class _GridLines extends StatelessWidget {
           bottom: 0,
           child: Container(
             width: 1,
-            color: Colors.white.withAlpha(13),
+            color: AppColors.onPrimary.withAlpha(13),
           ),
         ),
         Positioned(
@@ -346,7 +348,7 @@ class _GridLines extends StatelessWidget {
           bottom: 0,
           child: Container(
             width: 1,
-            color: Colors.white.withAlpha(13),
+            color: AppColors.onPrimary.withAlpha(13),
           ),
         ),
         Positioned(
@@ -355,7 +357,7 @@ class _GridLines extends StatelessWidget {
           bottom: 0,
           child: Container(
             width: 1,
-            color: Colors.white.withAlpha(13),
+            color: AppColors.onPrimary.withAlpha(13),
           ),
         ),
         Positioned(
@@ -364,7 +366,7 @@ class _GridLines extends StatelessWidget {
           right: 0,
           child: Container(
             height: 1,
-            color: Colors.white.withAlpha(13),
+            color: AppColors.onPrimary.withAlpha(13),
           ),
         ),
         Positioned(
@@ -373,7 +375,7 @@ class _GridLines extends StatelessWidget {
           right: 0,
           child: Container(
             height: 1,
-            color: Colors.white.withAlpha(13),
+            color: AppColors.onPrimary.withAlpha(13),
           ),
         ),
       ],
@@ -420,9 +422,9 @@ class _BrutalistButtonState extends State<_BrutalistButton> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
           decoration: BoxDecoration(
-            color: _isPressed ? Colors.black : Colors.white,
+            color: _isPressed ? AppColors.onSurface : AppColors.onPrimary,
             border: Border.all(
-              color: _isPressed ? Colors.white : Colors.black,
+              color: _isPressed ? AppColors.onPrimary : AppColors.onSurface,
               width: 2,
             ),
           ),
@@ -432,17 +434,17 @@ class _BrutalistButtonState extends State<_BrutalistButton> {
               Text(
                 widget.label,
                 style: TextStyle(
-                  fontFamily: 'SpaceGrotesk',
+                  fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.1,
-                  color: _isPressed ? Colors.white : Colors.black,
+                  color: _isPressed ? AppColors.onPrimary : AppColors.onSurface,
                 ),
               ),
               Icon(
                 widget.icon,
                 size: 20,
-                color: _isPressed ? Colors.white : Colors.black,
+                color: _isPressed ? AppColors.onPrimary : AppColors.onSurface,
               ),
             ],
           ),
@@ -469,22 +471,22 @@ class _StatBlock extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: AppColors.onPrimary,
             height: 1,
           ),
         ),
-        const SizedBox(height: 4),
+        Spacing.vXs,
         Text(
           label.toUpperCase(),
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             fontSize: 10,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.1,
-            color: Colors.white.withAlpha(128),
+            color: AppColors.onPrimary.withAlpha(128),
           ),
         ),
       ],

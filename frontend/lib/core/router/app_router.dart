@@ -5,6 +5,7 @@ import 'package:freebay/features/auth/presentation/pages/splash_page.dart';
 import 'package:freebay/features/auth/presentation/pages/login_page.dart';
 import 'package:freebay/features/auth/presentation/pages/register_page.dart';
 import 'package:freebay/features/auth/presentation/pages/password_recovery_page.dart';
+import 'package:freebay/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_details_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_search_page.dart';
@@ -41,6 +42,9 @@ import 'package:freebay/features/reviews/presentation/pages/user_reviews_page.da
 import 'package:freebay/features/reviews/presentation/pages/create_review_page.dart';
 import 'package:freebay/features/cart/presentation/pages/cart_checkout_page.dart';
 import 'package:freebay/features/orders/presentation/pages/order_detail_page.dart';
+import 'package:freebay/features/dispute/presentation/pages/dispute_list_page.dart';
+import 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart';
+import 'package:freebay/features/dispute/presentation/pages/create_dispute_page.dart';
 import 'package:freebay/core/components/app_shell.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -108,6 +112,17 @@ final GoRouter appRouter = GoRouter(
         context: context,
         state: state,
         child: const PasswordRecoveryPage(),
+      ),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      pageBuilder: (context, state) => _buildPageWithSlideTransition(
+        context: context,
+        state: state,
+        child: ResetPasswordPage(
+          token: state.uri.queryParameters['token'] ?? '',
+          email: state.uri.queryParameters['email'] ?? '',
+        ),
       ),
     ),
     GoRoute(
@@ -331,6 +346,20 @@ final GoRouter appRouter = GoRouter(
           reviewType: extra['reviewType'] as String,
         );
       },
+    ),
+    GoRoute(
+      path: '/disputes',
+      builder: (context, state) => const DisputeListPage(),
+    ),
+    GoRoute(
+      path: '/disputes/:disputeId',
+      builder: (context, state) =>
+          DisputeDetailPage(disputeId: state.pathParameters['disputeId']!),
+    ),
+    GoRoute(
+      path: '/disputes/create/:orderId',
+      builder: (context, state) =>
+          CreateDisputePage(orderId: state.pathParameters['orderId']!),
     ),
     GoRoute(
       path: '/:path(.*)',

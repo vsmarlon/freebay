@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 Future<T?> showBrutalistSheet<T>({
   required BuildContext context,
@@ -64,19 +66,19 @@ class BrutalistSheetScaffold extends StatelessWidget {
                 ),
               ),
             ),
-            if (title != null) const SizedBox(height: 24),
+            if (title != null) Spacing.vLg,
           ],
           if (title != null) ...[
             Text(
               title!,
               style: TextStyle(
-                fontFamily: 'SpaceGrotesk',
+                fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: context.textPrimary,
               ),
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
           ],
           builder(context),
         ],

@@ -2,11 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/features/social/presentation/providers/post_search_provider.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class PostSearchPage extends ConsumerStatefulWidget {
   const PostSearchPage({super.key});
@@ -69,6 +72,10 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
       ),
       body: Column(
         children: [
+          BrutalistBreadcrumb(items: [
+            BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
+            const BreadcrumbItem(label: 'Buscar'),
+          ]),
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -108,13 +115,13 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                   isSelected: _selectedFilter == 'all',
                   onSelected: () => _onFilterChanged('all'),
                 ),
-                const SizedBox(width: 8),
+                Spacing.hSm,
                 _FilterChip(
                   label: 'Seguindo',
                   isSelected: _selectedFilter == 'following',
                   onSelected: () => _onFilterChanged('following'),
                 ),
-                const SizedBox(width: 8),
+                Spacing.hSm,
                 _FilterChip(
                   label: 'Seguidores',
                   isSelected: _selectedFilter == 'followers',
@@ -123,7 +130,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           Expanded(
             child: _buildContent(searchState),
           ),
@@ -133,27 +140,11 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
   }
 
   Widget _buildContent(PostSearchState state) {
-    final isDark = context.isDark;
     if (state.posts.isEmpty && !state.isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Nenhum post encontrado',
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
+      return const EmptyState(
+        icon: Icons.search_off,
+        title: 'NENHUM RESULTADO',
+        subtitle: 'Tente alterar os filtros ou buscar por outro termo.',
       );
     }
 
@@ -170,52 +161,61 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
         }
         return false;
       },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: state.posts.length + (state.isLoading ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == state.posts.length) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          final post = state.posts[index];
-          final likesCount = post.isLiked ? post.likesCount : post.likesCount;
-          final isLiked = post.isLiked;
-          return SocialPost(
-            userId: post.user.id,
-            userName: post.user.displayName,
-            userAvatarUrl: post.user.avatarUrl,
-            content: post.content,
-            imageUrl: post.imageUrl,
-            likesCount: likesCount,
-            commentsCount: post.commentsCount,
-            sharesCount: post.sharesCount,
-            isLiked: isLiked,
-            price: post.product?.price.toDouble(),
-            onTap: () => context.push('/post/${post.id}'),
-            onUserTap: () => context.push('/user/${post.user.id}'),
-            onLike: () async {
-              final repo = ref.read(socialRepositoryProvider);
-              if (post.isLiked) {
-                await repo.unlikePost(post.id);
-              } else {
-                await repo.likePost(post.id);
-              }
-              ref.read(postSearchProvider.notifier).search(
-                    query: state.query,
-                    filter: state.filter,
-                    refresh: true,
-                  );
-              return true;
-            },
-            onComment: () => context.push('/post/${post.id}/comments'),
-          );
+      child: RefreshIndicator(
+        onRefresh: () async {
+          ref.read(postSearchProvider.notifier).search(
+                query: state.query,
+                filter: state.filter,
+                refresh: true,
+              );
         },
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: state.posts.length + (state.isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == state.posts.length) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
+            final post = state.posts[index];
+            final likesCount = post.isLiked ? post.likesCount : post.likesCount;
+            final isLiked = post.isLiked;
+            return SocialPost(
+              userId: post.user.id,
+              userName: post.user.displayName,
+              userAvatarUrl: post.user.avatarUrl,
+              content: post.content,
+              imageUrl: post.imageUrl,
+              likesCount: likesCount,
+              commentsCount: post.commentsCount,
+              sharesCount: post.sharesCount,
+              isLiked: isLiked,
+              price: post.product?.price.toDouble(),
+              onTap: () => context.push('/post/${post.id}'),
+              onUserTap: () => context.push('/user/${post.user.id}'),
+              onLike: () async {
+                final repo = ref.read(socialRepositoryProvider);
+                if (post.isLiked) {
+                  await repo.unlikePost(post.id);
+                } else {
+                  await repo.likePost(post.id);
+                }
+                ref.read(postSearchProvider.notifier).search(
+                      query: state.query,
+                      filter: state.filter,
+                      refresh: true,
+                    );
+                return true;
+              },
+              onComment: () => context.push('/post/${post.id}/comments'),
+            );
+          },
+        ),
       ),
     );
   }
@@ -241,12 +241,12 @@ class _FilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryPurple.withValues(alpha: 0.2)
+              ? AppColors.primaryContainer.withValues(alpha: 0.2)
               : context.surfaceMidColor,
           borderRadius: BorderRadius.zero,
           border: Border.all(
             color: isSelected
-                ? AppColors.primaryPurple
+                ? AppColors.primaryContainer
                 : context.borderColor,
           ),
         ),
@@ -254,7 +254,7 @@ class _FilterChip extends StatelessWidget {
           label,
           style: TextStyle(
             color: isSelected
-                ? AppColors.primaryPurple
+                ? AppColors.primaryContainer
                 : (isDark ? AppColors.white : AppColors.darkGray),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),

@@ -1,23 +1,69 @@
-import { z } from 'zod';
+import { IsUUID, IsString, MinLength, IsIn } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Dispute, Order, User, Product, Prisma } from '@prisma/client';
+import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
-export const openDisputeSchema = z.object({
-  orderId: z.string().uuid(),
-  reason: z.string().min(1),
-});
-
-export type OpenDisputeInput = z.infer<typeof openDisputeSchema> & {
-  userId: string;
-};
-
-export interface OpenDisputeOutput {
-  id: string;
+export class OpenDisputeDTO {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  @IsUUID()
   orderId: string;
-  openedById: string;
+
+  @ApiProperty({ example: 'Produto não corresponde à descrição' })
+  @IsString()
+  @MinLength(1)
+  @SanitizeText()
   reason: string;
+}
+
+export class ResolveDisputeDTO {
+  @ApiProperty({ example: 'Buyer received refund' })
+  @IsString()
+  @MinLength(1)
+  @SanitizeText()
+  resolution: string;
+
+  @ApiProperty({ enum: ['BUYER', 'SELLER'] })
+  @IsIn(['BUYER', 'SELLER'])
+  winner: 'BUYER' | 'SELLER';
+}
+
+export class OpenDisputeOutput {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  id: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  orderId: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  openedById: string;
+
+  @ApiProperty({ example: 'Produto não corresponde à descrição' })
+  reason: string;
+
+  @ApiProperty({ example: 'OPEN' })
   status: string;
+
+  @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
   createdAt: Date;
+
+  @ApiProperty({ example: '2026-07-17T12:00:00.000Z' })
   expiresAt: Date;
+}
+
+export class SubmitEvidenceOutput {
+  @ApiProperty({ example: true })
+  submitted: boolean;
+}
+
+export class ResolveDisputeOutput {
+  @ApiProperty({ example: true })
+  resolved: boolean;
+}
+
+export interface OpenDisputeInput {
+  userId: string;
+  orderId: string;
+  reason: string;
 }
 
 export interface SubmitEvidenceInput {
@@ -26,18 +72,10 @@ export interface SubmitEvidenceInput {
   evidence: Prisma.InputJsonValue;
 }
 
-export interface SubmitEvidenceOutput {
-  submitted: boolean;
-}
-
 export interface ResolveDisputeInput {
   disputeId: string;
   resolution: string;
   winner: 'BUYER' | 'SELLER';
-}
-
-export interface ResolveDisputeOutput {
-  resolved: boolean;
 }
 
 export type GetDisputeOutput = Dispute & {

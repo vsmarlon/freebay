@@ -8,7 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';
+import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -20,9 +20,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   private userSockets = new Map<string, Set<string>>();
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private tokenValidator: JwtTokenValidatorService,
+  ) {}
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token || client.handshake.headers.authorization?.replace('Bearer ', '');
       if (!token) {
@@ -30,7 +32,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         return;
       }
 
-      const payload = this.jwtService.verify(token);
+      const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
       const userId = payload.userId;
 
       if (!this.userSockets.has(userId)) {

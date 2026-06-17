@@ -11,6 +11,8 @@ import 'package:freebay/features/orders/presentation/widgets/order_status_timeli
 import 'package:freebay/features/orders/presentation/widgets/escrow_status_card.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_actions.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -51,7 +53,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         title: Text(
           'Pedido #${widget.orderId.length > 8 ? widget.orderId.substring(0, 8) : widget.orderId}',
           style: const TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.onSurface,
@@ -80,17 +82,17 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               color: AppColors.error,
               size: 48,
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Text(
               state.error!,
               style: const TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
                 color: AppColors.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             _buildRetryButton(),
           ],
         ),
@@ -103,7 +105,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         child: Text(
           'Pedido não encontrado',
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             fontSize: 14,
             color: AppColors.onSurfaceVariant,
           ),
@@ -154,7 +156,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ),
             const SizedBox(height: 2),
             _buildOrderInfo(order),
-            const SizedBox(height: 48),
+            Spacing.vXxl,
           ],
         ),
       ),
@@ -179,7 +181,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               child: Text(
                 'Tentar novamente',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.onPrimary,
@@ -204,14 +206,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           const Text(
             'PRODUTO',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -239,7 +241,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                         color: AppColors.onSurfaceVariant,
                       ),
               ),
-              const SizedBox(width: 16),
+              Spacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +249,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     Text(
                       product?.title ?? 'Produto',
                       style: const TextStyle(
-                        fontFamily: 'SpaceGrotesk',
+                        fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onSurface,
@@ -255,7 +257,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    Spacing.vSm,
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -265,7 +267,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       child: Text(
                         order.formattedAmount,
                         style: const TextStyle(
-                          fontFamily: 'SpaceGrotesk',
+                          fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: AppColors.onSurface,
@@ -295,14 +297,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           Text(
             label,
             style: const TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           Row(
             children: [
               UserAvatar(
@@ -310,7 +312,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 isVerified: participant?.isVerified ?? false,
                 size: AppAvatarSize.medium,
               ),
-              const SizedBox(width: 16),
+              Spacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,14 +320,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     Text(
                       participant?.displayNameOrDefault ?? 'Usuário',
                       style: const TextStyle(
-                        fontFamily: 'SpaceGrotesk',
+                        fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onSurface,
                       ),
                     ),
                     if (participant?.isVerified == true) ...[
-                      const SizedBox(height: 4),
+                      Spacing.vXs,
                       Row(
                         children: [
                           const Icon(
@@ -333,11 +335,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                             color: AppColors.primaryContainer,
                             size: 14,
                           ),
-                          const SizedBox(width: 4),
+                          Spacing.hXs,
                           const Text(
                             'Verificado',
                             style: TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: AppTypography.fontFamily,
                               fontSize: 12,
                               color: AppColors.onSurfaceVariant,
                             ),
@@ -382,14 +384,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           const Text(
             'INFORMAÇÕES',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           _buildInfoRow('ID do pedido', order.id),
           const SizedBox(height: 12),
           _buildInfoRow(
@@ -417,7 +419,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           child: Text(
             label,
             style: const TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 14,
               color: AppColors.onSurfaceVariant,
             ),
@@ -428,7 +430,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           child: Text(
             value,
             style: const TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppColors.onSurface,
@@ -608,23 +610,23 @@ class _BrutalistDialog extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontFamily: 'SpaceGrotesk',
+                fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: AppColors.onSurface,
               ),
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Text(
               message,
               style: const TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
                 color: AppColors.onSurfaceVariant,
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             Container(
               height: 48,
               decoration: BoxDecoration(
@@ -639,7 +641,7 @@ class _BrutalistDialog extends StatelessWidget {
                     child: Text(
                       confirmLabel,
                       style: const TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: AppTypography.fontFamily,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onPrimary,
@@ -665,7 +667,7 @@ class _BrutalistDialog extends StatelessWidget {
                     child: Text(
                       cancelLabel,
                       style: const TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: AppTypography.fontFamily,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onSurface,

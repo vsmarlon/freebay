@@ -39,4 +39,8 @@ export class RedisService implements OnModuleDestroy {
     const result = await this.redis.exists(key);
     return result === 1;
   }
+
+  async ping(): Promise<string> {
+    return this.redis.ping();
+  }
 }

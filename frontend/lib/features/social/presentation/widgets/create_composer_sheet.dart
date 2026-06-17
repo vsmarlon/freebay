@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class CreateComposerSheet extends StatelessWidget {
   const CreateComposerSheet({super.key});
@@ -78,17 +80,17 @@ class _CreateComposerOption extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontFamily: 'SpaceGrotesk',
+                      fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: context.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  Spacing.vXs,
                   Text(
                     subtitle,
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: AppTypography.fontFamily,
                       fontSize: 13,
                       color: context.textSecondary,
                       height: 1.4,

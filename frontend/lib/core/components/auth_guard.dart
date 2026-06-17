@@ -4,6 +4,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class AuthGuard extends ConsumerWidget {
   final Widget child;
@@ -33,7 +35,7 @@ class AuthGuard extends ConsumerWidget {
         AbsorbPointer(
           child: ColorFiltered(
             colorFilter: ColorFilter.mode(
-              Colors.black.withValues(alpha: 0.5),
+              AppColors.onSurface.withValues(alpha: 0.5),
               BlendMode.srcOver,
             ),
             child: Opacity(
@@ -87,7 +89,7 @@ class AuthGuard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                Spacing.hSm,
                 Container(
                   decoration: const BoxDecoration(
                     gradient: AppColors.brutalistGradient,
@@ -101,8 +103,8 @@ class AuthGuard extends ConsumerWidget {
                         child: Text(
                           'Entrar',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Inter',
+                            color: AppColors.onPrimary,
+                            fontFamily: AppTypography.fontFamily,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),

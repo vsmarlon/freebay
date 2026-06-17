@@ -4,6 +4,7 @@ import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
 import { isLeft, isRight } from '@/shared/core/either';
 import { CreateOrderInput } from '../dtos/order.dto';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
 describe('CreateOrderUseCase Integration', () => {
   let sut: CreateOrderUseCase;
@@ -12,10 +13,10 @@ describe('CreateOrderUseCase Integration', () => {
   let productFactory: ProductFactory;
 
   beforeEach(() => {
-    orderRepository = new PrismaOrderRepository(prisma);
+    orderRepository = new PrismaOrderRepository(prisma as PrismaService);
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
-    sut = new CreateOrderUseCase(orderRepository, prisma);
+    sut = new CreateOrderUseCase(orderRepository, prisma as PrismaService);
   });
 
   describe('Business Rules', () => {

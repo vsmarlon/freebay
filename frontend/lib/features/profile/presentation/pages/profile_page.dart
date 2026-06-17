@@ -11,6 +11,7 @@ import 'package:freebay/features/profile/presentation/widgets/profile_menu_list.
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_stats_section.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_stories_sheet.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ProfilePage extends HookConsumerWidget {
   const ProfilePage({super.key});
@@ -79,18 +80,18 @@ class ProfilePage extends HookConsumerWidget {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryPurple,
-                            shape: BoxShape.circle,
+                            color: AppColors.primaryContainer,
+                            borderRadius: BorderRadius.zero,
                             border: Border.all(
                               color: context.isDark
                                   ? AppColors.surfaceDark
-                                  : AppColors.white,
+                                  : AppColors.onPrimary,
                               width: 2,
                             ),
                           ),
                           child: const Icon(
                             Icons.add,
-                            color: AppColors.white,
+                            color: AppColors.onPrimary,
                             size: 14,
                           ),
                         ),
@@ -98,7 +99,7 @@ class ProfilePage extends HookConsumerWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 Text(
                   user.displayNameOrDefault,
                   style: TextStyle(
@@ -108,7 +109,7 @@ class ProfilePage extends HookConsumerWidget {
                   ),
                 ),
                 if (user.city != null) ...[
-                  const SizedBox(height: 4),
+                  Spacing.vXs,
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -117,7 +118,7 @@ class ProfilePage extends HookConsumerWidget {
                         size: 16,
                         color: AppColors.mediumGray,
                       ),
-                      const SizedBox(width: 4),
+                      Spacing.hXs,
                       Text(
                         user.city!,
                         style: const TextStyle(
@@ -128,7 +129,7 @@ class ProfilePage extends HookConsumerWidget {
                     ],
                   ),
                 ],
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 if (user.bio != null)
                   Text(
                     user.bio!,
@@ -138,11 +139,11 @@ class ProfilePage extends HookConsumerWidget {
                       fontSize: 16,
                     ),
                   ),
-                const SizedBox(height: 32),
+                Spacing.vXl,
                 const ProfileStatsRow(),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 const ProfileFollowRow(),
-                const SizedBox(height: 32),
+                Spacing.vXl,
                 const ProfileMenuList(),
               ],
             ),
@@ -150,7 +151,7 @@ class ProfilePage extends HookConsumerWidget {
         },
         loading: () => Center(
           child: CircularProgressIndicator(
-              color: AppColors.primaryPurple),
+              color: AppColors.primaryContainer),
         ),
         error: (err, stack) => Center(
           child: Padding(
@@ -160,7 +161,7 @@ class ProfilePage extends HookConsumerWidget {
               children: [
                 const Icon(Icons.error_outline,
                     size: 48, color: AppColors.error),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 Text(
                   'Erro ao carregar perfil',
                   style: TextStyle(
@@ -169,7 +170,7 @@ class ProfilePage extends HookConsumerWidget {
                     color: context.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 const Text(
                   'Não foi possível carregar suas informações. Verifique sua conexão.',
                   textAlign: TextAlign.center,

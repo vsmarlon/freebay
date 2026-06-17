@@ -10,15 +10,18 @@ import {
   Logger,
   BadRequestException,
 } from '@nestjs/common';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { Public } from '@/shared/decorators/public.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { WebhookGuard } from '@/shared/guards/webhook.guard';
 import { CreatePixPaymentUseCase, ProcessWebhookUseCase } from './usecases/payment.usecase';
-import { ProcessWebhookInput } from './dtos/payment.dto';
+import { ProcessWebhookInput, CreatePixPaymentOutput } from './dtos/payment.dto';
+import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
+@ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {
   private readonly logger = new Logger(PaymentsController.name);
@@ -32,6 +35,18 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Create PIX payment',
+    description: 'Creates a PIX QR code for an order (rate limited: 5/min)',
+    auth: true,
+    responseStatus: 201,
+    responseType: CreatePixPaymentOutput,
+    params: [{ name: 'orderId', description: 'Order UUID' }],
+    errors: [
+      { status: 429, description: 'Too many requests' },
+    ],
+  })
   async createPixPayment(
     @Param('orderId') orderId: string,
     @CurrentUser() user: AuthUser,
@@ -52,9 +67,13 @@ export class PaymentsController {
 
   @Post('webhook')
   @Public()
-  @SkipThrottle()
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @UseGuards(WebhookGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiDoc({
+    summary: 'Payment webhook',
+    description: 'Receives payment status updates from the PIX provider',
+  })
   async handleWebhook(
     @Body() body: ProcessWebhookInput,
     @Headers('x-webhook-event') event?: string,

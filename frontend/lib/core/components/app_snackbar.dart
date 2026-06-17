@@ -12,10 +12,10 @@ class AppSnackbar {
     Duration duration = const Duration(seconds: 3),
   }) {
     final color = switch (type) {
-      AppSnackbarType.success => AppColors.accentGreen,
+      AppSnackbarType.success => AppColors.success,
       AppSnackbarType.error => AppColors.error,
       AppSnackbarType.warning => AppColors.warning,
-      AppSnackbarType.info => AppColors.primaryPurple,
+      AppSnackbarType.info => AppColors.primaryContainer,
     };
 
     final icon = switch (type) {

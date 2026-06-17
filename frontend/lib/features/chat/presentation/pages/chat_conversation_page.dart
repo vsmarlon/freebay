@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
@@ -147,15 +149,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Nenhuma mensagem ainda',
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.mediumGray
-                                : AppColors.mediumGray,
-                          ),
-                        ),
+                    ? const EmptyState(
+                        icon: Icons.chat_bubble_outline,
+                        title: 'NENHUMA MENSAGEM',
+                        subtitle: 'Envie a primeira mensagem para iniciar a conversa.',
                       )
                     : ListView.builder(
                         controller: _scrollController,
@@ -208,7 +205,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          const SizedBox(width: 8),
+          Spacing.hSm,
           InkWell(
             onTap: _isSending ? null : _sendMessage,
             child: Container(
@@ -224,10 +221,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AppColors.onPrimary,
                         ),
                       )
-                    : const Icon(Icons.send, color: Colors.white),
+                    : const Icon(Icons.send, color: AppColors.onPrimary),
               ),
             ),
           ),
@@ -257,7 +254,7 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isMe
-              ? AppColors.primaryPurple
+              ? AppColors.primaryContainer
               : (isDark ? AppColors.surfaceDark : AppColors.white),
           borderRadius: BorderRadius.zero,
         ),
@@ -265,7 +262,7 @@ class _MessageBubble extends StatelessWidget {
           content,
           style: TextStyle(
             color: isMe
-                ? Colors.white
+                ? AppColors.onPrimary
                 : (isDark ? AppColors.white : AppColors.darkGray),
           ),
         ),

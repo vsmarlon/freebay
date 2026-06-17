@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -13,6 +14,9 @@ import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
@@ -40,7 +44,7 @@ class CreateProductPage extends HookConsumerWidget {
         title: Text(
           'Novo anúncio',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
             color: isDark ? AppColors.white : AppColors.onSurface,
           ),
@@ -55,6 +59,11 @@ class CreateProductPage extends HookConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            BrutalistBreadcrumb(items: [
+              BreadcrumbItem(label: 'Produtos', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Novo Anúncio'),
+            ]),
+            Spacing.vMd,
             Container(
               color: isDark
                   ? AppColors.surfaceContainerDark
@@ -66,12 +75,12 @@ class CreateProductPage extends HookConsumerWidget {
                   Text(
                     'ANUNCIO SEPARADO DO FEED SOCIAL',
                     style: TextStyle(
-                      fontFamily: 'SpaceGrotesk',
+                      fontFamily: AppTypography.headlineFontFamily,
                       fontWeight: FontWeight.w700,
                       color: isDark ? AppColors.white : AppColors.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vSm,
                   Text(
                     'Use anuncios para vender com preco, categoria e imagem. Posts sociais continuam no feed, enquanto sua reputacao fica visivel no perfil e nas avaliacoes.',
                     style: TextStyle(
@@ -84,7 +93,7 @@ class CreateProductPage extends HookConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             _buildPreviewCard(
               context: context,
               title: titleController.text.trim(),
@@ -93,20 +102,20 @@ class CreateProductPage extends HookConsumerWidget {
               categoryName: selectedCategory?.name,
               imagePath: selectedImagePath.value,
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             AppTextField(
               controller: titleController,
               label: 'Título do anúncio',
               hint: 'Ex: iPhone 13 Pro Max 256GB',
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             AppTextField(
               controller: descriptionController,
               label: 'Descrição',
               hint: 'Detalhes do estado, acessórios, tempo de uso...',
               maxLines: 4,
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             AppTextField(
               controller: priceController,
               label: 'Preço',
@@ -122,7 +131,7 @@ class CreateProductPage extends HookConsumerWidget {
                 }
               },
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             categoriesAsync.when(
               data: (categories) => InkWell(
                 onTap: () => _showCategoryPicker(
@@ -138,7 +147,7 @@ class CreateProductPage extends HookConsumerWidget {
                   child: Row(
                     children: [
                       const Icon(Icons.category_outlined,
-                          color: AppColors.primaryPurple),
+                          color: AppColors.primaryContainer),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -148,7 +157,7 @@ class CreateProductPage extends HookConsumerWidget {
                             Text(
                               'Categoria',
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: AppTypography.fontFamily,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                                 color: isDark
@@ -156,13 +165,13 @@ class CreateProductPage extends HookConsumerWidget {
                                     : AppColors.primary,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            Spacing.vXs,
                             Text(
                               selectedCategory?.name ?? 'Selecionar categoria',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: AppTypography.fontFamily,
                                 color: isDark
                                     ? AppColors.white
                                     : AppColors.darkGray,
@@ -172,7 +181,7 @@ class CreateProductPage extends HookConsumerWidget {
                         ),
                       ),
                       const Icon(Icons.arrow_forward,
-                          color: AppColors.primaryPurple),
+                          color: AppColors.primaryContainer),
                     ],
                   ),
                 ),
@@ -191,7 +200,7 @@ class CreateProductPage extends HookConsumerWidget {
                       child: Text(
                         'Não foi possível carregar categorias agora.',
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: AppTypography.fontFamily,
                           color: isDark ? AppColors.white : AppColors.darkGray,
                         ),
                       ),
@@ -220,7 +229,7 @@ class CreateProductPage extends HookConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             InkWell(
               onTap: () async {
                 final picker = ImagePicker();
@@ -241,7 +250,7 @@ class CreateProductPage extends HookConsumerWidget {
                 child: Row(
                   children: [
                     const Icon(Icons.image_outlined,
-                        color: AppColors.primaryPurple),
+                        color: AppColors.primaryContainer),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -250,7 +259,7 @@ class CreateProductPage extends HookConsumerWidget {
                             : 'Imagem selecionada',
                         style: TextStyle(
                           color: isDark ? AppColors.white : AppColors.darkGray,
-                          fontFamily: 'Inter',
+                          fontFamily: AppTypography.fontFamily,
                         ),
                       ),
                     ),
@@ -258,16 +267,16 @@ class CreateProductPage extends HookConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             Text(
               'Condição',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontWeight: FontWeight.w700,
                 color: isDark ? AppColors.mediumGray : AppColors.darkGray,
               ),
             ),
-            const SizedBox(height: 8),
+            Spacing.vSm,
             Row(
               children: [
                 Expanded(
@@ -279,7 +288,7 @@ class CreateProductPage extends HookConsumerWidget {
                     onPressed: () => isNewProduct.value = true,
                   ),
                 ),
-                const SizedBox(width: 8),
+                Spacing.hSm,
                 Expanded(
                   child: AppButton(
                     label: 'Usado',
@@ -398,7 +407,7 @@ class CreateProductPage extends HookConsumerWidget {
           Text(
             'PREVIEW DO ANÚNCIO',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
@@ -438,7 +447,7 @@ class CreateProductPage extends HookConsumerWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontFamily: 'SpaceGrotesk',
+                          fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
                           color: isDark ? AppColors.white : AppColors.onSurface,
@@ -456,7 +465,7 @@ class CreateProductPage extends HookConsumerWidget {
                         child: Text(
                           pricePreview,
                           style: TextStyle(
-                            fontFamily: 'SpaceGrotesk',
+                            fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                             color: isDark ? AppColors.white : AppColors.onSurface,
@@ -467,7 +476,7 @@ class CreateProductPage extends HookConsumerWidget {
                       Text(
                         categoryName ?? 'Categoria obrigatória',
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: AppTypography.fontFamily,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: isDark
@@ -475,7 +484,7 @@ class CreateProductPage extends HookConsumerWidget {
                               : AppColors.primary,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      Spacing.vSm,
                       Text(
                         description.isEmpty
                             ? 'A descrição do produto aparece aqui.'
@@ -483,7 +492,7 @@ class CreateProductPage extends HookConsumerWidget {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: AppTypography.fontFamily,
                           color: isDark
                               ? AppColors.mediumGray
                               : AppColors.onSurfaceVariant,
@@ -555,7 +564,7 @@ class CreateProductPage extends HookConsumerWidget {
                   child: Text(
                     'ESCOLHER CATEGORIA',
                     style: TextStyle(
-                      fontFamily: 'SpaceGrotesk',
+                      fontFamily: AppTypography.headlineFontFamily,
                       fontWeight: FontWeight.w700,
                       color: isDark ? AppColors.white : AppColors.onSurface,
                     ),
@@ -586,7 +595,7 @@ class CreateProductPage extends HookConsumerWidget {
                         child: Text(
                           category.name,
                           style: TextStyle(
-                            fontFamily: 'Inter',
+                            fontFamily: AppTypography.fontFamily,
                             fontWeight:
                                 isSelected ? FontWeight.w700 : FontWeight.w500,
                             color:
@@ -595,7 +604,7 @@ class CreateProductPage extends HookConsumerWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(Icons.check, color: AppColors.primaryPurple),
+                        const Icon(Icons.check, color: AppColors.primaryContainer),
                     ],
                   ),
                 ),

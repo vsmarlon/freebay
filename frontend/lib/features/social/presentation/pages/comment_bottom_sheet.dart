@@ -4,6 +4,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class CommentBottomSheet extends ConsumerStatefulWidget {
   final PostEntity post;
@@ -128,7 +129,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                       minLines: 1,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  Spacing.hSm,
                   InkWell(
                     onTap: _isLoading ? null : _submitComment,
                     child: Container(
@@ -162,7 +163,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
           ],
         ),
       ),

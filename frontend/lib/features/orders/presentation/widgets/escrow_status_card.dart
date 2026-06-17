@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class EscrowStatusCard extends StatelessWidget {
   final EscrowStatus escrowStatus;
@@ -41,7 +43,7 @@ class EscrowStatusCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              Spacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,18 +51,18 @@ class EscrowStatusCard extends StatelessWidget {
                     const Text(
                       'PAGAMENTO',
                       style: TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: AppTypography.fontFamily,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 1.2,
                         color: AppColors.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    Spacing.vXs,
                     Text(
                       escrowStatus.label,
                       style: TextStyle(
-                        fontFamily: 'SpaceGrotesk',
+                        fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                         color: _getStatusColor(),
@@ -71,7 +73,7 @@ class EscrowStatusCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          Spacing.vLg,
           Container(
             color: AppColors.surfaceContainerLowest,
             padding: const EdgeInsets.all(16),
@@ -85,7 +87,7 @@ class EscrowStatusCard extends StatelessWidget {
                     '- ${CurrencyUtils.formatCents(platformFee)}',
                     valueColor: AppColors.error,
                   ),
-                  const SizedBox(height: 16),
+                  Spacing.vMd,
                   _buildRow(
                     'Você recebe',
                     CurrencyUtils.formatCents(sellerAmount),
@@ -96,11 +98,11 @@ class EscrowStatusCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           Text(
             _getStatusDescription(),
             style: const TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 14,
               color: AppColors.onSurfaceVariant,
               height: 1.5,
@@ -123,7 +125,7 @@ class EscrowStatusCard extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             fontSize: 14,
             fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
             color: AppColors.onSurfaceVariant,
@@ -132,7 +134,7 @@ class EscrowStatusCard extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontSize: isBold ? 18 : 14,
             fontWeight: FontWeight.w600,
             color: valueColor ?? AppColors.onSurface,

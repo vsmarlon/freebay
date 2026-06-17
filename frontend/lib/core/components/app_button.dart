@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 enum AppButtonVariant { primary, secondary, ghost, danger }
 
@@ -60,7 +61,7 @@ class AppButton extends StatelessWidget {
                       children: [
                         if (icon != null) ...[
                           Icon(icon, size: 20, color: foregroundColor),
-                          const SizedBox(width: 8),
+                          Spacing.hSm,
                         ],
                         Text(
                           label,

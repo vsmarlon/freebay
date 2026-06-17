@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/comment_input.dart';
@@ -14,9 +15,11 @@ import 'package:freebay/features/social/presentation/providers/reposts_provider.
 import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:animated_tree_view/animated_tree_view.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -119,6 +122,10 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
       ),
       body: Column(
         children: [
+          BrutalistBreadcrumb(items: [
+            BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
+            const BreadcrumbItem(label: 'Post'),
+          ]),
           Expanded(child: _buildBody(context, state)),
         ],
       ),
@@ -128,7 +135,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   Widget _buildBody(BuildContext context, PostDetailsState state) {
     if (state.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryPurple),
+        child: CircularProgressIndicator(color: AppColors.primaryContainer),
       );
     }
 
@@ -138,9 +145,9 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Text(state.error!, style: TextStyle(color: context.textPrimary)),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             InkWell(
               onTap: () =>
                   ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
@@ -321,15 +328,10 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           if (state.comments.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    'Nenhum comentário ainda. Seja o primeiro!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: context.textSecondary),
-                  ),
-                ),
+              child: const EmptyState(
+                icon: Icons.chat_bubble_outline,
+                title: 'NENHUM COMENTÁRIO',
+                subtitle: 'Seja o primeiro a comentar!',
               ),
             )
           else

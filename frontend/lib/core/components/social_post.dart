@@ -6,6 +6,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class SocialPost extends StatefulWidget {
   final String userId;
@@ -114,7 +115,7 @@ void _handleShareExternal() {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
-        barrierColor: Colors.black87,
+        barrierColor: AppColors.onSurface.withValues(alpha: 0.87),
         pageBuilder: (context, animation, secondaryAnimation) {
           return PostFullScreenImage(
             imageUrl: widget.imageUrl!,
@@ -227,7 +228,7 @@ void _handleShareExternal() {
           ),
           child: Text(
             widget.content ?? '',
-            style: AppTypography.bodyMedium.copyWith(color: Colors.white),
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.onPrimary),
           ),
         ),
         _buildActionsRow(),
@@ -267,13 +268,13 @@ void _handleShareExternal() {
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Icon(
                         Icons.person,
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                         size: 20,
                       ),
                     )
                   : const Icon(
                       Icons.person,
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                       size: 20,
                     ),
             ),
@@ -292,7 +293,7 @@ void _handleShareExternal() {
                         child: Text(
                           widget.userName,
                           style: TextStyle(
-                            fontFamily: 'SpaceGrotesk',
+                            fontFamily: AppTypography.headlineFontFamily,
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                             color: context.textPrimary,
@@ -302,7 +303,7 @@ void _handleShareExternal() {
                       ),
                     ),
                     if (widget.isVerified) ...[
-                      const SizedBox(width: 4),
+                      Spacing.hXs,
                       const Icon(
                         Icons.verified,
                         size: 14,
@@ -314,7 +315,7 @@ void _handleShareExternal() {
                 Text(
                   'TIME AGO',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.1,
@@ -391,11 +392,11 @@ class _PostTypePill extends StatelessWidget {
       child: Text(
         isProduct ? 'VENDA' : 'SOCIAL',
         style: const TextStyle(
-          fontFamily: 'Inter',
+          fontFamily: AppTypography.fontFamily,
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.6,
-          color: Colors.white,
+          color: AppColors.onPrimary,
         ),
       ),
     );
@@ -418,7 +419,7 @@ class _PriceTag extends StatelessWidget {
       child: Text(
         CurrencyUtils.formatReais(price),
         style: const TextStyle(
-          fontFamily: 'SpaceGrotesk',
+          fontFamily: AppTypography.headlineFontFamily,
           fontSize: 18,
           fontWeight: FontWeight.w800,
           color: AppColors.primaryContainer,

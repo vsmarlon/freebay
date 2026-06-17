@@ -1,8 +1,4 @@
-import { z } from 'zod';
-
-export const createPixPaymentSchema = z.object({});
-
-export type CreatePixPaymentDTO = z.infer<typeof createPixPaymentSchema>;
+import { ApiProperty } from '@nestjs/swagger';
 
 export interface CreatePixPaymentInput {
   orderId: string;
@@ -11,13 +7,6 @@ export interface CreatePixPaymentInput {
   customerTaxId?: string;
   customerEmail?: string;
   idempotencyKey?: string;
-}
-
-export interface CreatePixPaymentOutput {
-  orderId: string;
-  pixQrCode: string;
-  pixImage: string;
-  expiresAt: Date;
 }
 
 export interface ProcessWebhookInput {
@@ -35,4 +24,18 @@ export interface CreateWithdrawalInput {
 
 export interface CreateWithdrawalOutput {
   transferred: boolean;
+}
+
+export class CreatePixPaymentOutput {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  orderId: string;
+
+  @ApiProperty({ example: '00020126580014BR.GOV.BCB.PIX...' })
+  pixQrCode: string;
+
+  @ApiProperty({ example: 'data:image/png;base64,...' })
+  pixImage: string;
+
+  @ApiProperty({ example: '2026-06-17T13:00:00.000Z' })
+  expiresAt: Date;
 }

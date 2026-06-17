@@ -2,7 +2,10 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 // Create a dedicated Prisma client for testing with pg adapter
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  allowExitOnIdle: true,
+});
 const adapter = new PrismaPg(pool);
 export const prisma = new PrismaClient({
   adapter,
@@ -72,4 +75,5 @@ afterEach(async () => {
 
 afterAll(async () => {
   await prisma.$disconnect();
+  await pool.end();
 });

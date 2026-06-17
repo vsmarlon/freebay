@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_card.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
 
 class FavoritesPage extends ConsumerStatefulWidget {
@@ -69,7 +70,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                         'Você ainda não tem favoritos',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'SpaceGrotesk',
+                          fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: isDark ? AppColors.white : AppColors.darkGray,
@@ -80,7 +81,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                         'Toque no coração dos produtos para salvar aqui.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: AppTypography.fontFamily,
                           color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                         ),
                       ),

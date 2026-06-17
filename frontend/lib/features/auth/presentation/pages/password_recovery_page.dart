@@ -5,6 +5,7 @@ import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class PasswordRecoveryPage extends ConsumerStatefulWidget {
   const PasswordRecoveryPage({super.key});
@@ -88,7 +89,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                   prefixIcon: Icons.email_outlined,
                   validator: (v) => v == null || v.isEmpty ? 'Informe seu e-mail' : null,
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 if (_requested) ...[
                   AppTextField(
                     controller: _codeController,
@@ -98,7 +99,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                     prefixIcon: Icons.verified_outlined,
                     validator: (v) => v == null || v.length != 6 ? 'Informe o código de 6 dígitos' : null,
                   ),
-                  const SizedBox(height: 16),
+                  Spacing.vMd,
                   AppTextField(
                     controller: _passwordController,
                     label: 'Nova senha',
@@ -108,11 +109,11 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                     prefixIcon: Icons.lock_outline,
                     validator: (v) => v == null || v.length < 8 ? 'Senha muito curta' : null,
                   ),
-                  const SizedBox(height: 16),
+                  Spacing.vMd,
                 ],
                 if (_message != null) ...[
                   Text(_message!, textAlign: TextAlign.center, style: TextStyle(color: isDark ? AppColors.white : AppColors.darkGray)),
-                  const SizedBox(height: 16),
+                  Spacing.vMd,
                 ],
                 AppButton(
                   label: _requested ? 'Redefinir senha' : 'Enviar código',

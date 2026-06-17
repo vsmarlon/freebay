@@ -1,16 +1,54 @@
-import { z } from 'zod';
+import { IsUUID, IsString, MinLength, IsOptional, IsIn } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Report, ReportReason } from '@prisma/client';
+import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
-export const createReportSchema = z.object({
-  targetType: z.enum(['USER', 'POST']),
-  targetId: z.string().uuid(),
-  reason: z.string().min(1),
-  description: z.string().optional(),
-});
+export class CreateReportDTO {
+  @ApiProperty({ enum: ['USER', 'POST'] })
+  @IsIn(['USER', 'POST'])
+  targetType: 'USER' | 'POST';
 
-export type CreateReportInput = z.infer<typeof createReportSchema> & {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  @IsUUID()
+  targetId: string;
+
+  @ApiProperty({ example: 'SPAM' })
+  @IsString()
+  @MinLength(1)
+  @SanitizeText()
+  reason: string;
+
+  @ApiPropertyOptional({ example: 'Usuário está enviando mensagens de spam' })
+  @IsOptional()
+  @IsString()
+  @SanitizeText()
+  description?: string;
+}
+
+export class ResolveReportDTO {
+  @ApiProperty({ enum: ['REVIEWED', 'RESOLVED', 'REJECTED'] })
+  @IsIn(['REVIEWED', 'RESOLVED', 'REJECTED'])
+  status: 'REVIEWED' | 'RESOLVED' | 'REJECTED';
+
+  @ApiPropertyOptional({ example: 'Report reviewed and action taken' })
+  @IsOptional()
+  @IsString()
+  @SanitizeText()
+  adminNote?: string;
+}
+
+export class ResolveReportOutput {
+  @ApiProperty({ example: true })
+  resolved: boolean;
+}
+
+export interface CreateReportInput {
   reporterId: string;
-};
+  targetType: 'USER' | 'POST';
+  targetId: string;
+  reason: string;
+  description?: string;
+}
 
 export interface GetReportsInput {
   status?: string;
@@ -20,10 +58,6 @@ export interface ResolveReportInput {
   reportId: string;
   status: 'REVIEWED' | 'RESOLVED' | 'REJECTED';
   adminNote?: string;
-}
-
-export interface ResolveReportOutput {
-  resolved: boolean;
 }
 
 export interface ReportWithRelations {

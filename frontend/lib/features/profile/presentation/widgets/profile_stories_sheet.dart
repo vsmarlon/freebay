@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 void showProfileStoriesSheet(BuildContext context) {
   showBrutalistSheet(
@@ -38,7 +39,7 @@ void showProfileStoriesSheet(BuildContext context) {
               context.push('/create-story');
             },
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
         ],
       );
     },

@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -104,9 +106,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       'assets/freebay-textonly.png',
                       height: 56,
                       fit: BoxFit.contain,
-                      color: context.isDark ? AppColors.white : AppColors.primaryPurple,
+                      color: context.isDark ? AppColors.white : AppColors.primaryContainer,
                     ),
-                    const SizedBox(height: 32),
+                    Spacing.vXl,
                     AppTextField(
                       controller: _emailController,
                       label: 'E-mail',
@@ -121,7 +123,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
+                    Spacing.vMd,
                     AppTextField(
                       controller: _passwordController,
                       label: 'Senha',
@@ -135,7 +137,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         return null;
                       },
                     ),
-                    const SizedBox(height: 8),
+                    Spacing.vSm,
                     Row(
                       children: [
                         Checkbox(
@@ -145,7 +147,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               _rememberMe = value ?? false;
                             });
                           },
-                          activeColor: AppColors.primaryPurple,
+                          activeColor: AppColors.primaryContainer,
                         ),
                         Text(
                           'Manter logado',
@@ -165,7 +167,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           child: Text(
                             'Esqueceu a senha?',
                             style: TextStyle(
-                              color: AppColors.primaryPurple,
+                              color: AppColors.primaryContainer,
                             ),
                           ),
                         ),
@@ -182,7 +184,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         textAlign: TextAlign.center,
                       ),
                     ],
-                    const SizedBox(height: 16),
+                    Spacing.vMd,
                     AppButton(
                       label: 'Entrar',
                       isLoading: authState.isLoading,
@@ -210,7 +212,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    Spacing.vSm,
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -228,7 +230,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             child: Text(
                               'Criar conta',
                               style: TextStyle(
-                                color: AppColors.primaryPurple,
+                                color: AppColors.primaryContainer,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

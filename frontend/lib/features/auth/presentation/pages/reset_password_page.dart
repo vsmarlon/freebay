@@ -5,10 +5,13 @@ import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import '../../data/repositories/auth_repository.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   final String token;
-  const ResetPasswordPage({super.key, required this.token});
+  final String email;
+  const ResetPasswordPage({super.key, required this.token, required this.email});
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -36,7 +39,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     });
 
     final result = await AuthRepository()
-        .resetPassword(widget.token, _passwordController.text.trim());
+        .resetPassword(widget.email, widget.token, _passwordController.text.trim());
 
     result.fold(
       (failure) {
@@ -79,22 +82,22 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 Text(
                   'Crie uma nova senha',
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                     color: context.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 Text(
                   'Escolha uma senha forte com pelo menos 8 caracteres.',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     fontSize: 14,
                     color: AppColors.mediumGray,
                   ),
                 ),
-                const SizedBox(height: 32),
+                Spacing.vXl,
                 AppTextField(
                   controller: _passwordController,
                   label: 'Nova senha',
@@ -108,7 +111,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 AppTextField(
                   controller: _confirmController,
                   label: 'Confirmar nova senha',
@@ -135,7 +138,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     textAlign: TextAlign.center,
                   ),
                 ],
-                const SizedBox(height: 24),
+                Spacing.vLg,
                 AppButton(
                   label: 'Redefinir senha',
                   isLoading: _isLoading,

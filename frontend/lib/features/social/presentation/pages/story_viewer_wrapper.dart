@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/pages/story_viewer_page.dart';
 
@@ -17,7 +18,11 @@ class StoryViewerWrapper extends ConsumerWidget {
         final stories = storiesResponse.stories;
         if (stories.isEmpty) {
           return const Scaffold(
-            body: Center(child: Text('No stories available')),
+            body: EmptyState(
+              icon: Icons.auto_awesome,
+              title: 'NENHUMA HISTÓRIA',
+              subtitle: 'No momento não há histórias disponíveis.',
+            ),
           );
         }
 

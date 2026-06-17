@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/notifications/data/models/notification_model.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
@@ -50,7 +53,7 @@ class NotificationsPage extends ConsumerWidget {
                   size: 48,
                   color: theme.colorScheme.outline,
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 Text(
                   'Não foi possível carregar suas notificações.',
                   textAlign: TextAlign.center,
@@ -58,11 +61,11 @@ class NotificationsPage extends ConsumerWidget {
                     color: theme.brightness == Brightness.dark
                         ? AppColors.white
                         : AppColors.onSurface,
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 Text(
                   'Puxe para atualizar ou tente novamente em instantes.',
                   textAlign: TextAlign.center,
@@ -70,7 +73,7 @@ class NotificationsPage extends ConsumerWidget {
                     color: theme.colorScheme.outline,
                   ),
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 InkWell(
                   onTap: () => ref.read(notificationsProvider.notifier).refresh(),
                   child: Container(
@@ -96,20 +99,10 @@ class NotificationsPage extends ConsumerWidget {
         ),
         data: (notifications) {
           if (notifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.notifications_none,
-                      size: 64, color: theme.colorScheme.outline),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhuma notificação',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: theme.colorScheme.outline),
-                  ),
-                ],
-              ),
+            return const EmptyState(
+              icon: Icons.notifications_none,
+              title: 'NENHUMA NOTIFICAÇÃO',
+              subtitle: 'Você será notificado sobre pedidos, mensagens e muito mais.',
             );
           }
 
@@ -146,7 +139,7 @@ class _NotificationTile extends ConsumerWidget {
         color: _getIconColor(notification.type),
         child: Icon(
           _getIcon(notification.type),
-          color: Colors.white,
+          color: AppColors.onPrimary,
           size: 20,
         ),
       ),
@@ -166,7 +159,7 @@ class _NotificationTile extends ConsumerWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          Spacing.vXs,
           Text(
             timeAgo,
             style: theme.textTheme.bodySmall
@@ -232,17 +225,17 @@ class _NotificationTile extends ConsumerWidget {
   Color _getIconColor(String type) {
     switch (type) {
       case 'ORDER':
-        return Colors.green;
+        return AppColors.success;
       case 'FOLLOW':
-        return Colors.blue;
+        return AppColors.info;
       case 'MESSAGE':
-        return Colors.purple;
+        return AppColors.primaryContainer;
       case 'DISPUTE':
-        return Colors.red;
+        return AppColors.error;
       case 'PAYMENT':
-        return Colors.orange;
+        return AppColors.warning;
       default:
-        return Colors.grey;
+        return AppColors.onSurfaceVariant;
     }
   }
 

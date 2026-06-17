@@ -4,6 +4,9 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from './infra/prisma/prisma.service';
 import { RedisService } from './infra/redis/redis.service';
 import { EmailService } from './infra/email/email.service';
+import { JwtTokenValidatorService } from './auth/jwt-token-validator.service';
+import { RolesGuard } from './guards/roles.guard';
+import { HealthController } from './http/health.controller';
 
 @Global()
 @Module({
@@ -18,7 +21,8 @@ import { EmailService } from './infra/email/email.service';
       }),
     }),
   ],
-  providers: [PrismaService, RedisService, EmailService],
-  exports: [PrismaService, RedisService, EmailService, JwtModule],
+  controllers: [HealthController],
+  providers: [PrismaService, RedisService, EmailService, JwtTokenValidatorService, RolesGuard],
+  exports: [PrismaService, RedisService, EmailService, JwtModule, JwtTokenValidatorService, RolesGuard],
 })
 export class SharedModule {}

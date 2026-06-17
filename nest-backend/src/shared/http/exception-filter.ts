@@ -25,30 +25,41 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      
+
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
-        const responseObj = exceptionResponse as {
-          code?: string;
-          message?: string | string[];
-          error?: { code?: string; message?: string | string[] };
-        };
-        const nestedError = responseObj.error;
+        const responseObj = exceptionResponse as Record<string, unknown>;
+
+        if (responseObj.errors) {
+          const validationErrors = responseObj.errors as Array<{ property: string; value: unknown; constraints: Record<string, string> }>;
+          const details = validationErrors.map((e) => ({
+            field: e.property,
+            received: e.value,
+            constraints: e.constraints,
+          }));
+          this.logger.warn(
+            `[VALIDATION] ${request.method} ${request.url} - ${JSON.stringify(details)}`,
+          );
+        }
+
+        const nestedError = responseObj.error as { code?: string; message?: string } | undefined;
         const resolvedMessage = nestedError?.message ?? responseObj.message;
 
-        code = nestedError?.code || responseObj.code || exception.name;
+        code = (nestedError?.code as string) || (responseObj.code as string) || exception.name;
         message = Array.isArray(resolvedMessage)
-          ? resolvedMessage[0] || exception.message
-          : resolvedMessage || exception.message;
+          ? (resolvedMessage as string[])[0] || exception.message
+          : (resolvedMessage as string) || exception.message;
       } else {
         message = exception.message;
+        this.logger.warn(`[HTTP] ${request.method} ${request.url} - ${status} ${message}`);
       }
     } else if (exception instanceof AppError) {
       status = exception.statusCode;
       code = exception.code;
       message = exception.message;
+      this.logger.warn(`[APP] ${request.method} ${request.url} - ${code}: ${message}`);
     } else if (exception instanceof Error) {
       message = exception.message;
-      this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack);
+      this.logger.error(`[UNHANDLED] ${request.method} ${request.url} - ${exception.message}`, exception.stack);
     }
 
     response.status(status).json({

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/stat_column.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ProfileStatsRow extends ConsumerWidget {
   const ProfileStatsRow({super.key});
@@ -56,7 +57,7 @@ class ProfileFollowRow extends ConsumerWidget {
             label: 'seguidores',
             onTap: () => context.push('/profile/followers'),
           ),
-          const SizedBox(width: 32),
+          Spacing.hXl,
           StatColumn(
             value: '${stats.followingCount}',
             label: 'seguindo',
@@ -68,7 +69,7 @@ class ProfileFollowRow extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           StatColumn(value: '...', label: 'seguidores', onTap: () {}),
-          const SizedBox(width: 32),
+          Spacing.hXl,
           StatColumn(value: '...', label: 'seguindo', onTap: () {}),
         ],
       ),
@@ -76,7 +77,7 @@ class ProfileFollowRow extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           StatColumn(value: '0', label: 'seguidores', onTap: () {}),
-          const SizedBox(width: 32),
+          Spacing.hXl,
           StatColumn(value: '0', label: 'seguindo', onTap: () {}),
         ],
       ),

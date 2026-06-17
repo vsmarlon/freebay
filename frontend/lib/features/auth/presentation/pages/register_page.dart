@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class RegisterPage extends HookConsumerWidget {
   const RegisterPage({super.key});
@@ -56,7 +58,7 @@ class RegisterPage extends HookConsumerWidget {
                     color: context.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 Text(
                   'Junte-se à comunidade FreeBay',
                   style: TextStyle(
@@ -64,7 +66,7 @@ class RegisterPage extends HookConsumerWidget {
                     color: AppColors.mediumGray,
                   ),
                 ),
-                const SizedBox(height: 32),
+                Spacing.vXl,
                 AppTextField(
                   controller: nameController,
                   label: 'Nome de exibição',
@@ -78,7 +80,7 @@ class RegisterPage extends HookConsumerWidget {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 AppTextField(
                   controller: emailController,
                   label: 'E-mail',
@@ -93,7 +95,7 @@ class RegisterPage extends HookConsumerWidget {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 AppTextField(
                   controller: passwordController,
                   label: 'Senha',
@@ -109,7 +111,7 @@ class RegisterPage extends HookConsumerWidget {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 AppTextField(
                   controller: confirmPasswordController,
                   label: 'Confirmar senha',
@@ -125,7 +127,7 @@ class RegisterPage extends HookConsumerWidget {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                Spacing.vLg,
                 if (errorMessage.value != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -150,7 +152,7 @@ class RegisterPage extends HookConsumerWidget {
                     }
                   },
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -168,7 +170,7 @@ class RegisterPage extends HookConsumerWidget {
                         child: Text(
                           'Entrar',
                           style: TextStyle(
-                            color: AppColors.primaryPurple,
+                            color: AppColors.primaryContainer,
                             fontWeight: FontWeight.w700,
                           ),
                         ),

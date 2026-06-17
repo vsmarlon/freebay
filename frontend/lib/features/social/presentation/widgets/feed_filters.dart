@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/components/brutalist_filter_chip.dart';
-import 'package:freebay/core/freebay.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class FeedContentFilterBar extends StatelessWidget {
   final FeedContentFilter currentFilter;
@@ -75,11 +76,11 @@ class FeedTypeDropdown extends StatelessWidget {
                     ? AppColors.primaryContainer
                     : AppColors.outline,
               ),
-              Freebay.horizontalSpacing8,
+              Spacing.hSm,
               Text(
                 'EXPLORE',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: currentType == FeedType.explore
@@ -102,11 +103,11 @@ class FeedTypeDropdown extends StatelessWidget {
                     ? AppColors.primaryContainer
                     : AppColors.outline,
               ),
-              Freebay.horizontalSpacing8,
+              Spacing.hSm,
               Text(
                 'FOLLOWING',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: currentType == FeedType.following
@@ -135,18 +136,18 @@ class FeedTypeDropdown extends StatelessWidget {
               size: 14,
               color: AppColors.primaryContainer,
             ),
-            const SizedBox(width: 4),
+            Spacing.hXs,
             Text(
               currentType == FeedType.explore ? 'EXPLORE' : 'FOLLOWING',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
                 color: context.textPrimary,
               ),
             ),
-            const SizedBox(width: 4),
+            Spacing.hXs,
             Icon(
               Icons.expand_more,
               size: 14,

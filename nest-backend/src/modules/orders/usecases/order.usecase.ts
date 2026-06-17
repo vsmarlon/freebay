@@ -2,16 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, InvalidOrderStateError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../repositories/order.repository';
-import { PrismaClient, OrderStatus, EscrowStatus } from '@prisma/client';
-import { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput } from '../dtos/order.dto';
+import { OrderStatus, EscrowStatus } from '@prisma/client';
+import { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput, MarkAsShippedInput, MarkAsDeliveredInput, CancelOrderInput } from '../dtos/order.dto';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
-export type { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput };
+export type { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput, MarkAsShippedInput, MarkAsDeliveredInput, CancelOrderInput };
 
 @Injectable()
 export class CreateOrderUseCase {
   constructor(
     private orderRepository: PrismaOrderRepository,
-    private prisma: PrismaClient,
+    private prisma: PrismaService,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Either<AppError, CreateOrderOutput>> {
@@ -80,7 +81,7 @@ export class CreateOrderUseCase {
 export class ConfirmDeliveryUseCase {
   constructor(
     private orderRepository: PrismaOrderRepository,
-    private prisma: PrismaClient,
+    private prisma: PrismaService,
   ) {}
 
   async execute(input: ConfirmDeliveryInput): Promise<Either<AppError, { confirmed: boolean; sellerAmount: number }>> {
@@ -134,7 +135,7 @@ export class ConfirmDeliveryUseCase {
 export class ActivateEscrowUseCase {
   constructor(
     private orderRepository: PrismaOrderRepository,
-    private prisma: PrismaClient,
+    private prisma: PrismaService,
   ) {}
 
   async execute(orderId: string): Promise<Either<AppError, { activated: boolean }>> {
@@ -162,5 +163,109 @@ export class ActivateEscrowUseCase {
     });
 
     return right({ activated: true });
+  }
+}
+
+@Injectable()
+export class MarkAsShippedUseCase {
+  constructor(
+    private orderRepository: PrismaOrderRepository,
+    private prisma: PrismaService,
+  ) {}
+
+  async execute(input: MarkAsShippedInput): Promise<Either<AppError, { shipped: boolean }>> {
+    const order = await this.orderRepository.findById(input.orderId);
+    if (!order) {
+      return left(new NotFoundError('Order'));
+    }
+
+    if (order.sellerId !== input.sellerId) {
+      return left(new UnauthorizedError('Only seller can mark as shipped'));
+    }
+
+    if (order.status !== OrderStatus.CONFIRMED) {
+      return left(new InvalidOrderStateError('Order must be CONFIRMED to ship', order.status));
+    }
+
+    await this.orderRepository.update(input.orderId, { status: OrderStatus.SHIPPED });
+
+    return right({ shipped: true });
+  }
+}
+
+@Injectable()
+export class MarkAsDeliveredUseCase {
+  constructor(
+    private orderRepository: PrismaOrderRepository,
+    private prisma: PrismaService,
+  ) {}
+
+  async execute(input: MarkAsDeliveredInput): Promise<Either<AppError, { delivered: boolean }>> {
+    const order = await this.orderRepository.findById(input.orderId);
+    if (!order) {
+      return left(new NotFoundError('Order'));
+    }
+
+    if (order.buyerId !== input.buyerId) {
+      return left(new UnauthorizedError('Only buyer can mark as delivered'));
+    }
+
+    if (order.status !== OrderStatus.SHIPPED) {
+      return left(new InvalidOrderStateError('Order must be SHIPPED to deliver', order.status));
+    }
+
+    await this.orderRepository.update(input.orderId, {
+      status: OrderStatus.DELIVERED,
+      deliveryConfirmedAt: new Date(),
+    });
+
+    return right({ delivered: true });
+  }
+}
+
+@Injectable()
+export class CancelOrderUseCase {
+  constructor(
+    private orderRepository: PrismaOrderRepository,
+    private prisma: PrismaService,
+  ) {}
+
+  async execute(input: CancelOrderInput): Promise<Either<AppError, { cancelled: boolean }>> {
+    const order = await this.orderRepository.findById(input.orderId);
+    if (!order) {
+      return left(new NotFoundError('Order'));
+    }
+
+    if (order.buyerId !== input.userId && order.sellerId !== input.userId) {
+      return left(new UnauthorizedError('Not authorized to cancel this order'));
+    }
+
+    if (order.status !== OrderStatus.PENDING && order.status !== OrderStatus.CONFIRMED) {
+      return left(new InvalidOrderStateError('Order can only be cancelled when PENDING or CONFIRMED', order.status));
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.order.update({
+        where: { id: input.orderId },
+        data: { status: OrderStatus.CANCELLED, escrowStatus: EscrowStatus.REFUNDED },
+      });
+
+      await tx.product.update({
+        where: { id: order.productId },
+        data: { status: 'ACTIVE' },
+      });
+
+      if (order.status === OrderStatus.CONFIRMED) {
+        const wallet = await tx.wallet.findUnique({ where: { userId: order.buyerId } });
+        if (wallet) {
+          await tx.wallet.update({
+            where: { userId: order.buyerId },
+            data: { availableBalance: { increment: order.amount } },
+          });
+        }
+      }
+    });
+
+    return right({ cancelled: true });
   }
 }

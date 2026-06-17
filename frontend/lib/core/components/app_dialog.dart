@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class AppDialog extends StatelessWidget {
   final String? logoAsset;
@@ -57,7 +59,7 @@ class AppDialog extends StatelessWidget {
       context: context,
       barrierDismissible: barrierDismissible,
       barrierLabel: 'Dismiss',
-      barrierColor: Colors.black54,
+      barrierColor: AppColors.onSurface.withValues(alpha: 0.54),
       transitionDuration: const Duration(milliseconds: 150),
       pageBuilder: (context, animation, secondaryAnimation) {
         return AppDialog(
@@ -161,14 +163,14 @@ class AppDialog extends StatelessWidget {
                       if (showCloseButton) _buildCloseButton(context),
                       if (icon != null) ...[
                         _buildIcon(isDark),
-                        const SizedBox(height: 16),
+                        Spacing.vMd,
                       ],
                       _buildTitle(isDark),
                       if (subtitle != null) ...[
-                        const SizedBox(height: 8),
+                        Spacing.vSm,
                         _buildSubtitle(isDark),
                       ],
-                      const SizedBox(height: 24),
+                      Spacing.vLg,
                       _buildActions(context, isDark),
                     ],
                   ),
@@ -221,7 +223,7 @@ class AppDialog extends StatelessWidget {
     return Text(
       title.toUpperCase(),
       style: TextStyle(
-        fontFamily: 'SpaceGrotesk',
+        fontFamily: AppTypography.headlineFontFamily,
         fontSize: 18,
         fontWeight: FontWeight.w800,
         letterSpacing: 0.5,
@@ -235,7 +237,7 @@ class AppDialog extends StatelessWidget {
     return Text(
       subtitle!,
       style: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: AppTypography.fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: AppColors.outline,
@@ -338,7 +340,7 @@ class AppDialog extends StatelessWidget {
         child: Text(
           text.toUpperCase(),
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,

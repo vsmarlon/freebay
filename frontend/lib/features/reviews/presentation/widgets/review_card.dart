@@ -4,6 +4,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/components/reputation_stars.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
+import 'package:freebay/core/theme/app_typography.dart';
 import 'package:intl/intl.dart';
 
 class ReviewCard extends StatelessWidget {
@@ -46,7 +47,7 @@ class ReviewCard extends StatelessWidget {
                       child: Text(
                         review.reviewer?.displayNameOrDefault ?? 'Usuário',
                         style: TextStyle(
-                          fontFamily: 'SpaceGrotesk',
+                          fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: isDark
@@ -59,7 +60,7 @@ class ReviewCard extends StatelessWidget {
                     Text(
                       _getReviewTypeLabel(),
                       style: TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: AppTypography.fontFamily,
                         fontSize: 12,
                         color: AppColors.outline,
                       ),
@@ -70,7 +71,7 @@ class ReviewCard extends StatelessWidget {
               Text(
                 dateFormat.format(review.createdAt),
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   color: AppColors.outline,
                 ),
@@ -88,7 +89,7 @@ class ReviewCard extends StatelessWidget {
             Text(
               review.comment!,
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
                 height: 1.5,
                 color: isDark

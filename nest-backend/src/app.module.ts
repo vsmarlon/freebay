@@ -18,6 +18,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { CartModule } from './modules/cart/cart.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { CartModule } from './modules/cart/cart.module';
     ReviewsModule,
     FavoritesModule,
     CartModule,
+    TasksModule,
   ],
   providers: [
     {

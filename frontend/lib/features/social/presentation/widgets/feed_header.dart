@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 
 class FeedHeader extends StatelessWidget {
@@ -48,7 +49,7 @@ class FeedHeader extends StatelessWidget {
                 TextSpan(
                   text: 'FREEBAY',
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     fontStyle: FontStyle.italic,
@@ -59,7 +60,7 @@ class FeedHeader extends StatelessWidget {
                 const TextSpan(
                   text: '!',
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     fontStyle: FontStyle.italic,
@@ -74,10 +75,10 @@ class FeedHeader extends StatelessWidget {
             child: Container(
               width: 40,
               height: 40,
-              color: AppColors.accentGreen,
+              color: AppColors.success,
               child: const Icon(
                 Icons.account_balance_wallet_outlined,
-                color: Colors.white,
+                color: AppColors.onPrimary,
                 size: 20,
               ),
             ),

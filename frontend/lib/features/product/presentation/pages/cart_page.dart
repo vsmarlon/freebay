@@ -6,6 +6,8 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class CartPage extends ConsumerStatefulWidget {
   const CartPage({super.key});
@@ -59,7 +61,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                 child: Text(
                   'Limpar',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.white : AppColors.onSurface,
                   ),
@@ -84,7 +86,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                       Text(
                         'Seu carrinho está vazio',
                         style: TextStyle(
-                          fontFamily: 'SpaceGrotesk',
+                          fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: isDark ? AppColors.white : AppColors.darkGray,
@@ -94,11 +96,11 @@ class _CartPageState extends ConsumerState<CartPage> {
                       Text(
                         'Adicione produtos para continuar',
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: AppTypography.fontFamily,
                           color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      Spacing.vLg,
                       InkWell(
                         onTap: () => context.go('/products'),
                         child: Container(
@@ -109,7 +111,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                             child: Text(
                               'Explorar produtos',
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: AppTypography.fontFamily,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.white,
                               ),
@@ -120,10 +122,14 @@ class _CartPageState extends ConsumerState<CartPage> {
                     ],
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-                  itemCount: cart.items.length,
-                  itemBuilder: (context, index) {
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    ref.read(cartProvider.notifier).loadCart();
+                  },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                    itemCount: cart.items.length,
+                    itemBuilder: (context, index) {
                     final item = cart.items[index];
                     final price = CurrencyUtils.formatCents(item.product.price);
                     final subtotal = CurrencyUtils.formatCents(item.subtotal);
@@ -155,7 +161,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontFamily: 'Inter',
+                                    fontFamily: AppTypography.fontFamily,
                                     fontWeight: FontWeight.w600,
                                     color: isDark ? AppColors.white : AppColors.darkGray,
                                   ),
@@ -164,11 +170,11 @@ class _CartPageState extends ConsumerState<CartPage> {
                                 Text(
                                   price,
                                   style: TextStyle(
-                                    fontFamily: 'Inter',
+                                    fontFamily: AppTypography.fontFamily,
                                     color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                Spacing.vSm,
                                 Row(
                                   children: [
                                     _QuantityButton(
@@ -189,7 +195,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                       child: Text(
                                         '${item.quantity}',
                                         style: TextStyle(
-                                          fontFamily: 'Inter',
+                                          fontFamily: AppTypography.fontFamily,
                                           fontWeight: FontWeight.w700,
                                           color: isDark ? AppColors.white : AppColors.darkGray,
                                         ),
@@ -207,7 +213,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                     Text(
                                       subtotal,
                                       style: TextStyle(
-                                        fontFamily: 'SpaceGrotesk',
+                                        fontFamily: AppTypography.headlineFontFamily,
                                         fontWeight: FontWeight.w700,
                                         color: isDark ? AppColors.white : AppColors.darkGray,
                                       ),
@@ -227,6 +233,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                     );
                   },
                 ),
+              ),
       bottomSheet: cart.items.isEmpty
           ? null
           : Container(
@@ -243,14 +250,14 @@ class _CartPageState extends ConsumerState<CartPage> {
                           Text(
                             'Total',
                             style: TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: AppTypography.fontFamily,
                               color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                             ),
                           ),
                           Text(
                             CurrencyUtils.formatCents(cart.totalPrice),
                             style: TextStyle(
-                              fontFamily: 'SpaceGrotesk',
+                              fontFamily: AppTypography.headlineFontFamily,
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                               color: isDark ? AppColors.white : AppColors.darkGray,
@@ -270,7 +277,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                             child: Text(
                               'Finalizar',
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: AppTypography.fontFamily,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.white,
                               ),

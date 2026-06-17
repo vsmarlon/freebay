@@ -1,29 +1,50 @@
-import { z } from 'zod';
+import { IsString, MinLength, MaxLength, IsEmail, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
-export const registerSchema = z.object({
-  displayName: z.string().min(2).max(50),
-  email: z.string().email(),
-  password: z.string().min(8).max(100),
-  city: z.string().optional(),
-  state: z.string().optional(),
-});
+export class RegisterDTO {
+  @ApiProperty({ example: 'John Doe', minLength: 2, maxLength: 50 })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  @SanitizeText()
+  displayName: string;
 
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-});
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
 
-export type RegisterDTO = z.infer<typeof registerSchema>;
-export type LoginDTO = z.infer<typeof loginSchema>;
+  @ApiProperty({ example: '********', minLength: 8, maxLength: 100 })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  password: string;
 
-export const forgotPasswordSchema = z.object({
-  email: z.string().email(),
-});
+  @ApiPropertyOptional({ example: 'São Paulo' })
+  @IsOptional()
+  @IsString()
+  @SanitizeText()
+  city?: string;
 
-export const resetPasswordSchema = z.object({
-  token: z.string().min(64).max(64),
-  password: z.string().min(8).max(100),
-});
+  @ApiPropertyOptional({ example: 'SP' })
+  @IsOptional()
+  @IsString()
+  state?: string;
+}
 
-export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema>;
-export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;
+export class LoginDTO {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: '********', minLength: 8 })
+  @IsString()
+  @MinLength(8)
+  password: string;
+}
+
+export class ForgotPasswordDTO {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+}

@@ -4,10 +4,14 @@ import { AppError, NotFoundError, BadRequestError, UnauthorizedError } from '@/s
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { OpenDisputeInput, OpenDisputeOutput, GetDisputeOutput, GetUserDisputesOutput } from '../dtos/dispute.dto';
+import { NotificationService } from '../../notifications/services/notification.service';
 
 @Injectable()
 export class OpenDisputeUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async execute(input: OpenDisputeInput): Promise<Either<AppError, OpenDisputeOutput>> {
     const order = await this.prisma.order.findUnique({
@@ -54,6 +58,11 @@ export class OpenDisputeUseCase {
       where: { id: input.orderId },
       data: { status: OrderStatus.DISPUTED },
     });
+
+    const otherUserId = order.buyerId === input.userId ? order.sellerId : order.buyerId;
+    await this.notificationService.notifyDispute(otherUserId, dispute.id, 'Uma disputa foi aberta em um dos seus pedidos');
+    await this.notificationService.notifyOrderStatus(input.userId, order.id, 'DISPUTED');
+    await this.notificationService.notifyOrderStatus(otherUserId, order.id, 'DISPUTED');
 
     return right({
       id: dispute.id,
@@ -157,7 +166,10 @@ export class SubmitEvidenceUseCase {
 
 @Injectable()
 export class ResolveDisputeUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async execute(input: { disputeId: string; resolution: string; winner: 'BUYER' | 'SELLER' }): Promise<Either<AppError, { resolved: boolean }>> {
     const dispute = await this.prisma.dispute.findUnique({
@@ -211,6 +223,11 @@ export class ResolveDisputeUseCase {
         }
       }
     });
+
+    const buyerMsg = input.winner === 'BUYER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do vendedor';
+    const sellerMsg = input.winner === 'SELLER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do comprador';
+    await this.notificationService.notifyDispute(dispute.order.buyerId, dispute.id, buyerMsg);
+    await this.notificationService.notifyDispute(dispute.order.sellerId, dispute.id, sellerMsg);
 
     return right({ resolved: true });
   }

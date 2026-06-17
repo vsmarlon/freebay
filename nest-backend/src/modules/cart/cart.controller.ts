@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
@@ -7,7 +8,10 @@ import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaCartRepository } from './repositories/cart.repository';
 import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
+import { AddToCartDTO, UpdateCartItemDTO, CartResponse, CheckoutCartResponse } from './dtos/cart.dto';
+import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
+@ApiTags('Cart')
 @Controller('cart')
 @UseGuards(JwtAuthGuard, NonGuestGuard)
 export class CartController {
@@ -17,6 +21,12 @@ export class CartController {
   ) {}
 
   @Get()
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get cart contents',
+    auth: true,
+    responseType: CartResponse,
+  })
   async getCart(@CurrentUser() user: AuthUser) {
     const items = await this.cartRepository.getUserCart(user.userId);
     const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
@@ -36,6 +46,13 @@ export class CartController {
   }
 
   @Post('checkout')
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Checkout cart',
+    description: 'Creates orders for all items in cart with PIX payment',
+    auth: true,
+    responseType: CheckoutCartResponse,
+  })
   async checkout(@CurrentUser() user: AuthUser) {
     const result = await this.checkoutCartUseCase.execute({
       userId: user.userId,
@@ -49,12 +66,23 @@ export class CartController {
   }
 
   @Post(':productId')
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Add product to cart',
+    auth: true,
+    bodyType: AddToCartDTO,
+    params: [{ name: 'productId', description: 'Product UUID' }],
+    errors: [
+      { status: 404, description: 'Product not found' },
+      { status: 403, description: 'Cannot add own product' },
+    ],
+  })
   async addToCart(
     @Param('productId') productId: string,
     @CurrentUser() user: AuthUser,
-    @Body() body?: { quantity?: number },
+    @Body() body: AddToCartDTO,
   ) {
-    const quantity = Math.min(Math.max(body?.quantity ?? 1, 1), 10);
+    const quantity = Math.min(Math.max(body.quantity ?? 1, 1), 10);
     const product = await this.cartRepository.findProductById(productId);
 
     if (!product || product.status !== 'ACTIVE') {
@@ -70,12 +98,20 @@ export class CartController {
   }
 
   @Patch(':productId')
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Update cart item quantity',
+    auth: true,
+    bodyType: UpdateCartItemDTO,
+    params: [{ name: 'productId', description: 'Product UUID' }],
+    errors: [{ status: 404, description: 'Item not found in cart' }],
+  })
   async updateCartItem(
     @Param('productId') productId: string,
     @CurrentUser() user: AuthUser,
-    @Body() body: { quantity: number },
+    @Body() body: UpdateCartItemDTO,
   ) {
-    const quantity = body?.quantity;
+    const quantity = body.quantity;
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
       return left(new AppError('BAD_REQUEST', 'Quantidade deve ser entre 1 e 10', 400));
     }
@@ -90,6 +126,13 @@ export class CartController {
   }
 
   @Delete(':productId')
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Remove item from cart',
+    auth: true,
+    params: [{ name: 'productId', description: 'Product UUID' }],
+    errors: [{ status: 404, description: 'Item not found in cart' }],
+  })
   async removeFromCart(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
     const existing = await this.cartRepository.findItem(user.userId, productId);
     if (!existing) {
@@ -101,6 +144,11 @@ export class CartController {
   }
 
   @Delete()
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Clear cart',
+    auth: true,
+  })
   async clearCart(@CurrentUser() user: AuthUser) {
     await this.cartRepository.clear(user.userId);
     return { cleared: true };

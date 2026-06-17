@@ -6,6 +6,9 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -122,7 +125,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   : const Text(
                       'Salvar',
                       style: TextStyle(
-                        color: AppColors.primaryPurple,
+                        color: AppColors.primaryContainer,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -138,6 +141,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                BrutalistBreadcrumb(items: [
+                  BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                  const BreadcrumbItem(label: 'Editar Perfil'),
+                ]),
+                Spacing.vMd,
                 Text(
                   'Nome',
                   style: TextStyle(
@@ -145,7 +153,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     color: isDark ? AppColors.white : AppColors.darkGray,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 TextFormField(
                   controller: _displayNameController,
                   decoration: InputDecoration(
@@ -168,7 +176,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 24),
+                Spacing.vLg,
                 Text(
                   'Bio',
                   style: TextStyle(
@@ -176,7 +184,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     color: isDark ? AppColors.white : AppColors.darkGray,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 TextFormField(
                   controller: _bioController,
                   maxLines: 3,
@@ -192,7 +200,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                Spacing.vMd,
                 Text(
                   'Cidade',
                   style: TextStyle(
@@ -200,7 +208,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     color: isDark ? AppColors.white : AppColors.darkGray,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 TextFormField(
                   controller: _cityController,
                   decoration: InputDecoration(
@@ -214,7 +222,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                Spacing.vLg,
                 Text(
                   'Estado',
                   style: TextStyle(
@@ -222,7 +230,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     color: isDark ? AppColors.white : AppColors.darkGray,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 TextFormField(
                   controller: _stateController,
                   decoration: InputDecoration(
@@ -236,7 +244,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                Spacing.vLg,
                 Row(
                   children: [
                     Text(
@@ -246,14 +254,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         color: isDark ? AppColors.white : AppColors.darkGray,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    Spacing.hSm,
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       color: AppColors.primaryContainer,
                       child: const Text(
                         'Obrigatório para compras',
                         style: TextStyle(
-                          fontFamily: 'Inter',
+                          fontFamily: AppTypography.fontFamily,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: AppColors.white,
@@ -262,7 +270,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 TextFormField(
                   controller: _cpfController,
                   keyboardType: TextInputType.number,
@@ -291,14 +299,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ),
         ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryPurple),
+          child: CircularProgressIndicator(color: AppColors.primaryContainer),
         ),
         error: (err, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
+              Spacing.vMd,
               Text(
                 'Erro ao carregar perfil',
                 style: TextStyle(

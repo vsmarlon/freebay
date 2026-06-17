@@ -5,6 +5,7 @@ export interface JwtPayload {
   isGuest?: boolean;
   type?: 'access' | 'refresh';
   jti?: string;
+  iat?: number;
   exp?: number;
 }
 

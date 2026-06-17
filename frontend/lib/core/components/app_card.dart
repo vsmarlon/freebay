@@ -4,6 +4,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 enum AppCardVariant { compact, full, skeleton }
 
@@ -75,7 +76,7 @@ class AppCard extends StatelessWidget {
                     maxLines: variant == AppCardVariant.compact ? 1 : 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vSm,
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -94,7 +95,7 @@ class AppCard extends StatelessWidget {
                               size: 16,
                               color: AppColors.warning,
                             ),
-                            const SizedBox(width: 4),
+                            Spacing.hXs,
                             Text(
                               score!.toStringAsFixed(1),
                               style: AppTypography.bodySmall.copyWith(
@@ -138,7 +139,7 @@ class AppCard extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primaryPurpleLight, AppColors.accentGreenLight],
+          colors: [AppColors.primaryContainer, AppColors.accentGreenLight],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -174,7 +175,7 @@ class AppCard extends StatelessWidget {
                   width: 100,
                   color: AppColors.mediumGray.withValues(alpha: 0.2),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 Container(
                   height: 16,
                   width: 60,

@@ -12,6 +12,9 @@ import 'package:freebay/features/payments/data/entities/pix_payment_entity.dart'
 import 'package:freebay/features/payments/data/services/payment_service.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key});
@@ -73,11 +76,21 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           onPressed: () => context.pop(),
         ),
       ),
-      body: isCartCheckout
-          ? _buildCartUnavailable(context)
-          : productId == null
-              ? _buildInvalidState(context)
-              : _buildProductCheckout(context, productId),
+      body: Column(
+        children: [
+          BrutalistBreadcrumb(items: [
+            BreadcrumbItem(label: 'Produto', onTap: () => context.pop()),
+            const BreadcrumbItem(label: 'Pagamento'),
+          ]),
+          Expanded(
+            child: isCartCheckout
+                ? _buildCartUnavailable(context)
+                : productId == null
+                    ? _buildInvalidState(context)
+                    : _buildProductCheckout(context, productId),
+          ),
+        ],
+      ),
     );
   }
 
@@ -98,7 +111,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 Text(
                   'CHECKOUT MULTI-ITEM',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
@@ -108,7 +121,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 Text(
                   'Ainda indisponivel',
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.white : AppColors.onSurface,
@@ -118,7 +131,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 Text(
                   'O backend ainda cria pedido por produto. Por enquanto, finalize a compra usando o botao Comprar agora dentro do produto.',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     fontSize: 14,
                     height: 1.5,
                     color: isDark ? AppColors.inverseOnSurface : AppColors.onSurfaceVariant,
@@ -127,7 +140,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          Spacing.vLg,
           InkWell(
             onTap: () => context.go('/cart'),
             child: Container(
@@ -140,7 +153,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 child: Text(
                   'Voltar ao carrinho',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     fontWeight: FontWeight.w700,
                     color: AppColors.onPrimary,
                   ),
@@ -161,7 +174,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         child: Text(
           'Produto nao informado para iniciar o pagamento.',
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             color: isDark ? AppColors.white : AppColors.onSurface,
           ),
           textAlign: TextAlign.center,
@@ -205,7 +218,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               Text(
                 'COMPRA IMEDIATA',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
@@ -215,20 +228,20 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               Text(
                 product.title,
                 style: TextStyle(
-                  fontFamily: 'SpaceGrotesk',
+                  fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.white : AppColors.onSurface,
                 ),
               ),
-              const SizedBox(height: 16),
+              Spacing.vMd,
               Container(
                 color: isDark ? AppColors.surfaceDark : AppColors.surfaceContainerHighest,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Text(
                   formattedPrice,
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.white : AppColors.onSurface,
@@ -238,7 +251,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        Spacing.vLg,
         Form(
           key: _formKey,
           child: Column(
@@ -281,7 +294,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
+              Spacing.vLg,
               InkWell(
                 onTap: _isSubmitting
                     ? null
@@ -308,7 +321,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                         : const Text(
                             'Gerar PIX',
                             style: TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: AppTypography.fontFamily,
                               fontWeight: FontWeight.w700,
                               color: AppColors.onPrimary,
                             ),
@@ -344,7 +357,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               Text(
                 'PIX GERADO',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
@@ -354,24 +367,24 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               Text(
                 product.title,
                 style: TextStyle(
-                  fontFamily: 'SpaceGrotesk',
+                  fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.white : AppColors.onSurface,
                 ),
               ),
-              const SizedBox(height: 8),
+              Spacing.vSm,
               Text(
                 'Expira em $expiresAt',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   color: isDark ? AppColors.inverseOnSurface : AppColors.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        Spacing.vLg,
         _buildLabel('CODIGO PIX'),
         const SizedBox(height: 12),
         Container(
@@ -380,14 +393,14 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           child: SelectableText(
             pixPayment.pixQrCode,
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 13,
               height: 1.5,
               color: isDark ? AppColors.white : AppColors.onSurface,
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        Spacing.vMd,
         InkWell(
           onTap: () async {
             await Clipboard.setData(ClipboardData(text: pixPayment.pixQrCode));
@@ -404,7 +417,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               child: Text(
                 'Copiar codigo',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.white : AppColors.onSurface,
                 ),
@@ -425,7 +438,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               child: Text(
                 'Ver pedido',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontWeight: FontWeight.w700,
                   color: AppColors.onPrimary,
                 ),
@@ -442,7 +455,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     return Text(
       text,
       style: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: AppTypography.fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w700,
         color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
@@ -462,13 +475,13 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       keyboardType: keyboardType,
       validator: validator,
       style: TextStyle(
-        fontFamily: 'Inter',
+        fontFamily: AppTypography.fontFamily,
         color: isDark ? AppColors.white : AppColors.onSurface,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          fontFamily: 'Inter',
+          fontFamily: AppTypography.fontFamily,
           color: isDark ? AppColors.mediumGray : AppColors.onSurfaceVariant,
         ),
         filled: true,

@@ -5,6 +5,8 @@ import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import '../../data/repositories/auth_repository.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -33,7 +35,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       _errorMessage = null;
     });
 
-    final result = await AuthRepository().forgotPassword(_emailController.text.trim());
+    final result = await AuthRepository().requestPasswordRecovery(_emailController.text.trim());
 
     result.fold(
       (failure) {
@@ -78,22 +80,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           Text(
             'Redefinir senha',
             style: TextStyle(
-              fontFamily: 'SpaceGrotesk',
+              fontFamily: AppTypography.headlineFontFamily,
               fontSize: 24,
               fontWeight: FontWeight.w600,
               color: context.textPrimary,
             ),
           ),
-          const SizedBox(height: 8),
+          Spacing.vSm,
           Text(
             'Informe seu e-mail e enviaremos um link para redefinir sua senha.',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 14,
               color: AppColors.mediumGray,
             ),
           ),
-          const SizedBox(height: 32),
+          Spacing.vXl,
           AppTextField(
             controller: _emailController,
             label: 'E-mail',
@@ -117,7 +119,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               textAlign: TextAlign.center,
             ),
           ],
-          const SizedBox(height: 24),
+          Spacing.vLg,
           AppButton(
             label: 'Enviar link',
             isLoading: _isLoading,
@@ -133,34 +135,34 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 48),
+        Spacing.vXxl,
         const Icon(
           Icons.mark_email_read_outlined,
           size: 64,
-          color: AppColors.accentGreen,
+          color: AppColors.success,
         ),
-        const SizedBox(height: 24),
+        Spacing.vLg,
         Text(
           'E-mail enviado',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontSize: 24,
             fontWeight: FontWeight.w600,
             color: context.textPrimary,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
+        Spacing.vSm,
         Text(
           'Se este e-mail estiver cadastrado, você receberá um link em breve. Verifique também sua caixa de spam.',
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             fontSize: 14,
             color: AppColors.mediumGray,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 32),
+        Spacing.vXl,
         AppButton(
           label: 'Voltar ao login',
           onPressed: () => context.go('/login'),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class OrderActions extends StatelessWidget {
   final OrderEntity order;
@@ -43,14 +45,14 @@ class OrderActions extends StatelessWidget {
           const Text(
             'AÇÕES',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           ...actions,
         ],
       ),
@@ -184,7 +186,7 @@ class _BrutalistButton extends StatelessWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: AppTypography.fontFamily,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: isDisabled
@@ -242,7 +244,7 @@ class _BrutalistButton extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: AppTypography.fontFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isDanger ? AppColors.error : AppColors.onSurface,

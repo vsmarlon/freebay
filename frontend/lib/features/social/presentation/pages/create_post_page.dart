@@ -9,6 +9,9 @@ import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -88,7 +91,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         title: Text(
           'Nova publicacao',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: context.textPrimary,
@@ -143,8 +146,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            BrutalistBreadcrumb(items: [
+              BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Nova Publicação'),
+            ]),
+            Spacing.vMd,
             _buildSeparationCard(context, isDark),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Row(
               children: [
                 Container(
@@ -157,14 +165,14 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 Text(
                   'Publicacao social',
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.white : AppColors.onSurface,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Container(
               color: isDark
                   ? AppColors.surfaceContainerDark
@@ -187,7 +195,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
               ),
             ),
             if (_selectedImagePath != null) ...[
-              const SizedBox(height: 16),
+              Spacing.vMd,
               Stack(
                 children: [
                   Image.file(
@@ -203,10 +211,10 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       onTap: () => setState(() => _selectedImagePath = null),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        color: Colors.black54,
+                        color: AppColors.onSurface.withValues(alpha: 0.54),
                         child: const Icon(
                           Icons.close,
-                          color: Colors.white,
+                          color: AppColors.onPrimary,
                           size: 20,
                         ),
                       ),
@@ -215,7 +223,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 ],
               ),
             ],
-            const SizedBox(height: 16),
+            Spacing.vMd,
             InkWell(
               onTap: _pickImage,
               child: Container(
@@ -232,7 +240,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       Icons.image_outlined,
                       color: AppColors.primaryContainer,
                     ),
-                    const SizedBox(width: 8),
+                    Spacing.hSm,
                     Text(
                       _selectedImagePath == null
                           ? 'Adicionar imagem ao post'
@@ -262,13 +270,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
           Text(
             'SOCIAL E VENDA AGORA FICAM SEPARADOS',
             style: TextStyle(
-              fontFamily: 'SpaceGrotesk',
+              fontFamily: AppTypography.headlineFontFamily,
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: isDark ? AppColors.white : AppColors.onSurface,
             ),
           ),
-          const SizedBox(height: 8),
+          Spacing.vSm,
           Text(
             'Use esta tela para posts do feed. Para vender um item, crie um anuncio separado para manter a experiencia mais limpa.',
             style: TextStyle(

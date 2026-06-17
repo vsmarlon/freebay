@@ -10,12 +10,14 @@ import {
 import { PrismaPasswordRecoveryRepository } from '../repositories/password-recovery.repository';
 import { PrismaUserRepository } from '../repositories/prisma-user.repository';
 import { ResetPasswordDTO } from '../dtos/password-recovery.dto';
+import { RedisService } from '@/shared/infra/redis/redis.service';
 
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
     private userRepository: PrismaUserRepository,
     private recoveryRepository: PrismaPasswordRecoveryRepository,
+    private redisService: RedisService,
   ) {}
 
   async execute(input: ResetPasswordDTO): Promise<Either<AppError, { reset: boolean }>> {
@@ -47,6 +49,11 @@ export class ResetPasswordUseCase {
 
     await this.userRepository.update(user.id, { passwordHash });
     await this.recoveryRepository.markUsed(recovery.id);
+    await this.redisService.add(
+      `user_tokens_invalid_before:${user.id}`,
+      Math.floor(Date.now() / 1000).toString(),
+      60 * 60 * 24 * 30,
+    );
 
     return right({ reset: true });
   }

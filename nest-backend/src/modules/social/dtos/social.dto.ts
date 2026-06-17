@@ -1,23 +1,37 @@
-import { z } from 'zod';
+import { IsString, MinLength, MaxLength, IsOptional, IsUUID, IsIn, IsUrl } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
-export const createPostSchema = z.object({
-  content: z.string().optional(),
-  imageUrl: z.string().optional(),
-  type: z.enum(['PRODUCT', 'REGULAR']),
-});
+export class CreatePostDTO {
+  @ApiPropertyOptional({ example: 'Post content here...' })
+  @IsOptional()
+  @IsString()
+  @SanitizeText()
+  content?: string;
 
-export const createCommentSchema = z.object({
-  content: z.string().min(1).max(1000),
-  parentId: z.string().uuid().optional(),
-});
+  @ApiPropertyOptional({ example: 'https://example.com/image.jpg' })
+  @IsOptional()
+  @IsUrl({ require_protocol: true, protocols: ['https'] })
+  imageUrl?: string;
 
-export const createStorySchema = z.object({
-  imageBase64: z.string(),
-});
+  @ApiProperty({ enum: ['PRODUCT', 'REGULAR'], example: 'REGULAR' })
+  @IsIn(['PRODUCT', 'REGULAR'])
+  type: 'PRODUCT' | 'REGULAR';
+}
 
-export type CreatePostDTO = z.infer<typeof createPostSchema>;
-export type CreateCommentDTO = z.infer<typeof createCommentSchema>;
-export type CreateStoryDTO = z.infer<typeof createStorySchema>;
+export class CreateCommentDTO {
+  @ApiProperty({ example: 'Great post!', minLength: 1, maxLength: 1000 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(1000)
+  @SanitizeText()
+  content: string;
+
+  @ApiPropertyOptional({ example: 'parent-uuid' })
+  @IsOptional()
+  @IsUUID()
+  parentId?: string;
+}
 
 export interface CreatePostInput {
   userId: string;

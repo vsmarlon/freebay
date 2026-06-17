@@ -4,10 +4,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_card.dart';
 import 'package:freebay/core/components/app_dialog.dart';
+import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
 
 class ProductListPage extends ConsumerStatefulWidget {
   const ProductListPage({super.key});
@@ -59,7 +62,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
         title: Text(
           'Explorar',
           style: TextStyle(
-            color: context.isDark ? AppColors.white : AppColors.primaryPurple,
+            color: context.isDark ? AppColors.white : AppColors.primaryContainer,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -69,7 +72,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
           IconButton(
             icon: Icon(
               _showFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: context.isDark ? AppColors.white : AppColors.primaryPurple,
+              color: context.isDark ? AppColors.white : AppColors.primaryContainer,
             ),
             onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
@@ -133,7 +136,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
                       category: selectedCategory,
                     ),
                   ).future),
-                  color: AppColors.primaryPurple,
+                  color: AppColors.primaryContainer,
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate:

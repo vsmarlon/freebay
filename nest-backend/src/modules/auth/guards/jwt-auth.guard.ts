@@ -3,24 +3,17 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-  Inject,
-  forwardRef,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
-import { RedisService } from '@/shared/infra/redis/redis.service';
 import { IS_PUBLIC_KEY } from '@/shared/decorators/public.decorator';
-import { JwtPayload } from '@/shared/core/types';
+import { ALLOWED_TOKEN_TYPES_KEY } from './token-types.decorator';
+import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-    @Inject(forwardRef(() => RedisService))
-    private readonly redisService: RedisService,
     private readonly reflector: Reflector,
-    private readonly jwtService: JwtService,
-    private readonly config: ConfigService,
+    private readonly tokenValidator: JwtTokenValidatorService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -35,23 +28,17 @@ export class JwtAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+    const allowedTokenTypes = this.reflector.getAllAndOverride<Array<'access' | 'refresh'>>(
+      ALLOWED_TOKEN_TYPES_KEY,
+      [context.getHandler(), context.getClass()],
+    ) ?? ['access'];
 
     if (!token) {
       throw new UnauthorizedException('Token não fornecido');
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
-        secret: this.config.get('JWT_SECRET', 'default-secret'),
-      });
-
-      const isBlacklisted = payload.jti
-        ? await this.redisService.exists(`blacklist:${payload.jti}`)
-        : false;
-
-      if (isBlacklisted) {
-        throw new UnauthorizedException('Token revogado');
-      }
+      const payload = await this.tokenValidator.verifyAndValidate(token, allowedTokenTypes);
 
       request.user = payload;
       return true;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class CommentItem extends StatelessWidget {
   final CommentEntity comment;
@@ -49,7 +50,7 @@ class CommentItem extends StatelessWidget {
                   : null,
             ),
           ),
-          const SizedBox(width: 8),
+          Spacing.hSm,
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,7 +71,7 @@ class CommentItem extends StatelessWidget {
                   comment.content,
                   style: TextStyle(fontSize: 14, color: context.textPrimary),
                 ),
-                const SizedBox(height: 4),
+                Spacing.vXs,
                 Row(
                   children: [
                     Text(
@@ -80,7 +81,7 @@ class CommentItem extends StatelessWidget {
                         color: AppColors.mediumGray,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    Spacing.hMd,
                     GestureDetector(
                       onTap: onReply,
                       child: const Text(
@@ -88,11 +89,11 @@ class CommentItem extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primaryPurple,
+                          color: AppColors.primaryContainer,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    Spacing.hMd,
                     GestureDetector(
                       onTap: onLike,
                       child: Row(
@@ -102,7 +103,7 @@ class CommentItem extends StatelessWidget {
                             size: 14,
                             color: isLiked ? Colors.red : AppColors.mediumGray,
                           ),
-                          const SizedBox(width: 4),
+                          Spacing.hXs,
                           if (likesCount > 0)
                             Text(
                               likesCount.toString(),

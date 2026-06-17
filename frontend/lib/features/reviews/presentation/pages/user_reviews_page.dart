@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/data/services/review_service.dart';
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
@@ -114,7 +117,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
             Text(
               'Avaliações',
               style: TextStyle(
-                fontFamily: 'SpaceGrotesk',
+                fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: isDark
@@ -126,7 +129,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
               Text(
                 widget.userName!,
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   color: AppColors.outline,
                 ),
@@ -134,10 +137,20 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
           ],
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        color: AppColors.primaryContainer,
-        child: _buildContent(isDark),
+      body: Column(
+        children: [
+          BrutalistBreadcrumb(items: [
+            BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+            const BreadcrumbItem(label: 'Avaliações'),
+          ]),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              color: AppColors.primaryContainer,
+              child: _buildContent(isDark),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -152,38 +165,10 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
     }
 
     if (_reviews.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.rate_review_outlined,
-              size: 64,
-              color: AppColors.outline,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Nenhuma avaliação',
-              style: TextStyle(
-                fontFamily: 'SpaceGrotesk',
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.inverseOnSurface
-                    : AppColors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Este usuário ainda não recebeu avaliações.',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                color: AppColors.outline,
-              ),
-            ),
-          ],
-        ),
+      return const EmptyState(
+        icon: Icons.rate_review_outlined,
+        title: 'NENHUMA AVALIAÇÃO',
+        subtitle: 'Este usuário ainda não recebeu avaliações.',
       );
     }
 

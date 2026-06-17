@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/theme/app_typography.dart';
 import '../theme/app_colors.dart';
 
 class SectionTitle extends StatelessWidget {
@@ -23,7 +24,7 @@ class SectionTitle extends StatelessWidget {
           Text(
             text.toUpperCase(),
             style: TextStyle(
-              fontFamily: 'SpaceGrotesk',
+              fontFamily: AppTypography.headlineFontFamily,
               fontSize: 48,
               fontWeight: FontWeight.bold,
               fontStyle: FontStyle.italic,

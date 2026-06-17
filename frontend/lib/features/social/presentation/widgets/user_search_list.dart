@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class UserSearchList extends StatelessWidget {
   final List<UserSearchEntity> users;
@@ -32,7 +33,7 @@ class UserSearchList extends StatelessWidget {
               size: 64,
               color: AppColors.mediumGray,
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             const Text(
               'Nenhum usuário encontrado',
               style: TextStyle(
@@ -145,10 +146,10 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                         ),
                       ),
                       if (widget.user.isVerified) ...[
-                        const SizedBox(width: 4),
+                        Spacing.hXs,
                         const Icon(
                           Icons.verified,
-                          color: AppColors.primaryPurple,
+                          color: AppColors.primaryContainer,
                           size: 16,
                         ),
                       ],
@@ -164,7 +165,7 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  const SizedBox(height: 4),
+                  Spacing.vXs,
                   Text(
                     '${widget.user.followersCount} seguidores',
                     style: const TextStyle(
@@ -175,7 +176,7 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                 ],
               ),
             ),
-            const SizedBox(width: 8),
+            Spacing.hSm,
             _isLoading
                 ? const SizedBox(
                     width: 32,
@@ -197,13 +198,13 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.primaryPurple),
+                            border: Border.all(color: AppColors.primaryContainer),
                           ),
                           child: const Center(
                             child: Text(
                               'Seguindo',
                               style: TextStyle(
-                                color: AppColors.primaryPurple,
+                                color: AppColors.primaryContainer,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

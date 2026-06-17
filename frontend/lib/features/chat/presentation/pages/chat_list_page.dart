@@ -7,6 +7,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -108,13 +109,18 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                           return _buildEmptyState(isDark, chats.isEmpty);
                         }
                         return Expanded(
-                          child: ListView.builder(
-                            itemCount: filteredChats.length,
-                            itemBuilder: (context, index) {
-                              final chat = filteredChats[index];
-                              return _buildChatItem(
-                                  context, isDark, chat, index);
+                          child: RefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(chatsProvider);
                             },
+                            child: ListView.builder(
+                              itemCount: filteredChats.length,
+                              itemBuilder: (context, index) {
+                                final chat = filteredChats[index];
+                                return _buildChatItem(
+                                    context, isDark, chat, index);
+                              },
+                            ),
                           ),
                         );
                       },
@@ -175,11 +181,11 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
               contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             ),
           ),
-          const SizedBox(height: 8),
+          Spacing.vSm,
           Row(
             children: [
               _buildSortChip('Recentes', 'recent', isDark),
-              const SizedBox(width: 8),
+              Spacing.hSm,
               _buildSortChip('Nome', 'name', isDark),
             ],
           ),
@@ -197,8 +203,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark
-                  ? AppColors.primaryPurpleLight
-                  : AppColors.primaryPurple)
+                  ? AppColors.primaryContainer
+                  : AppColors.primaryContainer)
               : (isDark ? AppColors.backgroundDark : AppColors.lightGray),
           borderRadius: BorderRadius.zero,
         ),
@@ -208,7 +214,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             color: isSelected
-                ? Colors.white
+                ? AppColors.onPrimary
                 : (isDark ? AppColors.white : AppColors.darkGray),
           ),
         ),
@@ -235,7 +241,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.error_outline, size: 64, color: AppColors.error),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Text(
               'Erro ao carregar conversas',
               style: TextStyle(
@@ -244,14 +250,14 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                 color: isDark ? AppColors.white : AppColors.darkGray,
               ),
             ),
-            const SizedBox(height: 8),
+            Spacing.vSm,
             Text(
               error,
               style: TextStyle(
                   color: isDark ? AppColors.mediumGray : AppColors.mediumGray),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             InkWell(
               onTap: () => ref.invalidate(chatsProvider),
               child: Container(
@@ -316,7 +322,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                        borderRadius: BorderRadius.zero,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vSm,
                   Container(
                     height: 12,
                     width: 150,
@@ -357,8 +363,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
             border: Border.all(
               color: chat.unread
                   ? (isDark
-                      ? AppColors.primaryPurpleLight
-                      : AppColors.primaryPurple)
+                      ? AppColors.primaryContainer
+                      : AppColors.primaryContainer)
                   : (isDark
                       ? AppColors.mediumGray.withAlpha(76)
                       : AppColors.mediumGray.withAlpha(102)),
@@ -398,7 +404,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: AppColors.accentGreen,
+                        color: AppColors.success,
                         border: Border.all(
                           color:
                               isDark ? AppColors.surfaceDark : AppColors.white,
@@ -430,8 +436,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                         chat.unread ? FontWeight.w600 : FontWeight.normal,
                     color: chat.unread
                         ? (isDark
-                            ? AppColors.primaryPurpleLight
-                            : AppColors.primaryPurple)
+                            ? AppColors.primaryContainer
+                            : AppColors.primaryContainer)
                         : (isDark
                             ? AppColors.mediumGray
                             : AppColors.mediumGray),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ReputationStars extends StatelessWidget {
   final double score;
@@ -26,20 +27,20 @@ class ReputationStars extends StatelessWidget {
           Color color;
 
           if (score >= starValue) {
-            icon = Icons.star_rounded;
+            icon = Icons.star;
             color = AppColors.warning;
           } else if (score >= starValue - 0.5) {
-            icon = Icons.star_half_rounded;
+            icon = Icons.star_half;
             color = AppColors.warning;
           } else {
-            icon = Icons.star_outline_rounded;
+            icon = Icons.star_outline;
             color = AppColors.mediumGray.withAlpha(128);
           }
 
           return Icon(icon, size: size, color: color);
         }),
         if (showCount && reviewCount > 0) ...[
-          const SizedBox(width: 4),
+          Spacing.hXs,
           Text(
             '($reviewCount)',
             style: TextStyle(

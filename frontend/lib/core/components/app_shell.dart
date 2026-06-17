@@ -8,6 +8,8 @@ import 'package:freebay/features/product/presentation/pages/product_list_page.da
 import 'package:freebay/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:freebay/features/profile/presentation/pages/profile_page.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class AppShell extends StatefulWidget {
   final Widget child;
@@ -219,7 +221,7 @@ class _NavItem extends StatelessWidget {
         child: Container(
           height: 64,
           color: isSelected
-              ? (isWallet ? AppColors.accentGreen : AppColors.primaryContainer)
+              ? (isWallet ? AppColors.success : AppColors.primaryContainer)
               : Colors.transparent,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -227,22 +229,22 @@ class _NavItem extends StatelessWidget {
               Icon(
                 isSelected ? selectedIcon : icon,
                 color: isSelected
-                    ? Colors.white
+                    ? AppColors.onPrimary
                     : (isDark
                         ? AppColors.inverseOnSurface
                         : AppColors.onSurface),
                 size: 24,
               ),
-              const SizedBox(height: 4),
+              Spacing.vXs,
               Text(
                 label,
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
                   color: isSelected
-                      ? Colors.white
+                      ? AppColors.onPrimary
                       : (isDark
                           ? AppColors.inverseOnSurface
                           : AppColors.onSurface),
@@ -280,7 +282,7 @@ class _CreateProductFab extends StatelessWidget {
         ),
         child: const Icon(
           Icons.add,
-          color: Colors.white,
+          color: AppColors.onPrimary,
           size: 28,
         ),
       ),

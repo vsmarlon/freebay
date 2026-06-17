@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/freebay.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
@@ -11,6 +11,8 @@ import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_header.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 import 'package:freebay/features/social/presentation/widgets/stories_row.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
@@ -162,7 +164,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
               Text(
                 'FEED',
                 style: TextStyle(
-                  fontFamily: 'SpaceGrotesk',
+                  fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 48,
                   fontWeight: FontWeight.w800,
                   fontStyle: FontStyle.italic,
@@ -171,7 +173,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
                   color: context.textPrimary,
                 ),
               ),
-              Freebay.horizontalSpacing8,
+              Spacing.hSm,
               FeedTypeDropdown(
                 currentType: feedType,
                 onChanged: _onFeedTypeChanged,
@@ -225,20 +227,20 @@ class _FeedPageState extends ConsumerState<FeedPage>
               height: 28,
               decoration: const BoxDecoration(
                 color: AppColors.primaryContainer,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
                 Icons.person,
                 size: 14,
-                color: Colors.white,
+                color: AppColors.onPrimary,
               ),
             ),
-            Freebay.horizontalSpacing8,
+            Spacing.hSm,
             Expanded(
               child: Text(
                 'Criar post social ou anuncio de venda',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
                   color: AppColors.outline,
                 ),
@@ -256,10 +258,10 @@ class _FeedPageState extends ConsumerState<FeedPage>
   }
 
   void _openCreateChooser() {
-    showModalBottomSheet<void>(
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const CreateComposerSheet(),
+      builder: (_) => const CreateComposerSheet(),
     );
   }
 

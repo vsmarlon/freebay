@@ -3,6 +3,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
 import { FollowRepository } from '../repositories/follow.repository';
+import { NotificationService } from '../../notifications/services/notification.service';
 import { BlockRepository } from '../repositories/block.repository';
 import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -104,6 +105,7 @@ export class FollowUserUseCase {
   constructor(
     private userRepository: PrismaUserRepository,
     private followRepository: FollowRepository,
+    private notificationService: NotificationService,
   ) {}
 
   async execute(input: FollowUserInput): Promise<Either<AppError, FollowResponse>> {
@@ -124,6 +126,11 @@ export class FollowUserUseCase {
         return left(new BadRequestError('Already following'));
       }
       throw error;
+    }
+
+    const follower = await this.userRepository.findById(input.followerId);
+    if (follower) {
+      await this.notificationService.notifyNewFollower(input.followingId, follower.displayName);
     }
 
     const followersCount = await this.followRepository.getFollowersCount(input.followingId);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class CommentInput extends StatelessWidget {
   final TextEditingController controller;
@@ -52,7 +53,7 @@ class CommentInput extends StatelessWidget {
             onSubmitted: (_) => onSend(),
           ),
         ),
-        const SizedBox(width: 8),
+        Spacing.hSm,
         GestureDetector(
           onTap: isSending ? null : onSend,
           child: Container(
@@ -66,10 +67,10 @@ class CommentInput extends StatelessWidget {
                     height: iconSize,
                     child: const CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                     ),
                   )
-                : Icon(Icons.send, color: Colors.white, size: iconSize),
+                : Icon(Icons.send, color: AppColors.onPrimary, size: iconSize),
           ),
         ),
       ],

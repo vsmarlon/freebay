@@ -1,20 +1,36 @@
-import { z } from 'zod';
+import { IsString, IsEmail, MinLength, MaxLength, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-export const requestPasswordRecoverySchema = z.object({
-  email: z.string().email(),
-});
+export class RequestPasswordRecoveryDTO {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+}
 
-export const verifyPasswordRecoveryCodeSchema = z.object({
-  email: z.string().email(),
-  code: z.string().regex(/^\d{6}$/, 'Código deve ter 6 dígitos'),
-});
+export class VerifyPasswordRecoveryCodeDTO {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
 
-export const resetPasswordSchema = z.object({
-  email: z.string().email(),
-  code: z.string().regex(/^\d{6}$/, 'Código deve ter 6 dígitos'),
-  newPassword: z.string().min(8).max(100),
-});
+  @ApiProperty({ example: '123456', description: '6-digit code sent via email' })
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'Código deve ter 6 dígitos' })
+  code: string;
+}
 
-export type RequestPasswordRecoveryDTO = z.infer<typeof requestPasswordRecoverySchema>;
-export type VerifyPasswordRecoveryCodeDTO = z.infer<typeof verifyPasswordRecoveryCodeSchema>;
-export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;
+export class ResetPasswordDTO {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: '123456', description: '6-digit code sent via email' })
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'Código deve ter 6 dígitos' })
+  code: string;
+
+  @ApiProperty({ example: '********', minLength: 8, maxLength: 100 })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  newPassword: string;
+}

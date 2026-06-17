@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 
 class BrutalistFilterChip extends StatelessWidget {
@@ -31,7 +32,7 @@ class BrutalistFilterChip extends StatelessWidget {
         child: Text(
           label.toUpperCase(),
           style: const TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             fontSize: 12,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.4,

@@ -8,11 +8,14 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';
+import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { SendMessageUseCase } from './usecases/chat.usecase';
+import { NotificationService } from '../notifications/services/notification.service';
 
 interface AuthenticatedUser {
   userId: string;
-  email: string;
+  email?: string;
 }
 
 @WebSocketGateway({
@@ -25,9 +28,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private connectedUsers = new Map<string, AuthenticatedUser>();
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private tokenValidator: JwtTokenValidatorService,
+    private prisma: PrismaService,
+    private sendMessageUseCase: SendMessageUseCase,
+    private notificationService: NotificationService,
+  ) {}
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token || client.handshake.headers.authorization?.replace('Bearer ', '');
       if (!token) {
@@ -35,7 +43,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const payload = this.jwtService.verify(token);
+      const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
       this.connectedUsers.set(client.id, { userId: payload.userId, email: payload.email });
       console.log(`Client connected: ${client.id}, userId: ${payload.userId}`);
     } catch (error) {
@@ -50,16 +58,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join_conversation')
-  handleJoinConversation(
+  async handleJoinConversation(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
     const user = this.connectedUsers.get(client.id);
     if (!user) return;
 
+    const conversation = await this.prisma.directConversation.findUnique({
+      where: { id: data.conversationId },
+    });
+
+    if (!conversation || (conversation.user1Id !== user.userId && conversation.user2Id !== user.userId)) {
+      return { error: 'Not a participant of this conversation' };
+    }
+
     client.join(`conversation:${data.conversationId}`);
     console.log(`User ${user.userId} joined conversation ${data.conversationId}`);
-    
+
     return { event: 'joined', data: { conversationId: data.conversationId } };
   }
 
@@ -104,6 +120,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private async sendMessage(userId: string, conversationId: string, content: string) {
-    return { id: `temp-${Date.now()}`, conversationId, senderId: userId, content, createdAt: new Date() };
+    const result = await this.sendMessageUseCase.execute({ senderId: userId, conversationId, content });
+    if (result.isLeft()) {
+      return null;
+    }
+
+    const conversation = await this.prisma.directConversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        user1: { select: { id: true, displayName: true } },
+        user2: { select: { id: true, displayName: true } },
+      },
+    });
+
+    if (conversation) {
+      const otherUserId = conversation.user1Id === userId ? conversation.user2Id : conversation.user1Id;
+      const senderName = conversation.user1Id === userId ? conversation.user1.displayName : conversation.user2.displayName;
+      await this.notificationService.notifyNewMessage(otherUserId, senderName, conversationId);
+    }
+
+    return result.value;
   }
 }

@@ -88,7 +88,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.onSurface,
       body: GestureDetector(
         onTapDown: (details) => _onTapDown(details, context),
         child: Stack(
@@ -127,8 +127,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
                     : index == _currentIndex
                         ? (_isPaused ? 0.0 : null)
                         : 0.0,
-                backgroundColor: Colors.white.withValues(alpha: 0.3),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                backgroundColor: AppColors.onPrimary.withValues(alpha: 0.3),
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
               ),
             ),
           );
@@ -173,7 +173,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
                   Text(
                     story.user.displayName,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -181,7 +181,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
                   Text(
                     _formatTime(story.createdAt),
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: AppColors.onPrimary.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),
@@ -189,7 +189,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
+              icon: const Icon(Icons.close, color: AppColors.onPrimary),
               onPressed: () => Navigator.pop(context),
             ),
           ],
@@ -271,22 +271,22 @@ class _StoryPageState extends State<_StoryPage>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black,
+      color: AppColors.onSurface,
       child: Center(
         child: Image.network(
           widget.story.imageUrl,
           fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => const Center(
+          errorBuilder: (context, error, stackTrace) => Center(
             child: Icon(
               Icons.broken_image,
-              color: Colors.white54,
+              color: AppColors.onPrimary.withAlpha(138),
               size: 64,
             ),
           ),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return const CircularProgressIndicator(
-              color: AppColors.primaryPurple,
+              color: AppColors.primaryContainer,
             );
           },
         ),

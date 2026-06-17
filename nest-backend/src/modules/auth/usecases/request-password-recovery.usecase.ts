@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { Either, left, right } from '@/shared/core/either';
+import { Either, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaUserRepository } from '../repositories/prisma-user.repository';
 import { PrismaPasswordRecoveryRepository } from '../repositories/password-recovery.repository';

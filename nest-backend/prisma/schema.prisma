@@ -127,6 +127,7 @@ model User {
   commentLikes    CommentLike[]
   favorites       Favorite[]
   cartItems       CartItem[]
+  passwordRecoveryCodes PasswordRecoveryCode[]
   convosAsUser1   DirectConversation[] @relation("User1Convos")
   convosAsUser2   DirectConversation[] @relation("User2Convos")
   directMessages  DirectMessage[]

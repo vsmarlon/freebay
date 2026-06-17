@@ -4,6 +4,7 @@ import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../../orders/repositories/order.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { AbacatePayProvider } from '../providers/abacatepay.provider';
+import { NotificationService } from '../../notifications/services/notification.service';
 import {
   CreatePixPaymentInput,
   CreatePixPaymentOutput,
@@ -109,7 +110,10 @@ export class CreatePixPaymentUseCase {
 export class ProcessWebhookUseCase {
   private readonly logger = new Logger(ProcessWebhookUseCase.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async execute(input: ProcessWebhookInput): Promise<Either<AppError, { processed: boolean }>> {
     const { event, data } = input;
@@ -123,7 +127,7 @@ export class ProcessWebhookUseCase {
 
       const transaction = await this.prisma.transaction.findFirst({
         where: { idempotencyKey: correlationID },
-        include: { order: true },
+        include: { order: { include: { buyer: true, seller: true } } },
       });
 
       if (!transaction) {
@@ -155,6 +159,9 @@ export class ProcessWebhookUseCase {
           update: { pendingBalance: { increment: transaction.sellerAmount } },
         });
       });
+
+      await this.notificationService.notifyPayment(transaction.order.sellerId, transaction.amount);
+      await this.notificationService.notifyOrderStatus(transaction.order.buyerId, transaction.orderId, 'CONFIRMED');
 
       return right({ processed: true });
     }

@@ -74,6 +74,23 @@ class AppTypography {
     color: AppColors.mediumGray,
   );
 
+  // ─── Breadcrumb ───────────────────────────────────────
+  static const TextStyle breadcrumbParent = TextStyle(
+    fontFamily: headlineFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppColors.onSurfaceVariant,
+    height: 1.4,
+  );
+
+  static const TextStyle breadcrumbCurrent = TextStyle(
+    fontFamily: headlineFontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    color: AppColors.onSurface,
+    height: 1.4,
+  );
+
   // ─── Button ───────────────────────────────────────────
   static const TextStyle button = TextStyle(
     fontFamily: fontFamily,

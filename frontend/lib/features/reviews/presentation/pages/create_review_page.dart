@@ -6,6 +6,9 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/reviews/data/services/review_service.dart';
 import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
@@ -107,7 +110,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
         title: Text(
           'Avaliar',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: isDark
@@ -121,16 +124,20 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 16),
+            BrutalistBreadcrumb(items: [
+              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Avaliar'),
+            ]),
+            Spacing.vMd,
             UserAvatar(
               imageUrl: widget.reviewedAvatarUrl,
               size: AppAvatarSize.large,
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Text(
               widget.reviewedName,
               style: TextStyle(
-                fontFamily: 'SpaceGrotesk',
+                fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: isDark
@@ -138,18 +145,18 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     : AppColors.onSurface,
               ),
             ),
-            const SizedBox(height: 4),
+            Spacing.vXs,
             Text(
               isBuyerReviewing ? 'VENDEDOR' : 'COMPRADOR',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 1.2,
                 color: AppColors.outline,
               ),
             ),
-            const SizedBox(height: 32),
+            Spacing.vXl,
             Container(
               width: double.infinity,
               color: isDark
@@ -161,7 +168,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                   Text(
                     'Como foi sua experiência?',
                     style: TextStyle(
-                      fontFamily: 'SpaceGrotesk',
+                      fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isDark
@@ -176,11 +183,11 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     size: 48,
                     enabled: !_isSubmitting,
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vSm,
                   Text(
                     _getScoreLabel(),
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: AppTypography.fontFamily,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: _score > 0
@@ -191,7 +198,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             Container(
               width: double.infinity,
               color: isDark
@@ -204,21 +211,21 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                   Text(
                     'Comentário (opcional)',
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: AppTypography.fontFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.5,
                       color: AppColors.outline,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vSm,
                   TextField(
                     controller: _commentController,
                     maxLines: 4,
                     maxLength: 500,
                     enabled: !_isSubmitting,
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: AppTypography.fontFamily,
                       fontSize: 14,
                       color: isDark
                           ? AppColors.inverseOnSurface
@@ -249,7 +256,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                         borderSide: BorderSide(color: AppColors.outlineVariant),
                       ),
                       counterStyle: TextStyle(
-                        fontFamily: 'Inter',
+                        fontFamily: AppTypography.fontFamily,
                         fontSize: 12,
                         color: AppColors.outline,
                       ),
@@ -258,7 +265,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 32),
+            Spacing.vXl,
             SizedBox(
               width: double.infinity,
               child: Container(
@@ -289,7 +296,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                             : Text(
                                 'Enviar avaliação',
                                 style: TextStyle(
-                                  fontFamily: 'Inter',
+                                  fontFamily: AppTypography.fontFamily,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                   color: _score > 0

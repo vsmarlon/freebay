@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
   final repository = SocialRepository();
@@ -39,63 +42,61 @@ class LikedPostsPage extends ConsumerWidget {
       ),
       body: postsAsync.when(
         data: (posts) {
-          if (posts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 64,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum post curtido ainda',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          return GridView.builder(
-            padding: const EdgeInsets.all(8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 4,
-              mainAxisSpacing: 4,
-            ),
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return _buildPostTile(context, post, isDark);
-            },
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryPurple),
-        ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          return Column(
             children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
-              Text(
-                'Erro ao carregar posts curtidos',
-                style: TextStyle(
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                ),
-              ),
-            ],
+              BrutalistBreadcrumb(items: [
+                BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                const BreadcrumbItem(label: 'Posts Curtidos'),
+              ]),
+              Expanded(
+                child: posts.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.favorite_border,
+                        title: 'NENHUM POST CURTIDO',
+                        subtitle: 'Curtidas em posts aparecerão aqui.',
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(likedPostsProvider);
+                        },
+                        child: GridView.builder(
+                          padding: const EdgeInsets.all(8),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 4,
+                            mainAxisSpacing: 4,
+                          ),
+                          itemCount: posts.length,
+                          itemBuilder: (context, index) {
+                            final post = posts[index];
+                            return _buildPostTile(context, post, isDark);
+                          },
+                        ),
+                      ),
+            ),
+          ],
+        );
+      },
+    loading: () => const Center(
+      child: CircularProgressIndicator(color: AppColors.primaryContainer),
+    ),
+    error: (err, _) => Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+          Spacing.vMd,
+          Text(
+            'Erro ao carregar posts curtidos',
+            style: TextStyle(
+              color: isDark ? AppColors.white : AppColors.darkGray,
+            ),
           ),
-        ),
+        ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildPostTile(BuildContext context, PostEntity post, bool isDark) {
@@ -106,6 +107,7 @@ class LikedPostsPage extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+          border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
         ),
         child: imageUrl != null && imageUrl.isNotEmpty
             ? Image.network(

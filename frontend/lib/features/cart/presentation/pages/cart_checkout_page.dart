@@ -3,12 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class CartCheckoutPage extends ConsumerStatefulWidget {
   const CartCheckoutPage({super.key});
@@ -56,27 +59,10 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
           : _checkout != null
               ? _buildCheckoutResult(context, isDark, _checkout!)
           : cart.items.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.shopping_cart_outlined,
-                        size: 72,
-                        color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Carrinho vazio',
-                        style: TextStyle(
-                          fontFamily: 'SpaceGrotesk',
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                    ],
-                  ),
+              ? const EmptyState(
+                  icon: Icons.shopping_cart_outlined,
+                  title: 'CARRINHO VAZIO',
+                  subtitle: 'Adicione produtos ao carrinho para continuar.',
                 )
               : Column(
                   children: [
@@ -98,7 +84,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontFamily: 'Inter',
+                                        fontFamily: AppTypography.fontFamily,
                                         fontWeight: FontWeight.w600,
                                         color: isDark ? AppColors.white : AppColors.darkGray,
                                       ),
@@ -108,7 +94,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                   Text(
                                     '${item.quantity}x',
                                     style: TextStyle(
-                                      fontFamily: 'Inter',
+                                      fontFamily: AppTypography.fontFamily,
                                       color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                                     ),
                                   ),
@@ -116,7 +102,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                   Text(
                                     'R\$ $subtotal',
                                     style: TextStyle(
-                                      fontFamily: 'SpaceGrotesk',
+                                      fontFamily: AppTypography.headlineFontFamily,
                                       fontWeight: FontWeight.w700,
                                       color: isDark ? AppColors.white : AppColors.darkGray,
                                     ),
@@ -125,32 +111,32 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                               ),
                             );
                           }),
-                          const SizedBox(height: 16),
+                          Spacing.vMd,
                           if (!(user?.hasCpf ?? false))
                             Container(
                               padding: const EdgeInsets.all(12),
                               color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainerHighest,
                               child: Row(
                                 children: [
-                                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
-                                  const SizedBox(width: 8),
+                                  const Icon(Icons.warning_amber, color: AppColors.warning, size: 20),
+                                  Spacing.hSm,
                                   Expanded(
                                     child: Text(
                                       'Adicione seu CPF no perfil antes de comprar.',
                                       style: TextStyle(
-                                        fontFamily: 'Inter',
+                                        fontFamily: AppTypography.fontFamily,
                                         fontSize: 13,
                                         color: isDark ? AppColors.white : AppColors.darkGray,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  Spacing.hSm,
                                   InkWell(
                                     onTap: () => context.push('/profile/edit'),
                                     child: const Text(
                                       'Adicionar',
                                       style: TextStyle(
-                                        fontFamily: 'Inter',
+                                        fontFamily: AppTypography.fontFamily,
                                         fontWeight: FontWeight.w700,
                                         color: AppColors.primaryContainer,
                                       ),
@@ -176,7 +162,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                   Text(
                                     'Total (${cart.totalItems} itens)',
                                     style: TextStyle(
-                                      fontFamily: 'Inter',
+                                      fontFamily: AppTypography.fontFamily,
                                       color: isDark
                                           ? AppColors.mediumGray
                                           : AppColors.mediumGray,
@@ -185,7 +171,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                   Text(
                                     CurrencyUtils.formatCents(cart.totalPrice),
                                     style: TextStyle(
-                                      fontFamily: 'SpaceGrotesk',
+                                      fontFamily: AppTypography.headlineFontFamily,
                                       fontSize: 24,
                                       fontWeight: FontWeight.w700,
                                       color: isDark ? AppColors.white : AppColors.darkGray,
@@ -224,7 +210,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                         : const Text(
                                             'Gerar PIXs',
                                             style: TextStyle(
-                                              fontFamily: 'Inter',
+                                              fontFamily: AppTypography.fontFamily,
                                               fontWeight: FontWeight.w700,
                                               color: AppColors.onPrimary,
                                             ),
@@ -259,7 +245,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
               Text(
                 'CHECKOUT GERADO',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
@@ -269,7 +255,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
               Text(
                 '${checkout.totalOrders} pedidos criados',
                 style: TextStyle(
-                  fontFamily: 'SpaceGrotesk',
+                  fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: isDark ? AppColors.white : AppColors.onSurface,
@@ -278,7 +264,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        Spacing.vMd,
         ...checkout.items.map(
           (item) => Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -290,25 +276,25 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                 Text(
                   item.productTitle,
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.white : AppColors.onSurface,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 Text(
                   'Quantidade: ${item.quantity}',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     color: isDark ? AppColors.mediumGray : AppColors.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 8),
+                Spacing.vSm,
                 Text(
                   CurrencyUtils.formatCents(item.amount),
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.white : AppColors.onSurface,
@@ -324,7 +310,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                   child: SelectableText(
                     item.pixQrCode,
                     style: TextStyle(
-                      fontFamily: 'Inter',
+                      fontFamily: AppTypography.fontFamily,
                       fontSize: 13,
                       height: 1.5,
                       color: isDark ? AppColors.white : AppColors.onSurface,
@@ -354,7 +340,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                             child: Text(
                               'Copiar',
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: AppTypography.fontFamily,
                                 fontWeight: FontWeight.w700,
                                 color: isDark ? AppColors.white : AppColors.onSurface,
                               ),
@@ -376,7 +362,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                             child: Text(
                               'Ver pedido',
                               style: TextStyle(
-                                fontFamily: 'Inter',
+                                fontFamily: AppTypography.fontFamily,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.onPrimary,
                               ),

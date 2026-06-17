@@ -5,6 +5,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class PurchasesPage extends ConsumerStatefulWidget {
   const PurchasesPage({super.key});
@@ -56,7 +59,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
         title: const Text(
           'Minhas Compras',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.onSurface,
@@ -64,7 +67,15 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
         ),
         centerTitle: false,
       ),
-      body: _buildBody(state),
+      body: Column(
+        children: [
+          BrutalistBreadcrumb(items: [
+            BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+            const BreadcrumbItem(label: 'Minhas Compras'),
+          ]),
+          Expanded(child: _buildBody(state)),
+        ],
+      ),
     );
   }
 
@@ -85,17 +96,17 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
               color: AppColors.error,
               size: 48,
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
             Text(
               state.error!,
               style: const TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
                 color: AppColors.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             _buildRetryButton(),
           ],
         ),
@@ -119,21 +130,21 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             const Text(
               'Nenhuma compra ainda',
               style: TextStyle(
-                fontFamily: 'SpaceGrotesk',
+                fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.onSurface,
               ),
             ),
-            const SizedBox(height: 8),
+            Spacing.vSm,
             const Text(
               'Suas compras aparecerão aqui',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
                 color: AppColors.onSurfaceVariant,
               ),
@@ -188,7 +199,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
               child: Text(
                 'Tentar novamente',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.onPrimary,
@@ -244,7 +255,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                         size: 24,
                       ),
               ),
-              const SizedBox(width: 16),
+              Spacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +266,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                         Text(
                           '#${order.shortId}',
                           style: const TextStyle(
-                            fontFamily: 'Inter',
+                            fontFamily: AppTypography.fontFamily,
                             fontSize: 12,
                             color: AppColors.onSurfaceVariant,
                           ),
@@ -263,11 +274,11 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                         _buildStatusBadge(order.status),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    Spacing.vXs,
                     Text(
                       order.product?.title ?? 'Produto',
                       style: const TextStyle(
-                        fontFamily: 'SpaceGrotesk',
+                        fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onSurface,
@@ -275,14 +286,14 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
+                    Spacing.vSm,
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           _formatDate(order.createdAt),
                           style: const TextStyle(
-                            fontFamily: 'Inter',
+                            fontFamily: AppTypography.fontFamily,
                             fontSize: 12,
                             color: AppColors.onSurfaceVariant,
                           ),
@@ -296,7 +307,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                           child: Text(
                             order.formattedAmount,
                             style: const TextStyle(
-                              fontFamily: 'SpaceGrotesk',
+                              fontFamily: AppTypography.headlineFontFamily,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppColors.onSurface,
@@ -308,7 +319,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              Spacing.hSm,
               const Icon(
                 Icons.chevron_right,
                 color: AppColors.onSurfaceVariant,
@@ -358,7 +369,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
       child: Text(
         status.label,
         style: TextStyle(
-          fontFamily: 'Inter',
+          fontFamily: AppTypography.fontFamily,
           fontSize: 10,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,

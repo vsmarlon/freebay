@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/wallet_card.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class WalletPage extends ConsumerStatefulWidget {
   const WalletPage({super.key});
@@ -89,11 +92,11 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                           size: 48,
                           color: AppColors.error,
                         ),
-                        const SizedBox(height: 16),
+                        Spacing.vMd,
                         Text(
                           'Não foi possível carregar o saldo.',
                           style: TextStyle(
-                            fontFamily: 'SpaceGrotesk',
+                            fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             color: isDark ? AppColors.white : AppColors.darkGray,
@@ -112,11 +115,11 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                     availableBalanceInCents: availableBalance,
                     pendingBalanceInCents: pendingBalance,
                   ),
-                  const SizedBox(height: 24),
+                  Spacing.vLg,
                   Text(
                     'Visão da carteira',
                     style: TextStyle(
-                      fontFamily: 'SpaceGrotesk',
+                      fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isDark ? AppColors.white : AppColors.darkGray,
@@ -134,12 +137,12 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                           label: 'Disponível',
                           value: 'Saldo já liberado para o vendedor.',
                         ),
-                        const SizedBox(height: 16),
+                        Spacing.vMd,
                         _buildInfoLine(
                           label: 'Em custódia',
                           value: 'Valor aguardando confirmação do pedido.',
                         ),
-                        const SizedBox(height: 16),
+                        Spacing.vMd,
                         _buildInfoLine(
                           label: 'Saques',
                           value: 'Saques automáticos ficam para a próxima etapa do produto.',
@@ -147,11 +150,11 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  Spacing.vLg,
                   Text(
                     'Histórico',
                     style: TextStyle(
-                      fontFamily: 'SpaceGrotesk',
+                      fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: isDark ? AppColors.white : AppColors.darkGray,
@@ -169,40 +172,10 @@ class _WalletPageState extends ConsumerState<WalletPage> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final isDark = context.isDark;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.zero,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 48,
-            color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Sem transações',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.darkGray,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Realize uma compra ou venda para visualizar suas transações aqui.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-            ),
-          ),
-        ],
-      ),
+    return const EmptyState(
+      icon: Icons.receipt_long_outlined,
+      title: 'SEM TRANSAÇÕES',
+      subtitle: 'Realize uma compra ou venda para visualizar suas transações aqui.',
     );
   }
 
@@ -217,7 +190,7 @@ class _WalletPageState extends ConsumerState<WalletPage> {
         Text(
           label.toUpperCase(),
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             fontSize: 12,
             fontWeight: FontWeight.w700,
             color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
@@ -227,7 +200,7 @@ class _WalletPageState extends ConsumerState<WalletPage> {
         Text(
           value,
           style: TextStyle(
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.fontFamily,
             color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
           ),
         ),

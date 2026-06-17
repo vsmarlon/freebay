@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 final userPostsProvider =
     FutureProvider.family<List<PostEntity>, String>((ref, userId) async {
@@ -50,87 +53,85 @@ class MyPostsPage extends ConsumerWidget {
       ),
       body: postsAsync.when(
         data: (posts) {
-          if (posts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.grid_view_rounded,
-                    size: 64,
-                    color: AppColors.mediumGray,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Nenhum post ainda',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.mediumGray,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => context.push('/create-post'),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.brutalistGradient,
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add, color: AppColors.onPrimary),
-                          SizedBox(width: 8),
-                          Text(
-                            'Criar post',
-                            style: TextStyle(
-                              color: AppColors.onPrimary,
-                              fontWeight: FontWeight.w700,
+          return Column(
+            children: [
+              BrutalistBreadcrumb(items: [
+                BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                const BreadcrumbItem(label: 'Meus Posts'),
+              ]),
+              Expanded(
+                child: posts.isEmpty
+                    ? EmptyState(
+                        icon: Icons.grid_view,
+                        title: 'NENHUM POST AINDA',
+                        subtitle: 'Crie seu primeiro post!',
+                        action: InkWell(
+                          onTap: () => context.push('/create-post'),
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            decoration: const BoxDecoration(
+                              gradient: AppColors.brutalistGradient,
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.add, color: AppColors.onPrimary),
+                                Spacing.hSm,
+                                Text(
+                                  'Criar post',
+                                  style: TextStyle(
+                                    color: AppColors.onPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(userPostsProvider(userId));
+                        },
+                        child: GridView.builder(
+                          padding: const EdgeInsets.all(8),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 4,
+                            mainAxisSpacing: 4,
+                          ),
+                          itemCount: posts.length,
+                          itemBuilder: (context, index) {
+                            final post = posts[index];
+                            return _buildPostTile(context, post);
+                          },
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          return GridView.builder(
-            padding: const EdgeInsets.all(8),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 4,
-              mainAxisSpacing: 4,
             ),
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return _buildPostTile(context, post);
-            },
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryPurple),
-        ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
-              Text(
-                'Erro ao carregar posts',
-                style: TextStyle(
-                  color: context.textPrimary,
-                ),
-              ),
-            ],
+          ],
+        );
+      },
+    loading: () => const Center(
+      child: CircularProgressIndicator(color: AppColors.primaryContainer),
+    ),
+    error: (err, _) => Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+          Spacing.vMd,
+          Text(
+            'Erro ao carregar posts',
+            style: TextStyle(
+              color: context.textPrimary,
+            ),
           ),
-        ),
+        ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildPostTile(BuildContext context, PostEntity post) {
@@ -146,6 +147,7 @@ class MyPostsPage extends ConsumerWidget {
           Container(
             decoration: BoxDecoration(
               color: context.surfaceMidColor,
+              border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
             ),
             child: imageUrl != null && imageUrl.isNotEmpty
                 ? Image.network(
@@ -183,7 +185,7 @@ class MyPostsPage extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryPurple.withAlpha(204),
+                  color: AppColors.primaryContainer.withAlpha(204),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -191,7 +193,7 @@ class MyPostsPage extends ConsumerWidget {
                     const Icon(
                       Icons.repeat,
                       size: 10,
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                     ),
                     const SizedBox(width: 2),
                     Text(
@@ -199,7 +201,7 @@ class MyPostsPage extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 8,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                       ),
                     ),
                   ],

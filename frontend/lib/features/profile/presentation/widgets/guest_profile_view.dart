@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class GuestProfileView extends ConsumerWidget {
   const GuestProfileView({super.key});
@@ -45,7 +46,7 @@ class GuestProfileView extends ConsumerWidget {
                 size: 80,
                 color: AppColors.mediumGray,
               ),
-              const SizedBox(height: 24),
+              Spacing.vLg,
               Text(
                 'Bem-vindo ao FreeBay!',
                 style: TextStyle(
@@ -61,7 +62,7 @@ class GuestProfileView extends ConsumerWidget {
                 style: TextStyle(fontSize: 16, color: AppColors.mediumGray),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              Spacing.vXl,
               SizedBox(
                 width: double.infinity,
                 child: InkWell(
@@ -91,7 +92,7 @@ class GuestProfileView extends ConsumerWidget {
                   child: Container(
                     height: 52,
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.primaryPurple),
+                      border: Border.all(color: AppColors.primaryContainer),
                     ),
                     child: const Center(
                       child: Text(
@@ -99,7 +100,7 @@ class GuestProfileView extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primaryPurple,
+                          color: AppColors.primaryContainer,
                         ),
                       ),
                     ),

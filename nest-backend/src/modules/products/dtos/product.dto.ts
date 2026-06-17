@@ -1,34 +1,94 @@
-import { z } from 'zod';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsInt,
+  IsPositive,
+  IsIn,
+  IsArray,
+  ArrayMaxSize,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
-export const createProductSchema = z.object({
-  title: z.string().min(3).max(100),
-  description: z.string().min(10).max(5000),
-  price: z.coerce.number().int().positive(),
-  condition: z.enum(['NEW', 'USED']),
-  categoryId: z.string().min(1),
-  images: z.array(z.string()).max(10).optional().default([]),
-});
+export class CreateProductDTO {
+  @ApiProperty({ example: 'iPhone 12', minLength: 3, maxLength: 100 })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(100)
+  @SanitizeText()
+  title: string;
 
-export const productQuerySchema = z.object({
-  cursor: z.string().optional(),
-  limit: z.string().optional(),
-  search: z.string().optional(),
-  category: z.string().optional(),
-  minPrice: z.string().optional(),
-  maxPrice: z.string().optional(),
-});
+  @ApiProperty({ example: 'Description of the product...', minLength: 10, maxLength: 5000 })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(5000)
+  @SanitizeText()
+  description: string;
 
-export const updateProductSchema = z.object({
-  title: z.string().min(3).max(100).optional(),
-  description: z.string().min(10).max(5000).optional(),
-  price: z.coerce.number().int().positive().optional(),
-  condition: z.enum(['NEW', 'USED']).optional(),
-  status: z.enum(['ACTIVE', 'PAUSED']).optional(),
-  categoryId: z.string().min(1).optional(),
-});
+  @ApiProperty({ example: 150000, description: 'Price in cents (BRL)' })
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  price: number;
 
-export type CreateProductDTO = z.infer<typeof createProductSchema>;
-export type UpdateProductDTO = z.infer<typeof updateProductSchema>;
+  @ApiProperty({ enum: ['NEW', 'USED'], example: 'USED' })
+  @IsIn(['NEW', 'USED'])
+  condition: 'NEW' | 'USED';
+
+  @ApiProperty({ example: 'category-uuid' })
+  @IsString()
+  categoryId: string;
+
+  @ApiPropertyOptional({ example: ['https://example.com/img.jpg'], type: [String], maxItems: 10 })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(10)
+  images?: string[];
+}
+
+export class UpdateProductDTO {
+  @ApiPropertyOptional({ example: 'iPhone 12', minLength: 3, maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(100)
+  @SanitizeText()
+  title?: string;
+
+  @ApiPropertyOptional({ example: 'Updated description', minLength: 10, maxLength: 5000 })
+  @IsOptional()
+  @IsString()
+  @MinLength(10)
+  @MaxLength(5000)
+  @SanitizeText()
+  description?: string;
+
+  @ApiPropertyOptional({ example: 150000, description: 'Price in cents (BRL)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  price?: number;
+
+  @ApiPropertyOptional({ enum: ['NEW', 'USED'], example: 'USED' })
+  @IsOptional()
+  @IsIn(['NEW', 'USED'])
+  condition?: 'NEW' | 'USED';
+
+  @ApiPropertyOptional({ enum: ['ACTIVE', 'PAUSED'], example: 'ACTIVE' })
+  @IsOptional()
+  @IsIn(['ACTIVE', 'PAUSED'])
+  status?: 'ACTIVE' | 'PAUSED';
+
+  @ApiPropertyOptional({ example: 'category-uuid' })
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+}
 
 export interface CreateProductInput {
   sellerId: string;
@@ -78,7 +138,7 @@ export interface UpdateProductOutput {
   sellerId: string;
   status: string;
   createdAt: Date;
- }
+}
 
 export interface DeleteProductOutput {
   deleted: boolean;

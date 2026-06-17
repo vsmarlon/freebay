@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
@@ -6,13 +7,22 @@ import { AuthUser } from '@/shared/core/types';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaFavoriteRepository } from './repositories/favorite.repository';
+import { FavoritesResponse, CheckFavoriteResponse, ToggleFavoriteResponse } from './dtos/favorite.dto';
+import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
+@ApiTags('Favorites')
 @Controller('favorites')
 export class FavoritesController {
   constructor(private readonly favoriteRepository: PrismaFavoriteRepository) {}
 
   @Get()
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get user favorites',
+    auth: true,
+    responseType: FavoritesResponse,
+  })
   async getFavorites(@CurrentUser() user: AuthUser) {
     const favorites = await this.favoriteRepository.getUserFavorites(user.userId);
     const products = favorites.map((favorite) => favorite.product);
@@ -21,6 +31,13 @@ export class FavoritesController {
 
   @Get('check/:productId')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Check if product is favorited',
+    auth: true,
+    params: [{ name: 'productId', description: 'Product UUID' }],
+    responseType: CheckFavoriteResponse,
+  })
   async checkFavorite(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
     const favorite = await this.favoriteRepository.findByUserAndProduct(user.userId, productId);
     return { isFavorited: !!favorite };
@@ -28,6 +45,18 @@ export class FavoritesController {
 
   @Post(':productId')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Toggle favorite',
+    description: 'Add or remove a product from favorites',
+    auth: true,
+    params: [{ name: 'productId', description: 'Product UUID' }],
+    responseType: ToggleFavoriteResponse,
+    errors: [
+      { status: 404, description: 'Product not found' },
+      { status: 403, description: 'Cannot favorite own product' },
+    ],
+  })
   async toggleFavorite(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
     const product = await this.favoriteRepository.findProductById(productId);
     if (!product || product.status !== 'ACTIVE') {

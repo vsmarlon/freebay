@@ -6,6 +6,8 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
 import 'package:freebay/features/profile/data/entities/follower_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 final followersProvider =
     FutureProvider.family<List<FollowerEntity>, String>((ref, userId) async {
@@ -43,47 +45,60 @@ class FollowersPage extends ConsumerWidget {
       ),
       body: followersAsync.when(
         data: (followers) {
-          if (followers.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 64,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhum seguidor ainda',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: followers.length,
-            itemBuilder: (context, index) {
-              final follower = followers[index];
-              return _buildFollowerTile(context, ref, follower, isDark);
-            },
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryPurple),
+          return Column(
+            children: [
+              BrutalistBreadcrumb(items: [
+                BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                const BreadcrumbItem(label: 'Seguidores'),
+              ]),
+              Expanded(
+                child: followers.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.people_outline,
+                              size: 64,
+                              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                            ),
+                            Spacing.vMd,
+                            Text(
+                              'Nenhum seguidor ainda',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(followersProvider(userId));
+                        },
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: followers.length,
+                          itemBuilder: (context, index) {
+                            final follower = followers[index];
+                            return _buildFollowerTile(context, ref, follower, isDark);
+                          },
+                        ),
+                      ),
+        ),
+      ],
+    );
+  },
+  loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryContainer),
         ),
         error: (err, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
+              Spacing.vMd,
               Text(
                 'Erro ao carregar seguidores',
                 style: TextStyle(
@@ -132,13 +147,13 @@ class FollowersPage extends ConsumerWidget {
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.primaryPurple),
+                  border: Border.all(color: AppColors.primaryContainer),
                 ),
                 child: const Center(
                   child: Text(
                     'Seguindo',
                     style: TextStyle(
-                      color: AppColors.primaryPurple,
+                      color: AppColors.primaryContainer,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

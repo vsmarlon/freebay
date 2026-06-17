@@ -13,11 +13,12 @@ import {
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { 
-  CreatePostUseCase, 
-  LikePostUseCase, 
+import {
+  CreatePostUseCase,
+  LikePostUseCase,
   UnlikePostUseCase,
   CreateStoryUseCase,
   GetStoriesUseCase,
@@ -25,7 +26,8 @@ import {
   ViewStoryUseCase,
   DeleteStoryUseCase,
 } from './usecases/social.usecase';
-import { CreatePostDTO, CreateStoryInput, createPostSchema, createCommentSchema } from './dtos/social.dto';
+import { CreatePostDTO, CreateCommentDTO, CreateStoryInput } from './dtos/social.dto';
+import { validateImageFile } from '@/shared/utils/image-upload.utils';
 import {
   PrismaPostRepository,
   PrismaLikeRepository,
@@ -37,12 +39,13 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { ZodValidationPipe } from '@/shared/pipes/zod-validation.pipe';
+import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PrismaSavedPostRepository } from './repositories/social.repository';
 
+@ApiTags('Social')
 @Controller('social')
 export class SocialController {
   constructor(
@@ -64,6 +67,14 @@ export class SocialController {
   ) {}
 
   @Get('feed')
+  @ApiDoc({
+    summary: 'Get social feed',
+    description: 'Returns paginated feed of posts from followed users or explore',
+    queries: [
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+      { name: 'type', required: false, description: 'Feed type: "following" or "explore" (default)' },
+    ],
+  })
   async getFeed(
     @CurrentUser() user: AuthUser,
     @Query('limit') limit?: string,
@@ -94,6 +105,11 @@ export class SocialController {
   }
 
   @Get('posts/:id')
+  @ApiDoc({
+    summary: 'Get post by ID',
+    params: [{ name: 'id', description: 'Post UUID' }],
+    errors: [{ status: 404, description: 'Post not found' }],
+  })
   async getPost(@Param('id') id: string, @CurrentUser() user?: AuthUser) {
     const post = await this.postRepository.findById(id);
     if (!post) {
@@ -116,11 +132,25 @@ export class SocialController {
     }),
   )
   @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Create a post',
+    description: 'Creates a new social post with optional image upload',
+    bodyType: CreatePostDTO,
+    responseStatus: 201,
+    auth: true,
+  })
   async createPost(
     @CurrentUser() user: AuthUser,
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Body(new ZodValidationPipe(createPostSchema)) body: CreatePostDTO,
+    @Body() body: CreatePostDTO,
   ) {
+    if (file) {
+      const mimeError = validateImageFile(file);
+      if (mimeError) {
+        return left(new AppError('BAD_REQUEST', mimeError));
+      }
+    }
     const userId = user.userId;
     const imageUrl = file ? this.toDataUri(file) : body.imageUrl;
     const result = await this.createPostUseCase.execute({ userId, ...body, imageUrl });
@@ -132,6 +162,15 @@ export class SocialController {
   }
 
   @Get('posts/user/:userId')
+  @ApiDoc({
+    summary: 'Get user posts',
+    description: 'Returns posts and reposts for a specific user',
+    params: [{ name: 'userId', description: 'User UUID' }],
+    queries: [
+      { name: 'cursor', required: false, description: 'Pagination cursor' },
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+    ],
+  })
   async getUserPosts(
     @Param('userId') userId: string,
     @CurrentUser() user?: AuthUser,
@@ -153,7 +192,7 @@ export class SocialController {
     const mergedPosts = [
       ...ownPosts.map(post => ({
         ...post,
-        repostedAt: null,
+        repostedAt: null as Date | null,
         repostedBy: null,
         isReposted: false,
       })),
@@ -182,6 +221,15 @@ export class SocialController {
   }
 
   @Get('posts/search')
+  @ApiDoc({
+    summary: 'Search posts',
+    queries: [
+      { name: 'q', required: false, description: 'Search query' },
+      { name: 'filter', required: false, description: 'Filter: "all", "following", or "followers"' },
+      { name: 'cursor', required: false, description: 'Pagination cursor' },
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+    ],
+  })
   async searchPosts(
     @CurrentUser() user: AuthUser,
     @Query('q') q?: string,
@@ -216,6 +264,12 @@ export class SocialController {
 
   @Post('posts/:id/like')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Like a post',
+    auth: true,
+    params: [{ name: 'id', description: 'Post UUID' }],
+  })
   async likePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const result = await this.likePostUseCase.execute({ userId, postId: id });
@@ -228,6 +282,12 @@ export class SocialController {
 
   @Delete('posts/:id/like')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Unlike a post',
+    auth: true,
+    params: [{ name: 'id', description: 'Post UUID' }],
+  })
   async unlikePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const result = await this.unlikePostUseCase.execute({ userId, postId: id });
@@ -240,6 +300,11 @@ export class SocialController {
 
   @Get('posts/liked')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get liked posts',
+    auth: true,
+  })
   async getLikedPosts(@CurrentUser() user: AuthUser) {
     const likes = await this.likeRepository.findLikedByUserId(user.userId);
     const posts = likes.map(like => like.post).filter(Boolean);
@@ -249,6 +314,14 @@ export class SocialController {
   @Post('posts/:id/share')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
   @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Share/repost a post',
+    auth: true,
+    responseStatus: 201,
+    params: [{ name: 'id', description: 'Post UUID' }],
+    errors: [{ status: 404, description: 'Post not found' }],
+  })
   async sharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const post = await this.postRepository.findById(id);
     if (!post) {
@@ -274,6 +347,13 @@ export class SocialController {
   @Delete('posts/:id/share')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Remove share/repost',
+    auth: true,
+    params: [{ name: 'id', description: 'Post UUID' }],
+    errors: [{ status: 404, description: 'Post not found' }],
+  })
   async unsharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const post = await this.postRepository.findById(id);
     if (!post) {
@@ -295,14 +375,22 @@ export class SocialController {
   @Post('posts/:id/comments')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
   @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Create comment on post',
+    auth: true,
+    responseStatus: 201,
+    params: [{ name: 'id', description: 'Post UUID' }],
+    bodyType: CreateCommentDTO,
+  })
   async createComment(
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(createCommentSchema)) body: { content: string; parentId?: string },
+    @Body() body: CreateCommentDTO,
   ) {
     const userId = user.userId;
     const comment = await this.commentRepository.create({
-      post: { connect: { id: id } },
+      post: { connect: { id } },
       user: { connect: { id: userId } },
       content: body.content,
       ...(body.parentId ? { parent: { connect: { id: body.parentId } } } : {}),
@@ -315,6 +403,10 @@ export class SocialController {
   }
 
   @Get('posts/:id/comments')
+  @ApiDoc({
+    summary: 'Get comments for a post',
+    params: [{ name: 'id', description: 'Post UUID' }],
+  })
   async getComments(@Param('id') id: string) {
     const comments = await this.commentRepository.findByPostId(id, { limit: 20 });
     return { comments };
@@ -322,6 +414,12 @@ export class SocialController {
 
   @Post('comments/:commentId/like')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Like a comment',
+    auth: true,
+    params: [{ name: 'commentId', description: 'Comment UUID' }],
+  })
   async likeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
     const userId = user.userId;
     await this.likeRepository.createCommentLike({
@@ -333,6 +431,12 @@ export class SocialController {
 
   @Delete('comments/:commentId/like')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Unlike a comment',
+    auth: true,
+    params: [{ name: 'commentId', description: 'Comment UUID' }],
+  })
   async unlikeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
     const userId = user.userId;
     await this.likeRepository.deleteCommentLike({ userId_commentId: { userId, commentId } });
@@ -342,6 +446,14 @@ export class SocialController {
   @Post('posts/:id/save')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
   @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Save a post',
+    auth: true,
+    responseStatus: 201,
+    params: [{ name: 'id', description: 'Post UUID' }],
+    errors: [{ status: 404, description: 'Post not found' }],
+  })
   async savePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const post = await this.postRepository.findById(id);
     if (!post) {
@@ -357,6 +469,12 @@ export class SocialController {
 
   @Delete('posts/:id/save')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Unsave a post',
+    auth: true,
+    params: [{ name: 'id', description: 'Post UUID' }],
+  })
   async unsavePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const existing = await this.savedPostRepository.findByUserAndPost(user.userId, id);
     if (!existing) {
@@ -367,6 +485,10 @@ export class SocialController {
   }
 
   @Get('stories')
+  @ApiDoc({
+    summary: 'Get stories feed',
+    description: 'Returns active stories from followed users',
+  })
   async getStories(@CurrentUser() user: AuthUser) {
     const userId = user?.userId;
     const result = await this.getStoriesUseCase.execute(userId);
@@ -374,6 +496,10 @@ export class SocialController {
   }
 
   @Get('stories/user/:userId')
+  @ApiDoc({
+    summary: 'Get user stories',
+    params: [{ name: 'userId', description: 'User UUID' }],
+  })
   async getUserStories(@Param('userId') userId: string) {
     const stories = await this.getUserStoriesUseCase.execute(userId);
     return { stories };
@@ -388,12 +514,24 @@ export class SocialController {
     }),
   )
   @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Create a story',
+    description: 'Uploads an image that will be available for 24h',
+    auth: true,
+    responseStatus: 201,
+  })
   async createStory(
     @CurrentUser() user: AuthUser,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (!file) {
       throw new BadRequestException('Imagem é obrigatória');
+    }
+
+    const mimeError = validateImageFile(file);
+    if (mimeError) {
+      throw new BadRequestException(mimeError);
     }
 
     const userId = user.userId;
@@ -415,6 +553,12 @@ export class SocialController {
 
   @Delete('stories/:id')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Delete a story',
+    auth: true,
+    params: [{ name: 'id', description: 'Story UUID' }],
+  })
   async deleteStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const result = await this.deleteStoryUseCase.execute({ storyId: id, userId });
@@ -426,6 +570,11 @@ export class SocialController {
   }
 
   @Post('stories/:id/view')
+  @ApiDoc({
+    summary: 'View a story',
+    description: 'Marks a story as viewed by the current user',
+    params: [{ name: 'id', description: 'Story UUID' }],
+  })
   async viewStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     const viewerId = user?.userId || '';
     const result = await this.viewStoryUseCase.execute({ storyId: id, viewerId });

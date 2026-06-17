@@ -4,6 +4,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class WalletCard extends StatefulWidget {
   final int availableBalanceInCents;
@@ -69,11 +70,11 @@ class _WalletCardState extends State<WalletCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'SALDO TOTAL',
                   style: TextStyle(
-                    fontFamily: 'Inter',
-                    color: Colors.white70,
+                    fontFamily: AppTypography.fontFamily,
+                    color: AppColors.onPrimary.withValues(alpha: 0.70),
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.0,
@@ -85,18 +86,18 @@ class _WalletCardState extends State<WalletCard> {
                     _valuesHidden
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: Colors.white70,
+                    color: AppColors.onPrimary.withValues(alpha: 0.70),
                     size: 20,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            Spacing.vSm,
             Text(
               _masked(total),
               style: const TextStyle(
-                fontFamily: 'SpaceGrotesk',
-                color: Colors.white,
+                fontFamily: AppTypography.headlineFontFamily,
+                color: AppColors.onPrimary,
                 fontSize: 40,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.5,
@@ -142,12 +143,12 @@ class _WalletCardState extends State<WalletCard> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.accentGreen.withAlpha(25),
+                color: AppColors.success.withAlpha(25),
                 borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
                 Icons.account_balance_wallet_outlined,
-                color: AppColors.accentGreen,
+                color: AppColors.success,
                 size: 20,
               ),
             ),
@@ -185,7 +186,7 @@ class _WalletCardState extends State<WalletCard> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border.all(
-          color: solid ? Colors.white : Colors.white38,
+          color: solid ? AppColors.onPrimary : AppColors.onPrimary.withValues(alpha: 0.38),
           width: 2,
         ),
       ),
@@ -194,20 +195,20 @@ class _WalletCardState extends State<WalletCard> {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontFamily: 'Inter',
+            style: TextStyle(
+              fontFamily: AppTypography.fontFamily,
               fontSize: 10,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.0,
-              color: Colors.white70,
+              color: AppColors.onPrimary.withValues(alpha: 0.70),
             ),
           ),
-          const SizedBox(height: 4),
+          Spacing.vXs,
           Text(
             value,
             style: const TextStyle(
-              fontFamily: 'SpaceGrotesk',
-              color: Colors.white,
+              fontFamily: AppTypography.headlineFontFamily,
+              color: AppColors.onPrimary,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),

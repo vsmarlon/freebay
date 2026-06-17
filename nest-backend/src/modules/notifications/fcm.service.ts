@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
+import type { Messaging } from 'firebase-admin/messaging';
 
 @Injectable()
 export class FcmService {
-  private firebaseConfig: Record<string, string> | null = null;
-  private messaging: Record<string, unknown> | null = null;
-  private initialized = false;
+  private readonly logger = new Logger(FcmService.name);
+  private messaging: Messaging | null = null;
 
   constructor(
     private config: ConfigService,
@@ -15,27 +17,37 @@ export class FcmService {
     this.initializeFirebase();
   }
 
-  private async initializeFirebase() {
+  private initializeFirebase() {
     try {
       const projectId = this.config.get('FIREBASE_PROJECT_ID');
       const privateKey = this.config.get('FIREBASE_PRIVATE_KEY');
       const clientEmail = this.config.get('FIREBASE_CLIENT_EMAIL');
 
       if (!projectId || !privateKey || !clientEmail) {
-        console.log('Firebase credentials not configured, FCM disabled');
+        this.logger.log('Firebase credentials not configured, FCM disabled');
         return;
       }
 
-      this.initialized = true;
-      console.log('Firebase FCM initialized');
+      if (!getApps().length) {
+        initializeApp({
+          credential: cert({
+            projectId,
+            privateKey: privateKey.replace(/\\n/g, '\n'),
+            clientEmail,
+          }),
+        });
+      }
+
+      this.messaging = getMessaging();
+      this.logger.log('Firebase FCM initialized');
     } catch (error) {
-      console.error('Failed to initialize Firebase:', error);
+      this.logger.error('Failed to initialize Firebase:', error);
     }
   }
 
-  async sendNotification(userId: string, title: string, body: string, _data?: Record<string, string>) {
-    if (!this.initialized) {
-      console.log('FCM not initialized, skipping notification');
+  async sendNotification(userId: string, title: string, body: string, data?: Record<string, string>) {
+    if (!this.messaging) {
+      this.logger.log('FCM not initialized, skipping notification');
       return;
     }
 
@@ -45,9 +57,15 @@ export class FcmService {
         return;
       }
 
-      console.log(`[FCM] Would send to ${userId}: ${title} - ${body}`);
+      await this.messaging.send({
+        token: user.fcmToken,
+        notification: { title, body },
+        data,
+        android: { priority: 'high' },
+        apns: { payload: { aps: { sound: 'default' } } },
+      });
     } catch (error) {
-      console.error('FCM sendNotification error:', error);
+      this.logger.error(`FCM sendNotification error for user ${userId}:`, error);
     }
   }
 

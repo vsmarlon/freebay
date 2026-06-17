@@ -25,6 +25,10 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = isVerified
+        ? AppColors.primaryContainer
+        : AppColors.onSurface.withValues(alpha: 0.15);
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -32,26 +36,18 @@ class UserAvatar extends StatelessWidget {
           width: size.value,
           height: size.value,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: context.surfaceMidColor,
-            border: Border.all(
-              color: isVerified
-                  ? AppColors.primaryPurple
-                  : AppColors.mediumGray.withValues(alpha: 0.2),
-              width: 2,
-            ),
+            borderRadius: BorderRadius.zero,
+            color: AppColors.surfaceContainerLow,
+            border: Border.all(color: borderColor, width: 2),
           ),
-          child: ClipOval(
-            child: imageUrl != null && imageUrl!.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: imageUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => _buildPlaceholder(),
-                    errorWidget: (context, url, error) =>
-                        _buildPlaceholder(),
-                  )
-                : _buildPlaceholder(),
-          ),
+          child: imageUrl != null && imageUrl!.isNotEmpty
+              ? CachedNetworkImage(
+                  imageUrl: imageUrl!,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => _buildPlaceholder(),
+                  errorWidget: (context, url, error) => _buildPlaceholder(),
+                )
+              : _buildPlaceholder(),
         ),
         if (isVerified)
           Positioned(
@@ -60,12 +56,16 @@ class UserAvatar extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: context.surfaceColor,
-                shape: BoxShape.circle,
+                color: AppColors.onPrimary,
+                borderRadius: BorderRadius.zero,
+                border: Border.all(
+                  color: AppColors.primaryContainer,
+                  width: 2,
+                ),
               ),
               child: Icon(
                 Icons.verified,
-                color: AppColors.primaryPurple,
+                color: AppColors.primaryContainer,
                 size: size == AppAvatarSize.small ? 12 : 16,
               ),
             ),
@@ -75,8 +75,10 @@ class UserAvatar extends StatelessWidget {
   }
 
   Widget _buildPlaceholder() {
-    return Icon(Icons.person,
-        color: AppColors.mediumGray,
-        size: size.value * 0.5);
+    return Icon(
+      Icons.person,
+      color: AppColors.onSurfaceVariant,
+      size: size.value * 0.5,
+    );
   }
 }

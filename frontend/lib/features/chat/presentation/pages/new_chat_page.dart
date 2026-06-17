@@ -2,12 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class NewChatPage extends ConsumerStatefulWidget {
   const NewChatPage({super.key});
@@ -194,13 +196,10 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
 
   Widget _buildSearchResults(UserSearchState state, bool isDark) {
     if (state.users.isEmpty && !state.isLoading) {
-      return Center(
-        child: Text(
-          'Nenhum usuário encontrado',
-          style: TextStyle(
-            color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-          ),
-        ),
+      return const EmptyState(
+        icon: Icons.person_search,
+        title: 'NENHUM USUÁRIO',
+        subtitle: 'Tente buscar por outro nome.',
       );
     }
 
@@ -237,11 +236,10 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
           if (_isLoadingFollowers)
             const Center(child: CircularProgressIndicator())
           else if (_followers.isEmpty)
-            Text(
-              'Nenhum follower ainda',
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
+            const EmptyState(
+              icon: Icons.people_outline,
+              title: 'NENHUM SEGUIDOR',
+              subtitle: 'Você ainda não tem seguidores.',
             )
           else
             ..._followers.map((user) => _UserListTile(
@@ -250,18 +248,17 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
                   onTap: () => _startConversation(
                       user.id, user.displayName, user.avatarUrl),
                 )),
-          const SizedBox(height: 24),
+          Spacing.vLg,
         ],
         if (_isLoadingSuggestions || _suggestions.isNotEmpty) ...[
           _SectionHeader(title: 'Sugestões', isDark: isDark),
           if (_isLoadingSuggestions)
             const Center(child: CircularProgressIndicator())
           else if (_suggestions.isEmpty)
-            Text(
-              'Nenhuma sugestão',
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
+            const EmptyState(
+              icon: Icons.explore_outlined,
+              title: 'NENHUMA SUGESTÃO',
+              subtitle: 'No momento não há sugestões de usuários.',
             )
           else
             ..._suggestions.map((user) => _UserListTile(
@@ -341,10 +338,10 @@ class _UserListTile extends StatelessWidget {
             ),
           ),
           if (user.isVerified) ...[
-            const SizedBox(width: 4),
+            Spacing.hXs,
             const Icon(
               Icons.verified,
-              color: AppColors.primaryPurple,
+              color: AppColors.primaryContainer,
               size: 16,
             ),
           ],

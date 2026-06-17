@@ -178,7 +178,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.onSurface,
       body: Stack(
         children: [
           if (_isInitialized && _cameraController != null)
@@ -188,7 +188,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
           else
             const Center(
               child: CircularProgressIndicator(
-                color: AppColors.primaryPurple,
+                color: AppColors.primaryContainer,
               ),
             ),
           SafeArea(
@@ -201,21 +201,21 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.close,
-                            color: Colors.white, size: 28),
+                            color: AppColors.onPrimary, size: 28),
                         onPressed: () => Navigator.pop(context),
                       ),
                       Row(
                         children: [
                           IconButton(
                             icon: const Icon(Icons.flip_camera_ios,
-                                color: Colors.white, size: 28),
+                                color: AppColors.onPrimary, size: 28),
                             onPressed: _cameras != null && _cameras!.length > 1
                                 ? _switchCamera
                                 : null,
                           ),
                           IconButton(
                             icon: const Icon(Icons.photo_library,
-                                color: Colors.white, size: 28),
+                                color: AppColors.onPrimary, size: 28),
                             onPressed: _pickFromGallery,
                           ),
                         ],
@@ -232,12 +232,12 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 4),
+                        border: Border.all(color: AppColors.onPrimary, width: 4),
                       ),
                       child: Container(
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: _isTakingPicture ? Colors.grey : Colors.white,
+                          color: _isTakingPicture ? Colors.grey : AppColors.onPrimary,
                         ),
                       ),
                     ),
@@ -253,7 +253,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
 
   Widget _buildPreviewScreen(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.onSurface,
       body: Stack(
         children: [
           SizedBox.expand(
@@ -272,7 +272,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.close,
-                            color: Colors.white, size: 28),
+                            color: AppColors.onPrimary, size: 28),
                         onPressed: () {
                           setState(() {
                             _capturedImagePath = null;
@@ -281,7 +281,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                       ),
                       if (_isLoading)
                         const CircularProgressIndicator(
-                          color: AppColors.primaryPurple,
+                          color: AppColors.primaryContainer,
                         )
                       else
                         InkWell(

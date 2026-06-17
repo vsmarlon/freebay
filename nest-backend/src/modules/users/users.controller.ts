@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
 import { FollowRepository } from './repositories/follow.repository';
@@ -17,13 +18,21 @@ import { BlockRepository } from './repositories/block.repository';
 import { GetUserStatsUseCase } from './usecases/user.usecase';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { updateProfileSchema, UpdateProfileDTO, UpdateFcmTokenDTO } from './dtos/user.dto';
+import { UpdateProfileDTO, UpdateFcmTokenDTO } from './dtos/user.dto';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { toUserResponse } from './mappers/user.mapper';
+import {
+  UserResponse,
+  UserStatsResponse,
+  FollowResponse,
+  BlockResponse,
+  toUserResponse,
+} from './mappers/user.mapper';
+import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(
@@ -36,6 +45,13 @@ export class UsersController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get current user profile',
+    auth: true,
+    responseType: UserResponse,
+    errors: [{ status: 404, description: 'User not found' }],
+  })
   async getMe(@CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const userRecord = await this.userRepository.findById(userId);
@@ -47,27 +63,42 @@ export class UsersController {
 
   @Get('me/stats')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get current user stats',
+    auth: true,
+    responseType: UserStatsResponse,
+  })
   async getMyStats(@CurrentUser() user: AuthUser) {
     return this.getUserStatsUseCase.execute({ userId: user.userId });
   }
 
   @Patch('me')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Update profile',
+    bodyType: UpdateProfileDTO,
+    auth: true,
+    responseType: UserResponse,
+    errors: [{ status: 404, description: 'User not found' }],
+  })
   async updateProfile(@CurrentUser() user: AuthUser, @Body() body: UpdateProfileDTO) {
     const userId = user.userId;
-    const parsed = updateProfileSchema.safeParse(body);
-    if (!parsed.success) {
-      return left(new AppError('VALIDATION_ERROR', parsed.error.issues[0]?.message || 'Validation failed'));
-    }
-
-    const data = { ...parsed.data };
-    if (data.cpf) data.cpf = data.cpf.replace(/\D/g, '');
+    const data = { ...body } as Record<string, unknown>;
+    if (data.cpf) data.cpf = (data.cpf as string).replace(/\D/g, '');
     const updated = await this.userRepository.update(userId, data);
     return toUserResponse(updated);
   }
 
   @Patch('me/fcm-token')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Update FCM token',
+    bodyType: UpdateFcmTokenDTO,
+    auth: true,
+  })
   async updateFcmToken(@CurrentUser() user: AuthUser, @Body() body: UpdateFcmTokenDTO) {
     const userId = user.userId;
     const updateData: Record<string, unknown> = {};
@@ -91,6 +122,12 @@ export class UsersController {
   }
 
   @Get(':id')
+  @ApiDoc({
+    summary: 'Get user by ID',
+    params: [{ name: 'id', description: 'User UUID' }],
+    responseType: UserResponse,
+    errors: [{ status: 404, description: 'User not found' }],
+  })
   async getUser(@Param('id', ParseUUIDPipe) id: string) {
     const userRecord = await this.userRepository.findById(id);
     if (!userRecord) {
@@ -101,6 +138,17 @@ export class UsersController {
 
   @Post(':id/follow')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Follow a user',
+    auth: true,
+    params: [{ name: 'id', description: 'Target user UUID' }],
+    responseType: FollowResponse,
+    errors: [
+      { status: 404, description: 'User not found' },
+      { status: 409, description: 'Already following' },
+    ],
+  })
   async followUser(@Param('id', ParseUUIDPipe) followingId: string, @CurrentUser() user: AuthUser) {
     const followerId = user.userId;
 
@@ -129,6 +177,14 @@ export class UsersController {
 
   @Delete(':id/follow')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Unfollow a user',
+    auth: true,
+    params: [{ name: 'id', description: 'Target user UUID' }],
+    responseType: FollowResponse,
+    errors: [{ status: 404, description: 'Not following' }],
+  })
   async unfollowUser(@Param('id', ParseUUIDPipe) followingId: string, @CurrentUser() user: AuthUser) {
     const followerId = user.userId;
 
@@ -147,7 +203,20 @@ export class UsersController {
   }
 
   @Get(':id/followers')
-  async getFollowers(@Param('id', ParseUUIDPipe) id: string, @Query('limit') limit?: string, @Query('offset') offset?: string) {
+  @ApiDoc({
+    summary: 'Get user followers',
+    params: [{ name: 'id', description: 'User UUID' }],
+    queries: [
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+      { name: 'offset', required: false, description: 'Pagination offset (default 0)' },
+    ],
+    errors: [{ status: 404, description: 'User not found' }],
+  })
+  async getFollowers(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
     const parsedLimit = parseInt(limit || '20');
     const parsedOffset = parseInt(offset || '0');
 
@@ -174,7 +243,20 @@ export class UsersController {
   }
 
   @Get(':id/following')
-  async getFollowing(@Param('id', ParseUUIDPipe) id: string, @Query('limit') limit?: string, @Query('offset') offset?: string) {
+  @ApiDoc({
+    summary: 'Get users being followed',
+    params: [{ name: 'id', description: 'User UUID' }],
+    queries: [
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+      { name: 'offset', required: false, description: 'Pagination offset (default 0)' },
+    ],
+    errors: [{ status: 404, description: 'User not found' }],
+  })
+  async getFollowing(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
     const parsedLimit = parseInt(limit || '20');
     const parsedOffset = parseInt(offset || '0');
 
@@ -202,6 +284,12 @@ export class UsersController {
 
   @Get(':id/is-following')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Check if following a user',
+    auth: true,
+    params: [{ name: 'id', description: 'Target user UUID' }],
+  })
   async isFollowing(@Param('id', ParseUUIDPipe) followingId: string, @CurrentUser() user: AuthUser) {
     const followerId = user.userId;
 
@@ -214,6 +302,17 @@ export class UsersController {
 
   @Post(':id/block')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Block a user',
+    auth: true,
+    params: [{ name: 'id', description: 'Target user UUID' }],
+    responseType: BlockResponse,
+    errors: [
+      { status: 404, description: 'User not found' },
+      { status: 409, description: 'Already blocked' },
+    ],
+  })
   async blockUser(@Param('id', ParseUUIDPipe) blockedId: string, @CurrentUser() user: AuthUser) {
     const blockerId = user.userId;
 
@@ -240,6 +339,14 @@ export class UsersController {
 
   @Delete(':id/block')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Unblock a user',
+    auth: true,
+    params: [{ name: 'id', description: 'Target user UUID' }],
+    responseType: BlockResponse,
+    errors: [{ status: 404, description: 'Not blocked' }],
+  })
   async unblockUser(@Param('id', ParseUUIDPipe) blockedId: string, @CurrentUser() user: AuthUser) {
     const blockerId = user.userId;
 
@@ -257,6 +364,12 @@ export class UsersController {
 
   @Get(':id/is-blocked')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Check if a user is blocked',
+    auth: true,
+    params: [{ name: 'id', description: 'Target user UUID' }],
+  })
   async isBlocked(@Param('id', ParseUUIDPipe) blockedId: string, @CurrentUser() user: AuthUser) {
     const blockerId = user.userId;
 
@@ -266,7 +379,20 @@ export class UsersController {
 
   @Get('blocked')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
-  async getBlockedUsers(@CurrentUser() user: AuthUser, @Query('limit') limit?: string, @Query('offset') offset?: string) {
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get blocked users',
+    auth: true,
+    queries: [
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+      { name: 'offset', required: false, description: 'Pagination offset (default 0)' },
+    ],
+  })
+  async getBlockedUsers(
+    @CurrentUser() user: AuthUser,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
     const userId = user.userId;
     const parsedLimit = parseInt(limit || '20');
     const parsedOffset = parseInt(offset || '0');
@@ -287,6 +413,14 @@ export class UsersController {
   }
 
   @Get('search')
+  @ApiDoc({
+    summary: 'Search users',
+    queries: [
+      { name: 'q', required: false, description: 'Search query' },
+      { name: 'cursor', required: false, description: 'Pagination cursor' },
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+    ],
+  })
   async searchUsers(@Query('q') query?: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
     const parsedLimit = parseInt(limit || '20');
     const users = await this.userRepository.searchUsers(query || '', parsedLimit, cursor);
@@ -309,6 +443,14 @@ export class UsersController {
 
   @Get('suggestions')
   @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get user suggestions',
+    auth: true,
+    queries: [
+      { name: 'limit', required: false, description: 'Number of suggestions (default 10)' },
+    ],
+  })
   async getSuggestions(@CurrentUser() user: AuthUser, @Query('limit') limit?: string) {
     const userId = user.userId;
     const parsedLimit = parseInt(limit || '10');

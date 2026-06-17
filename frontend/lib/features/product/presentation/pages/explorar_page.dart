@@ -3,12 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_card.dart';
+import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class ExplorarPage extends ConsumerStatefulWidget {
   const ExplorarPage({super.key});
@@ -73,7 +79,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
         title: Text(
           'Explorar',
           style: TextStyle(
-            color: context.isDark ? AppColors.white : AppColors.primaryPurple,
+            color: context.isDark ? AppColors.white : AppColors.primaryContainer,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -81,9 +87,9 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: context.isDark ? AppColors.white : AppColors.primaryPurple,
+          labelColor: context.isDark ? AppColors.white : AppColors.primaryContainer,
           unselectedLabelColor: AppColors.mediumGray,
-          indicatorColor: AppColors.primaryPurple,
+          indicatorColor: AppColors.primaryContainer,
           tabs: const [
             Tab(text: 'Produtos'),
             Tab(text: 'Pessoas'),
@@ -93,14 +99,14 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           IconButton(
             icon: Icon(
               _showFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: context.isDark ? AppColors.white : AppColors.primaryPurple,
+              color: context.isDark ? AppColors.white : AppColors.primaryContainer,
             ),
             onPressed: () => setState(() => _showFilters = !_showFilters),
           ),
           IconButton(
             icon: Icon(
               Icons.add_box_outlined,
-              color: AppColors.primaryPurpleDark,
+              color: AppColors.primaryContainer,
             ),
             onPressed: () => context.push('/products/create'),
           )
@@ -188,7 +194,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                       subtitle: 'Nenhum produto encontrado.',
                     ),
                     if (searchQuery.isNotEmpty || selectedCategory != null) ...[
-                      const SizedBox(height: 8),
+                      Spacing.vSm,
                       InkWell(
                         onTap: () {
                           _searchController.clear();
@@ -202,7 +208,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                           child: Text(
                             'Limpar filtros',
                             style: TextStyle(
-                              fontFamily: 'Inter',
+                              fontFamily: AppTypography.fontFamily,
                               fontWeight: FontWeight.w700,
                               color: context.textPrimary,
                             ),
@@ -221,7 +227,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                     category: selectedCategory,
                   ),
                 ).future),
-                color: AppColors.primaryPurple,
+                color: AppColors.primaryContainer,
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -261,13 +267,13 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                 children: [
                   const Icon(Icons.error_outline,
                       color: AppColors.error, size: 48),
-                  const SizedBox(height: 16),
+                  Spacing.vMd,
                   Text(
                     'Erro ao carregar\nerro: $err',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: context.textPrimary),
                   ),
-                  const SizedBox(height: 16),
+                  Spacing.vMd,
                   InkWell(
                     onTap: () => ref.invalidate(productsFeedProvider(
                       GetProductsParams(
@@ -284,7 +290,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                         child: Text(
                           'Tentar novamente',
                           style: TextStyle(
-                            fontFamily: 'Inter',
+                            fontFamily: AppTypography.fontFamily,
                             fontWeight: FontWeight.w700,
                             color: AppColors.onPrimary,
                           ),
@@ -311,7 +317,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.person_search, size: 64, color: AppColors.mediumGray),
-            SizedBox(height: 16),
+            Spacing.vMd,
             Text(
               'Busque por pessoas...',
               style: TextStyle(color: AppColors.mediumGray, fontSize: 16),

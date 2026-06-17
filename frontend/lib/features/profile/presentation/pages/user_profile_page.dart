@@ -9,6 +9,8 @@ import 'package:freebay/features/profile/presentation/controllers/profile_contro
 import 'package:freebay/features/profile/data/services/follow_service.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 final followServiceProvider = Provider<FollowService>((ref) => FollowService());
 
@@ -57,7 +59,7 @@ class UserProfilePage extends ConsumerWidget {
       body: profileAsync.when(
         data: (user) => _buildProfileContent(context, ref, isDark, user),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryPurple),
+          child: CircularProgressIndicator(color: AppColors.primaryContainer),
         ),
         error: (error, _) => Center(
           child: Column(
@@ -68,7 +70,7 @@ class UserProfilePage extends ConsumerWidget {
                 size: 64,
                 color: AppColors.error,
               ),
-              const SizedBox(height: 16),
+              Spacing.vMd,
               Text(
                 'Erro ao carregar perfil',
                 style: TextStyle(
@@ -77,7 +79,7 @@ class UserProfilePage extends ConsumerWidget {
                   color: isDark ? AppColors.white : AppColors.darkGray,
                 ),
               ),
-              const SizedBox(height: 8),
+              Spacing.vSm,
               Text(
                 'Não foi possível carregar as informações do usuário. Tente novamente.',
                 style: TextStyle(
@@ -112,7 +114,7 @@ class UserProfilePage extends ConsumerWidget {
             size: AppAvatarSize.large,
             isVerified: user.isVerified,
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           Text(
             user.displayNameOrDefault,
             style: TextStyle(
@@ -122,7 +124,7 @@ class UserProfilePage extends ConsumerWidget {
             ),
           ),
           if (user.bio != null && user.bio!.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            Spacing.vSm,
             Text(
               user.bio!,
               style: TextStyle(
@@ -132,7 +134,7 @@ class UserProfilePage extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
           ],
-          const SizedBox(height: 16),
+          Spacing.vMd,
           if (user.reputationScore > 0)
             GestureDetector(
               onTap: () => context.push(
@@ -145,7 +147,7 @@ class UserProfilePage extends ConsumerWidget {
                     score: user.reputationScore.toDouble(),
                     reviewCount: user.totalReviews,
                   ),
-                  const SizedBox(width: 4),
+                  Spacing.hXs,
                   Icon(
                     Icons.chevron_right,
                     size: 20,
@@ -162,7 +164,7 @@ class UserProfilePage extends ConsumerWidget {
                 color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
               ),
             ),
-          const SizedBox(height: 24),
+          Spacing.vLg,
           if (!isOwnProfile && currentUser != null && !currentUser.isGuest)
             followStatusAsync.when(
               data: (status) =>
@@ -173,7 +175,7 @@ class UserProfilePage extends ConsumerWidget {
             )
           else if (!isOwnProfile)
             _buildFollowPrompt(context, isDark),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           if (user.city != null && user.city!.isNotEmpty) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -183,7 +185,7 @@ class UserProfilePage extends ConsumerWidget {
                   size: 16,
                   color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                 ),
-                const SizedBox(width: 4),
+                Spacing.hXs,
                 Text(
                   user.city!,
                   style: TextStyle(
@@ -193,7 +195,7 @@ class UserProfilePage extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            Spacing.vMd,
           ],
           if (user.totalReviews > 0)
             GestureDetector(
@@ -202,9 +204,12 @@ class UserProfilePage extends ConsumerWidget {
               ),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: isDark
-                    ? AppColors.surfaceContainerDark
-                    : AppColors.surfaceContainerHighest,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.surfaceContainerDark
+                      : AppColors.surfaceContainerHighest,
+                  border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -213,17 +218,17 @@ class UserProfilePage extends ConsumerWidget {
                       size: 18,
                       color: AppColors.warning,
                     ),
-                    const SizedBox(width: 8),
+                    Spacing.hSm,
                     Text(
                       '${user.reputationScore.toStringAsFixed(1)} (${user.totalReviews} ${user.totalReviews == 1 ? 'avaliação' : 'avaliações'})',
                       style: TextStyle(
-                        fontFamily: 'SpaceGrotesk',
+                        fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: isDark ? AppColors.white : AppColors.darkGray,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    Spacing.hXs,
                     Icon(
                       Icons.chevron_right,
                       size: 18,
@@ -258,11 +263,11 @@ class UserProfilePage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildStatChip('Seguidores', followersCount, isDark),
-            const SizedBox(width: 24),
+            Spacing.hLg,
             _buildStatChip('Seguindo', followingCount, isDark),
           ],
         ),
-        const SizedBox(height: 16),
+        Spacing.vMd,
         SizedBox(
           width: double.infinity,
           child: InkWell(
@@ -284,14 +289,14 @@ class UserProfilePage extends ConsumerWidget {
                     ? (isDark ? AppColors.surfaceDark : AppColors.surfaceLight)
                     : null,
                 border: isFollowing
-                    ? Border.all(color: AppColors.primaryPurple)
+                    ? Border.all(color: AppColors.primaryContainer)
                     : null,
               ),
               child: Center(
                 child: Text(
                   isFollowing ? 'Seguindo' : 'Seguir',
                   style: TextStyle(
-                    color: isFollowing ? AppColors.primaryPurple : AppColors.onPrimary,
+                    color: isFollowing ? AppColors.primaryContainer : AppColors.onPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -320,7 +325,7 @@ class UserProfilePage extends ConsumerWidget {
               color: isDark ? AppColors.white : AppColors.darkGray,
             ),
           ),
-          const SizedBox(width: 4),
+          Spacing.hXs,
           Text(
             label,
             style: TextStyle(
@@ -341,7 +346,7 @@ class UserProfilePage extends ConsumerWidget {
             color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
           ),
         ),
-        const SizedBox(height: 16),
+        Spacing.vMd,
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -351,13 +356,13 @@ class UserProfilePage extends ConsumerWidget {
                 height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.primaryPurple),
+                  border: Border.all(color: AppColors.primaryContainer),
                 ),
                 child: const Center(
                   child: Text(
                     'Entrar',
                     style: TextStyle(
-                      color: AppColors.primaryPurple,
+                      color: AppColors.primaryContainer,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

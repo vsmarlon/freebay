@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class OrderStatusTimeline extends StatelessWidget {
   final OrderStatus currentStatus;
@@ -51,14 +53,14 @@ class OrderStatusTimeline extends StatelessWidget {
           const Text(
             'STATUS DO PEDIDO',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 24),
+          Spacing.vLg,
           Row(
             children: List.generate(_statusOrder.length * 2 - 1, (index) {
               if (index.isOdd) {
@@ -80,12 +82,12 @@ class OrderStatusTimeline extends StatelessWidget {
               );
             }),
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
           Center(
             child: Text(
               currentStatus.label,
               style: const TextStyle(
-                fontFamily: 'SpaceGrotesk',
+                fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppColors.onSurface,
@@ -122,7 +124,7 @@ class OrderStatusTimeline extends StatelessWidget {
             : Text(
                 '${stepIndex + 1}',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: isCompleted
@@ -148,7 +150,7 @@ class OrderStatusTimeline extends StatelessWidget {
               child: Icon(icon, color: color, size: 24),
             ),
           ),
-          const SizedBox(width: 16),
+          Spacing.hMd,
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,18 +158,18 @@ class OrderStatusTimeline extends StatelessWidget {
                 const Text(
                   'STATUS DO PEDIDO',
                   style: TextStyle(
-                    fontFamily: 'Inter',
+                    fontFamily: AppTypography.fontFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 1.2,
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: 4),
+                Spacing.vXs,
                 Text(
                   label,
                   style: TextStyle(
-                    fontFamily: 'SpaceGrotesk',
+                    fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: color,

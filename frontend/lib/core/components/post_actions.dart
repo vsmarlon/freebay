@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class PostActions extends StatelessWidget {
   final bool isLiked;
@@ -55,7 +57,7 @@ class PostActions extends StatelessWidget {
               onTap: onLike,
             ),
           ),
-          const SizedBox(width: 16),
+          Spacing.hMd,
           PostActionButton(
             icon: Icons.chat_bubble_outline,
             label: commentsCount > 0 ? commentsCount.toString() : null,
@@ -64,10 +66,10 @@ class PostActions extends StatelessWidget {
               onComment?.call();
             },
           ),
-          const SizedBox(width: 16),
+          Spacing.hMd,
           PostActionButton(
             icon: isReposted ? Icons.repeat : Icons.repeat,
-            iconColor: isReposted ? AppColors.primaryPurple : null,
+            iconColor: isReposted ? AppColors.primaryContainer : null,
             label: sharesCount > 0 ? sharesCount.toString() : null,
             onTap: onRepost,
           ),
@@ -109,11 +111,11 @@ class PostActionButton extends StatelessWidget {
           children: [
             Icon(icon, color: iconColor ?? defaultColor, size: 24),
             if (label != null) ...[
-              const SizedBox(width: 4),
+              Spacing.hXs,
               Text(
                 label!,
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: iconColor ?? defaultColor,
@@ -171,7 +173,7 @@ class PostFullScreenImage extends StatelessWidget {
                     border: Border.all(
                         color: AppColors.surfaceContainerLowest, width: 2),
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                  child: const Icon(Icons.close, color: AppColors.onPrimary, size: 24),
                 ),
               ),
             ),
@@ -187,8 +189,8 @@ class PostFullScreenImage extends StatelessWidget {
                   child: const Text(
                     'SWIPE TO CLOSE',
                     style: TextStyle(
-                      fontFamily: 'Inter',
-                      color: Colors.white,
+                      fontFamily: AppTypography.fontFamily,
+                      color: AppColors.onPrimary,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 0.1,
@@ -238,14 +240,14 @@ class PostShareBottomSheet extends StatelessWidget {
             title: Text(
               'Compartilhar externamente',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
               ),
             ),
             subtitle: const Text(
               'WhatsApp, Instagram, etc.',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 color: AppColors.outline,
                 fontSize: 12,
               ),
@@ -260,21 +262,21 @@ class PostShareBottomSheet extends StatelessWidget {
             title: Text(
               'Compartilhar no perfil',
               style: TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
               ),
             ),
             subtitle: Text(
               'Criar post com "Compartilhado de @$userName"',
               style: const TextStyle(
-                fontFamily: 'Inter',
+                fontFamily: AppTypography.fontFamily,
                 color: AppColors.outline,
                 fontSize: 12,
               ),
             ),
             onTap: onShareAsPost,
           ),
-          const SizedBox(height: 16),
+          Spacing.vMd,
         ],
       ),
     );

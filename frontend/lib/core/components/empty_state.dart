@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -60,7 +62,7 @@ class EmptyState extends StatelessWidget {
               child: const Text(
                 'TENTAR NOVAMENTE',
                 style: TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primaryContainer,
@@ -95,11 +97,11 @@ class EmptyState extends StatelessWidget {
                 color: AppColors.outline,
               ),
             ),
-            const SizedBox(height: 24),
+            Spacing.vLg,
             Text(
               title,
               style: TextStyle(
-                fontFamily: 'SpaceGrotesk',
+                fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
@@ -107,11 +109,11 @@ class EmptyState extends StatelessWidget {
               ),
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              Spacing.vSm,
               Text(
                 subtitle!,
                 style: const TextStyle(
-                  fontFamily: 'Inter',
+                  fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
                   color: AppColors.outline,
                 ),
@@ -119,7 +121,7 @@ class EmptyState extends StatelessWidget {
               ),
             ],
             if (action != null) ...[
-              const SizedBox(height: 24),
+              Spacing.vLg,
               action!,
             ],
           ],

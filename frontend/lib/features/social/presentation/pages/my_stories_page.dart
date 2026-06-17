@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 final userStoriesProvider =
     FutureProvider.family<List<StoryEntity>, String>((ref, userId) async {
@@ -51,80 +54,77 @@ class MyStoriesPage extends ConsumerWidget {
       ),
       body: storiesAsync.when(
         data: (stories) {
-          if (stories.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.auto_awesome,
-                    size: 64,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nenhuma história',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () => context.push('/create-story'),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.brutalistGradient,
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add, color: AppColors.onPrimary),
-                          SizedBox(width: 8),
-                          Text(
-                            'Criar história',
-                            style: TextStyle(
-                              color: AppColors.onPrimary,
-                              fontWeight: FontWeight.w700,
+          return Column(
+            children: [
+              BrutalistBreadcrumb(items: [
+                BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                const BreadcrumbItem(label: 'Minhas Hist\u00f3rias'),
+              ]),
+              Expanded(
+                child: stories.isEmpty
+                    ? EmptyState(
+                        icon: Icons.auto_awesome,
+                        title: 'NENHUMA HIST\u00d3RIA',
+                        subtitle: 'Crie sua primeira hist\u00f3ria!',
+                        action: InkWell(
+                          onTap: () => context.push('/create-story'),
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            decoration: const BoxDecoration(
+                              gradient: AppColors.brutalistGradient,
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.add, color: AppColors.onPrimary),
+                                Spacing.hSm,
+                                Text(
+                                  'Criar hist\u00f3ria',
+                                  style: TextStyle(
+                                    color: AppColors.onPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(userStoriesProvider(userId));
+                        },
+                        child: GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.7,
+                          ),
+                          itemCount: stories.length,
+                          itemBuilder: (context, index) {
+                            final story = stories[index];
+                            return _buildStoryTile(context, ref, story, isDark);
+                          },
+                        ),
                       ),
-                    ),
-                  ),
-                ],
               ),
-            );
-          }
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 0.7,
-            ),
-            itemCount: stories.length,
-            itemBuilder: (context, index) {
-              final story = stories[index];
-              return _buildStoryTile(context, ref, story, isDark);
-            },
+            ],
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryPurple),
+          child: CircularProgressIndicator(color: AppColors.primaryContainer),
         ),
         error: (err, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              const SizedBox(height: 16),
+              Spacing.vMd,
               Text(
-                'Erro ao carregar histórias',
+                'Erro ao carregar hist\u00f3rias',
                 style: TextStyle(
                   color: isDark ? AppColors.white : AppColors.darkGray,
                 ),
@@ -151,6 +151,7 @@ class MyStoriesPage extends ConsumerWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.zero,
+              border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
               image: story.imageUrl.isNotEmpty
                   ? DecorationImage(
                       image: NetworkImage(story.imageUrl),
@@ -167,12 +168,12 @@ class MyStoriesPage extends ConsumerWidget {
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.zero,
-                color: Colors.black.withValues(alpha: 0.5),
+                color: AppColors.onSurface.withValues(alpha: 0.5),
               ),
               child: const Center(
                 child: Icon(
                   Icons.access_time,
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                 ),
               ),
             ),

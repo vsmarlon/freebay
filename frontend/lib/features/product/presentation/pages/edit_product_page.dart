@@ -7,6 +7,9 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 
 class EditProductPage extends ConsumerStatefulWidget {
   final String productId;
@@ -50,7 +53,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           'Editar anúncio',
           style: TextStyle(
             color: context.textPrimary,
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -63,7 +66,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           child: Text(
             'Não foi possível carregar o anúncio.',
             style: TextStyle(
-              fontFamily: 'Inter',
+              fontFamily: AppTypography.fontFamily,
               color: isDark ? AppColors.white : AppColors.onSurface,
             ),
           ),
@@ -93,35 +96,40 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        BrutalistBreadcrumb(items: [
+          BreadcrumbItem(label: 'Produtos', onTap: () => context.pop()),
+          const BreadcrumbItem(label: 'Editar Anúncio'),
+        ]),
+        Spacing.vMd,
         AppTextField(
           controller: _titleController,
           label: 'Título',
           hint: 'Ex: iPhone 13 Pro Max 256GB',
         ),
-        const SizedBox(height: 16),
+        Spacing.vMd,
         AppTextField(
           controller: _descriptionController,
           label: 'Descrição',
           hint: 'Detalhes do produto',
           maxLines: 4,
         ),
-        const SizedBox(height: 16),
+        Spacing.vMd,
         AppTextField(
           controller: _priceController,
           label: 'Preço (R\$)',
           hint: '0,00',
           keyboardType: TextInputType.number,
         ),
-        const SizedBox(height: 24),
+        Spacing.vLg,
         Text(
           'Condição',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
             color: isDark ? AppColors.white : AppColors.onSurface,
           ),
         ),
-        const SizedBox(height: 8),
+        Spacing.vSm,
         Row(
           children: [
             Expanded(
@@ -133,7 +141,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
                 onPressed: () => setState(() => _isNewProduct = true),
               ),
             ),
-            const SizedBox(width: 8),
+            Spacing.hSm,
             Expanded(
               child: AppButton(
                 label: 'Usado',
@@ -145,16 +153,16 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
+        Spacing.vLg,
         Text(
           'Status',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
             color: isDark ? AppColors.white : AppColors.onSurface,
           ),
         ),
-        const SizedBox(height: 8),
+        Spacing.vSm,
         Row(
           children: [
             Expanded(
@@ -166,7 +174,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
                 onPressed: () => setState(() => _status = 'ACTIVE'),
               ),
             ),
-            const SizedBox(width: 8),
+            Spacing.hSm,
             Expanded(
               child: AppButton(
                 label: 'Pausado',
@@ -178,7 +186,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
             ),
           ],
         ),
-        const SizedBox(height: 32),
+        Spacing.vXl,
         AppButton(
           label: 'Salvar alterações',
           isLoading: _isLoading,

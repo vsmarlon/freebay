@@ -1,24 +1,52 @@
-import { z } from 'zod';
+import { IsUUID, IsInt, Min, Max, IsOptional, MaxLength, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ReviewType } from '@prisma/client';
+import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
-export const createReviewSchema = z.object({
-  reviewerId: z.string().uuid(),
-  orderId: z.string().uuid(),
-  reviewedId: z.string().uuid(),
-  type: z.nativeEnum(ReviewType),
-  score: z.number().int().min(1).max(5),
-  comment: z.string().max(500).optional(),
-});
+export class CreateReviewDTO {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  @IsUUID()
+  reviewedId: string;
 
-export type CreateReviewDto = z.infer<typeof createReviewSchema>;
+  @ApiProperty({ enum: ReviewType })
+  @IsEnum(ReviewType)
+  type: ReviewType;
 
-export const getUserReviewsQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(10),
-  type: z.nativeEnum(ReviewType).optional(),
-});
+  @ApiProperty({ example: 5 })
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  score: number;
 
-export type GetUserReviewsQueryDto = z.infer<typeof getUserReviewsQuerySchema>;
+  @ApiPropertyOptional({ example: 'Great seller!', maxLength: 500 })
+  @IsOptional()
+  @MaxLength(500)
+  @SanitizeText()
+  comment?: string;
+}
+
+export class GetUserReviewsQueryDTO {
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+
+  @ApiPropertyOptional({ enum: ReviewType })
+  @IsOptional()
+  @IsEnum(ReviewType)
+  type?: ReviewType;
+}
 
 export interface GetUserReviewsInput {
   userId: string;
@@ -27,28 +55,49 @@ export interface GetUserReviewsInput {
   type?: ReviewType;
 }
 
-export interface ReviewApiResponse {
+export class ReviewResponse {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   reviewerId: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   reviewedId: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   orderId: string;
+
+  @ApiProperty({ enum: ReviewType })
   type: ReviewType;
+
+  @ApiProperty({ example: 5 })
   score: number;
+
+  @ApiPropertyOptional({ nullable: true })
   comment: string | null;
+
+  @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
   createdAt: string;
-  reviewer: {
-    id: string;
-    displayName: string;
-    avatarUrl: string | null;
-    isVerified: boolean;
-  };
+
+  @ApiProperty({ description: 'Reviewer details' })
+  reviewer: Record<string, unknown>;
 }
 
 export interface GetUserReviewsOutput {
-  reviews: ReviewApiResponse[];
+  reviews: ReviewResponse[];
   total: number;
   page: number;
   limit: number;
+}
+
+export interface CreateReviewInput {
+  reviewerId: string;
+  orderId: string;
+  reviewedId: string;
+  type: ReviewType;
+  score: number;
+  comment?: string;
 }
 
 export interface CreateReviewOutput {
