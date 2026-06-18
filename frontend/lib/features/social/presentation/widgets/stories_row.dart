@@ -17,15 +17,15 @@ class StoriesRow extends ConsumerWidget {
     final storiesAsync = ref.watch(storiesProvider);
     return storiesAsync.when(
       data: (response) => _buildRow(context, ref, response.stories),
-      loading: () => const SizedBox(height: 100),
-      error: (_, __) => const SizedBox(height: 100),
+      loading: () => const SizedBox(height: 84),
+      error: (_, __) => const SizedBox(height: 84),
     );
   }
 
   Widget _buildRow(
       BuildContext context, WidgetRef ref, List<StoryEntity> stories) {
     return SizedBox(
-      height: 96,
+      height: 84,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),

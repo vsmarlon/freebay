@@ -1,9 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenDisputeUseCase, GetDisputeUseCase, GetUserDisputesUseCase, SubmitEvidenceUseCase, ResolveDisputeUseCase } from './dispute.usecase';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
 
 jest.mock('@/shared/infra/prisma/prisma.service');
+
+const mockNotificationService = {
+  notifyDispute: jest.fn().mockResolvedValue(undefined),
+  notifyOrderStatus: jest.fn().mockResolvedValue(undefined),
+};
 
 const mockPrisma = {
   $transaction: jest.fn((callback) => {
@@ -60,6 +66,7 @@ describe('Disputes UseCases', () => {
         SubmitEvidenceUseCase,
         ResolveDisputeUseCase,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 

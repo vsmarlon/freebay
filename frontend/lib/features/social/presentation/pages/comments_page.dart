@@ -9,6 +9,7 @@ import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class CommentsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -149,31 +150,32 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Comentários',
-          style: TextStyle(
-            color: context.textPrimary,
-          ),
-        ),
-        backgroundColor: context.surfaceMidColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: Column(
         children: [
+          PageHeader(
+            text: 'COMENTÁRIOS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
           BrutalistBreadcrumb(items: [
             BreadcrumbItem(label: 'Post', onTap: () => context.pop()),
             const BreadcrumbItem(label: 'Comentários'),
           ]),
           _buildNewCommentInput(),
-          const SizedBox(height: 2),
+          Spacing.vXs,
           Expanded(child: _buildBody(context)),
         ],
       ),
@@ -193,7 +195,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
             color: context.isDark ? AppColors.backgroundDark : AppColors.lightGray,
             child: const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
           ),
-          const SizedBox(width: 10),
+          Spacing.hSm,
           Expanded(
             child: TextField(
               controller: _newCommentController,
@@ -319,7 +321,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                                 isDark ? AppColors.white : AppColors.darkGray,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        Spacing.hXs,
                         Text(
                           _formatTimeAgo(comment.createdAt),
                           style: const TextStyle(
@@ -329,7 +331,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    Spacing.vXs,
                     Text(
                       comment.content,
                       style: TextStyle(
@@ -338,7 +340,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                         height: 1.3,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    Spacing.vXs,
                     GestureDetector(
                       onTap: () => isReplying
                           ? _cancelReply()
@@ -399,7 +401,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                       onSubmitted: (v) => _sendComment(v, parentId: comment.id),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  Spacing.hXs,
                   GestureDetector(
                     onTap: _isSending
                         ? null

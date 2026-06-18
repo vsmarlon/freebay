@@ -14,7 +14,7 @@ import { randomUUID } from 'crypto';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
 import { GuestUseCase } from './usecases/guest.usecase';
-import { RegisterDTO, LoginDTO } from './dtos/auth.dto';
+import { RegisterDTO, LoginDTO, LogoutDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -184,7 +184,7 @@ export class AuthController {
     auth: true,
     responseType: MessageResponse,
   })
-  async logout(@CurrentUser() user: AuthUser, @Body() body?: { refreshToken?: string }) {
+  async logout(@CurrentUser() user: AuthUser, @Body() body?: LogoutDTO) {
     await this.blacklistToken(user.jti, user.exp);
 
     if (body?.refreshToken) {

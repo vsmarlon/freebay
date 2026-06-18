@@ -14,6 +14,9 @@ export class UserResponse {
   avatarUrl: string | null;
 
   @ApiPropertyOptional({ example: null, nullable: true })
+  bannerUrl: string | null;
+
+  @ApiPropertyOptional({ example: null, nullable: true })
   bio: string | null;
 
   @ApiPropertyOptional({ example: 'São Paulo', nullable: true })
@@ -39,6 +42,15 @@ export class UserResponse {
 
   @ApiProperty({ example: true })
   hasCpf: boolean;
+
+  @ApiProperty({ example: 12 })
+  postsCount: number;
+
+  @ApiProperty({ example: 5 })
+  productsCount: number;
+
+  @ApiProperty({ example: false })
+  hasActiveStory: boolean;
 }
 
 export class UserStatsResponse {
@@ -134,10 +146,20 @@ export class SuggestionResponse {
 
 // ─── Mapper functions ──────────────────────────────────
 
-export const toUserResponse = (user: User): UserResponse => ({
+export interface UserResponseExtras {
+  postsCount?: number;
+  productsCount?: number;
+  hasActiveStory?: boolean;
+}
+
+export const toUserResponse = (
+  user: User,
+  extras?: UserResponseExtras,
+): UserResponse => ({
   id: user.id,
   displayName: user.displayName,
   avatarUrl: user.avatarUrl,
+  bannerUrl: user.bannerUrl,
   bio: user.bio,
   city: user.city,
   state: user.state,
@@ -147,4 +169,7 @@ export const toUserResponse = (user: User): UserResponse => ({
   createdAt: user.createdAt,
   role: user.role,
   hasCpf: !!user.cpf,
+  postsCount: extras?.postsCount ?? 0,
+  productsCount: extras?.productsCount ?? 0,
+  hasActiveStory: extras?.hasActiveStory ?? false,
 });

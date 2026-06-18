@@ -43,6 +43,13 @@ export class LoginDTO {
   password: string;
 }
 
+export class LogoutDTO {
+  @ApiPropertyOptional({ description: 'Refresh token to blacklist alongside the access token' })
+  @IsOptional()
+  @IsString()
+  refreshToken?: string;
+}
+
 export class ForgotPasswordDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()

@@ -5,6 +5,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderStatus, Prisma } from '@prisma/client';
 import { OpenDisputeInput, OpenDisputeOutput, GetDisputeOutput, GetUserDisputesOutput } from '../dtos/dispute.dto';
 import { NotificationService } from '../../notifications/services/notification.service';
+import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class OpenDisputeUseCase {
@@ -86,8 +87,8 @@ export class GetDisputeUseCase {
       include: {
         order: {
           include: {
-            buyer: { select: { id: true, displayName: true, avatarUrl: true } },
-            seller: { select: { id: true, displayName: true, avatarUrl: true } },
+            buyer: { select: USER_SELECT_MINIMAL },
+            seller: { select: USER_SELECT_MINIMAL },
             product: true,
           },
         },

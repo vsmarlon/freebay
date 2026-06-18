@@ -6,153 +6,156 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-All commands assume you are in the relevant subdirectory (`nest-backend/` or `frontend/`) unless using the Makefile from the root.
-
-### From the root (Makefile)
-
-```bash
-make test              # run everything: ts-check + jest + flutter unit + integration
-make test-unit         # npx tsc --noEmit + jest + flutter test
-make test-integration  # flutter drive headless (requires chromedriver)
-make help
-```
-
 ### Backend (`cd nest-backend`)
 
 ```bash
-npm run start            # start dev server
-npm run build          # prisma generate + tsc + tsc-alias
-npm test               # jest (all specs)
-npx tsc --noEmit       # type-check only, no output
+npm run start:dev        # dev server with watch mode
+npm run build             # nest build
+npm test                  # jest (all specs)
+npx tsc --noEmit          # type-check only, no output
 
 # Single test file
-npx jest src/application/usecases/auth/register.usecase.spec.ts
+npx jest src/modules/auth/usecases/register.usecase.spec.ts
 # Single test by name
-npx jest --testNamePattern "should return error" src/application/usecases/auth/register.usecase.spec.ts
+npx jest --testNamePattern "should return error" src/modules/auth/usecases/register.usecase.spec.ts
 
+npm run test:integration  # syncs .env.test DB schema, then runs jest.config.integration.js
 npm run prisma:generate   # regenerate client after schema changes
-npm run prisma:migrate    # run pending migrations
+npm run prisma:migrate    # create + apply a dev migration
 npm run prisma:studio     # open DB GUI
-npm run db:seed           # execute db/seeds/001_seed_dev.sql
-npm run lint              # eslint
-npm run format            # prettier
+npm run lint               # eslint --fix available via lint:fix
 ```
+
+Seed data: `db/seeds/001_seed_dev.sql` (run manually against your dev DB; no npm script wraps it).
 
 ### Frontend (`cd frontend`)
 
 ```bash
 flutter pub get
-flutter run                             # run on connected device/emulator
-flutter test                            # all unit tests
-flutter test test/some_widget_test.dart # single test file
-flutter analyze                         # static analysis
+flutter run                              # run on connected device/emulator
+flutter test                             # all unit/widget tests
+flutter test test/some_widget_test.dart  # single test file
+flutter analyze                          # static analysis
 flutter build apk --debug
 ```
 
+### Root `Makefile`
+
+References a `backend/` directory that does not exist in this repo (the backend lives in `nest-backend/`) — `make test` / `make test-unit` will fail with `cd backend` errors. Run the backend/frontend commands above directly instead of relying on the Makefile until it's updated.
+
 ---
 
-## Backend Architecture
+## Backend Architecture (`nest-backend/`)
 
-The backend uses **Clean Architecture** with strict layering. Dependencies always point inward (domain ← application ← infra/presentation).
+**NestJS** (Express platform) with Prisma/PostgreSQL, organized as **vertical feature modules**, not horizontal layers. There is no `domain/application/infra/presentation` split — each module owns its full stack:
 
 ```
 src/
-├── domain/           # pure interfaces and types — no dependencies on anything else
-│   ├── entities/     # plain TS interfaces (PostEntity, UserEntity, etc.)
-│   ├── repositories/ # I*Repository interfaces + their input/output types
-│   ├── errors/       # AppError subclasses (NotFoundError, UnauthorizedError, etc.)
-│   └── either.ts     # Either<L,R> monad used by all use cases
-├── application/
-│   └── usecases/     # one class per use case, depends only on domain interfaces
-├── infra/
-│   ├── database/repositories/  # Prisma implementations of I*Repository
-│   ├── http/
-│   │   ├── fastify/app.ts      # plugin registration + route mounting
-│   │   └── routes/             # DI wiring: repositories → controllers, or inline handlers
-│   ├── redis/        # token blacklist, cache
-│   └── storage/      # FileStorageService (base64 → disk)
-└── presentation/
-    ├── controllers/  # one class per domain area, receives repos, instantiates use cases
-    ├── dtos/         # Zod schemas for request validation
-    ├── middlewares/  # authGuard, authGuardOptional, requireNonGuest
-    └── response.ts   # apiSuccess / apiError helpers
+├── app.module.ts          # imports every feature module + global ThrottlerGuard
+├── main.ts
+├── shared/
+│   ├── core/               # either.ts (Either<L,R>), errors.ts (AppError subclasses), types.ts
+│   ├── auth/, guards/       # NonGuestGuard, RolesGuard, webhook.guard — Nest CanActivate guards
+│   ├── decorators/          # @Public(), @CurrentUser(), @Roles()
+│   ├── infra/prisma/        # PrismaService
+│   ├── infra/redis/         # RedisService (token blacklist, cache)
+│   ├── http/                 # global exception filter, logging/response/transform interceptors
+│   ├── swagger/              # @ApiDoc() composite decorator for OpenAPI docs
+│   └── utils/                # e.g. SanitizeText decorator
+└── modules/
+    └── <feature>/                  # auth, users, products, category, social, wallet,
+        ├── <feature>.module.ts     # orders, payments, chat, notifications, disputes,
+        ├── <feature>.controller.ts # reports, reviews, favorites, cart, tasks
+        ├── dtos/            # class-validator + @nestjs/swagger DTO classes
+        ├── repositories/    # concrete Prisma*Repository classes (no I*Repository interfaces)
+        ├── usecases/        # one class per use case, returns Either<AppError, Output>
+        ├── mappers/         # Prisma model → API response shape
+        ├── guards/          # module-specific guards (e.g. auth/guards/jwt-auth.guard.ts)
+        └── services/        # third-party integrations (e.g. ResendService for email)
 ```
 
-### Dependency Injection wiring
+### DI wiring
 
-Repositories are instantiated **in route files** (`infra/http/routes/`) and passed into controllers or use cases via constructors. Controllers instantiate their own use cases from the injected repositories. Nothing below the route layer touches Prisma directly.
-
-```typescript
-// route file
-const repo = new PrismaUserRepository();
-const controller = new AuthController(repo);
-app.post('/register', (req, reply) => controller.register(req, reply));
-```
+Standard Nest DI: every controller, use case, and repository is `@Injectable()`, registered in its module's `providers: []`, and injected via constructor. Nothing is manually `new`'d in route files. Repositories are injected as **concrete classes** (e.g. `private userRepository: PrismaUserRepository`), never behind an interface.
 
 ### Either pattern
 
-All use cases return `Either<AppError, Output>`. Never throw for expected business errors.
+Use cases return `Either<AppError, Output>` from `@/shared/core/either`. Never throw for expected business errors — throw only for truly exceptional/unexpected failures or from guards (Nest `ForbiddenException`, etc.).
 
 ```typescript
-// use case
-return left(new NotFoundError('Post'));   // failure
-return right({ post });                   // success
-
-// controller
-const result = await useCase.execute(input);
-if (isLeft(result)) {
-  return reply.code(result.value.statusCode).send(apiError(result.value.code, result.value.message));
+// usecase
+async execute(input: Input): Promise<Either<AppError, Output>> {
+  if (!entity) return left(new NotFoundError('Product'));
+  return right({ entity });
 }
-return reply.send(apiSuccess(result.value));
+
+// controller checks the result and throws/returns accordingly (see existing
+// controllers for the project's response-shaping convention before adding new ones)
 ```
 
-### Auth middlewares
+`AppError` subclasses live in `shared/core/errors.ts` (`NotFoundError`, `UnauthorizedError`, `ForbiddenError`, `EmailAlreadyExistsError`, `InvalidCredentialsError`, `InsufficientBalanceError`, etc.) and carry `code`, `message`, `statusCode`.
 
-Three variants used as `preHandler` arrays on routes:
+### Auth & guards
 
-| Middleware | Behaviour |
+JWT auth uses Passport (`@nestjs/passport`) with a `JwtAuthGuard` per module (e.g. `modules/auth/guards/jwt-auth.guard.ts`) plus shared guards in `shared/guards/`:
+
+| Guard | Behaviour |
 |---|---|
-| `authGuard` | JWT required + blacklist check; 401 if missing/invalid |
-| `authGuardOptional` | Tries JWT, sets `request.user` if valid, continues regardless |
-| `requireNonGuest` | Must follow `authGuard`; 403 if `request.user.isGuest === true` |
+| `JwtAuthGuard` (Passport) | Validates JWT; sets `request.user` |
+| `@Public()` decorator | Marks a route to skip the global JWT guard |
+| `NonGuestGuard` | Throws `ForbiddenException` if `request.user.isGuest === true` |
+| `RolesGuard` + `@Roles()` | Restricts by role via `Reflector` metadata |
+| `webhook.guard.ts` | Validates payment-provider webhook signatures |
 
-Guest users can browse but cannot create posts, orders, reports, etc.
+Guest users can browse but cannot create posts, orders, reports, reviews, etc.
+
+### Validation
+
+DTOs in `modules/<feature>/dtos/` use **class-validator** decorators (`@IsString`, `@IsEmail`, `@MinLength`, …) plus `@nestjs/swagger` `@ApiProperty` for docs — not Zod. `@SanitizeText()` (from `shared/utils`) strips/normalizes free-text input.
 
 ### Key constraints
 
 - All monetary values stored in **cents** (`Int`) — never `Float`.
-- Use `@/` path alias for all imports from `src/` (e.g. `@/domain/repositories`).
-- Validate all request bodies with **Zod** schemas in `presentation/dtos/` — no inline validation in controllers.
-- Domain repository interfaces must declare proper types (not `string` for enums, not `any[]` for returns). See `domain/repositories/report.repository.ts` for the `ReportReason` union type pattern.
-- Files: kebab-case (`create-post.usecase.ts`). Classes: PascalCase. Interfaces: `I` prefix (`IUserRepository`). Test files: `.spec.ts`.
+- Use the `@/` path alias for imports from `src/` (e.g. `@/shared/core/either`).
+- Domain repository interfaces are not used — repositories are concrete, injected Prisma classes; keep method signatures strongly typed (real enums, not bare `string`).
+- Files: kebab-case (`register.usecase.ts`, `prisma-user.repository.ts`). Classes: PascalCase. Test files: `.spec.ts`, colocated next to the file under test.
+- Rate limiting via `@nestjs/throttler` is applied globally (`APP_GUARD` in `app.module.ts`) with `short`/`medium`/`long` buckets; sensitive routes (e.g. `auth/register`) add a tighter `@Throttle(...)` override.
 
 ---
 
-## Frontend Architecture
+## Frontend Architecture (`frontend/`)
 
-Feature-based Flutter app using **Riverpod** for state management, **Dio** for HTTP, and **go_router** for navigation.
+Flutter app using **Riverpod** for state, **Dio** for HTTP, **go_router** for navigation. Each feature follows full Clean Architecture, not just data→presentation:
 
 ```
 lib/
 ├── core/
-│   ├── theme/        # AppColors, AppTypography, dark mode
-│   ├── components/   # Design System widgets (AppButton, AppTextField, AppCard…)
-│   └── router/       # go_router config, route guards
+│   ├── theme/        # app_colors, app_typography, app_theme, dark mode
+│   ├── components/   # Design System widgets (AppButton, BrutalistBox, SocialPost, …)
+│   ├── providers/    # cross-feature Riverpod providers (e.g. theme_provider)
+│   └── router/       # app_router.dart (go_router config + route guards)
 ├── features/
-│   ├── auth/         # login, register, splash
-│   ├── social/       # feed, posts, stories, likes, comments
-│   ├── product/      # listings, search, details
-│   ├── checkout/     # escrow flow
-│   ├── wallet/       # balance, transactions, withdrawals
-│   ├── chat/         # WebSocket messaging
-│   ├── dispute/      # dispute handling
-│   └── profile/      # user profiles, follow/block, reputation
+│   └── <feature>/                # auth, social, product, checkout, wallet, chat,
+│       ├── data/                 # dispute, profile, cart, favorites, notifications,
+│       │   ├── entities/         # orders, payments, reviews
+│       │   └── repositories/     # concrete repo implementing the domain interface
+│       ├── domain/
+│       │   ├── repositories/     # abstract repository interface
+│       │   └── usecases/
+│       └── presentation/
+│           ├── controllers/      # Riverpod notifiers
+│           ├── providers/
+│           ├── pages/
+│           └── widgets/
 └── shared/
-    ├── services/     # HttpService (Dio), TokenService, StorageService
-    └── errors/       # Failure types
+    ├── either/        # hand-rolled sealed Either<L,R> (fold/leftOrNull/rightOrNull)
+    ├── errors/        # Failure types
+    ├── services/      # http_client (Dio), storage_service, biometry_service,
+    │                  # notification_service, image_upload_service
+    ├── models/, config/, templates/
 ```
 
-Each feature follows: `data/services/` → `presentation/controllers/` (Riverpod notifiers) → `presentation/pages/` + `presentation/widgets/`.
+Note: the `dartz` package is also a dependency, but `shared/either/either.dart` is the project's own Either — prefer it for consistency within a feature unless the surrounding code already uses `dartz`.
 
 ### Design System: "The Digital Brutalist"
 
@@ -168,27 +171,31 @@ When building or modifying any frontend UI, invoke the `freebay-design-system` s
 - **Price tags:** `surface_container_highest` (#E2E2E2) block with Space Grotesk typography
 - **Surface hierarchy:** `#F9F9F9` → `#F3F3F3` → `#EEEEEE` → `#E2E2E2` (light to elevated)
 
+Check `core/components/` before building any UI pattern from scratch (e.g. `BrutalistBox`, `BrutalistFilterChip`, `EmptyState`, `SectionTitle`, `MenuListTile`, `StatColumn`) — extend a primitive instead of inlining a copy.
+
 Dark mode required on all screens.
 
 ---
 
 ## Database
 
-Prisma schema (`backend/prisma/schema.prisma`) is the source of truth. After any schema edit:
+Prisma schema (`nest-backend/prisma/schema.prisma`) is the source of truth. After any schema edit:
 1. `npm run prisma:migrate` — creates and applies migration
 2. `npm run prisma:generate` — regenerates the Prisma client
 
-Payment providers: **AbacatePay** (PIX) and **PagBank** (payouts to sellers). The `PaymentProvider` Prisma enum still uses legacy labels `PAGARME`/`WOOVI` for historical reasons — the adapters behind them target AbacatePay/PagBank. Escrow flow: `HELD → RELEASED | REFUNDED`.
+Payment providers: **AbacatePay** (PIX) and **PagBank** (payouts to sellers). The `PaymentProvider` Prisma enum still uses legacy labels `PAGARME`/`WOOVI` for historical reasons — the adapters behind them target AbacatePay/PagBank. Escrow flow: `EscrowStatus` `HELD → RELEASED | REFUNDED`. Order lifecycle: `PENDING → CONFIRMED → SHIPPED → DELIVERED → DISPUTED → COMPLETED | CANCELLED`.
+
+Chat is real-time via a Nest WebSocket gateway (`modules/chat/chat.gateway.ts`), alongside REST endpoints in `chat.controller.ts` for history/management.
 
 ---
 
 ## Testing patterns
 
-**Backend (Jest + ts-jest):**
+**Backend (Jest + ts-jest, NestJS testing utilities):**
 - Name the subject `sut` (`let sut: RegisterUseCase`)
-- Mock repositories with `jest.fn()` or in-memory implementations
-- Call `jest.clearAllMocks()` in `beforeEach`
-- Spec files live alongside the source file they test
+- Build with `Test.createTestingModule({ providers: [...] }).compile()`, mocking repositories via `{ provide: PrismaUserRepository, useValue: mockUserRepository }`
+- Spec files live alongside the source file they test (`*.spec.ts`)
+- `npm run test:integration` runs a separate suite (`jest.config.integration.js`) against `.env.test`, syncing the schema with `prisma db push` first — these are not run by plain `npm test`
 
 **Flutter:**
 - Unit/widget tests in `test/`, integration tests in `integration_test/`

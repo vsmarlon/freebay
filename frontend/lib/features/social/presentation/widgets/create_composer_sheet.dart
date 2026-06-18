@@ -33,7 +33,7 @@ class CreateComposerSheet extends StatelessWidget {
             subtitle: 'Item para catalogo com preco, categoria e imagem.',
             onTap: () {
               Navigator.of(context).pop();
-              context.push('/create-product');
+              context.push('/products/create');
             },
           ),
         ],
@@ -72,7 +72,7 @@ class _CreateComposerOption extends StatelessWidget {
               color: AppColors.primaryContainer,
               child: Icon(icon, color: AppColors.onPrimary),
             ),
-            const SizedBox(width: 12),
+            Spacing.hSm,
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +99,7 @@ class _CreateComposerOption extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 12),
+            Spacing.hSm,
             const Icon(Icons.arrow_forward, color: AppColors.primaryContainer),
           ],
         ),

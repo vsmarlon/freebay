@@ -11,6 +11,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class ProductListPage extends ConsumerStatefulWidget {
   const ProductListPage({super.key});
@@ -58,28 +59,20 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Explorar',
-          style: TextStyle(
-            color: context.isDark ? AppColors.white : AppColors.primaryContainer,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: context.isDark ? AppColors.white : AppColors.primaryContainer,
-            ),
-            onPressed: () => setState(() => _showFilters = !_showFilters),
-          ),
-        ],
-      ),
       body: Column(
         children: [
+          PageHeader(
+            text: 'EXPLORAR',
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                  color: context.isDark ? AppColors.white : AppColors.primaryContainer,
+                ),
+                onPressed: () => setState(() => _showFilters = !_showFilters),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: AppTextField(

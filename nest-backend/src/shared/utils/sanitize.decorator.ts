@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import sanitizeHtml from 'sanitize-html';
+import sanitizeHtml = require('sanitize-html');
 
 export function SanitizeText() {
   return Transform(({ value }) => {

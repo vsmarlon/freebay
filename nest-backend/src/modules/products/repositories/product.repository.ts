@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { SELLER_SELECT_FULL } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class PrismaProductRepository {
@@ -10,16 +11,7 @@ export class PrismaProductRepository {
     return this.prisma.product.findUnique({
       where: { id },
       include: {
-        seller: {
-          select: {
-            id: true,
-            displayName: true,
-            avatarUrl: true,
-            isVerified: true,
-            reputationScore: true,
-            totalReviews: true,
-          },
-        },
+        seller: { select: SELLER_SELECT_FULL },
         category: true,
         images: { orderBy: { order: 'asc' } },
       },
@@ -60,16 +52,7 @@ export class PrismaProductRepository {
       take: limit,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       include: {
-        seller: {
-          select: {
-            id: true,
-            displayName: true,
-            avatarUrl: true,
-            isVerified: true,
-            reputationScore: true,
-            totalReviews: true,
-          },
-        },
+        seller: { select: SELLER_SELECT_FULL },
         images: { orderBy: { order: 'asc' }, take: 1 },
       },
     });

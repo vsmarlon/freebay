@@ -137,10 +137,10 @@ describe('GetUserReviewsUseCase Integration', () => {
       }
 
       // Act - Get first page (2 items)
-      const result1 = await sut.execute({ userId: seller.id, page: 1, limit: 2 });
+      const result1 = await sut.execute({ userId: seller.id, offset: 0, limit: 2 });
 
       // Act - Get second page
-      const result2 = await sut.execute({ userId: seller.id, page: 2, limit: 2 });
+      const result2 = await sut.execute({ userId: seller.id, offset: 2, limit: 2 });
 
       // Assert
       expect(isRight(result1)).toBe(true);
@@ -149,10 +149,10 @@ describe('GetUserReviewsUseCase Integration', () => {
       if (isRight(result1) && isRight(result2)) {
         expect(result1.value.reviews).toHaveLength(2);
         expect(result1.value.total).toBe(5);
-        expect(result1.value.page).toBe(1);
+        expect(result1.value.offset).toBe(0);
 
         expect(result2.value.reviews).toHaveLength(2);
-        expect(result2.value.page).toBe(2);
+        expect(result2.value.offset).toBe(2);
       }
     });
 

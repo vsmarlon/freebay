@@ -16,4 +16,6 @@ abstract class IProfileRepository {
     String? state,
     String? cpf,
   });
+
+  Future<Either<Failure, UserEntity>> updateAvatar(String imagePath);
 }

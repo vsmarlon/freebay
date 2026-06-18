@@ -11,6 +11,7 @@ UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => UserEntity(
       displayName: json['displayName'] as String?,
       email: json['email'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
+      bannerUrl: json['bannerUrl'] as String?,
       bio: json['bio'] as String?,
       city: json['city'] as String?,
       state: json['state'] as String?,
@@ -23,6 +24,9 @@ UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => UserEntity(
       purchasesCount: (json['purchasesCount'] as num?)?.toInt() ?? 0,
       followersCount: (json['followersCount'] as num?)?.toInt() ?? 0,
       followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
+      postsCount: (json['postsCount'] as num?)?.toInt() ?? 0,
+      productsCount: (json['productsCount'] as num?)?.toInt() ?? 0,
+      hasActiveStory: json['hasActiveStory'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
@@ -31,6 +35,7 @@ Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
       'displayName': instance.displayName,
       'email': instance.email,
       'avatarUrl': instance.avatarUrl,
+      'bannerUrl': instance.bannerUrl,
       'bio': instance.bio,
       'city': instance.city,
       'state': instance.state,
@@ -43,4 +48,7 @@ Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
       'purchasesCount': instance.purchasesCount,
       'followersCount': instance.followersCount,
       'followingCount': instance.followingCount,
+      'postsCount': instance.postsCount,
+      'productsCount': instance.productsCount,
+      'hasActiveStory': instance.hasActiveStory,
     };

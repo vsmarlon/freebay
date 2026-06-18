@@ -37,6 +37,7 @@ import 'package:freebay/features/profile/presentation/pages/payment_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
 import 'package:freebay/features/chat/presentation/pages/new_chat_page.dart';
+import 'package:freebay/features/help/presentation/pages/faq_page.dart';
 import 'package:freebay/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:freebay/features/reviews/presentation/pages/user_reviews_page.dart';
 import 'package:freebay/features/reviews/presentation/pages/create_review_page.dart';
@@ -250,6 +251,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/profile/blocked',
       builder: (context, state) => const BlockedUsersPage(),
+    ),
+    GoRoute(
+      path: '/faq',
+      builder: (context, state) => const FaqPage(),
     ),
     GoRoute(
       path: '/notifications',

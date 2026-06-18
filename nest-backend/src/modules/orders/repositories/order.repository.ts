@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class PrismaOrderRepository {
@@ -11,8 +12,8 @@ export class PrismaOrderRepository {
       where: { id },
       include: {
         product: { include: { images: true } },
-        buyer: { select: { id: true, displayName: true, avatarUrl: true } },
-        seller: { select: { id: true, displayName: true, avatarUrl: true } },
+        buyer: { select: USER_SELECT_MINIMAL },
+        seller: { select: USER_SELECT_MINIMAL },
       },
     });
   }

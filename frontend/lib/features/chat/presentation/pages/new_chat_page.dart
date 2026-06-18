@@ -10,6 +10,7 @@ import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class NewChatPage extends ConsumerStatefulWidget {
   const NewChatPage({super.key});
@@ -20,9 +21,10 @@ class NewChatPage extends ConsumerStatefulWidget {
 
 class _NewChatPageState extends ConsumerState<NewChatPage> {
   final _searchController = TextEditingController();
-  List<UserSearchEntity> _followers = [];
+  List<UserSearchEntity> _following = [];
   List<UserSearchEntity> _suggestions = [];
-  bool _isLoadingFollowers = true;
+  Set<String> _blockedUserIds = {};
+  bool _isLoadingFollowing = true;
   bool _isLoadingSuggestions = true;
   Timer? _debounceTimer;
 
@@ -41,20 +43,34 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
 
   Future<void> _loadData() async {
     await Future.wait([
-      _loadFollowers(),
+      _loadFollowing(),
       _loadSuggestions(),
+      _loadBlockedUsers(),
     ]);
   }
 
-  Future<void> _loadFollowers() async {
-    setState(() => _isLoadingFollowers = true);
+  Future<void> _loadBlockedUsers() async {
+    try {
+      final response = await HttpClient.instance.get('/users/blocked');
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        final users = (data['users'] as List?) ?? [];
+        setState(() {
+          _blockedUserIds = users.map((u) => u['id'] as String).toSet();
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _loadFollowing() async {
+    setState(() => _isLoadingFollowing = true);
     try {
       final authState = ref.read(authControllerProvider);
       final userId = authState.valueOrNull?.id;
       if (userId == null) return;
 
       final response =
-          await HttpClient.instance.get('/users/$userId/followers');
+          await HttpClient.instance.get('/users/$userId/following');
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] as Map<String, dynamic>;
         final users = (data['users'] as List?)
@@ -63,12 +79,12 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
                 .toList() ??
             [];
         setState(() {
-          _followers = users;
-          _isLoadingFollowers = false;
+          _following = users;
+          _isLoadingFollowing = false;
         });
       }
     } catch (e) {
-      setState(() => _isLoadingFollowers = false);
+      setState(() => _isLoadingFollowing = false);
     }
   }
 
@@ -131,6 +147,10 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
     }
   }
 
+  List<UserSearchEntity> _filterBlocked(List<UserSearchEntity> users) {
+    return users.where((u) => !_blockedUserIds.contains(u.id)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
@@ -138,56 +158,65 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Nova Conversa',
-          style: TextStyle(
-            color: context.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar usuários...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(userSearchProvider.notifier).clear();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: isDark ? AppColors.surfaceDark : AppColors.white,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
-                  borderSide: BorderSide.none,
+          PageHeader(
+            text: 'NOVA CONVERSA',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
                 ),
               ),
-              onChanged: _onSearchDebounced,
             ),
           ),
           Expanded(
-            child: _searchController.text.isNotEmpty
-                ? _buildSearchResults(searchState, isDark)
-                : _buildFollowersAndSuggestions(isDark),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar usuários...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                ref
+                                    .read(userSearchProvider.notifier)
+                                    .clear();
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor:
+                          isDark ? AppColors.surfaceDark : AppColors.white,
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.zero,
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: _onSearchDebounced,
+                  ),
+                ),
+                Expanded(
+                  child: _searchController.text.isNotEmpty
+                      ? _buildSearchResults(searchState, isDark)
+                      : _buildFollowingAndSuggestions(isDark),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -203,11 +232,13 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
       );
     }
 
+    final filtered = _filterBlocked(state.users);
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: state.users.length + (state.isLoading ? 1 : 0),
+      itemCount: filtered.length + (state.isLoading ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == state.users.length) {
+        if (index == filtered.length) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(16),
@@ -216,7 +247,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
           );
         }
 
-        final user = state.users[index];
+        final user = filtered[index];
         return _UserListTile(
           user: user,
           isDark: isDark,
@@ -227,22 +258,25 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
     );
   }
 
-  Widget _buildFollowersAndSuggestions(bool isDark) {
+  Widget _buildFollowingAndSuggestions(bool isDark) {
+    final filteredFollowing = _filterBlocked(_following);
+    final filteredSuggestions = _filterBlocked(_suggestions);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (_isLoadingFollowers || _followers.isNotEmpty) ...[
-          _SectionHeader(title: 'Seus Seguidores', isDark: isDark),
-          if (_isLoadingFollowers)
+        if (_isLoadingFollowing || filteredFollowing.isNotEmpty) ...[
+          _SectionHeader(title: 'Quem você segue', isDark: isDark),
+          if (_isLoadingFollowing)
             const Center(child: CircularProgressIndicator())
-          else if (_followers.isEmpty)
+          else if (filteredFollowing.isEmpty)
             const EmptyState(
               icon: Icons.people_outline,
-              title: 'NENHUM SEGUIDOR',
-              subtitle: 'Você ainda não tem seguidores.',
+              title: 'NENHUM SEGUIDO',
+              subtitle: 'Você ainda não segue ninguém.',
             )
           else
-            ..._followers.map((user) => _UserListTile(
+            ...filteredFollowing.map((user) => _UserListTile(
                   user: user,
                   isDark: isDark,
                   onTap: () => _startConversation(
@@ -250,18 +284,18 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
                 )),
           Spacing.vLg,
         ],
-        if (_isLoadingSuggestions || _suggestions.isNotEmpty) ...[
+        if (_isLoadingSuggestions || filteredSuggestions.isNotEmpty) ...[
           _SectionHeader(title: 'Sugestões', isDark: isDark),
           if (_isLoadingSuggestions)
             const Center(child: CircularProgressIndicator())
-          else if (_suggestions.isEmpty)
+          else if (filteredSuggestions.isEmpty)
             const EmptyState(
               icon: Icons.explore_outlined,
               title: 'NENHUMA SUGESTÃO',
               subtitle: 'No momento não há sugestões de usuários.',
             )
           else
-            ..._suggestions.map((user) => _UserListTile(
+            ...filteredSuggestions.map((user) => _UserListTile(
                   user: user,
                   isDark: isDark,
                   onTap: () => _startConversation(

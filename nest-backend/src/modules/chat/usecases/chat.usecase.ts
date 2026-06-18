@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { USER_SELECT_MINIMAL, USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 import {
   SendMessageInput,
   SendMessageOutput,
@@ -39,7 +40,7 @@ export class SendMessageUseCase {
         type: 'TEXT',
       },
       include: {
-        sender: { select: { id: true, displayName: true, avatarUrl: true } },
+        sender: { select: USER_SELECT_MINIMAL },
       },
     });
 
@@ -70,8 +71,8 @@ export class GetConversationsUseCase {
       },
       orderBy: { lastMessageAt: 'desc' },
       include: {
-        user1: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
-        user2: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+        user1: { select: USER_SELECT_BASIC },
+        user2: { select: USER_SELECT_BASIC },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1,
@@ -124,7 +125,7 @@ export class GetMessagesUseCase {
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
       include: {
-        sender: { select: { id: true, displayName: true, avatarUrl: true } },
+        sender: { select: USER_SELECT_MINIMAL },
       },
     });
 

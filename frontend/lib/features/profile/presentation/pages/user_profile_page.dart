@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/components/reputation_stars.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
@@ -44,52 +45,64 @@ class UserProfilePage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Perfil'),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: profileAsync.when(
-        data: (user) => _buildProfileContent(context, ref, isDark, user),
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryContainer),
-        ),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: AppColors.error,
-              ),
-              Spacing.vMd,
-              Text(
-                'Erro ao carregar perfil',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'PERFIL',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
                 ),
               ),
-              Spacing.vSm,
-              Text(
-                'Não foi possível carregar as informações do usuário. Tente novamente.',
-                style: TextStyle(
-                  color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
-        ),
+          Expanded(
+            child: profileAsync.when(
+              data: (profileUser) => _buildProfileContent(context, ref, isDark, profileUser),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryContainer),
+              ),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppColors.error,
+                    ),
+                    Spacing.vMd,
+                    Text(
+                      'Erro ao carregar perfil',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.white : AppColors.darkGray,
+                      ),
+                    ),
+                    Spacing.vSm,
+                    Text(
+                      'Não foi possível carregar as informações do usuário. Tente novamente.',
+                      style: TextStyle(
+                        color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -105,15 +118,19 @@ class UserProfilePage extends ConsumerWidget {
         ? ref.watch(followStatusProvider(user.id))
         : const AsyncValue<FollowStatusResponse?>.data(null);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          UserAvatar(
-            imageUrl: user.avatarUrl,
-            size: AppAvatarSize.large,
-            isVerified: user.isVerified,
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              UserAvatar(
+                imageUrl: user.avatarUrl,
+                size: AppAvatarSize.large,
+                isVerified: user.isVerified,
+              ),
           Spacing.vMd,
           Text(
             user.displayNameOrDefault,
@@ -248,6 +265,8 @@ class UserProfilePage extends ConsumerWidget {
             ),
         ],
       ),
+      ),
+    ),
     );
   }
 

@@ -8,6 +8,7 @@ import 'package:freebay/features/profile/data/repositories/profile_repository.da
 import 'package:freebay/features/profile/data/entities/follower_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 final followingProvider =
     FutureProvider.family<List<FollowerEntity>, String>((ref, userId) async {
@@ -31,28 +32,34 @@ class FollowingPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Seguindo'),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'SEGUINDO',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+            breadcrumbs: [
+              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Seguindo'),
+            ],
           ),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: followingAsync.when(
-        data: (following) {
-          return Column(
-            children: [
-              BrutalistBreadcrumb(items: [
-                BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-                const BreadcrumbItem(label: 'Seguindo'),
-              ]),
-              Expanded(
-                child: following.isEmpty
+          Expanded(
+            child: followingAsync.when(
+              data: (following) {
+                return following.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -60,14 +67,18 @@ class FollowingPage extends ConsumerWidget {
                             Icon(
                               Icons.people_outline,
                               size: 64,
-                              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                              color: isDark
+                                  ? AppColors.mediumGray
+                                  : AppColors.mediumGray,
                             ),
                             Spacing.vMd,
                             Text(
                               'Não segue ninguém ainda',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                                color: isDark
+                                    ? AppColors.mediumGray
+                                    : AppColors.mediumGray,
                               ),
                             ),
                           ],
@@ -85,29 +96,31 @@ class FollowingPage extends ConsumerWidget {
                             return _buildFollowingTile(context, user, isDark);
                           },
                         ),
+                      );
+              },
+              loading: () => const Center(
+                child: CircularProgressIndicator(
+                    color: AppColors.primaryContainer),
+              ),
+              error: (err, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline,
+                        size: 48, color: AppColors.error),
+                    Spacing.vMd,
+                    Text(
+                      'Erro ao carregar seguindo',
+                      style: TextStyle(
+                        color: isDark ? AppColors.white : AppColors.darkGray,
                       ),
-        ),
-      ],
-    );
-  },
-  loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryContainer),
-        ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              Spacing.vMd,
-              Text(
-                'Erro ao carregar seguindo',
-                style: TextStyle(
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

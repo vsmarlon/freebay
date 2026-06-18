@@ -9,6 +9,7 @@ import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 final myProductsProvider = FutureProvider<List<ProductEntity>>((ref) async {
   final repository = ProductRepository();
@@ -29,28 +30,37 @@ class MyProductsPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Meus anúncios'),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: isDark ? AppColors.white : AppColors.darkGray,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'MEUS ANÚNCIOS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
             ),
-            onPressed: () => context.push('/products/create'),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.add,
+                  color: isDark ? AppColors.white : AppColors.darkGray,
+                ),
+                onPressed: () => context.push('/products/create'),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: productsAsync.when(
+          Expanded(
+            child: productsAsync.when(
         data: (products) {
           return Column(
             children: [
@@ -130,6 +140,9 @@ class MyProductsPage extends ConsumerWidget {
             ],
           ),
         ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -6,7 +6,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 class ImageUploadService {
   ImageUploadService._();
 
-  static const int maxUploadBytes = 1000000;
+  static const int maxUploadBytes = 800000;
 
   static Future<MultipartFile> compressedMultipartFile(
     String path, {

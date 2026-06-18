@@ -5,6 +5,7 @@ import { FollowRepository } from '../repositories/follow.repository';
 import { BlockRepository } from '../repositories/block.repository';
 import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
 
 jest.mock('@/modules/auth/repositories/prisma-user.repository');
@@ -40,6 +41,12 @@ const mockPrisma = {
   order: {
     count: jest.fn(),
   },
+};
+
+const mockNotificationService = {
+  notifyDispute: jest.fn().mockResolvedValue(undefined),
+  notifyOrderStatus: jest.fn().mockResolvedValue(undefined),
+  notifyNewFollower: jest.fn().mockResolvedValue(undefined),
 };
 
 const mockOrderRepository = {
@@ -88,6 +95,7 @@ describe('Users UseCases', () => {
         { provide: BlockRepository, useValue: mockBlockRepository },
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 

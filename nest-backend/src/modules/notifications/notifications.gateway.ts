@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -15,6 +16,8 @@ import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.serv
   namespace: '/notifications',
 })
 export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(NotificationsGateway.name);
+
   @WebSocketServer()
   server: Server;
 
@@ -40,9 +43,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       }
       this.userSockets.get(userId)!.add(client.id);
 
-      console.log(`User ${userId} connected to notifications, total sockets: ${this.userSockets.get(userId)!.size}`);
+      this.logger.log(`User ${userId} connected to notifications, total sockets: ${this.userSockets.get(userId)!.size}`);
     } catch (error) {
-      console.error('Notifications WebSocket auth failed:', error);
+      this.logger.error('Notifications WebSocket auth failed', error);
       client.disconnect();
     }
   }
@@ -56,7 +59,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         }
       }
     });
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   sendNotification(userId: string, notification: Record<string, unknown>) {

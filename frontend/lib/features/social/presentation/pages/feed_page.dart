@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -7,10 +8,9 @@ import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
-import 'package:freebay/features/social/presentation/widgets/feed_header.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
-import 'package:freebay/features/social/presentation/widgets/stories_row.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 
@@ -75,7 +75,20 @@ class _FeedPageState extends ConsumerState<FeedPage>
       backgroundColor: context.surfaceMidColor,
       body: Column(
         children: [
-          const FeedHeader(),
+          const PageHeader(
+            text: 'FREEBAY',
+            exclamation: '!',
+            actions: [
+              _HeaderIcon(
+                icon: Icons.notifications_outlined,
+                route: '/notifications',
+              ),
+              _HeaderIcon(
+                icon: Icons.account_balance_wallet_outlined,
+                route: '/wallet',
+              ),
+            ],
+          ),
           Expanded(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -135,7 +148,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
             return Column(
               children: [
                 _buildFeedTitle(feedType, contentFilter),
-                const StoriesRow(),
+                Spacing.vSm,
                 _buildInputArea(),
               ],
             );
@@ -154,37 +167,26 @@ class _FeedPageState extends ConsumerState<FeedPage>
     FeedContentFilter contentFilter,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                'FEED',
-                style: TextStyle(
-                  fontFamily: AppTypography.headlineFontFamily,
-                  fontSize: 48,
-                  fontWeight: FontWeight.w800,
-                  fontStyle: FontStyle.italic,
-                  letterSpacing: -1,
-                  height: 0.9,
-                  color: context.textPrimary,
-                ),
-              ),
-              Spacing.hSm,
+              const Spacer(),
               FeedTypeDropdown(
                 currentType: feedType,
                 onChanged: _onFeedTypeChanged,
               ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 12),
-          FeedContentFilterBar(
-            currentFilter: contentFilter,
-            onChanged: (filter) =>
-                ref.read(feedContentFilterProvider.notifier).state = filter,
+          Center(
+            child: FeedContentFilterBar(
+              currentFilter: contentFilter,
+              onChanged: (filter) =>
+                  ref.read(feedContentFilterProvider.notifier).state = filter,
+            ),
           ),
         ],
       ),
@@ -211,7 +213,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
     return GestureDetector(
       onTap: _openCreateChooser,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: context.surfaceColor,
@@ -277,5 +279,27 @@ class _FeedPageState extends ConsumerState<FeedPage>
       case FeedContentFilter.all:
         return true;
     }
+  }
+}
+
+class _HeaderIcon extends StatelessWidget {
+  final IconData icon;
+  final String route;
+
+  const _HeaderIcon({required this.icon, required this.route});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(route),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          border: Border.all(color: context.borderColor, width: 2),
+        ),
+        child: Icon(icon, color: context.textPrimary, size: 20),
+      ),
+    );
   }
 }

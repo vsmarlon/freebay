@@ -10,6 +10,7 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class EditProductPage extends ConsumerStatefulWidget {
   final String productId;
@@ -48,19 +49,13 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Editar anúncio',
-          style: TextStyle(
-            color: context.textPrimary,
-            fontFamily: AppTypography.headlineFontFamily,
-            fontWeight: FontWeight.w700,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'EDITAR ANÚNCIO',
           ),
-        ),
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
-        elevation: 0,
-      ),
-      body: productAsync.when(
+          Expanded(
+            child: productAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => Center(
           child: Text(
@@ -75,6 +70,9 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           _prefill(product);
           return _buildForm(context, product, isDark);
         },
+          ),
+          ),
+        ],
       ),
     );
   }

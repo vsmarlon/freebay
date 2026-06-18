@@ -14,7 +14,7 @@ export class GetUserReviewsUseCase {
   ) {}
 
   async execute(input: GetUserReviewsInput): Promise<Either<AppError, GetUserReviewsOutput>> {
-    const { userId, page = 1, limit = 10, type } = input;
+    const { userId, offset = 0, limit = 10, type } = input;
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -25,7 +25,7 @@ export class GetUserReviewsUseCase {
     }
 
     const result = await this.reviewRepository.findByReviewedId(userId, {
-      page,
+      offset,
       limit,
       type,
     });
@@ -33,7 +33,7 @@ export class GetUserReviewsUseCase {
     return right({
       reviews: result.reviews.map((review) => ReviewMapper.toApiResponse(review)),
       total: result.total,
-      page: result.page,
+      offset: result.offset,
       limit: result.limit,
     });
   }

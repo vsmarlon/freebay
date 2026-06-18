@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
@@ -28,9 +30,26 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
     final state = ref.watch(disputeListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Minhas Disputas')),
       body: Column(
         children: [
+          PageHeader(
+            text: 'MINHAS DISPUTAS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
           BrutalistBreadcrumb(items: [
             BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
             const BreadcrumbItem(label: 'Minhas Disputas'),

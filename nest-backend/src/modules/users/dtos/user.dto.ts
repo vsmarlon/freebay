@@ -5,10 +5,14 @@ import {
   IsOptional,
   IsUrl,
   IsObject,
+  IsInt,
+  Min,
+  Max,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
@@ -72,6 +76,54 @@ export class UpdateFcmTokenDTO {
   @IsOptional()
   @IsObject()
   notificationPrefs?: Record<string, boolean>;
+}
+
+export class OffsetPaginationQueryDTO {
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset?: number;
+}
+
+export class UserSearchQueryDTO {
+  @ApiPropertyOptional({ description: 'Search query' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  q?: string;
+
+  @ApiPropertyOptional({ description: 'Pagination cursor' })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+}
+
+export class SuggestionsQueryDTO {
+  @ApiPropertyOptional({ example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
 }
 
 export interface GetProfileInput {

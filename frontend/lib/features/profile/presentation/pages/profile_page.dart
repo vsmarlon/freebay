@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/user_avatar.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
+import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/guest_profile_view.dart';
-import 'package:freebay/features/profile/presentation/widgets/profile_menu_list.dart';
+import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
+import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
-import 'package:freebay/features/profile/presentation/widgets/profile_stats_section.dart';
-import 'package:freebay/features/profile/presentation/widgets/profile_stories_sheet.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class ProfilePage extends HookConsumerWidget {
   const ProfilePage({super.key});
@@ -26,132 +25,76 @@ class ProfilePage extends HookConsumerWidget {
     }
 
     final profileAsync = ref.watch(profileFutureProvider('me'));
+    final statsAsync = ref.watch(profileStatsProvider);
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Perfil',
-          style: TextStyle(
-            color: context.textPrimary,
-            fontWeight: FontWeight.bold,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'PERFIL',
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.settings_outlined,
+                  color: context.textPrimary,
+                ),
+                onPressed: () => showProfileSettingsSheet(context),
+              ),
+              IconButton(
+                icon: Icon(
+                  context.isDark ? Icons.light_mode : Icons.brightness_6,
+                  color: context.textPrimary,
+                ),
+                onPressed: () {
+                  ref.read(themeModeProvider.notifier).toggleTheme();
+                },
+              ),
+            ],
           ),
-        ),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.settings_outlined,
-              color: context.textPrimary,
-            ),
-            onPressed: () => showProfileSettingsSheet(context),
-          ),
-          IconButton(
-            icon: Icon(
-              context.isDark ? Icons.light_mode : Icons.brightness_6,
-              color: context.textPrimary,
-            ),
-            onPressed: () {
-              ref.read(themeModeProvider.notifier).toggleTheme();
-            },
-          ),
-        ],
-      ),
-      body: profileAsync.when(
-        data: (user) {
+          Expanded(
+            child: profileAsync.when(
+        data: (profileUser) {
+          final u = profileUser;
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () => showProfileStoriesSheet(context),
-                  child: Stack(
-                    children: [
-                      UserAvatar(
-                        imageUrl: user.avatarUrl,
-                        isVerified: user.isVerified,
-                        size: AppAvatarSize.large,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryContainer,
-                            borderRadius: BorderRadius.zero,
-                            border: Border.all(
-                              color: context.isDark
-                                  ? AppColors.surfaceDark
-                                  : AppColors.onPrimary,
-                              width: 2,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.add,
-                            color: AppColors.onPrimary,
-                            size: 14,
-                          ),
-                        ),
-                      ),
-                    ],
+                statsAsync.when(
+                  data: (stats) => ProfileHeader(
+                    user: u,
+                    followersCount: stats.followersCount,
+                    followingCount: stats.followingCount,
                   ),
+                  loading: () => ProfileHeader(user: u),
+                  error: (_, __) => ProfileHeader(user: u),
                 ),
                 Spacing.vMd,
-                Text(
-                  user.displayNameOrDefault,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: context.textPrimary,
-                  ),
+                Container(
+                  width: double.infinity,
+                  height: 1,
+                  color: context.isDark
+                      ? AppColors.outlineVariant.withAlpha(40)
+                      : AppColors.surfaceContainerHigh,
                 ),
-                if (user.city != null) ...[
-                  Spacing.vXs,
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: AppColors.mediumGray,
-                      ),
-                      Spacing.hXs,
-                      Text(
-                        user.city!,
-                        style: const TextStyle(
-                          color: AppColors.mediumGray,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                statsAsync.when(
+                  data: (stats) => ProfileTabs(
+                    user: u,
+                    salesCount: stats.salesCount,
+                    purchasesCount: stats.purchasesCount,
                   ),
-                ],
-                Spacing.vMd,
-                if (user.bio != null)
-                  Text(
-                    user.bio!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: context.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                Spacing.vXl,
-                const ProfileStatsRow(),
-                Spacing.vMd,
-                const ProfileFollowRow(),
-                Spacing.vXl,
-                const ProfileMenuList(),
+                  loading: () => ProfileTabs(user: u),
+                  error: (_, __) => ProfileTabs(user: u),
+                ),
               ],
             ),
           );
         },
-        loading: () => Center(
+        loading: () => const Center(
           child: CircularProgressIndicator(
-              color: AppColors.primaryContainer),
+            color: AppColors.primaryContainer,
+          ),
         ),
         error: (err, stack) => Center(
           child: Padding(
@@ -180,6 +123,9 @@ class ProfilePage extends HookConsumerWidget {
             ),
           ),
         ),
+            ),
+          ),
+        ],
       ),
     );
   }

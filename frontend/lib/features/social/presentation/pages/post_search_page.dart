@@ -10,6 +10,7 @@ import 'package:freebay/features/social/presentation/providers/post_search_provi
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class PostSearchPage extends ConsumerStatefulWidget {
   const PostSearchPage({super.key});
@@ -59,19 +60,11 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Buscar Posts',
-          style: TextStyle(
-            color: context.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-      ),
       body: Column(
         children: [
+          PageHeader(
+            text: 'BUSCAR POSTS',
+          ),
           BrutalistBreadcrumb(items: [
             BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
             const BreadcrumbItem(label: 'Buscar'),

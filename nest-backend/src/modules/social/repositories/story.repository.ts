@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class PrismaStoryRepository {
@@ -28,7 +29,7 @@ export class PrismaStoryRepository {
       },
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+        user: { select: USER_SELECT_BASIC },
         _count: { select: { views: true } },
       },
     });

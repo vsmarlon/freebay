@@ -11,55 +11,57 @@ import 'shared/services/notification_service.dart';
 import 'core/components/spacing.dart';
 import 'dart:async';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint('[CONFIG] Firebase initialization skipped: $e');
-  }
-
-  debugPrint('[CONFIG] API base URL: ${AppConfig.apiBaseUrl}');
-  if (!AppConfig.isUsingApiOverride) {
-    debugPrint(
-      '[CONFIG] Using platform default API host. For physical devices, run with --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
-    );
-  }
-
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-
-  ErrorWidget.builder = (details) {
-    return Material(
-      color: AppColors.surfaceContainerLowest,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Color(0xFF8A1083)),
-              Spacing.vMd,
-              Text(
-                'Algo deu errado',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              Spacing.vSm,
-              Text(
-                details.exception.toString(),
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  };
-
+void main() {
   runZonedGuarded(
-    () => runApp(const ProviderScope(child: FreeBayApp())),
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      try {
+        await Firebase.initializeApp();
+      } catch (e) {
+        debugPrint('[CONFIG] Firebase initialization skipped: $e');
+      }
+
+      debugPrint('[CONFIG] API base URL: ${AppConfig.apiBaseUrl}');
+      if (!AppConfig.isUsingApiOverride) {
+        debugPrint(
+          '[CONFIG] Using platform default API host. For physical devices, run with --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
+        );
+      }
+
+      final notificationService = NotificationService();
+      await notificationService.initialize();
+
+      ErrorWidget.builder = (details) {
+        return Material(
+          color: AppColors.surfaceContainerLowest,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Color(0xFF8A1083)),
+                  Spacing.vMd,
+                  Text(
+                    'Algo deu errado',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  Spacing.vSm,
+                  Text(
+                    details.exception.toString(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      };
+
+      runApp(const ProviderScope(child: FreeBayApp()));
+    },
     (error, stack) {
       debugPrint('[FATAL] Uncaught error: $error\n$stack');
     },

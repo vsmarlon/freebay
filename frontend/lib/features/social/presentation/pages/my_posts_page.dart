@@ -8,6 +8,7 @@ import 'package:freebay/features/social/data/repositories/social_repository.dart
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 final userPostsProvider =
     FutureProvider.family<List<PostEntity>, String>((ref, userId) async {
@@ -30,108 +31,120 @@ class MyPostsPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Meus posts'),
-        backgroundColor: context.bgColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: context.textPrimary,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'MEUS POSTS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
             ),
-            onPressed: () => context.push('/create-post'),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.add,
+                  color: context.textPrimary,
+                ),
+                onPressed: () => context.push('/create-post'),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: postsAsync.when(
-        data: (posts) {
-          return Column(
-            children: [
-              BrutalistBreadcrumb(items: [
-                BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-                const BreadcrumbItem(label: 'Meus Posts'),
-              ]),
-              Expanded(
-                child: posts.isEmpty
-                    ? EmptyState(
-                        icon: Icons.grid_view,
-                        title: 'NENHUM POST AINDA',
-                        subtitle: 'Crie seu primeiro post!',
-                        action: InkWell(
-                          onTap: () => context.push('/create-post'),
-                          child: Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: const BoxDecoration(
-                              gradient: AppColors.brutalistGradient,
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.add, color: AppColors.onPrimary),
-                                Spacing.hSm,
-                                Text(
-                                  'Criar post',
-                                  style: TextStyle(
-                                    color: AppColors.onPrimary,
-                                    fontWeight: FontWeight.w700,
+          Expanded(
+            child: postsAsync.when(
+              data: (posts) {
+                return Column(
+                  children: [
+                    BrutalistBreadcrumb(items: [
+                      BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                      const BreadcrumbItem(label: 'Meus Posts'),
+                    ]),
+                    Expanded(
+                      child: posts.isEmpty
+                          ? EmptyState(
+                              icon: Icons.grid_view,
+                              title: 'NENHUM POST AINDA',
+                              subtitle: 'Crie seu primeiro post!',
+                              action: InkWell(
+                                onTap: () => context.push('/create-post'),
+                                child: Container(
+                                  height: 48,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  decoration: const BoxDecoration(
+                                    gradient: AppColors.brutalistGradient,
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.add, color: AppColors.onPrimary),
+                                      Spacing.hSm,
+                                      Text(
+                                        'Criar post',
+                                        style: TextStyle(
+                                          color: AppColors.onPrimary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () async {
+                                ref.invalidate(userPostsProvider(userId));
+                              },
+                              child: GridView.builder(
+                                padding: const EdgeInsets.all(8),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 4,
+                                  mainAxisSpacing: 4,
+                                ),
+                                itemCount: posts.length,
+                                itemBuilder: (context, index) {
+                                  final post = posts[index];
+                                  return _buildPostTile(context, post);
+                                },
+                              ),
                             ),
-                          ),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          ref.invalidate(userPostsProvider(userId));
-                        },
-                        child: GridView.builder(
-                          padding: const EdgeInsets.all(8),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 4,
-                            mainAxisSpacing: 4,
-                          ),
-                          itemCount: posts.length,
-                          itemBuilder: (context, index) {
-                            final post = posts[index];
-                            return _buildPostTile(context, post);
-                          },
-                        ),
+                    ),
+                  ],
+                );
+              },
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryContainer),
+              ),
+              error: (err, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    Spacing.vMd,
+                    Text(
+                      'Erro ao carregar posts',
+                      style: TextStyle(
+                        color: context.textPrimary,
                       ),
-            ),
-          ],
-        );
-      },
-    loading: () => const Center(
-      child: CircularProgressIndicator(color: AppColors.primaryContainer),
-    ),
-    error: (err, _) => Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-          Spacing.vMd,
-          Text(
-            'Erro ao carregar posts',
-            style: TextStyle(
-              color: context.textPrimary,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
       ),
-    ),
-  ),
-);
+    );
   }
 
   Widget _buildPostTile(BuildContext context, PostEntity post) {

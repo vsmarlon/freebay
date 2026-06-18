@@ -143,20 +143,79 @@ void showProfileSettingsSheet(BuildContext context) {
                 ),
                 onTap: () {
                   Navigator.pop(consumerContext);
-                  showDialog(
+                  showBrutalistSheet(
                     context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Ajuda e suporte'),
-                      content: const Text(
-                        'Em caso de dúvidas ou problemas, entre em contato:\n\nmarlonstein260404@gmail.com',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Fechar'),
-                        ),
-                      ],
-                    ),
+                    title: 'Ajuda e suporte',
+                    builder: (sheetContext) {
+                      return Consumer(
+                        builder: (consumerContext, consumerRef, _) {
+                          return Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Em caso de dúvidas ou problemas, acesse o centro de ajuda:',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.mediumGray,
+                                  ),
+                                ),
+                                Spacing.vLg,
+                                InkWell(
+                                  onTap: () {
+                                    Navigator.pop(sheetContext);
+                                    context.push('/faq');
+                                  },
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 48,
+                                    decoration: const BoxDecoration(
+                                      gradient: AppColors.brutalistGradient,
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        'Central de ajuda',
+                                        style: TextStyle(
+                                          color: AppColors.onPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Spacing.vSm,
+                                InkWell(
+                                  onTap: () => Navigator.pop(sheetContext),
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColors.onSurface,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        'Fechar',
+                                        style: TextStyle(
+                                          color: AppColors.onSurface,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),

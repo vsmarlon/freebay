@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 
 class BreadcrumbItem {
   final String label;
@@ -19,18 +20,21 @@ class BrutalistBreadcrumb extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
     if (items.isEmpty) return const SizedBox.shrink();
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: List.generate(items.length * 2 - 1, (index) {
           if (index.isOdd) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: AppColors.onSurfaceVariant,
+                color: isDark
+                    ? AppColors.mediumGray
+                    : AppColors.onSurfaceVariant,
               ),
             );
           }
@@ -40,7 +44,16 @@ class BrutalistBreadcrumb extends StatelessWidget {
           if (isLast) {
             return Text(
               item.label,
-              style: AppTypography.breadcrumbCurrent,
+              style: TextStyle(
+                fontFamily: AppTypography.headlineFontFamily,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
+                color: isDark
+                    ? AppColors.primaryContainer
+                    : AppColors.onSurface,
+                height: 1.4,
+              ),
               overflow: TextOverflow.ellipsis,
             );
           }
@@ -51,7 +64,16 @@ class BrutalistBreadcrumb extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
               child: Text(
                 item.label,
-                style: AppTypography.breadcrumbParent,
+                style: TextStyle(
+                  fontFamily: AppTypography.headlineFontFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
+                  color: isDark
+                      ? AppColors.mediumGray
+                      : AppColors.onSurfaceVariant,
+                  height: 1.4,
+                ),
               ),
             ),
           );

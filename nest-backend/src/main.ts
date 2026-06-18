@@ -45,9 +45,15 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useGlobalInterceptors(new EitherInterceptor());
-  app.useGlobalInterceptors(new TransformInterceptor());
+  // Registration order matters: Nest composes interceptors so the FIRST
+  // registered is OUTERMOST (sees the final result) and the LAST is
+  // INNERMOST (sees the raw handler return value first). EitherInterceptor
+  // must run innermost so it unwraps left()/right() before TransformInterceptor
+  // wraps the value in { success, data } — otherwise error responses come
+  // back as HTTP 200 with the raw Either object buried in `data`.
   app.useGlobalInterceptors(new LoggingInterceptor());
+  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalInterceptors(new EitherInterceptor());
 
   const config = new DocumentBuilder()
     .setTitle('FreeBay API')

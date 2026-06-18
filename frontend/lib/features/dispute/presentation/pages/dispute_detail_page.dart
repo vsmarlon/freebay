@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
@@ -36,12 +38,35 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
     final state = ref.watch(disputeDetailProvider(widget.disputeId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes da Disputa')),
-      body: state.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : state.dispute == null
-              ? Center(child: Text(state.error ?? 'Disputa não encontrada'))
-              : _buildContent(state),
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'DETALHES DA DISPUTA',
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: state.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : state.dispute == null
+                    ? Center(child: Text(state.error ?? 'Disputa não encontrada'))
+                    : _buildContent(state),
+          ),
+        ],
+      ),
     );
   }
 

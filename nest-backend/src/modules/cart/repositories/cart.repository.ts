@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class PrismaCartRepository {
@@ -101,14 +102,7 @@ export class PrismaCartRepository {
       include: {
         product: {
           include: {
-            seller: {
-              select: {
-                id: true,
-                displayName: true,
-                avatarUrl: true,
-                isVerified: true,
-              },
-            },
+            seller: { select: USER_SELECT_BASIC },
             images: {
               orderBy: { order: 'asc' },
               take: 1,

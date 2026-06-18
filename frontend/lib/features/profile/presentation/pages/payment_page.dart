@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/orders/data/services/order_service.dart';
@@ -63,21 +64,26 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     return Scaffold(
       backgroundColor:
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      appBar: AppBar(
-        title: Text(isCartCheckout ? 'Checkout do carrinho' : 'Pagamento PIX'),
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: Column(
         children: [
+          PageHeader(
+            text: isCartCheckout ? 'CHECKOUT' : 'PAGAMENTO PIX',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: isDark ? AppColors.white : AppColors.darkGray,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
           BrutalistBreadcrumb(items: [
             BreadcrumbItem(label: 'Produto', onTap: () => context.pop()),
             const BreadcrumbItem(label: 'Pagamento'),

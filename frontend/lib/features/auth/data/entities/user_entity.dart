@@ -9,6 +9,7 @@ class UserEntity extends Equatable {
   final String? displayName;
   final String? email;
   final String? avatarUrl;
+  final String? bannerUrl;
   final String? bio;
   final String? city;
   final String? state;
@@ -21,12 +22,16 @@ class UserEntity extends Equatable {
   final int purchasesCount;
   final int followersCount;
   final int followingCount;
+  final int postsCount;
+  final int productsCount;
+  final bool hasActiveStory;
 
   const UserEntity({
     required this.id,
     this.displayName,
     this.email,
     this.avatarUrl,
+    this.bannerUrl,
     this.bio,
     this.city,
     this.state,
@@ -39,6 +44,9 @@ class UserEntity extends Equatable {
     this.purchasesCount = 0,
     this.followersCount = 0,
     this.followingCount = 0,
+    this.postsCount = 0,
+    this.productsCount = 0,
+    this.hasActiveStory = false,
   });
 
   String get displayNameOrDefault =>
@@ -55,6 +63,7 @@ class UserEntity extends Equatable {
         displayName,
         email,
         avatarUrl,
+        bannerUrl,
         bio,
         city,
         state,
@@ -67,5 +76,8 @@ class UserEntity extends Equatable {
         purchasesCount,
         followersCount,
         followingCount,
+        postsCount,
+        productsCount,
+        hasActiveStory,
       ];
 }

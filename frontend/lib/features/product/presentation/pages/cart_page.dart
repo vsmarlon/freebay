@@ -8,6 +8,7 @@ import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class CartPage extends ConsumerStatefulWidget {
   const CartPage({super.key});
@@ -31,46 +32,55 @@ class _CartPageState extends ConsumerState<CartPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text('Carrinho (${cart.totalItems})'),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          if (cart.items.isNotEmpty)
-            InkWell(
-              onTap: () async {
-                final ok = await ref.read(cartProvider.notifier).clearCart();
-                if (!context.mounted) {
-                  return;
-                }
-                if (!ok) {
-                  AppSnackbar.error(context, 'Não foi possível limpar o carrinho');
-                  return;
-                }
-                AppSnackbar.info(context, 'Carrinho limpo');
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Text(
-                  'Limpar',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.white : AppColors.onSurface,
-                  ),
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'CARRINHO (${cart.totalItems})',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
                 ),
               ),
             ),
-        ],
-      ),
-      body: state.isLoading
+            actions: [
+              if (cart.items.isNotEmpty)
+                InkWell(
+                  onTap: () async {
+                    final ok = await ref.read(cartProvider.notifier).clearCart();
+                    if (!context.mounted) {
+                      return;
+                    }
+                    if (!ok) {
+                      AppSnackbar.error(context, 'Não foi possível limpar o carrinho');
+                      return;
+                    }
+                    AppSnackbar.info(context, 'Carrinho limpo');
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Text(
+                      'Limpar',
+                      style: TextStyle(
+                        fontFamily: AppTypography.fontFamily,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppColors.white : AppColors.onSurface,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          Expanded(
+            child: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : cart.items.isEmpty
               ? Center(
@@ -234,6 +244,9 @@ class _CartPageState extends ConsumerState<CartPage> {
                   },
                 ),
               ),
+          ),
+        ],
+      ),
       bottomSheet: cart.items.isEmpty
           ? null
           : Container(

@@ -8,6 +8,8 @@ import 'package:freebay/features/orders/presentation/providers/order_providers.d
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 
 class PurchasesPage extends ConsumerStatefulWidget {
   const PurchasesPage({super.key});
@@ -49,30 +51,30 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainerLowest,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text(
-          'Minhas Compras',
-          style: TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
-          ),
-        ),
-        centerTitle: false,
-      ),
       body: Column(
         children: [
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Minhas Compras'),
-          ]),
+          PageHeader(
+            text: 'COMPRAS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+            breadcrumbs: [
+              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Minhas Compras'),
+            ],
+          ),
           Expanded(child: _buildBody(state)),
         ],
       ),
@@ -213,8 +215,9 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
   }
 
   Widget _buildOrderCard(OrderEntity order, int index) {
-    final backgroundColor =
-        index.isEven ? AppColors.surfaceContainerLowest : AppColors.surfaceContainerLow;
+    final backgroundColor = index.isEven
+        ? AppColors.surfaceContainerLowest
+        : AppColors.surfaceContainerLow;
 
     return Material(
       color: backgroundColor,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -57,16 +58,34 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Esqueceu a senha?'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _sent ? _buildSuccessState() : _buildForm(),
-        ),
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'ESQUECI A SENHA',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: _sent ? _buildSuccessState() : _buildForm(),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

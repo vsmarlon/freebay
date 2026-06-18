@@ -8,8 +8,14 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  HttpCode,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
@@ -18,7 +24,13 @@ import { BlockRepository } from './repositories/block.repository';
 import { GetUserStatsUseCase } from './usecases/user.usecase';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { UpdateProfileDTO, UpdateFcmTokenDTO } from './dtos/user.dto';
+import {
+  UpdateProfileDTO,
+  UpdateFcmTokenDTO,
+  OffsetPaginationQueryDTO,
+  UserSearchQueryDTO,
+  SuggestionsQueryDTO,
+} from './dtos/user.dto';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import {
@@ -31,6 +43,7 @@ import {
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
+import { validateImageFile } from '@/shared/utils/image-upload.utils';
 
 @ApiTags('Users')
 @Controller('users')
@@ -58,7 +71,21 @@ export class UsersController {
     if (!userRecord) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
-    return toUserResponse(userRecord);
+
+    const [postsCount, productsCount, activeStory] = await Promise.all([
+      this.prisma.post.count({ where: { userId } }),
+      this.prisma.product.count({ where: { sellerId: userId, status: { not: 'DELETED' } } }),
+      this.prisma.story.findFirst({
+        where: { userId, expiresAt: { gt: new Date() } },
+        select: { id: true },
+      }),
+    ]);
+
+    return toUserResponse(userRecord, {
+      postsCount,
+      productsCount,
+      hasActiveStory: activeStory !== null,
+    });
   }
 
   @Get('me/stats')
@@ -88,6 +115,42 @@ export class UsersController {
     const data = { ...body } as Record<string, unknown>;
     if (data.cpf) data.cpf = (data.cpf as string).replace(/\D/g, '');
     const updated = await this.userRepository.update(userId, data);
+    return toUserResponse(updated);
+  }
+
+  @Post('me/avatar')
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  @ApiBearerAuth()
+  @HttpCode(200)
+  @ApiDoc({
+    summary: 'Upload profile picture',
+    description: 'Uploads an image to be used as profile avatar. Accepts JPEG, PNG, WebP, GIF up to 5MB.',
+    auth: true,
+    responseType: UserResponse,
+  })
+  async uploadAvatar(
+    @CurrentUser() user: AuthUser,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Imagem é obrigatória');
+    }
+
+    const mimeError = validateImageFile(file);
+    if (mimeError) {
+      throw new BadRequestException(mimeError);
+    }
+
+    const dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    const updated = await this.userRepository.update(user.userId, {
+      avatarUrl: dataUri,
+    });
     return toUserResponse(updated);
   }
 
@@ -133,7 +196,21 @@ export class UsersController {
     if (!userRecord) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
-    return toUserResponse(userRecord);
+
+    const [postsCount, productsCount, activeStory] = await Promise.all([
+      this.prisma.post.count({ where: { userId: id } }),
+      this.prisma.product.count({ where: { sellerId: id, status: { not: 'DELETED' } } }),
+      this.prisma.story.findFirst({
+        where: { userId: id, expiresAt: { gt: new Date() } },
+        select: { id: true },
+      }),
+    ]);
+
+    return toUserResponse(userRecord, {
+      postsCount,
+      productsCount,
+      hasActiveStory: activeStory !== null,
+    });
   }
 
   @Post(':id/follow')
@@ -214,11 +291,10 @@ export class UsersController {
   })
   async getFollowers(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query() query: OffsetPaginationQueryDTO,
   ) {
-    const parsedLimit = parseInt(limit || '20');
-    const parsedOffset = parseInt(offset || '0');
+    const parsedLimit = query.limit ?? 20;
+    const parsedOffset = query.offset ?? 0;
 
     const targetUser = await this.userRepository.findById(id);
     if (!targetUser) {
@@ -254,11 +330,10 @@ export class UsersController {
   })
   async getFollowing(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query() query: OffsetPaginationQueryDTO,
   ) {
-    const parsedLimit = parseInt(limit || '20');
-    const parsedOffset = parseInt(offset || '0');
+    const parsedLimit = query.limit ?? 20;
+    const parsedOffset = query.offset ?? 0;
 
     const targetUser = await this.userRepository.findById(id);
     if (!targetUser) {
@@ -390,12 +465,11 @@ export class UsersController {
   })
   async getBlockedUsers(
     @CurrentUser() user: AuthUser,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string,
+    @Query() query: OffsetPaginationQueryDTO,
   ) {
     const userId = user.userId;
-    const parsedLimit = parseInt(limit || '20');
-    const parsedOffset = parseInt(offset || '0');
+    const parsedLimit = query.limit ?? 20;
+    const parsedOffset = query.offset ?? 0;
 
     const blockedUsers = await this.blockRepository.getBlockedUsers(userId, parsedLimit, parsedOffset);
 
@@ -421,9 +495,9 @@ export class UsersController {
       { name: 'limit', required: false, description: 'Results per page (default 20)' },
     ],
   })
-  async searchUsers(@Query('q') query?: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    const parsedLimit = parseInt(limit || '20');
-    const users = await this.userRepository.searchUsers(query || '', parsedLimit, cursor);
+  async searchUsers(@Query() query: UserSearchQueryDTO) {
+    const parsedLimit = query.limit ?? 20;
+    const users = await this.userRepository.searchUsers(query.q || '', parsedLimit, query.cursor);
 
     return {
       users: users.map((u) => ({
@@ -451,9 +525,9 @@ export class UsersController {
       { name: 'limit', required: false, description: 'Number of suggestions (default 10)' },
     ],
   })
-  async getSuggestions(@CurrentUser() user: AuthUser, @Query('limit') limit?: string) {
+  async getSuggestions(@CurrentUser() user: AuthUser, @Query() query: SuggestionsQueryDTO) {
     const userId = user.userId;
-    const parsedLimit = parseInt(limit || '10');
+    const parsedLimit = query.limit ?? 10;
     const suggestions = await this.userRepository.getSuggestions(userId, parsedLimit);
 
     return {

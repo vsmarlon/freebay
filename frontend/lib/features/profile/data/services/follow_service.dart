@@ -22,7 +22,7 @@ class FollowService {
     try {
       final response = await HttpClient.instance.post('/users/$userId/follow');
 
-      if (response.statusCode == 200 && response.data != null) {
+      if (response.statusCode == 201 && response.data != null) {
         return Right(FollowResponse.fromJson(response.data['data']));
       } else {
         return Left(ServerFailure(_extractErrorMessage(response.data)));

@@ -149,7 +149,7 @@ void _handleShareExternal() {
         decoration: BoxDecoration(
           color: context.surfaceColor,
           border: Border.all(
-            color: AppColors.onSurface,
+            color: context.borderColor,
             width: 2,
           ),
         ),
@@ -183,17 +183,17 @@ void _handleShareExternal() {
                         ..setEntry(1, 1, 1.02))
                       : Matrix4.identity(),
                   child: Container(
-                    color: AppColors.surfaceContainer,
+                    color: context.surfaceMidColor,
                     child: Image.network(
                       widget.imageUrl!,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        color: AppColors.surfaceContainer,
+                        color: context.surfaceMidColor,
                         child: Icon(
                           Icons.image,
-                          color: AppColors.outline,
+                          color: context.textSecondary,
                           size: 48,
                         ),
                       ),
@@ -239,10 +239,10 @@ void _handleShareExternal() {
   Widget _buildCardHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: AppColors.onSurface,
+            color: context.borderColor,
             width: 2,
           ),
         ),
@@ -319,7 +319,7 @@ void _handleShareExternal() {
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.1,
-                    color: AppColors.outline,
+                    color: context.textSecondary,
                   ),
                 ),
               ],
@@ -386,8 +386,8 @@ class _PostTypePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         gradient: isProduct ? AppColors.brutalistGradient : null,
-        color: isProduct ? null : AppColors.onSurface,
-        border: Border.all(color: AppColors.onSurface, width: 2),
+        color: isProduct ? null : context.textPrimary,
+        border: Border.all(color: context.borderColor, width: 2),
       ),
       child: Text(
         isProduct ? 'VENDA' : 'SOCIAL',
@@ -413,8 +413,8 @@ class _PriceTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        border: Border.all(color: AppColors.onSurface, width: 2),
+        color: context.surfaceColor,
+        border: Border.all(color: context.borderColor, width: 2),
       ),
       child: Text(
         CurrencyUtils.formatReais(price),

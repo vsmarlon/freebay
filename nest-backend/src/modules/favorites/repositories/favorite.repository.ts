@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { SELLER_SELECT_FULL } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class PrismaFavoriteRepository {
@@ -62,16 +63,7 @@ export class PrismaFavoriteRepository {
       include: {
         product: {
           include: {
-            seller: {
-              select: {
-                id: true,
-                displayName: true,
-                avatarUrl: true,
-                isVerified: true,
-                reputationScore: true,
-                totalReviews: true,
-              },
-            },
+            seller: { select: SELLER_SELECT_FULL },
             images: {
               orderBy: { order: 'asc' },
               take: 1,

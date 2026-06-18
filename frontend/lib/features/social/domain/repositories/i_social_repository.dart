@@ -48,4 +48,8 @@ abstract class ISocialRepository {
       {String? query, String filter = 'all', int limit = 20, String? cursor});
   Future<Either<Failure, void>> savePost(String postId);
   Future<Either<Failure, void>> unsavePost(String postId);
+  Future<Either<Failure, List<PostEntity>>> getPostsByUser(String userId,
+      {int limit = 20, String? cursor});
+  Future<Either<Failure, List<PostEntity>>> getLikedPosts(
+      {int limit = 20, String? cursor});
 }

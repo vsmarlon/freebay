@@ -9,6 +9,7 @@ import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
@@ -97,33 +98,32 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
 
     return Scaffold(
       backgroundColor: context.surfaceMidColor,
-      appBar: AppBar(
-        backgroundColor: context.surfaceMidColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.close,
-            color: context.textPrimary,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'AVALIAR',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.close,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
           ),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Avaliar',
-          style: TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: isDark
-                ? AppColors.inverseOnSurface
-                : AppColors.onSurface,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
             BrutalistBreadcrumb(items: [
               BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
               const BreadcrumbItem(label: 'Avaliar'),
@@ -310,8 +310,11 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                 ),
               ),
             ),
-          ],
-        ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

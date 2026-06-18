@@ -23,7 +23,6 @@ class ProfileMenuList extends ConsumerWidget {
           MenuListTile(icon: Icons.bookmark_outline, label: 'Salvos', onTap: () => context.push('/profile/saved')),
           Spacing.vMd,
           MenuListTile(icon: Icons.shopping_cart_outlined, label: 'Carrinho', onTap: () => context.push('/cart')),
-          MenuListTile(icon: Icons.bookmark_border, label: 'Favoritos', onTap: () => context.push('/profile/favorites')),
           Spacing.vMd,
           MenuListTile(icon: Icons.history, label: 'Histórico de compras', onTap: () => context.push('/profile/purchases')),
           MenuListTile(icon: Icons.account_balance_wallet_outlined, label: 'Carteira e custódia', onTap: () => context.push('/wallet')),

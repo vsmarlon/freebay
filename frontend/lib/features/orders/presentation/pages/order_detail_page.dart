@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
@@ -13,6 +14,7 @@ import 'package:freebay/features/orders/presentation/widgets/order_actions.dart'
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -42,33 +44,39 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final currentUserId = authState.valueOrNull?.id;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfaceContainerLowest,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          'Pedido #${widget.orderId.length > 8 ? widget.orderId.substring(0, 8) : widget.orderId}',
-          style: const TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppColors.onSurface,
+      backgroundColor: context.bgColor,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'PEDIDO #${widget.orderId.length > 8 ? widget.orderId.substring(0, 8) : widget.orderId}',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
           ),
-        ),
-        centerTitle: false,
+          Expanded(
+            child: _buildBody(state, currentUserId),
+          ),
+        ],
       ),
-      body: _buildBody(state, currentUserId),
     );
   }
 
   Widget _buildBody(OrderDetailState state, String? currentUserId) {
     if (state.isLoading && state.order == null) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryContainer),
+      return Center(
+        child: CircularProgressIndicator(color: context.colors.primaryContainer),
       );
     }
 
@@ -77,18 +85,18 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outlined,
-              color: AppColors.error,
+              color: context.colors.error,
               size: 48,
             ),
             Spacing.vMd,
             Text(
               state.error!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
-                color: AppColors.onSurfaceVariant,
+                color: context.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -101,13 +109,13 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
     final order = state.order;
     if (order == null) {
-      return const Center(
+      return Center(
         child: Text(
           'Pedido não encontrado',
           style: TextStyle(
             fontFamily: AppTypography.fontFamily,
             fontSize: 14,
-            color: AppColors.onSurfaceVariant,
+            color: context.textSecondary,
           ),
         ),
       );
@@ -116,7 +124,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final isBuyer = currentUserId == order.buyerId;
 
     return RefreshIndicator(
-      color: AppColors.primaryContainer,
+      color: context.colors.primaryContainer,
       onRefresh: () async {
         await ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
       },
@@ -125,11 +133,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         child: Column(
           children: [
             OrderStatusTimeline(currentStatus: order.status),
-            const SizedBox(height: 2),
+            Spacing.vXs,
             _buildProductSection(order),
-            const SizedBox(height: 2),
+            Spacing.vXs,
             _buildParticipantSection(order, isBuyer),
-            const SizedBox(height: 2),
+            Spacing.vXs,
             EscrowStatusCard(
               escrowStatus: order.escrowStatus,
               amount: order.amount,
@@ -137,7 +145,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               sellerAmount: order.sellerAmount,
               isBuyer: isBuyer,
             ),
-            const SizedBox(height: 2),
+            Spacing.vXs,
             OrderActions(
               order: order,
               canReview: state.canReview,
@@ -154,7 +162,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               onDispute: () => _handleDispute(order),
               onCancel: () => _handleCancel(),
             ),
-            const SizedBox(height: 2),
+            Spacing.vXs,
             _buildOrderInfo(order),
             Spacing.vXxl,
           ],
@@ -198,19 +206,19 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final product = order.product;
 
     return Container(
-      color: AppColors.surfaceContainerLowest,
+      color: context.surfaceColor,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'PRODUTO',
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
-              color: AppColors.onSurfaceVariant,
+              color: context.textSecondary,
             ),
           ),
           Spacing.vMd,
@@ -220,25 +228,25 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               Container(
                 width: 80,
                 height: 80,
-                color: AppColors.surfaceContainerHighest,
+                color: context.surfaceMidColor,
                 child: product?.imageUrl != null
                     ? CachedNetworkImage(
                         imageUrl: product!.imageUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => const Center(
+                        placeholder: (context, url) => Center(
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.primaryContainer,
+                            color: context.colors.primaryContainer,
                           ),
                         ),
-                        errorWidget: (context, url, error) => const Icon(
+                        errorWidget: (context, url, error) => Icon(
                           Icons.image_outlined,
-                          color: AppColors.onSurfaceVariant,
+                          color: context.textSecondary,
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.image_outlined,
-                        color: AppColors.onSurfaceVariant,
+                        color: context.textSecondary,
                       ),
               ),
               Spacing.hMd,
@@ -248,11 +256,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   children: [
                     Text(
                       product?.title ?? 'Produto',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        color: context.textPrimary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -263,14 +271,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                         horizontal: 12,
                         vertical: 8,
                       ),
-                      color: AppColors.surfaceContainerHighest,
+                      color: context.surfaceMidColor,
                       child: Text(
                         order.formattedAmount,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.onSurface,
+                          color: context.textPrimary,
                         ),
                       ),
                     ),
@@ -289,19 +297,19 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final label = isBuyer ? 'VENDEDOR' : 'COMPRADOR';
 
     return Container(
-      color: AppColors.surfaceContainer,
+      color: context.surfaceMidColor,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
-              color: AppColors.onSurfaceVariant,
+              color: context.textSecondary,
             ),
           ),
           Spacing.vMd,
@@ -319,29 +327,29 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   children: [
                     Text(
                       participant?.displayNameOrDefault ?? 'Usuário',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        color: context.textPrimary,
                       ),
                     ),
                     if (participant?.isVerified == true) ...[
                       Spacing.vXs,
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.verified,
-                            color: AppColors.primaryContainer,
+                            color: context.colors.primaryContainer,
                             size: 14,
                           ),
                           Spacing.hXs,
-                          const Text(
+                          Text(
                             'Verificado',
                             style: TextStyle(
                               fontFamily: AppTypography.fontFamily,
                               fontSize: 12,
-                              color: AppColors.onSurfaceVariant,
+                              color: context.textSecondary,
                             ),
                           ),
                         ],
@@ -360,9 +368,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   },
                   child: Container(
                     padding: const EdgeInsets.all(12),
-                    child: const Icon(
+                    child: Icon(
                       Icons.chevron_right,
-                      color: AppColors.onSurfaceVariant,
+                      color: context.textSecondary,
                     ),
                   ),
                 ),
@@ -376,19 +384,19 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
   Widget _buildOrderInfo(OrderEntity order) {
     return Container(
-      color: AppColors.surfaceContainerLowest,
+      color: context.surfaceColor,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'INFORMAÇÕES',
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
-              color: AppColors.onSurfaceVariant,
+              color: context.textSecondary,
             ),
           ),
           Spacing.vMd,
@@ -418,10 +426,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           flex: 2,
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 14,
-              color: AppColors.onSurfaceVariant,
+              color: context.textSecondary,
             ),
           ),
         ),
@@ -429,11 +437,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           flex: 3,
           child: Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: AppColors.onSurface,
+              color: context.textPrimary,
             ),
             textAlign: TextAlign.end,
           ),
@@ -476,7 +484,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   ? 'Recebimento confirmado com sucesso!'
                   : 'Erro ao confirmar recebimento',
             ),
-            backgroundColor: success ? AppColors.success : AppColors.error,
+            backgroundColor:
+                success ? AppColors.success : AppColors.error,
           ),
         );
       }
@@ -600,7 +609,7 @@ class _BrutalistDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      backgroundColor: AppColors.surfaceContainerLowest,
+      backgroundColor: context.surfaceColor,
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -609,20 +618,20 @@ class _BrutalistDialog extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
+                color: context.textPrimary,
               ),
             ),
             Spacing.vMd,
             Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
-                color: AppColors.onSurfaceVariant,
+                color: context.textSecondary,
                 height: 1.5,
               ),
             ),
@@ -656,7 +665,7 @@ class _BrutalistDialog extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                  color: context.borderColor.withValues(alpha: 0.3),
                 ),
               ),
               child: Material(
@@ -666,11 +675,11 @@ class _BrutalistDialog extends StatelessWidget {
                   child: Center(
                     child: Text(
                       cancelLabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
+                        color: context.textPrimary,
                       ),
                     ),
                   ),

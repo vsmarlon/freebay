@@ -20,6 +20,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -115,13 +116,11 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Post'),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-      ),
       body: Column(
         children: [
+          const PageHeader(
+            text: 'POST',
+          ),
           BrutalistBreadcrumb(items: [
             BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
             const BreadcrumbItem(label: 'Post'),

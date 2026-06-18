@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -6,6 +7,7 @@ import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/profile/data/services/block_service.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 final blockServiceProvider = Provider<BlockService>((ref) {
   return BlockService();
@@ -30,30 +32,34 @@ class BlockedUsersPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Usuários bloqueados',
-          style: TextStyle(
-            color: context.textPrimary,
-            fontWeight: FontWeight.bold,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'USUÁRIOS BLOQUEADOS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+            breadcrumbs: [
+              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Usuários Bloqueados'),
+            ],
           ),
-        ),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        iconTheme: IconThemeData(
-          color: isDark ? AppColors.white : AppColors.black,
-        ),
-      ),
-      body: blockedUsersAsync.when(
-        data: (response) {
-          return Column(
-            children: [
-              BrutalistBreadcrumb(items: [
-                BreadcrumbItem(label: 'Perfil', onTap: () => Navigator.pop(context)),
-                const BreadcrumbItem(label: 'Usuários Bloqueados'),
-              ]),
-              Expanded(
-                child: response.users.isEmpty
+          Expanded(
+            child: blockedUsersAsync.when(
+              data: (response) {
+                return response.users.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -61,14 +67,18 @@ class BlockedUsersPage extends ConsumerWidget {
                             Icon(
                               Icons.block_outlined,
                               size: 64,
-                              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                              color: isDark
+                                  ? AppColors.mediumGray
+                                  : AppColors.mediumGray,
                             ),
                             Spacing.vMd,
                             Text(
                               'Você não bloqueou nenhum usuário',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                                color: isDark
+                                    ? AppColors.mediumGray
+                                    : AppColors.mediumGray,
                               ),
                             ),
                           ],
@@ -106,66 +116,69 @@ class BlockedUsersPage extends ConsumerWidget {
                             );
                           },
                         ),
-                      ),
-        ),
-      ],
-    );
-  },
-  loading: () => Center(
-          child: CircularProgressIndicator(
-            color:
-                isDark ? AppColors.primaryContainer : AppColors.primaryContainer,
-          ),
-        ),
-        error: (err, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline,
-                    size: 48, color: AppColors.error),
-                Spacing.vMd,
-                Text(
-                  'Erro ao carregar usuários bloqueados',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.white : AppColors.darkGray,
-                  ),
+                      );
+              },
+              loading: () => Center(
+                child: CircularProgressIndicator(
+                  color: isDark
+                      ? AppColors.primaryContainer
+                      : AppColors.primaryContainer,
                 ),
-                Spacing.vSm,
-                Text(
-                  'Não foi possível carregar a lista. Verifique sua conexão.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
-                ),
-                Spacing.vMd,
-                InkWell(
-                  onTap: () => ref.invalidate(blockedUsersProvider),
-                  child: Container(
-                    height: 48,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.brutalistGradient,
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Tentar novamente',
+              ),
+              error: (err, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          size: 48, color: AppColors.error),
+                      Spacing.vMd,
+                      Text(
+                        'Erro ao carregar usuários bloqueados',
                         style: TextStyle(
-                          color: AppColors.onPrimary,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.white : AppColors.darkGray,
                         ),
                       ),
-                    ),
+                      Spacing.vSm,
+                      Text(
+                        'Não foi possível carregar a lista. Verifique sua conexão.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: isDark
+                              ? AppColors.mediumGray
+                              : AppColors.mediumGray,
+                        ),
+                      ),
+                      Spacing.vMd,
+                      InkWell(
+                        onTap: () => ref.invalidate(blockedUsersProvider),
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: const BoxDecoration(
+                            gradient: AppColors.brutalistGradient,
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Tentar novamente',
+                              style: TextStyle(
+                                color: AppColors.onPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

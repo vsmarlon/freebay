@@ -18,7 +18,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CreateProductUseCase, DeleteProductUseCase, UpdateProductUseCase } from './usecases/product.usecase';
-import { CreateProductDTO, UpdateProductDTO } from './dtos/product.dto';
+import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO } from './dtos/product.dto';
 import { PrismaProductRepository } from './repositories/product.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
@@ -54,27 +54,22 @@ export class ProductsController {
       { name: 'maxPrice', required: false, description: 'Maximum price in cents' },
     ],
   })
-  async findAll(
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-    @Query('category') category?: string,
-    @Query('minPrice') minPrice?: string,
-    @Query('maxPrice') maxPrice?: string,
-  ) {
+  async findAll(@Query() query: ProductQueryDTO) {
+    const parsedLimit = query.limit ?? 20;
+
     const products = await this.productRepository.findMany({
-      cursor,
-      limit: limit ? parseInt(limit) : undefined,
-      search,
-      categoryId: category,
-      minPrice: minPrice ? parseInt(minPrice) : undefined,
-      maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
+      cursor: query.cursor,
+      limit: parsedLimit,
+      search: query.search,
+      categoryId: query.category,
+      minPrice: query.minPrice,
+      maxPrice: query.maxPrice,
     });
 
     return {
       products,
       nextCursor:
-        products.length === (limit ? parseInt(limit) : 20)
+        products.length === parsedLimit
           ? products[products.length - 1]?.id
           : null,
     };

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/wallet_card.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
 import 'package:freebay/core/theme/app_typography.dart';
@@ -17,24 +19,6 @@ class WalletPage extends ConsumerStatefulWidget {
 }
 
 class _WalletPageState extends ConsumerState<WalletPage> {
-  void _showHelpDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Ajuda e suporte'),
-        content: const Text(
-          'Em caso de dúvidas ou problemas, entre em contato:\n\nmarlonstein260404@gmail.com',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   void initState() {
     super.initState();
@@ -58,27 +42,32 @@ class _WalletPageState extends ConsumerState<WalletPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Carteira',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isDark ? AppColors.white : AppColors.darkGray,
-          ),
-        ),
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.help_outline,
-              color: isDark ? AppColors.white : AppColors.darkGray,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'CARTEIRA',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+              ),
             ),
-            onPressed: () => _showHelpDialog(context),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.help_outline,
+                  color: isDark ? AppColors.white : AppColors.darkGray,
+                ),
+                onPressed: () => context.push('/faq'),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: walletState.isLoading && !isGuest
+          Expanded(
+            child: walletState.isLoading && !isGuest
           ? const Center(child: CircularProgressIndicator())
           : walletState.hasError && !isGuest
               ? Center(
@@ -168,6 +157,9 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 

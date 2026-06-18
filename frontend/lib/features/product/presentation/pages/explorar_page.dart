@@ -15,6 +15,7 @@ import 'package:freebay/features/social/presentation/providers/user_search_provi
 import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class ExplorarPage extends ConsumerStatefulWidget {
   const ExplorarPage({super.key});
@@ -75,45 +76,40 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Explorar',
-          style: TextStyle(
-            color: context.isDark ? AppColors.white : AppColors.primaryContainer,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: context.isDark ? AppColors.white : AppColors.primaryContainer,
-          unselectedLabelColor: AppColors.mediumGray,
-          indicatorColor: AppColors.primaryContainer,
-          tabs: const [
-            Tab(text: 'Produtos'),
-            Tab(text: 'Pessoas'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showFilters ? Icons.filter_list_off : Icons.filter_list,
-              color: context.isDark ? AppColors.white : AppColors.primaryContainer,
-            ),
-            onPressed: () => setState(() => _showFilters = !_showFilters),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.add_box_outlined,
-              color: AppColors.primaryContainer,
-            ),
-            onPressed: () => context.push('/products/create'),
-          )
-        ],
-      ),
       body: Column(
         children: [
+          PageHeader(
+            text: 'EXPLORAR',
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                  color: context.isDark ? AppColors.white : AppColors.primaryContainer,
+                ),
+                onPressed: () => setState(() => _showFilters = !_showFilters),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.add_box_outlined,
+                  color: AppColors.primaryContainer,
+                ),
+                onPressed: () => context.push('/products/create'),
+              )
+            ],
+          ),
+          Material(
+            color: context.surfaceColor,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: context.isDark ? AppColors.white : AppColors.primaryContainer,
+              unselectedLabelColor: AppColors.mediumGray,
+              indicatorColor: AppColors.primaryContainer,
+              tabs: const [
+                Tab(text: 'Produtos'),
+                Tab(text: 'Pessoas'),
+              ],
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: AppTextField(

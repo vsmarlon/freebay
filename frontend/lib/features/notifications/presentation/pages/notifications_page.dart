@@ -8,6 +8,8 @@ import 'package:freebay/features/notifications/data/models/notification_model.da
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
@@ -18,105 +20,127 @@ class NotificationsPage extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Notificações',
-          overflow: TextOverflow.visible,
-        ),
-        actions: [
-          InkWell(
-            onTap: () {
-              ref.read(notificationsProvider.notifier).markAllAsRead();
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Icon(
-                Icons.done_all,
-                color: theme.brightness == Brightness.dark
-                    ? AppColors.white
-                    : AppColors.onSurface,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'NOTIFICAÇÕES',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      body: notificationsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.notifications_off_outlined,
-                  size: 48,
-                  color: theme.colorScheme.outline,
-                ),
-                Spacing.vMd,
-                Text(
-                  'Não foi possível carregar suas notificações.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(
+            actions: [
+              InkWell(
+                onTap: () {
+                  ref.read(notificationsProvider.notifier).markAllAsRead();
+                },
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Icon(
+                    Icons.done_all,
                     color: theme.brightness == Brightness.dark
                         ? AppColors.white
                         : AppColors.onSurface,
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                Spacing.vSm,
-                Text(
-                  'Puxe para atualizar ou tente novamente em instantes.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
-                ),
-                Spacing.vMd,
-                InkWell(
-                  onTap: () => ref.read(notificationsProvider.notifier).refresh(),
-                  child: Container(
-                    height: 44,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.brutalistGradient,
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Tentar novamente',
-                        style: TextStyle(
-                          color: AppColors.onPrimary,
+              ),
+            ],
+          ),
+          Expanded(
+            child: notificationsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.notifications_off_outlined,
+                        size: 48,
+                        color: theme.colorScheme.outline,
+                      ),
+                      Spacing.vMd,
+                      Text(
+                        'Não foi possível carregar suas notificações.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.brightness == Brightness.dark
+                              ? AppColors.white
+                              : AppColors.onSurface,
+                          fontFamily: AppTypography.headlineFontFamily,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
+                      Spacing.vSm,
+                      Text(
+                        'Puxe para atualizar ou tente novamente em instantes.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                      Spacing.vMd,
+                      InkWell(
+                        onTap: () =>
+                            ref.read(notificationsProvider.notifier).refresh(),
+                        child: Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: const BoxDecoration(
+                            gradient: AppColors.brutalistGradient,
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Tentar novamente',
+                              style: TextStyle(
+                                color: AppColors.onPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-        data: (notifications) {
-          if (notifications.isEmpty) {
-            return const EmptyState(
-              icon: Icons.notifications_none,
-              title: 'NENHUMA NOTIFICAÇÃO',
-              subtitle: 'Você será notificado sobre pedidos, mensagens e muito mais.',
-            );
-          }
+              ),
+              data: (notifications) {
+                if (notifications.isEmpty) {
+                  return const EmptyState(
+                    icon: Icons.notifications_none,
+                    title: 'NENHUMA NOTIFICAÇÃO',
+                    subtitle:
+                        'Você será notificado sobre pedidos, mensagens e muito mais.',
+                  );
+                }
 
-          return RefreshIndicator(
-            onRefresh: () => ref.read(notificationsProvider.notifier).refresh(),
-            child: ListView.builder(
-              itemCount: notifications.length,
-              itemBuilder: (context, index) {
-                final notification = notifications[index];
-                return _NotificationTile(notification: notification);
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      ref.read(notificationsProvider.notifier).refresh(),
+                  child: ListView.builder(
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = notifications[index];
+                      return _NotificationTile(notification: notification);
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

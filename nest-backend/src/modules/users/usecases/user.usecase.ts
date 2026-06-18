@@ -133,8 +133,10 @@ export class FollowUserUseCase {
       await this.notificationService.notifyNewFollower(input.followingId, follower.displayName);
     }
 
-    const followersCount = await this.followRepository.getFollowersCount(input.followingId);
-    const followingCount = await this.followRepository.getFollowingCount(input.followingId);
+    const [followersCount, followingCount] = await Promise.all([
+      this.followRepository.getFollowersCount(input.followingId),
+      this.followRepository.getFollowingCount(input.followingId),
+    ]);
 
     return right({ following: true, followersCount, followingCount });
   }
@@ -158,8 +160,10 @@ export class UnfollowUserUseCase {
       throw error;
     }
 
-    const followersCount = await this.followRepository.getFollowersCount(input.followingId);
-    const followingCount = await this.followRepository.getFollowingCount(input.followingId);
+    const [followersCount, followingCount] = await Promise.all([
+      this.followRepository.getFollowersCount(input.followingId),
+      this.followRepository.getFollowingCount(input.followingId),
+    ]);
 
     return right({ following: false, followersCount, followingCount });
   }

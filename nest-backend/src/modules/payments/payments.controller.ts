@@ -8,7 +8,6 @@ import {
   HttpStatus,
   Headers,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -20,6 +19,8 @@ import { WebhookGuard } from '@/shared/guards/webhook.guard';
 import { CreatePixPaymentUseCase, ProcessWebhookUseCase } from './usecases/payment.usecase';
 import { ProcessWebhookInput, CreatePixPaymentOutput } from './dtos/payment.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { left } from '@/shared/core/either';
+import { AppError } from '@/shared/core/errors';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -59,10 +60,10 @@ export class PaymentsController {
     });
 
     if (result.isLeft()) {
-      throw new BadRequestException(result.value.message);
+      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
     }
 
-    return { success: true, data: result.value };
+    return result.value;
   }
 
   @Post('webhook')
@@ -84,9 +85,9 @@ export class PaymentsController {
     });
 
     if (result.isLeft()) {
-      return { success: false, error: result.value.message };
+      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
     }
 
-    return { success: true, data: result.value };
+    return result.value;
   }
 }

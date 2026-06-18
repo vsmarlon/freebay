@@ -27,12 +27,12 @@ export class CreateReviewDTO {
 }
 
 export class GetUserReviewsQueryDTO {
-  @ApiPropertyOptional({ example: 1 })
+  @ApiPropertyOptional({ example: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
-  page?: number;
+  @Min(0)
+  offset?: number;
 
   @ApiPropertyOptional({ example: 10 })
   @IsOptional()
@@ -50,7 +50,7 @@ export class GetUserReviewsQueryDTO {
 
 export interface GetUserReviewsInput {
   userId: string;
-  page?: number;
+  offset?: number;
   limit?: number;
   type?: ReviewType;
 }
@@ -87,7 +87,7 @@ export class ReviewResponse {
 export interface GetUserReviewsOutput {
   reviews: ReviewResponse[];
   total: number;
-  page: number;
+  offset: number;
   limit: number;
 }
 

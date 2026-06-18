@@ -4,8 +4,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { NotFoundError, ForbiddenError, BadRequestError } from '@/shared/core/errors';
 import { PrismaCartRepository } from './repositories/cart.repository';
 import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
 import { AddToCartDTO, UpdateCartItemDTO, CartResponse, CheckoutCartResponse } from './dtos/cart.dto';
@@ -59,7 +58,7 @@ export class CartController {
     });
 
     if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
+      throw result.value;
     }
 
     return result.value;
@@ -86,11 +85,11 @@ export class CartController {
     const product = await this.cartRepository.findProductById(productId);
 
     if (!product || product.status !== 'ACTIVE') {
-      return left(new AppError('NOT_FOUND', 'Produto não encontrado', 404));
+      throw new NotFoundError('Produto');
     }
 
     if (product.sellerId === user.userId) {
-      return left(new AppError('FORBIDDEN', 'Você não pode adicionar seu próprio produto ao carrinho', 403));
+      throw new ForbiddenError('Você não pode adicionar seu próprio produto ao carrinho');
     }
 
     const item = await this.cartRepository.addOrIncrement(user.userId, productId, quantity);
@@ -113,12 +112,12 @@ export class CartController {
   ) {
     const quantity = body.quantity;
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
-      return left(new AppError('BAD_REQUEST', 'Quantidade deve ser entre 1 e 10', 400));
+      throw new BadRequestError('Quantidade deve ser entre 1 e 10');
     }
 
     const existing = await this.cartRepository.findItem(user.userId, productId);
     if (!existing) {
-      return left(new AppError('NOT_FOUND', 'Item não encontrado no carrinho', 404));
+      throw new NotFoundError('Item no carrinho');
     }
 
     const item = await this.cartRepository.updateQuantity(user.userId, productId, quantity);
@@ -136,7 +135,7 @@ export class CartController {
   async removeFromCart(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
     const existing = await this.cartRepository.findItem(user.userId, productId);
     if (!existing) {
-      return left(new AppError('NOT_FOUND', 'Item não encontrado no carrinho', 404));
+      throw new NotFoundError('Item no carrinho');
     }
 
     await this.cartRepository.remove(user.userId, productId);

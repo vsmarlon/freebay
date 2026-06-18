@@ -143,7 +143,7 @@ class OrderService {
         '/orders/$orderId/confirm-delivery',
       );
 
-      if (response.statusCode == 200 && response.data != null) {
+      if (response.statusCode == 201 && response.data != null) {
         return Right(OrderEntity.fromJson(response.data['data']));
       } else {
         return Left(ServerFailure(_extractErrorMessage(response.data)));

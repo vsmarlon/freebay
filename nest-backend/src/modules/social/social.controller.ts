@@ -26,7 +26,14 @@ import {
   ViewStoryUseCase,
   DeleteStoryUseCase,
 } from './usecases/social.usecase';
-import { CreatePostDTO, CreateCommentDTO, CreateStoryInput } from './dtos/social.dto';
+import {
+  CreatePostDTO,
+  CreateCommentDTO,
+  CreateStoryInput,
+  GetFeedQueryDTO,
+  GetUserPostsQueryDTO,
+  SearchPostsQueryDTO,
+} from './dtos/social.dto';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
 import {
   PrismaPostRepository,
@@ -77,15 +84,13 @@ export class SocialController {
   })
   async getFeed(
     @CurrentUser() user: AuthUser,
-    @Query('limit') limit?: string,
-    @Query('type') type?: string,
+    @Query() query: GetFeedQueryDTO,
   ) {
     const currentUserId = user?.userId || '';
-    const feedType = (type === 'following' ? 'following' : 'explore') as 'explore' | 'following';
     const posts = await this.postRepository.findFeed({
       userId: currentUserId,
-      limit: limit ? parseInt(limit) : 20,
-      type: feedType,
+      limit: query.limit ?? 20,
+      type: query.type ?? 'explore',
     });
 
     let hasRepostedMap: Record<string, boolean> = {};
@@ -128,7 +133,7 @@ export class SocialController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
-      limits: { fileSize: 1000000 },
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   @HttpCode(HttpStatus.CREATED)
@@ -173,21 +178,15 @@ export class SocialController {
   })
   async getUserPosts(
     @Param('userId') userId: string,
+    @Query() query: GetUserPostsQueryDTO,
     @CurrentUser() user?: AuthUser,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
   ) {
-    const limitNum = limit ? parseInt(limit) : 20;
+    const limitNum = query.limit ?? 20;
 
-    const ownPosts = await this.postRepository.findByUserId(userId, {
-      limit: limitNum,
-      cursor,
-    });
-
-    const repostedPosts = await this.shareRepository.findPostsRepostedByUser(userId, {
-      limit: limitNum,
-      cursor,
-    });
+    const [ownPosts, repostedPosts] = await Promise.all([
+      this.postRepository.findByUserId(userId, { limit: limitNum, cursor: query.cursor }),
+      this.shareRepository.findPostsRepostedByUser(userId, { limit: limitNum, cursor: query.cursor }),
+    ]);
 
     const mergedPosts = [
       ...ownPosts.map(post => ({
@@ -232,18 +231,15 @@ export class SocialController {
   })
   async searchPosts(
     @CurrentUser() user: AuthUser,
-    @Query('q') q?: string,
-    @Query('filter') filter?: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
+    @Query() query: SearchPostsQueryDTO,
   ) {
     const currentUserId = user?.userId || '';
     const posts = await this.postRepository.searchPosts({
-      query: q || '',
-      filter: (filter as 'all' | 'following' | 'followers') || 'all',
+      query: query.q || '',
+      filter: query.filter || 'all',
       userId: currentUserId,
-      limit: limit ? parseInt(limit) : 20,
-      cursor,
+      limit: query.limit ?? 20,
+      cursor: query.cursor,
     });
 
     let hasRepostedMap: Record<string, boolean> = {};
@@ -510,7 +506,7 @@ export class SocialController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
-      limits: { fileSize: 1000000 },
+      limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
   @HttpCode(HttpStatus.CREATED)

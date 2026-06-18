@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/full_screen_image_viewer.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
@@ -54,9 +55,13 @@ class ProductDetailPage extends ConsumerWidget {
                 fit: StackFit.expand,
                 children: [
                   product.imageUrl != null && product.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          product.imageUrl!,
-                          fit: BoxFit.cover,
+                      ? GestureDetector(
+                          onTap: () =>
+                              showFullScreenImage(context, product.imageUrl!),
+                          child: Image.network(
+                            product.imageUrl!,
+                            fit: BoxFit.cover,
+                          ),
                         )
                       : Container(
                           decoration: const BoxDecoration(
@@ -128,34 +133,6 @@ class ProductDetailPage extends ConsumerWidget {
                   await Share.share(
                     'Confira este produto no FreeBay: ${product.title}\n$url',
                     subject: product.title,
-                  );
-                },
-              ),
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.black38 : Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isFavorited ? Icons.bookmark : Icons.bookmark_border,
-                    color: isFavorited
-                        ? AppColors.primaryPurple
-                        : (isDark ? Colors.white : Colors.black),
-                  ),
-                ),
-                onPressed: () async {
-                  final ok = await ref.read(favoritesProvider.notifier).toggleFavorite(product.id);
-                  if (!context.mounted) return;
-                  if (!ok) {
-                    AppSnackbar.error(context, 'Não foi possível atualizar os favoritos');
-                    return;
-                  }
-                  final nowFav = ref.read(favoritesProvider).isFavorited(product.id);
-                  AppSnackbar.success(
-                    context,
-                    nowFav ? 'Produto adicionado aos favoritos' : 'Produto removido dos favoritos',
                   );
                 },
               ),

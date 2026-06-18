@@ -4,6 +4,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class SavedPostsPage extends StatelessWidget {
   const SavedPostsPage({super.key});
@@ -13,24 +14,30 @@ class SavedPostsPage extends StatelessWidget {
     final isDark = context.isDark;
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Salvos'),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: Column(
         children: [
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Salvos'),
-          ]),
+          PageHeader(
+            text: 'POSTS SALVOS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+            breadcrumbs: [
+              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Salvos'),
+            ],
+          ),
           Expanded(
             child: Center(
               child: Column(
@@ -54,7 +61,8 @@ class SavedPostsPage extends StatelessWidget {
                   Text(
                     'Funcionalidade em desenvolvimento',
                     style: TextStyle(
-                      color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                      color:
+                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
                     ),
                   ),
                 ],

@@ -8,6 +8,7 @@ import 'package:freebay/features/social/data/repositories/social_repository.dart
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 final userStoriesProvider =
     FutureProvider.family<List<StoryEntity>, String>((ref, userId) async {
@@ -31,107 +32,119 @@ class MyStoriesPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: const Text('Minhas histórias'),
-        backgroundColor: context.appBarColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: context.textPrimary,
-          ),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: isDark ? AppColors.white : AppColors.darkGray,
-            ),
-            onPressed: () => context.push('/create-story'),
-          ),
-        ],
-      ),
-      body: storiesAsync.when(
-        data: (stories) {
-          return Column(
-            children: [
-              BrutalistBreadcrumb(items: [
-                BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-                const BreadcrumbItem(label: 'Minhas Hist\u00f3rias'),
-              ]),
-              Expanded(
-                child: stories.isEmpty
-                    ? EmptyState(
-                        icon: Icons.auto_awesome,
-                        title: 'NENHUMA HIST\u00d3RIA',
-                        subtitle: 'Crie sua primeira hist\u00f3ria!',
-                        action: InkWell(
-                          onTap: () => context.push('/create-story'),
-                          child: Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: const BoxDecoration(
-                              gradient: AppColors.brutalistGradient,
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.add, color: AppColors.onPrimary),
-                                Spacing.hSm,
-                                Text(
-                                  'Criar hist\u00f3ria',
-                                  style: TextStyle(
-                                    color: AppColors.onPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          ref.invalidate(userStoriesProvider(userId));
-                        },
-                        child: GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 0.7,
-                          ),
-                          itemCount: stories.length,
-                          itemBuilder: (context, index) {
-                            final story = stories[index];
-                            return _buildStoryTile(context, ref, story, isDark);
-                          },
-                        ),
-                      ),
-              ),
-            ],
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primaryContainer),
-        ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-              Spacing.vMd,
-              Text(
-                'Erro ao carregar hist\u00f3rias',
-                style: TextStyle(
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'MINHAS HISTÓRIAS',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
                 ),
               ),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  Icons.add,
+                  color: isDark ? AppColors.white : AppColors.darkGray,
+                ),
+                onPressed: () => context.push('/create-story'),
+              ),
             ],
           ),
-        ),
+          Expanded(
+            child: storiesAsync.when(
+              data: (stories) {
+                return Column(
+                  children: [
+                    BrutalistBreadcrumb(items: [
+                      BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                      const BreadcrumbItem(label: 'Minhas Hist\u00f3rias'),
+                    ]),
+                    Expanded(
+                      child: stories.isEmpty
+                          ? EmptyState(
+                              icon: Icons.auto_awesome,
+                              title: 'NENHUMA HIST\u00d3RIA',
+                              subtitle: 'Crie sua primeira hist\u00f3ria!',
+                              action: InkWell(
+                                onTap: () => context.push('/create-story'),
+                                child: Container(
+                                  height: 48,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  decoration: const BoxDecoration(
+                                    gradient: AppColors.brutalistGradient,
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.add, color: AppColors.onPrimary),
+                                      Spacing.hSm,
+                                      Text(
+                                        'Criar hist\u00f3ria',
+                                        style: TextStyle(
+                                          color: AppColors.onPrimary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: () async {
+                                ref.invalidate(userStoriesProvider(userId));
+                              },
+                              child: GridView.builder(
+                                padding: const EdgeInsets.all(16),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                  childAspectRatio: 0.7,
+                                ),
+                                itemCount: stories.length,
+                                itemBuilder: (context, index) {
+                                  final story = stories[index];
+                                  return _buildStoryTile(context, ref, story, isDark);
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
+                );
+              },
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryContainer),
+              ),
+              error: (err, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    Spacing.vMd,
+                    Text(
+                      'Erro ao carregar hist\u00f3rias',
+                      style: TextStyle(
+                        color: isDark ? AppColors.white : AppColors.darkGray,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

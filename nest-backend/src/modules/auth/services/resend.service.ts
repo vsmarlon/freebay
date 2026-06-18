@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ResendService {
+  private readonly logger = new Logger(ResendService.name);
+
   constructor(private config: ConfigService) {}
 
   async sendRecoveryCode(email: string, code: string): Promise<string | null> {
@@ -10,6 +12,7 @@ export class ResendService {
     const fromEmail = this.config.get<string>('RESEND_FROM_EMAIL');
 
     if (!apiKey || !fromEmail) {
+      this.logger.warn('Recovery email not sent: RESEND_API_KEY or RESEND_FROM_EMAIL is not configured');
       return null;
     }
 
@@ -28,6 +31,8 @@ export class ResendService {
     });
 
     if (!response.ok) {
+      const body = await response.text();
+      this.logger.error(`Recovery email failed: Resend API responded ${response.status} - ${body}`);
       return null;
     }
 

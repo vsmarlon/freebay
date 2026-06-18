@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma, ReviewType } from '@prisma/client';
+import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class PrismaReviewRepository {
@@ -10,33 +11,18 @@ export class PrismaReviewRepository {
     return this.prisma.review.findUnique({
       where: { id },
       include: {
-        reviewer: {
-          select: {
-            id: true,
-            displayName: true,
-            avatarUrl: true,
-            isVerified: true,
-          },
-        },
-        reviewed: {
-          select: {
-            id: true,
-            displayName: true,
-            avatarUrl: true,
-            isVerified: true,
-          },
-        },
+        reviewer: { select: USER_SELECT_BASIC },
+        reviewed: { select: USER_SELECT_BASIC },
       },
     });
   }
 
   async findByReviewedId(
     reviewedId: string,
-    options?: { page?: number; limit?: number; type?: ReviewType },
+    options?: { offset?: number; limit?: number; type?: ReviewType },
   ) {
-    const page = options?.page ?? 1;
+    const offset = options?.offset ?? 0;
     const limit = options?.limit ?? 10;
-    const skip = (page - 1) * limit;
 
     const where: Prisma.ReviewWhereInput = {
       reviewedId,
@@ -46,24 +32,17 @@ export class PrismaReviewRepository {
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
         where,
-        skip,
+        skip: offset,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          reviewer: {
-            select: {
-              id: true,
-              displayName: true,
-              avatarUrl: true,
-              isVerified: true,
-            },
-          },
+          reviewer: { select: USER_SELECT_BASIC },
         },
       }),
       this.prisma.review.count({ where }),
     ]);
 
-    return { reviews, total, page, limit };
+    return { reviews, total, offset, limit };
   }
 
   async findByOrderAndType(orderId: string, type: ReviewType) {
@@ -88,14 +67,7 @@ export class PrismaReviewRepository {
     return this.prisma.review.create({
       data,
       include: {
-        reviewer: {
-          select: {
-            id: true,
-            displayName: true,
-            avatarUrl: true,
-            isVerified: true,
-          },
-        },
+        reviewer: { select: USER_SELECT_BASIC },
       },
     });
   }

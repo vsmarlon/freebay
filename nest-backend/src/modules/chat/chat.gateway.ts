@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -23,6 +24,8 @@ interface AuthenticatedUser {
   namespace: '/chat',
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(ChatGateway.name);
+
   @WebSocketServer()
   server: Server;
 
@@ -45,16 +48,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
       this.connectedUsers.set(client.id, { userId: payload.userId, email: payload.email });
-      console.log(`Client connected: ${client.id}, userId: ${payload.userId}`);
+      this.logger.log(`Client connected: ${client.id}, userId: ${payload.userId}`);
     } catch (error) {
-      console.error('WebSocket authentication failed:', error);
+      this.logger.error('WebSocket authentication failed', error);
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
     this.connectedUsers.delete(client.id);
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('join_conversation')
@@ -74,7 +77,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     client.join(`conversation:${data.conversationId}`);
-    console.log(`User ${user.userId} joined conversation ${data.conversationId}`);
+    this.logger.log(`User ${user.userId} joined conversation ${data.conversationId}`);
 
     return { event: 'joined', data: { conversationId: data.conversationId } };
   }

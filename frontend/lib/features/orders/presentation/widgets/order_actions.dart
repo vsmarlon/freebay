@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
@@ -37,19 +38,19 @@ class OrderActions extends StatelessWidget {
     if (actions.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      color: AppColors.surfaceContainerLowest,
+      color: context.surfaceColor,
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'AÇÕES',
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 1.2,
-              color: AppColors.onSurfaceVariant,
+              color: context.textSecondary,
             ),
           ),
           Spacing.vMd,
@@ -154,7 +155,7 @@ class _BrutalistButton extends StatelessWidget {
         height: 52,
         decoration: BoxDecoration(
           gradient: isDisabled ? null : AppColors.brutalistGradient,
-          color: isDisabled ? AppColors.surfaceContainerHighest : null,
+          color: isDisabled ? context.surfaceMidColor : null,
         ),
         child: Material(
           color: Colors.transparent,
@@ -166,20 +167,20 @@ class _BrutalistButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (isLoading)
-                    const SizedBox(
+                    SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.onPrimary,
+                        color: context.colors.onPrimary,
                       ),
                     )
                   else ...[
                     Icon(
                       icon,
                       color: isDisabled
-                          ? AppColors.onSurfaceVariant
-                          : AppColors.onPrimary,
+                          ? context.textSecondary
+                          : context.colors.onPrimary,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -190,8 +191,8 @@ class _BrutalistButton extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: isDisabled
-                            ? AppColors.onSurfaceVariant
-                            : AppColors.onPrimary,
+                            ? context.textSecondary
+                            : context.colors.onPrimary,
                       ),
                     ),
                   ],
@@ -209,11 +210,11 @@ class _BrutalistButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDanger
             ? AppColors.error.withValues(alpha: 0.1)
-            : AppColors.surfaceContainerHighest,
+            : context.surfaceMidColor,
         border: Border.all(
           color: isDanger
               ? AppColors.error.withValues(alpha: 0.3)
-              : AppColors.outlineVariant.withValues(alpha: 0.3),
+              : context.borderColor.withValues(alpha: 0.3),
         ),
       ),
       child: Material(
@@ -231,13 +232,17 @@ class _BrutalistButton extends StatelessWidget {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: isDanger ? AppColors.error : AppColors.onSurface,
+                      color: isDanger
+                          ? AppColors.error
+                          : context.textPrimary,
                     ),
                   )
                 else ...[
                   Icon(
                     icon,
-                    color: isDanger ? AppColors.error : AppColors.onSurface,
+                    color: isDanger
+                        ? AppColors.error
+                        : context.textPrimary,
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -247,7 +252,9 @@ class _BrutalistButton extends StatelessWidget {
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: isDanger ? AppColors.error : AppColors.onSurface,
+                      color: isDanger
+                          ? AppColors.error
+                          : context.textPrimary,
                     ),
                   ),
                 ],

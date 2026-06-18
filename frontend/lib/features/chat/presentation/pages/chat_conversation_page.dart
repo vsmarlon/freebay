@@ -7,6 +7,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
@@ -104,72 +105,59 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                image: widget.oderAvatarUrl != null
-                    ? DecorationImage(
-                        image: NetworkImage(widget.oderAvatarUrl!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-                color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
-              ),
-              child: widget.oderAvatarUrl == null
-                  ? const Icon(Icons.person, size: 20)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              widget.oderName,
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.darkGray,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: isDark ? AppColors.white : AppColors.darkGray,
-          ),
-          onPressed: () => context.pop(),
-        ),
-      ),
       body: Column(
         children: [
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.chat_bubble_outline,
-                        title: 'NENHUMA MENSAGEM',
-                        subtitle: 'Envie a primeira mensagem para iniciar a conversa.',
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = _messages[index];
-                          final isMe = msg['senderId'] == currentUserId;
-                          return _MessageBubble(
-                            content: msg['content'] ?? '',
-                            isMe: isMe,
-                            isDark: isDark,
-                          );
-                        },
-                      ),
+          PageHeader(
+            text: widget.oderName,
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
           ),
-          _buildInputBar(isDark),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _messages.isEmpty
+                          ? const EmptyState(
+                              icon: Icons.chat_bubble_outline,
+                              title: 'NENHUMA MENSAGEM',
+                              subtitle:
+                                  'Envie a primeira mensagem para iniciar a conversa.',
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _messages.length,
+                              itemBuilder: (context, index) {
+                                final msg = _messages[index];
+                                final isMe =
+                                    msg['senderId'] == currentUserId;
+                                return _MessageBubble(
+                                  content: msg['content'] ?? '',
+                                  isMe: isMe,
+                                  isDark: isDark,
+                                );
+                              },
+                            ),
+                ),
+                _buildInputBar(isDark),
+              ],
+            ),
+          ),
         ],
       ),
     );

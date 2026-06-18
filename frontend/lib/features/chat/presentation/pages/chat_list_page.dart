@@ -8,6 +8,7 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/page_header.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -81,61 +82,62 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Mensagens',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: context.textPrimary,
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'MENSAGENS',
           ),
-        ),
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
-        elevation: 0,
-      ),
-      body: isGuest
-          ? Column(
-              children: [
-                _buildSearchBar(isDark),
-                _buildEmptyState(isDark, true),
-              ],
-            )
-          : Column(
-              children: [
-                _buildSearchBar(isDark),
-                ref.watch(chatsProvider).when(
-                      data: (chats) {
-                        final filteredChats = _filterAndSortChats(chats);
-                        if (filteredChats.isEmpty) {
-                          return _buildEmptyState(isDark, chats.isEmpty);
-                        }
-                        return Expanded(
-                          child: RefreshIndicator(
-                            onRefresh: () async {
-                              ref.invalidate(chatsProvider);
+          Expanded(
+            child: isGuest
+                ? Column(
+                    children: [
+                      _buildSearchBar(isDark),
+                      _buildEmptyState(isDark, true),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      _buildSearchBar(isDark),
+                      ref.watch(chatsProvider).when(
+                            data: (chats) {
+                              final filteredChats =
+                                  _filterAndSortChats(chats);
+                              if (filteredChats.isEmpty) {
+                                return _buildEmptyState(
+                                    isDark, chats.isEmpty);
+                              }
+                              return Expanded(
+                                child: RefreshIndicator(
+                                  onRefresh: () async {
+                                    ref.invalidate(chatsProvider);
+                                  },
+                                  child: ListView.builder(
+                                    itemCount: filteredChats.length,
+                                    itemBuilder: (context, index) {
+                                      final chat = filteredChats[index];
+                                      return _buildChatItem(
+                                          context, isDark, chat, index);
+                                    },
+                                  ),
+                                ),
+                              );
                             },
-                            child: ListView.builder(
-                              itemCount: filteredChats.length,
-                              itemBuilder: (context, index) {
-                                final chat = filteredChats[index];
-                                return _buildChatItem(
-                                    context, isDark, chat, index);
-                              },
+                            loading: () => Expanded(
+                              child: ListView.builder(
+                                itemCount: 5,
+                                itemBuilder: (context, index) =>
+                                    _buildLoadingChat(isDark),
+                              ),
                             ),
+                            error: (error, stack) => _buildErrorState(
+                                isDark,
+                                'Não foi possível carregar suas conversas. Verifique sua conexão.'),
                           ),
-                        );
-                      },
-                      loading: () => Expanded(
-                        child: ListView.builder(
-                          itemCount: 5,
-                          itemBuilder: (context, index) =>
-                              _buildLoadingChat(isDark),
-                        ),
-                      ),
-                      error: (error, stack) => _buildErrorState(isDark,
-                          'Não foi possível carregar suas conversas. Verifique sua conexão.'),
-                    ),
-              ],
-            ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: InkWell(
         onTap: () => context.push('/chat/new'),
         child: Container(

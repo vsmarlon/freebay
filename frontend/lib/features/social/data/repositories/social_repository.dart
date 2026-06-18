@@ -411,6 +411,7 @@ class SocialRepository implements ISocialRepository {
     }
   }
 
+  @override
   Future<Either<Failure, List<PostEntity>>> getPostsByUser(String userId,
       {int limit = 20, String? cursor}) async {
     try {
@@ -437,6 +438,7 @@ class SocialRepository implements ISocialRepository {
     }
   }
 
+  @override
   Future<Either<Failure, List<PostEntity>>> getLikedPosts(
       {int limit = 20, String? cursor}) async {
     try {

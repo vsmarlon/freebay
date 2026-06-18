@@ -11,12 +11,15 @@ import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/spacing.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
@@ -31,7 +34,12 @@ class CreateProductPage extends HookConsumerWidget {
     final isLoading = useState<bool>(false);
     final selectedCategoryId = useState<String?>(null);
     final selectedImagePath = useState<String?>(null);
+    useListenable(titleController);
+    useListenable(descriptionController);
+    useListenable(priceController);
     final categoriesAsync = ref.watch(flatCategoriesProvider);
+    final authState = ref.watch(authControllerProvider);
+    final currentUser = authState.valueOrNull;
 
     final pricePreview = _displayPrice(priceController.text);
     final selectedCategory = categoriesAsync.valueOrNull
@@ -40,30 +48,36 @@ class CreateProductPage extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      appBar: AppBar(
-        title: Text(
-          'Novo anúncio',
-          style: TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.white : AppColors.onSurface,
-          ),
-        ),
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.transparent,
-        elevation: 0,
-        iconTheme:
-            IconThemeData(color: isDark ? AppColors.white : AppColors.onSurface),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            BrutalistBreadcrumb(items: [
+      body: Column(
+        children: [
+          PageHeader(
+            text: 'NOVO ANÚNCIO',
+            leading: GestureDetector(
+              onTap: () => context.pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(
+                  Icons.arrow_back,
+                  color: context.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+            breadcrumbs: [
               BreadcrumbItem(label: 'Produtos', onTap: () => context.pop()),
               const BreadcrumbItem(label: 'Novo Anúncio'),
-            ]),
-            Spacing.vMd,
+            ],
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
             Container(
               color: isDark
                   ? AppColors.surfaceContainerDark
@@ -101,6 +115,9 @@ class CreateProductPage extends HookConsumerWidget {
               pricePreview: pricePreview,
               categoryName: selectedCategory?.name,
               imagePath: selectedImagePath.value,
+              isNew: isNewProduct.value,
+              userName: currentUser?.displayName ?? 'Você',
+              userAvatarUrl: currentUser?.avatarUrl,
             ),
             Spacing.vLg,
             AppTextField(
@@ -386,7 +403,10 @@ class CreateProductPage extends HookConsumerWidget {
           ],
         ),
       ),
-    );
+      ),
+    ],
+  ),
+  );
   }
 
   Widget _buildPreviewCard({
@@ -396,6 +416,9 @@ class CreateProductPage extends HookConsumerWidget {
     required String pricePreview,
     required String? categoryName,
     required String? imagePath,
+    required bool isNew,
+    required String userName,
+    required String? userAvatarUrl,
   }) {
     final isDark = context.isDark;
     return Container(
@@ -415,7 +438,10 @@ class CreateProductPage extends HookConsumerWidget {
           ),
           const SizedBox(height: 12),
           Container(
-            color: isDark ? AppColors.surfaceDark : AppColors.white,
+            decoration: BoxDecoration(
+              color: context.surfaceColor,
+              border: Border.all(color: context.borderColor, width: 2),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -442,6 +468,49 @@ class CreateProductPage extends HookConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          UserAvatar(
+                            imageUrl: userAvatarUrl,
+                            size: AppAvatarSize.small,
+                          ),
+                          Spacing.hSm,
+                          Text(
+                            userName,
+                            style: TextStyle(
+                              fontFamily: AppTypography.headlineFontFamily,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: context.textPrimary,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.brutalistGradient,
+                              border: Border.all(
+                                color: context.borderColor,
+                                width: 2,
+                              ),
+                            ),
+                            child: Text(
+                              isNew ? 'NOVO' : 'USADO',
+                              style: const TextStyle(
+                                fontFamily: AppTypography.fontFamily,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.6,
+                                color: AppColors.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Spacing.vSm,
                       Text(
                         title.isEmpty ? 'Seu título aparece aqui' : title,
                         maxLines: 2,

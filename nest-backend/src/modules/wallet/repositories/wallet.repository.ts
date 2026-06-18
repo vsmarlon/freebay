@@ -13,15 +13,16 @@ export class PrismaWalletRepository {
   }
 
   async getTransactions(userId: string) {
-    const ordersAsBuyer = await this.prisma.order.findMany({
-      where: { buyerId: userId },
-      select: { id: true, amount: true, status: true, createdAt: true, sellerId: true },
-    });
-
-    const ordersAsSeller = await this.prisma.order.findMany({
-      where: { sellerId: userId },
-      select: { id: true, amount: true, status: true, createdAt: true, sellerAmount: true },
-    });
+    const [ordersAsBuyer, ordersAsSeller] = await Promise.all([
+      this.prisma.order.findMany({
+        where: { buyerId: userId },
+        select: { id: true, amount: true, status: true, createdAt: true, sellerId: true },
+      }),
+      this.prisma.order.findMany({
+        where: { sellerId: userId },
+        select: { id: true, amount: true, status: true, createdAt: true, sellerAmount: true },
+      }),
+    ]);
 
     const buyerTx = ordersAsBuyer.map(o => ({
       id: o.id,

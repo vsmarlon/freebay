@@ -1,6 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/profile/domain/repositories/i_profile_repository.dart';
@@ -95,6 +97,31 @@ class ProfileRepository implements IProfileRepository {
         debugPrint('[PROFILE] getFollowing error: $e');
         debugPrint('[PROFILE] getFollowing stack: $stack');
       }
+      return const Left(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> updateAvatar(String imagePath) async {
+    try {
+      final data = FormData.fromMap({
+        'avatar': await ImageUploadService.compressedMultipartFile(
+          imagePath,
+          filename: 'avatar.jpg',
+        ),
+      });
+
+      final response = await HttpClient.instance.post(
+        '/users/me/avatar',
+        data: data,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return Right(UserEntity.fromJson(response.data['data']));
+      }
+      return const Left(ServerFailure('Não foi possível atualizar a foto.'));
+    } catch (e) {
       return const Left(ServerFailure());
     }
   }

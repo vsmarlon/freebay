@@ -44,8 +44,12 @@ export class CreatePostUseCase {
       content: post.content,
       imageUrl: post.imageUrl,
       type: post.type as 'PRODUCT' | 'REGULAR',
-      userId: post.userId!,
+      userId: post.userId,
+      likesCount: post.likesCount,
+      commentsCount: post.commentsCount,
+      sharesCount: post.sharesCount,
       createdAt: post.createdAt,
+      user: post.user,
     });
   }
 }
@@ -118,27 +122,6 @@ export class CommentUseCase {
       content: input.content,
       createdAt: comment.createdAt,
     });
-  }
-}
-
-@Injectable()
-export class GetCommentsUseCase {
-  async execute(_postId: string) {
-    return [];
-  }
-}
-
-@Injectable()
-export class LikeCommentUseCase {
-  async execute(_input: { userId: string; commentId: string }) {
-    return right({ liked: true });
-  }
-}
-
-@Injectable()
-export class UnlikeCommentUseCase {
-  async execute(_input: { userId: string; commentId: string }) {
-    return right({ unliked: true });
   }
 }
 

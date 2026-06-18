@@ -37,6 +37,13 @@ export class ResolveReportDTO {
   adminNote?: string;
 }
 
+export class GetReportsQueryDTO {
+  @ApiPropertyOptional({ enum: ['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED'] })
+  @IsOptional()
+  @IsIn(['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED'])
+  status?: 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'REJECTED';
+}
+
 export class ResolveReportOutput {
   @ApiProperty({ example: true })
   resolved: boolean;

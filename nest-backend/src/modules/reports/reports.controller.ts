@@ -6,7 +6,7 @@ import { RolesGuard } from '@/shared/guards/roles.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { CreateReportUseCase, GetReportsUseCase, ResolveReportUseCase } from './usecases/report.usecase';
-import { CreateReportDTO, ResolveReportDTO } from './dtos/report.dto';
+import { CreateReportDTO, ResolveReportDTO, GetReportsQueryDTO } from './dtos/report.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
@@ -53,8 +53,8 @@ export class ReportsController {
       { name: 'status', required: false, description: 'Filter by status' },
     ],
   })
-  async findAll(@Query('status') status?: string) {
-    const result = await this.getReportsUseCase.execute(status);
+  async findAll(@Query() query: GetReportsQueryDTO) {
+    const result = await this.getReportsUseCase.execute(query.status);
 
     if (result.isLeft()) {
       return left(new AppError(result.value.code, result.value.message));

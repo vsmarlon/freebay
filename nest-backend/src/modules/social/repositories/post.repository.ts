@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
 @Injectable()
 export class PrismaPostRepository {
@@ -10,7 +11,7 @@ export class PrismaPostRepository {
     return this.prisma.post.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+        user: { select: USER_SELECT_BASIC },
         likes: { take: 3 },
         _count: { select: { likes: true, comments: true } },
       },
@@ -36,7 +37,7 @@ export class PrismaPostRepository {
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: {
-        user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+        user: { select: USER_SELECT_BASIC },
         likes: { take: 3 },
         _count: { select: { likes: true, comments: true } },
       },
@@ -50,7 +51,7 @@ export class PrismaPostRepository {
       take: params.limit,
       ...(params.cursor ? { skip: 1, cursor: { id: params.cursor } } : {}),
       include: {
-        user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+        user: { select: USER_SELECT_BASIC },
         _count: { select: { likes: true, comments: true } },
       },
     });
@@ -63,14 +64,19 @@ export class PrismaPostRepository {
       take: params.limit,
       ...(params.cursor ? { skip: 1, cursor: { id: params.cursor } } : {}),
       include: {
-        user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+        user: { select: USER_SELECT_BASIC },
         _count: { select: { likes: true, comments: true } },
       },
     });
   }
 
   async create(data: Prisma.PostCreateInput) {
-    return this.prisma.post.create({ data });
+    return this.prisma.post.create({
+      data,
+      include: {
+        user: { select: USER_SELECT_BASIC },
+      },
+    });
   }
 
   async incrementSharesCount(postId: string) {

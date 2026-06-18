@@ -20,7 +20,16 @@ describe('CreatePostUseCase', () => {
         imageUrl: data.imageUrl ?? null,
         type: data.type,
         userId: data.user?.connect?.id ?? 'user-123',
+        likesCount: 0,
+        commentsCount: 0,
+        sharesCount: 0,
         createdAt: new Date(),
+        user: {
+          id: data.user?.connect?.id ?? 'user-123',
+          displayName: 'Test User',
+          avatarUrl: null,
+          isVerified: false,
+        },
       })),
     };
 

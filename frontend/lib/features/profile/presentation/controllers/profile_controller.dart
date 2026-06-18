@@ -5,6 +5,9 @@ import 'package:freebay/features/profile/domain/usecases/get_profile_usecase.dar
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart' hide UserEntity;
+import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
 
 // Providers
 final profileRepositoryProvider = Provider<IProfileRepository>((ref) {
@@ -13,6 +16,10 @@ final profileRepositoryProvider = Provider<IProfileRepository>((ref) {
 
 final getProfileUsecaseProvider =
     Provider((ref) => GetProfileUsecase(ref.watch(profileRepositoryProvider)));
+
+final socialRepositoryProvider = Provider<ISocialRepository>((ref) {
+  return SocialRepository();
+});
 
 // Provides user profile details
 final profileFutureProvider =
@@ -35,5 +42,16 @@ final profileStatsProvider = FutureProvider<UserStatsEntity>((ref) async {
   return result.fold(
     (failure) => throw Exception(failure.message),
     (stats) => stats,
+  );
+});
+
+final userPostsProvider =
+    FutureProvider.family<List<PostEntity>, String>((ref, userId) async {
+  final repository = ref.watch(socialRepositoryProvider);
+  final result = await repository.getPostsByUser(userId);
+
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (posts) => posts,
   );
 });
