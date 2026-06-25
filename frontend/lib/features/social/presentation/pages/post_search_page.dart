@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/features/social/presentation/providers/post_search_provider.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
@@ -167,11 +168,9 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
           itemCount: state.posts.length + (state.isLoading ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == state.posts.length) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
-                ),
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: ShimmerBlock(height: 80),
               );
             }
 
@@ -188,6 +187,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
               commentsCount: post.commentsCount,
               sharesCount: post.sharesCount,
               isLiked: isLiked,
+              createdAt: post.createdAt,
               price: post.product?.price.toDouble(),
               onTap: () => context.push('/post/${post.id}'),
               onUserTap: () => context.push('/user/${post.user.id}'),
@@ -238,9 +238,8 @@ class _FilterChip extends StatelessWidget {
               : context.surfaceMidColor,
           borderRadius: BorderRadius.zero,
           border: Border.all(
-            color: isSelected
-                ? AppColors.primaryContainer
-                : context.borderColor,
+            color:
+                isSelected ? AppColors.primaryContainer : context.borderColor,
           ),
         ),
         child: Text(

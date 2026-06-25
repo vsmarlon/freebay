@@ -3,6 +3,7 @@ import { CreateOrderUseCase, ConfirmDeliveryUseCase } from './order.usecase';
 import { PrismaOrderRepository } from '../repositories/order.repository';
 import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 describe('CreateOrderUseCase', () => {
   let sut: CreateOrderUseCase;
@@ -38,6 +39,9 @@ describe('CreateOrderUseCase', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
       },
+      chatMessage: {
+        create: jest.fn(),
+      },
     };
     mockPrisma.$transaction = jest.fn().mockImplementation(async (callback) => callback(mockPrisma));
 
@@ -46,6 +50,7 @@ describe('CreateOrderUseCase', () => {
         CreateOrderUseCase,
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationService, useValue: { create: jest.fn() } },
       ],
     }).compile();
 
@@ -304,6 +309,9 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
       },
+      chatMessage: {
+        create: jest.fn(),
+      },
     };
     mockPrisma.$transaction = jest.fn().mockImplementation(async (callback) => callback(mockPrisma));
 
@@ -312,6 +320,7 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
         CreateOrderUseCase,
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationService, useValue: { create: jest.fn() } },
       ],
     }).compile();
 

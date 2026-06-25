@@ -5,14 +5,18 @@ import { PrismaOrderRepository } from '../repositories/order.repository';
 import { OrderStatus, EscrowStatus } from '@prisma/client';
 import { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput, MarkAsShippedInput, MarkAsDeliveredInput, CancelOrderInput } from '../dtos/order.dto';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 export type { CreateOrderInput, CreateOrderOutput, ConfirmDeliveryInput, MarkAsShippedInput, MarkAsDeliveredInput, CancelOrderInput };
+
+const WELCOME_MESSAGE = 'Pedido criado! Aproveite para combinar os detalhes da entrega.';
 
 @Injectable()
 export class CreateOrderUseCase {
   constructor(
     private orderRepository: PrismaOrderRepository,
     private prisma: PrismaService,
+    private notificationService: NotificationService,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<Either<AppError, CreateOrderOutput>> {
@@ -51,7 +55,7 @@ export class CreateOrderUseCase {
         throw new InvalidOrderStateError('Product is unavailable for checkout', product.status);
       }
 
-      return tx.order.create({
+      const created = await tx.order.create({
         data: {
           buyer: { connect: { id: input.buyerId } },
           seller: { connect: { id: input.sellerId } },
@@ -63,6 +67,31 @@ export class CreateOrderUseCase {
           escrowStatus: 'HELD',
         },
       });
+
+      await tx.chatMessage.create({
+        data: {
+          orderId: created.id,
+          senderId: input.buyerId,
+          content: WELCOME_MESSAGE,
+        },
+      });
+
+      return created;
+    });
+
+    this.notificationService.create({
+      userId: input.buyerId,
+      type: 'ORDER',
+      title: 'Pedido criado',
+      body: WELCOME_MESSAGE,
+      extraData: { type: 'order', orderId: order.id },
+    });
+    this.notificationService.create({
+      userId: input.sellerId,
+      type: 'ORDER',
+      title: 'Novo pedido',
+      body: `Você recebeu um pedido de ${product.title}`,
+      extraData: { type: 'order', orderId: order.id },
     });
 
     return right({

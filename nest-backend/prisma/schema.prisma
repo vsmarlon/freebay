@@ -82,6 +82,35 @@ enum ReviewType {
   SELLER_REVIEWING_BUYER
 }
 
+enum ConversationStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+}
+
+enum ChatThreadType {
+  ORDER
+  DIRECT
+}
+
+enum ChatTheme {
+  DEFAULT
+  CRIMSON
+  COBALT
+  FOREST
+  AMBER
+  SLATE
+}
+
+enum ReportTargetType {
+  USER
+  POST
+  CONVERSATION
+  MESSAGE
+  ORDER_CHAT
+  CHAT_MESSAGE
+}
+
 // ─── Models ────────────────────────────────────────────
 
 model User {
@@ -132,7 +161,10 @@ model User {
   convosAsUser1   DirectConversation[] @relation("User1Convos")
   convosAsUser2   DirectConversation[] @relation("User2Convos")
   directMessages  DirectMessage[]
+  conversationPreferences ConversationPreference[]
   notifications  Notification[]
+  submittedReports       Report[] @relation("SubmittedReports")
+  reportedUserReports    Report[] @relation("ReportedUserReports")
   fcmToken        String?
   notificationPrefs Json? @default("{\"orders\":true,\"follows\":true,\"messages\":true,\"disputes\":true}")
 
@@ -169,7 +201,7 @@ model Category {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children  Category[] @relation("CategoryHierarchy")
   products  Product[]
 
@@ -232,6 +264,7 @@ model Post {
   likes    Like[]
   shares   Share[]
   savedBy  SavedPost[]
+  reportedPostReports Report[] @relation("ReportedPostReports")
 
   @@index([userId, createdAt])
 }
@@ -245,9 +278,9 @@ model Comment {
   likesCount Int     @default(0)
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  parent Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
   replies Comment[] @relation("CommentReplies")
   commentLikes CommentLike[]
 
@@ -274,7 +307,7 @@ model CommentLike {
   commentId String
   createdAt DateTime @default(now())
 
-  user    User    @relation(fields: [userId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
@@ -323,11 +356,13 @@ model Order {
 
   buyer        User          @relation("BuyerOrders", fields: [buyerId], references: [id])
   seller       User          @relation("SellerOrders", fields: [sellerId], references: [id])
-  product      Product       @relation(fields: [productId], references: [id])
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
   transaction  Transaction?
   dispute      Dispute?
   reviews      Review[]
   chatMessages ChatMessage[]
+  conversationPreferences ConversationPreference[]
+  reportedOrderReports Report[] @relation("ReportedOrderReports")
 
   @@index([buyerId])
   @@index([sellerId])
@@ -396,8 +431,8 @@ model Dispute {
   createdAt      DateTime      @default(now())
   expiresAt      DateTime
 
-  order    Order @relation(fields: [orderId], references: [id])
-  openedBy User  @relation(fields: [openedById], references: [id])
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  openedBy User  @relation(fields: [openedById], references: [id], onDelete: Cascade)
 }
 
 model Review {
@@ -426,8 +461,9 @@ model ChatMessage {
   readAt    DateTime?
   createdAt DateTime @default(now())
 
-  order  Order @relation(fields: [orderId], references: [id])
-  sender User  @relation(fields: [senderId], references: [id])
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender User  @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  reportedChatMsgReports Report[] @relation("ReportedChatMsgReports")
 
   @@index([orderId, createdAt])
 }
@@ -513,13 +549,15 @@ model DirectConversation {
   id            String    @id @default(uuid())
   user1Id       String
   user2Id       String
-  status        String    @default("PENDING")  // PENDING | ACTIVE | BLOCKED
+  status        ConversationStatus @default(PENDING)
   lastMessageAt DateTime  @default(now())
   createdAt     DateTime  @default(now())
 
-  user1    User            @relation("User1Convos", fields: [user1Id], references: [id])
-  user2    User            @relation("User2Convos", fields: [user2Id], references: [id])
-  messages DirectMessage[]
+  user1       User                      @relation("User1Convos", fields: [user1Id], references: [id])
+  user2       User                      @relation("User2Convos", fields: [user2Id], references: [id])
+  messages    DirectMessage[]
+  preferences ConversationPreference[]
+  reportedDirectConvReports Report[] @relation("ReportedDirectConvReports")
 
   @@unique([user1Id, user2Id])
 }
@@ -532,23 +570,48 @@ model DirectMessage {
   type           MessageType @default(TEXT)
   attachmentUrl  String?
   metadata       Json?
+  deliveredAt    DateTime?
   readAt         DateTime?
   createdAt      DateTime    @default(now())
 
   conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User               @relation(fields: [senderId], references: [id])
+  sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  reportedDirectMsgReports Report[] @relation("ReportedDirectMsgReports")
 
   @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+// ─── Per-user conversation preferences (archive, theme, background) ────
+
+model ConversationPreference {
+  id                   String    @id @default(uuid())
+  userId               String
+  orderId              String?
+  directConversationId String?
+  isArchived           Boolean   @default(false)
+  isDeleted            Boolean   @default(false)
+  deletedAt            DateTime?
+  theme                ChatTheme @default(DEFAULT)
+  backgroundUrl        String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order              Order?              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  directConversation DirectConversation? @relation(fields: [directConversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orderId])
+  @@unique([userId, directConversationId])
 }
 
 enum ReportReason {
-  // Post
   FALSE_ADVERTISING
   SPAM
   FRAUD
   NUDITY
+  HARASSMENT
   OTHER
-  // Profile
   FAKE_ACCOUNT
   IMPERSONATING
   BLACKMAIL
@@ -562,21 +625,40 @@ enum ReportStatus {
 }
 
 model Report {
-  id             String        @id @default(uuid())
-  reporterId     String
-  reportedUserId String?
-  reportedPostId String?
-  reason         ReportReason
-  description    String?
-  hideFromUser   Boolean       @default(false)
-  status         ReportStatus  @default(PENDING)
-  createdAt      DateTime      @default(now())
-  reviewedAt     DateTime?
+  id                          String           @id @default(uuid())
+  reporterId                  String
+  reportedUserId              String?
+  reportedPostId              String?
+  targetType                  ReportTargetType @default(USER)
+  reportedDirectConversationId String?
+  reportedOrderChatId          String?
+  reportedDirectMessageId      String?
+  reportedChatMessageId        String?
+  reason                      ReportReason
+  description                 String?
+  hideFromUser                Boolean          @default(false)
+  status                      ReportStatus     @default(PENDING)
+  createdAt                   DateTime         @default(now())
+  reviewedAt                  DateTime?
+
+  reporter              User               @relation("SubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser          User?              @relation("ReportedUserReports", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reportedPost          Post?              @relation("ReportedPostReports", fields: [reportedPostId], references: [id], onDelete: Cascade)
+  reportedDirectConv    DirectConversation? @relation("ReportedDirectConvReports", fields: [reportedDirectConversationId], references: [id], onDelete: Cascade)
+  reportedOrder         Order?             @relation("ReportedOrderReports", fields: [reportedOrderChatId], references: [id], onDelete: Cascade)
+  reportedDirectMsg     DirectMessage?     @relation("ReportedDirectMsgReports", fields: [reportedDirectMessageId], references: [id], onDelete: Cascade)
+  reportedChatMsg       ChatMessage?       @relation("ReportedChatMsgReports", fields: [reportedChatMessageId], references: [id], onDelete: Cascade)
 
   @@unique([reporterId, reportedUserId])
   @@unique([reporterId, reportedPostId])
+  @@unique([reporterId, reportedDirectConversationId])
+  @@unique([reporterId, reportedOrderChatId])
+  @@unique([reporterId, reportedDirectMessageId])
+  @@unique([reporterId, reportedChatMessageId])
   @@index([reporterId])
   @@index([status])
+  @@index([reportedUserId])
+  @@index([reportedDirectConversationId])
 }
 
 enum NotificationType {

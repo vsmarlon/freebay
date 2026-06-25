@@ -9,6 +9,7 @@ import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/data/services/review_service.dart';
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
@@ -140,9 +141,41 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
 
   Widget _buildContent(bool isDark) {
     if (_reviews.isEmpty && _isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryContainer,
+      return SkeletonPage(
+        child: SkeletonList(
+          itemCount: 4,
+          itemBuilder: (_, i) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ShimmerBlock(width: 40, height: 40),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            ShimmerBlock(height: 14, width: 16),
+                            const SizedBox(width: 2),
+                            ShimmerBlock(height: 14, width: 16),
+                            const SizedBox(width: 2),
+                            ShimmerBlock(height: 14, width: 16),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ShimmerBlock(height: 14, width: double.infinity),
+                const SizedBox(height: 4),
+                ShimmerBlock(height: 14, width: 200),
+              ],
+            ),
+          ),
         ),
       );
     }
@@ -163,11 +196,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
           _loadReviews();
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryContainer,
-              ),
-            ),
+            child: ShimmerBlock(height: 60),
           );
         }
 

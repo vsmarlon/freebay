@@ -9,6 +9,7 @@ import 'package:freebay/features/profile/data/entities/follower_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final followersProvider =
     FutureProvider.family<List<FollowerEntity>, String>((ref, userId) async {
@@ -99,9 +100,29 @@ class FollowersPage extends ConsumerWidget {
                         ),
                       );
               },
-              loading: () => const Center(
-                child: CircularProgressIndicator(
-                    color: AppColors.primaryContainer),
+              loading: () => SkeletonList(
+                itemCount: 6,
+                itemBuilder: (_, i) => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  child: Row(
+                    children: [
+                      ShimmerBlock(width: 48, height: 48),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ShimmerBlock(height: 16, width: 140),
+                            SizedBox(height: 4),
+                            ShimmerBlock(height: 12, width: 200),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      ShimmerBlock(width: 80, height: 32),
+                    ],
+                  ),
+                ),
               ),
               error: (err, _) => Center(
                 child: Column(

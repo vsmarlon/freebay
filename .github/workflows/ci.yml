@@ -6,7 +6,43 @@ on:
   pull_request:
     branches: [ master, main ]
 
+env:
+  NODE_VERSION: '20'
+
 jobs:
+  # ── Backend ──────────────────────────────────────────
+
+  backend-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./nest-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './nest-backend/package-lock.json'
+      - run: npm ci
+      - run: npm run lint
+
+  backend-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./nest-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './nest-backend/package-lock.json'
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx tsc --noEmit
+
   backend-test:
     runs-on: ubuntu-latest
     defaults:
@@ -16,16 +52,64 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: './nest-backend/package-lock.json'
       - run: npm ci
       - run: npx prisma generate
       - run: npm run build
-      - run: npm test --if-present
+      - run: npm test
+
+  backend-integration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./nest-backend
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test:test123@localhost:5433/freebay_test
+      REDIS_HOST: localhost
+      REDIS_PORT: '6380'
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: freebay_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test123
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d freebay_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: './nest-backend/package-lock.json'
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: postgresql://test:test123@localhost:5433/freebay_test
+      - run: npm run test:integration
+
+  # ── Frontend ─────────────────────────────────────────
 
   frontend-analyze:
     runs-on: ubuntu-latest

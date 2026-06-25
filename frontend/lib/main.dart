@@ -10,6 +10,8 @@ import 'shared/services/http_client.dart';
 import 'shared/services/notification_service.dart';
 import 'core/components/spacing.dart';
 import 'dart:async';
+import 'features/auth/presentation/controllers/auth_controller.dart';
+import 'features/auth/data/entities/user_entity.dart';
 
 void main() {
   runZonedGuarded(
@@ -41,17 +43,20 @@ void main() {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Color(0xFF8A1083)),
+                  const Icon(Icons.error_outline,
+                      size: 48, color: Color(0xFF8A1083)),
                   Spacing.vMd,
                   Text(
                     'Algo deu errado',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   Spacing.vSm,
                   Text(
                     details.exception.toString(),
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: AppColors.onSurfaceVariant),
+                    style: TextStyle(
+                        fontSize: 14, color: AppColors.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -83,8 +88,8 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
   }
 
   void _handleAuthLost() {
-    // Navigate to login when auth is lost (token expired + refresh failed)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authControllerProvider.notifier).forceLogout();
       appRouter.go('/login');
     });
   }
@@ -99,6 +104,9 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, __) {
+      routerRefreshNotifier.value++;
+    });
     final themeMode = ref.watch(themeModeProvider);
     final isDark = _computeIsDarkMode(themeMode);
 

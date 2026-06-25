@@ -9,6 +9,8 @@ class StorageService {
   static const _refreshTokenKey = 'refresh_token';
   static const _isGuestKey = 'is_guest';
   static const _rememberMeKey = 'remember_me';
+  static const _hasSeenOnboardingKey = 'has_seen_onboarding';
+  static bool? _hasSeenOnboardingCache;
 
   static Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
@@ -42,6 +44,18 @@ class StorageService {
   static Future<bool> getRememberMe() async {
     final value = await _storage.read(key: _rememberMeKey);
     return value == 'true';
+  }
+
+  static Future<bool> getHasSeenOnboarding() async {
+    final cached = _hasSeenOnboardingCache;
+    if (cached != null) return cached;
+    final value = await _storage.read(key: _hasSeenOnboardingKey);
+    return _hasSeenOnboardingCache = value == 'true';
+  }
+
+  static Future<void> setHasSeenOnboarding() async {
+    await _storage.write(key: _hasSeenOnboardingKey, value: 'true');
+    _hasSeenOnboardingCache = true;
   }
 
   static Future<void> clearTokens() async {

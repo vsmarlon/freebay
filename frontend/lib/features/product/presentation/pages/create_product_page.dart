@@ -20,6 +20,7 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
@@ -78,115 +79,149 @@ class CreateProductPage extends HookConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-            Container(
-              color: isDark
-                  ? AppColors.surfaceContainerDark
-                  : AppColors.surfaceContainer,
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'ANUNCIO SEPARADO DO FEED SOCIAL',
-                    style: TextStyle(
-                      fontFamily: AppTypography.headlineFontFamily,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppColors.white : AppColors.onSurface,
+                  Container(
+                    color: isDark
+                        ? AppColors.surfaceContainerDark
+                        : AppColors.surfaceContainer,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ANUNCIO SEPARADO DO FEED SOCIAL',
+                          style: TextStyle(
+                            fontFamily: AppTypography.headlineFontFamily,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                isDark ? AppColors.white : AppColors.onSurface,
+                          ),
+                        ),
+                        Spacing.vSm,
+                        Text(
+                          'Use anuncios para vender com preco, categoria e imagem. Posts sociais continuam no feed, enquanto sua reputacao fica visivel no perfil e nas avaliacoes.',
+                          style: TextStyle(
+                            color: isDark
+                                ? AppColors.inverseOnSurface
+                                : AppColors.onSurface,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Spacing.vSm,
-                  Text(
-                    'Use anuncios para vender com preco, categoria e imagem. Posts sociais continuam no feed, enquanto sua reputacao fica visivel no perfil e nas avaliacoes.',
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.inverseOnSurface
-                          : AppColors.onSurface,
-                      height: 1.4,
-                    ),
+                  Spacing.vLg,
+                  _buildPreviewCard(
+                    context: context,
+                    title: titleController.text.trim(),
+                    description: descriptionController.text.trim(),
+                    pricePreview: pricePreview,
+                    categoryName: selectedCategory?.name,
+                    imagePath: selectedImagePath.value,
+                    isNew: isNewProduct.value,
+                    userName: currentUser?.displayName ?? 'Você',
+                    userAvatarUrl: currentUser?.avatarUrl,
                   ),
-                ],
-              ),
-            ),
-            Spacing.vLg,
-            _buildPreviewCard(
-              context: context,
-              title: titleController.text.trim(),
-              description: descriptionController.text.trim(),
-              pricePreview: pricePreview,
-              categoryName: selectedCategory?.name,
-              imagePath: selectedImagePath.value,
-              isNew: isNewProduct.value,
-              userName: currentUser?.displayName ?? 'Você',
-              userAvatarUrl: currentUser?.avatarUrl,
-            ),
-            Spacing.vLg,
-            AppTextField(
-              controller: titleController,
-              label: 'Título do anúncio',
-              hint: 'Ex: iPhone 13 Pro Max 256GB',
-            ),
-            Spacing.vMd,
-            AppTextField(
-              controller: descriptionController,
-              label: 'Descrição',
-              hint: 'Detalhes do estado, acessórios, tempo de uso...',
-              maxLines: 4,
-            ),
-            Spacing.vMd,
-            AppTextField(
-              controller: priceController,
-              label: 'Preço',
-              hint: '0,00',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (value) {
-                final normalized = _formatCurrencyInput(value);
-                if (normalized != value) {
-                  priceController.value = TextEditingValue(
-                    text: normalized,
-                    selection: TextSelection.collapsed(offset: normalized.length),
-                  );
-                }
-              },
-            ),
-            Spacing.vLg,
-            categoriesAsync.when(
-              data: (categories) => InkWell(
-                onTap: () => _showCategoryPicker(
-                  context,
-                  categories,
-                  selectedCategoryId.value,
-                  (value) => selectedCategoryId.value = value,
-                ),
-                child: Container(
-                  height: 64,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  color: isDark ? AppColors.surfaceDark : AppColors.white,
-                  child: Row(
-                    children: [
-                      const Icon(Icons.category_outlined,
-                          color: AppColors.primaryContainer),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  Spacing.vLg,
+                  AppTextField(
+                    controller: titleController,
+                    label: 'Título do anúncio',
+                    hint: 'Ex: iPhone 13 Pro Max 256GB',
+                  ),
+                  Spacing.vMd,
+                  AppTextField(
+                    controller: descriptionController,
+                    label: 'Descrição',
+                    hint: 'Detalhes do estado, acessórios, tempo de uso...',
+                    maxLines: 4,
+                  ),
+                  Spacing.vMd,
+                  AppTextField(
+                    controller: priceController,
+                    label: 'Preço',
+                    hint: '0,00',
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (value) {
+                      final normalized = _formatCurrencyInput(value);
+                      if (normalized != value) {
+                        priceController.value = TextEditingValue(
+                          text: normalized,
+                          selection: TextSelection.collapsed(
+                              offset: normalized.length),
+                        );
+                      }
+                    },
+                  ),
+                  Spacing.vLg,
+                  categoriesAsync.when(
+                    data: (categories) => InkWell(
+                      onTap: () => _showCategoryPicker(
+                        context,
+                        categories,
+                        selectedCategoryId.value,
+                        (value) => selectedCategoryId.value = value,
+                      ),
+                      child: Container(
+                        height: 64,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        color: isDark ? AppColors.surfaceDark : AppColors.white,
+                        child: Row(
                           children: [
-                            Text(
-                              'Categoria',
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? AppColors.onPrimaryContainer
-                                    : AppColors.primary,
+                            const Icon(Icons.category_outlined,
+                                color: AppColors.primaryContainer),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Categoria',
+                                    style: TextStyle(
+                                      fontFamily: AppTypography.fontFamily,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark
+                                          ? AppColors.onPrimaryContainer
+                                          : AppColors.primary,
+                                    ),
+                                  ),
+                                  Spacing.vXs,
+                                  Text(
+                                    selectedCategory?.name ??
+                                        'Selecionar categoria',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontFamily: AppTypography.fontFamily,
+                                      color: isDark
+                                          ? AppColors.white
+                                          : AppColors.darkGray,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Spacing.vXs,
-                            Text(
-                              selectedCategory?.name ?? 'Selecionar categoria',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            const Icon(Icons.arrow_forward,
+                                color: AppColors.primaryContainer),
+                          ],
+                        ),
+                      ),
+                    ),
+                    loading: () => Container(
+                      height: 64,
+                      color: isDark ? AppColors.surfaceDark : AppColors.white,
+                      child: const Center(
+                          child: ShimmerBlock(width: 24, height: 24)),
+                    ),
+                    error: (_, __) => Container(
+                      padding: const EdgeInsets.all(16),
+                      color: isDark ? AppColors.surfaceDark : AppColors.white,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Não foi possível carregar categorias agora.',
                               style: TextStyle(
                                 fontFamily: AppTypography.fontFamily,
                                 color: isDark
@@ -194,219 +229,201 @@ class CreateProductPage extends HookConsumerWidget {
                                     : AppColors.darkGray,
                               ),
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 12),
+                          InkWell(
+                            onTap: () => ref.invalidate(categoriesProvider),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: const BoxDecoration(
+                                gradient: AppColors.brutalistGradient,
+                              ),
+                              child: const Text(
+                                'Tentar',
+                                style: TextStyle(
+                                  color: AppColors.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Spacing.vMd,
+                  InkWell(
+                    onTap: () async {
+                      final picker = ImagePicker();
+                      final image = await picker.pickImage(
+                        source: ImageSource.gallery,
+                        maxWidth: 1600,
+                        maxHeight: 1600,
+                        imageQuality: 82,
+                      );
+                      if (image != null) {
+                        selectedImagePath.value = image.path;
+                      }
+                    },
+                    child: Container(
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      color: isDark ? AppColors.surfaceDark : AppColors.white,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.image_outlined,
+                              color: AppColors.primaryContainer),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              selectedImagePath.value == null
+                                  ? 'Selecionar imagem do produto'
+                                  : 'Imagem selecionada',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.darkGray,
+                                fontFamily: AppTypography.fontFamily,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Spacing.vLg,
+                  Text(
+                    'Condição',
+                    style: TextStyle(
+                      fontFamily: AppTypography.fontFamily,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? AppColors.mediumGray : AppColors.darkGray,
+                    ),
+                  ),
+                  Spacing.vSm,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton(
+                          label: 'Novo',
+                          variant: isNewProduct.value
+                              ? AppButtonVariant.primary
+                              : AppButtonVariant.ghost,
+                          onPressed: () => isNewProduct.value = true,
                         ),
                       ),
-                      const Icon(Icons.arrow_forward,
-                          color: AppColors.primaryContainer),
+                      Spacing.hSm,
+                      Expanded(
+                        child: AppButton(
+                          label: 'Usado',
+                          variant: !isNewProduct.value
+                              ? AppButtonVariant.primary
+                              : AppButtonVariant.ghost,
+                          onPressed: () => isNewProduct.value = false,
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ),
-              loading: () => Container(
-                height: 64,
-                color: isDark ? AppColors.surfaceDark : AppColors.white,
-                child: const Center(child: CircularProgressIndicator()),
-              ),
-              error: (_, __) => Container(
-                padding: const EdgeInsets.all(16),
-                color: isDark ? AppColors.surfaceDark : AppColors.white,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Não foi possível carregar categorias agora.',
-                        style: TextStyle(
-                          fontFamily: AppTypography.fontFamily,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    InkWell(
-                      onTap: () => ref.invalidate(categoriesProvider),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        decoration: const BoxDecoration(
-                          gradient: AppColors.brutalistGradient,
-                        ),
-                        child: const Text(
-                          'Tentar',
-                          style: TextStyle(
-                            color: AppColors.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Spacing.vMd,
-            InkWell(
-              onTap: () async {
-                final picker = ImagePicker();
-                final image = await picker.pickImage(
-                  source: ImageSource.gallery,
-                  maxWidth: 1600,
-                  maxHeight: 1600,
-                  imageQuality: 82,
-                );
-                if (image != null) {
-                  selectedImagePath.value = image.path;
-                }
-              },
-              child: Container(
-                height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                color: isDark ? AppColors.surfaceDark : AppColors.white,
-                child: Row(
-                  children: [
-                    const Icon(Icons.image_outlined,
-                        color: AppColors.primaryContainer),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        selectedImagePath.value == null
-                            ? 'Selecionar imagem do produto'
-                            : 'Imagem selecionada',
-                        style: TextStyle(
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                          fontFamily: AppTypography.fontFamily,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Spacing.vLg,
-            Text(
-              'Condição',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.mediumGray : AppColors.darkGray,
-              ),
-            ),
-            Spacing.vSm,
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Novo',
-                    variant: isNewProduct.value
-                        ? AppButtonVariant.primary
-                        : AppButtonVariant.ghost,
-                    onPressed: () => isNewProduct.value = true,
-                  ),
-                ),
-                Spacing.hSm,
-                Expanded(
-                  child: AppButton(
-                    label: 'Usado',
-                    variant: !isNewProduct.value
-                        ? AppButtonVariant.primary
-                        : AppButtonVariant.ghost,
-                    onPressed: () => isNewProduct.value = false,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-            AppButton(
-              label: 'Publicar anúncio',
-              isLoading: isLoading.value,
-              onPressed: () async {
-                final title = titleController.text.trim();
-                final description = descriptionController.text.trim();
-                final price = _parsePriceToCents(priceController.text);
+                  const SizedBox(height: 40),
+                  AppButton(
+                    label: 'Publicar anúncio',
+                    isLoading: isLoading.value,
+                    onPressed: () async {
+                      final title = titleController.text.trim();
+                      final description = descriptionController.text.trim();
+                      final price = _parsePriceToCents(priceController.text);
 
-                if (title.length < 3) {
-                  AppSnackbar.error(context, 'Informe um título válido.');
-                  return;
-                }
+                      if (title.length < 3) {
+                        AppSnackbar.error(context, 'Informe um título válido.');
+                        return;
+                      }
 
-                if (description.length < 10) {
-                  AppSnackbar.error(context, 'Adicione uma descrição mais completa.');
-                  return;
-                }
+                      if (description.length < 10) {
+                        AppSnackbar.error(
+                            context, 'Adicione uma descrição mais completa.');
+                        return;
+                      }
 
-                if (price <= 0) {
-                  AppSnackbar.error(context, 'Informe um preço válido.');
-                  return;
-                }
+                      if (price <= 0) {
+                        AppSnackbar.error(context, 'Informe um preço válido.');
+                        return;
+                      }
 
-                if (selectedCategoryId.value == null) {
-                  AppSnackbar.error(context, 'Selecione uma categoria.');
-                  return;
-                }
+                      if (selectedCategoryId.value == null) {
+                        AppSnackbar.error(context, 'Selecione uma categoria.');
+                        return;
+                      }
 
-                if (selectedImagePath.value == null) {
-                  AppSnackbar.error(context, 'Adicione uma imagem do produto.');
-                  return;
-                }
+                      if (selectedImagePath.value == null) {
+                        AppSnackbar.error(
+                            context, 'Adicione uma imagem do produto.');
+                        return;
+                      }
 
-                if (kDebugMode) {
-                  debugPrint('[PRODUCT UI] publishing product...');
-                  debugPrint('[PRODUCT UI] title=$title');
-                  debugPrint('[PRODUCT UI] descriptionLength=${description.length}');
-                  debugPrint('[PRODUCT UI] priceCents=$price');
-                  debugPrint('[PRODUCT UI] condition=${isNewProduct.value ? 'NEW' : 'USED'}');
-                  debugPrint('[PRODUCT UI] categoryId=${selectedCategoryId.value}');
-                  debugPrint('[PRODUCT UI] imagePath=${selectedImagePath.value}');
-                }
+                      if (kDebugMode) {
+                        debugPrint('[PRODUCT UI] publishing product...');
+                        debugPrint('[PRODUCT UI] title=$title');
+                        debugPrint(
+                            '[PRODUCT UI] descriptionLength=${description.length}');
+                        debugPrint('[PRODUCT UI] priceCents=$price');
+                        debugPrint(
+                            '[PRODUCT UI] condition=${isNewProduct.value ? 'NEW' : 'USED'}');
+                        debugPrint(
+                            '[PRODUCT UI] categoryId=${selectedCategoryId.value}');
+                        debugPrint(
+                            '[PRODUCT UI] imagePath=${selectedImagePath.value}');
+                      }
 
-                isLoading.value = true;
-                try {
-                  final usecase = ref.read(createProductUsecaseProvider);
-                  final result = await usecase({
-                    'title': title,
-                    'description': description,
-                    'price': price,
-                      'condition': isNewProduct.value ? 'NEW' : 'USED',
-                      'categoryId': selectedCategoryId.value,
-                      'imagePath': selectedImagePath.value!,
-                    });
+                      isLoading.value = true;
+                      try {
+                        final usecase = ref.read(createProductUsecaseProvider);
+                        final result = await usecase({
+                          'title': title,
+                          'description': description,
+                          'price': price,
+                          'condition': isNewProduct.value ? 'NEW' : 'USED',
+                          'categoryId': selectedCategoryId.value,
+                          'imagePath': selectedImagePath.value!,
+                        });
 
-                  result.fold(
-                    (failure) {
-                      if (context.mounted) {
-                        AppSnackbar.error(context, failure.message);
+                        result.fold(
+                          (failure) {
+                            if (context.mounted) {
+                              AppSnackbar.error(context, failure.message);
+                            }
+                          },
+                          (_) {
+                            ref.invalidate(productsFeedProvider);
+                            if (context.mounted) {
+                              context.pop();
+                              AppSnackbar.success(context, 'Anúncio criado!');
+                            }
+                          },
+                        );
+                      } catch (_) {
+                        if (kDebugMode) {
+                          debugPrint(
+                              '[PRODUCT UI] unexpected publish exception');
+                        }
+                        if (context.mounted) {
+                          AppSnackbar.error(
+                              context, 'Não foi possível publicar o anúncio.');
+                        }
+                      } finally {
+                        isLoading.value = false;
                       }
                     },
-                    (_) {
-                      ref.invalidate(productsFeedProvider);
-                      if (context.mounted) {
-                        context.pop();
-                        AppSnackbar.success(context, 'Anúncio criado!');
-                      }
-                    },
-                  );
-                  } catch (_) {
-                    if (kDebugMode) {
-                      debugPrint('[PRODUCT UI] unexpected publish exception');
-                    }
-                    if (context.mounted) {
-                      AppSnackbar.error(
-                          context, 'Não foi possível publicar o anúncio.');
-                  }
-                } finally {
-                  isLoading.value = false;
-                }
-              },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      ),
-    ],
-  ),
-  );
+    );
   }
 
   Widget _buildPreviewCard({
@@ -422,7 +439,9 @@ class CreateProductPage extends HookConsumerWidget {
   }) {
     final isDark = context.isDark;
     return Container(
-      color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainerLowest,
+      color: isDark
+          ? AppColors.surfaceContainerDark
+          : AppColors.surfaceContainerLowest,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,7 +556,8 @@ class CreateProductPage extends HookConsumerWidget {
                             fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? AppColors.white : AppColors.onSurface,
+                            color:
+                                isDark ? AppColors.white : AppColors.onSurface,
                           ),
                         ),
                       ),
@@ -673,7 +693,8 @@ class CreateProductPage extends HookConsumerWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(Icons.check, color: AppColors.primaryContainer),
+                        const Icon(Icons.check,
+                            color: AppColors.primaryContainer),
                     ],
                   ),
                 ),

@@ -1,5 +1,5 @@
 import { IsUUID, IsString, MinLength, IsIn } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Dispute, Order, User, Product, Prisma } from '@prisma/client';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 

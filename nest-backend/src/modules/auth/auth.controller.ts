@@ -25,7 +25,6 @@ import {
   GuestSessionResponse,
   TokenRefreshResponse,
   MessageResponse,
-  StatusResponse,
 } from './dtos/auth-response.class';
 import { Public } from '@/shared/decorators/public.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';

@@ -13,6 +13,7 @@ import 'package:freebay/features/cart/presentation/providers/cart_provider.dart'
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CartCheckoutPage extends ConsumerStatefulWidget {
   const CartCheckoutPage({super.key});
@@ -65,7 +66,24 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
           ),
           Expanded(
             child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const SkeletonPage(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 16),
+                        _CheckoutSkeletonItem(),
+                        SizedBox(height: 24),
+                        _CheckoutSkeletonItem(),
+                        SizedBox(height: 24),
+                        ShimmerBlock(height: 80),
+                        SizedBox(height: 16),
+                        ShimmerBlock(height: 60),
+                        SizedBox(height: 16),
+                        ShimmerBlock(height: 40),
+                        SizedBox(height: 16),
+                        ShimmerBlock(height: 48),
+                      ],
+                    ),
+                  )
                 : _checkout != null
                     ? _buildCheckoutResult(context, isDark, _checkout!)
                     : cart.items.isEmpty
@@ -245,15 +263,9 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                             ),
                                             child: Center(
                                               child: _isSubmitting
-                                                  ? const SizedBox(
+                                                  ? const ShimmerBlock(
                                                       width: 20,
                                                       height: 20,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        color:
-                                                            AppColors.onPrimary,
-                                                      ),
                                                     )
                                                   : const Text(
                                                       'Gerar PIXs',
@@ -473,5 +485,29 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
         _isSubmitting = false;
       });
     }
+  }
+}
+
+class _CheckoutSkeletonItem extends StatelessWidget {
+  const _CheckoutSkeletonItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        ShimmerBlock(width: 60, height: 60),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ShimmerBlock(height: 16, width: double.infinity),
+              SizedBox(height: 6),
+              ShimmerBlock(height: 14, width: 80),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

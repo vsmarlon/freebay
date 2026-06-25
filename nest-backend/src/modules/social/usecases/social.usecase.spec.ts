@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreatePostUseCase, LikePostUseCase, UnlikePostUseCase, CommentUseCase, CreateStoryUseCase } from './social.usecase';
+import { CreatePostUseCase } from './create-post.usecase';
+import { LikePostUseCase } from './like-post.usecase';
+import { UnlikePostUseCase } from './unlike-post.usecase';
+import { CommentUseCase } from './comment.usecase';
+import { CreateStoryUseCase } from './create-story.usecase';
 import { NotFoundError } from '@/shared/core/errors';
 import {
   PrismaPostRepository,
@@ -248,6 +252,12 @@ describe('CreateStoryUseCase', () => {
         imageUrl: 'http://example.com/image.jpg',
         expiresAt: new Date(),
         createdAt: new Date(),
+        user: {
+          id: 'user-123',
+          displayName: 'Test User',
+          avatarUrl: null,
+          isVerified: false,
+        },
       }),
     };
 

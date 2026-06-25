@@ -11,8 +11,9 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { SendMessageUseCase } from './usecases/chat.usecase';
+import { SendMessageUseCase } from './usecases/send-message.usecase';
 import { NotificationService } from '../notifications/services/notification.service';
+import { BlockRepository } from '@/modules/users/repositories/block.repository';
 
 interface AuthenticatedUser {
   userId: string;
@@ -36,6 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private prisma: PrismaService,
     private sendMessageUseCase: SendMessageUseCase,
     private notificationService: NotificationService,
+    private blockRepository: BlockRepository,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -68,12 +70,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const user = this.connectedUsers.get(client.id);
     if (!user) return;
 
-    const conversation = await this.prisma.directConversation.findUnique({
+    const directConv = await this.prisma.directConversation.findUnique({
       where: { id: data.conversationId },
     });
 
-    if (!conversation || (conversation.user1Id !== user.userId && conversation.user2Id !== user.userId)) {
-      return { error: 'Not a participant of this conversation' };
+    let otherUserId: string | undefined;
+
+    if (directConv) {
+      if (directConv.user1Id !== user.userId && directConv.user2Id !== user.userId) {
+        return { error: 'Not a participant of this conversation' };
+      }
+      otherUserId = directConv.user1Id === user.userId ? directConv.user2Id : directConv.user1Id;
+    } else {
+      const order = await this.prisma.order.findUnique({
+        where: { id: data.conversationId },
+      });
+
+      if (!order || (order.buyerId !== user.userId && order.sellerId !== user.userId)) {
+        return { error: 'Not a participant of this conversation' };
+      }
+      otherUserId = order.buyerId === user.userId ? order.sellerId : order.buyerId;
+    }
+
+    if (otherUserId) {
+      const blockedByOther = await this.blockRepository.isBlocked(otherUserId, user.userId);
+      if (blockedByOther) {
+        return { error: 'You cannot join this conversation' };
+      }
+
+      const userBlockedOther = await this.blockRepository.isBlocked(user.userId, otherUserId);
+      if (userBlockedOther) {
+        return { error: 'You cannot join this conversation' };
+      }
     }
 
     client.join(`conversation:${data.conversationId}`);

@@ -8,6 +8,7 @@ import 'package:freebay/features/profile/data/services/block_service.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final blockServiceProvider = Provider<BlockService>((ref) {
   return BlockService();
@@ -118,12 +119,8 @@ class BlockedUsersPage extends ConsumerWidget {
                         ),
                       );
               },
-              loading: () => Center(
-                child: CircularProgressIndicator(
-                  color: isDark
-                      ? AppColors.primaryContainer
-                      : AppColors.primaryContainer,
-                ),
+              loading: () => const Center(
+                child: ShimmerBlock(width: 20, height: 20),
               ),
               error: (err, stack) => Center(
                 child: Padding(

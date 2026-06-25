@@ -84,7 +84,9 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
               IconButton(
                 icon: Icon(
                   _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                  color: context.isDark ? AppColors.white : AppColors.primaryContainer,
+                  color: context.isDark
+                      ? AppColors.white
+                      : AppColors.primaryContainer,
                 ),
                 onPressed: () => setState(() => _showFilters = !_showFilters),
               ),
@@ -101,7 +103,8 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
             color: context.surfaceColor,
             child: TabBar(
               controller: _tabController,
-              labelColor: context.isDark ? AppColors.white : AppColors.primaryContainer,
+              labelColor:
+                  context.isDark ? AppColors.white : AppColors.primaryContainer,
               unselectedLabelColor: AppColors.mediumGray,
               indicatorColor: AppColors.primaryContainer,
               tabs: const [
@@ -137,8 +140,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
     );
   }
 
-  Widget _buildProdutosTab(
-      String? selectedCategory,
+  Widget _buildProdutosTab(String? selectedCategory,
       AsyncValue<List<CategoryEntity>> categoriesAsync) {
     final searchQuery = ref.watch(searchQueryProvider);
 
@@ -168,9 +170,19 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                     ref.read(selectedCategoryProvider.notifier).state = id,
               );
             },
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
+            loading: () => Padding(
+              padding: const EdgeInsets.all(16),
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: 6,
+                itemBuilder: (_, __) => const AppCard.skeleton(),
+                physics: const NeverScrollableScrollPhysics(),
+              ),
             ),
             error: (err, _) => Padding(
               padding: const EdgeInsets.all(16),
@@ -195,7 +207,8 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                         onTap: () {
                           _searchController.clear();
                           ref.read(searchQueryProvider.notifier).state = '';
-                          ref.read(selectedCategoryProvider.notifier).state = null;
+                          ref.read(selectedCategoryProvider.notifier).state =
+                              null;
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(

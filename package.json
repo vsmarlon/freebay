@@ -1,0 +1,17 @@
+{
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "nest-backend/src/**/*.ts": [
+      "nest-backend/node_modules/.bin/eslint --config nest-backend/eslint.config.js --fix"
+    ],
+    "frontend/lib/**/*.dart": [
+      "fvm dart format"
+    ]
+  }
+}

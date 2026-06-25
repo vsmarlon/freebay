@@ -5,6 +5,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/core/utils/time_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/core/components/spacing.dart';
 
@@ -31,6 +32,7 @@ class SocialPost extends StatefulWidget {
   final double? price;
   final String? userRole;
   final bool isVerified;
+  final DateTime? createdAt;
 
   const SocialPost({
     super.key,
@@ -55,6 +57,7 @@ class SocialPost extends StatefulWidget {
     this.price,
     this.userRole,
     this.isVerified = false,
+    this.createdAt,
   });
 
   @override
@@ -84,8 +87,7 @@ class _SocialPostState extends State<SocialPost> {
   }
 
   @pragma('vm:entry-point')
-void _handleShareExternal() {
-    // External share functionality - can be triggered from overflow menu
+  void _handleShareExternal() {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
@@ -228,7 +230,8 @@ void _handleShareExternal() {
           ),
           child: Text(
             widget.content ?? '',
-            style: AppTypography.bodyMedium.copyWith(color: AppColors.onPrimary),
+            style:
+                AppTypography.bodyMedium.copyWith(color: AppColors.onPrimary),
           ),
         ),
         _buildActionsRow(),
@@ -313,7 +316,9 @@ void _handleShareExternal() {
                   ],
                 ),
                 Text(
-                  'TIME AGO',
+                  widget.createdAt != null
+                      ? TimeUtils.timeAgo(widget.createdAt!)
+                      : 'agora',
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 10,
@@ -386,17 +391,17 @@ class _PostTypePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         gradient: isProduct ? AppColors.brutalistGradient : null,
-        color: isProduct ? null : context.textPrimary,
+        color: isProduct ? null : context.surfaceMidColor,
         border: Border.all(color: context.borderColor, width: 2),
       ),
       child: Text(
         isProduct ? 'VENDA' : 'SOCIAL',
-        style: const TextStyle(
+        style: TextStyle(
           fontFamily: AppTypography.fontFamily,
           fontSize: 10,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.6,
-          color: AppColors.onPrimary,
+          color: isProduct ? AppColors.onPrimary : context.textPrimary,
         ),
       ),
     );
@@ -429,4 +434,3 @@ class _PriceTag extends StatelessWidget {
     );
   }
 }
-

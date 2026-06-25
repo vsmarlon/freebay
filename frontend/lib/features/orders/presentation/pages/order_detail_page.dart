@@ -15,6 +15,7 @@ import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -48,7 +49,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       body: Column(
         children: [
           PageHeader(
-            text: 'PEDIDO #${widget.orderId.length > 8 ? widget.orderId.substring(0, 8) : widget.orderId}',
+            text:
+                'PEDIDO #${widget.orderId.length > 8 ? widget.orderId.substring(0, 8) : widget.orderId}',
             leading: GestureDetector(
               onTap: () => context.pop(),
               child: Container(
@@ -75,9 +77,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
   Widget _buildBody(OrderDetailState state, String? currentUserId) {
     if (state.isLoading && state.order == null) {
-      return Center(
-        child: CircularProgressIndicator(color: context.colors.primaryContainer),
-      );
+      return _buildSkeleton(context);
     }
 
     if (state.error != null && state.order == null) {
@@ -126,7 +126,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     return RefreshIndicator(
       color: context.colors.primaryContainer,
       onRefresh: () async {
-        await ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
+        await ref
+            .read(orderDetailProvider(widget.orderId).notifier)
+            .loadOrder();
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -168,6 +170,59 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSkeleton(BuildContext context) {
+    return SkeletonPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          const ShimmerBlock(height: 32, width: 120),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const ShimmerBlock(width: 80, height: 80),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    ShimmerBlock(height: 16, width: 160),
+                    SizedBox(height: 8),
+                    ShimmerBlock(height: 14, width: 80),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const ShimmerBlock(height: 100),
+          const SizedBox(height: 16),
+          const ShimmerBlock(height: 48),
+          const SizedBox(height: 16),
+          _buildSkeletonInfoRow(),
+          _buildSkeletonInfoRow(),
+          _buildSkeletonInfoRow(),
+          _buildSkeletonInfoRow(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonInfoRow() {
+    return const Column(
+      children: [
+        Row(
+          children: [
+            ShimmerBlock(width: 80, height: 14),
+            Spacer(),
+            ShimmerBlock(width: 120, height: 14),
+          ],
+        ),
+        SizedBox(height: 8),
+      ],
     );
   }
 
@@ -233,12 +288,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     ? CachedNetworkImage(
                         imageUrl: product!.imageUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: context.colors.primaryContainer,
-                          ),
-                        ),
+                        placeholder: (context, url) =>
+                            const ShimmerBlock(height: 60, width: 60),
                         errorWidget: (context, url, error) => Icon(
                           Icons.image_outlined,
                           color: context.textSecondary,
@@ -484,8 +535,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   ? 'Recebimento confirmado com sucesso!'
                   : 'Erro ao confirmar recebimento',
             ),
-            backgroundColor:
-                success ? AppColors.success : AppColors.error,
+            backgroundColor: success ? AppColors.success : AppColors.error,
           ),
         );
       }
@@ -550,7 +600,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   void _handleDispute(OrderEntity order) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Abertura de disputa pela interface chega no próximo ajuste.'),
+        content:
+            Text('Abertura de disputa pela interface chega no próximo ajuste.'),
         backgroundColor: AppColors.onSurface,
       ),
     );

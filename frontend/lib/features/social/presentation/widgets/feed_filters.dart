@@ -86,7 +86,7 @@ class FeedTypeDropdown extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: currentType == FeedType.explore
                       ? AppColors.primaryContainer
-                      : AppColors.onSurface,
+                      : context.textPrimary,
                 ),
               ),
             ],
@@ -113,7 +113,7 @@ class FeedTypeDropdown extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: currentType == FeedType.following
                       ? AppColors.primaryContainer
-                      : AppColors.onSurface,
+                      : context.textPrimary,
                 ),
               ),
             ],

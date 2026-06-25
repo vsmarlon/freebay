@@ -36,6 +36,20 @@ class BlockService {
     }
   }
 
+  Future<Either<Failure, BlockResponse>> block(String userId) async {
+    try {
+      final response = await HttpClient.instance.post('/users/$userId/block');
+
+      if (response.statusCode == 200 && response.data != null) {
+        return Right(BlockResponse.fromJson(response.data['data']));
+      } else {
+        return Left(ServerFailure(_extractErrorMessage(response.data)));
+      }
+    } catch (e) {
+      return Left(ServerFailure(_extractErrorMessage(e)));
+    }
+  }
+
   Future<Either<Failure, UnblockResponse>> unblock(String userId) async {
     try {
       final response = await HttpClient.instance.delete('/users/$userId/block');
@@ -106,6 +120,18 @@ class UnblockResponse {
 
   factory UnblockResponse.fromJson(Map<String, dynamic> json) {
     return UnblockResponse(
+      blocked: json['blocked'] as bool,
+    );
+  }
+}
+
+class BlockResponse {
+  final bool blocked;
+
+  BlockResponse({required this.blocked});
+
+  factory BlockResponse.fromJson(Map<String, dynamic> json) {
+    return BlockResponse(
       blocked: json['blocked'] as bool,
     );
   }

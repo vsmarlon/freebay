@@ -11,6 +11,7 @@ import 'package:freebay/features/social/presentation/providers/user_search_provi
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class NewChatPage extends ConsumerStatefulWidget {
   const NewChatPage({super.key});
@@ -67,7 +68,10 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
     try {
       final authState = ref.read(authControllerProvider);
       final userId = authState.valueOrNull?.id;
-      if (userId == null) return;
+      if (userId == null) {
+        setState(() => _isLoadingFollowing = false);
+        return;
+      }
 
       final response =
           await HttpClient.instance.get('/users/$userId/following');
@@ -82,6 +86,8 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
           _following = users;
           _isLoadingFollowing = false;
         });
+      } else {
+        setState(() => _isLoadingFollowing = false);
       }
     } catch (e) {
       setState(() => _isLoadingFollowing = false);
@@ -103,6 +109,8 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
           _suggestions = users;
           _isLoadingSuggestions = false;
         });
+      } else {
+        setState(() => _isLoadingSuggestions = false);
       }
     } catch (e) {
       setState(() => _isLoadingSuggestions = false);
@@ -193,9 +201,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
                               icon: const Icon(Icons.clear),
                               onPressed: () {
                                 _searchController.clear();
-                                ref
-                                    .read(userSearchProvider.notifier)
-                                    .clear();
+                                ref.read(userSearchProvider.notifier).clear();
                               },
                             )
                           : null,
@@ -239,12 +245,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
       itemCount: filtered.length + (state.isLoading ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == filtered.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(),
-            ),
-          );
+          return const ShimmerBlock(height: 72);
         }
 
         final user = filtered[index];
@@ -268,7 +269,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
         if (_isLoadingFollowing || filteredFollowing.isNotEmpty) ...[
           _SectionHeader(title: 'Quem você segue', isDark: isDark),
           if (_isLoadingFollowing)
-            const Center(child: CircularProgressIndicator())
+            const ShimmerBlock(width: 20, height: 20)
           else if (filteredFollowing.isEmpty)
             const EmptyState(
               icon: Icons.people_outline,
@@ -287,7 +288,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
         if (_isLoadingSuggestions || filteredSuggestions.isNotEmpty) ...[
           _SectionHeader(title: 'Sugestões', isDark: isDark),
           if (_isLoadingSuggestions)
-            const Center(child: CircularProgressIndicator())
+            const ShimmerBlock(width: 20, height: 20)
           else if (filteredSuggestions.isEmpty)
             const EmptyState(
               icon: Icons.explore_outlined,

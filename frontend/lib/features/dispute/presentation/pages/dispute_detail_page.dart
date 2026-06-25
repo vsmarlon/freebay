@@ -8,6 +8,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class DisputeDetailPage extends ConsumerStatefulWidget {
   final String disputeId;
@@ -24,7 +25,9 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(disputeDetailProvider(widget.disputeId).notifier).loadDispute());
+    Future.microtask(() => ref
+        .read(disputeDetailProvider(widget.disputeId).notifier)
+        .loadDispute());
   }
 
   @override
@@ -60,13 +63,46 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
           ),
           Expanded(
             child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildSkeleton(context)
                 : state.dispute == null
-                    ? Center(child: Text(state.error ?? 'Disputa não encontrada'))
+                    ? Center(
+                        child: Text(state.error ?? 'Disputa não encontrada'))
                     : _buildContent(state),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSkeleton(BuildContext context) {
+    return SkeletonPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          const ShimmerBlock(height: 40, width: 120),
+          const SizedBox(height: 16),
+          const ShimmerBlock(height: 60),
+          const SizedBox(height: 16),
+          const ShimmerBlock(height: 14, width: 100),
+          const SizedBox(height: 8),
+          _buildTimelineStep(),
+          const SizedBox(height: 12),
+          _buildTimelineStep(),
+          const SizedBox(height: 12),
+          _buildTimelineStep(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineStep() {
+    return const Row(
+      children: [
+        ShimmerBlock(width: 24, height: 24),
+        SizedBox(width: 12),
+        ShimmerBlock(height: 14, width: 160),
+      ],
     );
   }
 
@@ -79,7 +115,8 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Disputas', onTap: () => Navigator.pop(context)),
+            BreadcrumbItem(
+                label: 'Disputas', onTap: () => Navigator.pop(context)),
             const BreadcrumbItem(label: 'Detalhes da Disputa'),
           ]),
           Spacing.vMd,
@@ -87,7 +124,7 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _row('Status', _statusLabel(dispute.status)),
+                _row('Status', dispute.status.label),
                 Spacing.vSm,
                 _row('Motivo', dispute.reason),
                 Spacing.vSm,
@@ -129,7 +166,8 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
                     child: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Center(
-                        child: Text('Enviar Evidência', style: AppTypography.button),
+                        child: Text('Enviar Evidência',
+                            style: AppTypography.button),
                       ),
                     ),
                   ),
@@ -146,7 +184,9 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
     final evidence = _evidenceController.text.trim();
     if (evidence.isEmpty) return;
 
-    final success = await ref.read(disputeDetailProvider(widget.disputeId).notifier).submitEvidence(evidence);
+    final success = await ref
+        .read(disputeDetailProvider(widget.disputeId).notifier)
+        .submitEvidence(evidence);
     if (success && mounted) {
       _evidenceController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -161,22 +201,13 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
       children: [
         SizedBox(
           width: 100,
-          child: Text(label, style: AppTypography.bodySmall.copyWith(color: AppColors.onSurfaceVariant)),
+          child: Text(label,
+              style: AppTypography.bodySmall
+                  .copyWith(color: AppColors.onSurfaceVariant)),
         ),
         Expanded(child: Text(value, style: AppTypography.bodyMedium)),
       ],
     );
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'OPEN': return 'Aberta';
-      case 'AWAITING_SELLER': return 'Aguardando vendedor';
-      case 'AWAITING_BUYER': return 'Aguardando comprador';
-      case 'RESOLVED': return 'Resolvida';
-      case 'CANCELLED': return 'Cancelada';
-      default: return status;
-    }
   }
 
   String _formatDate(DateTime date) {

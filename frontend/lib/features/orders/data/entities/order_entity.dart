@@ -1,5 +1,9 @@
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+
+part 'order_entity.g.dart';
 
 enum OrderStatus {
   pending,
@@ -50,9 +54,7 @@ enum OrderStatus {
     }
   }
 
-  String toApiString() {
-    return name.toUpperCase();
-  }
+  String toApiString() => name.toUpperCase();
 }
 
 enum EscrowStatus {
@@ -83,12 +85,16 @@ enum EscrowStatus {
         return 'Reembolsado';
     }
   }
+
+  String toApiString() => name.toUpperCase();
 }
 
+@JsonSerializable()
 class OrderUserInfo extends Equatable {
   final String id;
   final String? displayName;
   final String? avatarUrl;
+  @JsonKey(defaultValue: false)
   final bool isVerified;
 
   const OrderUserInfo({
@@ -100,28 +106,30 @@ class OrderUserInfo extends Equatable {
 
   String get displayNameOrDefault => displayName ?? 'Usuário';
 
-  factory OrderUserInfo.fromJson(Map<String, dynamic> json) {
-    return OrderUserInfo(
-      id: json['id'] as String,
-      displayName: json['displayName'] as String?,
-      avatarUrl: json['avatarUrl'] as String?,
-      isVerified: json['isVerified'] as bool? ?? false,
-    );
-  }
+  factory OrderUserInfo.fromJson(Map<String, dynamic> json) =>
+      _$OrderUserInfoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$OrderUserInfoToJson(this);
 
   @override
   List<Object?> get props => [id, displayName, avatarUrl, isVerified];
 }
 
+@JsonSerializable()
 class OrderEntity extends Equatable {
   final String id;
   final String buyerId;
   final String sellerId;
   final String productId;
+  @JsonKey(defaultValue: 0)
   final int amount;
+  @JsonKey(defaultValue: 0)
   final int platformFee;
+  @JsonKey(defaultValue: 0)
   final int sellerAmount;
+  @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson)
   final OrderStatus status;
+  @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson)
   final EscrowStatus escrowStatus;
   final DateTime createdAt;
   final DateTime? deliveryConfirmedAt;
@@ -150,41 +158,16 @@ class OrderEntity extends Equatable {
   double get platformFeeInReais => platformFee / 100;
   double get sellerAmountInReais => sellerAmount / 100;
 
-  String get formattedAmount => 'R\$ ${amountInReais.toStringAsFixed(2)}';
-  String get formattedPlatformFee =>
-      'R\$ ${platformFeeInReais.toStringAsFixed(2)}';
-  String get formattedSellerAmount =>
-      'R\$ ${sellerAmountInReais.toStringAsFixed(2)}';
+  String get formattedAmount => CurrencyUtils.formatCents(amount);
+  String get formattedPlatformFee => CurrencyUtils.formatCents(platformFee);
+  String get formattedSellerAmount => CurrencyUtils.formatCents(sellerAmount);
 
   String get shortId => id.length > 8 ? id.substring(0, 8) : id;
 
-  factory OrderEntity.fromJson(Map<String, dynamic> json) {
-    return OrderEntity(
-      id: json['id'] as String,
-      buyerId: json['buyerId'] as String,
-      sellerId: json['sellerId'] as String,
-      productId: json['productId'] as String,
-      amount: json['amount'] as int? ?? 0,
-      platformFee: json['platformFee'] as int? ?? 0,
-      sellerAmount: json['sellerAmount'] as int? ?? 0,
-      status: OrderStatus.fromString(json['status'] as String? ?? 'PENDING'),
-      escrowStatus:
-          EscrowStatus.fromString(json['escrowStatus'] as String? ?? 'HELD'),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      deliveryConfirmedAt: json['deliveryConfirmedAt'] != null
-          ? DateTime.parse(json['deliveryConfirmedAt'] as String)
-          : null,
-      product: json['product'] != null
-          ? ProductEntity.fromJson(json['product'] as Map<String, dynamic>)
-          : null,
-      buyer: json['buyer'] != null
-          ? OrderUserInfo.fromJson(json['buyer'] as Map<String, dynamic>)
-          : null,
-      seller: json['seller'] != null
-          ? OrderUserInfo.fromJson(json['seller'] as Map<String, dynamic>)
-          : null,
-    );
-  }
+  factory OrderEntity.fromJson(Map<String, dynamic> json) =>
+      _$OrderEntityFromJson(json);
+
+  Map<String, dynamic> toJson() => _$OrderEntityToJson(this);
 
   @override
   List<Object?> get props => [
@@ -205,7 +188,12 @@ class OrderEntity extends Equatable {
       ];
 }
 
+String _orderStatusToJson(OrderStatus status) => status.toApiString();
+String _escrowStatusToJson(EscrowStatus status) => status.toApiString();
+
+@JsonSerializable()
 class CanReviewResponse extends Equatable {
+  @JsonKey(defaultValue: false)
   final bool canReview;
   final String? reviewType;
   final String? reason;
@@ -216,13 +204,10 @@ class CanReviewResponse extends Equatable {
     this.reason,
   });
 
-  factory CanReviewResponse.fromJson(Map<String, dynamic> json) {
-    return CanReviewResponse(
-      canReview: json['canReview'] as bool? ?? false,
-      reviewType: json['reviewType'] as String?,
-      reason: json['reason'] as String?,
-    );
-  }
+  factory CanReviewResponse.fromJson(Map<String, dynamic> json) =>
+      _$CanReviewResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CanReviewResponseToJson(this);
 
   @override
   List<Object?> get props => [canReview, reviewType, reason];

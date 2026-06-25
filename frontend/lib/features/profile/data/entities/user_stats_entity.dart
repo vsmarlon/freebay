@@ -1,9 +1,17 @@
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'user_stats_entity.g.dart';
+
+@JsonSerializable()
 class UserStatsEntity extends Equatable {
+  @JsonKey(defaultValue: 0)
   final int salesCount;
+  @JsonKey(defaultValue: 0)
   final int purchasesCount;
+  @JsonKey(defaultValue: 0)
   final int followersCount;
+  @JsonKey(defaultValue: 0)
   final int followingCount;
 
   const UserStatsEntity({
@@ -13,21 +21,10 @@ class UserStatsEntity extends Equatable {
     required this.followingCount,
   });
 
-  factory UserStatsEntity.fromJson(Map<String, dynamic> json) {
-    return UserStatsEntity(
-      salesCount: json['salesCount'] as int? ?? 0,
-      purchasesCount: json['purchasesCount'] as int? ?? 0,
-      followersCount: json['followersCount'] as int? ?? 0,
-      followingCount: json['followingCount'] as int? ?? 0,
-    );
-  }
+  factory UserStatsEntity.fromJson(Map<String, dynamic> json) =>
+      _$UserStatsEntityFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        'salesCount': salesCount,
-        'purchasesCount': purchasesCount,
-        'followersCount': followersCount,
-        'followingCount': followingCount,
-      };
+  Map<String, dynamic> toJson() => _$UserStatsEntityToJson(this);
 
   @override
   List<Object?> get props =>

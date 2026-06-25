@@ -141,6 +141,12 @@ class AppTheme {
           thickness: 0,
           space: 0,
         ),
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: AppColors.surfaceContainerLowest,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: borderRadiusZero),
+        ),
         splashFactory: InkRipple.splashFactory,
       );
 
@@ -259,6 +265,12 @@ class AppTheme {
           color: Colors.transparent,
           thickness: 0,
           space: 0,
+        ),
+        drawerTheme: const DrawerThemeData(
+          backgroundColor: AppColors.surfaceDark,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: borderRadiusZero),
         ),
         splashFactory: InkRipple.splashFactory,
       );

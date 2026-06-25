@@ -9,6 +9,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/shared/services/biometry_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -47,6 +48,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
       curve: Curves.linear,
     ));
     _animationController.forward();
+
+    Future.microtask(() async {
+      final biometry = BiometryService();
+      if (await biometry.isEnabled()) {
+        final authenticated = await biometry.authenticate(
+          reason: 'Autentique para acessar sua conta',
+        );
+        if (authenticated && mounted) {
+          await ref.read(authControllerProvider.notifier).tryRefreshSession();
+        }
+      }
+    });
   }
 
   @override
@@ -78,7 +91,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
           if (user != null) context.go('/feed');
         },
         error: (err, _) {
-          setState(() => _errorMessage = err is String ? err : 'Erro ao fazer login. Tente novamente.');
+          setState(() => _errorMessage =
+              err is String ? err : 'Erro ao fazer login. Tente novamente.');
         },
       );
     });
@@ -89,20 +103,26 @@ class _LoginPageState extends ConsumerState<LoginPage>
         children: [
           PageHeader(
             text: 'ENTRAR',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: const Icon(
-                  Icons.arrow_back,
-                  size: 20,
-                ),
-              ),
-            ),
+            // Only show a back button when there's somewhere to return to
+            // (e.g. a guest tapped "Entrar"). After logout the stack is reset
+            // (context.go('/login')) so canPop() is false and no arrow shows.(fool proof ## TODO SON)
+            leading: context.canPop()
+                ? GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        border:
+                            Border.all(color: context.borderColor, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        size: 20,
+                      ),
+                    ),
+                  )
+                : null,
           ),
           Expanded(
             child: FadeTransition(
@@ -110,160 +130,164 @@ class _LoginPageState extends ConsumerState<LoginPage>
               child: SlideTransition(
                 position: _slideAnimation,
                 child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Image.asset(
-                      'assets/freebay-textonly.png',
-                      height: 56,
-                      fit: BoxFit.contain,
-                      color: context.isDark ? AppColors.white : AppColors.primaryContainer,
-                    ),
-                    Spacing.vXl,
-                    AppTextField(
-                      controller: _emailController,
-                      label: 'E-mail',
-                      hint: 'seu@email.com',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.email_outlined,
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Informe seu e-mail';
-                        if (!v.contains('@') || !v.contains('.')) {
-                          return 'E-mail inválido';
-                        }
-                        return null;
-                      },
-                    ),
-                    Spacing.vMd,
-                    AppTextField(
-                      controller: _passwordController,
-                      label: 'Senha',
-                      hint: '*********',
-                      obscureText: true,
-                      showPasswordToggle: true,
-                      prefixIcon: Icons.lock_outline,
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Informe sua senha';
-                        if (v.length < 8) return 'Mínimo 8 caracteres';
-                        return null;
-                      },
-                    ),
-                    Spacing.vSm,
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
-                          activeColor: AppColors.primaryContainer,
-                        ),
-                        Text(
-                          'Manter logado',
-                          style: TextStyle(
-                            color: context.textPrimary,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Image.asset(
+                            'assets/freebay-textonly.png',
+                            height: 56,
+                            fit: BoxFit.contain,
+                            color: context.isDark
+                                ? AppColors.white
+                                : AppColors.primaryContainer,
                           ),
-                        ),
-                      ],
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: InkWell(
-                        onTap: () => context.push('/recover-password'),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 6),
-                          child: Text(
-                            'Esqueceu a senha?',
-                            style: TextStyle(
-                              color: AppColors.primaryContainer,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: AppColors.error,
-                          fontSize: 13,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                    Spacing.vMd,
-                    AppButton(
-                      label: 'Entrar',
-                      isLoading: authState.isLoading,
-                      onPressed: _handleLogin,
-                    ),
-                    const SizedBox(height: 12),
-                    InkWell(
-                      onTap: authState.isLoading
-                          ? null
-                          : () async {
-                              setState(() => _errorMessage = null);
-                              await ref
-                                  .read(authControllerProvider.notifier)
-                                  .loginAsGuest();
+                          Spacing.vXl,
+                          AppTextField(
+                            controller: _emailController,
+                            label: 'E-mail',
+                            hint: 'seu@email.com',
+                            keyboardType: TextInputType.emailAddress,
+                            prefixIcon: Icons.email_outlined,
+                            validator: (v) {
+                              if (v == null || v.isEmpty)
+                                return 'Informe seu e-mail';
+                              if (!v.contains('@') || !v.contains('.')) {
+                                return 'E-mail inválido';
+                              }
+                              return null;
                             },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          'Entrar como convidado',
-                          style: TextStyle(
-                            color: AppColors.mediumGray,
-                            fontSize: 14,
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                    Spacing.vSm,
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Não tem conta? ',
-                          style: TextStyle(
-                            color: context.textPrimary,
+                          Spacing.vMd,
+                          AppTextField(
+                            controller: _passwordController,
+                            label: 'Senha',
+                            hint: '*********',
+                            obscureText: true,
+                            showPasswordToggle: true,
+                            prefixIcon: Icons.lock_outline,
+                            validator: (v) {
+                              if (v == null || v.isEmpty)
+                                return 'Informe sua senha';
+                              if (v.length < 8) return 'Mínimo 8 caracteres';
+                              return null;
+                            },
                           ),
-                        ),
-                        InkWell(
-                          onTap: () => context.push('/register'),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 4),
-                            child: Text(
-                              'Criar conta',
-                              style: TextStyle(
-                                color: AppColors.primaryContainer,
-                                fontWeight: FontWeight.w700,
+                          Spacing.vSm,
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                                activeColor: AppColors.primaryContainer,
+                              ),
+                              Text(
+                                'Manter logado',
+                                style: TextStyle(
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: InkWell(
+                              onTap: () => context.push('/recover-password'),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 6),
+                                child: Text(
+                                  'Esqueceu a senha?',
+                                  style: TextStyle(
+                                    color: AppColors.primaryContainer,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: AppColors.error,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                          Spacing.vMd,
+                          AppButton(
+                            label: 'Entrar',
+                            isLoading: authState.isLoading,
+                            onPressed: _handleLogin,
+                          ),
+                          const SizedBox(height: 12),
+                          InkWell(
+                            onTap: authState.isLoading
+                                ? null
+                                : () async {
+                                    setState(() => _errorMessage = null);
+                                    await ref
+                                        .read(authControllerProvider.notifier)
+                                        .loginAsGuest();
+                                  },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'Entrar como convidado',
+                                style: TextStyle(
+                                  color: AppColors.mediumGray,
+                                  fontSize: 14,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          Spacing.vSm,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Não tem conta? ',
+                                style: TextStyle(
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => context.push('/register'),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 4),
+                                  child: Text(
+                                    'Criar conta',
+                                    style: TextStyle(
+                                      color: AppColors.primaryContainer,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
-      ),
-    ],
-  ),
-);
+    );
   }
 }

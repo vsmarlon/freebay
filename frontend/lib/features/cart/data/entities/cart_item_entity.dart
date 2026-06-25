@@ -1,6 +1,10 @@
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
+part 'cart_item_entity.g.dart';
+
+@JsonSerializable()
 class CartItemEntity extends Equatable {
   final String id;
   final String productId;
@@ -17,25 +21,23 @@ class CartItemEntity extends Equatable {
   });
 
   factory CartItemEntity.fromJson(Map<String, dynamic> json) {
-    final productMap = Map<String, dynamic>.from(json['product'] as Map);
-    if (productMap['seller'] != null) {
-      productMap['sellerName'] = productMap['seller']['displayName'];
-      productMap['sellerAvatar'] = productMap['seller']['avatarUrl'];
-    }
-    final images = productMap['images'] as List?;
-    if (images != null && images.isNotEmpty) {
-      final firstImage = images.first as Map;
-      productMap['imageUrl'] = firstImage['url'];
-    }
+    final product = json['product'] as Map<String, dynamic>;
+    final seller = product['seller'] as Map?;
+    final images = product['images'] as List?;
 
-    return CartItemEntity(
-      id: json['id'] as String,
-      productId: json['productId'] as String,
-      quantity: (json['quantity'] as num).toInt(),
-      subtotal: (json['subtotal'] as num).toInt(),
-      product: ProductEntity.fromJson(productMap),
-    );
+    return _$CartItemEntityFromJson({
+      ...json,
+      'product': {
+        ...product,
+        if (seller != null) 'sellerName': seller['displayName'],
+        if (seller != null) 'sellerAvatar': seller['avatarUrl'],
+        if (images != null && images.isNotEmpty)
+          'imageUrl': (images.first as Map)['url'],
+      },
+    });
   }
+
+  Map<String, dynamic> toJson() => _$CartItemEntityToJson(this);
 
   @override
   List<Object?> get props => [id, productId, quantity, subtotal, product];

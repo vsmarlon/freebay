@@ -8,11 +8,13 @@ import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
@@ -22,9 +24,13 @@ class FeedPage extends ConsumerStatefulWidget {
 }
 
 class _FeedPageState extends ConsumerState<FeedPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -47,7 +53,8 @@ class _FeedPageState extends ConsumerState<FeedPage>
         if (!mounted) return;
         ref.read(feedProvider.notifier).loadFeed(
               refresh: true,
-              feedType: feedType == FeedType.following ? 'following' : 'explore',
+              feedType:
+                  feedType == FeedType.following ? 'following' : 'explore',
             );
       });
     }
@@ -69,15 +76,31 @@ class _FeedPageState extends ConsumerState<FeedPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final feedState = ref.watch(feedProvider);
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: context.surfaceMidColor,
+      drawer: const FeedDrawer(),
+      drawerEnableOpenDragGesture: true,
+      drawerEdgeDragWidth: 32,
       body: Column(
         children: [
-          const PageHeader(
+          PageHeader(
             text: 'FREEBAY',
             exclamation: '!',
+            leading: GestureDetector(
+              onTap: () => _scaffoldKey.currentState?.openDrawer(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  border: Border.all(color: context.borderColor, width: 2),
+                ),
+                child: Icon(Icons.menu, color: context.textPrimary, size: 20),
+              ),
+            ),
             actions: [
               _HeaderIcon(
                 icon: Icons.notifications_outlined,
@@ -114,8 +137,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
           final type = ref.read(feedTypeProvider);
           ref.read(feedProvider.notifier).loadFeed(
                 refresh: true,
-                feedType:
-                    type == FeedType.following ? 'following' : 'explore',
+                feedType: type == FeedType.following ? 'following' : 'explore',
               );
         },
       );
@@ -195,16 +217,13 @@ class _FeedPageState extends ConsumerState<FeedPage>
 
   Widget _buildLoadingMore() {
     return const Padding(
-      padding: EdgeInsets.all(24),
-      child: Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            color: AppColors.primaryContainer,
-            strokeWidth: 2,
-          ),
-        ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _SkeletonFeedPost(),
+          SizedBox(height: 12),
+          _SkeletonFeedPost(),
+        ],
       ),
     );
   }
@@ -279,6 +298,35 @@ class _FeedPageState extends ConsumerState<FeedPage>
       case FeedContentFilter.all:
         return true;
     }
+  }
+}
+
+class _SkeletonFeedPost extends StatelessWidget {
+  const _SkeletonFeedPost();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            ShimmerBlock(width: 48, height: 48),
+            SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerBlock(height: 14, width: 100),
+                SizedBox(height: 8),
+                ShimmerBlock(height: 12, width: 150),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        ShimmerBlock(height: 200),
+      ],
+    );
   }
 }
 

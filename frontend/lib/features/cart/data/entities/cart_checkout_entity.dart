@@ -1,12 +1,20 @@
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'cart_checkout_entity.g.dart';
+
+@JsonSerializable()
 class CartCheckoutItemEntity extends Equatable {
   final String orderId;
   final String productId;
   final String productTitle;
+  @JsonKey(defaultValue: 1)
   final int quantity;
+  @JsonKey(defaultValue: 0)
   final int amount;
+  @JsonKey(defaultValue: '')
   final String pixQrCode;
+  @JsonKey(defaultValue: '')
   final String pixImage;
   final DateTime expiresAt;
 
@@ -21,18 +29,10 @@ class CartCheckoutItemEntity extends Equatable {
     required this.expiresAt,
   });
 
-  factory CartCheckoutItemEntity.fromJson(Map<String, dynamic> json) {
-    return CartCheckoutItemEntity(
-      orderId: json['orderId'] as String,
-      productId: json['productId'] as String,
-      productTitle: json['productTitle'] as String,
-      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
-      amount: (json['amount'] as num?)?.toInt() ?? 0,
-      pixQrCode: json['pixQrCode'] as String? ?? '',
-      pixImage: json['pixImage'] as String? ?? '',
-      expiresAt: DateTime.parse(json['expiresAt'] as String),
-    );
-  }
+  factory CartCheckoutItemEntity.fromJson(Map<String, dynamic> json) =>
+      _$CartCheckoutItemEntityFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CartCheckoutItemEntityToJson(this);
 
   @override
   List<Object?> get props => [
@@ -47,9 +47,12 @@ class CartCheckoutItemEntity extends Equatable {
       ];
 }
 
+@JsonSerializable()
 class CartCheckoutEntity extends Equatable {
   final List<CartCheckoutItemEntity> items;
+  @JsonKey(defaultValue: 0)
   final int totalOrders;
+  @JsonKey(defaultValue: 0)
   final int totalAmount;
 
   const CartCheckoutEntity({
@@ -58,17 +61,10 @@ class CartCheckoutEntity extends Equatable {
     required this.totalAmount,
   });
 
-  factory CartCheckoutEntity.fromJson(Map<String, dynamic> json) {
-    final itemsJson = (json['items'] as List<dynamic>? ?? []);
-    return CartCheckoutEntity(
-      items: itemsJson
-          .map((item) =>
-              CartCheckoutItemEntity.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      totalOrders: (json['totalOrders'] as num?)?.toInt() ?? 0,
-      totalAmount: (json['totalAmount'] as num?)?.toInt() ?? 0,
-    );
-  }
+  factory CartCheckoutEntity.fromJson(Map<String, dynamic> json) =>
+      _$CartCheckoutEntityFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CartCheckoutEntityToJson(this);
 
   @override
   List<Object?> get props => [items, totalOrders, totalAmount];

@@ -13,7 +13,7 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 

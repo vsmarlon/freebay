@@ -18,7 +18,7 @@ import {
   MarkAsDeliveredUseCase,
   CancelOrderUseCase,
 } from './usecases/order.usecase';
-import { CreateOrderDTO, OrderResponse } from './dtos/order.dto';
+import { CreateOrderDTO } from './dtos/order.dto';
 import { PrismaOrderRepository } from './repositories/order.repository';
 import { PrismaProductRepository } from '../products/repositories/product.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';

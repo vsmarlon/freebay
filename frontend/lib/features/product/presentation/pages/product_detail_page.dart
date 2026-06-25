@@ -39,7 +39,8 @@ class ProductDetailPage extends ConsumerWidget {
     final conditionLabel = product.condition == 'NEW' ? 'NOVO' : 'USADO';
     final favoriteAsync = ref.watch(isFavoritedProvider(product.id));
     final favoritesState = ref.watch(favoritesProvider);
-    final isFavorited = favoritesState.isFavorited(product.id) || (favoriteAsync.value ?? false);
+    final isFavorited = favoritesState.isFavorited(product.id) ||
+        (favoriteAsync.value ?? false);
 
     return Scaffold(
       backgroundColor:
@@ -92,12 +93,17 @@ class ProductDetailPage extends ConsumerWidget {
                         color: AppColors.black.withValues(alpha: 0.54),
                         borderRadius: BorderRadius.zero,
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.photo_library,
+                          const Icon(Icons.photo_library,
                               color: Colors.white, size: 16),
-                          SizedBox(width: 4),
-                          Text('1', style: TextStyle(color: Colors.white)),
+                          const SizedBox(width: 4),
+                          Text(
+                              product.imageUrl != null &&
+                                      product.imageUrl!.isNotEmpty
+                                  ? '1'
+                                  : '0',
+                              style: const TextStyle(color: Colors.white)),
                         ],
                       ),
                     ),
@@ -151,15 +157,19 @@ class ProductDetailPage extends ConsumerWidget {
                   ),
                 ),
                 onPressed: () async {
-                  final ok = await ref.read(favoritesProvider.notifier).toggleFavorite(product.id);
+                  final ok = await ref
+                      .read(favoritesProvider.notifier)
+                      .toggleFavorite(product.id);
                   if (!context.mounted) {
                     return;
                   }
                   if (!ok) {
-                    AppSnackbar.error(context, 'Não foi possível atualizar favoritos');
+                    AppSnackbar.error(
+                        context, 'Não foi possível atualizar favoritos');
                     return;
                   }
-                  final nowFavorited = ref.read(favoritesProvider).isFavorited(product.id);
+                  final nowFavorited =
+                      ref.read(favoritesProvider).isFavorited(product.id);
                   AppSnackbar.success(
                     context,
                     nowFavorited
@@ -363,12 +373,15 @@ class ProductDetailPage extends ConsumerWidget {
                       );
                       return;
                     }
-                    AppSnackbar.success(context, 'Produto adicionado ao carrinho');
+                    AppSnackbar.success(
+                        context, 'Produto adicionado ao carrinho');
                   },
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
+                      color: isDark
+                          ? AppColors.surfaceContainerDark
+                          : AppColors.lightGray,
                       border: Border.all(
                         color: isDark ? AppColors.white : AppColors.onSurface,
                         width: 1,

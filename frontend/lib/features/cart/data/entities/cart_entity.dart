@@ -1,6 +1,10 @@
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:freebay/features/cart/data/entities/cart_item_entity.dart';
 
+part 'cart_entity.g.dart';
+
+@JsonSerializable()
 class CartEntity extends Equatable {
   final List<CartItemEntity> items;
   final int totalItems;
@@ -12,16 +16,10 @@ class CartEntity extends Equatable {
     required this.totalPrice,
   });
 
-  factory CartEntity.fromJson(Map<String, dynamic> json) {
-    final itemsJson = (json['items'] as List?) ?? [];
-    return CartEntity(
-      items: itemsJson
-          .map((item) => CartItemEntity.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      totalItems: (json['totalItems'] as num?)?.toInt() ?? 0,
-      totalPrice: (json['totalPrice'] as num?)?.toInt() ?? 0,
-    );
-  }
+  factory CartEntity.fromJson(Map<String, dynamic> json) =>
+      _$CartEntityFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CartEntityToJson(this);
 
   @override
   List<Object?> get props => [items, totalItems, totalPrice];

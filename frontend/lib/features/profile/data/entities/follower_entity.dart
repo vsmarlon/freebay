@@ -1,11 +1,18 @@
 import 'package:equatable/equatable.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'follower_entity.g.dart';
+
+@JsonSerializable()
 class FollowerEntity extends Equatable {
   final String id;
+  @JsonKey(defaultValue: 'Usuário')
   final String displayName;
   final String? avatarUrl;
+  @JsonKey(defaultValue: false)
   final bool isVerified;
   final String? bio;
+  @JsonKey(defaultValue: false)
   final bool isFollowing;
 
   const FollowerEntity({
@@ -17,25 +24,10 @@ class FollowerEntity extends Equatable {
     required this.isFollowing,
   });
 
-  factory FollowerEntity.fromJson(Map<String, dynamic> json) {
-    return FollowerEntity(
-      id: json['id'] as String,
-      displayName: json['displayName'] as String? ?? 'Usuário',
-      avatarUrl: json['avatarUrl'] as String?,
-      isVerified: json['isVerified'] as bool? ?? false,
-      bio: json['bio'] as String?,
-      isFollowing: json['isFollowing'] as bool? ?? false,
-    );
-  }
+  factory FollowerEntity.fromJson(Map<String, dynamic> json) =>
+      _$FollowerEntityFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'displayName': displayName,
-        'avatarUrl': avatarUrl,
-        'isVerified': isVerified,
-        'bio': bio,
-        'isFollowing': isFollowing,
-      };
+  Map<String, dynamic> toJson() => _$FollowerEntityToJson(this);
 
   @override
   List<Object?> get props =>

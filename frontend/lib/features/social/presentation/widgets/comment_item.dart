@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 
@@ -75,7 +76,7 @@ class CommentItem extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      _formatDate(comment.createdAt),
+                      TimeUtils.timeAgo(comment.createdAt),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.mediumGray,
@@ -109,7 +110,8 @@ class CommentItem extends StatelessWidget {
                               likesCount.toString(),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isLiked ? Colors.red : AppColors.mediumGray,
+                                color:
+                                    isLiked ? Colors.red : AppColors.mediumGray,
                               ),
                             ),
                         ],
@@ -123,13 +125,5 @@ class CommentItem extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static String _formatDate(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inDays > 0) return '${diff.inDays} d';
-    if (diff.inHours > 0) return '${diff.inHours} h';
-    if (diff.inMinutes > 0) return '${diff.inMinutes} m';
-    return 'agora';
   }
 }

@@ -1,6 +1,7 @@
 const js = require('@eslint/js');
 
 module.exports = [
+  { ignores: ['dist/', 'node_modules/', '**/*.config.js', '**/*.config.ts', 'jest.config.*.js'] },
   js.configs.recommended,
   {
     files: ['**/*.ts'],
@@ -27,7 +28,6 @@ module.exports = [
       'no-unused-vars': 'off',
       'no-undef': 'off',
     },
-    ignores: ['dist/', 'node_modules/', '*.config.ts'],
   },
   {
     files: ['**/*.spec.ts'],

@@ -21,6 +21,7 @@ import 'package:freebay/core/components/spacing.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -131,11 +132,53 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     );
   }
 
+  Widget _buildSkeleton() {
+    return const SkeletonPage(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ShimmerBlock(height: 48),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              ShimmerBlock(width: 48, height: 48),
+              SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerBlock(height: 14, width: 120),
+                  SizedBox(height: 8),
+                  ShimmerBlock(height: 12, width: 80),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          ShimmerBlock(height: 300),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              ShimmerBlock(width: 24, height: 24),
+              SizedBox(width: 16),
+              ShimmerBlock(width: 24, height: 24),
+              SizedBox(width: 16),
+              ShimmerBlock(width: 24, height: 24),
+            ],
+          ),
+          SizedBox(height: 24),
+          _CommentSkeletonRow(),
+          SizedBox(height: 12),
+          _CommentSkeletonRow(),
+          SizedBox(height: 12),
+          _CommentSkeletonRow(),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBody(BuildContext context, PostDetailsState state) {
     if (state.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryContainer),
-      );
+      return _buildSkeleton();
     }
 
     if (state.error != null) {
@@ -148,17 +191,20 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
             Text(state.error!, style: TextStyle(color: context.textPrimary)),
             Spacing.vMd,
             InkWell(
-              onTap: () =>
-                  ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
+              onTap: () => ref
+                  .read(postDetailsProvider(widget.postId).notifier)
+                  .refresh(),
               child: Container(
                 height: 48,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: const BoxDecoration(gradient: AppColors.brutalistGradient),
+                decoration:
+                    const BoxDecoration(gradient: AppColors.brutalistGradient),
                 child: const Center(
                   child: Text(
                     'Tentar novamente',
                     style: TextStyle(
-                        color: AppColors.onPrimary, fontWeight: FontWeight.w700),
+                        color: AppColors.onPrimary,
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -174,7 +220,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
 
     final post = state.post!;
     final treeNode = _buildTree(state.comments);
-    
+
     final likesState = ref.watch(likesProvider);
     final isLiked = likesState.getLikedOverride(post.id) ?? post.isLiked;
     final likesCount = likesState.getCountOverride(post.id) ?? post.likesCount;
@@ -183,8 +229,10 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     final isSaved = savesState.getSavedOverride(post.id) ?? post.isSaved;
 
     final repostsState = ref.watch(repostsProvider);
-    final isReposted = repostsState.getRepostedOverride(post.id) ?? post.hasReposted;
-    final sharesCount = repostsState.getCountOverride(post.id) ?? post.sharesCount;
+    final isReposted =
+        repostsState.getRepostedOverride(post.id) ?? post.hasReposted;
+    final sharesCount =
+        repostsState.getCountOverride(post.id) ?? post.sharesCount;
 
     return RefreshIndicator(
       onRefresh: () =>
@@ -205,10 +253,10 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               isSaved: isSaved,
               isReposted: isReposted,
               isVerified: post.user.isVerified,
+              createdAt: post.createdAt,
               onUserTap: () => context.push('/user/${post.user.id}'),
               onLike: () async {
-                final user =
-                    ref.read(authControllerProvider).valueOrNull;
+                final user = ref.read(authControllerProvider).valueOrNull;
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
                     AppSnackbar.warning(context, 'Faça login para curtir');
@@ -229,9 +277,6 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                         newLikesState.getCountOverride(post.id) ??
                             post.likesCount,
                       );
-                  ref
-                      .read(postDetailsProvider(widget.postId).notifier)
-                      .refresh();
                 }
                 return success;
               },
@@ -256,20 +301,19 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   }
                   return false;
                 }
-                final success = await ref.read(repostsProvider.notifier).toggleRepost(
-                      post.id,
-                      initialIsReposted: post.hasReposted,
-                      initialCount: post.sharesCount,
-                    );
+                final success =
+                    await ref.read(repostsProvider.notifier).toggleRepost(
+                          post.id,
+                          initialIsReposted: post.hasReposted,
+                          initialCount: post.sharesCount,
+                        );
                 if (success) {
                   final newRepostsState = ref.read(repostsProvider);
                   ref.read(feedProvider.notifier).updateSharesCount(
                         post.id,
-                        newRepostsState.getCountOverride(post.id) ?? post.sharesCount,
+                        newRepostsState.getCountOverride(post.id) ??
+                            post.sharesCount,
                       );
-                  ref
-                      .read(postDetailsProvider(widget.postId).notifier)
-                      .refresh();
                 }
                 return success;
               },
@@ -278,7 +322,8 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                 final user = ref.read(authControllerProvider).valueOrNull;
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para compartilhar');
+                    AppSnackbar.warning(
+                        context, 'Faça login para compartilhar');
                   }
                   return;
                 }
@@ -293,9 +338,6 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   ),
                   (_) {
                     AppSnackbar.success(context, 'Compartilhado no seu perfil');
-                    ref
-                        .read(postDetailsProvider(widget.postId).notifier)
-                        .refresh();
                   },
                 );
               },
@@ -364,8 +406,10 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   Widget _buildCommentNode(BuildContext context, CommentEntity comment) {
     final isReplying = _replyToId == comment.id;
     final commentLikesState = ref.watch(commentLikesProvider);
-    final isCommentLiked = commentLikesState.getLikedOverride(comment.id) ?? comment.isLiked;
-    final commentLikesCount = commentLikesState.getCountOverride(comment.id) ?? comment.likesCount;
+    final isCommentLiked =
+        commentLikesState.getLikedOverride(comment.id) ?? comment.isLiked;
+    final commentLikesCount =
+        commentLikesState.getCountOverride(comment.id) ?? comment.likesCount;
 
     return Column(
       children: [
@@ -383,9 +427,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               }
               return;
             }
-            await ref
-                .read(commentLikesProvider.notifier)
-                .toggleLike(
+            await ref.read(commentLikesProvider.notifier).toggleLike(
                   comment.id,
                   initialIsLiked: comment.isLiked,
                   initialCount: comment.likesCount,
@@ -407,6 +449,28 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               compact: true,
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _CommentSkeletonRow extends StatelessWidget {
+  const _CommentSkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        ShimmerBlock(width: 32, height: 32),
+        SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerBlock(height: 14, width: 100),
+            SizedBox(height: 6),
+            ShimmerBlock(height: 12, width: 160),
+          ],
+        ),
       ],
     );
   }

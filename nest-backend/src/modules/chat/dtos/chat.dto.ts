@@ -2,6 +2,8 @@ import { IsString, IsNotEmpty, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
+export type ChatThreadTypeParam = 'ORDER' | 'DIRECT';
+
 export class StartConversationDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
@@ -61,6 +63,9 @@ export class MessageResponse {
 
   @ApiProperty({ example: null, nullable: true })
   readAt: Date | null;
+
+  @ApiProperty({ example: null, nullable: true })
+  deliveredAt: Date | null;
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
   createdAt: Date;
@@ -127,6 +132,7 @@ export interface GetMessagesOutput {
   content: string | null;
   type: string;
   readAt: Date | null;
+  deliveredAt: Date | null;
   createdAt: Date;
 }
 
@@ -138,4 +144,23 @@ export interface StartConversationInput {
 export interface AcceptConversationInput {
   conversationId: string;
   userId: string;
+}
+
+export class UpdatePreferenceDTO {
+  @ApiProperty({ enum: ['DEFAULT', 'CRIMSON', 'COBALT', 'FOREST', 'AMBER', 'SLATE'], example: 'DEFAULT' })
+  @IsString()
+  theme: string;
+}
+
+export interface ConversationPreferenceSummary {
+  isArchived: boolean;
+  theme: string;
+  backgroundUrl: string | null;
+}
+
+export interface GetMessagesResult {
+  messages: GetMessagesOutput[];
+  threadType: ChatThreadTypeParam;
+  otherUserId: string;
+  preference: ConversationPreferenceSummary | null;
 }

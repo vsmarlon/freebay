@@ -20,10 +20,14 @@ class ProductListPage extends ConsumerStatefulWidget {
   ConsumerState<ProductListPage> createState() => _ProductListPageState();
 }
 
-class _ProductListPageState extends ConsumerState<ProductListPage> {
+class _ProductListPageState extends ConsumerState<ProductListPage>
+    with AutomaticKeepAliveClientMixin {
   final _searchController = TextEditingController();
   bool _showFilters = false;
   Timer? _debounceTimer;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void dispose() {
@@ -46,6 +50,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final searchQuery = ref.watch(searchQueryProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -67,7 +72,9 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
               IconButton(
                 icon: Icon(
                   _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                  color: context.isDark ? AppColors.white : AppColors.primaryContainer,
+                  color: context.isDark
+                      ? AppColors.white
+                      : AppColors.primaryContainer,
                 ),
                 onPressed: () => setState(() => _showFilters = !_showFilters),
               ),
@@ -101,9 +108,19 @@ class _ProductListPageState extends ConsumerState<ProductListPage> {
                       ref.read(selectedCategoryProvider.notifier).state = id,
                 );
               },
-              loading: () => const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
+              loading: () => Padding(
+                padding: const EdgeInsets.all(16),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.7,
+                  ),
+                  itemCount: 6,
+                  itemBuilder: (_, __) => const AppCard.skeleton(),
+                  physics: const NeverScrollableScrollPhysics(),
+                ),
               ),
               error: (err, _) => Padding(
                 padding: const EdgeInsets.all(16),

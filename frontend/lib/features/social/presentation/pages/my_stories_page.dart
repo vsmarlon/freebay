@@ -9,6 +9,7 @@ import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final userStoriesProvider =
     FutureProvider.family<List<StoryEntity>, String>((ref, userId) async {
@@ -67,7 +68,8 @@ class MyStoriesPage extends ConsumerWidget {
                 return Column(
                   children: [
                     BrutalistBreadcrumb(items: [
-                      BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                      BreadcrumbItem(
+                          label: 'Perfil', onTap: () => context.pop()),
                       const BreadcrumbItem(label: 'Minhas Hist\u00f3rias'),
                     ]),
                     Expanded(
@@ -80,14 +82,16 @@ class MyStoriesPage extends ConsumerWidget {
                                 onTap: () => context.push('/create-story'),
                                 child: Container(
                                   height: 48,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
                                   decoration: const BoxDecoration(
                                     gradient: AppColors.brutalistGradient,
                                   ),
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.add, color: AppColors.onPrimary),
+                                      Icon(Icons.add,
+                                          color: AppColors.onPrimary),
                                       Spacing.hSm,
                                       Text(
                                         'Criar hist\u00f3ria',
@@ -107,7 +111,8 @@ class MyStoriesPage extends ConsumerWidget {
                               },
                               child: GridView.builder(
                                 padding: const EdgeInsets.all(16),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
                                   crossAxisSpacing: 8,
                                   mainAxisSpacing: 8,
@@ -116,7 +121,8 @@ class MyStoriesPage extends ConsumerWidget {
                                 itemCount: stories.length,
                                 itemBuilder: (context, index) {
                                   final story = stories[index];
-                                  return _buildStoryTile(context, ref, story, isDark);
+                                  return _buildStoryTile(
+                                      context, ref, story, isDark);
                                 },
                               ),
                             ),
@@ -124,14 +130,29 @@ class MyStoriesPage extends ConsumerWidget {
                   ],
                 );
               },
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryContainer),
+              loading: () => const SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    _StoryRingSkeleton(),
+                    SizedBox(width: 16),
+                    _StoryRingSkeleton(),
+                    SizedBox(width: 16),
+                    _StoryRingSkeleton(),
+                    SizedBox(width: 16),
+                    _StoryRingSkeleton(),
+                    SizedBox(width: 16),
+                    _StoryRingSkeleton(),
+                  ],
+                ),
               ),
               error: (err, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    const Icon(Icons.error_outline,
+                        size: 48, color: AppColors.error),
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar hist\u00f3rias',
@@ -164,7 +185,8 @@ class MyStoriesPage extends ConsumerWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.zero,
-              border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
+              border: Border.all(
+                  color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
               image: story.imageUrl.isNotEmpty
                   ? DecorationImage(
                       image: NetworkImage(story.imageUrl),
@@ -242,6 +264,21 @@ class MyStoriesPage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _StoryRingSkeleton extends StatelessWidget {
+  const _StoryRingSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        ShimmerBlock(width: 64, height: 64),
+        SizedBox(height: 8),
+        ShimmerBlock(height: 12, width: 50),
+      ],
     );
   }
 }

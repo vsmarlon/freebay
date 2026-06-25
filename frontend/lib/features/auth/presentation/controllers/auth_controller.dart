@@ -10,7 +10,6 @@ import 'package:freebay/features/auth/domain/usecases/request_password_recovery_
 import 'package:freebay/features/auth/domain/usecases/verify_password_recovery_code_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/reset_password_usecase.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
@@ -27,16 +26,22 @@ final getCurrentUserUsecaseProvider =
     Provider((ref) => GetCurrentUserUsecase(ref.watch(authRepositoryProvider)));
 final guestLoginUsecaseProvider =
     Provider((ref) => GuestLoginUsecase(ref.watch(authRepositoryProvider)));
-final requestPasswordRecoveryUsecaseProvider =
-    Provider((ref) => RequestPasswordRecoveryUsecase(ref.watch(authRepositoryProvider)));
-final verifyPasswordRecoveryCodeUsecaseProvider =
-    Provider((ref) => VerifyPasswordRecoveryCodeUsecase(ref.watch(authRepositoryProvider)));
+final requestPasswordRecoveryUsecaseProvider = Provider(
+    (ref) => RequestPasswordRecoveryUsecase(ref.watch(authRepositoryProvider)));
+final verifyPasswordRecoveryCodeUsecaseProvider = Provider((ref) =>
+    VerifyPasswordRecoveryCodeUsecase(ref.watch(authRepositoryProvider)));
 final resetPasswordUsecaseProvider =
     Provider((ref) => ResetPasswordUsecase(ref.watch(authRepositoryProvider)));
+
+// Whether the post-login onboarding carousel has been seen, seeded once
+// during auth init alongside the session itself so the router's redirect
+// can read it synchronously instead of awaiting secure storage on every nav.
+final hasSeenOnboardingProvider = StateProvider<bool>((ref) => false);
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<UserEntity?>>((ref) {
   return AuthController(
+    ref,
     ref.watch(loginUsecaseProvider),
     ref.watch(registerUsecaseProvider),
     ref.watch(logoutUsecaseProvider),
@@ -50,6 +55,7 @@ final authControllerProvider =
 
 // Controller
 class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
+  final Ref _ref;
   final LoginUsecase _loginUsecase;
   final RegisterUsecase _registerUsecase;
   final LogoutUsecase _logoutUsecase;
@@ -60,6 +66,7 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
   final ResetPasswordUsecase _resetPasswordUsecase;
 
   AuthController(
+    this._ref,
     this._loginUsecase,
     this._registerUsecase,
     this._logoutUsecase,
@@ -75,13 +82,16 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
   Future<void> _initAuth() async {
     state = const AsyncValue.loading();
 
+    final hasSeenOnboarding = await StorageService.getHasSeenOnboarding();
+    _ref.read(hasSeenOnboardingProvider.notifier).state = hasSeenOnboarding;
+
     final token = await StorageService.getToken();
     if (token == null) {
       state = const AsyncValue.data(null);
       return;
     }
 
-    final result = await _getCurrentUserUsecase(NoParams());
+    final result = await _getCurrentUserUsecase();
 
     result.fold(
       (failure) async {
@@ -120,7 +130,7 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
 
   Future<void> loginAsGuest() async {
     state = const AsyncValue.loading();
-    final result = await _guestLoginUsecase(NoParams());
+    final result = await _guestLoginUsecase();
 
     result.fold(
         (failure) =>
@@ -130,7 +140,7 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
 
   Future<void> logout() async {
     state = const AsyncValue.loading();
-    final result = await _logoutUsecase(NoParams());
+    final result = await _logoutUsecase();
 
     result.fold(
         (failure) =>
@@ -139,7 +149,8 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
   }
 
   Future<void> requestPasswordRecovery(String email) async {
-    await _requestPasswordRecoveryUsecase(RequestPasswordRecoveryParams(email: email));
+    await _requestPasswordRecoveryUsecase(
+        RequestPasswordRecoveryParams(email: email));
   }
 
   Future<bool> verifyPasswordRecoveryCode(String email, String code) async {
@@ -149,9 +160,24 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     return result.fold((_) => false, (value) => value);
   }
 
-  Future<void> resetPassword(String email, String code, String newPassword) async {
+  Future<void> resetPassword(
+      String email, String code, String newPassword) async {
     await _resetPasswordUsecase(
       ResetPasswordParams(email: email, code: code, newPassword: newPassword),
     );
+  }
+
+  Future<void> tryRefreshSession() async {
+    state = const AsyncValue.loading();
+    final result = await _getCurrentUserUsecase();
+    result.fold(
+      (_) => state = const AsyncValue.data(null),
+      (user) => state = AsyncValue.data(user),
+    );
+  }
+
+  Future<void> forceLogout() async {
+    await StorageService.clearTokens();
+    state = const AsyncValue.data(null);
   }
 }

@@ -42,46 +42,59 @@ class PageHeader extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (leading != null) ...[
-                leading!,
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: text,
-                        style: TextStyle(
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 0.5,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      if (exclamation != null)
+          SizedBox(
+            height: 48,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (leading != null) ...[
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: leading!,
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
                         TextSpan(
-                          text: exclamation,
+                          text: text,
                           style: TextStyle(
                             fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             fontStyle: FontStyle.italic,
-                            color: AppColors.primaryContainer,
+                            letterSpacing: 0.5,
+                            color: context.textPrimary,
                           ),
                         ),
-                    ],
+                        if (exclamation != null)
+                          TextSpan(
+                            text: exclamation,
+                            style: TextStyle(
+                              fontFamily: AppTypography.headlineFontFamily,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.primaryContainer,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              if (actions != null) ...actions!,
-            ],
+                if (actions != null)
+                  ...actions!.map((a) => SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: a,
+                      )),
+              ],
+            ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),

@@ -20,5 +20,6 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
     PrismaWalletRepository,
     PrismaService,
   ],
+  exports: [PrismaOrderRepository],
 })
 export class OrdersModule {}

@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OpenDisputeUseCase, GetDisputeUseCase, GetUserDisputesUseCase, SubmitEvidenceUseCase, ResolveDisputeUseCase } from './dispute.usecase';
+import { OpenDisputeUseCase } from './open-dispute.usecase';
+import { GetDisputeUseCase } from './get-dispute.usecase';
+import { GetUserDisputesUseCase } from './get-user-disputes.usecase';
+import { SubmitEvidenceUseCase } from './submit-evidence.usecase';
+import { ResolveDisputeUseCase } from './resolve-dispute.usecase';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';

@@ -10,6 +10,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -127,11 +128,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
+                      ? const ShimmerBlock(width: 80, height: 80)
                       : const Text(
                           'Salvar',
                           style: TextStyle(
@@ -321,8 +318,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 ),
               ),
               loading: () => const Center(
-                child: CircularProgressIndicator(
-                    color: AppColors.primaryContainer),
+                child: ShimmerBlock(width: 20, height: 20),
               ),
               error: (err, _) => Center(
                 child: Column(

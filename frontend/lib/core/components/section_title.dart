@@ -6,12 +6,22 @@ class SectionTitle extends StatelessWidget {
   final String text;
   final bool isDark;
   final Widget? trailing;
+  final double fontSize;
 
   const SectionTitle({
     super.key,
     required this.text,
     this.isDark = false,
     this.trailing,
+    this.fontSize = 48,
+  });
+
+  const SectionTitle.compact({
+    super.key,
+    required this.text,
+    this.isDark = false,
+    this.trailing,
+    this.fontSize = 18,
   });
 
   @override
@@ -25,7 +35,7 @@ class SectionTitle extends StatelessWidget {
             text.toUpperCase(),
             style: TextStyle(
               fontFamily: AppTypography.headlineFontFamily,
-              fontSize: 48,
+              fontSize: fontSize,
               fontWeight: FontWeight.bold,
               fontStyle: FontStyle.italic,
               letterSpacing: -2,

@@ -9,6 +9,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 
 class PurchasesPage extends ConsumerStatefulWidget {
@@ -83,8 +84,31 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
 
   Widget _buildBody(PurchasesListState state) {
     if (state.isLoading && state.orders.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryContainer),
+      return SkeletonList(
+        itemCount: 5,
+        itemBuilder: (_, i) => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+              ShimmerBlock(width: 80, height: 80),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShimmerBlock(height: 16, width: 140),
+                    SizedBox(height: 4),
+                    ShimmerBlock(height: 12, width: 80),
+                    SizedBox(height: 4),
+                    ShimmerBlock(height: 12, width: 100),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8),
+              ShimmerBlock(height: 20, width: 60),
+            ],
+          ),
+        ),
       );
     }
 
@@ -166,13 +190,8 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
         itemBuilder: (context, index) {
           if (index == state.orders.length) {
             return const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryContainer,
-                  strokeWidth: 2,
-                ),
-              ),
+              padding: EdgeInsets.all(16),
+              child: ShimmerBlock(height: 80),
             );
           }
 
@@ -236,16 +255,8 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                     ? CachedNetworkImage(
                         imageUrl: order.product!.imageUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primaryContainer,
-                            ),
-                          ),
-                        ),
+                        placeholder: (context, url) =>
+                            const ShimmerBlock(width: 80, height: 80),
                         errorWidget: (context, url, error) => const Icon(
                           Icons.image_outlined,
                           color: AppColors.onSurfaceVariant,

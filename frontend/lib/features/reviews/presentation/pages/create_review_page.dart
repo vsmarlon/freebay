@@ -10,6 +10,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
@@ -124,192 +125,188 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-            BrutalistBreadcrumb(items: [
-              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-              const BreadcrumbItem(label: 'Avaliar'),
-            ]),
-            Spacing.vMd,
-            UserAvatar(
-              imageUrl: widget.reviewedAvatarUrl,
-              size: AppAvatarSize.large,
-            ),
-            Spacing.vMd,
-            Text(
-              widget.reviewedName,
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDark
-                    ? AppColors.inverseOnSurface
-                    : AppColors.onSurface,
-              ),
-            ),
-            Spacing.vXs,
-            Text(
-              isBuyerReviewing ? 'VENDEDOR' : 'COMPRADOR',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 1.2,
-                color: AppColors.outline,
-              ),
-            ),
-            Spacing.vXl,
-            Container(
-              width: double.infinity,
-              color: isDark
-                  ? AppColors.surfaceContainerDark
-                  : AppColors.surfaceContainerLowest,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
+                  BrutalistBreadcrumb(items: [
+                    BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                    const BreadcrumbItem(label: 'Avaliar'),
+                  ]),
+                  Spacing.vMd,
+                  UserAvatar(
+                    imageUrl: widget.reviewedAvatarUrl,
+                    size: AppAvatarSize.large,
+                  ),
+                  Spacing.vMd,
                   Text(
-                    'Como foi sua experiência?',
+                    widget.reviewedName,
                     style: TextStyle(
                       fontFamily: AppTypography.headlineFontFamily,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                       color: isDark
                           ? AppColors.inverseOnSurface
                           : AppColors.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  StarRatingInput(
-                    value: _score,
-                    onChanged: (value) => setState(() => _score = value),
-                    size: 48,
-                    enabled: !_isSubmitting,
-                  ),
-                  Spacing.vSm,
+                  Spacing.vXs,
                   Text(
-                    _getScoreLabel(),
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: _score > 0
-                          ? AppColors.primaryContainer
-                          : AppColors.outline,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Spacing.vLg,
-            Container(
-              width: double.infinity,
-              color: isDark
-                  ? AppColors.surfaceContainerDark
-                  : AppColors.surfaceContainerLowest,
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Comentário (opcional)',
+                    isBuyerReviewing ? 'VENDEDOR' : 'COMPRADOR',
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
+                      letterSpacing: 1.2,
                       color: AppColors.outline,
                     ),
                   ),
-                  Spacing.vSm,
-                  TextField(
-                    controller: _commentController,
-                    maxLines: 4,
-                    maxLength: 500,
-                    enabled: !_isSubmitting,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 14,
-                      color: isDark
-                          ? AppColors.inverseOnSurface
-                          : AppColors.onSurface,
+                  Spacing.vXl,
+                  Container(
+                    width: double.infinity,
+                    color: isDark
+                        ? AppColors.surfaceContainerDark
+                        : AppColors.surfaceContainerLowest,
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Como foi sua experiência?',
+                          style: TextStyle(
+                            fontFamily: AppTypography.headlineFontFamily,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.inverseOnSurface
+                                : AppColors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        StarRatingInput(
+                          value: _score,
+                          onChanged: (value) => setState(() => _score = value),
+                          size: 48,
+                          enabled: !_isSubmitting,
+                        ),
+                        Spacing.vSm,
+                        Text(
+                          _getScoreLabel(),
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: _score > 0
+                                ? AppColors.primaryContainer
+                                : AppColors.outline,
+                          ),
+                        ),
+                      ],
                     ),
-                    decoration: InputDecoration(
-                      hintText: 'Conte como foi sua experiência...',
-                      hintStyle: TextStyle(
-                        color: AppColors.outline,
+                  ),
+                  Spacing.vLg,
+                  Container(
+                    width: double.infinity,
+                    color: isDark
+                        ? AppColors.surfaceContainerDark
+                        : AppColors.surfaceContainerLowest,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Comentário (opcional)',
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.5,
+                            color: AppColors.outline,
+                          ),
+                        ),
+                        Spacing.vSm,
+                        TextField(
+                          controller: _commentController,
+                          maxLines: 4,
+                          maxLength: 500,
+                          enabled: !_isSubmitting,
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 14,
+                            color: isDark
+                                ? AppColors.inverseOnSurface
+                                : AppColors.onSurface,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Conte como foi sua experiência...',
+                            hintStyle: TextStyle(
+                              color: AppColors.outline,
+                            ),
+                            filled: true,
+                            fillColor: isDark
+                                ? AppColors.surfaceDark
+                                : AppColors.surface,
+                            enabledBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.zero,
+                              borderSide: BorderSide(color: AppColors.outline),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.zero,
+                              borderSide: BorderSide(
+                                color: AppColors.primaryContainer,
+                                width: 2,
+                              ),
+                            ),
+                            disabledBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.zero,
+                              borderSide:
+                                  BorderSide(color: AppColors.outlineVariant),
+                            ),
+                            counterStyle: TextStyle(
+                              fontFamily: AppTypography.fontFamily,
+                              fontSize: 12,
+                              color: AppColors.outline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Spacing.vXl,
+                  SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: _score > 0 && !_isSubmitting
+                            ? AppColors.brutalistGradient
+                            : null,
+                        color: _score == 0 || _isSubmitting
+                            ? AppColors.surfaceContainerHighest
+                            : null,
                       ),
-                      filled: true,
-                      fillColor: isDark
-                          ? AppColors.surfaceDark
-                          : AppColors.surface,
-                      enabledBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.zero,
-                        borderSide: BorderSide(color: AppColors.outline),
-                      ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.zero,
-                        borderSide: BorderSide(
-                          color: AppColors.primaryContainer,
-                          width: 2,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _score > 0 && !_isSubmitting
+                              ? _submitReview
+                              : null,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: _isSubmitting
+                                  ? const ShimmerBlock(width: 20, height: 20)
+                                  : Text(
+                                      'Enviar avaliação',
+                                      style: TextStyle(
+                                        fontFamily: AppTypography.fontFamily,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: _score > 0
+                                            ? AppColors.onPrimary
+                                            : AppColors.outline,
+                                      ),
+                                    ),
+                            ),
+                          ),
                         ),
                       ),
-                      disabledBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.zero,
-                        borderSide: BorderSide(color: AppColors.outlineVariant),
-                      ),
-                      counterStyle: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 12,
-                        color: AppColors.outline,
-                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            Spacing.vXl,
-            SizedBox(
-              width: double.infinity,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: _score > 0 && !_isSubmitting
-                      ? AppColors.brutalistGradient
-                      : null,
-                  color: _score == 0 || _isSubmitting
-                      ? AppColors.surfaceContainerHighest
-                      : null,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _score > 0 && !_isSubmitting ? _submitReview : null,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.onPrimary,
-                                ),
-                              )
-                            : Text(
-                                'Enviar avaliação',
-                                style: TextStyle(
-                                  fontFamily: AppTypography.fontFamily,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: _score > 0
-                                      ? AppColors.onPrimary
-                                      : AppColors.outline,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/core/components/spacing.dart';
@@ -48,21 +49,32 @@ void showProfileSettingsSheet(BuildContext context) {
                           : 'Sistema',
                   style: const TextStyle(color: AppColors.mediumGray),
                 ),
-                trailing: PopupMenuButton<ThemeMode>(
-                  icon: const Icon(Icons.chevron_right,
-                      color: AppColors.mediumGray),
-                  onSelected: (mode) {
-                    consumerRef
-                        .read(themeModeProvider.notifier)
-                        .setTheme(mode);
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                        value: ThemeMode.system, child: Text('Sistema')),
-                    const PopupMenuItem(
-                        value: ThemeMode.light, child: Text('Claro')),
-                    const PopupMenuItem(
-                        value: ThemeMode.dark, child: Text('Escuro')),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ThemeOption(
+                      label: 'S',
+                      isSelected: currentThemeMode == ThemeMode.system,
+                      onTap: () => consumerRef
+                          .read(themeModeProvider.notifier)
+                          .setTheme(ThemeMode.system),
+                    ),
+                    const SizedBox(width: 4),
+                    _ThemeOption(
+                      label: 'L',
+                      isSelected: currentThemeMode == ThemeMode.light,
+                      onTap: () => consumerRef
+                          .read(themeModeProvider.notifier)
+                          .setTheme(ThemeMode.light),
+                    ),
+                    const SizedBox(width: 4),
+                    _ThemeOption(
+                      label: 'D',
+                      isSelected: currentThemeMode == ThemeMode.dark,
+                      onTap: () => consumerRef
+                          .read(themeModeProvider.notifier)
+                          .setTheme(ThemeMode.dark),
+                    ),
                   ],
                 ),
               ),
@@ -94,8 +106,7 @@ void showProfileSettingsSheet(BuildContext context) {
                   },
                 ),
                 trailing: FutureBuilder<bool>(
-                  future:
-                      consumerRef.read(biometryServiceProvider).isEnabled(),
+                  future: consumerRef.read(biometryServiceProvider).isEnabled(),
                   builder: (context, snapshot) {
                     if (snapshot.data == true) {
                       return Switch(
@@ -226,4 +237,46 @@ void showProfileSettingsSheet(BuildContext context) {
       );
     },
   );
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
+          border: Border.all(
+            color:
+                isSelected ? AppColors.primaryContainer : context.borderColor,
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.fontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: isSelected ? AppColors.onPrimary : context.textPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -1,0 +1,1 @@
+enum ChatThreadType { order, direct }

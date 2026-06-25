@@ -14,7 +14,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateReviewUseCase } from './usecases/create-review.usecase';
 import { GetUserReviewsUseCase } from './usecases/get-user-reviews.usecase';
 import { CanReviewOrderUseCase } from './usecases/can-review-order.usecase';
-import { CreateReviewDTO, GetUserReviewsQueryDTO, GetUserReviewsOutput } from './dtos/review.dto';
+import { CreateReviewDTO, GetUserReviewsQueryDTO } from './dtos/review.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';

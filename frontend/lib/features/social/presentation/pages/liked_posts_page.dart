@@ -9,6 +9,7 @@ import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
   final repository = SocialRepository();
@@ -55,7 +56,8 @@ class LikedPostsPage extends ConsumerWidget {
                 return Column(
                   children: [
                     BrutalistBreadcrumb(items: [
-                      BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
+                      BreadcrumbItem(
+                          label: 'Perfil', onTap: () => context.pop()),
                       const BreadcrumbItem(label: 'Posts Curtidos'),
                     ]),
                     Expanded(
@@ -71,7 +73,8 @@ class LikedPostsPage extends ConsumerWidget {
                               },
                               child: GridView.builder(
                                 padding: const EdgeInsets.all(8),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 3,
                                   crossAxisSpacing: 4,
                                   mainAxisSpacing: 4,
@@ -87,14 +90,25 @@ class LikedPostsPage extends ConsumerWidget {
                   ],
                 );
               },
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryContainer),
+              loading: () => Padding(
+                padding: const EdgeInsets.all(8),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 4,
+                    mainAxisSpacing: 4,
+                  ),
+                  itemCount: 9,
+                  itemBuilder: (_, __) => const ShimmerBlock(height: 120),
+                  physics: const NeverScrollableScrollPhysics(),
+                ),
               ),
               error: (err, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    const Icon(Icons.error_outline,
+                        size: 48, color: AppColors.error),
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar posts curtidos',
@@ -112,7 +126,6 @@ class LikedPostsPage extends ConsumerWidget {
     );
   }
 
-
   Widget _buildPostTile(BuildContext context, PostEntity post, bool isDark) {
     final imageUrl = post.imageUrl;
 
@@ -121,7 +134,8 @@ class LikedPostsPage extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
-          border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
+          border: Border.all(
+              color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
         ),
         child: imageUrl != null && imageUrl.isNotEmpty
             ? Image.network(

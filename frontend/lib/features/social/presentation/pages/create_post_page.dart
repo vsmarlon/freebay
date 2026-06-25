@@ -13,6 +13,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -117,14 +118,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                     ),
                     child: Center(
                       child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.white,
-                              ),
-                            )
+                          ? const ShimmerBlock(width: 20, height: 20)
                           : const Text(
                               'Publicar',
                               style: TextStyle(
@@ -156,12 +150,15 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       Container(
                         width: 40,
                         height: 40,
-                        color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
-                        child: const Icon(Icons.person, color: AppColors.mediumGray),
+                        color: isDark
+                            ? AppColors.surfaceContainerDark
+                            : AppColors.lightGray,
+                        child: const Icon(Icons.person,
+                            color: AppColors.mediumGray),
                       ),
                       Spacing.hSm,
                       Text(
-                        'Publicacao social',
+                        'Publicação social',
                         style: TextStyle(
                           fontFamily: AppTypography.headlineFontFamily,
                           fontWeight: FontWeight.w700,
@@ -180,13 +177,15 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       controller: _contentController,
                       maxLines: null,
                       minLines: 5,
-                    style: TextStyle(
+                      style: TextStyle(
                         color: isDark ? AppColors.white : AppColors.onSurface,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Compartilhe uma atualizacao, ideia ou bastidor.',
+                        hintText:
+                            'Compartilhe uma atualização, ideia ou bastidor.',
                         hintStyle: TextStyle(
-                          color: isDark ? AppColors.mediumGray : AppColors.outline,
+                          color:
+                              isDark ? AppColors.mediumGray : AppColors.outline,
                         ),
                         border: InputBorder.none,
                       ),
@@ -206,10 +205,12 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                           top: 8,
                           right: 8,
                           child: GestureDetector(
-                            onTap: () => setState(() => _selectedImagePath = null),
+                            onTap: () =>
+                                setState(() => _selectedImagePath = null),
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              color: AppColors.onSurface.withValues(alpha: 0.54),
+                              color:
+                                  AppColors.onSurface.withValues(alpha: 0.54),
                               child: const Icon(
                                 Icons.close,
                                 color: AppColors.onPrimary,
@@ -226,8 +227,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                     onTap: _pickImage,
                     child: Container(
                       width: double.infinity,
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 16),
                       color: isDark
                           ? AppColors.surfaceContainerDark
                           : AppColors.surfaceContainer,
@@ -245,7 +246,9 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                                 : 'Trocar imagem',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.white : AppColors.onSurface,
+                              color: isDark
+                                  ? AppColors.white
+                                  : AppColors.onSurface,
                             ),
                           ),
                         ],
@@ -263,7 +266,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
   Widget _buildSeparationCard(BuildContext context, bool isDark) {
     return Container(
-      color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainer,
+      color:
+          isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainer,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +283,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
           ),
           Spacing.vSm,
           Text(
-            'Use esta tela para posts do feed. Para vender um item, crie um anuncio separado para manter a experiencia mais limpa.',
+            'Use esta tela para posts do feed. Para vender um item, crie um anúncio separado para manter a experiência mais limpa.',
             style: TextStyle(
               color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
               height: 1.4,
@@ -299,18 +303,20 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.sell_outlined, color: AppColors.primaryContainer),
+                  const Icon(Icons.sell_outlined,
+                      color: AppColors.primaryContainer),
                   Spacing.hSm,
                   Expanded(
                     child: Text(
-                      'Criar anuncio de venda',
+                      'Criar anúncio de venda',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: isDark ? AppColors.white : AppColors.onSurface,
                       ),
                     ),
                   ),
-                  const Icon(Icons.arrow_forward, color: AppColors.primaryContainer),
+                  const Icon(Icons.arrow_forward,
+                      color: AppColors.primaryContainer),
                 ],
               ),
             ),

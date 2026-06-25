@@ -128,7 +128,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
                         ? (_isPaused ? 0.0 : null)
                         : 0.0,
                 backgroundColor: AppColors.onPrimary.withValues(alpha: 0.3),
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
               ),
             ),
           );
@@ -285,9 +286,7 @@ class _StoryPageState extends State<_StoryPage>
           ),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
-            return const CircularProgressIndicator(
-              color: AppColors.primaryContainer,
-            );
+            return Container(color: AppColors.surfaceDark);
           },
         ),
       ),

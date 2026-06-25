@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/pages/story_viewer_page.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class StoryViewerWrapper extends ConsumerWidget {
   final String? indexParam;
@@ -39,8 +40,22 @@ class StoryViewerWrapper extends ConsumerWidget {
           initialIndex: initialIndex,
         );
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      loading: () => const SkeletonPage(
+        child: Column(
+          children: [
+            ShimmerBlock(height: 4, width: double.infinity),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                ShimmerBlock(width: 40, height: 40),
+                SizedBox(width: 12),
+                ShimmerBlock(height: 14, width: 120),
+              ],
+            ),
+            SizedBox(height: 40),
+            ShimmerBlock(height: 400),
+          ],
+        ),
       ),
       error: (err, _) => Scaffold(
         body: Center(child: Text('Error: $err')),

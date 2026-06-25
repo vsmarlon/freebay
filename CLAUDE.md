@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Always run `cd frontend && flutter analyze` after any frontend change and fix every issue it reports (warnings and infos, not just errors) before considering the work done — zero-issue output is the bar, not "no errors."**
+
 ---
 
 ## Commands
@@ -89,11 +91,48 @@ async execute(input: Input): Promise<Either<AppError, Output>> {
   return right({ entity });
 }
 
-// controller checks the result and throws/returns accordingly (see existing
-// controllers for the project's response-shaping convention before adding new ones)
+// controller checks the result (see full convention below)
 ```
 
 `AppError` subclasses live in `shared/core/errors.ts` (`NotFoundError`, `UnauthorizedError`, `ForbiddenError`, `EmailAlreadyExistsError`, `InvalidCredentialsError`, `InsufficientBalanceError`, etc.) and carry `code`, `message`, `statusCode`.
+
+### Controller response-shaping convention
+
+Every controller follows the same pattern: query a usecase, check `isLeft()`/`isRight()`, return early on error. Three interceptors handle the rest:
+
+1. **`EitherInterceptor`** (`shared/http/response.interceptor.ts` — innermost) — catches raw `{ _tag: 'left', value }` Either objects returned from controllers and throws them as `AppError` exceptions so Nest's exception filter can handle them. On `right()`, it unwraps `either.value` and passes the inner value to the next interceptor.
+2. **`TransformInterceptor`** (`shared/http/transform.interceptor.ts` — middle) — wraps every successful response in `{ success: true, data: <value> }`.
+3. **`AllExceptionsFilter`** (`shared/http/exception-filter.ts` — global filter) — catches all thrown exceptions and renders `{ success: false, error: { code, message }, timestamp, path }`.
+
+**Register order matters** (in `main.ts`): `LoggingInterceptor` (outermost) → `TransformInterceptor` → `EitherInterceptor` (innermost, runs first). Because `EitherInterceptor` unwraps `left()`/`right()` before `TransformInterceptor` wraps the value, error responses are correctly shaped as HTTP errors, not 200 OK with an Either buried in `data`.
+
+**Canonical controller pattern:**
+
+```typescript
+@Post('resource')
+@HttpCode(HttpStatus.CREATED)
+@ApiDoc({ summary: '…', bodyType: …, responseStatus: 201, auth: true })
+async create(@CurrentUser() user: AuthUser, @Body() body: CreateDTO) {
+  const result = await this.someUseCase.execute({ userId: user.userId, ...body });
+  if (result.isLeft()) {
+    // EitherInterceptor will throw this as an AppError; AllExceptionsFilter shapes the response
+    return left(new AppError(result.value.code, result.value.message));
+  }
+  return result.value; // TransformInterceptor wraps in { success: true, data: … }
+}
+```
+
+Do NOT `throw` business errors in controllers — return `left(new AppError(…))` so `EitherInterceptor` handles them consistently. The exceptions are Nest guards (`ForbiddenException`, `BadRequestException` for invalid file uploads) which are caught by `AllExceptionsFilter`.
+
+### One-class-per-usecase rule
+
+Every use case file must contain **exactly one exported class**. This keeps each file focused and testable (`let sut: SomeUseCase`). Current exceptions tracked in `TODO.md`:
+- `modules/social/usecases/social.usecase.ts` — 9 classes (refactor pending)
+- `modules/chat/usecases/chat.usecase.ts` — 5 classes
+- `modules/disputes/usecases/dispute.usecase.ts` — 5 classes
+- `modules/reports/usecases/report.usecase.ts` — 3 classes
+
+New use cases should always be one-per-file.
 
 ### Auth & guards
 
@@ -120,6 +159,79 @@ DTOs in `modules/<feature>/dtos/` use **class-validator** decorators (`@IsString
 - Domain repository interfaces are not used — repositories are concrete, injected Prisma classes; keep method signatures strongly typed (real enums, not bare `string`).
 - Files: kebab-case (`register.usecase.ts`, `prisma-user.repository.ts`). Classes: PascalCase. Test files: `.spec.ts`, colocated next to the file under test.
 - Rate limiting via `@nestjs/throttler` is applied globally (`APP_GUARD` in `app.module.ts`) with `short`/`medium`/`long` buckets; sensitive routes (e.g. `auth/register`) add a tighter `@Throttle(...)` override.
+- **Throttler buckets** (from `app.module.ts`): `short` = 10 req/s, `medium` = 60 req/min (default), `long` = 1000 req/h. Override per route with `@Throttle({ short: { limit, ttl } })`.
+
+### WebSocket / Chat
+
+Chat uses **Socket.IO** with a dedicated NestJS WebSocket gateway at `modules/chat/chat.gateway.ts` on namespace `/chat`.
+
+**Auth handshake:** The client sends a JWT access token via `client.handshake.auth.token` (or the `Authorization` header). The gateway validates it with `JwtTokenValidatorService` and disconnects unauthenticated clients.
+
+**Two chat models:**
+- **Order chat** — `ChatMessage` model in Prisma, linked to an `Order`. Used for buyer-seller communication about a specific order. REST endpoints in `chat.controller.ts`.
+- **Direct Messages** — `DirectConversation` (two-party) + `DirectMessage` models. Conversation-level REST endpoints, message-level Socket.IO events.
+
+WebSocket events mirror CRUD operations on messages. For history/management, use the REST endpoints.
+
+### Frontend routing & guards
+
+Routes are configured in `frontend/lib/core/router/app_router.dart` using **go_router** with a `ShellRoute` (bottom nav tabs). Guard logic uses Riverpod state:
+
+- **Auth gate:** `redirect` callback checks the auth provider. Unauthenticated users are redirected to `/login` except for public routes (marked via a list of public paths).
+- **Guest vs authenticated:** Guest users can browse public content but are redirected to login for guarded actions.
+- **Page transitions:** `CustomTransitionPage` with slide + fade. **Note:** current duration is 250–300ms with `easeInCubic`/`easeOutCubic` — this violations the design-system rule of 150ms/`Curves.linear` (tracked in `TODO.md`).
+
+### Mapper pattern
+
+Prisma models are never returned directly as API responses. Each module has a `mappers/` directory with pure functions that transform Prisma types → API response types:
+
+```typescript
+// modules/users/mappers/user.mapper.ts
+export function toUserResponse(user: User): UserResponse {
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl,
+    bio: user.bio,
+    // … only expose what the API consumer needs; never leak passwordHash, etc.
+  };
+}
+```
+
+Mappers handle null/default values and ensure response shape consistency. They are called from controllers or usecases before returning data.
+
+### Running seeds
+
+Seed data is at `db/seeds/001_seed_dev.sql` — raw SQL for Prisma/PostgreSQL. Run manually:
+
+```bash
+# Using psql or any Postgres client against your dev DB
+psql -h localhost -U postgres -d freebay -f db/seeds/001_seed_dev.sql
+```
+
+The seed populates: demo users, categories, sample products, and social posts for local development. There is no npm script wrapping it — run it directly.
+
+### Integration tests
+
+Integration tests live alongside unit specs (`*.spec.ts`) but run under a separate Jest config (`jest.config.integration.js`) against `.env.test`:
+
+```bash
+npm run test:integration   # syncs schema + runs integration suite
+npm run test:integration:watch
+npm run test:integration:cov
+```
+
+The `.env.test` database is synced via `prisma db push --accept-data-loss` before each run. Integration tests are **not** included in plain `npm test`. They require a local PostgreSQL + Redis instance (use `docker-compose.test.yml` from the repo root).
+
+### Swagger UI
+
+Swagger is configured in `main.ts` via `@nestjs/swagger` `SwaggerModule`. The UI is available at:
+
+```
+http://localhost:{PORT}/api
+```
+
+All endpoints are documented with `@ApiDoc()` (a composite decorator from `shared/swagger/api-doc.decorator`). Request DTOs use `@ApiProperty` for schema generation. Bearer auth is configured globally — click "Authorize" in Swagger UI to add a JWT token.
 
 ---
 
@@ -156,6 +268,20 @@ lib/
 ```
 
 Note: the `dartz` package is also a dependency, but `shared/either/either.dart` is the project's own Either — prefer it for consistency within a feature unless the surrounding code already uses `dartz`.
+
+### Tab pages inside the swipeable shell
+
+`AppShell` (`core/components/app_shell.dart`) hosts the 5 bottom-nav tabs in a single `PageView` that keeps every tab mounted simultaneously. Any page registered there must:
+- Mix in `AutomaticKeepAliveClientMixin` (`wantKeepAlive => true`, call `super.build(context)` at the top of `build()`) so swiping away and back doesn't reset scroll position or rebuild from scratch.
+- Guard data-loading calls (e.g. `loadFeed()`) so they run once per provider lifetime — only on first load or an explicit pull-to-refresh/`invalidate()` — never unconditionally in `initState`/`build`.
+- Prefer non-`autoDispose` Riverpod providers (`StateNotifierProvider`, plain `FutureProvider`/`.family`) for tab data so state survives tab switches; only use `autoDispose` for screens outside the shell.
+
+### Entity codegen convention
+
+Every entity with JSON (de)serialization must use `@JsonSerializable()` (from `json_annotation`) with a generated `part 'x.g.dart'`, never a hand-written `fromJson`/`toJson`. If an entity needs custom preprocessing before mapping (e.g. flattening a nested API shape), do that preprocessing on the raw `Map` and then call the generated `_$XFromJson`, rather than writing the whole mapping by hand. After adding or editing any `@JsonSerializable`/`@freezed` class, run:
+```
+cd frontend && flutter pub run build_runner build --delete-conflicting-outputs
+```
 
 ### Design System: "The Digital Brutalist"
 

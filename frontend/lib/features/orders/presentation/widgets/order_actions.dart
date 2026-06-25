@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/app_button.dart';
 
 class OrderActions extends StatelessWidget {
   final OrderEntity order;
@@ -64,54 +64,59 @@ class OrderActions extends StatelessWidget {
     final List<Widget> actions = [];
 
     if (isBuyer && order.status == OrderStatus.delivered) {
-      actions.add(_BrutalistButton(
+      actions.add(AppButton(
         label: 'Confirmar Recebimento',
         icon: Icons.check,
-        isPrimary: true,
+        variant: AppButtonVariant.primary,
         isLoading: isLoading,
         onPressed: onConfirmDelivery,
+        width: double.infinity,
       ));
       actions.add(const SizedBox(height: 12));
     }
 
     if (canReview && reviewType != null) {
       final reviewLabel = isBuyer ? 'Avaliar Vendedor' : 'Avaliar Comprador';
-      actions.add(_BrutalistButton(
+      actions.add(AppButton(
         label: reviewLabel,
         icon: Icons.star_outlined,
-        isPrimary: actions.isEmpty,
+        variant: actions.isEmpty
+            ? AppButtonVariant.primary
+            : AppButtonVariant.secondary,
         onPressed: onReview,
+        width: double.infinity,
       ));
       actions.add(const SizedBox(height: 12));
     }
 
-    actions.add(_BrutalistButton(
+    actions.add(AppButton(
       label: 'Enviar Mensagem',
       icon: Icons.chat_outlined,
-      isPrimary: false,
+      variant: AppButtonVariant.secondary,
       onPressed: onChat,
+      width: double.infinity,
     ));
 
     if (_canDispute()) {
       actions.add(const SizedBox(height: 12));
-      actions.add(_BrutalistButton(
+      actions.add(AppButton(
         label: 'Abrir Disputa',
         icon: Icons.gavel_outlined,
-        isPrimary: false,
-        isDanger: true,
+        variant: AppButtonVariant.danger,
         onPressed: onDispute,
+        width: double.infinity,
       ));
     }
 
     if (_canCancel()) {
       actions.add(const SizedBox(height: 12));
-      actions.add(_BrutalistButton(
+      actions.add(AppButton(
         label: 'Cancelar Pedido',
         icon: Icons.close,
-        isPrimary: false,
-        isDanger: true,
+        variant: AppButtonVariant.danger,
         isLoading: isLoading,
         onPressed: onCancel,
+        width: double.infinity,
       ));
     }
 
@@ -125,144 +130,5 @@ class OrderActions extends StatelessWidget {
 
   bool _canCancel() {
     return isBuyer && order.status == OrderStatus.pending;
-  }
-}
-
-class _BrutalistButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isPrimary;
-  final bool isDanger;
-  final bool isLoading;
-  final VoidCallback? onPressed;
-
-  const _BrutalistButton({
-    required this.label,
-    required this.icon,
-    this.isPrimary = false,
-    this.isDanger = false,
-    this.isLoading = false,
-    this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = onPressed == null || isLoading;
-
-    if (isPrimary && !isDanger) {
-      return Container(
-        width: double.infinity,
-        height: 52,
-        decoration: BoxDecoration(
-          gradient: isDisabled ? null : AppColors.brutalistGradient,
-          color: isDisabled ? context.surfaceMidColor : null,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: isDisabled ? null : onPressed,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isLoading)
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: context.colors.onPrimary,
-                      ),
-                    )
-                  else ...[
-                    Icon(
-                      icon,
-                      color: isDisabled
-                          ? context.textSecondary
-                          : context.colors.onPrimary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isDisabled
-                            ? context.textSecondary
-                            : context.colors.onPrimary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      height: 52,
-      decoration: BoxDecoration(
-        color: isDanger
-            ? AppColors.error.withValues(alpha: 0.1)
-            : context.surfaceMidColor,
-        border: Border.all(
-          color: isDanger
-              ? AppColors.error.withValues(alpha: 0.3)
-              : context.borderColor.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isDisabled ? null : onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isLoading)
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: isDanger
-                          ? AppColors.error
-                          : context.textPrimary,
-                    ),
-                  )
-                else ...[
-                  Icon(
-                    icon,
-                    color: isDanger
-                        ? AppColors.error
-                        : context.textPrimary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isDanger
-                          ? AppColors.error
-                          : context.textPrimary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

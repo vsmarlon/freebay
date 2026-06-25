@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/presentation/pages/splash_page.dart';
 import 'package:freebay/features/auth/presentation/pages/login_page.dart';
 import 'package:freebay/features/auth/presentation/pages/register_page.dart';
 import 'package:freebay/features/auth/presentation/pages/password_recovery_page.dart';
 import 'package:freebay/features/auth/presentation/pages/reset_password_page.dart';
+import 'package:freebay/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_details_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_search_page.dart';
@@ -37,6 +40,7 @@ import 'package:freebay/features/profile/presentation/pages/payment_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
 import 'package:freebay/features/chat/presentation/pages/new_chat_page.dart';
+import 'package:freebay/features/chat/presentation/pages/archived_chats_page.dart';
 import 'package:freebay/features/help/presentation/pages/faq_page.dart';
 import 'package:freebay/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:freebay/features/reviews/presentation/pages/user_reviews_page.dart';
@@ -60,13 +64,12 @@ CustomTransitionPage<void> _buildPageWithSlideTransition({
   return CustomTransitionPage<void>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 300),
-    reverseTransitionDuration: const Duration(milliseconds: 250),
+    transitionDuration: const Duration(milliseconds: 150),
+    reverseTransitionDuration: const Duration(milliseconds: 150),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
+        curve: Curves.linear,
       );
 
       return SlideTransition(
@@ -83,9 +86,39 @@ CustomTransitionPage<void> _buildPageWithSlideTransition({
   );
 }
 
+final routerRefreshNotifier = ValueNotifier<int>(0);
+
+final List<String> _publicRoutes = [
+  '/splash',
+  '/login',
+  '/register',
+  '/recover-password',
+  '/reset-password',
+];
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/splash',
+  refreshListenable: routerRefreshNotifier,
+  redirect: (context, state) {
+    final isPublic = _publicRoutes.any((p) => state.matchedLocation == p);
+    if (isPublic) return null;
+
+    final container = ProviderScope.containerOf(context, listen: false);
+    final authState = container.read(authControllerProvider);
+    final user = authState.valueOrNull;
+    if (user == null) {
+      return '/login';
+    }
+
+    if (state.matchedLocation != '/onboarding' &&
+        !user.isGuest &&
+        !container.read(hasSeenOnboardingProvider)) {
+      return '/onboarding';
+    }
+
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/splash',
@@ -127,6 +160,10 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingPage(),
+    ),
+    GoRoute(
       path: '/create-post',
       builder: (context, state) => const CreatePostPage(),
     ),
@@ -151,14 +188,16 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const CreateProductPage(),
     ),
     GoRoute(
-      path: '/products/:id/edit',
-      builder: (context, state) =>
-          EditProductPage(productId: state.pathParameters['id']!),
-    ),
-    GoRoute(
       path: '/products/:id',
       builder: (context, state) =>
           ProductDetailPage(productId: state.pathParameters['id']!),
+      routes: [
+        GoRoute(
+          path: 'edit',
+          builder: (context, state) =>
+              EditProductPage(productId: state.pathParameters['id']!),
+        ),
+      ],
     ),
     GoRoute(
       path: '/story',
@@ -219,24 +258,6 @@ final GoRouter appRouter = GoRouter(
             state: state,
             child: const ChatListPage(),
           ),
-          routes: [
-            GoRoute(
-              path: ':chatId',
-              builder: (context, state) {
-                final extra = state.extra as Map<String, dynamic>?;
-                return ChatConversationPage(
-                  chatId: state.pathParameters['chatId']!,
-                  oderName: extra?['oderName'] ?? 'Chat',
-                  oderAvatarUrl: extra?['oderAvatarUrl'],
-                  chatType: extra?['chatType'] ?? 'order',
-                );
-              },
-            ),
-            GoRoute(
-              path: 'new',
-              builder: (context, state) => const NewChatPage(),
-            ),
-          ],
         ),
         GoRoute(
           path: '/profile',
@@ -247,6 +268,29 @@ final GoRouter appRouter = GoRouter(
           ),
         ),
       ],
+    ),
+    // Chat detail routes live at top level (outside the shell) so they render
+    // full-screen over the bottom nav. `/chat/new` is declared before
+    // `/chat/:chatId` so "new" is not captured as a chat id.
+    GoRoute(
+      path: '/chat/new',
+      builder: (context, state) => const NewChatPage(),
+    ),
+    GoRoute(
+      path: '/chat/archived',
+      builder: (context, state) => const ArchivedChatsPage(),
+    ),
+    GoRoute(
+      path: '/chat/:chatId',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return ChatConversationPage(
+          chatId: state.pathParameters['chatId']!,
+          oderName: extra?['oderName'] ?? 'Chat',
+          oderAvatarUrl: extra?['oderAvatarUrl'],
+          chatType: extra?['chatType'] ?? 'order',
+        );
+      },
     ),
     GoRoute(
       path: '/profile/blocked',

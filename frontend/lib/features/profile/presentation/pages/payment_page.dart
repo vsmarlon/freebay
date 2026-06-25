@@ -16,6 +16,7 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key});
@@ -109,7 +110,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         children: [
           Container(
             width: double.infinity,
-            color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainer,
+            color: isDark
+                ? AppColors.surfaceContainerDark
+                : AppColors.surfaceContainer,
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,7 +123,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+                    color: isDark
+                        ? AppColors.onPrimaryContainer
+                        : AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -140,7 +145,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 14,
                     height: 1.5,
-                    color: isDark ? AppColors.inverseOnSurface : AppColors.onSurfaceVariant,
+                    color: isDark
+                        ? AppColors.inverseOnSurface
+                        : AppColors.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -196,7 +203,22 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     final productAsync = ref.watch(productByIdProvider(productId));
 
     return productAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => SkeletonPage(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            const ShimmerBlock(height: 100),
+            const SizedBox(height: 12),
+            const ShimmerBlock(height: 100),
+            const SizedBox(height: 12),
+            const ShimmerBlock(height: 100),
+            const SizedBox(height: 16),
+            const ShimmerBlock(height: 48),
+            const SizedBox(height: 12),
+            const ShimmerBlock(height: 48),
+          ],
+        ),
+      ),
       error: (_, __) => _buildInvalidState(context),
       data: (product) {
         if (_pixPayment != null) {
@@ -216,7 +238,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       padding: const EdgeInsets.all(24),
       children: [
         Container(
-          color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainerLowest,
+          color: isDark
+              ? AppColors.surfaceContainerDark
+              : AppColors.surfaceContainerLowest,
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,7 +251,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+                  color:
+                      isDark ? AppColors.onPrimaryContainer : AppColors.primary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -242,8 +267,11 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               ),
               Spacing.vMd,
               Container(
-                color: isDark ? AppColors.surfaceDark : AppColors.surfaceContainerHighest,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : AppColors.surfaceContainerHighest,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Text(
                   formattedPrice,
                   style: TextStyle(
@@ -281,7 +309,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 hint: 'Email',
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty || !value.contains('@')) {
+                  if (value == null ||
+                      value.trim().isEmpty ||
+                      !value.contains('@')) {
                     return 'Informe um email valido';
                   }
                   return null;
@@ -309,21 +339,17 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   width: double.infinity,
                   height: 54,
                   decoration: BoxDecoration(
-                    gradient: _isSubmitting ? null : AppColors.brutalistGradient,
+                    gradient:
+                        _isSubmitting ? null : AppColors.brutalistGradient,
                     color: _isSubmitting
-                        ? (isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainer)
+                        ? (isDark
+                            ? AppColors.surfaceContainerDark
+                            : AppColors.surfaceContainer)
                         : null,
                   ),
                   child: Center(
                     child: _isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.onPrimary,
-                            ),
-                          )
+                        ? const ShimmerBlock(width: 20, height: 20)
                         : const Text(
                             'Gerar PIX',
                             style: TextStyle(
@@ -355,7 +381,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       padding: const EdgeInsets.all(24),
       children: [
         Container(
-          color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainer,
+          color: isDark
+              ? AppColors.surfaceContainerDark
+              : AppColors.surfaceContainer,
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,7 +394,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+                  color:
+                      isDark ? AppColors.onPrimaryContainer : AppColors.primary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -384,7 +413,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 'Expira em $expiresAt',
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
-                  color: isDark ? AppColors.inverseOnSurface : AppColors.onSurfaceVariant,
+                  color: isDark
+                      ? AppColors.inverseOnSurface
+                      : AppColors.onSurfaceVariant,
                 ),
               ),
             ],
@@ -394,7 +425,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         _buildLabel('CODIGO PIX'),
         const SizedBox(height: 12),
         Container(
-          color: isDark ? AppColors.surfaceContainerLowDark : AppColors.surfaceContainerLowest,
+          color: isDark
+              ? AppColors.surfaceContainerLowDark
+              : AppColors.surfaceContainerLowest,
           padding: const EdgeInsets.all(16),
           child: SelectableText(
             pixPayment.pixQrCode,
@@ -418,7 +451,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           child: Container(
             width: double.infinity,
             height: 48,
-            color: isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainerHighest,
+            color: isDark
+                ? AppColors.surfaceContainerDark
+                : AppColors.surfaceContainerHighest,
             child: Center(
               child: Text(
                 'Copiar codigo',
@@ -433,7 +468,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         ),
         const SizedBox(height: 12),
         InkWell(
-          onTap: _createdOrderId == null ? null : () => context.go('/orders/${_createdOrderId!}'),
+          onTap: _createdOrderId == null
+              ? null
+              : () => context.go('/orders/${_createdOrderId!}'),
           child: Container(
             width: double.infinity,
             height: 52,
@@ -491,7 +528,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           color: isDark ? AppColors.mediumGray : AppColors.onSurfaceVariant,
         ),
         filled: true,
-        fillColor: isDark ? AppColors.surfaceContainerLowDark : AppColors.surfaceContainerLowest,
+        fillColor: isDark
+            ? AppColors.surfaceContainerLowDark
+            : AppColors.surfaceContainerLowest,
         enabledBorder: const OutlineInputBorder(
           borderRadius: BorderRadius.zero,
           borderSide: BorderSide(color: AppColors.outline),
@@ -512,7 +551,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     );
   }
 
-  Future<void> _submitCheckout(BuildContext context, ProductEntity product) async {
+  Future<void> _submitCheckout(
+      BuildContext context, ProductEntity product) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }

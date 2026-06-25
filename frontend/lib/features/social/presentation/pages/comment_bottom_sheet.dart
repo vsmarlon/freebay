@@ -5,6 +5,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CommentBottomSheet extends ConsumerStatefulWidget {
   final PostEntity post;
@@ -140,12 +141,9 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                       ),
                       child: Center(
                         child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.send, color: AppColors.onPrimary),
+                            ? const ShimmerBlock(width: 20, height: 20)
+                            : const Icon(Icons.send,
+                                color: AppColors.onPrimary),
                       ),
                     ),
                   ),

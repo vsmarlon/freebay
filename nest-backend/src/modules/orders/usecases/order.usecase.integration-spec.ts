@@ -5,6 +5,7 @@ import { UserFactory, ProductFactory } from '../../../../test/factories';
 import { isLeft, isRight } from '@/shared/core/either';
 import { CreateOrderInput } from '../dtos/order.dto';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 describe('CreateOrderUseCase Integration', () => {
   let sut: CreateOrderUseCase;
@@ -16,7 +17,8 @@ describe('CreateOrderUseCase Integration', () => {
     orderRepository = new PrismaOrderRepository(prisma as PrismaService);
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
-    sut = new CreateOrderUseCase(orderRepository, prisma as PrismaService);
+    const notificationService = { create: jest.fn() } as unknown as NotificationService;
+    sut = new CreateOrderUseCase(orderRepository, prisma as PrismaService, notificationService);
   });
 
   describe('Business Rules', () => {

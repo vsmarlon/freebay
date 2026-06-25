@@ -4,6 +4,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class UserSearchList extends StatelessWidget {
   final List<UserSearchEntity> users;
@@ -60,11 +61,9 @@ class UserSearchList extends StatelessWidget {
         itemCount: users.length + (isLoading ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == users.length) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              ),
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: ShimmerBlock(height: 72),
             );
           }
 
@@ -178,11 +177,7 @@ class _UserSearchItemState extends State<_UserSearchItem> {
             ),
             Spacing.hSm,
             _isLoading
-                ? const SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const ShimmerBlock(width: 32, height: 32)
                 : _isFollowing
                     ? InkWell(
                         onTap: () async {
@@ -198,7 +193,8 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.primaryContainer),
+                            border:
+                                Border.all(color: AppColors.primaryContainer),
                           ),
                           child: const Center(
                             child: Text(

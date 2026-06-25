@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 enum AppButtonVariant { primary, secondary, ghost, danger }
 
@@ -48,13 +49,12 @@ class AppButton extends StatelessWidget {
             onTap: isEnabled ? onPressed : null,
             child: Center(
               child: isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.onPrimary,
-                      ),
+                  ? ShimmerBlock(
+                      height: 48,
+                      width: width ?? double.infinity,
+                      baseColor: variant == AppButtonVariant.ghost
+                          ? AppColors.outlineVariant
+                          : backgroundColor,
                     )
                   : Row(
                       mainAxisSize: MainAxisSize.min,

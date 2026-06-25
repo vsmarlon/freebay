@@ -4,9 +4,9 @@ import { Report, ReportReason } from '@prisma/client';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
 export class CreateReportDTO {
-  @ApiProperty({ enum: ['USER', 'POST'] })
-  @IsIn(['USER', 'POST'])
-  targetType: 'USER' | 'POST';
+  @ApiProperty({ enum: ['USER', 'POST', 'CONVERSATION', 'MESSAGE', 'ORDER_CHAT', 'CHAT_MESSAGE'] })
+  @IsIn(['USER', 'POST', 'CONVERSATION', 'MESSAGE', 'ORDER_CHAT', 'CHAT_MESSAGE'])
+  targetType: 'USER' | 'POST' | 'CONVERSATION' | 'MESSAGE' | 'ORDER_CHAT' | 'CHAT_MESSAGE';
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
@@ -51,7 +51,7 @@ export class ResolveReportOutput {
 
 export interface CreateReportInput {
   reporterId: string;
-  targetType: 'USER' | 'POST';
+  targetType: 'USER' | 'POST' | 'CONVERSATION' | 'MESSAGE' | 'ORDER_CHAT' | 'CHAT_MESSAGE';
   targetId: string;
   reason: string;
   description?: string;

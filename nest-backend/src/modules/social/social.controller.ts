@@ -11,21 +11,18 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
-  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import {
-  CreatePostUseCase,
-  LikePostUseCase,
-  UnlikePostUseCase,
-  CreateStoryUseCase,
-  GetStoriesUseCase,
-  GetUserStoriesUseCase,
-  ViewStoryUseCase,
-  DeleteStoryUseCase,
-} from './usecases/social.usecase';
+import { CreatePostUseCase } from './usecases/create-post.usecase';
+import { LikePostUseCase } from './usecases/like-post.usecase';
+import { UnlikePostUseCase } from './usecases/unlike-post.usecase';
+import { CreateStoryUseCase } from './usecases/create-story.usecase';
+import { GetStoriesUseCase } from './usecases/get-stories.usecase';
+import { GetUserStoriesUseCase } from './usecases/get-user-stories.usecase';
+import { ViewStoryUseCase } from './usecases/view-story.usecase';
+import { DeleteStoryUseCase } from './usecases/delete-story.usecase';
 import {
   CreatePostDTO,
   CreateCommentDTO,
@@ -179,7 +176,7 @@ export class SocialController {
   async getUserPosts(
     @Param('userId') userId: string,
     @Query() query: GetUserPostsQueryDTO,
-    @CurrentUser() user?: AuthUser,
+    @CurrentUser() _user?: AuthUser,
   ) {
     const limitNum = query.limit ?? 20;
 
@@ -522,12 +519,12 @@ export class SocialController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (!file) {
-      throw new BadRequestException('Imagem é obrigatória');
+      return left(new AppError('BAD_REQUEST', 'Imagem é obrigatória'));
     }
 
     const mimeError = validateImageFile(file);
     if (mimeError) {
-      throw new BadRequestException(mimeError);
+      return left(new AppError('BAD_REQUEST', mimeError));
     }
 
     const userId = user.userId;

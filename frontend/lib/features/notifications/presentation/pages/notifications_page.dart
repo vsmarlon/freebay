@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/notifications/data/models/notification_model.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
@@ -59,7 +60,34 @@ class NotificationsPage extends ConsumerWidget {
           ),
           Expanded(
             child: notificationsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => SkeletonPage(
+                child: SkeletonList(
+                  itemCount: 6,
+                  itemBuilder: (_, i) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShimmerBlock(width: 40, height: 40),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ShimmerBlock(height: 16, width: 180),
+                              const SizedBox(height: 6),
+                              ShimmerBlock(height: 14, width: double.infinity),
+                              const SizedBox(height: 4),
+                              ShimmerBlock(height: 12, width: 80),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               error: (error, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -154,7 +182,7 @@ class _NotificationTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final timeAgo = _formatTimeAgo(notification.createdAt);
+    final timeAgo = TimeUtils.timeAgo(notification.createdAt);
 
     return ListTile(
       leading: Container(
@@ -260,23 +288,6 @@ class _NotificationTile extends ConsumerWidget {
         return AppColors.warning;
       default:
         return AppColors.onSurfaceVariant;
-    }
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'Agora';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m atrás';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h atrás';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}d atrás';
-    } else {
-      return DateFormat('dd MMM').format(dateTime);
     }
   }
 }

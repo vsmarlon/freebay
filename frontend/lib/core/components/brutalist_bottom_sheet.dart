@@ -15,15 +15,18 @@ Future<T?> showBrutalistSheet<T>({
 }) {
   return showModalBottomSheet<T>(
     context: context,
-    backgroundColor: backgroundColor ?? (context.isDark ? AppColors.surfaceDark : AppColors.white),
+    backgroundColor: Colors.transparent,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
     builder: (sheetContext) {
-      return BrutalistSheetScaffold(
-        title: title,
-        builder: builder,
-        useSafeArea: useSafeArea,
-        showDragHandle: showDragHandle,
-        padding: padding,
+      return Container(
+        color: sheetContext.isDark ? AppColors.surfaceDark : AppColors.white,
+        child: BrutalistSheetScaffold(
+          title: title,
+          builder: builder,
+          useSafeArea: useSafeArea,
+          showDragHandle: showDragHandle,
+          padding: padding,
+        ),
       );
     },
   );

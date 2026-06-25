@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/spacing.dart';
 
 class CommentInput extends StatelessWidget {
@@ -23,10 +24,12 @@ class CommentInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding =
-        compact ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8) : const EdgeInsets.symmetric(horizontal: 20, vertical: 12);
+    final padding = compact
+        ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+        : const EdgeInsets.symmetric(horizontal: 20, vertical: 12);
     final iconSize = compact ? 16.0 : 20.0;
-    final containerPadding = compact ? const EdgeInsets.all(8.0) : const EdgeInsets.all(12.0);
+    final containerPadding =
+        compact ? const EdgeInsets.all(8.0) : const EdgeInsets.all(12.0);
 
     return Row(
       children: [
@@ -62,13 +65,9 @@ class CommentInput extends StatelessWidget {
               gradient: AppColors.brutalistGradient,
             ),
             child: isSending
-                ? SizedBox(
-                    width: iconSize,
-                    height: iconSize,
-                    child: const CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.onPrimary,
-                    ),
+                ? const ShimmerBlock(
+                    width: 44,
+                    height: 44,
                   )
                 : Icon(Icons.send, color: AppColors.onPrimary, size: iconSize),
           ),

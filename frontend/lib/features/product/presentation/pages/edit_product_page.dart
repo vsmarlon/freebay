@@ -11,6 +11,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class EditProductPage extends ConsumerStatefulWidget {
   final String productId;
@@ -56,21 +57,38 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           ),
           Expanded(
             child: productAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(
-          child: Text(
-            'Não foi possível carregar o anúncio.',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: isDark ? AppColors.white : AppColors.onSurface,
+              loading: () => const SkeletonPage(
+                child: Column(
+                  children: [
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 200),
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 48),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 48),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 48),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 120),
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 48),
+                  ],
+                ),
+              ),
+              error: (_, __) => Center(
+                child: Text(
+                  'Não foi possível carregar o anúncio.',
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    color: isDark ? AppColors.white : AppColors.onSurface,
+                  ),
+                ),
+              ),
+              data: (product) {
+                _prefill(product);
+                return _buildForm(context, product, isDark);
+              },
             ),
-          ),
-        ),
-        data: (product) {
-          _prefill(product);
-          return _buildForm(context, product, isDark);
-        },
-          ),
           ),
         ],
       ),
@@ -84,7 +102,8 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
     _titleController.text = product.title;
     _descriptionController.text = product.description;
-    _priceController.text = (product.price / 100).toStringAsFixed(2).replaceAll('.', ',');
+    _priceController.text =
+        (product.price / 100).toStringAsFixed(2).replaceAll('.', ',');
     _status = product.status == 'PAUSED' ? 'PAUSED' : 'ACTIVE';
     _isNewProduct = product.condition == 'NEW';
     _didPrefill = true;

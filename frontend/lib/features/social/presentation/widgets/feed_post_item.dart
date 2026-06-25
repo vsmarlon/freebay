@@ -20,8 +20,6 @@ class FeedPostItem extends ConsumerStatefulWidget {
 }
 
 class _FeedPostItemState extends ConsumerState<FeedPostItem> {
-
-
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
@@ -32,13 +30,15 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
     final likesState = ref.watch(likesProvider);
     final isLiked = likesState.getLikedOverride(post.id) ?? post.isLiked;
     final likesCount = likesState.getCountOverride(post.id) ?? post.likesCount;
-    
+
     final savesState = ref.watch(savesProvider);
     final isSaved = savesState.getSavedOverride(post.id) ?? post.isSaved;
 
     final repostsState = ref.watch(repostsProvider);
-    final isReposted = repostsState.getRepostedOverride(post.id) ?? post.hasReposted;
-    final sharesCount = repostsState.getCountOverride(post.id) ?? post.sharesCount;
+    final isReposted =
+        repostsState.getRepostedOverride(post.id) ?? post.hasReposted;
+    final sharesCount =
+        repostsState.getCountOverride(post.id) ?? post.sharesCount;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -60,6 +60,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
           isSaved: isSaved,
           isReposted: isReposted,
           isVerified: post.user.isVerified,
+          createdAt: post.createdAt,
           price: price,
           onTap: () => context.push('/post/${post.id}'),
           onUserTap: () => context.push('/user/${post.user.id}'),
@@ -107,16 +108,18 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               }
               return false;
             }
-            final success = await ref.read(repostsProvider.notifier).toggleRepost(
-                  post.id,
-                  initialIsReposted: post.hasReposted,
-                  initialCount: post.sharesCount,
-                );
+            final success =
+                await ref.read(repostsProvider.notifier).toggleRepost(
+                      post.id,
+                      initialIsReposted: post.hasReposted,
+                      initialCount: post.sharesCount,
+                    );
             if (success && context.mounted) {
               final newRepostsState = ref.read(repostsProvider);
               ref.read(feedProvider.notifier).updateSharesCount(
                     post.id,
-                    newRepostsState.getCountOverride(post.id) ?? post.sharesCount,
+                    newRepostsState.getCountOverride(post.id) ??
+                        post.sharesCount,
                   );
             }
             return success;

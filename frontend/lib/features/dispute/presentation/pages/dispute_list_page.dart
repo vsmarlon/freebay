@@ -10,6 +10,7 @@ import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class DisputeListPage extends ConsumerStatefulWidget {
   const DisputeListPage({super.key});
@@ -22,7 +23,8 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(disputeListProvider.notifier).loadDisputes());
+    Future.microtask(
+        () => ref.read(disputeListProvider.notifier).loadDisputes());
   }
 
   @override
@@ -62,7 +64,30 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
 
   Widget _buildBody(DisputeListState state) {
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return SkeletonPage(
+        child: SkeletonList(
+          itemCount: 5,
+          itemBuilder: (_, i) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
+              children: [
+                const ShimmerBlock(width: 40, height: 40),
+                const SizedBox(width: 12),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShimmerBlock(height: 16, width: 140),
+                    SizedBox(height: 6),
+                    ShimmerBlock(height: 14, width: 100),
+                  ],
+                ),
+                const Spacer(),
+                const ShimmerBlock(height: 14, width: 60),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     if (state.error != null) {
@@ -77,10 +102,12 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => ref.read(disputeListProvider.notifier).loadDisputes(),
+                  onTap: () =>
+                      ref.read(disputeListProvider.notifier).loadDisputes(),
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    child: Text('Tentar novamente', style: AppTypography.button),
+                    child:
+                        Text('Tentar novamente', style: AppTypography.button),
                   ),
                 ),
               ),
@@ -108,11 +135,16 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
           final dispute = state.disputes[index];
           return BrutalistBox(
             child: ListTile(
-              title: Text('Disputa #${dispute.id.split('-').first}', style: AppTypography.bodyMedium),
+              title: Text('Disputa #${dispute.id.split('-').first}',
+                  style: AppTypography.bodyMedium),
               subtitle: Text(
-                dispute.status,
+                dispute.status.label,
                 style: AppTypography.bodySmall.copyWith(
-                  color: dispute.isOpen ? AppColors.warning : dispute.isResolved ? AppColors.success : AppColors.onSurfaceVariant,
+                  color: dispute.isOpen
+                      ? AppColors.warning
+                      : dispute.isResolved
+                          ? AppColors.success
+                          : AppColors.onSurfaceVariant,
                 ),
               ),
               trailing: const Icon(Icons.chevron_right),

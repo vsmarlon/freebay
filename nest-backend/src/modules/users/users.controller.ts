@@ -184,6 +184,103 @@ export class UsersController {
     return { success: true };
   }
 
+  // NOTE: static single-segment routes must be declared before the parametric
+  // `@Get(':id')` below, otherwise Nest matches e.g. `/users/blocked` to `:id`
+  // and ParseUUIDPipe rejects it ("Validation failed (uuid is expected)").
+  @Get('blocked')
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get blocked users',
+    auth: true,
+    queries: [
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+      { name: 'offset', required: false, description: 'Pagination offset (default 0)' },
+    ],
+  })
+  async getBlockedUsers(
+    @CurrentUser() user: AuthUser,
+    @Query() query: OffsetPaginationQueryDTO,
+  ) {
+    const userId = user.userId;
+    const parsedLimit = query.limit ?? 20;
+    const parsedOffset = query.offset ?? 0;
+
+    const blockedUsers = await this.blockRepository.getBlockedUsers(userId, parsedLimit, parsedOffset);
+
+    return {
+      users: blockedUsers.map((u) => ({
+        id: u.id,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+        isVerified: u.isVerified,
+        reputationScore: u.reputationScore,
+      })),
+      limit: parsedLimit,
+      offset: parsedOffset,
+    };
+  }
+
+  @Get('search')
+  @ApiDoc({
+    summary: 'Search users',
+    queries: [
+      { name: 'q', required: false, description: 'Search query' },
+      { name: 'cursor', required: false, description: 'Pagination cursor' },
+      { name: 'limit', required: false, description: 'Results per page (default 20)' },
+    ],
+  })
+  async searchUsers(@Query() query: UserSearchQueryDTO) {
+    const parsedLimit = query.limit ?? 20;
+    const users = await this.userRepository.searchUsers(query.q || '', parsedLimit, query.cursor);
+
+    return {
+      users: users.map((u) => ({
+        id: u.id,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+        bio: u.bio,
+        isVerified: u.isVerified,
+        reputationScore: u.reputationScore,
+        totalReviews: u.totalReviews,
+        followersCount: u._count?.followers || 0,
+        followingCount: u._count?.following || 0,
+      })),
+      nextCursor: users.length === parsedLimit ? users[users.length - 1]?.id : null,
+    };
+  }
+
+  @Get('suggestions')
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get user suggestions',
+    auth: true,
+    queries: [
+      { name: 'limit', required: false, description: 'Number of suggestions (default 10)' },
+    ],
+  })
+  async getSuggestions(@CurrentUser() user: AuthUser, @Query() query: SuggestionsQueryDTO) {
+    const userId = user.userId;
+    const parsedLimit = query.limit ?? 10;
+    const suggestions = await this.userRepository.getSuggestions(userId, parsedLimit);
+
+    return {
+      users: suggestions.map((u) => ({
+        id: u.id,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+        bio: u.bio,
+        isVerified: u.isVerified,
+        reputationScore: u.reputationScore,
+        totalReviews: u.totalReviews,
+        followersCount: u.followersCount,
+        followingCount: u.followingCount,
+        mutualCount: u.mutualCount,
+      })),
+    };
+  }
+
   @Get(':id')
   @ApiDoc({
     summary: 'Get user by ID',
@@ -277,6 +374,48 @@ export class UsersController {
       }
       throw error;
     }
+  }
+
+  @Get('me/followers')
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get current user followers',
+    auth: true,
+  })
+  async getMyFollowers(@CurrentUser() user: AuthUser) {
+    const followers = await this.followRepository.getFollowers(user.userId, 20, 0);
+    const total = await this.followRepository.getFollowersCount(user.userId);
+    return {
+      users: followers.map((u: { id: string; displayName: string; avatarUrl: string | null; isVerified: boolean }) => ({
+        id: u.id,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+        isVerified: u.isVerified,
+      })),
+      total,
+    };
+  }
+
+  @Get('me/following')
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Get current user following',
+    auth: true,
+  })
+  async getMyFollowing(@CurrentUser() user: AuthUser) {
+    const following = await this.followRepository.getFollowing(user.userId, 20, 0);
+    const total = await this.followRepository.getFollowingCount(user.userId);
+    return {
+      users: following.map((u: { id: string; displayName: string; avatarUrl: string | null; isVerified: boolean }) => ({
+        id: u.id,
+        displayName: u.displayName,
+        avatarUrl: u.avatarUrl,
+        isVerified: u.isVerified,
+      })),
+      total,
+    };
   }
 
   @Get(':id/followers')
@@ -450,99 +589,5 @@ export class UsersController {
 
     const isBlocked = await this.blockRepository.isBlocked(blockerId, blockedId);
     return { isBlocked };
-  }
-
-  @Get('blocked')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get blocked users',
-    auth: true,
-    queries: [
-      { name: 'limit', required: false, description: 'Results per page (default 20)' },
-      { name: 'offset', required: false, description: 'Pagination offset (default 0)' },
-    ],
-  })
-  async getBlockedUsers(
-    @CurrentUser() user: AuthUser,
-    @Query() query: OffsetPaginationQueryDTO,
-  ) {
-    const userId = user.userId;
-    const parsedLimit = query.limit ?? 20;
-    const parsedOffset = query.offset ?? 0;
-
-    const blockedUsers = await this.blockRepository.getBlockedUsers(userId, parsedLimit, parsedOffset);
-
-    return {
-      users: blockedUsers.map((u) => ({
-        id: u.id,
-        displayName: u.displayName,
-        avatarUrl: u.avatarUrl,
-        isVerified: u.isVerified,
-        reputationScore: u.reputationScore,
-      })),
-      limit: parsedLimit,
-      offset: parsedOffset,
-    };
-  }
-
-  @Get('search')
-  @ApiDoc({
-    summary: 'Search users',
-    queries: [
-      { name: 'q', required: false, description: 'Search query' },
-      { name: 'cursor', required: false, description: 'Pagination cursor' },
-      { name: 'limit', required: false, description: 'Results per page (default 20)' },
-    ],
-  })
-  async searchUsers(@Query() query: UserSearchQueryDTO) {
-    const parsedLimit = query.limit ?? 20;
-    const users = await this.userRepository.searchUsers(query.q || '', parsedLimit, query.cursor);
-
-    return {
-      users: users.map((u) => ({
-        id: u.id,
-        displayName: u.displayName,
-        avatarUrl: u.avatarUrl,
-        bio: u.bio,
-        isVerified: u.isVerified,
-        reputationScore: u.reputationScore,
-        totalReviews: u.totalReviews,
-        followersCount: u._count?.followers || 0,
-        followingCount: u._count?.following || 0,
-      })),
-      nextCursor: users.length === parsedLimit ? users[users.length - 1]?.id : null,
-    };
-  }
-
-  @Get('suggestions')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get user suggestions',
-    auth: true,
-    queries: [
-      { name: 'limit', required: false, description: 'Number of suggestions (default 10)' },
-    ],
-  })
-  async getSuggestions(@CurrentUser() user: AuthUser, @Query() query: SuggestionsQueryDTO) {
-    const userId = user.userId;
-    const parsedLimit = query.limit ?? 10;
-    const suggestions = await this.userRepository.getSuggestions(userId, parsedLimit);
-
-    return {
-      users: suggestions.map((u) => ({
-        id: u.id,
-        displayName: u.displayName,
-        avatarUrl: u.avatarUrl,
-        bio: u.bio,
-        isVerified: u.isVerified,
-        reputationScore: u.reputationScore,
-        totalReviews: u.totalReviews,
-        followersCount: u.followersCount,
-        followingCount: u.followingCount,
-        mutualCount: u.mutualCount,
-      })),
-    };
   }
 }

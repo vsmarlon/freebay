@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CreateStoryPage extends ConsumerStatefulWidget {
   const CreateStoryPage({super.key});
@@ -187,9 +188,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
             )
           else
             const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryContainer,
-              ),
+              child: ShimmerBlock(width: 24, height: 24),
             ),
           SafeArea(
             child: Column(
@@ -232,12 +231,15 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.onPrimary, width: 4),
+                        border:
+                            Border.all(color: AppColors.onPrimary, width: 4),
                       ),
                       child: Container(
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: _isTakingPicture ? Colors.grey : AppColors.onPrimary,
+                          color: _isTakingPicture
+                              ? Colors.grey
+                              : AppColors.onPrimary,
                         ),
                       ),
                     ),
@@ -280,9 +282,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                         },
                       ),
                       if (_isLoading)
-                        const CircularProgressIndicator(
-                          color: AppColors.primaryContainer,
-                        )
+                        const ShimmerBlock(width: 20, height: 20)
                       else
                         InkWell(
                           onTap: _uploadStory,

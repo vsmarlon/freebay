@@ -28,7 +28,11 @@
       "Bash(awk '{ gsub\\(/[^-]/,\"\"\\); print length, $0 }')",
       "Bash(awk '{print length}')",
       "Bash(command -v flutter.bat)",
-      "Bash(PGPASSWORD=holdback psql -h localhost -U postgres -d postgres -f ../db/seeds/001_seed_dev.sql)"
+      "Bash(PGPASSWORD=holdback psql -h localhost -U postgres -d postgres -f ../db/seeds/001_seed_dev.sql)",
+      "Bash(npx eslint *)",
+      "Bash(npx jest *)",
+      "Bash(node -e \"const m = require\\('sanitize-html'\\); console.log\\(typeof m, Object.keys\\(m\\)\\);\")",
+      "Bash(xargs -I{} sh -c 'echo ==={}===; tail -15 \"{}\"')"
     ]
   }
 }

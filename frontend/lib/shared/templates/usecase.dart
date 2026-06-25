@@ -7,4 +7,6 @@ abstract class Usecase<Output, Params> {
   UsecaseResponse<Failure, Output> call(Params params);
 }
 
-class NoParams {}
+abstract class NoParamsUsecase<Output> {
+  UsecaseResponse<Failure, Output> call();
+}

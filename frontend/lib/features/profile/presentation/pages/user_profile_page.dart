@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/components/reputation_stars.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
@@ -67,9 +68,10 @@ class UserProfilePage extends ConsumerWidget {
           ),
           Expanded(
             child: profileAsync.when(
-              data: (profileUser) => _buildProfileContent(context, ref, isDark, profileUser),
+              data: (profileUser) =>
+                  _buildProfileContent(context, ref, isDark, profileUser),
               loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.primaryContainer),
+                child: ShimmerBlock(width: 60, height: 60),
               ),
               error: (error, _) => Center(
                 child: Column(
@@ -93,7 +95,9 @@ class UserProfilePage extends ConsumerWidget {
                     Text(
                       'Não foi possível carregar as informações do usuário. Tente novamente.',
                       style: TextStyle(
-                        color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                        color: isDark
+                            ? AppColors.mediumGray
+                            : AppColors.mediumGray,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -131,142 +135,209 @@ class UserProfilePage extends ConsumerWidget {
                 size: AppAvatarSize.large,
                 isVerified: user.isVerified,
               ),
-          Spacing.vMd,
-          Text(
-            user.displayNameOrDefault,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.white : AppColors.darkGray,
-            ),
-          ),
-          if (user.bio != null && user.bio!.isNotEmpty) ...[
-            Spacing.vSm,
-            Text(
-              user.bio!,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+              Spacing.vMd,
+              Text(
+                user.displayNameOrDefault,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.white : AppColors.darkGray,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-          Spacing.vMd,
-          if (user.reputationScore > 0)
-            GestureDetector(
-              onTap: () => context.push(
-                '/user/${user.id}/reviews?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ReputationStars(
-                    score: user.reputationScore.toDouble(),
-                    reviewCount: user.totalReviews,
-                  ),
-                  Spacing.hXs,
-                  Icon(
-                    Icons.chevron_right,
-                    size: 20,
+              if (user.bio != null && user.bio!.isNotEmpty) ...[
+                Spacing.vSm,
+                Text(
+                  user.bio!,
+                  style: TextStyle(
+                    fontSize: 14,
                     color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                   ),
-                ],
-              ),
-            ),
-          if (user.reputationScore <= 0 && user.totalReviews == 0)
-            Text(
-              'Sem avaliações',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
-            ),
-          Spacing.vLg,
-          if (!isOwnProfile && currentUser != null && !currentUser.isGuest)
-            followStatusAsync.when(
-              data: (status) =>
-                  _buildFollowButton(context, ref, user.id, isDark, status),
-              loading: () => const CircularProgressIndicator(),
-              error: (_, __) =>
-                  _buildFollowButton(context, ref, user.id, isDark, null),
-            )
-          else if (!isOwnProfile)
-            _buildFollowPrompt(context, isDark),
-          Spacing.vMd,
-          if (user.city != null && user.city!.isNotEmpty) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 16,
-                  color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                  textAlign: TextAlign.center,
                 ),
-                Spacing.hXs,
+              ],
+              Spacing.vMd,
+              if (user.reputationScore > 0)
+                GestureDetector(
+                  onTap: () => context.push(
+                    '/user/${user.id}/reviews?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ReputationStars(
+                        score: user.reputationScore.toDouble(),
+                        reviewCount: user.totalReviews,
+                      ),
+                      Spacing.hXs,
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: isDark
+                            ? AppColors.mediumGray
+                            : AppColors.mediumGray,
+                      ),
+                    ],
+                  ),
+                ),
+              if (user.reputationScore <= 0 && user.totalReviews == 0)
                 Text(
-                  user.city!,
+                  'Sem avaliações',
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
                   ),
                 ),
-              ],
-            ),
-            Spacing.vMd,
-          ],
-          if (user.totalReviews > 0)
-            GestureDetector(
-              onTap: () => context.push(
-                '/user/${user.id}/reviews?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
-              ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.surfaceContainerDark
-                      : AppColors.surfaceContainerHighest,
-                  border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              Spacing.vLg,
+              if (!isOwnProfile && currentUser != null && !currentUser.isGuest)
+                followStatusAsync.when(
+                  data: (status) =>
+                      _buildFollowButton(context, ref, user.id, isDark, status),
+                  loading: () => SkeletonPage(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        const ShimmerBlock(height: 80, width: 80),
+                        const SizedBox(height: 12),
+                        const ShimmerBlock(height: 20, width: 160),
+                        const SizedBox(height: 6),
+                        const ShimmerBlock(height: 14, width: 100),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const ShimmerBlock(height: 20, width: 40),
+                                  const SizedBox(height: 4),
+                                  const ShimmerBlock(height: 12, width: 60),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const ShimmerBlock(height: 20, width: 40),
+                                  const SizedBox(height: 4),
+                                  const ShimmerBlock(height: 12, width: 60),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const ShimmerBlock(height: 20, width: 40),
+                                  const SizedBox(height: 4),
+                                  const ShimmerBlock(height: 12, width: 60),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        const ShimmerBlock(height: 40),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(child: ShimmerBlock(height: 120)),
+                            const SizedBox(width: 8),
+                            Expanded(child: ShimmerBlock(height: 120)),
+                            const SizedBox(width: 8),
+                            Expanded(child: ShimmerBlock(height: 120)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  error: (_, __) =>
+                      _buildFollowButton(context, ref, user.id, isDark, null),
+                )
+              else if (!isOwnProfile)
+                _buildFollowPrompt(context, isDark),
+              Spacing.vMd,
+              if (user.city != null && user.city!.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.star,
-                      size: 18,
-                      color: AppColors.warning,
-                    ),
-                    Spacing.hSm,
-                    Text(
-                      '${user.reputationScore.toStringAsFixed(1)} (${user.totalReviews} ${user.totalReviews == 1 ? 'avaliação' : 'avaliações'})',
-                      style: TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color:
+                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
                     ),
                     Spacing.hXs,
-                    Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: AppColors.outline,
+                    Text(
+                      user.city!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark
+                            ? AppColors.mediumGray
+                            : AppColors.mediumGray,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            )
-          else
-            Text(
-              'Sem avaliações ainda',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
-            ),
-        ],
+                Spacing.vMd,
+              ],
+              if (user.totalReviews > 0)
+                GestureDetector(
+                  onTap: () => context.push(
+                    '/user/${user.id}/reviews?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
+                  ),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.surfaceContainerDark
+                          : AppColors.surfaceContainerHighest,
+                      border: Border.all(
+                          color: AppColors.onSurface.withValues(alpha: 0.15),
+                          width: 2),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.star,
+                          size: 18,
+                          color: AppColors.warning,
+                        ),
+                        Spacing.hSm,
+                        Text(
+                          '${user.reputationScore.toStringAsFixed(1)} (${user.totalReviews} ${user.totalReviews == 1 ? 'avaliação' : 'avaliações'})',
+                          style: TextStyle(
+                            fontFamily: AppTypography.headlineFontFamily,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isDark ? AppColors.white : AppColors.darkGray,
+                          ),
+                        ),
+                        Spacing.hXs,
+                        Icon(
+                          Icons.chevron_right,
+                          size: 18,
+                          color: AppColors.outline,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  'Sem avaliações ainda',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
-      ),
-    ),
     );
   }
 
@@ -315,7 +386,9 @@ class UserProfilePage extends ConsumerWidget {
                 child: Text(
                   isFollowing ? 'Seguindo' : 'Seguir',
                   style: TextStyle(
-                    color: isFollowing ? AppColors.primaryContainer : AppColors.onPrimary,
+                    color: isFollowing
+                        ? AppColors.primaryContainer
+                        : AppColors.onPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -330,10 +403,10 @@ class UserProfilePage extends ConsumerWidget {
   Widget _buildStatChip(String label, int count, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          borderRadius: BorderRadius.zero,
-        ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.zero,
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

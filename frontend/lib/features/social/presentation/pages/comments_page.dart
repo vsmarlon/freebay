@@ -10,6 +10,7 @@ import 'package:freebay/features/social/presentation/providers/feed_provider.dar
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CommentsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -192,8 +193,10 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
           Container(
             width: 32,
             height: 32,
-            color: context.isDark ? AppColors.backgroundDark : AppColors.lightGray,
-            child: const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
+            color:
+                context.isDark ? AppColors.backgroundDark : AppColors.lightGray,
+            child:
+                const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
           ),
           Spacing.hSm,
           Expanded(
@@ -232,19 +235,13 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                 : () => _sendComment(_newCommentController.text),
             child: Container(
               padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.brutalistGradient,
-                ),
+              decoration: const BoxDecoration(
+                gradient: AppColors.brutalistGradient,
+              ),
               child: _isSending
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.onPrimary,
-                      ),
-                    )
-                  : const Icon(Icons.send, color: AppColors.onPrimary, size: 16),
+                  ? const ShimmerBlock(width: 32, height: 32)
+                  : const Icon(Icons.send,
+                      color: AppColors.onPrimary, size: 16),
             ),
           ),
         ],
@@ -255,8 +252,24 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
   Widget _buildBody(BuildContext context) {
     final isDark = context.isDark;
     if (_isLoading && _comments.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryContainer),
+      return SkeletonPage(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            const ShimmerBlock(height: 48),
+            const SizedBox(height: 16),
+            const _CommentSkeletonRow(),
+            const SizedBox(height: 12),
+            const _CommentSkeletonRow(),
+            const SizedBox(height: 12),
+            const _CommentSkeletonRow(),
+            const SizedBox(height: 12),
+            const _CommentSkeletonRow(),
+            const SizedBox(height: 12),
+            const _CommentSkeletonRow(),
+          ],
+        ),
       );
     }
     if (_error != null && _comments.isEmpty) return _buildError(context);
@@ -344,7 +357,8 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                     GestureDetector(
                       onTap: () => isReplying
                           ? _cancelReply()
-                          : _activateReply(node.key, displayName: comment.user?.displayName),
+                          : _activateReply(node.key,
+                              displayName: comment.user?.displayName),
                       child: Text(
                         isReplying ? 'Cancelar' : 'Responder',
                         style: TextStyle(
@@ -415,14 +429,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                         gradient: AppColors.brutalistGradient,
                       ),
                       child: _isSending
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.onPrimary,
-                              ),
-                            )
+                          ? const ShimmerBlock(width: 28, height: 28)
                           : const Icon(
                               Icons.send,
                               color: AppColors.onPrimary,
@@ -493,5 +500,27 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     if (diff.inHours > 0) return '${diff.inHours}h';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m';
     return 'agora';
+  }
+}
+
+class _CommentSkeletonRow extends StatelessWidget {
+  const _CommentSkeletonRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        ShimmerBlock(width: 32, height: 32),
+        SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerBlock(height: 14, width: 100),
+            SizedBox(height: 6),
+            ShimmerBlock(height: 12, width: 160),
+          ],
+        ),
+      ],
+    );
   }
 }

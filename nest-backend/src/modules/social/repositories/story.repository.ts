@@ -47,7 +47,12 @@ export class PrismaStoryRepository {
   }
 
   async create(data: Prisma.StoryCreateInput) {
-    return this.prisma.story.create({ data });
+    return this.prisma.story.create({
+      data,
+      include: {
+        user: { select: USER_SELECT_BASIC },
+      },
+    });
   }
 
   async delete(id: string) {
