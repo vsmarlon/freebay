@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -107,20 +108,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
             // (e.g. a guest tapped "Entrar"). After logout the stack is reset
             // (context.go('/login')) so canPop() is false and no arrow shows.(fool proof ## TODO SON)
             leading: context.canPop()
-                ? GestureDetector(
+                ? BrutalistIconButton(
+                    icon: Icons.arrow_back,
                     onTap: () => context.pop(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        border:
-                            Border.all(color: context.borderColor, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        size: 20,
-                      ),
-                    ),
                   )
                 : null,
           ),

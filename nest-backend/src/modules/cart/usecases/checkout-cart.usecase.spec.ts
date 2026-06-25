@@ -84,10 +84,9 @@ describe('CheckoutCartUseCase', () => {
   it('should checkout successfully', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(userData);
     mockCartRepository.getUserCart.mockResolvedValue([cartItem]);
-    mockPrisma.product.findUnique.mockResolvedValue({ status: 'ACTIVE' });
     mockPrisma.$transaction.mockImplementation(async (cb) => {
       const tx = {
-        product: { update: jest.fn().mockResolvedValue({}) },
+        product: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
         order: {
           create: jest.fn().mockResolvedValue({
             id: 'order-1', amount: 20000, platformFee: 2000, sellerAmount: 18000,
@@ -112,14 +111,13 @@ describe('CheckoutCartUseCase', () => {
   it('should rollback order if PIX payment fails', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(userData);
     mockCartRepository.getUserCart.mockResolvedValue([cartItem]);
-    mockPrisma.product.findUnique.mockResolvedValue({ status: 'ACTIVE' });
 
     let orderCreated = false;
     mockPrisma.$transaction.mockImplementation(async (cb) => {
       if (!orderCreated) {
         orderCreated = true;
         const tx = {
-          product: { update: jest.fn().mockResolvedValue({}) },
+          product: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
           order: { create: jest.fn().mockResolvedValue({ id: 'order-1' }) },
         };
         return cb(tx);
@@ -134,5 +132,19 @@ describe('CheckoutCartUseCase', () => {
 
     const result = await sut.execute({ userId: 'user-1' });
     expect(result.isLeft()).toBe(true);
+  });
+
+  it('should throw if product was concurrently reserved by another checkout', async () => {
+    mockPrisma.user.findUnique.mockResolvedValue(userData);
+    mockCartRepository.getUserCart.mockResolvedValue([cartItem]);
+    mockPrisma.$transaction.mockImplementation(async (cb) => {
+      const tx = {
+        product: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
+        order: { create: jest.fn() },
+      };
+      return cb(tx);
+    });
+
+    await expect(sut.execute({ userId: 'user-1' })).rejects.toBeInstanceOf(BadRequestError);
   });
 });

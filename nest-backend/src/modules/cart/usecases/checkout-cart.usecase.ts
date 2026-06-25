@@ -51,20 +51,20 @@ export class CheckoutCartUseCase {
       const platformFee = Math.round(amount * 0.1);
       const sellerAmount = amount - platformFee;
 
-      const currentProduct = await this.prisma.product.findUnique({
-        where: { id: item.productId },
-        select: { status: true },
-      });
-
-      if (!currentProduct || currentProduct.status !== 'ACTIVE') {
-        return left(new BadRequestError('One or more cart products are unavailable'));
-      }
-
       const order = await this.prisma.$transaction(async (tx) => {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { status: 'PAUSED' },
+        const reserveResult = await tx.product.updateMany({
+          where: {
+            id: item.productId,
+            status: 'ACTIVE',
+          },
+          data: {
+            status: 'PAUSED',
+          },
         });
+
+        if (reserveResult.count === 0) {
+          throw new BadRequestError('One or more cart products are unavailable');
+        }
 
         return tx.order.create({
           data: {

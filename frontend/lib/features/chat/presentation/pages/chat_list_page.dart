@@ -12,6 +12,8 @@ import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
+import 'package:freebay/core/utils/time_utils.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -51,17 +53,6 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       setState(() => _searchQuery = value.trim().toLowerCase());
     });
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final diff = now.difference(dateTime);
-
-    if (diff.inMinutes < 1) return 'agora';
-    if (diff.inHours < 1) return '${diff.inMinutes} min';
-    if (diff.inDays < 1) return '${diff.inHours}h';
-    if (diff.inDays < 7) return '${diff.inDays}d';
-    return '${dateTime.day}/${dateTime.month}';
   }
 
   List<ChatEntity> _filterAndSortChats(List<ChatEntity> chats) {
@@ -273,36 +264,18 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                 ),
               ),
               Spacing.hSm,
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => context.push('/chat/archived'),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: context.borderColor, width: 2),
-                    ),
-                    child: Icon(Icons.archive,
-                        color: context.textPrimary, size: 20),
-                  ),
-                ),
+              BrutalistIconButton(
+                icon: Icons.archive,
+                size: 48,
+                onTap: () => context.push('/chat/archived'),
               ),
               Spacing.hSm,
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => context.push('/chat/new'),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.brutalistGradient,
-                    ),
-                    child: const Icon(Icons.edit,
-                        color: AppColors.onPrimary, size: 20),
-                  ),
-                ),
+              BrutalistIconButton(
+                icon: Icons.edit,
+                size: 48,
+                iconColor: AppColors.onPrimary,
+                gradient: AppColors.brutalistGradient,
+                onTap: () => context.push('/chat/new'),
               ),
             ],
           ),
@@ -529,7 +502,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                 ),
               ),
               Text(
-                _formatTime(chat.timestamp),
+                TimeUtils.timeAgoCompact(chat.timestamp),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: chat.unread ? FontWeight.w600 : FontWeight.normal,

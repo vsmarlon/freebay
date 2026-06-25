@@ -67,18 +67,6 @@ final archivedChatsProvider =
   );
 });
 
-final searchedChatsProvider = FutureProvider.autoDispose
-    .family<List<ChatEntity>, String>((ref, query) async {
-  if (query.isEmpty) return [];
-  final repository = ref.watch(chatRepositoryProvider);
-  final result = await repository.getChats(query: query);
-
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (chats) => chats,
-  );
-});
-
 class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
   ChatListController(this._ref) : super(const AsyncValue.loading()) {
     _init();

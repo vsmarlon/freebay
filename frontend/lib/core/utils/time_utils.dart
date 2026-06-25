@@ -26,4 +26,15 @@ class TimeUtils {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
+
+  static String timeAgoCompact(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inMinutes < 1) return 'agora';
+    if (diff.inHours < 1) return '${diff.inMinutes} min';
+    if (diff.inDays < 1) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+    return '${date.day}/${date.month}';
+  }
 }

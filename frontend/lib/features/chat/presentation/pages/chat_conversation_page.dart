@@ -12,6 +12,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
@@ -637,7 +638,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
               child: Container(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: AppColors.brutalistGradient,
                 ),
                 child: Center(
@@ -699,21 +700,7 @@ class _ChatHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onBack,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(Icons.arrow_back,
-                    color: context.textPrimary, size: 20),
-              ),
-            ),
-          ),
+          BrutalistIconButton(icon: Icons.arrow_back, onTap: onBack),
           const SizedBox(width: 12),
           UserAvatar(
             imageUrl: avatarUrl,
@@ -751,21 +738,7 @@ class _ChatHeader extends StatelessWidget {
               ],
             ),
           ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onConfig,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child:
-                    Icon(Icons.more_vert, color: context.textPrimary, size: 20),
-              ),
-            ),
-          ),
+          BrutalistIconButton(icon: Icons.more_vert, onTap: onConfig),
         ],
       ),
     );
