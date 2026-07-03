@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProductsController } from './products.controller';
-import { ProductsService } from './api/products.service';
+import { ProductsService } from './products.service';
 import { CreateProductUseCaseModule } from './usecases/create-product/create-product.usecase.module';
 import { UpdateProductUseCaseModule } from './usecases/update-product/update-product.usecase.module';
 import { DeleteProductUseCaseModule } from './usecases/delete-product/delete-product.usecase.module';

@@ -17,7 +17,7 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { ProductsService } from './api/products.service';
+import { ProductsService } from './products.service';
 import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO } from './dtos/product.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';

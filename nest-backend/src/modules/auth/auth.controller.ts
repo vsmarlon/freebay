@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthService } from './api/auth.service';
+import { AuthService } from './auth.service';
 import { RegisterDTO, LoginDTO, LogoutDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,

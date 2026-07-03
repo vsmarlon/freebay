@@ -1,12 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AuthApiModule } from './api/auth.module';
+import { PassportModule } from '@nestjs/passport';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { AuthUseCasesModule } from './usecases/auth-usecases.module';
 import { JwtStrategy } from './guards/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
-  imports: [AuthUseCasesModule, AuthApiModule],
-  providers: [JwtStrategy, JwtAuthGuard],
-  exports: [JwtAuthGuard, AuthUseCasesModule],
+  imports: [
+    AuthUseCasesModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  exports: [JwtAuthGuard, AuthUseCasesModule, AuthService],
 })
 export class AuthModule {}

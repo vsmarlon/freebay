@@ -5,18 +5,18 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-import { RegisterUseCase } from '../usecases/register.usecase';
-import { LoginUseCase } from '../usecases/login.usecase';
-import { GuestUseCase } from '../usecases/guest.usecase';
-import { RequestPasswordRecoveryUseCase } from '../usecases/request-password-recovery.usecase';
-import { VerifyPasswordRecoveryCodeUseCase } from '../usecases/verify-password-recovery-code.usecase';
-import { ResetPasswordUseCase } from '../usecases/reset-password.usecase';
-import { RegisterDTO, LoginDTO } from '../dtos/auth.dto';
+import { RegisterUseCase } from './usecases/register.usecase';
+import { LoginUseCase } from './usecases/login.usecase';
+import { GuestUseCase } from './usecases/guest.usecase';
+import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
+import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
+import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
+import { RegisterDTO, LoginDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
   ResetPasswordDTO,
-} from '../dtos/password-recovery.dto';
+} from './dtos/password-recovery.dto';
 import { AppError } from '@/shared/core/errors';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 

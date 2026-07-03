@@ -1,5 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { DirectConversation, User, Prisma, DirectMessage } from '@prisma/client';
+import { DirectConversation, User, Prisma, DirectMessage, ConversationPreference } from '@prisma/client';
 import {
   DirectConversationWithDetails,
   OrderWithChat,
@@ -20,5 +20,5 @@ export abstract class ConversationRepository {
   abstract markMessagesRead(conversationId: string, userId: string): RepositoryResponse<void>;
   abstract findOrdersByUser(userId: string): RepositoryResponse<OrderWithChat[]>;
   abstract countUnreadChatMessages(orderIds: string[], userId: string): RepositoryResponse<Record<string, number>>;
-  abstract findPreferencesByUser(userId: string): RepositoryResponse<Record<string, string | number | boolean | null | object | undefined>[]>;
+  abstract findPreferencesByUser(userId: string): RepositoryResponse<ConversationPreference[]>;
 }

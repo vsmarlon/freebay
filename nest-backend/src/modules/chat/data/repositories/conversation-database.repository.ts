@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, DirectConversation, User, DirectMessage } from '@prisma/client';
+import { Prisma, DirectConversation, User, DirectMessage, ConversationPreference } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
@@ -50,7 +50,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
           user1: { select: USER_SELECT_BASIC },
           user2: { select: USER_SELECT_BASIC },
         },
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { lastMessageAt: 'desc' },
       });
       return right(convs as DirectConversationWithDetails[]);
     } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar conversas')); }
@@ -104,8 +104,8 @@ export class ConversationDatabaseRepository implements ConversationRepository {
   async markMessagesDelivered(conversationId: string, userId: string): RepositoryResponse<void> {
     try {
       await this.prisma.directMessage.updateMany({
-        where: { conversationId, senderId: { not: userId }, status: 'SENT' },
-        data: { status: 'DELIVERED', deliveredAt: new Date() },
+        where: { conversationId, senderId: { not: userId }, deliveredAt: null },
+        data: { deliveredAt: new Date() },
       });
       return right(void 0);
     } catch { return left(new AppError('DB_ERROR', 'Erro ao marcar mensagens')); }
@@ -115,7 +115,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     try {
       await this.prisma.directMessage.updateMany({
         where: { conversationId, senderId: { not: userId }, readAt: null },
-        data: { status: 'READ', readAt: new Date() },
+        data: { readAt: new Date(), deliveredAt: new Date() },
       });
       return right(void 0);
     } catch { return left(new AppError('DB_ERROR', 'Erro ao marcar mensagens')); }
@@ -159,7 +159,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     } catch { return left(new AppError('DB_ERROR', 'Erro ao contar mensagens')); }
   }
 
-  async findPreferencesByUser(userId: string): RepositoryResponse<Record<string, string | number | boolean | null | object | undefined>[]> {
+  async findPreferencesByUser(userId: string): RepositoryResponse<ConversationPreference[]> {
     try {
       return right(await this.prisma.conversationPreference.findMany({
         where: { userId, isDeleted: false },
