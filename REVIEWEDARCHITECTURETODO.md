@@ -98,13 +98,13 @@ Standardize already completed modules by removing the `api/` directory.
 - [✓] **2.1** **cart** — Move `cart/api/cart.service.ts` to `cart/cart.service.ts`, merge module setup, and nuke `cart/api/`
 - [✓] **2.2** **orders** — Move `orders/api/orders.service.ts` to `orders/orders.service.ts`, merge module setup, and nuke `orders/api/`
 - [✓] **2.3** **social** — Move `social/api/social.service.ts` to `social/social.service.ts`, merge module setup, and nuke `social/api/`
-- [ ] **2.4** **stories** — Move `stories/api/stories.service.ts` to `stories/stories.service.ts`, merge module setup, and nuke `stories/api/`
-- [ ] **2.5** **category** — Move `category/api/category.service.ts` to `category/category.service.ts`, merge module setup, and nuke `category/api/`
-- [ ] **2.6** **favorites** — Move `favorites/api/favorites.service.ts` to `favorites/favorites.service.ts`, merge module setup, and nuke `favorites/api/`
+- [✓] **2.4** **stories** — Move `stories/api/stories.service.ts` to `stories/stories.service.ts`, merge module setup, and nuke `stories/api/`
+- [✓] **2.5** **category** — Move `category/api/category.service.ts` to `category/category.service.ts`, merge module setup, and nuke `category/api/`
+- [✓] **2.6** **favorites** — Move `favorites/api/favorites.service.ts` to `favorites/favorites.service.ts`, merge module setup, and nuke `favorites/api/`
 - [ ] **2.7** **reports** — Move `reports/api/reports.service.ts` to `reports/reports.service.ts`, merge module setup, and nuke `reports/api/`
 - [ ] **2.8** **reviews** — Move `reviews/api/reviews.service.ts` to `reviews/reviews.service.ts` and `reviews/api/reviews.controller.ts` to `reviews/reviews.controller.ts`, merge module setup, and nuke `reviews/api/`
-- [ ] **2.9** **auth** — Move `auth/api/auth.service.ts` to `auth/auth.service.ts` and `auth/api/auth.module.ts` to `auth/auth-api.module.ts`, merge setup, and nuke `auth/api/`
-- [ ] **2.10** **products** — Move `products/api/products.service.ts` to `products/products.service.ts`, merge setup, and nuke `products/api/`
+- [✓] **2.9** **auth** — Move `auth/api/auth.service.ts` to `auth/auth.service.ts` and `auth/api/auth.module.ts` to `auth/auth-api.module.ts`, merge setup, and nuke `auth/api/`
+- [✓] **2.10** **products** — Move `products/api/products.service.ts` to `products/products.service.ts`, merge setup, and nuke `products/api/`
 
 ---
 
