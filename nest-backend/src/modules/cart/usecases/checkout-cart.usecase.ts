@@ -4,26 +4,7 @@ import { AppError, BadRequestError } from '@/shared/core/errors';
 import { CartRepository } from '../domain/repositories/cart.repository';
 import { CreatePixPaymentUseCase } from '@/modules/payments/usecases/payment.usecase';
 
-export interface CheckoutCartInput {
-  userId: string;
-}
-
-export interface CheckoutCartItemOutput {
-  orderId: string;
-  productId: string;
-  productTitle: string;
-  quantity: number;
-  amount: number;
-  pixQrCode: string;
-  pixImage: string;
-  expiresAt: Date;
-}
-
-export interface CheckoutCartOutput {
-  items: CheckoutCartItemOutput[];
-  totalOrders: number;
-  totalAmount: number;
-}
+import { CheckoutCartInput, CheckoutCartItemOutput, CheckoutCartOutput } from '../dtos/cart.dto';
 
 @Injectable()
 export class CheckoutCartUseCase {

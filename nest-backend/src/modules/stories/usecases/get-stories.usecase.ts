@@ -3,16 +3,7 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { StoryRepository } from '../domain/repositories/story.repository';
 
-export interface GroupedStory {
-  user: { id: string; displayName: string; avatarUrl: string | null };
-  stories: {
-    id: string;
-    imageUrl: string;
-    createdAt: Date;
-    expiresAt: Date;
-    viewsCount: number;
-  }[];
-}
+import { GroupedStory } from '../dtos/stories.dto';
 
 @Injectable()
 export class GetStoriesUseCase {

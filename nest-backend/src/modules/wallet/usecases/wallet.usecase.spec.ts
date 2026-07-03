@@ -8,7 +8,7 @@ type MockPrisma = Record<string, Record<string, jest.Mock> | jest.Mock>;
 
 describe('GetWalletUseCase', () => {
   let sut: GetWalletUseCase;
-  let mockWalletRepository: jest.Mocked<Partial<PrismaWalletRepository>>;
+  let mockWalletRepository: any;
 
   beforeEach(async () => {
     mockWalletRepository = {
@@ -57,7 +57,7 @@ describe('GetWalletUseCase', () => {
 
 describe('WithdrawUseCase', () => {
   let sut: WithdrawUseCase;
-  let mockWalletRepository: jest.Mocked<Partial<PrismaWalletRepository>>;
+  let mockWalletRepository: any;
   let mockPrisma: MockPrisma;
 
   beforeEach(async () => {

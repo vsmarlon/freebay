@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoryController } from './category.controller';
-import { CategoryService } from './api/category.service';
+import { CategoryService } from './category.service';
 
 const mockService = {
   findAll: jest.fn(),

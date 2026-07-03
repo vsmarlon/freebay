@@ -114,3 +114,40 @@ export class CartResponse {
   @ApiProperty({ example: 75000 })
   readonly totalPrice!: number;
 }
+
+export interface AddToCartInput {
+  userId: string;
+  productId: string;
+  quantity: number;
+}
+
+export interface AddToCartOutput {
+  item: { id: string; quantity: number };
+}
+
+export interface GetCartOutput {
+  items: Array<{
+    id: string;
+    productId: string;
+    quantity: number;
+    subtotal: number;
+    product: CartItemProduct;
+  }>;
+  totalItems: number;
+  totalPrice: number;
+}
+
+export interface RemoveFromCartInput {
+  userId: string;
+  productId: string;
+}
+
+export interface UpdateCartItemInput {
+  userId: string;
+  productId: string;
+  quantity: number;
+}
+
+export interface UpdateCartItemOutput {
+  item: { id: string; quantity: number };
+}

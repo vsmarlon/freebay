@@ -21,7 +21,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { FollowRepository } from './repositories/follow.repository';
 import { BlockRepository } from './repositories/block.repository';
-import { GetUserStatsUseCase } from './usecases/user.usecase';
+import { GetUserStatsUseCase } from './usecases';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import {

@@ -3,15 +3,7 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PostRepository, UserPostsQuery } from '../domain/repositories/post.repository';
 import { ShareRepository } from '../domain/repositories/share.repository';
-import { PostPayload } from '../types/social.types';
-
-export interface UserPostEntry {
-  post: PostPayload;
-  repostedAt: Date | null;
-  repostedBy: { id: string; displayName: string; avatarUrl: string | null } | null;
-  isReposted: boolean;
-  sharesCount: number;
-}
+import { UserPostEntry } from '../types/social.types';
 
 @Injectable()
 export class GetUserPostsUseCase {

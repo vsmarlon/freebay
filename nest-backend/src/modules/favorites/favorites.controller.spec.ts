@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CanActivate } from '@nestjs/common';
 import { FavoritesController } from './favorites.controller';
-import { FavoritesService } from './api/favorites.service';
+import { FavoritesService } from './favorites.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { AuthUser } from '@/shared/core/types';

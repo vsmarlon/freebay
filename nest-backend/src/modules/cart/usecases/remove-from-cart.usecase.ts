@@ -3,10 +3,7 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { CartRepository } from '../domain/repositories/cart.repository';
 
-export interface RemoveFromCartInput {
-  userId: string;
-  productId: string;
-}
+import { RemoveFromCartInput } from '../dtos/cart.dto';
 
 @Injectable()
 export class RemoveFromCartUseCase {

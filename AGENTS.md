@@ -319,21 +319,84 @@ Before implementing any UI pattern, check if a primitive exists in `lib/core/com
 
 ---
 
-## 5. Database
+## 5. Database & System Architecture
 
-### Prisma
+### Prisma Schema & Relationships
+The database is structured on PostgreSQL using Prisma ORM. Below is the systematic mapping of all core database models and their relational dependencies:
 
-- Schema is the source of truth
-- Run migrations: `npm run prisma:migrate`
-- After schema changes: `npm run prisma:generate`
+```mermaid
+erDiagram
+    User ||--o| Wallet : "1:1 owns wallet"
+    User ||--o{ Product : "1:N sells products"
+    User ||--o{ Post : "1:N creates social posts"
+    User ||--o{ Order : "1:N buys or sells orders"
+    User ||--o{ Follow : "1:N follower/following"
+    User ||--o{ Block : "1:N blocker/blocked"
+    User ||--o{ Dispute : "1:N initiates disputes"
+    User ||--o{ Review : "1:N review giver/receiver"
+    User ||--o{ DirectMessage : "1:N sends chat messages"
+    User ||--o{ ConversationPreference : "1:N configures preferences"
+    User ||--o{ Notification : "1:N receives notifications"
 
-### Migrations Location
+    Product ||--o{ ProductImage : "1:N contains images"
+    Product ||--o{ Order : "1:N referenced in orders"
+    Product ||--o{ Favorite : "1:N favorited by users"
+    Product ||--o{ CartItem : "1:N added to shopping carts"
+    Product ||--o| Post : "1:1 optionally featured in post cards"
 
-Database migrations: `db/migrations/001_create_tables.sql`
+    Post ||--o{ Comment : "1:N commented under"
+    Post ||--o{ Like : "1:N liked by users"
+    Post ||--o{ Share : "1:N shared by users"
+    Post ||--o{ SavedPost : "1:N bookmarked by users"
+
+    Order ||--o| Transaction : "1:1 holds payment details"
+    Order ||--o| Dispute : "1:1 opens conflict case"
+    Order ||--o{ ChatMessage : "1:N order-chat messages"
+    Order ||--o{ Review : "1:N reviewed once per order"
+
+    Wallet ||--o{ Withdrawal : "1:N requests money cashouts"
+
+    DirectConversation ||--o{ DirectMessage : "1:N holds messages"
+    DirectConversation ||--o{ ConversationPreference : "1:N holds user chat preferences"
+```
+
+### Core Domain Subsystems
+1. **User & Authentication:** Manages profiles, follower graphs (`Follow`), and social blocklists (`Block`).
+2. **Escrow Marketplace (Product & Order):** Core purchasing flow. Money goes to escrow (`EscrowStatus = HELD`) and release to seller occurs only when delivery is confirmed (`OrderStatus = DELIVERED`, escrow release).
+3. **Financial Wallet (Wallet & Withdrawal):** Tracks `availableBalance`, `pendingBalance` (funds held in escrow), and withdrawal requests.
+4. **Conflict Resolution (Dispute):** Handles client-to-client transaction arguments within a strict 48-hour delivery window.
+5. **Real-time Messaging (DirectConversation & Order Chat):** Real-time chats mapped individually with customizable styling preferences per user.
 
 ---
 
-## 6. API Response Format
+## 6. Clean Architecture Flow & Fluxgram
+
+We adhere to vertical modules using strict unidirectional dependency flows. High-level execution flow for any API endpoint is structured as:
+
+```mermaid
+graph TD
+    Client[HTTP Client / WebSocket Client] -->|1. Request JSON / Payload| Controller[Fastify Route Adapter / Controller]
+    Controller -->|2. Maps DTO Validation| Service[Module Service Wrapper]
+    Service -->|3. Resolves and Executes Usecase| Usecase[Single-use Usecase execute]
+    Usecase -->|4. Requests Data| AbstractRepo[Abstract Repository interface/class]
+    AbstractRepo -->|5. Implementation lookup| DataRepo[Concrete Data Repository Prisma]
+    DataRepo -->|6. SQL Query| DB[(PostgreSQL Database)]
+    DB -->|7. Prisma Entity Model| DataRepo
+    DataRepo -->|8. Either Failure or Entity| Usecase
+    Usecase -->|9. Either Failure or DTO Output| Service
+    Service -->|10. ResponseEntity JSON Wrapper| Controller
+    Controller -->|11. API response status 200/201/4xx| Client
+```
+
+### Dependency Rules
+* **Controllers** must ONLY inject the module's main **Service**.
+* **Services** must ONLY inject **Usecases**.
+* **Usecases** must ONLY inject **Abstract Repositories** (no PrismaService injections).
+* **Concrete Repositories** implement abstract contracts and inject **PrismaService** to run queries.
+
+---
+
+## 7. API Response Format
 
 **Success:**
 ```typescript
@@ -347,10 +410,11 @@ Database migrations: `db/migrations/001_create_tables.sql`
 
 ---
 
-## 7. Important Notes
+## 8. Important Notes
 
 - JWT tokens: 15 min access, 7 days refresh
 - Validate webhook signatures from payment providers
 - Use idempotency keys for payment requests
 - All split calculations happen server-side
 - Prices always in cents (Int)
+

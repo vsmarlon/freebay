@@ -3,15 +3,7 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { CartRepository } from '../domain/repositories/cart.repository';
 
-export interface UpdateCartItemInput {
-  userId: string;
-  productId: string;
-  quantity: number;
-}
-
-export interface UpdateCartItemOutput {
-  item: { id: string; quantity: number };
-}
+import { UpdateCartItemInput, UpdateCartItemOutput } from '../dtos/cart.dto';
 
 @Injectable()
 export class UpdateCartItemUseCase {

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GetProfileUseCase, GetUserStatsUseCase, UpdateProfileUseCase, FollowUserUseCase, UnfollowUserUseCase, BlockUserUseCase, UnblockUserUseCase, SearchUsersUseCase, GetSuggestionsUseCase } from './user.usecase';
+import { GetProfileUseCase, GetUserStatsUseCase, UpdateProfileUseCase, FollowUserUseCase, UnfollowUserUseCase, BlockUserUseCase, UnblockUserUseCase, SearchUsersUseCase, GetSuggestionsUseCase } from './index';
 import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { FollowRepository } from '../repositories/follow.repository';
 import { BlockRepository } from '../repositories/block.repository';
@@ -138,17 +138,20 @@ describe('Users UseCases', () => {
 
   describe('GetUserStatsUseCase', () => {
     it('should return user stats', async () => {
-      mockOrderRepository.countBySellerId.mockResolvedValue(5);
-      mockOrderRepository.countByBuyerId.mockResolvedValue(3);
+      mockOrderRepository.countBySellerId.mockResolvedValue(right(5));
+      mockOrderRepository.countByBuyerId.mockResolvedValue(right(3));
       mockFollowRepository.getFollowersCount.mockResolvedValue(100);
       mockFollowRepository.getFollowingCount.mockResolvedValue(50);
 
       const result = await getUserStatsUseCase.execute({ userId: 'user-123' });
 
-      expect(result.salesCount).toBe(5);
-      expect(result.purchasesCount).toBe(3);
-      expect(result.followersCount).toBe(100);
-      expect(result.followingCount).toBe(50);
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value.salesCount).toBe(5);
+        expect(result.value.purchasesCount).toBe(3);
+        expect(result.value.followersCount).toBe(100);
+        expect(result.value.followingCount).toBe(50);
+      }
     });
   });
 
@@ -225,7 +228,7 @@ describe('Users UseCases', () => {
     it('should return BadRequestError when already following', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
       const error = new Error('Unique constraint failed');
-      (error as { code: string }).code = 'P2002';
+      (error as any).code = 'P2002';
       mockFollowRepository.follow.mockRejectedValue(error);
 
       const result = await followUserUseCase.execute({
@@ -259,7 +262,7 @@ describe('Users UseCases', () => {
 
     it('should return BadRequestError when not following', async () => {
       const error = new Error('Record not found');
-      (error as { code: string }).code = 'P2025';
+      (error as any).code = 'P2025';
       mockFollowRepository.unfollow.mockRejectedValue(error);
 
       const result = await unfollowUserUseCase.execute({
@@ -334,7 +337,7 @@ describe('Users UseCases', () => {
 
     it('should return BadRequestError when user not blocked', async () => {
       const error = new Error('Record not found');
-      (error as { code: string }).code = 'P2025';
+      (error as any).code = 'P2025';
       mockBlockRepository.unblock.mockRejectedValue(error);
 
       const result = await unblockUserUseCase.execute({

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateOrderUseCase, ConfirmDeliveryUseCase } from './order.usecase';
+import { CreateOrderUseCase } from './create-order.usecase';
+import { ConfirmDeliveryUseCase } from './confirm-delivery.usecase';
 import { PrismaOrderRepository } from '../repositories/order.repository';
 import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';

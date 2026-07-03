@@ -11,7 +11,7 @@ import {
   UnblockUserUseCase,
   SearchUsersUseCase,
   GetSuggestionsUseCase,
-} from './usecases/user.usecase';
+} from './usecases';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { FollowRepository } from './repositories/follow.repository';
 import { BlockRepository } from './repositories/block.repository';

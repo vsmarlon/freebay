@@ -16,3 +16,14 @@ export interface CreateStoryOutput {
     isVerified: boolean;
   };
 }
+
+export interface GroupedStory {
+  user: { id: string; displayName: string; avatarUrl: string | null };
+  stories: {
+    id: string;
+    imageUrl: string;
+    createdAt: Date;
+    expiresAt: Date;
+    viewsCount: number;
+  }[];
+}

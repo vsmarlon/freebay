@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { GetCartUseCase } from './usecases/get-cart.usecase';
-import { AddToCartUseCase, AddToCartInput } from './usecases/add-to-cart.usecase';
-import { UpdateCartItemUseCase, UpdateCartItemInput } from './usecases/update-cart-item.usecase';
-import { RemoveFromCartUseCase, RemoveFromCartInput } from './usecases/remove-from-cart.usecase';
+import { AddToCartUseCase } from './usecases/add-to-cart.usecase';
+import { UpdateCartItemUseCase } from './usecases/update-cart-item.usecase';
+import { RemoveFromCartUseCase } from './usecases/remove-from-cart.usecase';
 import { ClearCartUseCase } from './usecases/clear-cart.usecase';
-import { CheckoutCartUseCase, CheckoutCartInput } from './usecases/checkout-cart.usecase';
+import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
+import { AddToCartInput, UpdateCartItemInput, RemoveFromCartInput, CheckoutCartInput } from './dtos/cart.dto';
 
 @Injectable()
 export class CartService {

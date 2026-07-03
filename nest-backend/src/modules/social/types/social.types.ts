@@ -26,3 +26,11 @@ export const COMMENT_INCLUDE = {
 } satisfies Prisma.CommentInclude;
 
 export type CommentPayload = Prisma.CommentGetPayload<{ include: typeof COMMENT_INCLUDE }>;
+
+export interface UserPostEntry {
+  post: PostPayload;
+  repostedAt: Date | null;
+  repostedBy: { id: string; displayName: string; avatarUrl: string | null } | null;
+  isReposted: boolean;
+  sharesCount: number;
+}

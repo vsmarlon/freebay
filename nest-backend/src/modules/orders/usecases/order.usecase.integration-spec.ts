@@ -1,4 +1,4 @@
-import { CreateOrderUseCase } from './order.usecase';
+import { CreateOrderUseCase } from './create-order.usecase';
 import { PrismaOrderRepository } from '../repositories/order.repository';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
@@ -13,12 +13,12 @@ describe('CreateOrderUseCase Integration', () => {
   let userFactory: UserFactory;
   let productFactory: ProductFactory;
 
-  beforeEach(() => {
+  beforeAll(() => {
     orderRepository = new PrismaOrderRepository(prisma as PrismaService);
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
     const notificationService = { create: jest.fn() } as unknown as NotificationService;
-    sut = new CreateOrderUseCase(orderRepository, prisma as PrismaService, notificationService);
+    sut = new CreateOrderUseCase(orderRepository, notificationService);
   });
 
   describe('Business Rules', () => {
