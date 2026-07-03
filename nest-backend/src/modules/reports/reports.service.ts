@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { isLeft } from '@/shared/core/either';
-import { CreateReportUseCase } from '../usecases/create-report.usecase';
-import { GetReportsUseCase } from '../usecases/get-reports.usecase';
-import { ResolveReportUseCase } from '../usecases/resolve-report.usecase';
-import { CreateReportDTO, GetReportsQueryDTO, ResolveReportDTO } from '../dtos/report.dto';
+import { CreateReportUseCase } from './usecases/create-report.usecase';
+import { GetReportsUseCase } from './usecases/get-reports.usecase';
+import { ResolveReportUseCase } from './usecases/resolve-report.usecase';
+import { CreateReportDTO, GetReportsQueryDTO, ResolveReportDTO } from './dtos/report.dto';
 
 @Injectable()
 export class ReportsService {

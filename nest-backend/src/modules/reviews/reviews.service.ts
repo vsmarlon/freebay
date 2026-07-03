@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CreateReviewUseCase } from '../usecases/create-review/create-review.usecase';
-import { GetUserReviewsUseCase } from '../usecases/get-user-reviews/get-user-reviews.usecase';
-import { CanReviewOrderUseCase } from '../usecases/can-review-order/can-review-order.usecase';
-import { ReviewRepository } from '../domain/repositories/review.repository';
-import { CreateReviewInput } from './input/create-review.input';
+import { CreateReviewUseCase } from './usecases/create-review/create-review.usecase';
+import { GetUserReviewsUseCase } from './usecases/get-user-reviews/get-user-reviews.usecase';
+import { CanReviewOrderUseCase } from './usecases/can-review-order/can-review-order.usecase';
+import { ReviewRepository } from './domain/repositories/review.repository';
+import { CreateReviewInput } from './dtos/create-review.dto';
 import { AuthUser } from '@/shared/core/types';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
 import { AppError, BadRequestError } from '@/shared/core/errors';

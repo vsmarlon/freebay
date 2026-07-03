@@ -5,7 +5,7 @@ import { Roles } from '@/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { ReportsService } from './api/reports.service';
+import { ReportsService } from './reports.service';
 import { CreateReportDTO, ResolveReportDTO, GetReportsQueryDTO } from './dtos/report.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
