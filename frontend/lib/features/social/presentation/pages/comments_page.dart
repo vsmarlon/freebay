@@ -2,11 +2,14 @@ import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/comment_skeleton_row.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
@@ -229,20 +232,14 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
             ),
           ),
           Spacing.hSm,
-          GestureDetector(
-            onTap: _isSending
-                ? null
-                : () => _sendComment(_newCommentController.text),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                gradient: AppColors.brutalistGradient,
-              ),
-              child: _isSending
-                  ? const ShimmerBlock(width: 32, height: 32)
-                  : const Icon(Icons.send,
-                      color: AppColors.onPrimary, size: 16),
-            ),
+          BrutalistIconButton(
+            icon: Icons.send,
+            onTap: () => _sendComment(_newCommentController.text),
+            size: 32,
+            iconSize: 16,
+            iconColor: AppColors.onPrimary,
+            gradient: AppColors.brutalistGradient,
+            isLoading: _isSending,
           ),
         ],
       ),
@@ -259,15 +256,15 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
             const SizedBox(height: 16),
             const ShimmerBlock(height: 48),
             const SizedBox(height: 16),
-            const _CommentSkeletonRow(),
+            const CommentSkeletonRow(),
             const SizedBox(height: 12),
-            const _CommentSkeletonRow(),
+            const CommentSkeletonRow(),
             const SizedBox(height: 12),
-            const _CommentSkeletonRow(),
+            const CommentSkeletonRow(),
             const SizedBox(height: 12),
-            const _CommentSkeletonRow(),
+            const CommentSkeletonRow(),
             const SizedBox(height: 12),
-            const _CommentSkeletonRow(),
+            const CommentSkeletonRow(),
           ],
         ),
       );
@@ -416,26 +413,17 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                     ),
                   ),
                   Spacing.hXs,
-                  GestureDetector(
-                    onTap: _isSending
-                        ? null
-                        : () => _sendComment(
-                              _replyController.text,
-                              parentId: comment.id,
-                            ),
-                    child: Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.brutalistGradient,
-                      ),
-                      child: _isSending
-                          ? const ShimmerBlock(width: 28, height: 28)
-                          : const Icon(
-                              Icons.send,
-                              color: AppColors.onPrimary,
-                              size: 14,
-                            ),
+                  BrutalistIconButton(
+                    icon: Icons.send,
+                    onTap: () => _sendComment(
+                      _replyController.text,
+                      parentId: comment.id,
                     ),
+                    size: 28,
+                    iconSize: 14,
+                    iconColor: AppColors.onPrimary,
+                    gradient: AppColors.brutalistGradient,
+                    isLoading: _isSending,
                   ),
                 ],
               ),
@@ -461,24 +449,9 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
             ),
           ),
           Spacing.vMd,
-          InkWell(
-            onTap: () => _loadComments(refresh: true),
-            child: Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: const BoxDecoration(
-                gradient: AppColors.brutalistGradient,
-              ),
-              child: const Center(
-                child: Text(
-                  'Tentar novamente',
-                  style: TextStyle(
-                    color: AppColors.onPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
+          AppButton(
+            label: 'Tentar novamente',
+            onPressed: () => _loadComments(refresh: true),
           ),
         ],
       ),
@@ -500,27 +473,5 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     if (diff.inHours > 0) return '${diff.inHours}h';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m';
     return 'agora';
-  }
-}
-
-class _CommentSkeletonRow extends StatelessWidget {
-  const _CommentSkeletonRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        ShimmerBlock(width: 32, height: 32),
-        SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ShimmerBlock(height: 14, width: 100),
-            SizedBox(height: 6),
-            ShimmerBlock(height: 12, width: 160),
-          ],
-        ),
-      ],
-    );
   }
 }

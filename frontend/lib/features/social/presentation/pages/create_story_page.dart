@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CreateStoryPage extends ConsumerStatefulWidget {
@@ -284,24 +285,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                       if (_isLoading)
                         const ShimmerBlock(width: 20, height: 20)
                       else
-                        InkWell(
-                          onTap: _uploadStory,
-                          child: Container(
-                            height: 40,
-                            padding: const EdgeInsets.symmetric(horizontal: 18),
-                            decoration: const BoxDecoration(
-                              gradient: AppColors.brutalistGradient,
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'Publicar',
-                                style: TextStyle(
-                                  color: AppColors.onPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
+                        AppButton(
+                          label: 'Publicar',
+                          onPressed: _uploadStory,
                         ),
                     ],
                   ),

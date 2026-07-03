@@ -49,7 +49,7 @@ Run after finishing large work.
 
 ## Backend Architecture (`nest-backend/`)
 
-**NestJS** (Express platform) with Prisma/PostgreSQL, organized as **vertical feature modules**, not horizontal layers. There is no `domain/application/infra/presentation` split — each module owns its full stack:
+**NestJS** (Express platform) with Prisma/PostgreSQL, organized as **vertical feature modules**, not horizontal layers. There is no top-level `domain/application/infra/presentation` split — each module owns its full stack. Inside that vertical slice, most modules additionally split the repository layer into an abstract `domain/repositories/` interface and a concrete `data/repositories/` Prisma implementation (see DI wiring below); a couple of modules (`payments`, `notifications`) still inject a concrete repository directly with no abstract layer:
 
 ```
 src/
@@ -69,7 +69,9 @@ src/
         ├── <feature>.module.ts     # orders, payments, chat, notifications, disputes,
         ├── <feature>.controller.ts # reports, reviews, favorites, cart, tasks
         ├── dtos/            # class-validator + @nestjs/swagger DTO classes
-        ├── repositories/    # concrete Prisma*Repository classes (no I*Repository interfaces)
+        ├── domain/repositories/  # abstract Repository classes (most modules)
+        ├── data/repositories/    # concrete Prisma*Repository implementations (most modules)
+        ├── repositories/    # flat concrete repository folder (modules not yet migrated to domain/data split)
         ├── usecases/        # one class per use case, returns Either<AppError, Output>
         ├── mappers/         # Prisma model → API response shape
         ├── guards/          # module-specific guards (e.g. auth/guards/jwt-auth.guard.ts)
@@ -78,7 +80,7 @@ src/
 
 ### DI wiring
 
-Standard Nest DI: every controller, use case, and repository is `@Injectable()`, registered in its module's `providers: []`, and injected via constructor. Nothing is manually `new`'d in route files. Repositories are injected as **concrete classes** (e.g. `private userRepository: PrismaUserRepository`), never behind an interface.
+Standard Nest DI: every controller, use case, and repository is `@Injectable()`, registered in its module's `providers: []`, and injected via constructor. Nothing is manually `new`'d in route files. Most modules now inject the **abstract** `domain/repositories/*.repository.ts` class into use cases (e.g. `private readonly orderRepository: OrderRepository`), bound to its concrete `data/repositories/*-database.repository.ts` implementation via `{ provide: AbstractRepo, useExisting: ConcreteRepo }` in the module's providers array — concrete repositories inject `PrismaService` to run queries, use cases never do. `payments` and `notifications` haven't been migrated yet and still inject the concrete Prisma repository class directly (e.g. `private orderRepository: PrismaOrderRepository`), with no abstract layer.
 
 ### Either pattern
 
@@ -126,12 +128,7 @@ Do NOT `throw` business errors in controllers — return `left(new AppError(…)
 
 ### One-class-per-usecase rule
 
-Every use case file must contain **exactly one exported class**. This keeps each file focused and testable (`let sut: SomeUseCase`). Current exceptions tracked in `TODO.md`:
-- `modules/social/usecases/social.usecase.ts` — 9 classes (refactor pending)
-- `modules/chat/usecases/chat.usecase.ts` — 5 classes
-- `modules/reports/usecases/report.usecase.ts` — 3 classes
-
-New use cases should always be one-per-file.
+Every use case file must contain **exactly one exported class**. This keeps each file focused and testable (`let sut: SomeUseCase`). New use cases should always be one-per-file.
 
 ### Auth & guards
 
@@ -155,7 +152,7 @@ DTOs in `modules/<feature>/dtos/` use **class-validator** decorators (`@IsString
 
 - All monetary values stored in **cents** (`Int`) — never `Float`.
 - Use the `@/` path alias for imports from `src/` (e.g. `@/shared/core/either`).
-- Domain repository interfaces are not used — repositories are concrete, injected Prisma classes; keep method signatures strongly typed (real enums, not bare `string`).
+- Most modules inject an abstract `domain/repositories/*.repository.ts` class (bound to a concrete `data/repositories/*-database.repository.ts` implementation via `useExisting`); `payments`/`notifications` still inject the concrete Prisma class directly. Either way, keep method signatures strongly typed (real enums, not bare `string`).
 - Files: kebab-case (`register.usecase.ts`, `prisma-user.repository.ts`). Classes: PascalCase. Test files: `.spec.ts`, colocated next to the file under test.
 - Rate limiting via `@nestjs/throttler` is applied globally (`APP_GUARD` in `app.module.ts`) with `short`/`medium`/`long` buckets; sensitive routes (e.g. `auth/register`) add a tighter `@Throttle(...)` override.
 - **Throttler buckets** (from `app.module.ts`): `short` = 10 req/s, `medium` = 60 req/min (default), `long` = 1000 req/h. Override per route with `@Throttle({ short: { limit, ttl } })`.
@@ -178,7 +175,7 @@ Routes are configured in `frontend/lib/core/router/app_router.dart` using **go_r
 
 - **Auth gate:** `redirect` callback checks the auth provider. Unauthenticated users are redirected to `/login` except for public routes (marked via a list of public paths).
 - **Guest vs authenticated:** Guest users can browse public content but are redirected to login for guarded actions.
-- **Page transitions:** `CustomTransitionPage` with slide + fade. **Note:** current duration is 250–300ms with `easeInCubic`/`easeOutCubic` — this violations the design-system rule of 150ms/`Curves.linear` (tracked in `TODO.md`).
+- **Page transitions:** `CustomTransitionPage` with slide + fade, 150ms/`Curves.linear` per the design system.
 
 ### Mapper pattern
 

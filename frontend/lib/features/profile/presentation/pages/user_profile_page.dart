@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/user_avatar.dart';
@@ -360,8 +361,11 @@ class UserProfilePage extends ConsumerWidget {
         Spacing.vMd,
         SizedBox(
           width: double.infinity,
-          child: InkWell(
-            onTap: () async {
+          child: AppButton(
+            label: isFollowing ? 'Seguindo' : 'Seguir',
+            variant:
+                isFollowing ? AppButtonVariant.ghost : AppButtonVariant.primary,
+            onPressed: () async {
               final service = ref.read(followServiceProvider);
               final result = isFollowing
                   ? await service.unfollow(userId)
@@ -371,29 +375,6 @@ class UserProfilePage extends ConsumerWidget {
                 ref.invalidate(followStatusProvider(userId));
               }
             },
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: isFollowing ? null : AppColors.brutalistGradient,
-                color: isFollowing
-                    ? (isDark ? AppColors.surfaceDark : AppColors.surfaceLight)
-                    : null,
-                border: isFollowing
-                    ? Border.all(color: AppColors.primaryContainer)
-                    : null,
-              ),
-              child: Center(
-                child: Text(
-                  isFollowing ? 'Seguindo' : 'Seguir',
-                  style: TextStyle(
-                    color: isFollowing
-                        ? AppColors.primaryContainer
-                        : AppColors.onPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
       ],
@@ -462,24 +443,9 @@ class UserProfilePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 12),
-            InkWell(
-              onTap: () => context.push('/register'),
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.brutalistGradient,
-                ),
-                child: const Center(
-                  child: Text(
-                    'Cadastrar',
-                    style: TextStyle(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
+            AppButton(
+              label: 'Cadastrar',
+              onPressed: () => context.push('/register'),
             ),
           ],
         ),

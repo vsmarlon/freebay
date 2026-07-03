@@ -1,9 +1,10 @@
 # FreeBay NestJS Backend — Architecture Migration Tracker
 
-> **Purpose:** Track every file change needed to migrate from the old MVC-Plus pattern to the Clean Architecture defined in `IMPROVEARCHITECTURE.md`.
+> **Purpose:** Track every file change needed to migrate from the old MVC-Plus pattern to the Clean Architecture defined in `REVIEWEDARCHITECTURETODO.md`.
 > **Status:** `[ ]` = Pending | `[~]` = In Progress | `[✓]` = Done
 > **Rule:** Only the user marks items `[✓]`. The agent marks items `[~]` while working.
 > **2026-06-25:** Stories extracted from social into own `modules/stories/` module to reduce module size. `wishlistrepositories/` deleted (empty).
+> **2026-07-03:** Phase 2 (Domain Layer Per Module) checkboxes resynced against actual disk state — every row verified by checking whether the named file exists. Phases 3-8 are unchanged and still reflect self-reported `[~]`/`[ ]` status, not a verified resync.
 
 ---
 
@@ -25,13 +26,13 @@
 ### auth/
 | # | File Change | Status |
 |---|-------------|--------|
-| 2.1 | Create `modules/auth/domain/entities/user.model.ts` | `[~]` |
-| 2.2 | Create `modules/auth/domain/repositories/user.repository.ts` (abstract) | `[~]` |
-| 2.3 | Create `modules/auth/domain/repositories/password-recovery.repository.ts` (abstract) | `[~]` |
-| 2.4 | Create `modules/auth/data/repositories/user-database.repository.ts` (implements abstract) | `[~]` |
-| 2.5 | Create `modules/auth/data/repositories/password-recovery-database.repository.ts` (implements abstract) | `[~]` |
-| 2.6 | Delete old `modules/auth/repositories/prisma-user.repository.ts` | `[~]` |
-| 2.7 | Delete old `modules/auth/repositories/password-recovery.repository.ts` | `[~]` |
+| 2.1 | Create `modules/auth/domain/entities/user.model.ts` | `[✓]` |
+| 2.2 | Create `modules/auth/domain/repositories/user.repository.ts` (abstract) | `[✓]` |
+| 2.3 | Create `modules/auth/domain/repositories/password-recovery.repository.ts` (abstract) | `[✓]` |
+| 2.4 | Create `modules/auth/data/repositories/user-database.repository.ts` (implements abstract) | `[✓]` |
+| 2.5 | Create `modules/auth/data/repositories/password-recovery-database.repository.ts` (implements abstract) | `[✓]` |
+| 2.6 | Delete old `modules/auth/repositories/prisma-user.repository.ts` | `[✓]` |
+| 2.7 | Delete old `modules/auth/repositories/password-recovery.repository.ts` | `[✓]` |
 
 ### cart/
 | # | File Change | Status |
@@ -42,30 +43,30 @@
 ### category/
 | # | File Change | Status |
 |---|-------------|--------|
-| 2.10 | Create `modules/category/domain/repositories/category.repository.ts` (abstract) | `[ ]` |
-| 2.11 | Create `modules/category/data/repositories/category-database.repository.ts` | `[ ]` |
+| 2.10 | Create `modules/category/domain/repositories/category.repository.ts` (abstract) | `[✓]` |
+| 2.11 | Create `modules/category/data/repositories/category-database.repository.ts` | `[✓]` |
 
 ### chat/
 | # | File Change | Status |
 |---|-------------|--------|
 | 2.12 | Create `modules/chat/domain/repositories/conversation-preference.repository.ts` (abstract) | `[ ]` |
 | 2.13 | Create `modules/chat/data/repositories/conversation-preference-database.repository.ts` | `[ ]` |
-| 2.14 | Create `modules/chat/domain/repositories/conversation.repository.ts` (abstract) | `[ ]` |
-| 2.15 | Create `modules/chat/data/repositories/conversation-database.repository.ts` | `[ ]` |
+| 2.14 | Create `modules/chat/domain/repositories/conversation.repository.ts` (abstract) | `[✓]` |
+| 2.15 | Create `modules/chat/data/repositories/conversation-database.repository.ts` | `[✓]` |
 | 2.16 | Create `modules/chat/domain/repositories/message.repository.ts` (abstract) | `[ ]` |
 | 2.17 | Create `modules/chat/data/repositories/message-database.repository.ts` | `[ ]` |
 
 ### disputes/
 | # | File Change | Status |
 |---|-------------|--------|
-| 2.18 | Create `modules/disputes/domain/repositories/dispute.repository.ts` (abstract) | `[ ]` |
-| 2.19 | Create `modules/disputes/data/repositories/dispute-database.repository.ts` | `[ ]` |
+| 2.18 | Create `modules/disputes/domain/repositories/dispute.repository.ts` (abstract) | `[✓]` |
+| 2.19 | Create `modules/disputes/data/repositories/dispute-database.repository.ts` | `[ ]` — concrete impl still lives at old flat path `modules/disputes/repositories/dispute.repository.ts`, not yet moved to `data/repositories/` |
 
 ### favorites/
 | # | File Change | Status |
 |---|-------------|--------|
-| 2.20 | Create `modules/favorites/domain/repositories/favorite.repository.ts` (abstract) | `[ ]` |
-| 2.21 | Create `modules/favorites/data/repositories/favorite-database.repository.ts` | `[ ]` |
+| 2.20 | Create `modules/favorites/domain/repositories/favorite.repository.ts` (abstract) | `[✓]` |
+| 2.21 | Create `modules/favorites/data/repositories/favorite-database.repository.ts` | `[✓]` |
 
 ### notifications/
 | # | File Change | Status |
@@ -94,14 +95,14 @@
 ### reports/
 | # | File Change | Status |
 |---|-------------|--------|
-| 2.30 | Create `modules/reports/domain/repositories/report.repository.ts` (abstract) | `[ ]` |
-| 2.31 | Create `modules/reports/data/repositories/report-database.repository.ts` | `[ ]` |
+| 2.30 | Create `modules/reports/domain/repositories/report.repository.ts` (abstract) | `[✓]` |
+| 2.31 | Create `modules/reports/data/repositories/report-database.repository.ts` | `[✓]` |
 
 ### reviews/
 | # | File Change | Status |
 |---|-------------|--------|
-| 2.32 | Create `modules/reviews/domain/repositories/review.repository.ts` (abstract) | `[ ]` |
-| 2.33 | Create `modules/reviews/data/repositories/review-database.repository.ts` | `[ ]` |
+| 2.32 | Create `modules/reviews/domain/repositories/review.repository.ts` (abstract) | `[✓]` |
+| 2.33 | Create `modules/reviews/data/repositories/review-database.repository.ts` | `[✓]` |
 
 ### social/
 | # | File Change | Status |
@@ -144,8 +145,8 @@
 ### wallet/
 | # | File Change | Status |
 |---|-------------|--------|
-| 2.52 | Create `modules/wallet/domain/repositories/wallet.repository.ts` (abstract) | `[ ]` |
-| 2.53 | Create `modules/wallet/data/repositories/wallet-database.repository.ts` | `[ ]` |
+| 2.52 | Create `modules/wallet/domain/repositories/wallet.repository.ts` (abstract) | `[✓]` |
+| 2.53 | Create `modules/wallet/data/repositories/wallet-database.repository.ts` | `[✓]` |
 
 ---
 

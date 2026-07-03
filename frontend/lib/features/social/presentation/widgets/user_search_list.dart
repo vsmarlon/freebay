@@ -5,6 +5,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/app_button.dart';
 
 class UserSearchList extends StatelessWidget {
   final List<UserSearchEntity> users;
@@ -176,64 +177,26 @@ class _UserSearchItemState extends State<_UserSearchItem> {
               ),
             ),
             Spacing.hSm,
-            _isLoading
-                ? const ShimmerBlock(width: 32, height: 32)
-                : _isFollowing
-                    ? InkWell(
-                        onTap: () async {
-                          setState(() => _isLoading = true);
-                          await widget.onUnfollow?.call(widget.user.id);
-                          setState(() {
-                            _isFollowing = false;
-                            _isLoading = false;
-                          });
-                        },
-                        child: Container(
-                          height: 36,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            border:
-                                Border.all(color: AppColors.primaryContainer),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Seguindo',
-                              style: TextStyle(
-                                color: AppColors.primaryContainer,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : InkWell(
-                        onTap: () async {
-                          setState(() => _isLoading = true);
-                          await widget.onFollow?.call(widget.user.id);
-                          setState(() {
-                            _isFollowing = true;
-                            _isLoading = false;
-                          });
-                        },
-                        child: Container(
-                          height: 36,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: const BoxDecoration(
-                            gradient: AppColors.brutalistGradient,
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Seguir',
-                              style: TextStyle(
-                                color: AppColors.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+            AppButton(
+              label: _isFollowing ? 'Seguindo' : 'Seguir',
+              variant: _isFollowing
+                  ? AppButtonVariant.ghost
+                  : AppButtonVariant.primary,
+              size: AppButtonSize.compact,
+              isLoading: _isLoading,
+              onPressed: () async {
+                setState(() => _isLoading = true);
+                if (_isFollowing) {
+                  await widget.onUnfollow?.call(widget.user.id);
+                } else {
+                  await widget.onFollow?.call(widget.user.id);
+                }
+                setState(() {
+                  _isFollowing = !_isFollowing;
+                  _isLoading = false;
+                });
+              },
+            ),
           ],
         ),
       ),

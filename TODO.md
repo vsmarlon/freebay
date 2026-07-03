@@ -31,13 +31,13 @@
 ## Frontend
 
 ### Design-system violations `[MED]`
-- [ ] `core/router/app_router.dart` — page transitions use 250–300ms + `easeInCubic`/`easeOutCubic`; should be 150ms `Curves.linear`
+- [x] `core/router/app_router.dart` — page transitions already use 150ms `Curves.linear` (`_buildPageWithSlideTransition`); stale item, no longer an issue
 - [ ] `social_post.dart` — price tag uses `primaryContainer` instead of `surface_container_highest`
 - [ ] Audit all pages for hardcoded `Colors.white` / `Colors.black` instead of `context.isDark` / theme extension
 - [ ] Audit all pages for `BorderRadius.circular()` > 0
 
 ### Docs
-- [ ] Replace stale `frontend/README.md` (stock Flutter boilerplate) with project-specific README
+- [x] Replace stale `frontend/README.md` (stock Flutter boilerplate) with project-specific README
 
 ---
 
@@ -77,7 +77,7 @@ All onDelete constraints verified present in schema:
 - [ ] Architecture/escrow flow diagram (or ADR) for the payment lifecycle
 
 ### Conventions
-- [ ] Align `AGENTS.md` — ensure it says **class-validator** (not Zod) for DTO validation
+- [x] Align `AGENTS.md` — moot: `AGENTS.md` was slimmed down to diagrams-only and no longer describes DTO validation at all; conventions now live solely in `CLAUDE.md` (already correct: class-validator, not Zod)
 
 ---
 

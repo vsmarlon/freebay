@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/empty_state.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/notifications/data/models/notification_model.dart';
@@ -120,25 +121,10 @@ class NotificationsPage extends ConsumerWidget {
                         ),
                       ),
                       Spacing.vMd,
-                      InkWell(
-                        onTap: () =>
+                      AppButton(
+                        label: 'Tentar novamente',
+                        onPressed: () =>
                             ref.read(notificationsProvider.notifier).refresh(),
-                        child: Container(
-                          height: 44,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: const BoxDecoration(
-                            gradient: AppColors.brutalistGradient,
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Tentar novamente',
-                              style: TextStyle(
-                                color: AppColors.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   ),

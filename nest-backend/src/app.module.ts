@@ -20,6 +20,7 @@ import { FavoritesModule } from './modules/favorites/favorites.module';
 import { CartModule } from './modules/cart/cart.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { BugReportModule } from './modules/bug-reports/bug-report.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     CartModule,
     StoriesModule,
     TasksModule,
+    BugReportModule,
   ],
   providers: [
     {

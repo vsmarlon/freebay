@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/core/components/spacing.dart';
 
 class CommentInput extends StatelessWidget {
@@ -28,8 +28,7 @@ class CommentInput extends StatelessWidget {
         ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
         : const EdgeInsets.symmetric(horizontal: 20, vertical: 12);
     final iconSize = compact ? 16.0 : 20.0;
-    final containerPadding =
-        compact ? const EdgeInsets.all(8.0) : const EdgeInsets.all(12.0);
+    final buttonSize = compact ? 32.0 : 44.0;
 
     return Row(
       children: [
@@ -57,20 +56,14 @@ class CommentInput extends StatelessWidget {
           ),
         ),
         Spacing.hSm,
-        GestureDetector(
-          onTap: isSending ? null : onSend,
-          child: Container(
-            padding: containerPadding,
-            decoration: const BoxDecoration(
-              gradient: AppColors.brutalistGradient,
-            ),
-            child: isSending
-                ? const ShimmerBlock(
-                    width: 44,
-                    height: 44,
-                  )
-                : Icon(Icons.send, color: AppColors.onPrimary, size: iconSize),
-          ),
+        BrutalistIconButton(
+          icon: Icons.send,
+          onTap: onSend,
+          size: buttonSize,
+          iconSize: iconSize,
+          iconColor: AppColors.onPrimary,
+          gradient: AppColors.brutalistGradient,
+          isLoading: isSending,
         ),
       ],
     );

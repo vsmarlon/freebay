@@ -74,7 +74,7 @@ describe('CreatePixPaymentUseCase', () => {
   });
 
   it('should return error if order not found', async () => {
-    mockOrderRepository.findById = jest.fn().mockResolvedValue(null);
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(left(new NotFoundError('Order')));
 
     const input = {
       orderId: 'non-existent-order',
@@ -93,7 +93,7 @@ describe('CreatePixPaymentUseCase', () => {
   });
 
   it('should return error if user is not the buyer', async () => {
-    mockOrderRepository.findById = jest.fn().mockResolvedValue(mockOrder);
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
 
     const input = {
       orderId: 'order-123',
@@ -112,7 +112,7 @@ describe('CreatePixPaymentUseCase', () => {
   });
 
   it('should create PIX payment successfully', async () => {
-    mockOrderRepository.findById = jest.fn().mockResolvedValue(mockOrder);
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
 
     const input = {
       orderId: 'order-123',
@@ -145,7 +145,7 @@ describe('CreatePixPaymentUseCase', () => {
   });
 
   it('should handle payment provider failure', async () => {
-    mockOrderRepository.findById = jest.fn().mockResolvedValue(mockOrder);
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockAbacatePay.createPixCharge = jest.fn().mockResolvedValue(
       left(new AppError('PAYMENT_PROVIDER_ERROR', 'Provider error', 500)),
     );
@@ -167,7 +167,7 @@ describe('CreatePixPaymentUseCase', () => {
   });
 
   it('should return existing transaction for duplicate idempotency key', async () => {
-    mockOrderRepository.findById = jest.fn().mockResolvedValue(mockOrder);
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockPrisma.transaction.findFirst = jest.fn().mockResolvedValue({
       id: 'tx-existing',
       pixQrCode: 'existing-qr-code',

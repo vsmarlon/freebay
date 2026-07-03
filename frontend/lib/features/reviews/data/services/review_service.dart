@@ -78,7 +78,7 @@ class ReviewService {
           filePath: path,
         );
         if (result.isLeft()) {
-          return Left(result.getLeft().toNullable()!);
+          return Left((result as Left<Failure, String>).value);
         }
         imageUrls.add(result.getOrElse(() => ''));
       }

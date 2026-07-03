@@ -36,7 +36,7 @@ import 'package:freebay/features/profile/presentation/pages/following_page.dart'
 import 'package:freebay/features/profile/presentation/pages/favorites_page.dart';
 import 'package:freebay/features/profile/presentation/pages/saved_posts_page.dart';
 import 'package:freebay/features/profile/presentation/pages/purchases_page.dart';
-import 'package:freebay/features/profile/presentation/pages/payment_page.dart';
+import 'package:freebay/features/payments/presentation/pages/payment_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
 import 'package:freebay/features/chat/presentation/pages/new_chat_page.dart';

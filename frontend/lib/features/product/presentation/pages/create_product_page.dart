@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -12,15 +10,14 @@ import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/features/product/presentation/widgets/category_selector_field.dart';
+import 'package:freebay/features/product/presentation/widgets/product_preview_card.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
@@ -110,8 +107,7 @@ class CreateProductPage extends HookConsumerWidget {
                     ),
                   ),
                   Spacing.vLg,
-                  _buildPreviewCard(
-                    context: context,
+                  ProductPreviewCard(
                     title: titleController.text.trim(),
                     description: descriptionController.text.trim(),
                     pricePreview: pricePreview,
@@ -153,106 +149,12 @@ class CreateProductPage extends HookConsumerWidget {
                     },
                   ),
                   Spacing.vLg,
-                  categoriesAsync.when(
-                    data: (categories) => InkWell(
-                      onTap: () => _showCategoryPicker(
-                        context,
-                        categories,
-                        selectedCategoryId.value,
-                        (value) => selectedCategoryId.value = value,
-                      ),
-                      child: Container(
-                        height: 64,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        color: isDark ? AppColors.surfaceDark : AppColors.white,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.category_outlined,
-                                color: AppColors.primaryContainer),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Categoria',
-                                    style: TextStyle(
-                                      fontFamily: AppTypography.fontFamily,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDark
-                                          ? AppColors.onPrimaryContainer
-                                          : AppColors.primary,
-                                    ),
-                                  ),
-                                  Spacing.vXs,
-                                  Text(
-                                    selectedCategory?.name ??
-                                        'Selecionar categoria',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontFamily: AppTypography.fontFamily,
-                                      color: isDark
-                                          ? AppColors.white
-                                          : AppColors.darkGray,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.arrow_forward,
-                                color: AppColors.primaryContainer),
-                          ],
-                        ),
-                      ),
-                    ),
-                    loading: () => Container(
-                      height: 64,
-                      color: isDark ? AppColors.surfaceDark : AppColors.white,
-                      child: const Center(
-                          child: ShimmerBlock(width: 24, height: 24)),
-                    ),
-                    error: (_, __) => Container(
-                      padding: const EdgeInsets.all(16),
-                      color: isDark ? AppColors.surfaceDark : AppColors.white,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Não foi possível carregar categorias agora.',
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                color: isDark
-                                    ? AppColors.white
-                                    : AppColors.darkGray,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          InkWell(
-                            onTap: () => ref.invalidate(categoriesProvider),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: const BoxDecoration(
-                                gradient: AppColors.brutalistGradient,
-                              ),
-                              child: const Text(
-                                'Tentar',
-                                style: TextStyle(
-                                  color: AppColors.onPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  CategorySelectorField(
+                    categoriesAsync: categoriesAsync,
+                    selectedCategory: selectedCategory,
+                    onCategorySelected: (value) =>
+                        selectedCategoryId.value = value,
+                    onRetry: () => ref.invalidate(categoriesProvider),
                   ),
                   Spacing.vMd,
                   InkWell(
@@ -426,178 +328,6 @@ class CreateProductPage extends HookConsumerWidget {
     );
   }
 
-  Widget _buildPreviewCard({
-    required BuildContext context,
-    required String title,
-    required String description,
-    required String pricePreview,
-    required String? categoryName,
-    required String? imagePath,
-    required bool isNew,
-    required String userName,
-    required String? userAvatarUrl,
-  }) {
-    final isDark = context.isDark;
-    return Container(
-      color: isDark
-          ? AppColors.surfaceContainerDark
-          : AppColors.surfaceContainerLowest,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'PREVIEW DO ANÚNCIO',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: context.surfaceColor,
-              border: Border.all(color: context.borderColor, width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: double.infinity,
-                  height: 220,
-                  child: imagePath != null
-                      ? Image.file(File(imagePath), fit: BoxFit.cover)
-                      : Container(
-                          color: isDark
-                              ? AppColors.surfaceContainerLowDark
-                              : AppColors.surfaceContainerHighest,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              color: AppColors.mediumGray,
-                              size: 40,
-                            ),
-                          ),
-                        ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          UserAvatar(
-                            imageUrl: userAvatarUrl,
-                            size: AppAvatarSize.small,
-                          ),
-                          Spacing.hSm,
-                          Text(
-                            userName,
-                            style: TextStyle(
-                              fontFamily: AppTypography.headlineFontFamily,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: context.textPrimary,
-                            ),
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: AppColors.brutalistGradient,
-                              border: Border.all(
-                                color: context.borderColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: Text(
-                              isNew ? 'NOVO' : 'USADO',
-                              style: const TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.6,
-                                color: AppColors.onPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Spacing.vSm,
-                      Text(
-                        title.isEmpty ? 'Seu título aparece aqui' : title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.white : AppColors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        color: isDark
-                            ? AppColors.surfaceContainerLowDark
-                            : AppColors.surfaceContainerHighest,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        child: Text(
-                          pricePreview,
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color:
-                                isDark ? AppColors.white : AppColors.onSurface,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        categoryName ?? 'Categoria obrigatória',
-                        style: TextStyle(
-                          fontFamily: AppTypography.fontFamily,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? AppColors.onPrimaryContainer
-                              : AppColors.primary,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      Text(
-                        description.isEmpty
-                            ? 'A descrição do produto aparece aqui.'
-                            : description,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: AppTypography.fontFamily,
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _formatCurrencyInput(String value) {
     final digits = value.replaceAll(RegExp(r'\D'), '');
     if (digits.isEmpty) {
@@ -627,82 +357,5 @@ class CreateProductPage extends HookConsumerWidget {
     final cents = _parsePriceToCents(value);
     final reais = cents / 100;
     return 'R\$ ${reais.toStringAsFixed(2).replaceAll('.', ',')}';
-  }
-
-  Future<void> _showCategoryPicker(
-    BuildContext context,
-    List<CategoryEntity> categories,
-    String? selectedCategoryId,
-    void Function(String) onSelected,
-  ) async {
-    final isDark = context.isDark;
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      builder: (context) {
-        return SafeArea(
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: categories.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(height: 2),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'ESCOLHER CATEGORIA',
-                    style: TextStyle(
-                      fontFamily: AppTypography.headlineFontFamily,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppColors.white : AppColors.onSurface,
-                    ),
-                  ),
-                );
-              }
-
-              final category = categories[index - 1];
-              final isSelected = category.id == selectedCategoryId;
-              return InkWell(
-                onTap: () {
-                  onSelected(category.id);
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  color: isSelected
-                      ? (isDark
-                          ? AppColors.surfaceContainerDark
-                          : AppColors.surfaceContainerHighest)
-                      : (isDark ? AppColors.surfaceDark : AppColors.white),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          category.name,
-                          style: TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color:
-                                isDark ? AppColors.white : AppColors.onSurface,
-                          ),
-                        ),
-                      ),
-                      if (isSelected)
-                        const Icon(Icons.check,
-                            color: AppColors.primaryContainer),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
   }
 }

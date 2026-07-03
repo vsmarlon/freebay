@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/app_refresh_indicator.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
@@ -13,11 +14,21 @@ import 'package:freebay/features/profile/presentation/widgets/profile_header.dar
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 
-class ProfilePage extends HookConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final authState = ref.watch(authControllerProvider);
     final isGuest = authState.valueOrNull?.isGuest ?? false;
 
@@ -57,30 +68,35 @@ class ProfilePage extends HookConsumerWidget {
             child: profileAsync.when(
               data: (profileUser) {
                 final u = profileUser;
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      statsAsync.when(
-                        data: (stats) => ProfileHeader(
-                          user: u,
-                          followersCount: stats.followersCount,
-                          followingCount: stats.followingCount,
+                return AppRefreshIndicator(
+                  onRefresh: () async =>
+                      ref.refresh(profileFutureProvider('me').future),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        statsAsync.when(
+                          data: (stats) => ProfileHeader(
+                            user: u,
+                            followersCount: stats.followersCount,
+                            followingCount: stats.followingCount,
+                          ),
+                          loading: () => ProfileHeader(user: u),
+                          error: (_, __) => ProfileHeader(user: u),
                         ),
-                        loading: () => ProfileHeader(user: u),
-                        error: (_, __) => ProfileHeader(user: u),
-                      ),
-                      Spacing.vMd,
-                      Container(
-                        width: double.infinity,
-                        height: 1,
-                        color: context.isDark
-                            ? AppColors.outlineVariant.withAlpha(40)
-                            : AppColors.surfaceContainerHigh,
-                      ),
-                      ProfileTabs(user: u),
-                    ],
+                        Spacing.vMd,
+                        Container(
+                          width: double.infinity,
+                          height: 1,
+                          color: context.isDark
+                              ? AppColors.outlineVariant.withAlpha(40)
+                              : AppColors.surfaceContainerHigh,
+                        ),
+                        ProfileTabs(user: u),
+                      ],
+                    ),
                   ),
                 );
               },

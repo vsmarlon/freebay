@@ -1,65 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateOrderUseCase } from './create-order.usecase';
 import { ConfirmDeliveryUseCase } from './confirm-delivery.usecase';
-import { PrismaOrderRepository } from '../repositories/order.repository';
+import { OrderRepository } from '../domain/repositories/order.repository';
 import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
-
-interface MockPrisma {
-  $transaction: jest.Mock;
-  product: Record<string, jest.Mock>;
-  order: Record<string, jest.Mock>;
-  chatMessage: Record<string, jest.Mock>;
-  wallet: Record<string, jest.Mock>;
-  transaction: Record<string, jest.Mock>;
-}
+import { right } from '@/shared/core/either';
 
 describe('CreateOrderUseCase', () => {
   let sut: CreateOrderUseCase;
-  let mockOrderRepository: { create: jest.Mock };
-  let mockPrisma: MockPrisma;
+  let mockOrderRepository: { createOrderWithReservation: jest.Mock };
 
   beforeEach(async () => {
     mockOrderRepository = {
-      create: jest.fn(),
+      createOrderWithReservation: jest.fn().mockResolvedValue(right({ id: 'order-123' })),
     };
-
-    mockPrisma = {
-      product: {
-        findUnique: jest.fn().mockResolvedValue({
-          id: 'product-123',
-          sellerId: 'seller-123',
-          status: 'ACTIVE',
-        }),
-        update: jest.fn(),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-      },
-      order: {
-        create: jest.fn().mockResolvedValue({
-          id: 'order-123',
-          buyerId: 'buyer-123',
-          sellerId: 'seller-123',
-          productId: 'product-123',
-          amount: 10000,
-          platformFee: 1000,
-          status: 'PENDING',
-          createdAt: new Date(),
-        }),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-      },
-      chatMessage: {
-        create: jest.fn(),
-      },
-    } as unknown as MockPrisma;
-    mockPrisma.$transaction = jest.fn().mockImplementation(async (callback) => callback(mockPrisma));
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderUseCase,
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: OrderRepository, useValue: mockOrderRepository },
         { provide: NotificationService, useValue: { create: jest.fn() } },
       ],
     }).compile();
@@ -87,13 +46,14 @@ describe('CreateOrderUseCase', () => {
       expect(result.value.amount).toBe(10000);
       expect(result.value.status).toBe('PENDING');
     }
-    expect(mockPrisma.order.create).toHaveBeenCalledWith(
+    expect(mockOrderRepository.createOrderWithReservation).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          buyer: { connect: { id: 'buyer-123' } },
-          seller: { connect: { id: 'seller-123' } },
-          platformFee: 1000,
-        }),
+        buyerId: 'buyer-123',
+        sellerId: 'seller-123',
+        productId: 'product-123',
+        amount: 10000,
+        platformFee: 1000,
+        sellerAmount: 9000,
       }),
     );
   });
@@ -109,11 +69,10 @@ describe('CreateOrderUseCase', () => {
 
     await sut.execute(input);
 
-    expect(mockPrisma.order.create).toHaveBeenCalledWith(
+    expect(mockOrderRepository.createOrderWithReservation).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          platformFee: 1500,
-        }),
+        platformFee: 1500,
+        sellerAmount: 8500,
       }),
     );
   });
@@ -121,31 +80,18 @@ describe('CreateOrderUseCase', () => {
 
 describe('ConfirmDeliveryUseCase', () => {
   let sut: ConfirmDeliveryUseCase;
-  let mockOrderRepository: { findById: jest.Mock; update: jest.Mock };
-  let mockPrisma: MockPrisma;
+  let mockOrderRepository: { findById: jest.Mock; confirmDelivery: jest.Mock };
 
   beforeEach(async () => {
     mockOrderRepository = {
       findById: jest.fn(),
-      update: jest.fn(),
+      confirmDelivery: jest.fn().mockResolvedValue(right(undefined)),
     };
-
-    mockPrisma = {
-      product: {
-        findUnique: jest.fn(),
-        update: jest.fn(),
-      },
-      order: {
-        findUnique: jest.fn(),
-        update: jest.fn(),
-      },
-    } as unknown as MockPrisma;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConfirmDeliveryUseCase,
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: OrderRepository, useValue: mockOrderRepository },
       ],
     }).compile();
 
@@ -157,22 +103,15 @@ describe('ConfirmDeliveryUseCase', () => {
   });
 
   it('should confirm delivery when order is CONFIRMED or DELIVERED and user is buyer', async () => {
-    mockOrderRepository.findById.mockResolvedValue({
-      id: 'order-123',
-      buyerId: 'user-123',
-      sellerId: 'seller-123',
-      status: 'CONFIRMED',
-      sellerAmount: 9000,
-    });
-    mockPrisma.$transaction = jest.fn().mockImplementation(async (callback) => {
-      return callback(mockPrisma);
-    });
-    mockPrisma.order = { update: jest.fn().mockResolvedValue({}) };
-    mockPrisma.wallet = { 
-      findUnique: jest.fn().mockResolvedValue({ id: 'wallet-1' }),
-      update: jest.fn().mockResolvedValue({})
-    };
-    mockPrisma.transaction = { update: jest.fn().mockResolvedValue({}) };
+    mockOrderRepository.findById.mockResolvedValue(
+      right({
+        id: 'order-123',
+        buyerId: 'user-123',
+        sellerId: 'seller-123',
+        status: 'CONFIRMED',
+        sellerAmount: 9000,
+      }),
+    );
 
     const input = {
       orderId: 'order-123',
@@ -185,10 +124,15 @@ describe('ConfirmDeliveryUseCase', () => {
     if (result.isRight()) {
       expect(result.value.confirmed).toBe(true);
     }
+    expect(mockOrderRepository.confirmDelivery).toHaveBeenCalledWith({
+      orderId: 'order-123',
+      sellerId: 'seller-123',
+      sellerAmount: 9000,
+    });
   });
 
   it('should return error if order not found', async () => {
-    mockOrderRepository.findById.mockResolvedValue(null);
+    mockOrderRepository.findById.mockResolvedValue(right(null));
 
     const input = {
       orderId: 'order-123',
@@ -204,11 +148,13 @@ describe('ConfirmDeliveryUseCase', () => {
   });
 
   it('should return error if user is not the buyer', async () => {
-    mockOrderRepository.findById.mockResolvedValue({
-      id: 'order-123',
-      buyerId: 'other-user-123',
-      status: 'CONFIRMED',
-    });
+    mockOrderRepository.findById.mockResolvedValue(
+      right({
+        id: 'order-123',
+        buyerId: 'other-user-123',
+        status: 'CONFIRMED',
+      }),
+    );
 
     const input = {
       orderId: 'order-123',
@@ -225,11 +171,13 @@ describe('ConfirmDeliveryUseCase', () => {
   });
 
   it('should return error if order is not SHIPPED', async () => {
-    mockOrderRepository.findById.mockResolvedValue({
-      id: 'order-123',
-      buyerId: 'user-123',
-      status: 'PENDING',
-    });
+    mockOrderRepository.findById.mockResolvedValue(
+      right({
+        id: 'order-123',
+        buyerId: 'user-123',
+        status: 'PENDING',
+      }),
+    );
 
     const input = {
       orderId: 'order-123',
@@ -245,11 +193,13 @@ describe('ConfirmDeliveryUseCase', () => {
   });
 
   it('should return error if order status is COMPLETED', async () => {
-    mockOrderRepository.findById.mockResolvedValue({
-      id: 'order-123',
-      buyerId: 'user-123',
-      status: 'COMPLETED',
-    });
+    mockOrderRepository.findById.mockResolvedValue(
+      right({
+        id: 'order-123',
+        buyerId: 'user-123',
+        status: 'COMPLETED',
+      }),
+    );
 
     const input = {
       orderId: 'order-123',
@@ -265,11 +215,13 @@ describe('ConfirmDeliveryUseCase', () => {
   });
 
   it('should return error if order status is CANCELLED', async () => {
-    mockOrderRepository.findById.mockResolvedValue({
-      id: 'order-123',
-      buyerId: 'user-123',
-      status: 'CANCELLED',
-    });
+    mockOrderRepository.findById.mockResolvedValue(
+      right({
+        id: 'order-123',
+        buyerId: 'user-123',
+        status: 'CANCELLED',
+      }),
+    );
 
     const input = {
       orderId: 'order-123',
@@ -287,49 +239,17 @@ describe('ConfirmDeliveryUseCase', () => {
 
 describe('CreateOrderUseCase - platform fee calculations', () => {
   let sut: CreateOrderUseCase;
-  let mockOrderRepository: { create: jest.Mock };
-  let mockPrisma: MockPrisma;
+  let mockOrderRepository: { createOrderWithReservation: jest.Mock };
 
   beforeEach(async () => {
     mockOrderRepository = {
-      create: jest.fn(),
+      createOrderWithReservation: jest.fn().mockResolvedValue(right({ id: 'order-123' })),
     };
-
-    mockPrisma = {
-      product: {
-        findUnique: jest.fn().mockResolvedValue({
-          id: 'product-123',
-          sellerId: 'seller-123',
-          status: 'ACTIVE',
-        }),
-        update: jest.fn(),
-        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
-      },
-      order: {
-        create: jest.fn().mockResolvedValue({
-          id: 'order-123',
-          buyerId: 'buyer-123',
-          sellerId: 'seller-123',
-          productId: 'product-123',
-          amount: 10000,
-          platformFee: 1000,
-          status: 'PENDING',
-          createdAt: new Date(),
-        }),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-      },
-      chatMessage: {
-        create: jest.fn(),
-      },
-    } as unknown as MockPrisma;
-    mockPrisma.$transaction = jest.fn().mockImplementation(async (callback) => callback(mockPrisma));
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderUseCase,
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: OrderRepository, useValue: mockOrderRepository },
         { provide: NotificationService, useValue: { create: jest.fn() } },
       ],
     }).compile();
@@ -348,11 +268,10 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
 
     await sut.execute(input);
 
-    expect(mockPrisma.order.create).toHaveBeenCalledWith(
+    expect(mockOrderRepository.createOrderWithReservation).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          platformFee: 500,
-        }),
+        platformFee: 500,
+        sellerAmount: 9500,
       }),
     );
   });
@@ -368,11 +287,10 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
 
     await sut.execute(input);
 
-    expect(mockPrisma.order.create).toHaveBeenCalledWith(
+    expect(mockOrderRepository.createOrderWithReservation).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          platformFee: 2000,
-        }),
+        platformFee: 2000,
+        sellerAmount: 8000,
       }),
     );
   });
@@ -388,11 +306,9 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
 
     await sut.execute(input);
 
-    expect(mockPrisma.order.create).toHaveBeenCalledWith(
+    expect(mockOrderRepository.createOrderWithReservation).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
-          platformFee: 1000,
-        }),
+        platformFee: 1000,
       }),
     );
   });

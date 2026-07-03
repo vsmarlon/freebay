@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
@@ -11,6 +12,7 @@ import 'package:freebay/features/orders/presentation/providers/order_providers.d
 import 'package:freebay/features/orders/presentation/widgets/order_status_timeline.dart';
 import 'package:freebay/features/orders/presentation/widgets/escrow_status_card.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_actions.dart';
+import 'package:freebay/features/orders/presentation/widgets/brutalist_confirm_dialog.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
@@ -227,33 +229,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   }
 
   Widget _buildRetryButton() {
-    return Container(
-      height: 48,
-      decoration: const BoxDecoration(
-        gradient: AppColors.brutalistGradient,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
-          },
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Center(
-              child: Text(
-                'Tentar novamente',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onPrimary,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return AppButton(
+      label: 'Tentar novamente',
+      onPressed: () {
+        ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
+      },
     );
   }
 
@@ -513,7 +493,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Future<void> _handleConfirmDelivery() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => _BrutalistDialog(
+      builder: (context) => BrutalistConfirmDialog(
         title: 'Confirmar Recebimento',
         message:
             'Ao confirmar o recebimento, o pagamento será liberado para o vendedor. Deseja continuar?',
@@ -610,7 +590,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Future<void> _handleCancel() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => _BrutalistDialog(
+      builder: (context) => BrutalistConfirmDialog(
         title: 'Cancelar Pedido',
         message:
             'Tem certeza que deseja cancelar este pedido? O valor será reembolsado.',
@@ -638,108 +618,5 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         );
       }
     }
-  }
-}
-
-class _BrutalistDialog extends StatelessWidget {
-  final String title;
-  final String message;
-  final String confirmLabel;
-  final String cancelLabel;
-  final bool isDanger;
-
-  const _BrutalistDialog({
-    required this.title,
-    required this.message,
-    required this.confirmLabel,
-    required this.cancelLabel,
-    this.isDanger = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      backgroundColor: context.surfaceColor,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: context.textPrimary,
-              ),
-            ),
-            Spacing.vMd,
-            Text(
-              message,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 14,
-                color: context.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            Spacing.vLg,
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: isDanger ? null : AppColors.brutalistGradient,
-                color: isDanger ? AppColors.error : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => Navigator.of(context).pop(true),
-                  child: Center(
-                    child: Text(
-                      confirmLabel,
-                      style: const TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: context.borderColor.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => Navigator.of(context).pop(false),
-                  child: Center(
-                    child: Text(
-                      cancelLabel,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

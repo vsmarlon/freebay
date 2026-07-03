@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
 import 'package:freebay/features/profile/data/entities/follower_entity.dart';
@@ -175,45 +176,14 @@ class FollowersPage extends ConsumerWidget {
               ),
             )
           : null,
-      trailing: follower.isFollowing
-          ? InkWell(
-              onTap: () {},
-              child: Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.primaryContainer),
-                ),
-                child: const Center(
-                  child: Text(
-                    'Seguindo',
-                    style: TextStyle(
-                      color: AppColors.primaryContainer,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            )
-          : InkWell(
-              onTap: () {},
-              child: Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.brutalistGradient,
-                ),
-                child: const Center(
-                  child: Text(
-                    'Seguir',
-                    style: TextStyle(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+      trailing: AppButton(
+        label: follower.isFollowing ? 'Seguindo' : 'Seguir',
+        variant: follower.isFollowing
+            ? AppButtonVariant.ghost
+            : AppButtonVariant.primary,
+        size: AppButtonSize.compact,
+        onPressed: () {},
+      ),
     );
   }
 }

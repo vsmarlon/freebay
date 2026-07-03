@@ -2,10 +2,10 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/features/wallet/data/models/wallet_model.dart';
+import 'package:freebay/features/wallet/data/entities/wallet_entity.dart';
 
 class WalletService {
-  Future<Either<Failure, WalletModel>> getWallet() async {
+  Future<Either<Failure, WalletEntity>> getWallet() async {
     try {
       final response = await HttpClient.instance.get('/wallet/');
 
@@ -16,7 +16,7 @@ class WalletService {
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'];
-        return Right(WalletModel.fromJson(data));
+        return Right(WalletEntity.fromJson(data));
       } else {
         return const Left(ServerFailure('Erro ao carregar dados da carteira.'));
       }

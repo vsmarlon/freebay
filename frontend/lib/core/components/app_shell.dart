@@ -15,6 +15,8 @@ import 'package:freebay/features/profile/presentation/pages/profile_page.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_fab.dart';
+import 'package:freebay/core/components/app_shell_scaffold_key.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
 
 class AppShell extends StatefulWidget {
   final Widget child;
@@ -148,6 +150,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         });
 
         return Scaffold(
+          key: appShellScaffoldKey,
+          drawer: const FeedDrawer(),
+          drawerEnableOpenDragGesture: selectedIndex == 0,
+          drawerEdgeDragWidth: 48,
           body: PageView(
             controller: _pageController,
             physics: const ClampingScrollPhysics(),

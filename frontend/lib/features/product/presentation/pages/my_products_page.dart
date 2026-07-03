@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_card.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -76,31 +77,11 @@ class MyProductsPage extends ConsumerWidget {
                               icon: Icons.shopping_bag_outlined,
                               title: 'NENHUM AN\u00daNCIO',
                               subtitle: 'Nenhum an\u00fancio ainda',
-                              action: InkWell(
-                                onTap: () => context.push('/products/create'),
-                                child: Container(
-                                  height: 48,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20),
-                                  decoration: const BoxDecoration(
-                                    gradient: AppColors.brutalistGradient,
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.add,
-                                          color: AppColors.onPrimary),
-                                      Spacing.hSm,
-                                      Text(
-                                        'Criar an\u00fancio',
-                                        style: TextStyle(
-                                          color: AppColors.onPrimary,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              action: AppButton(
+                                label: 'Criar an\u00fancio',
+                                icon: Icons.add,
+                                onPressed: () =>
+                                    context.push('/products/create'),
                               ),
                             )
                           : RefreshIndicator(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -243,44 +244,12 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
-                                        child: InkWell(
-                                          onTap: _isSubmitting
+                                        child: AppButton(
+                                          label: 'Gerar PIXs',
+                                          onPressed: _isSubmitting
                                               ? null
                                               : () => _submitCheckout(context),
-                                          child: Container(
-                                            height: 48,
-                                            decoration: BoxDecoration(
-                                              gradient: _isSubmitting
-                                                  ? null
-                                                  : AppColors.brutalistGradient,
-                                              color: _isSubmitting
-                                                  ? (isDark
-                                                      ? AppColors
-                                                          .surfaceContainerDark
-                                                      : AppColors
-                                                          .surfaceContainerHighest)
-                                                  : null,
-                                            ),
-                                            child: Center(
-                                              child: _isSubmitting
-                                                  ? const ShimmerBlock(
-                                                      width: 20,
-                                                      height: 20,
-                                                    )
-                                                  : const Text(
-                                                      'Gerar PIXs',
-                                                      style: TextStyle(
-                                                        fontFamily:
-                                                            AppTypography
-                                                                .fontFamily,
-                                                        fontWeight:
-                                                            FontWeight.w700,
-                                                        color:
-                                                            AppColors.onPrimary,
-                                                      ),
-                                                    ),
-                                            ),
-                                          ),
+                                          isLoading: _isSubmitting,
                                         ),
                                       ),
                                     ],
@@ -425,24 +394,10 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: InkWell(
-                        onTap: () => context.push('/orders/${item.orderId}'),
-                        child: Container(
-                          height: 44,
-                          decoration: const BoxDecoration(
-                            gradient: AppColors.brutalistGradient,
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Ver pedido',
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
+                      child: AppButton(
+                        label: 'Ver pedido',
+                        onPressed: () =>
+                            context.push('/orders/${item.orderId}'),
                       ),
                     ),
                   ],
@@ -460,7 +415,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
       _isSubmitting = true;
     });
 
-    final result = await ref.read(cartServiceProvider).checkoutCart();
+    final result = await ref.read(checkoutCartUsecaseProvider)();
 
     result.fold(
       (failure) {

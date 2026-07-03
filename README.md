@@ -60,7 +60,7 @@ FreeBay permite que usuários vendam e comprem produtos enquanto interagem em um
 | Redis | - | Cache e sessões |
 | Socket.io | 4.8.x | WebSocket para chat em tempo real |
 | JWT | 11.x | Autenticação |
-| Zod | 3.24.x | Validação de DTOs |
+| class-validator | 0.14.x | Validação de DTOs |
 | Firebase | - | Cloud Messaging (FCM) |
 
 ### Frontend
@@ -138,6 +138,33 @@ Funcionalidades completamente implementadas (backend + frontend + testes).
 - **Backend:** `nest-backend/src/modules/wallet/`
 - **Frontend:** `frontend/lib/features/wallet/`
 
+#### 📂 Categoria (`category`)
+- Categorias hierárquicas (parent/child)
+- Use cases + repository (abstrato + Prisma) implementados
+- **Backend:** `nest-backend/src/modules/category/`
+
+#### ⭐ Favoritos (`favorites`)
+- Toggle de favorito, listagem, checagem por produto
+- Use cases + repository (abstrato + Prisma) implementados
+- **Backend:** `nest-backend/src/modules/favorites/`
+- **Frontend:** `frontend/lib/features/favorites/`
+
+#### 📖 Stories (`stories`)
+- Módulo próprio (extraído de `social`), stories com expiração e contagem de views
+- Use cases + repository (abstrato + Prisma) implementados
+- **Backend:** `nest-backend/src/modules/stories/`
+
+#### 🚩 Denúncias (`reports`)
+- Criação, listagem e resolução de denúncias (usuário/post)
+- Use cases + repository (abstrato + Prisma) + testes implementados
+- **Backend:** `nest-backend/src/modules/reports/`
+
+#### ⚖️ Disputas (`disputes`)
+- Ciclo completo: abertura, evidências, resolução, desistência
+- Janela de 48h para entrega, cron de limpeza (`modules/tasks/`)
+- Repository dedicado (`PrismaDisputeRepository`, ainda não migrado para o padrão `domain/`+`data/repositories/` usado pelos demais módulos)
+- **Backend:** `nest-backend/src/modules/disputes/`
+
 ---
 
 ### 🔄 INCOMPLETO / PARCIAL
@@ -150,7 +177,7 @@ Funcionalidades com implementação parcial (algumas partes faltando).
 | Controller | ✅ Completo |
 | Use Cases | ✅ Completo |
 | Repository | ✅ Completo |
-| Module | ❌ Falta `reviews.module.ts` |
+| Module | ✅ Completo |
 | Tests | ✅ Unit + Integration |
 
 - Reviews bidirecionais: buyer_reviewing_seller, seller_reviewing_buyer
@@ -181,8 +208,8 @@ Funcionalidades com implementação parcial (algumas partes faltando).
 | Controller | ✅ Completo |
 | Use Cases | ✅ Completo |
 | WebSocket Gateway | ✅ Completo |
-| Repository | ❌ Não existe |
-| Tests | ❌ Não existe |
+| Repository | 🔄 Parcial (`conversation.repository.ts` migrado para `domain/`+`data/repositories/`; `message` e `conversation-preference` ainda no padrão antigo) |
+| Tests | ✅ Unit test |
 
 - Mensagens associadas a orders
 - WebSocket para tempo real
@@ -208,80 +235,25 @@ Funcionalidades com implementação parcial (algumas partes faltando).
 
 ---
 
-### 📋 NÃO INICIADO / A FAZER
-
-Funcionalidades projetadas mas não implementadas.
-
-#### 📂 Categoria (`category`)
-```
-Status: Controller existe, use cases/repositório não existem
-```
-- Modelo: Category com parent/child hierarchy
-- Endpoint: category.controller.ts (vazio)
-- **Precisa:** Implementar use cases CRUD, repository
-
-#### ❤️ Lista de Desejos (`wishlist`)
-```
-Status: Controller + Repository existem, use cases não existem
-```
-- Modelo: Wishlist (userId, productId)
-- Repository: `wishlist.repository.ts`
-- **Precisa:** Implementar use cases, testes
-
-#### ⭐ Favoritos (`favorites`)
-```
-Status: Controller + Repository existem, use cases não existem
-```
-- Modelo: Favorite (userId, productId)
-- Repository: `favorite.repository.ts`
-- **Precisa:** Implementar use cases, testes
-
-#### ⚖️ Disputas (`disputes`)
-```
-Status: Mínimo implementado, sem repository dedicado
-```
-- Modelo: Dispute com evidence (buyerEvidence, sellerEvidence)
-- Estados: OPEN → AWAITING_SELLER → AWAITING_BUYER → RESOLVED/CANCELLED
-- Prazo de expiração (expiresAt)
-- **Precisa:** Repository dedicado, completar use cases, frontend
-
-#### 🚩 Reports (`reports`)
-```
-Status: Mínimo implementado, sem repository/testes
-```
-- Modelo: Report (reporterId, reportedUserId/postId)
-- Razões: FALSE_ADVERTISING, SPAM, FRAUD, NUDITY, FAKE_ACCOUNT, etc.
-- Estados: PENDING, REVIEWED, RESOLVED, REJECTED
-- **Precisa:** Repository, testes, frontend completo
-
-#### 📖 Stories (social)
-```
-Status: Modelos existem no Prisma, backend não implementado
-```
-- Modelos: Story, StoryView
-- Stories expiram (expiresAt)
-- Views únicas por usuário
-- **Precisa:** Implementar completo
-
----
-
 ## Database Schema
 
 Local: `nest-backend/prisma/schema.prisma`
 
-### Entidades (28 modelos)
+### Entidades (30 modelos)
 
 | Entidade | Descrição | Relacionamentos |
 |----------|-----------|------------------|
 | **User** | Usuário da plataforma | wallet, products, posts, orders, reviews, follow/following, blocks, disputes, chat, etc. |
+| **PasswordRecoveryCode** | Código de recuperação de senha | user |
 | **Category** | Categorias hierárquicas de produtos | parent/children, products |
-| **Product** | Produto à venda | seller, category, post, images, orders, favorites, wishlist, cart |
+| **Product** | Produto à venda | seller, category, post, images, orders, favorites, cart |
 | **ProductImage** | Imagens do produto | product (Cascade delete) |
 | **Post** | Post no feed social | user, product, comments, likes, shares, savedBy |
 | **Comment** | Comentário em post | user, post, parent (threaded), commentLikes |
 | **CommentLike** | Like em comentário | user, comment |
 | **Like** | Like em post | user, post (unique) |
 | **Share** | Compartilhamento de post | user, post (unique) |
+| **SavedPost** | Post salvo/bookmarked | user, post (unique) |
 | **Follow** | Seguimento de usuário | follower, following (unique) |
 | **Story** | Story efêmera do usuário | user, views |
 | **StoryView** | Visualização de story | story, viewer (unique) |
@@ -292,11 +264,12 @@ Local: `nest-backend/prisma/schema.prisma`
 | **Withdrawal** | Solicitação de saque | wallet |
 | **Dispute** | Disputa de pedido | order (unique), openedBy |
 | **Review** | Avaliação após pedido | reviewer, reviewed, order (unique por type) |
+| **ReviewImage** | Imagem anexada a uma avaliação | review |
 | **ChatMessage** | Mensagem no contexto de pedido | order, sender |
 | **DirectConversation** | Conversa direta entre usuários | user1, user2 (unique), messages |
 | **DirectMessage** | Mensagem direta | conversation, sender |
+| **ConversationPreference** | Preferências de chat por usuário | conversation, user |
 | **Favorite** | Produto favoritado | user, product (unique) |
-| **Wishlist** | Produto na lista de desejos | user, product (unique) |
 | **CartItem** | Item no carrinho | user, product (unique) |
 | **Report** | Denúncia de conteúdo/usuário | reporter, reportedUser/post |
 | **Notification** | Notificação in-app | user |
@@ -348,12 +321,13 @@ NotificationType   : ORDER, FOLLOW, MESSAGE, DISPUTE, PAYMENT
 
 ```
 src/
-├── modules/                    # Vertical slices
+├── modules/                    # Vertical slices (NestJS modules)
 │   ├── {module}/
-│   │   ├── dtos/              # Zod validation schemas
+│   │   ├── dtos/              # class-validator DTOs + @nestjs/swagger
 │   │   ├── mappers/           # Prisma → API response
-│   │   ├── repositories/      # Concrete repositories
-│   │   ├── usecases/          # Business logic
+│   │   ├── domain/repositories/  # Abstract Repository classes (maioria dos módulos)
+│   │   ├── data/repositories/    # Implementação Prisma concreta
+│   │   ├── usecases/          # Uma classe por caso de uso, retorna Either<AppError, Output>
 │   │   ├── {module}.controller.ts
 │   │   └── {module}.module.ts
 │   └── ...
@@ -361,7 +335,7 @@ src/
 └── shared/                    # Reusable
     ├── core/                  # Either, AppError classes
     ├── infra/prisma/          # Prisma client
-    └── http/                  # Route adapter
+    └── http/                  # Interceptors (Either/Transform), exception filter
 ```
 
 ### Padrões Utilizados
@@ -369,9 +343,9 @@ src/
 | Padrão | Descrição |
 |--------|-----------|
 | **Either Type** | Retorno fortemente tipado (success/error) em use cases |
-| **Zod DTOs** | Validação de input com schemas |
-| **Route Adapter** | Elimina boilerplate de controllers |
-| **Concrete Repos** | Sem interfaces, injeção direta |
+| **class-validator DTOs** | Validação de input via decorators (`@IsString`, `@IsEmail`, etc.) |
+| **Interceptors** | `EitherInterceptor` + `TransformInterceptor` moldam a resposta HTTP a partir do retorno Either do controller |
+| **Abstract + Concrete Repos** | Maioria dos módulos injeta um repositório abstrato (`domain/repositories/`) ligado à implementação Prisma (`data/repositories/`) via `useExisting`; `payments`/`notifications` ainda injetam a classe concreta diretamente |
 | **Vertical Modules** | Cada feature é autocontida |
 
 ### Flutter Architecture (Frontend)
@@ -511,19 +485,20 @@ freebay/
 │   │   │   ├── auth/               # Login, register, JWT
 │   │   │   ├── users/              # Profile, follow, block
 │   │   │   ├── products/           # CRUD products
-│   │   │   ├── category/           # Categories (incompleto)
+│   │   │   ├── category/           # Categories
 │   │   │   ├── social/             # Posts, likes, comments
+│   │   │   ├── stories/            # Ephemeral stories (extracted from social)
 │   │   │   ├── orders/             # Order lifecycle
 │   │   │   ├── payments/           # PIX, credit card
 │   │   │   ├── wallet/             # Balance, withdrawals
 │   │   │   ├── cart/               # Cart management
-│   │   │   ├── wishlist/           # Wishlist (incompleto)
-│   │   │   ├── favorites/          # Favorites (incompleto)
-│   │   │   ├── disputes/           # Dispute system (incompleto)
+│   │   │   ├── favorites/          # Favorites
+│   │   │   ├── disputes/           # Dispute system
 │   │   │   ├── reviews/            # Ratings/reviews
-│   │   │   ├── chat/               # Order chat (WebSocket)
+│   │   │   ├── chat/               # Order chat + direct messages (WebSocket)
 │   │   │   ├── notifications/       # Push + in-app
-│   │   │   └── reports/            # Content reports (incompleto)
+│   │   │   ├── reports/            # Content reports
+│   │   │   └── tasks/              # Scheduled jobs (e.g. dispute cleanup cron)
 │   │   │
 │   │   └── shared/                 # Core, errors, http
 │   │
@@ -547,7 +522,9 @@ freebay/
 │   │   │
 │   │   ├── features/
 │   │   │   ├── auth/              # Login, register, splash
+│   │   │   ├── onboarding/        # First-run onboarding flow
 │   │   │   ├── profile/           # Profile, followers, edit
+│   │   │   ├── social/            # Feed, posts, stories
 │   │   │   ├── product/           # List, detail, create, edit
 │   │   │   ├── cart/              # Cart, checkout
 │   │   │   ├── orders/            # Order detail, status timeline
@@ -557,7 +534,8 @@ freebay/
 │   │   │   ├── notifications/    # Notification list
 │   │   │   ├── reviews/           # Create review, user reviews
 │   │   │   ├── favorites/         # Favorited products
-│   │   │   └── wishlist/          # Wishlist items
+│   │   │   ├── dispute/           # Dispute filing, evidence
+│   │   │   └── help/              # FAQ / support
 │   │   │
 │   │   └── shared/               # Services, utils
 │   │

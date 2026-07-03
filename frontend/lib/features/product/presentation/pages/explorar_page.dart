@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_card.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/empty_state.dart';
@@ -283,29 +284,14 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                     style: TextStyle(color: context.textPrimary),
                   ),
                   Spacing.vMd,
-                  InkWell(
-                    onTap: () => ref.invalidate(productsFeedProvider(
+                  AppButton(
+                    label: 'Tentar novamente',
+                    onPressed: () => ref.invalidate(productsFeedProvider(
                       GetProductsParams(
                         search: searchQuery.isEmpty ? null : searchQuery,
                         category: selectedCategory,
                       ),
                     )),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      decoration: const BoxDecoration(
-                          gradient: AppColors.brutalistGradient),
-                      child: const Center(
-                        child: Text(
-                          'Tentar novamente',
-                          style: TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onPrimary,
-                          ),
-                        ),
-                      ),
-                    ),
                   )
                 ],
               ),

@@ -12,6 +12,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/bug_report/presentation/widgets/bug_report_sheet.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_menu_list.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 
@@ -125,6 +126,10 @@ class FeedDrawer extends ConsumerWidget {
                 showProfileSettingsSheet(context);
               },
               onLogout: () => _confirmLogout(context, ref),
+              onReportBug: () {
+                _closeDrawer(context);
+                showBugReportSheet(context);
+              },
             ),
           ],
         ),
@@ -224,7 +229,7 @@ class _StatsStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: context.surfaceColor,
+      color: context.surfaceMidColor,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
       child: Column(
         children: [
@@ -318,12 +323,14 @@ class _Footer extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final VoidCallback onSettings;
   final VoidCallback onLogout;
+  final VoidCallback onReportBug;
 
   const _Footer({
     required this.isDark,
     required this.onToggleTheme,
     required this.onSettings,
     required this.onLogout,
+    required this.onReportBug,
   });
 
   @override
@@ -342,34 +349,20 @@ class _Footer extends StatelessWidget {
             ),
             const Spacer(),
             _FooterAction(
+              icon: Icons.bug_report_outlined,
+              onTap: onReportBug,
+            ),
+            Spacing.hSm,
+            _FooterAction(
               icon: Icons.settings_outlined,
               onTap: onSettings,
             ),
             Spacing.hSm,
-            InkWell(
+            _FooterAction(
+              icon: Icons.logout,
+              label: 'SAIR',
+              color: AppColors.error,
               onTap: onLogout,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                color: AppColors.error,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.logout, color: AppColors.onPrimary, size: 18),
-                    SizedBox(width: 8),
-                    Text(
-                      'SAIR',
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: AppColors.onPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -382,15 +375,18 @@ class _FooterAction extends StatelessWidget {
   final IconData icon;
   final String? label;
   final VoidCallback onTap;
+  final Color? color;
 
   const _FooterAction({
     required this.icon,
     this.label,
     required this.onTap,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final tint = color ?? context.textPrimary;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -398,7 +394,7 @@ class _FooterAction extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: context.textPrimary, size: 20),
+            Icon(icon, color: tint, size: 20),
             if (label != null) ...[
               Spacing.hSm,
               Text(
@@ -408,7 +404,7 @@ class _FooterAction extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
-                  color: context.textPrimary,
+                  color: tint,
                 ),
               ),
             ],

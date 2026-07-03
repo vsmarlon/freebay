@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/features/orders/data/services/order_service.dart';
+import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/payments/data/entities/pix_payment_entity.dart';
-import 'package:freebay/features/payments/data/services/payment_service.dart';
+import 'package:freebay/features/payments/domain/usecases/create_pix_payment_usecase.dart';
+import 'package:freebay/features/payments/presentation/providers/payment_providers.dart';
+import 'package:freebay/features/payments/presentation/widgets/pix_payment_view.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/core/theme/app_typography.dart';
@@ -30,8 +32,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   final _nameController = TextEditingController();
   final _taxIdController = TextEditingController();
   final _emailController = TextEditingController();
-  final _orderService = OrderService();
-  final _paymentService = PaymentService();
 
   bool _isSubmitting = false;
   bool _didPrefill = false;
@@ -154,25 +154,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
             ),
           ),
           Spacing.vLg,
-          InkWell(
-            onTap: () => context.go('/cart'),
-            child: Container(
-              width: double.infinity,
-              height: 52,
-              decoration: const BoxDecoration(
-                gradient: AppColors.brutalistGradient,
-              ),
-              child: const Center(
-                child: Text(
-                  'Voltar ao carrinho',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onPrimary,
-                  ),
-                ),
-              ),
-            ),
+          AppButton(
+            label: 'Voltar ao carrinho',
+            onPressed: () => context.go('/cart'),
           ),
         ],
       ),
@@ -222,7 +206,11 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       error: (_, __) => _buildInvalidState(context),
       data: (product) {
         if (_pixPayment != null) {
-          return _buildPixState(context, product, _pixPayment!);
+          return PixPaymentView(
+            product: product,
+            pixPayment: _pixPayment!,
+            createdOrderId: _createdOrderId,
+          );
         }
 
         return _buildCheckoutForm(context, product);
@@ -291,7 +279,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildLabel('DADOS DO PAGADOR'),
+              const PaymentSectionLabel('DADOS DO PAGADOR'),
               const SizedBox(height: 12),
               _buildInput(
                 controller: _nameController,
@@ -331,178 +319,17 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 },
               ),
               Spacing.vLg,
-              InkWell(
-                onTap: _isSubmitting
+              AppButton(
+                label: 'Gerar PIX',
+                onPressed: _isSubmitting
                     ? null
                     : () => _submitCheckout(context, product),
-                child: Container(
-                  width: double.infinity,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    gradient:
-                        _isSubmitting ? null : AppColors.brutalistGradient,
-                    color: _isSubmitting
-                        ? (isDark
-                            ? AppColors.surfaceContainerDark
-                            : AppColors.surfaceContainer)
-                        : null,
-                  ),
-                  child: Center(
-                    child: _isSubmitting
-                        ? const ShimmerBlock(width: 20, height: 20)
-                        : const Text(
-                            'Gerar PIX',
-                            style: TextStyle(
-                              fontFamily: AppTypography.fontFamily,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onPrimary,
-                            ),
-                          ),
-                  ),
-                ),
+                isLoading: _isSubmitting,
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPixState(
-    BuildContext context,
-    ProductEntity product,
-    PixPaymentEntity pixPayment,
-  ) {
-    final isDark = context.isDark;
-    final expiresAt =
-        '${pixPayment.expiresAt.day.toString().padLeft(2, '0')}/${pixPayment.expiresAt.month.toString().padLeft(2, '0')} ${pixPayment.expiresAt.hour.toString().padLeft(2, '0')}:${pixPayment.expiresAt.minute.toString().padLeft(2, '0')}';
-
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Container(
-          color: isDark
-              ? AppColors.surfaceContainerDark
-              : AppColors.surfaceContainer,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'PIX GERADO',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color:
-                      isDark ? AppColors.onPrimaryContainer : AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                product.title,
-                style: TextStyle(
-                  fontFamily: AppTypography.headlineFontFamily,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.onSurface,
-                ),
-              ),
-              Spacing.vSm,
-              Text(
-                'Expira em $expiresAt',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  color: isDark
-                      ? AppColors.inverseOnSurface
-                      : AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Spacing.vLg,
-        _buildLabel('CODIGO PIX'),
-        const SizedBox(height: 12),
-        Container(
-          color: isDark
-              ? AppColors.surfaceContainerLowDark
-              : AppColors.surfaceContainerLowest,
-          padding: const EdgeInsets.all(16),
-          child: SelectableText(
-            pixPayment.pixQrCode,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 13,
-              height: 1.5,
-              color: isDark ? AppColors.white : AppColors.onSurface,
-            ),
-          ),
-        ),
-        Spacing.vMd,
-        InkWell(
-          onTap: () async {
-            await Clipboard.setData(ClipboardData(text: pixPayment.pixQrCode));
-            if (!context.mounted) {
-              return;
-            }
-            AppSnackbar.success(context, 'Codigo PIX copiado');
-          },
-          child: Container(
-            width: double.infinity,
-            height: 48,
-            color: isDark
-                ? AppColors.surfaceContainerDark
-                : AppColors.surfaceContainerHighest,
-            child: Center(
-              child: Text(
-                'Copiar codigo',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.onSurface,
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        InkWell(
-          onTap: _createdOrderId == null
-              ? null
-              : () => context.go('/orders/${_createdOrderId!}'),
-          child: Container(
-            width: double.infinity,
-            height: 52,
-            decoration: const BoxDecoration(
-              gradient: AppColors.brutalistGradient,
-            ),
-            child: const Center(
-              child: Text(
-                'Ver pedido',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onPrimary,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    final isDark = context.isDark;
-    return Text(
-      text,
-      style: TextStyle(
-        fontFamily: AppTypography.fontFamily,
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
-      ),
     );
   }
 
@@ -561,7 +388,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       _isSubmitting = true;
     });
 
-    final orderResult = await _orderService.createOrder(product.id);
+    final orderResult = await ref.read(createOrderUsecaseProvider)(product.id);
 
     await orderResult.fold(
       (failure) async {
@@ -573,12 +400,14 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       (order) async {
         _createdOrderId = order.id;
 
-        final paymentResult = await _paymentService.createPixPayment(
-          orderId: order.id,
-          customerName: _nameController.text.trim(),
-          customerTaxId: _taxIdController.text.replaceAll(RegExp(r'\D'), ''),
-          customerEmail: _emailController.text.trim(),
-          idempotencyKey: order.id,
+        final paymentResult = await ref.read(createPixPaymentUsecaseProvider)(
+          CreatePixPaymentParams(
+            orderId: order.id,
+            customerName: _nameController.text.trim(),
+            customerTaxId: _taxIdController.text.replaceAll(RegExp(r'\D'), ''),
+            customerEmail: _emailController.text.trim(),
+            idempotencyKey: order.id,
+          ),
         );
 
         paymentResult.fold(

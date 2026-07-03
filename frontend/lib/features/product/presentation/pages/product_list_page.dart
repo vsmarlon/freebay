@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_card.dart';
 import 'package:freebay/core/components/app_dialog.dart';
+import 'package:freebay/core/components/app_refresh_indicator.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -139,14 +140,13 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                         : 'Nenhum produto encontrado.',
                   );
                 }
-                return RefreshIndicator(
+                return AppRefreshIndicator(
                   onRefresh: () => ref.refresh(productsFeedProvider(
                     GetProductsParams(
                       search: searchQuery.isEmpty ? null : searchQuery,
                       category: selectedCategory,
                     ),
                   ).future),
-                  color: AppColors.primaryContainer,
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
                     gridDelegate:

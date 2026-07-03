@@ -6,15 +6,15 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/features/reviews/data/services/review_service.dart';
+import 'package:freebay/features/reviews/domain/usecases/create_review_usecase.dart';
+import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
-
-final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
 class CreateReviewPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -104,14 +104,15 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
 
     setState(() => _isSubmitting = true);
 
-    final service = ref.read(reviewServiceProvider);
-    final result = await service.createReview(
-      orderId: widget.orderId,
-      reviewedId: widget.reviewedId,
-      type: widget.reviewType,
-      score: _score,
-      comment: _commentController.text.trim(),
-      imagePaths: _selectedImages.map((f) => f.path).toList(),
+    final result = await ref.read(createReviewUsecaseProvider)(
+      CreateReviewParams(
+        orderId: widget.orderId,
+        reviewedId: widget.reviewedId,
+        type: widget.reviewType,
+        score: _score,
+        comment: _commentController.text.trim(),
+        imagePaths: _selectedImages.map((f) => f.path).toList(),
+      ),
     );
 
     setState(() => _isSubmitting = false);
@@ -433,64 +434,11 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                   Spacing.vXl,
                   SizedBox(
                     width: double.infinity,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: _score > 0 && !_isSubmitting
-                            ? AppColors.brutalistGradient
-                            : null,
-                        color: _score == 0 || _isSubmitting
-                            ? AppColors.surfaceContainerHighest
-                            : null,
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _score > 0 && !_isSubmitting
-                              ? _submitReview
-                              : null,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: Center(
-                              child: _isSubmitting
-                                  ? const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: AppColors.onPrimary,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Enviando...',
-                                          style: TextStyle(
-                                            fontFamily:
-                                                AppTypography.fontFamily,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.onPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Text(
-                                      'Enviar avaliação',
-                                      style: TextStyle(
-                                        fontFamily: AppTypography.fontFamily,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: _score > 0
-                                            ? AppColors.onPrimary
-                                            : AppColors.outline,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    child: AppButton(
+                      label: 'Enviar avaliação',
+                      onPressed:
+                          _score > 0 && !_isSubmitting ? _submitReview : null,
+                      isLoading: _isSubmitting,
                     ),
                   ),
                 ],

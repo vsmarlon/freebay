@@ -6,17 +6,16 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
-import 'package:freebay/features/reviews/data/services/review_service.dart';
+import 'package:freebay/features/reviews/domain/usecases/get_user_reviews_usecase.dart';
+import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
-final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
-
 final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>(
   (ref, userId) async {
-    final service = ref.watch(reviewServiceProvider);
-    final result = await service.getUserReviews(userId);
+    final usecase = ref.watch(getUserReviewsUsecaseProvider);
+    final result = await usecase(GetUserReviewsParams(userId: userId));
     return result.fold(
       (failure) => throw Exception(failure.message),
       (response) => response,
@@ -56,11 +55,9 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
 
     setState(() => _isLoading = true);
 
-    final service = ref.read(reviewServiceProvider);
-    final result = await service.getUserReviews(
-      widget.userId,
-      limit: _limit,
-      offset: _offset,
+    final result = await ref.read(getUserReviewsUsecaseProvider)(
+      GetUserReviewsParams(
+          userId: widget.userId, limit: _limit, offset: _offset),
     );
 
     result.fold(

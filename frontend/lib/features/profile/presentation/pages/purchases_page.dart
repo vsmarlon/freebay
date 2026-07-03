@@ -7,6 +7,7 @@ import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
@@ -203,33 +204,11 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
   }
 
   Widget _buildRetryButton() {
-    return Container(
-      height: 48,
-      decoration: const BoxDecoration(
-        gradient: AppColors.brutalistGradient,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            ref.read(purchasesListProvider.notifier).refresh();
-          },
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Center(
-              child: Text(
-                'Tentar novamente',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onPrimary,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return AppButton(
+      label: 'Tentar novamente',
+      onPressed: () {
+        ref.read(purchasesListProvider.notifier).refresh();
+      },
     );
   }
 

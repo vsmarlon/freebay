@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -13,7 +14,6 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -107,27 +107,10 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: InkWell(
-                  onTap: _isLoading ? null : _createPost,
-                  child: Container(
-                    height: 40,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.brutalistGradient,
-                    ),
-                    child: Center(
-                      child: _isLoading
-                          ? const ShimmerBlock(width: 20, height: 20)
-                          : const Text(
-                              'Publicar',
-                              style: TextStyle(
-                                color: AppColors.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                    ),
-                  ),
+                child: AppButton(
+                  label: 'Publicar',
+                  onPressed: _isLoading ? null : _createPost,
+                  isLoading: _isLoading,
                 ),
               ),
             ],

@@ -1,8 +1,27 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freebay/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:freebay/features/favorites/data/services/favorites_service.dart';
+import 'package:freebay/features/favorites/domain/repositories/i_favorites_repository.dart';
+import 'package:freebay/features/favorites/domain/usecases/get_favorites_usecase.dart';
+import 'package:freebay/features/favorites/domain/usecases/is_favorited_usecase.dart';
+import 'package:freebay/features/favorites/domain/usecases/toggle_favorite_usecase.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
 final favoritesServiceProvider = Provider((ref) => FavoritesService());
+
+final favoritesRepositoryProvider = Provider<IFavoritesRepository>((ref) {
+  return FavoritesRepository(ref.watch(favoritesServiceProvider));
+});
+
+final getFavoritesUsecaseProvider = Provider(
+  (ref) => GetFavoritesUsecase(ref.watch(favoritesRepositoryProvider)),
+);
+final isFavoritedUsecaseProvider = Provider(
+  (ref) => IsFavoritedUsecase(ref.watch(favoritesRepositoryProvider)),
+);
+final toggleFavoriteUsecaseProvider = Provider(
+  (ref) => ToggleFavoriteUsecase(ref.watch(favoritesRepositoryProvider)),
+);
 
 class FavoritesState {
   final bool isLoading;
@@ -31,13 +50,19 @@ class FavoritesState {
 }
 
 class FavoritesNotifier extends StateNotifier<FavoritesState> {
-  final FavoritesService _service;
+  final GetFavoritesUsecase _getFavoritesUsecase;
+  final IsFavoritedUsecase _isFavoritedUsecase;
+  final ToggleFavoriteUsecase _toggleFavoriteUsecase;
 
-  FavoritesNotifier(this._service) : super(const FavoritesState());
+  FavoritesNotifier(
+    this._getFavoritesUsecase,
+    this._isFavoritedUsecase,
+    this._toggleFavoriteUsecase,
+  ) : super(const FavoritesState());
 
   Future<void> loadFavorites() async {
     state = state.copyWith(isLoading: true);
-    final result = await _service.getFavorites();
+    final result = await _getFavoritesUsecase();
     result.fold(
       (_) => state = state.copyWith(isLoading: false),
       (products) {
@@ -52,7 +77,7 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   }
 
   Future<bool> initializeFavoriteStatus(String productId) async {
-    final result = await _service.isFavorited(productId);
+    final result = await _isFavoritedUsecase(productId);
     return result.fold(
       (_) => false,
       (isFavorited) {
@@ -79,7 +104,7 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
     }
     state = state.copyWith(favoritedProductIds: ids);
 
-    final result = await _service.toggleFavorite(productId);
+    final result = await _toggleFavoriteUsecase(productId);
     return result.fold(
       (_) {
         final rollback = Set<String>.from(state.favoritedProductIds);
@@ -114,10 +139,15 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
 
 final favoritesProvider =
     StateNotifierProvider<FavoritesNotifier, FavoritesState>((ref) {
-  return FavoritesNotifier(ref.watch(favoritesServiceProvider));
+  return FavoritesNotifier(
+    ref.watch(getFavoritesUsecaseProvider),
+    ref.watch(isFavoritedUsecaseProvider),
+    ref.watch(toggleFavoriteUsecaseProvider),
+  );
 });
 
-final isFavoritedProvider = FutureProvider.family<bool, String>((ref, productId) async {
-  final result = await ref.read(favoritesServiceProvider).isFavorited(productId);
+final isFavoritedProvider =
+    FutureProvider.family<bool, String>((ref, productId) async {
+  final result = await ref.read(isFavoritedUsecaseProvider)(productId);
   return result.fold((_) => false, (value) => value);
 });

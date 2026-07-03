@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
@@ -66,25 +67,10 @@ class _PostsTab extends ConsumerWidget {
                     ),
                   ),
                   Spacing.vLg,
-                  InkWell(
-                    onTap: () => context.push('/create-story'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.brutalistGradient,
-                      ),
-                      child: const Text(
-                        'Criar post',
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
+                  AppButton(
+                    label: 'Criar post',
+                    size: AppButtonSize.compact,
+                    onPressed: () => context.push('/create-story'),
                   ),
                 ],
               ),

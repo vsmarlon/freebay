@@ -165,6 +165,7 @@ model User {
   notifications  Notification[]
   submittedReports       Report[] @relation("SubmittedReports")
   reportedUserReports    Report[] @relation("ReportedUserReports")
+  bugReports      BugReport[]
   fcmToken        String?
   notificationPrefs Json? @default("{\"orders\":true,\"follows\":true,\"messages\":true,\"disputes\":true}")
 
@@ -673,6 +674,21 @@ model Report {
   @@index([status])
   @@index([reportedUserId])
   @@index([reportedDirectConversationId])
+}
+
+model BugReport {
+  id            String   @id @default(uuid())
+  userId        String?
+  description   String
+  appVersion    String?
+  platform      String?
+  screenContext String?
+  createdAt     DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 enum NotificationType {

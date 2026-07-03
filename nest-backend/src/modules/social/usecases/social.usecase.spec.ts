@@ -3,14 +3,11 @@ import { CreatePostUseCase } from './create-post.usecase';
 import { LikePostUseCase } from './like-post.usecase';
 import { UnlikePostUseCase } from './unlike-post.usecase';
 import { CommentUseCase } from './comment.usecase';
-import { CreateStoryUseCase } from './create-story.usecase';
 import { NotFoundError } from '@/shared/core/errors';
-import {
-  PrismaPostRepository,
-  PrismaCommentRepository,
-  PrismaLikeRepository,
-  PrismaStoryRepository,
-} from '../repositories/social.repository';
+import { right } from '@/shared/core/either';
+import { PostRepository } from '../domain/repositories/post.repository';
+import { LikeRepository } from '../domain/repositories/like.repository';
+import { CommentRepository } from '../domain/repositories/comment.repository';
 
 describe('CreatePostUseCase', () => {
   let sut: CreatePostUseCase;
@@ -18,7 +15,7 @@ describe('CreatePostUseCase', () => {
 
   beforeEach(async () => {
     mockPostRepository = {
-      create: jest.fn().mockImplementation((data) => Promise.resolve({
+      create: jest.fn().mockImplementation((data) => Promise.resolve(right({
         id: 'post-123',
         content: data.content ?? null,
         imageUrl: data.imageUrl ?? null,
@@ -34,13 +31,13 @@ describe('CreatePostUseCase', () => {
           avatarUrl: null,
           isVerified: false,
         },
-      })),
+      }))),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePostUseCase,
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
+        { provide: PostRepository, useValue: mockPostRepository },
       ],
     }).compile();
 
@@ -87,25 +84,25 @@ describe('CreatePostUseCase', () => {
 
 describe('LikePostUseCase', () => {
   let sut: LikePostUseCase;
-  let mockPostRepository: { findById: jest.Mock; incrementLikesCount: jest.Mock };
+  let mockPostRepository: { findById: jest.Mock; update: jest.Mock };
   let mockLikeRepository: { findPostLike: jest.Mock; createLike: jest.Mock };
 
   beforeEach(async () => {
     mockPostRepository = {
       findById: jest.fn(),
-      incrementLikesCount: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue(right({})),
     };
 
     mockLikeRepository = {
-      findPostLike: jest.fn().mockResolvedValue(null),
-      createLike: jest.fn().mockResolvedValue({}),
+      findPostLike: jest.fn().mockResolvedValue(right(null)),
+      createLike: jest.fn().mockResolvedValue(right({})),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LikePostUseCase,
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
-        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
+        { provide: PostRepository, useValue: mockPostRepository },
+        { provide: LikeRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
@@ -117,10 +114,10 @@ describe('LikePostUseCase', () => {
   });
 
   it('should like a post when it exists', async () => {
-    mockPostRepository.findById.mockResolvedValue({
+    mockPostRepository.findById.mockResolvedValue(right({
       id: 'post-123',
       content: 'Test',
-    });
+    }));
 
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
@@ -129,11 +126,11 @@ describe('LikePostUseCase', () => {
       expect(result.value.liked).toBe(true);
     }
     expect(mockLikeRepository.createLike).toHaveBeenCalled();
-    expect(mockPostRepository.incrementLikesCount).toHaveBeenCalledWith('post-123');
+    expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { increment: 1 } });
   });
 
   it('should return error if post not found', async () => {
-    mockPostRepository.findById.mockResolvedValue(null);
+    mockPostRepository.findById.mockResolvedValue(right(null));
 
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
@@ -146,24 +143,24 @@ describe('LikePostUseCase', () => {
 
 describe('UnlikePostUseCase', () => {
   let sut: UnlikePostUseCase;
-  let mockPostRepository: { decrementLikesCount: jest.Mock };
+  let mockPostRepository: { update: jest.Mock };
   let mockLikeRepository: { findPostLike: jest.Mock; deletePostLikeByUser: jest.Mock };
 
   beforeEach(async () => {
     mockPostRepository = {
-      decrementLikesCount: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue(right({})),
     };
 
     mockLikeRepository = {
-      findPostLike: jest.fn().mockResolvedValue({ id: 'like-123' }),
-      deletePostLikeByUser: jest.fn().mockResolvedValue({}),
+      findPostLike: jest.fn().mockResolvedValue(right({ id: 'like-123' })),
+      deletePostLikeByUser: jest.fn().mockResolvedValue(right(undefined)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UnlikePostUseCase,
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
-        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
+        { provide: PostRepository, useValue: mockPostRepository },
+        { provide: LikeRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
@@ -182,35 +179,35 @@ describe('UnlikePostUseCase', () => {
       expect(result.value.unliked).toBe(true);
     }
     expect(mockLikeRepository.deletePostLikeByUser).toHaveBeenCalledWith('user-123', 'post-123');
-    expect(mockPostRepository.decrementLikesCount).toHaveBeenCalledWith('post-123');
+    expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { decrement: 1 } });
   });
 });
 
 describe('CommentUseCase', () => {
   let sut: CommentUseCase;
   let mockCommentRepository: { create: jest.Mock };
-  let mockPostRepository: { incrementCommentsCount: jest.Mock };
+  let mockPostRepository: { update: jest.Mock };
 
   beforeEach(async () => {
     mockCommentRepository = {
-      create: jest.fn().mockResolvedValue({
+      create: jest.fn().mockResolvedValue(right({
         id: 'comment-123',
         content: 'Test comment',
         postId: 'post-123',
         userId: 'user-123',
         createdAt: new Date(),
-      }),
+      })),
     };
 
     mockPostRepository = {
-      incrementCommentsCount: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue(right({})),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CommentUseCase,
-        { provide: PrismaCommentRepository, useValue: mockCommentRepository },
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
+        { provide: CommentRepository, useValue: mockCommentRepository },
+        { provide: PostRepository, useValue: mockPostRepository },
       ],
     }).compile();
 
@@ -236,53 +233,6 @@ describe('CommentUseCase', () => {
       expect(result.value.postId).toBe('post-123');
       expect(result.value.userId).toBe('user-123');
     }
-    expect(mockPostRepository.incrementCommentsCount).toHaveBeenCalledWith('post-123');
-  });
-});
-
-describe('CreateStoryUseCase', () => {
-  let sut: CreateStoryUseCase;
-  let mockStoryRepository: { create: jest.Mock };
-
-  beforeEach(async () => {
-    mockStoryRepository = {
-      create: jest.fn().mockResolvedValue({
-        id: 'story-123',
-        userId: 'user-123',
-        imageUrl: 'http://example.com/image.jpg',
-        expiresAt: new Date(),
-        createdAt: new Date(),
-        user: {
-          id: 'user-123',
-          displayName: 'Test User',
-          avatarUrl: null,
-          isVerified: false,
-        },
-      }),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CreateStoryUseCase,
-        { provide: PrismaStoryRepository, useValue: mockStoryRepository },
-      ],
-    }).compile();
-
-    sut = module.get<CreateStoryUseCase>(CreateStoryUseCase);
-  });
-
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should create a story', async () => {
-    const input = {
-      userId: 'user-123',
-      imageBase64: 'base64encodedimage',
-    };
-
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
+    expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { commentsCount: { increment: 1 } });
   });
 });

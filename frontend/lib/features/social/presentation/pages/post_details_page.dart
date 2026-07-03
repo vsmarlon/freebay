@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
@@ -190,24 +191,11 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
             Spacing.vMd,
             Text(state.error!, style: TextStyle(color: context.textPrimary)),
             Spacing.vMd,
-            InkWell(
-              onTap: () => ref
+            AppButton(
+              label: 'Tentar novamente',
+              onPressed: () => ref
                   .read(postDetailsProvider(widget.postId).notifier)
                   .refresh(),
-              child: Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration:
-                    const BoxDecoration(gradient: AppColors.brutalistGradient),
-                child: const Center(
-                  child: Text(
-                    'Tentar novamente',
-                    style: TextStyle(
-                        color: AppColors.onPrimary,
-                        fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
             ),
           ],
         ),

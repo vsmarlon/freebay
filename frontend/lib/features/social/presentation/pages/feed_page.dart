@@ -8,7 +8,8 @@ import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
-import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
+import 'package:freebay/core/components/app_refresh_indicator.dart';
+import 'package:freebay/core/components/app_shell_scaffold_key.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
@@ -25,7 +26,6 @@ class FeedPage extends ConsumerStatefulWidget {
 
 class _FeedPageState extends ConsumerState<FeedPage>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -80,18 +80,14 @@ class _FeedPageState extends ConsumerState<FeedPage>
     final feedState = ref.watch(feedProvider);
 
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: context.surfaceMidColor,
-      drawer: const FeedDrawer(),
-      drawerEnableOpenDragGesture: true,
-      drawerEdgeDragWidth: 32,
+      backgroundColor: context.bgColor,
       body: Column(
         children: [
           PageHeader(
             text: 'FREEBAY',
             exclamation: '!',
             leading: GestureDetector(
-              onTap: () => _scaffoldKey.currentState?.openDrawer(),
+              onTap: () => appShellScaffoldKey.currentState?.openDrawer(),
               child: Container(
                 width: 40,
                 height: 40,
@@ -153,7 +149,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
       );
     }
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: () async {
         final type = ref.read(feedTypeProvider);
         ref.read(feedProvider.notifier).loadFeed(
@@ -161,7 +157,6 @@ class _FeedPageState extends ConsumerState<FeedPage>
               feedType: type == FeedType.following ? 'following' : 'explore',
             );
       },
-      color: AppColors.primaryContainer,
       child: ListView.builder(
         padding: EdgeInsets.zero,
         itemCount: filteredPosts.length + 1 + (feedState.hasMore ? 1 : 0),

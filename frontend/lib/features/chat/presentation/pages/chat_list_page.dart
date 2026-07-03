@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/app_refresh_indicator.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -10,10 +12,10 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/utils/time_utils.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_search_bar.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -23,7 +25,10 @@ class ChatListPage extends ConsumerStatefulWidget {
 }
 
 class _ChatListPageState extends ConsumerState<ChatListPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late AnimationController _animationController;
   final _searchController = TextEditingController();
   Timer? _debounceTimer;
@@ -81,6 +86,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     result.fold(
       (failure) => AppSnackbar.error(context, failure.message),
       (_) {
+        ref.invalidate(chatsProvider);
         ref.invalidate(liveChatListProvider);
         ref.invalidate(archivedChatsProvider);
         AppSnackbar.success(context,
@@ -119,6 +125,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     result.fold(
       (failure) => AppSnackbar.error(context, failure.message),
       (_) {
+        ref.invalidate(chatsProvider);
         ref.invalidate(liveChatListProvider);
         ref.invalidate(archivedChatsProvider);
         AppSnackbar.success(context, 'Conversa excluída');
@@ -168,6 +175,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull;
@@ -196,16 +204,32 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                                 return _buildEmptyState(isDark, chats.isEmpty);
                               }
                               return Expanded(
-                                child: RefreshIndicator(
+                                child: AppRefreshIndicator(
                                   onRefresh: () async {
+                                    ref.invalidate(chatsProvider);
                                     ref.invalidate(liveChatListProvider);
                                   },
                                   child: ListView.builder(
                                     itemCount: filteredChats.length,
                                     itemBuilder: (context, index) {
                                       final chat = filteredChats[index];
-                                      return _buildChatItem(
-                                          context, isDark, chat, index);
+                                      return ChatListTile(
+                                        chat: chat,
+                                        isDark: isDark,
+                                        canSwipe: _canModifyOrderChat(chat),
+                                        onTap: () {
+                                          context
+                                              .push('/chat/${chat.id}', extra: {
+                                            'oderName': chat.otherName,
+                                            'oderAvatarUrl':
+                                                chat.otherAvatarUrl,
+                                            'chatType': chat.threadType.name,
+                                          });
+                                        },
+                                        onLongPress: () =>
+                                            _showContextMenu(chat),
+                                        onArchive: () => _archiveChat(chat),
+                                      );
                                     },
                                   ),
                                 ),
@@ -215,7 +239,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                               child: ListView.builder(
                                 itemCount: 5,
                                 itemBuilder: (context, index) =>
-                                    _buildLoadingChat(isDark),
+                                    ChatListLoadingTile(isDark: isDark),
                               ),
                             ),
                             error: (error, stack) => _buildErrorState(isDark),
@@ -229,92 +253,19 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   }
 
   Widget _buildSearchBar(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: isDark ? AppColors.surfaceDark : AppColors.white,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar conversas...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor:
-                        isDark ? AppColors.backgroundDark : AppColors.lightGray,
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                ),
-              ),
-              Spacing.hSm,
-              BrutalistIconButton(
-                icon: Icons.archive,
-                size: 48,
-                onTap: () => context.push('/chat/archived'),
-              ),
-              Spacing.hSm,
-              BrutalistIconButton(
-                icon: Icons.edit,
-                size: 48,
-                iconColor: AppColors.onPrimary,
-                gradient: AppColors.brutalistGradient,
-                onTap: () => context.push('/chat/new'),
-              ),
-            ],
-          ),
-          Spacing.vSm,
-          Row(
-            children: [
-              _buildSortChip('Recentes', 'recent', isDark),
-              Spacing.hSm,
-              _buildSortChip('Nome', 'name', isDark),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSortChip(String label, String value, bool isDark) {
-    final isSelected = _sortBy == value;
-    return GestureDetector(
-      onTap: () => setState(() => _sortBy = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryContainer
-              : (isDark ? AppColors.backgroundDark : AppColors.lightGray),
-          borderRadius: BorderRadius.zero,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected
-                ? AppColors.onPrimary
-                : (isDark ? AppColors.white : AppColors.darkGray),
-          ),
-        ),
-      ),
+    return ChatSearchBar(
+      controller: _searchController,
+      onChanged: _onSearchChanged,
+      hasQuery: _searchQuery.isNotEmpty,
+      onClear: () {
+        _searchController.clear();
+        setState(() => _searchQuery = '');
+      },
+      sortBy: _sortBy,
+      onSortChanged: (value) => setState(() => _sortBy = value),
+      onArchiveTap: () => context.push('/chat/archived'),
+      onNewChatTap: () => context.push('/chat/new'),
+      isDark: isDark,
     );
   }
 
@@ -353,245 +304,16 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
               textAlign: TextAlign.center,
             ),
             Spacing.vMd,
-            InkWell(
-              onTap: () => ref.invalidate(liveChatListProvider),
-              child: Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration:
-                    const BoxDecoration(gradient: AppColors.brutalistGradient),
-                child: const Center(
-                  child: Text(
-                    'Tentar novamente',
-                    style: TextStyle(
-                        color: AppColors.onPrimary,
-                        fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
+            AppButton(
+              label: 'Tentar novamente',
+              onPressed: () {
+                ref.invalidate(chatsProvider);
+                ref.invalidate(liveChatListProvider);
+              },
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildLoadingChat(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
-          borderRadius: BorderRadius.zero,
-          border: Border.all(
-            color: isDark
-                ? AppColors.mediumGray.withAlpha(51)
-                : AppColors.mediumGray.withAlpha(51),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              color: isDark
-                  ? AppColors.mediumGray.withAlpha(51)
-                  : AppColors.lightGray,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 14,
-                    width: 100,
-                    color: isDark
-                        ? AppColors.mediumGray.withAlpha(51)
-                        : AppColors.lightGray,
-                  ),
-                  Spacing.vSm,
-                  Container(
-                    height: 12,
-                    width: 150,
-                    color: isDark
-                        ? AppColors.mediumGray.withAlpha(51)
-                        : AppColors.lightGray,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChatItem(
-      BuildContext context, bool isDark, ChatEntity chat, int index) {
-    final canSwipe = _canModifyOrderChat(chat);
-
-    Widget tile = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
-          borderRadius: BorderRadius.zero,
-          border: Border.all(
-            color: chat.unread
-                ? AppColors.primaryContainer
-                : (isDark
-                    ? AppColors.mediumGray.withAlpha(76)
-                    : AppColors.mediumGray.withAlpha(102)),
-            width: chat.unread ? 2 : 1,
-          ),
-        ),
-        child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Stack(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  image: chat.otherAvatarUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(chat.otherAvatarUrl!),
-                          fit: BoxFit.cover)
-                      : null,
-                  color: isDark
-                      ? AppColors.mediumGray.withAlpha(51)
-                      : AppColors.lightGray,
-                ),
-                child: chat.otherAvatarUrl == null
-                    ? Icon(Icons.person,
-                        color: isDark ? AppColors.white : AppColors.mediumGray)
-                    : null,
-              ),
-              if (chat.unread)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: AppColors.success,
-                      border: Border.all(
-                          color:
-                              isDark ? AppColors.surfaceDark : AppColors.white,
-                          width: 2),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  chat.otherName,
-                  style: TextStyle(
-                    fontWeight: chat.unread ? FontWeight.bold : FontWeight.w600,
-                    color: isDark ? AppColors.white : AppColors.darkGray,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-              Text(
-                TimeUtils.timeAgoCompact(chat.timestamp),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: chat.unread ? FontWeight.w600 : FontWeight.normal,
-                  color: chat.unread
-                      ? AppColors.primaryContainer
-                      : AppColors.mediumGray,
-                ),
-              ),
-            ],
-          ),
-          subtitle: Row(
-            children: [
-              if (chat.threadType == ChatThreadType.order) ...[
-                Text(
-                  'PEDIDO \u2022 ',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryContainer,
-                  ),
-                ),
-              ],
-              Expanded(
-                child: Text(
-                  chat.lastMessage ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: chat.unread
-                        ? (isDark ? AppColors.white : AppColors.darkGray)
-                        : AppColors.mediumGray,
-                    fontWeight:
-                        chat.unread ? FontWeight.w500 : FontWeight.normal,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          trailing: !canSwipe
-              ? Tooltip(
-                  message:
-                      'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
-                  child: Icon(Icons.lock_outline,
-                      size: 16, color: AppColors.mediumGray),
-                )
-              : null,
-          onTap: () {
-            context.push('/chat/${chat.id}', extra: {
-              'oderName': chat.otherName,
-              'oderAvatarUrl': chat.otherAvatarUrl,
-              'chatType': chat.threadType.name,
-            });
-          },
-          onLongPress: () => _showContextMenu(chat),
-        ),
-      ),
-    );
-
-    if (canSwipe) {
-      tile = Dismissible(
-        key: ValueKey('chat_${chat.id}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 24),
-          color: AppColors.primaryContainer,
-          child:
-              const Icon(Icons.archive, color: AppColors.onPrimary, size: 28),
-        ),
-        confirmDismiss: (direction) async {
-          await _archiveChat(chat);
-          return false;
-        },
-        child: tile,
-      );
-    }
-
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(30 * (1 - value), 0),
-          child: Opacity(opacity: value, child: child),
-        );
-      },
-      child: tile,
     );
   }
 }

@@ -25,6 +25,7 @@ import { NotificationsModule } from '@/modules/notifications/notifications.modul
     CancelOrderUseCase,
   ],
   exports: [
+    OrderRepository,
     PrismaOrderRepository,
     CreateOrderUseCase,
     ConfirmDeliveryUseCase,

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/error_indicator.dart';
+import 'package:freebay/core/providers/last_error_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/features/bug_report/presentation/widgets/bug_report_sheet.dart';
 
-class PageHeader extends StatelessWidget {
+class PageHeader extends ConsumerWidget {
   final String text;
   final String? exclamation;
   final String? subtitle;
@@ -23,7 +27,22 @@ class PageHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lastError = ref.watch(lastErrorProvider);
+    final trailingActions = [
+      ...?actions,
+      if (lastError != null)
+        ErrorIndicator(
+          onTap: () {
+            ref.read(lastErrorProvider.notifier).state = null;
+            showBugReportSheet(
+              context,
+              prefillDescription: lastError.message,
+              screenContext: lastError.route,
+            );
+          },
+        ),
+    ];
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
@@ -87,12 +106,11 @@ class PageHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (actions != null)
-                  ...actions!.map((a) => SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: a,
-                      )),
+                ...trailingActions.map((a) => SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: a,
+                    )),
               ],
             ),
           ),

@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
 
@@ -68,30 +69,16 @@ class GuestProfileView extends ConsumerWidget {
                     Spacing.vXl,
                     SizedBox(
                       width: double.infinity,
-                      child: InkWell(
-                        onTap: () => context.go('/login'),
-                        child: Container(
-                          height: 52,
-                          decoration: const BoxDecoration(
-                              gradient: AppColors.brutalistGradient),
-                          child: const Center(
-                            child: Text(
-                              'Entrar',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.onPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
+                      child: AppButton(
+                        label: 'Entrar',
+                        onPressed: () => context.push('/login'),
                       ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: InkWell(
-                        onTap: () => context.go('/register'),
+                        onTap: () => context.push('/register'),
                         child: Container(
                           height: 52,
                           decoration: BoxDecoration(

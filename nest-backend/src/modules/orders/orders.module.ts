@@ -7,7 +7,7 @@ import { PrismaOrderRepository } from './data/repositories/order-database.reposi
 @Module({
   imports: [OrderUseCasesModule],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, PrismaOrderRepository],
   exports: [PrismaOrderRepository, OrdersService],
 })
 export class OrdersModule {}

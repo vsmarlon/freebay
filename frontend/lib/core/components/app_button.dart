@@ -6,10 +6,13 @@ import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 enum AppButtonVariant { primary, secondary, ghost, danger }
 
+enum AppButtonSize { standard, compact }
+
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final AppButtonVariant variant;
+  final AppButtonSize size;
   final bool isLoading;
   final IconData? icon;
   final double? width;
@@ -19,6 +22,7 @@ class AppButton extends StatelessWidget {
     required this.label,
     this.onPressed,
     this.variant = AppButtonVariant.primary,
+    this.size = AppButtonSize.standard,
     this.isLoading = false,
     this.icon,
     this.width,
@@ -33,10 +37,15 @@ class AppButton extends StatelessWidget {
     final gradient = variant == AppButtonVariant.primary && isEnabled
         ? AppColors.brutalistGradient
         : null;
+    final height = size == AppButtonSize.compact ? 36.0 : 48.0;
+    final horizontalPadding = size == AppButtonSize.compact ? 12.0 : 0.0;
+    final textStyle = size == AppButtonSize.compact
+        ? AppTypography.button.copyWith(fontSize: 13)
+        : AppTypography.button;
 
     return SizedBox(
       width: width,
-      height: 48,
+      height: height,
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: gradient,
@@ -47,30 +56,33 @@ class AppButton extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: isEnabled ? onPressed : null,
-            child: Center(
-              child: isLoading
-                  ? ShimmerBlock(
-                      height: 48,
-                      width: width ?? double.infinity,
-                      baseColor: variant == AppButtonVariant.ghost
-                          ? AppColors.outlineVariant
-                          : backgroundColor,
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (icon != null) ...[
-                          Icon(icon, size: 20, color: foregroundColor),
-                          Spacing.hSm,
-                        ],
-                        Text(
-                          label,
-                          style: AppTypography.button.copyWith(
-                            color: foregroundColor,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Center(
+                child: isLoading
+                    ? ShimmerBlock(
+                        height: height,
+                        width: width ?? double.infinity,
+                        baseColor: variant == AppButtonVariant.ghost
+                            ? AppColors.outlineVariant
+                            : backgroundColor,
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (icon != null) ...[
+                            Icon(icon, size: 20, color: foregroundColor),
+                            Spacing.hSm,
+                          ],
+                          Text(
+                            label,
+                            style: textStyle.copyWith(
+                              color: foregroundColor,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),

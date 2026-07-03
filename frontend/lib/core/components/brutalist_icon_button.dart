@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 
 class BrutalistIconButton extends StatelessWidget {
@@ -9,6 +10,7 @@ class BrutalistIconButton extends StatelessWidget {
   final Color? iconColor;
   final Color? borderColor;
   final Gradient? gradient;
+  final bool isLoading;
 
   const BrutalistIconButton({
     super.key,
@@ -19,6 +21,7 @@ class BrutalistIconButton extends StatelessWidget {
     this.iconColor,
     this.borderColor,
     this.gradient,
+    this.isLoading = false,
   });
 
   @override
@@ -26,7 +29,7 @@ class BrutalistIconButton extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         child: Container(
           width: size,
           height: size,
@@ -37,8 +40,10 @@ class BrutalistIconButton extends StatelessWidget {
                     color: borderColor ?? context.borderColor, width: 2)
                 : null,
           ),
-          child: Icon(icon,
-              color: iconColor ?? context.textPrimary, size: iconSize),
+          child: isLoading
+              ? ShimmerBlock(width: iconSize, height: iconSize)
+              : Icon(icon,
+                  color: iconColor ?? context.textPrimary, size: iconSize),
         ),
       ),
     );

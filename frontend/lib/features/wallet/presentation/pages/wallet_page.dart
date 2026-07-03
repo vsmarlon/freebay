@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/app_refresh_indicator.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/wallet_card.dart';
 import 'package:freebay/core/components/section_title.dart';
@@ -20,7 +21,11 @@ class WalletPage extends ConsumerStatefulWidget {
   ConsumerState<WalletPage> createState() => _WalletPageState();
 }
 
-class _WalletPageState extends ConsumerState<WalletPage> {
+class _WalletPageState extends ConsumerState<WalletPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +40,7 @@ class _WalletPageState extends ConsumerState<WalletPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final walletState = ref.watch(walletProvider);
@@ -91,67 +97,73 @@ class _WalletPageState extends ConsumerState<WalletPage> {
                           ),
                         ),
                       )
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            WalletCard(
-                              availableBalanceInCents: availableBalance,
-                              pendingBalanceInCents: pendingBalance,
-                            ),
-                            Spacing.vLg,
-                            SectionTitle.compact(
-                                text: 'Visão da carteira', isDark: isDark),
-                            Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : AppColors.surfaceLight,
-                                border: Border(
-                                  bottom: BorderSide(
-                                      color: context.borderColor, width: 1),
+                    : AppRefreshIndicator(
+                        onRefresh: () async =>
+                            ref.read(walletProvider.notifier).loadWallet(),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              WalletCard(
+                                availableBalanceInCents: availableBalance,
+                                pendingBalanceInCents: pendingBalance,
+                              ),
+                              Spacing.vLg,
+                              SectionTitle.compact(
+                                  text: 'Visão da carteira', isDark: isDark),
+                              Container(
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.surfaceDark
+                                      : AppColors.surfaceLight,
+                                  border: Border(
+                                    bottom: BorderSide(
+                                        color: context.borderColor, width: 1),
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildInfoLine(
+                                      label: 'Disponível',
+                                      value:
+                                          'Saldo já liberado para o vendedor.',
+                                    ),
+                                    Spacing.vMd,
+                                    _buildInfoLine(
+                                      label: 'Em custódia',
+                                      value:
+                                          'Valor aguardando confirmação do pedido.',
+                                    ),
+                                    Spacing.vMd,
+                                    _buildInfoLine(
+                                      label: 'Saques',
+                                      value:
+                                          'Saques automáticos ficam para a próxima etapa do produto.',
+                                    ),
+                                  ],
                                 ),
                               ),
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildInfoLine(
-                                    label: 'Disponível',
-                                    value: 'Saldo já liberado para o vendedor.',
-                                  ),
-                                  Spacing.vMd,
-                                  _buildInfoLine(
-                                    label: 'Em custódia',
-                                    value:
-                                        'Valor aguardando confirmação do pedido.',
-                                  ),
-                                  Spacing.vMd,
-                                  _buildInfoLine(
-                                    label: 'Saques',
-                                    value:
-                                        'Saques automáticos ficam para a próxima etapa do produto.',
-                                  ),
-                                ],
+                              Spacing.vLg,
+                              Text(
+                                'Histórico',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.headlineFontFamily,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.white
+                                      : AppColors.darkGray,
+                                ),
                               ),
-                            ),
-                            Spacing.vLg,
-                            Text(
-                              'Histórico',
-                              style: TextStyle(
-                                fontFamily: AppTypography.headlineFontFamily,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? AppColors.white
-                                    : AppColors.darkGray,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildEmptyState(context),
-                          ],
+                              const SizedBox(height: 12),
+                              _buildEmptyState(context),
+                            ],
+                          ),
                         ),
                       ),
           ),

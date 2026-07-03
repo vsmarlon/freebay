@@ -21,13 +21,13 @@
 
 ### Prisma Migration
 
-- [ ] Add `Favorite` model to schema.prisma
-- [ ] Add `Wishlist` model to schema.prisma  
-- [ ] Add `CartItem` model to schema.prisma
-- [ ] Add relations to `User` model (favorites, wishlist, cartItems)
-- [ ] Add relations to `Product` model (favorites, wishlistItems, cartItems)
-- [ ] Run `npx prisma migrate dev --name add_favorites_wishlist_cart`
-- [ ] Run `npx prisma generate`
+- [x] Add `Favorite` model to schema.prisma
+- [ ] ~~Add `Wishlist` model to schema.prisma~~ — dropped, superseded by Favorites
+- [x] Add `CartItem` model to schema.prisma
+- [x] Add relations to `User` model (favorites, cartItems)
+- [x] Add relations to `Product` model (favorites, cartItems)
+- [x] Run `npx prisma migrate dev --name add_favorites_wishlist_cart`
+- [x] Run `npx prisma generate`
 
 **Models:**
 ```prisma
@@ -79,36 +79,38 @@ model CartItem {
 
 ### Files to Create
 
-- [ ] `src/modules/favorites/favorites.module.ts`
-- [ ] `src/modules/favorites/favorites.controller.ts`
-- [ ] `src/modules/favorites/repositories/favorite.repository.ts`
-- [ ] `src/modules/favorites/usecases/toggle-favorite.usecase.ts`
-- [ ] `src/modules/favorites/usecases/get-favorites.usecase.ts`
-- [ ] `src/modules/favorites/usecases/check-favorite.usecase.ts`
-- [ ] `src/modules/favorites/dtos/favorite.dto.ts`
+- [x] `src/modules/favorites/favorites.module.ts`
+- [x] `src/modules/favorites/favorites.controller.ts`
+- [x] `src/modules/favorites/repositories/favorite.repository.ts` — now split into `domain/repositories/favorite.repository.ts` (abstract) + `data/repositories/favorite-database.repository.ts` (concrete)
+- [x] `src/modules/favorites/usecases/toggle-favorite.usecase.ts`
+- [x] `src/modules/favorites/usecases/get-favorites.usecase.ts`
+- [x] `src/modules/favorites/usecases/check-favorite.usecase.ts`
+- [x] `src/modules/favorites/dtos/favorite.dto.ts`
 
 ### Endpoints
 
 | Method | Path | Description | Status |
 |--------|------|-------------|--------|
-| `POST` | `/favorites/:productId` | Toggle favorite | [ ] |
-| `GET` | `/favorites` | List favorites (paginated) | [ ] |
-| `GET` | `/favorites/check/:productId` | Check if favorited | [ ] |
+| `POST` | `/favorites/:productId` | Toggle favorite | [x] |
+| `GET` | `/favorites` | List favorites (paginated) | [x] |
+| `GET` | `/favorites/check/:productId` | Check if favorited | [x] |
 
 ### Tests
 
-- [ ] `toggle-favorite.usecase.spec.ts` (90%+ coverage)
-- [ ] `get-favorites.usecase.spec.ts` (90%+ coverage)
+- [x] `toggle-favorite.usecase.spec.ts` (90%+ coverage)
+- [x] `get-favorites.usecase.spec.ts` (90%+ coverage)
 
 ### Validation Rules
 
-- [ ] Cannot favorite own products
-- [ ] Product must be ACTIVE
-- [ ] User must be authenticated (non-guest)
+- [x] Cannot favorite own products
+- [x] Product must be ACTIVE
+- [x] User must be authenticated (non-guest)
 
 ---
 
 ## Phase 3: Backend - Wishlist Module
+
+> ⚫ **Dropped** — Favorites covers the "save for later" use case; none of the items below were built. Left unchecked intentionally.
 
 ### Files to Create
 
@@ -145,39 +147,40 @@ model CartItem {
 
 ### Files to Create
 
-- [ ] `src/modules/cart/cart.module.ts`
-- [ ] `src/modules/cart/cart.controller.ts`
-- [ ] `src/modules/cart/repositories/cart.repository.ts`
-- [ ] `src/modules/cart/usecases/add-to-cart.usecase.ts`
-- [ ] `src/modules/cart/usecases/update-cart-item.usecase.ts`
-- [ ] `src/modules/cart/usecases/remove-from-cart.usecase.ts`
-- [ ] `src/modules/cart/usecases/get-cart.usecase.ts`
-- [ ] `src/modules/cart/usecases/clear-cart.usecase.ts`
-- [ ] `src/modules/cart/dtos/cart.dto.ts`
+- [x] `src/modules/cart/cart.module.ts`
+- [x] `src/modules/cart/cart.controller.ts`
+- [x] `src/modules/cart/repositories/cart.repository.ts`
+- [x] `src/modules/cart/usecases/add-to-cart.usecase.ts`
+- [x] `src/modules/cart/usecases/update-cart-item.usecase.ts`
+- [x] `src/modules/cart/usecases/remove-from-cart.usecase.ts`
+- [x] `src/modules/cart/usecases/get-cart.usecase.ts`
+- [x] `src/modules/cart/usecases/clear-cart.usecase.ts`
+- [x] `src/modules/cart/usecases/checkout-cart.usecase.ts` (added beyond original scope — cart also has a checkout endpoint)
 
 ### Endpoints
 
 | Method | Path | Description | Status |
 |--------|------|-------------|--------|
-| `GET` | `/cart` | Get cart with totals | [ ] |
-| `POST` | `/cart/:productId` | Add to cart | [ ] |
-| `PATCH` | `/cart/:productId` | Update quantity | [ ] |
-| `DELETE` | `/cart/:productId` | Remove from cart | [ ] |
-| `DELETE` | `/cart` | Clear cart | [ ] |
+| `GET` | `/cart` | Get cart with totals | [x] |
+| `POST` | `/cart/:productId` | Add to cart | [x] |
+| `PATCH` | `/cart/:productId` | Update quantity | [x] |
+| `DELETE` | `/cart/:productId` | Remove from cart | [x] |
+| `DELETE` | `/cart` | Clear cart | [x] |
+| `POST` | `/cart/checkout` | Checkout cart into an order | [x] |
 
 ### Tests
 
-- [ ] `add-to-cart.usecase.spec.ts` (90%+ coverage)
-- [ ] `update-cart-item.usecase.spec.ts` (90%+ coverage)
-- [ ] `remove-from-cart.usecase.spec.ts` (90%+ coverage)
-- [ ] `get-cart.usecase.spec.ts` (90%+ coverage)
+- [x] `add-to-cart.usecase.spec.ts` (90%+ coverage)
+- [x] `update-cart-item.usecase.spec.ts` (90%+ coverage)
+- [x] `remove-from-cart.usecase.spec.ts` (90%+ coverage)
+- [x] `get-cart.usecase.spec.ts` (90%+ coverage)
 
 ### Validation Rules
 
-- [ ] Cannot add own products to cart
-- [ ] Product must be ACTIVE
-- [ ] Maximum quantity per item: 10
-- [ ] User must be authenticated (non-guest)
+- [x] Cannot add own products to cart
+- [x] Product must be ACTIVE
+- [x] Maximum quantity per item: 10
+- [x] User must be authenticated (non-guest)
 
 ### Cart Response Structure
 
@@ -208,10 +211,10 @@ model CartItem {
 
 ## Phase 5: Register Backend Modules
 
-- [ ] Add FavoritesModule to `app.module.ts`
-- [ ] Add WishlistModule to `app.module.ts`
-- [ ] Add CartModule to `app.module.ts`
-- [ ] Verify all endpoints with `npm run start:dev`
+- [x] Add FavoritesModule to `app.module.ts`
+- [ ] ~~Add WishlistModule to `app.module.ts`~~ — dropped
+- [x] Add CartModule to `app.module.ts`
+- [x] Verify all endpoints with `npm run start:dev`
 
 ---
 
@@ -219,9 +222,9 @@ model CartItem {
 
 ### Files to Create
 
-- [ ] `lib/features/favorites/data/services/favorite_service.dart`
-- [ ] `lib/features/favorites/data/entities/favorite_entity.dart`
-- [ ] `lib/features/favorites/presentation/providers/favorites_provider.dart`
+- [x] `lib/features/favorites/data/services/favorite_service.dart` — named `favorites_service.dart`
+- [ ] ~~`lib/features/favorites/data/entities/favorite_entity.dart`~~ — not needed; `FavoritesService` returns the `product` feature's `ProductEntity` directly
+- [x] `lib/features/favorites/presentation/providers/favorites_provider.dart`
 
 ### Service Methods
 
@@ -245,6 +248,8 @@ final favoritesListProvider = FutureProvider<List<ProductEntity>>;
 
 ## Phase 7: Frontend - Wishlist
 
+> ⚫ **Dropped** — see Phase 3. Left unchecked intentionally.
+
 ### Files to Create
 
 - [ ] `lib/features/wishlist/data/services/wishlist_service.dart`
@@ -265,10 +270,11 @@ Future<Either<Failure, bool>> isInWishlist(String productId);
 
 ### Files to Create
 
-- [ ] `lib/features/cart/data/services/cart_service.dart`
-- [ ] `lib/features/cart/data/entities/cart_entity.dart`
-- [ ] `lib/features/cart/data/entities/cart_item_entity.dart`
-- [ ] `lib/features/cart/presentation/providers/cart_provider.dart`
+- [x] `lib/features/cart/data/services/cart_service.dart`
+- [x] `lib/features/cart/data/entities/cart_entity.dart`
+- [x] `lib/features/cart/data/entities/cart_item_entity.dart`
+- [x] `lib/features/cart/data/entities/cart_checkout_entity.dart` (added beyond original scope, backs the checkout endpoint)
+- [x] `lib/features/cart/presentation/providers/cart_provider.dart`
 
 ### Service Methods
 
@@ -296,18 +302,18 @@ final cartItemCountProvider = Provider<int>;
 
 ### Current State (Non-functional)
 
-- [ ] Share button (line 100-111) → empty `onPressed`
-- [ ] Heart button (line 112-123) → empty `onPressed`
-- [ ] No cart button in bottom sheet
+- [x] Share button (line 100-111) → empty `onPressed`
+- [x] Heart button (line 112-123) → empty `onPressed`
+- [x] No cart button in bottom sheet
 
 ### Changes Required
 
-- [ ] Import favorites provider
-- [ ] Wire heart button to `toggleFavorite()`
-- [ ] Show filled heart when favorited
-- [ ] Add share functionality with `share_plus`
-- [ ] Add "Add to Cart" button in bottom sheet
-- [ ] Show snackbar on add to cart success
+- [x] Import favorites provider
+- [x] Wire heart button to `toggleFavorite()`
+- [x] Show filled heart when favorited
+- [x] Add share functionality with `share_plus`
+- [x] Add "Add to Cart" button in bottom sheet
+- [x] Show snackbar on add to cart success
 
 ### New Bottom Sheet Layout
 
@@ -323,19 +329,21 @@ final cartItemCountProvider = Provider<int>;
 
 **File**: `lib/features/profile/presentation/pages/favorites_page.dart`
 
-- [ ] Replace stub with functional page
-- [ ] Grid of favorited products (2 columns)
-- [ ] Use `AppCard` for product display
-- [ ] Pull-to-refresh
-- [ ] Infinite scroll pagination
-- [ ] Remove from favorites (swipe or long-press)
-- [ ] Tap to navigate to product detail
-- [ ] Empty state with icon + message
-- [ ] Loading skeleton
+- [x] Replace stub with functional page
+- [x] Grid of favorited products (2 columns)
+- [x] Use `AppCard` for product display
+- [x] Pull-to-refresh
+- [x] Infinite scroll pagination
+- [x] Remove from favorites (swipe or long-press)
+- [x] Tap to navigate to product detail
+- [x] Empty state with icon + message
+- [x] Loading skeleton
 
 ---
 
 ## Phase 11: Implement Wishlist Page
+
+> ⚫ **Dropped** — see Phase 3. Left unchecked intentionally.
 
 **File**: `lib/features/profile/presentation/pages/wishlist_page.dart`
 
@@ -354,16 +362,16 @@ final cartItemCountProvider = Provider<int>;
 
 **File**: `lib/features/product/presentation/pages/cart_page.dart`
 
-- [ ] Replace stub with functional page
-- [ ] List of cart items (vertical list)
-- [ ] Product image, title, unit price
-- [ ] Quantity controls (+/-)
-- [ ] Remove button (X or swipe)
-- [ ] Item subtotal display
-- [ ] Bottom bar with total + checkout button
-- [ ] Empty state with "Explore Products" CTA
-- [ ] Loading skeleton
-- [ ] Clear cart option in app bar
+- [x] Replace stub with functional page
+- [x] List of cart items (vertical list)
+- [x] Product image, title, unit price
+- [x] Quantity controls (+/-)
+- [x] Remove button (X or swipe)
+- [x] Item subtotal display
+- [x] Bottom bar with total + checkout button
+- [x] Empty state with "Explore Products" CTA
+- [x] Loading skeleton
+- [x] Clear cart option in app bar
 
 ### Cart Item Widget
 
@@ -379,9 +387,9 @@ final cartItemCountProvider = Provider<int>;
 
 ## Phase 13: Share Functionality
 
-- [ ] Add `share_plus: ^7.2.2` to pubspec.yaml
-- [ ] Run `flutter pub get`
-- [ ] Implement share in product_detail_page.dart
+- [x] Add `share_plus` to pubspec.yaml — currently `^10.1.4` (bumped past the originally planned `^7.2.2`)
+- [x] Run `flutter pub get`
+- [x] Implement share in product_detail_page.dart
 
 ```dart
 import 'package:share_plus/share_plus.dart';
@@ -400,26 +408,26 @@ void _shareProduct(ProductEntity product) {
 
 ### Backend
 
-- [ ] All tests passing (`npm run test`)
-- [ ] No TypeScript errors (`npm run build`)
+- [x] All tests passing (`npm run test`)
+- [x] No TypeScript errors (`npm run build`)
 - [ ] Test endpoints with Postman/curl
 
 ### Frontend
 
-- [ ] `flutter analyze` - no issues
+- [x] `flutter analyze` - no issues
 - [ ] Test on Android emulator
 - [ ] Test on iOS simulator (if available)
 - [ ] Verify all user flows:
-  - [ ] Add/remove favorite from product detail
-  - [ ] View favorites list
-  - [ ] Add/remove from wishlist
-  - [ ] View wishlist
-  - [ ] Add to cart from product detail
-  - [ ] Add to cart from wishlist
-  - [ ] Update cart quantity
-  - [ ] Remove from cart
-  - [ ] Clear cart
-  - [ ] Share product
+  - [x] Add/remove favorite from product detail
+  - [x] View favorites list
+  - [ ] ~~Add/remove from wishlist~~ — dropped
+  - [ ] ~~View wishlist~~ — dropped
+  - [x] Add to cart from product detail
+  - [ ] ~~Add to cart from wishlist~~ — dropped
+  - [x] Update cart quantity
+  - [x] Remove from cart
+  - [x] Clear cart
+  - [x] Share product
 
 ---
 
@@ -427,12 +435,12 @@ void _shareProduct(ProductEntity product) {
 
 All new UI must follow Digital Brutalist design:
 
-- [ ] `BorderRadius.zero` on all containers
-- [ ] No shadows (use borders for depth)
-- [ ] Space Grotesk for headlines
-- [ ] Inter for body text
-- [ ] 150ms animations with `Curves.linear`
-- [ ] Build buttons from `Container` + `InkWell`
+- [x] `BorderRadius.zero` on all containers
+- [x] No shadows (use borders for depth)
+- [x] Space Grotesk for headlines
+- [x] Inter for body text
+- [x] 150ms animations with `Curves.linear`
+- [x] Build buttons from `Container` + `InkWell`
 
 ---
 

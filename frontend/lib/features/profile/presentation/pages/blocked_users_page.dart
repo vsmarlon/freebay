@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/features/profile/data/services/block_service.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
@@ -150,24 +151,9 @@ class BlockedUsersPage extends ConsumerWidget {
                         ),
                       ),
                       Spacing.vMd,
-                      InkWell(
-                        onTap: () => ref.invalidate(blockedUsersProvider),
-                        child: Container(
-                          height: 48,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: const BoxDecoration(
-                            gradient: AppColors.brutalistGradient,
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Tentar novamente',
-                              style: TextStyle(
-                                color: AppColors.onPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
+                      AppButton(
+                        label: 'Tentar novamente',
+                        onPressed: () => ref.invalidate(blockedUsersProvider),
                       ),
                     ],
                   ),

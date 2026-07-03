@@ -36,6 +36,9 @@ import { SetConversationBackgroundUseCase } from './set-conversation-background.
     SetConversationBackgroundUseCase,
   ],
   exports: [
+    ConversationRepository,
+    ChatThreadAccessService,
+    BlockRepository,
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,

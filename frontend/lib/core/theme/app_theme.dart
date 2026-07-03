@@ -143,7 +143,7 @@ class AppTheme {
           space: 0,
         ),
         drawerTheme: const DrawerThemeData(
-          backgroundColor: AppColors.surfaceContainerLowest,
+          backgroundColor: AppColors.surface,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: borderRadiusZero),

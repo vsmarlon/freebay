@@ -46,7 +46,7 @@ final setChatBackgroundUsecaseProvider =
   return SetChatBackgroundUsecase(ref.watch(chatRepositoryProvider));
 });
 
-final chatsProvider = FutureProvider.autoDispose<List<ChatEntity>>((ref) async {
+final chatsProvider = FutureProvider<List<ChatEntity>>((ref) async {
   final repository = ref.watch(chatRepositoryProvider);
   final result = await repository.getChats();
 
@@ -78,7 +78,7 @@ class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
   void _init() {
     _ref.listen(chatsProvider, (_, next) {
       state = next;
-    });
+    }, fireImmediately: true);
 
     final socketService = _ref.read(chatSocketServiceProvider);
     _subscription = socketService.messageStream.listen(_onSocketMessage);

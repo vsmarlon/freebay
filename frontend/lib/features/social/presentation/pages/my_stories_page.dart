@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -78,31 +79,10 @@ class MyStoriesPage extends ConsumerWidget {
                               icon: Icons.auto_awesome,
                               title: 'NENHUMA HIST\u00d3RIA',
                               subtitle: 'Crie sua primeira hist\u00f3ria!',
-                              action: InkWell(
-                                onTap: () => context.push('/create-story'),
-                                child: Container(
-                                  height: 48,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20),
-                                  decoration: const BoxDecoration(
-                                    gradient: AppColors.brutalistGradient,
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.add,
-                                          color: AppColors.onPrimary),
-                                      Spacing.hSm,
-                                      Text(
-                                        'Criar hist\u00f3ria',
-                                        style: TextStyle(
-                                          color: AppColors.onPrimary,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              action: AppButton(
+                                label: 'Criar hist\u00f3ria',
+                                icon: Icons.add,
+                                onPressed: () => context.push('/create-story'),
                               ),
                             )
                           : RefreshIndicator(

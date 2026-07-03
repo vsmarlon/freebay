@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -174,27 +175,14 @@ void showProfileSettingsSheet(BuildContext context) {
                                   ),
                                 ),
                                 Spacing.vLg,
-                                InkWell(
-                                  onTap: () {
-                                    Navigator.pop(sheetContext);
-                                    context.push('/faq');
-                                  },
-                                  child: Container(
-                                    width: double.infinity,
-                                    height: 48,
-                                    decoration: const BoxDecoration(
-                                      gradient: AppColors.brutalistGradient,
-                                    ),
-                                    child: const Center(
-                                      child: Text(
-                                        'Central de ajuda',
-                                        style: TextStyle(
-                                          color: AppColors.onPrimary,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: AppButton(
+                                    label: 'Central de ajuda',
+                                    onPressed: () {
+                                      Navigator.pop(sheetContext);
+                                      context.push('/faq');
+                                    },
                                   ),
                                 ),
                                 Spacing.vSm,

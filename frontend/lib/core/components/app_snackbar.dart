@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:freebay/core/providers/last_error_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 
@@ -56,8 +59,22 @@ class AppSnackbar {
   static void success(BuildContext context, String message) =>
       show(context, message: message, type: AppSnackbarType.success);
 
-  static void error(BuildContext context, String message) =>
-      show(context, message: message, type: AppSnackbarType.error);
+  static void error(BuildContext context, String message) {
+    show(context, message: message, type: AppSnackbarType.error);
+    _recordError(context, message);
+  }
+
+  static void _recordError(BuildContext context, String message) {
+    String? route;
+    try {
+      route = GoRouterState.of(context).uri.toString();
+    } catch (_) {}
+    try {
+      ProviderScope.containerOf(context, listen: false)
+          .read(lastErrorProvider.notifier)
+          .state = LastErrorInfo(message, route);
+    } catch (_) {}
+  }
 
   static void warning(BuildContext context, String message) =>
       show(context, message: message, type: AppSnackbarType.warning);

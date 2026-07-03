@@ -5,7 +5,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class CommentBottomSheet extends ConsumerStatefulWidget {
   final PostEntity post;
@@ -131,21 +131,14 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                     ),
                   ),
                   Spacing.hSm,
-                  InkWell(
-                    onTap: _isLoading ? null : _submitComment,
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.brutalistGradient,
-                      ),
-                      child: Center(
-                        child: _isLoading
-                            ? const ShimmerBlock(width: 20, height: 20)
-                            : const Icon(Icons.send,
-                                color: AppColors.onPrimary),
-                      ),
-                    ),
+                  BrutalistIconButton(
+                    icon: Icons.send,
+                    onTap: _submitComment,
+                    size: 44,
+                    iconSize: 24,
+                    iconColor: AppColors.onPrimary,
+                    gradient: AppColors.brutalistGradient,
+                    isLoading: _isLoading,
                   ),
                 ],
               ),

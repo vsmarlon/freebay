@@ -3,24 +3,24 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_header.dart';
+import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
@@ -508,7 +508,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       backgroundColor: context.bgColor,
       body: Column(
         children: [
-          _ChatHeader(
+          ChatHeader(
             name: widget.oderName,
             avatarUrl: widget.oderAvatarUrl,
             chatType: widget.chatType,
@@ -551,7 +551,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                                           currentUserId
                                       : false;
                                   final isConsecutive = isMe == prevIsMe;
-                                  return _MessageBubble(
+                                  return MessageBubble(
                                     content: msg['content'] ?? '',
                                     isMe: isMe,
                                     isDark: isDark,
@@ -634,252 +634,17 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
             ),
           ),
           Spacing.hSm,
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _isSending ? null : _sendMessage,
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  gradient: AppColors.brutalistGradient,
-                ),
-                child: Center(
-                  child: _isSending
-                      ? const ShimmerBlock(width: 20, height: 20)
-                      : const Icon(Icons.send, color: AppColors.onPrimary),
-                ),
-              ),
-            ),
+          BrutalistIconButton(
+            icon: Icons.send,
+            onTap: _sendMessage,
+            size: 48,
+            iconSize: 24,
+            iconColor: AppColors.onPrimary,
+            gradient: AppColors.brutalistGradient,
+            isLoading: _isSending,
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ChatHeader extends StatelessWidget {
-  final String name;
-  final String? avatarUrl;
-  final String chatType;
-  final Color accentColor;
-  final VoidCallback onBack;
-  final VoidCallback onConfig;
-
-  const _ChatHeader({
-    required this.name,
-    this.avatarUrl,
-    required this.chatType,
-    required this.accentColor,
-    required this.onBack,
-    required this.onConfig,
-  });
-
-  String get _statusLabel {
-    switch (chatType) {
-      case 'order':
-        return 'PEDIDO';
-      case 'direct':
-        return 'DIRETA';
-      default:
-        return chatType.toUpperCase();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        bottom: 8,
-      ),
-      decoration: BoxDecoration(
-        color: context.appBarColor,
-        border: Border(
-          bottom: BorderSide(color: accentColor, width: 2),
-        ),
-      ),
-      child: Row(
-        children: [
-          BrutalistIconButton(icon: Icons.arrow_back, onTap: onBack),
-          const SizedBox(width: 12),
-          UserAvatar(
-            imageUrl: avatarUrl,
-            size: AppAvatarSize.small,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    fontStyle: FontStyle.italic,
-                    color: context.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _statusLabel,
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                    color: accentColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          BrutalistIconButton(icon: Icons.more_vert, onTap: onConfig),
-        ],
-      ),
-    );
-  }
-}
-
-class _MessageBubble extends StatelessWidget {
-  final String content;
-  final bool isMe;
-  final bool isDark;
-  final bool isConsecutive;
-  final Color accentColor;
-  final DateTime? createdAt;
-  final dynamic readAt;
-  final dynamic deliveredAt;
-
-  const _MessageBubble({
-    required this.content,
-    required this.isMe,
-    required this.isDark,
-    this.isConsecutive = false,
-    this.accentColor = AppColors.primaryContainer,
-    this.createdAt,
-    this.readAt,
-    this.deliveredAt,
-  });
-
-  bool get _isRead => readAt != null;
-  bool get _isDelivered => deliveredAt != null;
-
-  @override
-  Widget build(BuildContext context) {
-    final timeStr =
-        createdAt != null ? DateFormat('HH:mm').format(createdAt!) : '';
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: isConsecutive ? 2 : 8),
-      child: Column(
-        crossAxisAlignment:
-            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment:
-                isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-            children: [
-              if (!isMe) const Spacer(),
-              Flexible(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isMe
-                        ? accentColor
-                        : (isDark
-                            ? AppColors.surfaceDark
-                            : AppColors.surfaceContainerLow),
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: Text(
-                    content,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 14,
-                      color: isMe
-                          ? AppColors.onPrimary
-                          : (isDark ? AppColors.white : AppColors.darkGray),
-                    ),
-                  ),
-                ),
-              ),
-              if (isMe) const Spacer(),
-            ],
-          ),
-          Padding(
-            padding: EdgeInsets.only(
-                top: 2, left: isMe ? 0 : 4, right: isMe ? 4 : 0),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment:
-                  isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-              children: [
-                if (timeStr.isNotEmpty)
-                  Text(
-                    timeStr,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 11,
-                      color: context.textSecondary,
-                    ),
-                  ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  _ReadStatusIcon(
-                    isRead: _isRead,
-                    isDelivered: _isDelivered,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReadStatusIcon extends StatelessWidget {
-  final bool isRead;
-  final bool isDelivered;
-
-  const _ReadStatusIcon({
-    required this.isRead,
-    required this.isDelivered,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isRead) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.done_all, size: 14, color: AppColors.primaryContainer),
-        ],
-      );
-    }
-    if (isDelivered) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.done_all, size: 14, color: context.textSecondary),
-        ],
-      );
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.done, size: 14, color: context.textSecondary),
-      ],
     );
   }
 }
