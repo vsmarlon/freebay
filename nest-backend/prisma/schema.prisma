@@ -216,6 +216,8 @@ model Product {
   condition   Condition
   categoryId  String?
   status      ProductStatus @default(ACTIVE)
+  quantity    Int           @default(1)
+  soldCount   Int           @default(0)
   sellerId    String
   postId      String?       @unique
   createdAt   DateTime      @default(now())
@@ -445,12 +447,24 @@ model Review {
   comment    String?
   createdAt  DateTime   @default(now())
 
+  images   ReviewImage[]
   reviewer User  @relation("ReviewsGiven", fields: [reviewerId], references: [id])
   reviewed User  @relation("ReviewsReceived", fields: [reviewedId], references: [id])
   order    Order @relation(fields: [orderId], references: [id])
 
   @@unique([reviewerId, orderId, type])
   @@index([reviewedId])
+}
+
+model ReviewImage {
+  id        String   @id @default(uuid())
+  url       String
+  order     Int      @default(0)
+  reviewId  String
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
 }
 
 model ChatMessage {

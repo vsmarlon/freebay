@@ -1,26 +1,42 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right } from '@/shared/core/either';
+import { Either, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
+import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationMapper, UnifiedConversationResponse } from '../mappers/conversation.mapper';
 
 @Injectable()
 export class GetUnifiedConversationsUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly conversationRepository: ConversationRepository) {}
 
   async execute(
     userId: string,
     query?: string,
     archived?: boolean,
   ): Promise<Either<AppError, UnifiedConversationResponse[]>> {
-    const [directConvs, orderConvs, preferences] = await Promise.all([
-      this.fetchDirectConversations(userId),
-      this.fetchOrderConversations(userId),
-      this.prisma.conversationPreference.findMany({
-        where: { userId, isDeleted: false },
-      }),
+    const [directConvsResult, orderConvsResult, preferencesResult] = await Promise.all([
+      this.conversationRepository.findDirectConversationsByUser(userId),
+      this.conversationRepository.findOrdersByUser(userId),
+      this.conversationRepository.findPreferencesByUser(userId),
     ]);
+
+    if (isLeft(directConvsResult)) return directConvsResult;
+    if (isLeft(orderConvsResult)) return orderConvsResult;
+    if (isLeft(preferencesResult)) return preferencesResult;
+
+    const directConvs = directConvsResult.value;
+    const orderConvsData = orderConvsResult.value;
+    const preferences = preferencesResult.value;
+
+    const unreadResult = await this.conversationRepository.countUnreadChatMessages(
+      orderConvsData.map(o => o.id), userId,
+    );
+    if (isLeft(unreadResult)) return unreadResult;
+
+    const unreadMap = unreadResult.value;
+    const orderConvs = orderConvsData.map(o => ({
+      ...o,
+      unreadCount: unreadMap[o.id] ?? 0,
+    }));
 
     const prefMap = new Map<string, (typeof preferences)[0]>();
     for (const p of preferences) {
@@ -64,42 +80,5 @@ export class GetUnifiedConversationsUseCase {
     });
 
     return right(all);
-  }
-
-  private fetchDirectConversations(userId: string) {
-    return this.prisma.directConversation.findMany({
-      where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
-      orderBy: { lastMessageAt: 'desc' },
-      include: {
-        user1: { select: USER_SELECT_BASIC },
-        user2: { select: USER_SELECT_BASIC },
-        messages: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
-        },
-      },
-    });
-  }
-
-  private fetchOrderConversations(userId: string) {
-    return this.prisma.order.findMany({
-      where: { OR: [{ buyerId: userId }, { sellerId: userId }] },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        buyerId: true,
-        sellerId: true,
-        status: true,
-        createdAt: true,
-        product: { select: { id: true, title: true } },
-        buyer: { select: USER_SELECT_BASIC },
-        seller: { select: USER_SELECT_BASIC },
-        chatMessages: {
-          orderBy: { createdAt: 'asc' },
-          select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
-        },
-      },
-    });
   }
 }

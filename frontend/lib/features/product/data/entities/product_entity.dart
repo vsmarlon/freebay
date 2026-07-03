@@ -23,6 +23,12 @@ class ProductEntity extends Equatable {
   @JsonKey(name: 'imageUrl')
   final String? imageUrl;
 
+  @JsonKey(defaultValue: 1)
+  final int quantity;
+
+  @JsonKey(defaultValue: 0)
+  final int soldCount;
+
   const ProductEntity({
     required this.id,
     required this.title,
@@ -35,6 +41,8 @@ class ProductEntity extends Equatable {
     this.sellerName,
     this.sellerAvatar,
     this.imageUrl,
+    this.quantity = 1,
+    this.soldCount = 0,
   });
 
   factory ProductEntity.fromJson(Map<String, dynamic> json) =>
@@ -55,5 +63,7 @@ class ProductEntity extends Equatable {
         sellerName,
         sellerAvatar,
         imageUrl,
+        quantity,
+        soldCount,
       ];
 }

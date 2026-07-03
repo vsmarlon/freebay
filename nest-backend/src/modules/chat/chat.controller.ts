@@ -3,63 +3,35 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { SendMessageUseCase } from './usecases/send-message.usecase';
-import { GetConversationsUseCase } from './usecases/get-conversations.usecase';
-import { GetMessagesUseCase } from './usecases/get-messages.usecase';
-import { StartConversationUseCase } from './usecases/start-conversation.usecase';
-import { AcceptConversationUseCase } from './usecases/accept-conversation.usecase';
-import { GetUnifiedConversationsUseCase } from './usecases/get-unified-conversations.usecase';
-import { ArchiveConversationUseCase } from './usecases/archive-conversation.usecase';
-import { DeleteConversationUseCase } from './usecases/delete-conversation.usecase';
-import { SetConversationThemeUseCase } from './usecases/set-conversation-theme.usecase';
-import { SetConversationBackgroundUseCase } from './usecases/set-conversation-background.usecase';
-import { StartConversationDTO, SendMessageDTO, ConversationResponse, UpdatePreferenceDTO } from './dtos/chat.dto';
+import { ChatService } from './api/chat.service';
+import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO } from './dtos/chat.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
 
 @ApiTags('Chat')
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
-  constructor(
-    private getConversationsUseCase: GetConversationsUseCase,
-    private getMessagesUseCase: GetMessagesUseCase,
-    private sendMessageUseCase: SendMessageUseCase,
-    private startConversationUseCase: StartConversationUseCase,
-    private acceptConversationUseCase: AcceptConversationUseCase,
-    private getUnifiedConversationsUseCase: GetUnifiedConversationsUseCase,
-    private archiveConversationUseCase: ArchiveConversationUseCase,
-    private deleteConversationUseCase: DeleteConversationUseCase,
-    private setConversationThemeUseCase: SetConversationThemeUseCase,
-    private setConversationBackgroundUseCase: SetConversationBackgroundUseCase,
-  ) {}
+  constructor(private readonly chatService: ChatService) {}
 
   @Get('conversations')
   @ApiBearerAuth()
-  @ApiDoc({ summary: 'Get all conversations (direct + order)', auth: true, responseType: ConversationResponse })
+  @ApiDoc({ summary: 'Get all conversations (direct + order)', auth: true })
   async getConversations(@CurrentUser() user: AuthUser, @Query('q') query?: string) {
-    const result = await this.getUnifiedConversationsUseCase.execute(user.userId, query);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { conversations: result.value };
+    return this.chatService.getConversations(user.userId, query);
   }
 
   @Get('direct')
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Get only direct conversations (legacy)', auth: true })
   async getDirectConversations(@CurrentUser() user: AuthUser) {
-    const result = await this.getConversationsUseCase.execute(user.userId);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { conversations: result.value };
+    return this.chatService.getDirectConversations(user.userId);
   }
 
   @Get('archived')
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Get archived conversations', auth: true })
   async getArchivedConversations(@CurrentUser() user: AuthUser) {
-    const result = await this.getUnifiedConversationsUseCase.execute(user.userId, undefined, true);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { conversations: result.value };
+    return this.chatService.getConversations(user.userId, undefined, true);
   }
 
   @Post('conversations')
@@ -67,9 +39,7 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Start a conversation', auth: true, bodyType: StartConversationDTO, responseStatus: 201 })
   async startConversation(@CurrentUser() user: AuthUser, @Body() body: StartConversationDTO) {
-    const result = await this.startConversationUseCase.execute(user.userId, body.targetUserId);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return result.value;
+    return this.chatService.startConversation(user.userId, body);
   }
 
   @Post('conversations/:id/accept')
@@ -77,18 +47,14 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Accept conversation', auth: true })
   async acceptConversation(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.acceptConversationUseCase.execute(id, user.userId);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return result.value;
+    return this.chatService.acceptConversation(id, user.userId);
   }
 
   @Get('conversations/:id')
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Get conversation messages', auth: true })
   async getConversation(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.getMessagesUseCase.execute(id, user.userId);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { messages: result.value };
+    return this.chatService.getMessages(id, user.userId);
   }
 
   @Post('conversations/:id/messages')
@@ -96,9 +62,7 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Send a message', auth: true, bodyType: SendMessageDTO, responseStatus: 201 })
   async sendMessage(@Param('id') id: string, @Body() body: SendMessageDTO, @CurrentUser() user: AuthUser) {
-    const result = await this.sendMessageUseCase.execute({ senderId: user.userId, conversationId: id, content: body.content });
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return result.value;
+    return this.chatService.sendMessage(user.userId, id, body);
   }
 
   @Patch('conversations/:id/archive')
@@ -106,9 +70,7 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Archive or unarchive a conversation', auth: true })
   async archiveConversation(@Param('id') id: string, @Body() body: { archived: boolean }, @CurrentUser() user: AuthUser) {
-    const result = await this.archiveConversationUseCase.execute(user.userId, id, body.archived);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { preference: result.value };
+    return this.chatService.archiveConversation(user.userId, id, body.archived);
   }
 
   @Delete('conversations/:id')
@@ -116,9 +78,7 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Soft-delete a conversation', auth: true })
   async deleteConversation(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.deleteConversationUseCase.execute(user.userId, id);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { deleted: true };
+    return this.chatService.deleteConversation(user.userId, id);
   }
 
   @Patch('conversations/:id/theme')
@@ -126,9 +86,7 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Set conversation theme', auth: true })
   async setTheme(@Param('id') id: string, @Body() body: UpdatePreferenceDTO, @CurrentUser() user: AuthUser) {
-    const result = await this.setConversationThemeUseCase.execute(user.userId, id, body.theme);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { preference: result.value };
+    return this.chatService.setTheme(user.userId, id, body.theme);
   }
 
   @Patch('conversations/:id/background')
@@ -136,8 +94,6 @@ export class ChatController {
   @ApiBearerAuth()
   @ApiDoc({ summary: 'Set conversation background', auth: true })
   async setBackground(@Param('id') id: string, @Body() body: { backgroundUrl: string }, @CurrentUser() user: AuthUser) {
-    const result = await this.setConversationBackgroundUseCase.execute(user.userId, id, body.backgroundUrl);
-    if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-    return { preference: result.value };
+    return this.chatService.setBackground(user.userId, id, body.backgroundUrl);
   }
 }

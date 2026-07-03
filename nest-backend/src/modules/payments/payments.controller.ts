@@ -81,7 +81,7 @@ export class PaymentsController {
   ) {
     const result = await this.processWebhookUseCase.execute({
       event: event || body.event || 'charge.completed',
-      data: body,
+      data: body.data,
     });
 
     if (result.isLeft()) {

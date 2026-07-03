@@ -4,33 +4,33 @@ import { ApiProperty } from '@nestjs/swagger';
 export class RequestPasswordRecoveryDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
-  email: string;
+  readonly email: string;
 }
 
 export class VerifyPasswordRecoveryCodeDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
-  email: string;
+  readonly email: string;
 
   @ApiProperty({ example: '123456', description: '6-digit code sent via email' })
   @IsString()
   @Matches(/^\d{6}$/, { message: 'Código deve ter 6 dígitos' })
-  code: string;
+  readonly code: string;
 }
 
 export class ResetPasswordDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
-  email: string;
+  readonly email: string;
 
   @ApiProperty({ example: '123456', description: '6-digit code sent via email' })
   @IsString()
   @Matches(/^\d{6}$/, { message: 'Código deve ter 6 dígitos' })
-  code: string;
+  readonly code: string;
 
   @ApiProperty({ example: '********', minLength: 8, maxLength: 100 })
   @IsString()
   @MinLength(8)
   @MaxLength(100)
-  newPassword: string;
+  readonly newPassword: string;
 }

@@ -8,16 +8,16 @@ export class CreatePostDTO {
   @IsOptional()
   @IsString()
   @SanitizeText()
-  content?: string;
+  readonly content?: string;
 
   @ApiPropertyOptional({ example: 'https://example.com/image.jpg' })
   @IsOptional()
   @IsUrl({ require_protocol: true, protocols: ['https'] })
-  imageUrl?: string;
+  readonly imageUrl?: string;
 
   @ApiProperty({ enum: ['PRODUCT', 'REGULAR'], example: 'REGULAR' })
   @IsIn(['PRODUCT', 'REGULAR'])
-  type: 'PRODUCT' | 'REGULAR';
+  readonly type: 'PRODUCT' | 'REGULAR';
 }
 
 export class CreateCommentDTO {
@@ -26,12 +26,12 @@ export class CreateCommentDTO {
   @MinLength(1)
   @MaxLength(1000)
   @SanitizeText()
-  content: string;
+  readonly content: string;
 
   @ApiPropertyOptional({ example: 'parent-uuid' })
   @IsOptional()
   @IsUUID()
-  parentId?: string;
+  readonly parentId?: string;
 }
 
 export class GetFeedQueryDTO {
@@ -41,19 +41,19 @@ export class GetFeedQueryDTO {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  readonly limit?: number;
 
   @ApiPropertyOptional({ enum: ['explore', 'following'], example: 'explore' })
   @IsOptional()
   @IsIn(['explore', 'following'])
-  type?: 'explore' | 'following';
+  readonly type?: 'explore' | 'following';
 }
 
 export class GetUserPostsQueryDTO {
   @ApiPropertyOptional({ description: 'Pagination cursor' })
   @IsOptional()
   @IsString()
-  cursor?: string;
+  readonly cursor?: string;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()
@@ -61,7 +61,7 @@ export class GetUserPostsQueryDTO {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  readonly limit?: number;
 }
 
 export class SearchPostsQueryDTO {
@@ -69,17 +69,17 @@ export class SearchPostsQueryDTO {
   @IsOptional()
   @IsString()
   @MaxLength(200)
-  q?: string;
+  readonly q?: string;
 
   @ApiPropertyOptional({ enum: ['all', 'following', 'followers'], example: 'all' })
   @IsOptional()
   @IsIn(['all', 'following', 'followers'])
-  filter?: 'all' | 'following' | 'followers';
+  readonly filter?: 'all' | 'following' | 'followers';
 
   @ApiPropertyOptional({ description: 'Pagination cursor' })
   @IsOptional()
   @IsString()
-  cursor?: string;
+  readonly cursor?: string;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()
@@ -87,7 +87,7 @@ export class SearchPostsQueryDTO {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  readonly limit?: number;
 }
 
 export interface CreatePostInput {
@@ -133,23 +133,4 @@ export interface CreateCommentOutput {
   userId: string;
   content: string;
   createdAt: Date;
-}
-
-export interface CreateStoryInput {
-  userId: string;
-  imageBase64: string;
-}
-
-export interface CreateStoryOutput {
-  id: string;
-  userId: string;
-  imageUrl: string;
-  expiresAt: Date;
-  createdAt: Date;
-  user: {
-    id: string;
-    displayName: string;
-    avatarUrl: string | null;
-    isVerified: boolean;
-  };
 }

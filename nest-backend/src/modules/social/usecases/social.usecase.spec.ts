@@ -14,7 +14,7 @@ import {
 
 describe('CreatePostUseCase', () => {
   let sut: CreatePostUseCase;
-  let mockPostRepository: any;
+  let mockPostRepository: { create: jest.Mock };
 
   beforeEach(async () => {
     mockPostRepository = {
@@ -87,8 +87,8 @@ describe('CreatePostUseCase', () => {
 
 describe('LikePostUseCase', () => {
   let sut: LikePostUseCase;
-  let mockPostRepository: any;
-  let mockLikeRepository: any;
+  let mockPostRepository: { findById: jest.Mock; incrementLikesCount: jest.Mock };
+  let mockLikeRepository: { findPostLike: jest.Mock; createLike: jest.Mock };
 
   beforeEach(async () => {
     mockPostRepository = {
@@ -146,8 +146,8 @@ describe('LikePostUseCase', () => {
 
 describe('UnlikePostUseCase', () => {
   let sut: UnlikePostUseCase;
-  let mockPostRepository: any;
-  let mockLikeRepository: any;
+  let mockPostRepository: { decrementLikesCount: jest.Mock };
+  let mockLikeRepository: { findPostLike: jest.Mock; deletePostLikeByUser: jest.Mock };
 
   beforeEach(async () => {
     mockPostRepository = {
@@ -188,8 +188,8 @@ describe('UnlikePostUseCase', () => {
 
 describe('CommentUseCase', () => {
   let sut: CommentUseCase;
-  let mockCommentRepository: any;
-  let mockPostRepository: any;
+  let mockCommentRepository: { create: jest.Mock };
+  let mockPostRepository: { incrementCommentsCount: jest.Mock };
 
   beforeEach(async () => {
     mockCommentRepository = {
@@ -242,7 +242,7 @@ describe('CommentUseCase', () => {
 
 describe('CreateStoryUseCase', () => {
   let sut: CreateStoryUseCase;
-  let mockStoryRepository: any;
+  let mockStoryRepository: { create: jest.Mock };
 
   beforeEach(async () => {
     mockStoryRepository = {

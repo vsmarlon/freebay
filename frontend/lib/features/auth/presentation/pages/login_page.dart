@@ -144,8 +144,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             keyboardType: TextInputType.emailAddress,
                             prefixIcon: Icons.email_outlined,
                             validator: (v) {
-                              if (v == null || v.isEmpty)
+                              if (v == null || v.isEmpty) {
                                 return 'Informe seu e-mail';
+                              }
                               if (!v.contains('@') || !v.contains('.')) {
                                 return 'E-mail inválido';
                               }
@@ -161,8 +162,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             showPasswordToggle: true,
                             prefixIcon: Icons.lock_outline,
                             validator: (v) {
-                              if (v == null || v.isEmpty)
+                              if (v == null || v.isEmpty) {
                                 return 'Informe sua senha';
+                              }
                               if (v.length < 8) return 'Mínimo 8 caracteres';
                               return null;
                             },

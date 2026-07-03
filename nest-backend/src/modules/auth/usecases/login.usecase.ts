@@ -2,16 +2,19 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidCredentialsError } from '@/shared/core/errors';
-import { PrismaUserRepository } from '../repositories/prisma-user.repository';
+import { UserRepository } from '../domain/repositories/user.repository';
 import { LoginDTO } from '../dtos/auth.dto';
 import { LoginResponse, toLoginResponse } from '../mappers/auth.mapper';
 
 @Injectable()
 export class LoginUseCase {
-  constructor(private userRepository: PrismaUserRepository) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: LoginDTO): Promise<Either<AppError, LoginResponse>> {
-    const user = await this.userRepository.findByEmail(input.email);
+    const userResult = await this.userRepository.findByEmail(input.email);
+    if (userResult.isLeft()) return left(userResult.value);
+    const user = userResult.value;
+
     if (!user) {
       return left(new InvalidCredentialsError());
     }

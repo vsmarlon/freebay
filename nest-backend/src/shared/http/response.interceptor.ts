@@ -14,10 +14,15 @@ export class EitherInterceptor<T> implements NestInterceptor<T, T> {
       next.handle().subscribe({
         next: (value) => {
           if (value && typeof value === 'object' && '_tag' in value) {
-            const either = value as { _tag: string; value: unknown };
+            const either = value as EitherShape;
             if (either._tag === 'left') {
-              const error = either.value as { code: string; message: string };
-              subscriber.error(new AppError(error.code, error.message));
+              const error = either.value;
+              if (error instanceof AppError) {
+                subscriber.error(error);
+              } else {
+                const err = error as { code?: string; message?: string };
+                subscriber.error(new AppError(err?.code ?? 'UNKNOWN', err?.message ?? 'Erro desconhecido'));
+              }
               return;
             }
             subscriber.next(either.value as T);
@@ -30,4 +35,9 @@ export class EitherInterceptor<T> implements NestInterceptor<T, T> {
       });
     });
   }
+}
+
+interface EitherShape {
+  _tag: 'left' | 'right';
+  value: { code?: string; message?: string } | AppError | Record<string, string | number | boolean | null | object | undefined> | string | number | boolean | null | undefined;
 }

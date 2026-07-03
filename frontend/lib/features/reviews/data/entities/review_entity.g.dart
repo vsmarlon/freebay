@@ -14,6 +14,10 @@ ReviewEntity _$ReviewEntityFromJson(Map<String, dynamic> json) => ReviewEntity(
       type: _reviewTypeFromJson(json['type'] as String),
       score: (json['score'] as num).toInt(),
       comment: json['comment'] as String?,
+      images: (json['images'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       createdAt: DateTime.parse(json['createdAt'] as String),
       reviewer: json['reviewer'] == null
           ? null
@@ -29,6 +33,7 @@ Map<String, dynamic> _$ReviewEntityToJson(ReviewEntity instance) =>
       'type': _reviewTypeToJson(instance.type),
       'score': instance.score,
       'comment': instance.comment,
+      'images': instance.images,
       'createdAt': instance.createdAt.toIso8601String(),
       'reviewer': instance.reviewer,
     };

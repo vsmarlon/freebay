@@ -1,24 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError } from '@/shared/core/errors';
+import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
+import { PrismaDisputeRepository } from '../repositories/dispute.repository';
+import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
+import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 
 @Injectable()
 export class ResolveDisputeUseCase {
   constructor(
     private prisma: PrismaService,
+    private disputeRepo: PrismaDisputeRepository,
     private notificationService: NotificationService,
+    private transitionPolicy: DisputeTransitionPolicy,
+    private resolutionExecution: DisputeResolutionExecutionService,
   ) {}
 
   async execute(input: { disputeId: string; resolution: string; winner: 'BUYER' | 'SELLER' }): Promise<Either<AppError, { resolved: boolean }>> {
-    const dispute = await this.prisma.dispute.findUnique({
-      where: { id: input.disputeId },
-      include: { order: true },
-    });
+    const dispute = await this.disputeRepo.findById(input.disputeId);
 
     if (!dispute) {
       return left(new NotFoundError('Dispute'));
+    }
+
+    if (!this.transitionPolicy.canResolve(dispute.status)) {
+      return left(new BadRequestError(`Dispute cannot be resolved while it is ${dispute.status}`));
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -32,42 +39,18 @@ export class ResolveDisputeUseCase {
       });
 
       if (input.winner === 'BUYER') {
-        await tx.order.update({
-          where: { id: dispute.orderId },
-          data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
-        });
-
-        const buyerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.buyerId } });
-        if (buyerWallet) {
-          await tx.wallet.update({
-            where: { userId: dispute.order.buyerId },
-            data: { availableBalance: { increment: dispute.order.amount } },
-          });
-        }
+        await this.resolutionExecution.resolveInFavorOfBuyer(tx, dispute);
       } else {
-        await tx.order.update({
-          where: { id: dispute.orderId },
-          data: { status: 'COMPLETED', escrowStatus: 'RELEASED' },
-        });
-
-        const sellerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.sellerId } });
-        if (sellerWallet) {
-          await tx.wallet.update({
-            where: { userId: dispute.order.sellerId },
-            data: {
-              pendingBalance: { decrement: dispute.order.sellerAmount },
-              availableBalance: { increment: dispute.order.sellerAmount },
-              totalEarned: { increment: dispute.order.sellerAmount },
-            },
-          });
-        }
+        await this.resolutionExecution.resolveInFavorOfSeller(tx, dispute);
       }
     });
 
     const buyerMsg = input.winner === 'BUYER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do vendedor';
     const sellerMsg = input.winner === 'SELLER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do comprador';
-    await this.notificationService.notifyDispute(dispute.order.buyerId, dispute.id, buyerMsg);
-    await this.notificationService.notifyDispute(dispute.order.sellerId, dispute.id, sellerMsg);
+    await Promise.all([
+      this.notificationService.notifyDispute(dispute.order.buyerId, dispute.id, buyerMsg),
+      this.notificationService.notifyDispute(dispute.order.sellerId, dispute.id, sellerMsg),
+    ]);
 
     return right({ resolved: true });
   }

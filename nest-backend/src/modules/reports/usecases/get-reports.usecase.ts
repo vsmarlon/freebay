@@ -1,23 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right } from '@/shared/core/either';
+import { Either, right, left, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Report } from '@prisma/client';
 import { ReportWithRelations } from '../dtos/report.dto';
+import { ReportRepository } from '../domain/repositories/report.repository';
 
 @Injectable()
 export class GetReportsUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly reportRepository: ReportRepository) {}
 
   async execute(status?: string): Promise<Either<AppError, ReportWithRelations[]>> {
     const where = status ? { status: status as Report['status'] } : {};
 
-    const reports = await this.prisma.report.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    const result = await this.reportRepository.findAllReports(where);
+    if (isLeft(result)) return left(result.value);
 
-    const result: ReportWithRelations[] = reports.map(r => ({
+    const mapped: ReportWithRelations[] = result.value.map(r => ({
       id: r.id,
       reason: r.reason,
       description: r.description,
@@ -28,6 +26,6 @@ export class GetReportsUseCase {
       reportedPostId: r.reportedPostId,
     }));
 
-    return right(result);
+    return right(mapped);
   }
 }

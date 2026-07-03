@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AcceptConversationUseCase } from './accept-conversation.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
 
-const mockPrisma = {
-  directConversation: {
-    findUnique: jest.fn(),
-    update: jest.fn(),
-  },
+const mockRepo = {
+  findDirectConversationById: jest.fn(),
+  updateDirectConversation: jest.fn(),
 };
 
 describe('AcceptConversationUseCase', () => {
@@ -17,7 +16,7 @@ describe('AcceptConversationUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AcceptConversationUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: ConversationRepository, useValue: mockRepo },
       ],
     }).compile();
 
@@ -26,36 +25,33 @@ describe('AcceptConversationUseCase', () => {
   });
 
   it('should return error if conversation not found', async () => {
-    mockPrisma.directConversation.findUnique.mockResolvedValue(null);
+    mockRepo.findDirectConversationById.mockResolvedValue(right(null));
     const result = await sut.execute('conv-1', 'user-1');
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
   it('should return error if user is not a participant', async () => {
-    mockPrisma.directConversation.findUnique.mockResolvedValue({ id: 'conv-1', user1Id: 'a', user2Id: 'b', status: 'PENDING' });
+    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'a', user2Id: 'b', status: 'PENDING' }));
     const result = await sut.execute('conv-1', 'stranger');
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
   it('should return error if conversation is not PENDING', async () => {
-    mockPrisma.directConversation.findUnique.mockResolvedValue({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' });
+    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
     const result = await sut.execute('conv-1', 'user-1');
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
   it('should accept conversation successfully', async () => {
-    mockPrisma.directConversation.findUnique.mockResolvedValue({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'PENDING' });
-    mockPrisma.directConversation.update.mockResolvedValue({ id: 'conv-1', status: 'ACTIVE' });
+    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'PENDING' }));
+    mockRepo.updateDirectConversation.mockResolvedValue(right({ id: 'conv-1', status: 'ACTIVE' }));
 
     const result = await sut.execute('conv-1', 'user-1');
     expect(result.isRight()).toBe(true);
     if (result.isRight()) expect(result.value.accepted).toBe(true);
-    expect(mockPrisma.directConversation.update).toHaveBeenCalledWith({
-      where: { id: 'conv-1' },
-      data: { status: 'ACTIVE' },
-    });
+    expect(mockRepo.updateDirectConversation).toHaveBeenCalledWith('conv-1', { status: 'ACTIVE' });
   });
 });

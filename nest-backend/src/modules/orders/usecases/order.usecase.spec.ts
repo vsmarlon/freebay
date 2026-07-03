@@ -5,10 +5,19 @@ import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 
+interface MockPrisma {
+  $transaction: jest.Mock;
+  product: Record<string, jest.Mock>;
+  order: Record<string, jest.Mock>;
+  chatMessage: Record<string, jest.Mock>;
+  wallet: Record<string, jest.Mock>;
+  transaction: Record<string, jest.Mock>;
+}
+
 describe('CreateOrderUseCase', () => {
   let sut: CreateOrderUseCase;
-  let mockOrderRepository: any;
-  let mockPrisma: any;
+  let mockOrderRepository: { create: jest.Mock };
+  let mockPrisma: MockPrisma;
 
   beforeEach(async () => {
     mockOrderRepository = {
@@ -42,7 +51,7 @@ describe('CreateOrderUseCase', () => {
       chatMessage: {
         create: jest.fn(),
       },
-    };
+    } as unknown as MockPrisma;
     mockPrisma.$transaction = jest.fn().mockImplementation(async (callback) => callback(mockPrisma));
 
     const module: TestingModule = await Test.createTestingModule({
@@ -111,8 +120,8 @@ describe('CreateOrderUseCase', () => {
 
 describe('ConfirmDeliveryUseCase', () => {
   let sut: ConfirmDeliveryUseCase;
-  let mockOrderRepository: any;
-  let mockPrisma: any;
+  let mockOrderRepository: { findById: jest.Mock; update: jest.Mock };
+  let mockPrisma: MockPrisma;
 
   beforeEach(async () => {
     mockOrderRepository = {
@@ -129,7 +138,7 @@ describe('ConfirmDeliveryUseCase', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
       },
-    };
+    } as unknown as MockPrisma;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -277,8 +286,8 @@ describe('ConfirmDeliveryUseCase', () => {
 
 describe('CreateOrderUseCase - platform fee calculations', () => {
   let sut: CreateOrderUseCase;
-  let mockOrderRepository: any;
-  let mockPrisma: any;
+  let mockOrderRepository: { create: jest.Mock };
+  let mockPrisma: MockPrisma;
 
   beforeEach(async () => {
     mockOrderRepository = {
@@ -312,7 +321,7 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
       chatMessage: {
         create: jest.fn(),
       },
-    };
+    } as unknown as MockPrisma;
     mockPrisma.$transaction = jest.fn().mockImplementation(async (callback) => callback(mockPrisma));
 
     const module: TestingModule = await Test.createTestingModule({

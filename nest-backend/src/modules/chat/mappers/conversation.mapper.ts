@@ -16,6 +16,7 @@ export type OrderWithChat = {
   seller: Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
   product: { id: string; title: string };
   chatMessages: Pick<ChatMessage, 'id' | 'content' | 'senderId' | 'createdAt' | 'readAt'>[];
+  unreadCount: number;
 };
 
 export interface UnifiedConversationResponse {
@@ -98,11 +99,8 @@ export class ConversationMapper {
     preference?: ConversationPreference | null,
   ): UnifiedConversationResponse {
     const otherUser = order.buyerId === userId ? order.seller : order.buyer;
-    const messages = order.chatMessages ?? [];
-    const lastMsg = messages[messages.length - 1] ?? null;
-    const unreadCount = messages.filter(m =>
-      m.senderId !== userId && !m.readAt
-    ).length;
+    const lastMsg = order.chatMessages?.[0] ?? null;
+    const unreadCount = order.unreadCount;
 
     return {
       id: order.id,

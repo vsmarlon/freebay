@@ -11,7 +11,12 @@ export interface CreatePixPaymentInput {
 
 export interface ProcessWebhookInput {
   event: string;
-  data: unknown;
+  data: WebhookDataPayload;
+}
+
+export interface WebhookDataPayload {
+  correlationID?: string;
+  [key: string]: string | number | boolean | null | object | undefined;
 }
 
 export interface ProcessWebhookOutput {
@@ -28,14 +33,14 @@ export interface CreateWithdrawalOutput {
 
 export class CreatePixPaymentOutput {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  orderId: string;
+  readonly orderId: string;
 
   @ApiProperty({ example: '00020126580014BR.GOV.BCB.PIX...' })
-  pixQrCode: string;
+  readonly pixQrCode: string;
 
   @ApiProperty({ example: 'data:image/png;base64,...' })
-  pixImage: string;
+  readonly pixImage: string;
 
   @ApiProperty({ example: '2026-06-17T13:00:00.000Z' })
-  expiresAt: Date;
+  readonly expiresAt: Date;
 }

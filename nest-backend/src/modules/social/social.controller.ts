@@ -15,30 +15,15 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { CreatePostUseCase } from './usecases/create-post.usecase';
-import { LikePostUseCase } from './usecases/like-post.usecase';
-import { UnlikePostUseCase } from './usecases/unlike-post.usecase';
-import { CreateStoryUseCase } from './usecases/create-story.usecase';
-import { GetStoriesUseCase } from './usecases/get-stories.usecase';
-import { GetUserStoriesUseCase } from './usecases/get-user-stories.usecase';
-import { ViewStoryUseCase } from './usecases/view-story.usecase';
-import { DeleteStoryUseCase } from './usecases/delete-story.usecase';
+import { SocialService } from './social.service';
 import {
   CreatePostDTO,
   CreateCommentDTO,
-  CreateStoryInput,
   GetFeedQueryDTO,
   GetUserPostsQueryDTO,
   SearchPostsQueryDTO,
 } from './dtos/social.dto';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
-import {
-  PrismaPostRepository,
-  PrismaLikeRepository,
-  PrismaStoryRepository,
-  PrismaCommentRepository,
-  PrismaShareRepository,
-} from './repositories/social.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
@@ -46,28 +31,12 @@ import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaSavedPostRepository } from './repositories/social.repository';
 
 @ApiTags('Social')
 @Controller('social')
 export class SocialController {
   constructor(
-    private readonly createPostUseCase: CreatePostUseCase,
-    private readonly createStoryUseCase: CreateStoryUseCase,
-    private readonly likePostUseCase: LikePostUseCase,
-    private readonly unlikePostUseCase: UnlikePostUseCase,
-    private readonly getStoriesUseCase: GetStoriesUseCase,
-    private readonly getUserStoriesUseCase: GetUserStoriesUseCase,
-    private readonly viewStoryUseCase: ViewStoryUseCase,
-    private readonly deleteStoryUseCase: DeleteStoryUseCase,
-    private readonly postRepository: PrismaPostRepository,
-    private readonly likeRepository: PrismaLikeRepository,
-    private readonly storyRepository: PrismaStoryRepository,
-    private readonly commentRepository: PrismaCommentRepository,
-    private readonly shareRepository: PrismaShareRepository,
-    private readonly savedPostRepository: PrismaSavedPostRepository,
-    private readonly prisma: PrismaService,
+    private readonly socialService: SocialService,
   ) {}
 
   @Get('feed')
@@ -83,27 +52,15 @@ export class SocialController {
     @CurrentUser() user: AuthUser,
     @Query() query: GetFeedQueryDTO,
   ) {
-    const currentUserId = user?.userId || '';
-    const posts = await this.postRepository.findFeed({
-      userId: currentUserId,
+    const result = await this.socialService.getFeed({
+      userId: user?.userId || '',
       limit: query.limit ?? 20,
       type: query.type ?? 'explore',
     });
-
-    let hasRepostedMap: Record<string, boolean> = {};
-    if (currentUserId) {
-      const postIds = posts.map(p => p.id);
-      for (const postId of postIds) {
-        hasRepostedMap[postId] = await this.shareRepository.exists(currentUserId, postId);
-      }
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-
-    const postsWithReposted = posts.map(post => ({
-      ...post,
-      hasReposted: hasRepostedMap[post.id] || false,
-    }));
-
-    return { posts: postsWithReposted };
+    return { posts: result.value };
   }
 
   @Get('posts/:id')
@@ -112,17 +69,12 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
     errors: [{ status: 404, description: 'Post not found' }],
   })
-  async getPost(@Param('id') id: string, @CurrentUser() user?: AuthUser) {
-    const post = await this.postRepository.findById(id);
-    if (!post) {
-      return left(new AppError('NOT_FOUND', 'Post não encontrado'));
+  async getPost(@Param('id') id: string, @CurrentUser() _user?: AuthUser) {
+    const result = await this.socialService.getPost(id);
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-    const currentUserId = user?.userId;
-    let hasReposted = false;
-    if (currentUserId) {
-      hasReposted = await this.shareRepository.exists(currentUserId, id);
-    }
-    return { post: { ...post, hasReposted } };
+    return { post: result.value };
   }
 
   @Post('posts')
@@ -154,8 +106,8 @@ export class SocialController {
       }
     }
     const userId = user.userId;
-    const imageUrl = file ? this.toDataUri(file) : body.imageUrl;
-    const result = await this.createPostUseCase.execute({ userId, ...body, imageUrl });
+    const imageUrl = file ? this.socialService.toDataUri(file) : body.imageUrl;
+    const result = await this.socialService.createPost({ userId, ...body, imageUrl });
 
     if (result.isLeft()) {
       return left(new AppError(result.value.code, result.value.message));
@@ -176,44 +128,17 @@ export class SocialController {
   async getUserPosts(
     @Param('userId') userId: string,
     @Query() query: GetUserPostsQueryDTO,
-    @CurrentUser() _user?: AuthUser,
   ) {
     const limitNum = query.limit ?? 20;
-
-    const [ownPosts, repostedPosts] = await Promise.all([
-      this.postRepository.findByUserId(userId, { limit: limitNum, cursor: query.cursor }),
-      this.shareRepository.findPostsRepostedByUser(userId, { limit: limitNum, cursor: query.cursor }),
-    ]);
-
-    const mergedPosts = [
-      ...ownPosts.map(post => ({
-        ...post,
-        repostedAt: null as Date | null,
-        repostedBy: null,
-        isReposted: false,
-      })),
-      ...repostedPosts.map(share => ({
-        ...share.post,
-        sharesCount: share.post.sharesCount,
-        repostedAt: share.createdAt,
-        repostedBy: {
-          id: userId,
-          displayName: '',
-          avatarUrl: null,
-        },
-        isReposted: true,
-      })),
-    ];
-
-    mergedPosts.sort((a, b) => {
-      const aDate = a.repostedAt ?? a.createdAt;
-      const bDate = b.repostedAt ?? b.createdAt;
-      return bDate.getTime() - aDate.getTime();
+    const result = await this.socialService.getUserPosts({
+      userId,
+      limit: limitNum,
+      cursor: query.cursor,
     });
-
-    const posts = mergedPosts.slice(0, limitNum);
-
-    return { posts };
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return { posts: result.value };
   }
 
   @Get('posts/search')
@@ -230,29 +155,17 @@ export class SocialController {
     @CurrentUser() user: AuthUser,
     @Query() query: SearchPostsQueryDTO,
   ) {
-    const currentUserId = user?.userId || '';
-    const posts = await this.postRepository.searchPosts({
+    const result = await this.socialService.searchPosts({
       query: query.q || '',
       filter: query.filter || 'all',
-      userId: currentUserId,
+      userId: user?.userId || '',
       limit: query.limit ?? 20,
       cursor: query.cursor,
     });
-
-    let hasRepostedMap: Record<string, boolean> = {};
-    if (currentUserId) {
-      const postIds = posts.map(p => p.id);
-      for (const postId of postIds) {
-        hasRepostedMap[postId] = await this.shareRepository.exists(currentUserId, postId);
-      }
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-
-    const postsWithReposted = posts.map(post => ({
-      ...post,
-      hasReposted: hasRepostedMap[post.id] || false,
-    }));
-
-    return { posts: postsWithReposted };
+    return { posts: result.value };
   }
 
   @Post('posts/:id/like')
@@ -264,9 +177,7 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async likePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const result = await this.likePostUseCase.execute({ userId, postId: id });
-
+    const result = await this.socialService.likePost({ userId: user.userId, postId: id });
     if (result.isLeft()) {
       return left(new AppError(result.value.code, result.value.message));
     }
@@ -282,9 +193,7 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async unlikePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const result = await this.unlikePostUseCase.execute({ userId, postId: id });
-
+    const result = await this.socialService.unlikePost({ userId: user.userId, postId: id });
     if (result.isLeft()) {
       return left(new AppError(result.value.code, result.value.message));
     }
@@ -299,9 +208,11 @@ export class SocialController {
     auth: true,
   })
   async getLikedPosts(@CurrentUser() user: AuthUser) {
-    const likes = await this.likeRepository.findLikedByUserId(user.userId);
-    const posts = likes.map(like => like.post).filter(Boolean);
-    return { posts };
+    const result = await this.socialService.getLikedPosts(user.userId);
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return { posts: result.value };
   }
 
   @Post('posts/:id/share')
@@ -316,25 +227,11 @@ export class SocialController {
     errors: [{ status: 404, description: 'Post not found' }],
   })
   async sharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const post = await this.postRepository.findById(id);
-    if (!post) {
-      return left(new AppError('NOT_FOUND', 'Post não encontrado'));
+    const result = await this.socialService.sharePost({ userId: user.userId, postId: id });
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-
-    const existingShare = await this.shareRepository.findByUserAndPost(user.userId, id);
-    if (existingShare) {
-      return { shared: true, alreadyShared: true, sharesCount: post.sharesCount };
-    }
-
-    await this.shareRepository.create({
-      user: { connect: { id: user.userId } },
-      post: { connect: { id } },
-    });
-
-    await this.postRepository.incrementSharesCount(id);
-    const updatedPost = await this.postRepository.findById(id);
-
-    return { shared: true, alreadyShared: false, sharesCount: updatedPost?.sharesCount ?? post.sharesCount + 1 };
+    return result.value;
   }
 
   @Delete('posts/:id/share')
@@ -348,21 +245,11 @@ export class SocialController {
     errors: [{ status: 404, description: 'Post not found' }],
   })
   async unsharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const post = await this.postRepository.findById(id);
-    if (!post) {
-      return left(new AppError('NOT_FOUND', 'Post não encontrado'));
+    const result = await this.socialService.unsharePost({ userId: user.userId, postId: id });
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-
-    const existingShare = await this.shareRepository.findByUserAndPost(user.userId, id);
-    if (!existingShare) {
-      return { unshared: true, sharesCount: post.sharesCount };
-    }
-
-    await this.shareRepository.delete(user.userId, id);
-    await this.postRepository.decrementSharesCount(id);
-    const updatedPost = await this.postRepository.findById(id);
-
-    return { unshared: true, sharesCount: updatedPost?.sharesCount ?? post.sharesCount - 1 };
+    return result.value;
   }
 
   @Post('posts/:id/comments')
@@ -381,18 +268,16 @@ export class SocialController {
     @CurrentUser() user: AuthUser,
     @Body() body: CreateCommentDTO,
   ) {
-    const userId = user.userId;
-    const comment = await this.commentRepository.create({
-      post: { connect: { id } },
-      user: { connect: { id: userId } },
+    const result = await this.socialService.createComment({
+      userId: user.userId,
+      postId: id,
       content: body.content,
-      ...(body.parentId ? { parent: { connect: { id: body.parentId } } } : {}),
+      parentId: body.parentId,
     });
-    await this.prisma.post.update({
-      where: { id },
-      data: { commentsCount: { increment: 1 } },
-    });
-    return { id: comment.id, postId: id, userId, content: body.content, parentId: body.parentId ?? null, createdAt: comment.createdAt };
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return result.value;
   }
 
   @Get('posts/:id/comments')
@@ -401,8 +286,11 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async getComments(@Param('id') id: string) {
-    const comments = await this.commentRepository.findByPostId(id, { limit: 20 });
-    return { comments };
+    const result = await this.socialService.getComments({ postId: id, limit: 20 });
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return { comments: result.value };
   }
 
   @Post('comments/:commentId/like')
@@ -414,12 +302,11 @@ export class SocialController {
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
   async likeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    await this.likeRepository.createCommentLike({
-      user: { connect: { id: userId } },
-      comment: { connect: { id: commentId } },
-    });
-    return { liked: true };
+    const result = await this.socialService.likeComment({ userId: user.userId, commentId });
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return result.value;
   }
 
   @Delete('comments/:commentId/like')
@@ -431,9 +318,11 @@ export class SocialController {
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
   async unlikeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    await this.likeRepository.deleteCommentLike({ userId_commentId: { userId, commentId } });
-    return { unliked: true };
+    const result = await this.socialService.unlikeComment({ userId: user.userId, commentId });
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return result.value;
   }
 
   @Post('posts/:id/save')
@@ -448,16 +337,11 @@ export class SocialController {
     errors: [{ status: 404, description: 'Post not found' }],
   })
   async savePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const post = await this.postRepository.findById(id);
-    if (!post) {
-      return left(new AppError('NOT_FOUND', 'Post não encontrado'));
+    const result = await this.socialService.savePost({ userId: user.userId, postId: id });
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-    const existing = await this.savedPostRepository.findByUserAndPost(user.userId, id);
-    if (existing) {
-      return { saved: true, alreadySaved: true };
-    }
-    await this.savedPostRepository.save(user.userId, id);
-    return { saved: true, alreadySaved: false };
+    return result.value;
   }
 
   @Delete('posts/:id/save')
@@ -469,112 +353,11 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async unsavePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const existing = await this.savedPostRepository.findByUserAndPost(user.userId, id);
-    if (!existing) {
-      return { unsaved: true };
-    }
-    await this.savedPostRepository.unsave(user.userId, id);
-    return { unsaved: true };
-  }
-
-  @Get('stories')
-  @ApiDoc({
-    summary: 'Get stories feed',
-    description: 'Returns active stories from followed users',
-  })
-  async getStories(@CurrentUser() user: AuthUser) {
-    const userId = user?.userId;
-    const result = await this.getStoriesUseCase.execute(userId);
-    return { stories: result.stories, userHasStory: result.userHasStory };
-  }
-
-  @Get('stories/user/:userId')
-  @ApiDoc({
-    summary: 'Get user stories',
-    params: [{ name: 'userId', description: 'User UUID' }],
-  })
-  async getUserStories(@Param('userId') userId: string) {
-    const stories = await this.getUserStoriesUseCase.execute(userId);
-    return { stories };
-  }
-
-  @Post('stories')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
-  )
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Create a story',
-    description: 'Uploads an image that will be available for 24h',
-    auth: true,
-    responseStatus: 201,
-  })
-  async createStory(
-    @CurrentUser() user: AuthUser,
-    @UploadedFile() file?: Express.Multer.File,
-  ) {
-    if (!file) {
-      return left(new AppError('BAD_REQUEST', 'Imagem é obrigatória'));
-    }
-
-    const mimeError = validateImageFile(file);
-    if (mimeError) {
-      return left(new AppError('BAD_REQUEST', mimeError));
-    }
-
-    const userId = user.userId;
-    const input: CreateStoryInput = {
-      userId,
-      imageBase64: this.toDataUri(file),
-    };
-    const result = await this.createStoryUseCase.execute(input);
-
+    const result = await this.socialService.unsavePost({ userId: user.userId, postId: id });
     if (result.isLeft()) {
       return left(new AppError(result.value.code, result.value.message));
     }
     return result.value;
   }
 
-  private toDataUri(file: Express.Multer.File): string {
-    return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-  }
-
-  @Delete('stories/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Delete a story',
-    auth: true,
-    params: [{ name: 'id', description: 'Story UUID' }],
-  })
-  async deleteStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const result = await this.deleteStoryUseCase.execute({ storyId: id, userId });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
-  }
-
-  @Post('stories/:id/view')
-  @ApiDoc({
-    summary: 'View a story',
-    description: 'Marks a story as viewed by the current user',
-    params: [{ name: 'id', description: 'Story UUID' }],
-  })
-  async viewStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const viewerId = user?.userId || '';
-    const result = await this.viewStoryUseCase.execute({ storyId: id, viewerId });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
-  }
 }

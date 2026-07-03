@@ -1,17 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetUnifiedConversationsUseCase } from './get-unified-conversations.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { right } from '@/shared/core/either';
 
-const mockPrisma = {
-  directConversation: {
-    findMany: jest.fn(),
-  },
-  order: {
-    findMany: jest.fn(),
-  },
-  conversationPreference: {
-    findMany: jest.fn(),
-  },
+const mockRepo = {
+  findDirectConversationsByUser: jest.fn(),
+  findOrdersByUser: jest.fn(),
+  countUnreadChatMessages: jest.fn(),
+  findPreferencesByUser: jest.fn(),
 };
 
 describe('GetUnifiedConversationsUseCase', () => {
@@ -21,18 +17,19 @@ describe('GetUnifiedConversationsUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetUnifiedConversationsUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: ConversationRepository, useValue: mockRepo },
       ],
     }).compile();
 
     sut = module.get<GetUnifiedConversationsUseCase>(GetUnifiedConversationsUseCase);
     jest.clearAllMocks();
+    mockRepo.countUnreadChatMessages.mockResolvedValue(right({}));
   });
 
   it('should return empty array when user has no conversations', async () => {
-    mockPrisma.directConversation.findMany.mockResolvedValue([]);
-    mockPrisma.order.findMany.mockResolvedValue([]);
-    mockPrisma.conversationPreference.findMany.mockResolvedValue([]);
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-1');
     expect(result.isRight()).toBe(true);
@@ -40,7 +37,7 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('should return direct conversations mapped correctly', async () => {
-    mockPrisma.directConversation.findMany.mockResolvedValue([
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
         user1Id: 'user-1',
@@ -54,9 +51,9 @@ describe('GetUnifiedConversationsUseCase', () => {
           { id: 'm-1', content: 'Hi', senderId: 'user-2', createdAt: new Date('2026-06-24'), readAt: null },
         ],
       },
-    ]);
-    mockPrisma.order.findMany.mockResolvedValue([]);
-    mockPrisma.conversationPreference.findMany.mockResolvedValue([]);
+    ]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-1');
     expect(result.isRight()).toBe(true);
@@ -69,8 +66,8 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('should return order conversations mapped correctly', async () => {
-    mockPrisma.directConversation.findMany.mockResolvedValue([]);
-    mockPrisma.order.findMany.mockResolvedValue([
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([
       {
         id: 'order-1',
         buyerId: 'user-1',
@@ -83,9 +80,10 @@ describe('GetUnifiedConversationsUseCase', () => {
         chatMessages: [
           { id: 'cm-1', content: 'Thanks!', senderId: 'user-2', createdAt: new Date('2026-06-23'), readAt: null },
         ],
+        unreadCount: 0,
       },
-    ]);
-    mockPrisma.conversationPreference.findMany.mockResolvedValue([]);
+    ]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-2');
     expect(result.isRight()).toBe(true);
@@ -98,7 +96,7 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('should return both direct and order conversations', async () => {
-    mockPrisma.directConversation.findMany.mockResolvedValue([
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
         user1Id: 'user-1',
@@ -110,8 +108,8 @@ describe('GetUnifiedConversationsUseCase', () => {
         user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
         messages: [],
       },
-    ]);
-    mockPrisma.order.findMany.mockResolvedValue([
+    ]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([
       {
         id: 'order-1',
         buyerId: 'user-1',
@@ -122,9 +120,10 @@ describe('GetUnifiedConversationsUseCase', () => {
         buyer: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
         seller: { id: 'user-3', displayName: 'Bob', avatarUrl: null, isVerified: true },
         chatMessages: [],
+        unreadCount: 0,
       },
-    ]);
-    mockPrisma.conversationPreference.findMany.mockResolvedValue([]);
+    ]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-1');
     expect(result.isRight()).toBe(true);
@@ -132,7 +131,7 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('should filter by archived flag', async () => {
-    mockPrisma.directConversation.findMany.mockResolvedValue([
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
         user1Id: 'user-1',
@@ -144,11 +143,11 @@ describe('GetUnifiedConversationsUseCase', () => {
         user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
         messages: [],
       },
-    ]);
-    mockPrisma.order.findMany.mockResolvedValue([]);
-    mockPrisma.conversationPreference.findMany.mockResolvedValue([
+    ]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([
       { id: 'pref-1', userId: 'user-1', directConversationId: 'dc-1', orderId: null, isArchived: true, isDeleted: false },
-    ]);
+    ]));
 
     const normal = await sut.execute('user-1');
     expect(normal.isRight()).toBe(true);
@@ -160,7 +159,7 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('should filter by search query', async () => {
-    mockPrisma.directConversation.findMany.mockResolvedValue([
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
         user1Id: 'user-1',
@@ -187,9 +186,9 @@ describe('GetUnifiedConversationsUseCase', () => {
           { id: 'm-2', content: 'Deal!', senderId: 'user-3', createdAt: new Date('2026-06-19'), readAt: null },
         ],
       },
-    ]);
-    mockPrisma.order.findMany.mockResolvedValue([]);
-    mockPrisma.conversationPreference.findMany.mockResolvedValue([]);
+    ]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-1', 'ali');
     expect(result.isRight()).toBe(true);

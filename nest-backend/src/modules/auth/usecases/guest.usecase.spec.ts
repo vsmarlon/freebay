@@ -18,15 +18,20 @@ describe('GuestUseCase', () => {
 
   it('should generate a guest user with guest_ prefix', async () => {
     const result = await sut.execute();
-
-    expect(result.userId).toMatch(/^guest_\d{6}$/);
-    expect(result.guestToken).toBeDefined();
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.userId).toMatch(/^guest_\d{6}$/);
+      expect(result.value.guestToken).toBeDefined();
+    }
   });
 
   it('should generate unique guest numbers', async () => {
     const result1 = await sut.execute();
     const result2 = await sut.execute();
-
-    expect(result1.userId).not.toBe(result2.userId);
+    expect(result1.isRight()).toBe(true);
+    expect(result2.isRight()).toBe(true);
+    if (result1.isRight() && result2.isRight()) {
+      expect(result1.value.userId).not.toBe(result2.value.userId);
+    }
   });
 });

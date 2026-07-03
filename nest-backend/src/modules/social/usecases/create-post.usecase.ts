@@ -1,21 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaPostRepository } from '../repositories/social.repository';
+import { PostRepository } from '../domain/repositories/post.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
 
 @Injectable()
 export class CreatePostUseCase {
-  constructor(private postRepository: PrismaPostRepository) {}
+  constructor(private readonly postRepository: PostRepository) {}
 
   async execute(input: CreatePostInput): Promise<Either<AppError, CreatePostOutput>> {
-    const post = await this.postRepository.create({
+    const result = await this.postRepository.create({
       content: input.content ?? null,
       imageUrl: input.imageUrl ?? null,
       type: input.type,
       user: { connect: { id: input.userId } },
     });
+    if (isLeft(result)) return left(result.value);
 
+    const post = result.value;
     return right({
       id: post.id,
       content: post.content,

@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { CartController } from './cart.controller';
-import { PrismaCartRepository } from './repositories/cart.repository';
-import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
-import { PaymentsModule } from '../payments/payments.module';
+import { CartService } from './cart.service';
+import { CartUseCasesModule } from './usecases/cart-usecases.module';
 
 @Module({
-  imports: [PaymentsModule],
+  imports: [CartUseCasesModule],
   controllers: [CartController],
-  providers: [PrismaCartRepository, CheckoutCartUseCase],
-  exports: [PrismaCartRepository],
+  providers: [CartService],
+  exports: [CartService],
 })
 export class CartModule {}

@@ -10,6 +10,7 @@ import { GetDisputeUseCase } from './usecases/get-dispute.usecase';
 import { SubmitEvidenceUseCase } from './usecases/submit-evidence.usecase';
 import { ResolveDisputeUseCase } from './usecases/resolve-dispute.usecase';
 import { GetUserDisputesUseCase } from './usecases/get-user-disputes.usecase';
+import { WithdrawDisputeUseCase } from './usecases/withdraw-dispute.usecase';
 import { OpenDisputeDTO, ResolveDisputeDTO, OpenDisputeOutput } from './dtos/dispute.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left } from '@/shared/core/either';
@@ -26,6 +27,7 @@ export class DisputesController {
     private submitEvidenceUseCase: SubmitEvidenceUseCase,
     private resolveDisputeUseCase: ResolveDisputeUseCase,
     private getUserDisputesUseCase: GetUserDisputesUseCase,
+    private withdrawDisputeUseCase: WithdrawDisputeUseCase,
   ) {}
 
   @Post()
@@ -122,6 +124,27 @@ export class DisputesController {
       disputeId: id,
       resolution: body.resolution,
       winner: body.winner,
+    });
+
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return result.value;
+  }
+
+  @Post(':id/withdraw')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiDoc({
+    summary: 'Withdraw a dispute',
+    auth: true,
+    params: [{ name: 'id', description: 'Dispute UUID' }],
+    errors: [{ status: 404, description: 'Dispute not found' }],
+  })
+  async withdraw(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    const result = await this.withdrawDisputeUseCase.execute({
+      disputeId: id,
+      userId: user.userId,
     });
 
     if (result.isLeft()) {

@@ -19,6 +19,8 @@ ProductEntity _$ProductEntityFromJson(Map<String, dynamic> json) =>
       sellerName: json['sellerName'] as String?,
       sellerAvatar: json['sellerAvatar'] as String?,
       imageUrl: json['imageUrl'] as String?,
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      soldCount: (json['soldCount'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$ProductEntityToJson(ProductEntity instance) =>
@@ -34,4 +36,6 @@ Map<String, dynamic> _$ProductEntityToJson(ProductEntity instance) =>
       'sellerName': instance.sellerName,
       'sellerAvatar': instance.sellerAvatar,
       'imageUrl': instance.imageUrl,
+      'quantity': instance.quantity,
+      'soldCount': instance.soldCount,
     };

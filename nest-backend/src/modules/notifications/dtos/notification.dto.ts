@@ -6,24 +6,24 @@ export class RegisterFcmTokenDTO {
   @ApiProperty({ example: 'fcm-token-abc123' })
   @IsString()
   @IsNotEmpty()
-  fcmToken: string;
+  readonly fcmToken: string;
 }
 
 export class NotificationResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string;
+  readonly id: string;
 
   @ApiProperty({ example: 'USER_ID' })
-  userId: string;
+  readonly userId: string;
 
   @ApiProperty({ example: 'Você recebeu uma nova mensagem' })
-  content: string;
+  readonly content: string;
 
   @ApiProperty({ example: false })
-  read: boolean;
+  readonly read: boolean;
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  createdAt: Date;
+  readonly createdAt: Date;
 }
 
 export interface GetNotificationsInput {

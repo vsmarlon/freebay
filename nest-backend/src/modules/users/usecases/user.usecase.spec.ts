@@ -1,14 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetProfileUseCase, GetUserStatsUseCase, UpdateProfileUseCase, FollowUserUseCase, UnfollowUserUseCase, BlockUserUseCase, UnblockUserUseCase, SearchUsersUseCase, GetSuggestionsUseCase } from './user.usecase';
-import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
+import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { FollowRepository } from '../repositories/follow.repository';
 import { BlockRepository } from '../repositories/block.repository';
 import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
-
-jest.mock('@/modules/auth/repositories/prisma-user.repository');
+import { right } from '@/shared/core/either';
 jest.mock('../repositories/follow.repository');
 jest.mock('../repositories/block.repository');
 jest.mock('@/modules/orders/repositories/order.repository');
@@ -90,7 +89,7 @@ describe('Users UseCases', () => {
         UnblockUserUseCase,
         SearchUsersUseCase,
         GetSuggestionsUseCase,
-        { provide: PrismaUserRepository, useValue: mockUserRepository },
+        { provide: UserRepository, useValue: mockUserRepository },
         { provide: FollowRepository, useValue: mockFollowRepository },
         { provide: BlockRepository, useValue: mockBlockRepository },
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
@@ -114,7 +113,7 @@ describe('Users UseCases', () => {
 
   describe('GetProfileUseCase', () => {
     it('should return user profile when found', async () => {
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findById.mockResolvedValue(right(mockUser));
 
       const result = await getProfileUseCase.execute({ userId: 'user-123' });
 
@@ -126,7 +125,7 @@ describe('Users UseCases', () => {
     });
 
     it('should return NotFoundError when user not found', async () => {
-      mockUserRepository.findById.mockResolvedValue(null);
+      mockUserRepository.findById.mockResolvedValue(right(null));
 
       const result = await getProfileUseCase.execute({ userId: 'nonexistent' });
 
@@ -156,7 +155,7 @@ describe('Users UseCases', () => {
   describe('UpdateProfileUseCase', () => {
     it('should update and return user profile', async () => {
       const updatedUser = { ...mockUser, displayName: 'Updated Name' };
-      mockUserRepository.update.mockResolvedValue(updatedUser);
+      mockUserRepository.update.mockResolvedValue(right(updatedUser));
 
       const result = await updateProfileUseCase.execute({ userId: 'user-123', displayName: 'Updated Name' });
 
@@ -167,7 +166,7 @@ describe('Users UseCases', () => {
     });
 
     it('should return NotFoundError when user not found', async () => {
-      mockUserRepository.update.mockResolvedValue(null);
+      mockUserRepository.update.mockResolvedValue(right(null));
 
       const result = await updateProfileUseCase.execute({ userId: 'nonexistent', displayName: 'New Name' });
 
@@ -180,7 +179,7 @@ describe('Users UseCases', () => {
 
   describe('FollowUserUseCase', () => {
     it('should follow user successfully', async () => {
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockFollowRepository.follow.mockResolvedValue(undefined);
       mockFollowRepository.getFollowersCount.mockResolvedValue(101);
       mockFollowRepository.getFollowingCount.mockResolvedValue(51);
@@ -210,7 +209,7 @@ describe('Users UseCases', () => {
     });
 
     it('should return NotFoundError when target user not found', async () => {
-      mockUserRepository.findById.mockResolvedValue(null);
+      mockUserRepository.findById.mockResolvedValue(right(null));
 
       const result = await followUserUseCase.execute({
         followerId: 'follower-123',
@@ -224,9 +223,9 @@ describe('Users UseCases', () => {
     });
 
     it('should return BadRequestError when already following', async () => {
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findById.mockResolvedValue(right(mockUser));
       const error = new Error('Unique constraint failed');
-      (error as any).code = 'P2002';
+      (error as { code: string }).code = 'P2002';
       mockFollowRepository.follow.mockRejectedValue(error);
 
       const result = await followUserUseCase.execute({
@@ -260,7 +259,7 @@ describe('Users UseCases', () => {
 
     it('should return BadRequestError when not following', async () => {
       const error = new Error('Record not found');
-      (error as any).code = 'P2025';
+      (error as { code: string }).code = 'P2025';
       mockFollowRepository.unfollow.mockRejectedValue(error);
 
       const result = await unfollowUserUseCase.execute({
@@ -277,7 +276,7 @@ describe('Users UseCases', () => {
 
   describe('BlockUserUseCase', () => {
     it('should block user successfully', async () => {
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+      mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockBlockRepository.block.mockResolvedValue(undefined);
 
       const result = await blockUserUseCase.execute({
@@ -304,7 +303,7 @@ describe('Users UseCases', () => {
     });
 
     it('should return NotFoundError when target user not found', async () => {
-      mockUserRepository.findById.mockResolvedValue(null);
+      mockUserRepository.findById.mockResolvedValue(right(null));
 
       const result = await blockUserUseCase.execute({
         blockerId: 'blocker-123',
@@ -335,7 +334,7 @@ describe('Users UseCases', () => {
 
     it('should return BadRequestError when user not blocked', async () => {
       const error = new Error('Record not found');
-      (error as any).code = 'P2025';
+      (error as { code: string }).code = 'P2025';
       mockBlockRepository.unblock.mockRejectedValue(error);
 
       const result = await unblockUserUseCase.execute({
@@ -355,12 +354,15 @@ describe('Users UseCases', () => {
       const searchResults = [
         { id: 'user-1', displayName: 'John', avatarUrl: null, bio: null, isVerified: false, reputationScore: 0, totalReviews: 0, _count: { followers: 10, following: 5 } },
       ];
-      mockUserRepository.searchUsers.mockResolvedValue(searchResults);
+      mockUserRepository.searchUsers.mockResolvedValue(right(searchResults));
 
       const result = await searchUsersUseCase.execute({ query: 'John', limit: 20 });
 
-      expect(result).toHaveLength(1);
-      expect(result[0].displayName).toBe('John');
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value).toHaveLength(1);
+        expect(result.value[0].displayName).toBe('John');
+      }
     });
   });
 
@@ -369,13 +371,16 @@ describe('Users UseCases', () => {
       const suggestions = [
         { id: 'user-2', displayName: 'Jane', avatarUrl: null, bio: null, isVerified: true, reputationScore: 4.8, totalReviews: 15, followersCount: 100, followingCount: 50, mutualCount: 5 },
       ];
-      mockUserRepository.getSuggestions.mockResolvedValue(suggestions);
+      mockUserRepository.getSuggestions.mockResolvedValue(right(suggestions));
 
       const result = await getSuggestionsUseCase.execute({ userId: 'user-123', limit: 10 });
 
-      expect(result).toHaveLength(1);
-      expect(result[0].displayName).toBe('Jane');
-      expect(result[0].mutualCount).toBe(5);
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value).toHaveLength(1);
+        expect(result.value[0].displayName).toBe('Jane');
+        expect(result.value[0].mutualCount).toBe(5);
+      }
     });
   });
 });

@@ -28,6 +28,8 @@ class ReviewEntity extends Equatable {
   final ReviewType type;
   final int score;
   final String? comment;
+  @JsonKey(defaultValue: [])
+  final List<String> images;
   final DateTime createdAt;
   final ReviewUserInfo? reviewer;
 
@@ -39,6 +41,7 @@ class ReviewEntity extends Equatable {
     required this.type,
     required this.score,
     this.comment,
+    this.images = const [],
     required this.createdAt,
     this.reviewer,
   });
@@ -57,6 +60,7 @@ class ReviewEntity extends Equatable {
         type,
         score,
         comment,
+        images,
         createdAt,
         reviewer,
       ];

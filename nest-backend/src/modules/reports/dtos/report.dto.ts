@@ -6,47 +6,47 @@ import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 export class CreateReportDTO {
   @ApiProperty({ enum: ['USER', 'POST', 'CONVERSATION', 'MESSAGE', 'ORDER_CHAT', 'CHAT_MESSAGE'] })
   @IsIn(['USER', 'POST', 'CONVERSATION', 'MESSAGE', 'ORDER_CHAT', 'CHAT_MESSAGE'])
-  targetType: 'USER' | 'POST' | 'CONVERSATION' | 'MESSAGE' | 'ORDER_CHAT' | 'CHAT_MESSAGE';
+  readonly targetType: 'USER' | 'POST' | 'CONVERSATION' | 'MESSAGE' | 'ORDER_CHAT' | 'CHAT_MESSAGE';
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
-  targetId: string;
+  readonly targetId: string;
 
   @ApiProperty({ example: 'SPAM' })
   @IsString()
   @MinLength(1)
   @SanitizeText()
-  reason: string;
+  readonly reason: string;
 
   @ApiPropertyOptional({ example: 'Usuário está enviando mensagens de spam' })
   @IsOptional()
   @IsString()
   @SanitizeText()
-  description?: string;
+  readonly description?: string;
 }
 
 export class ResolveReportDTO {
   @ApiProperty({ enum: ['REVIEWED', 'RESOLVED', 'REJECTED'] })
   @IsIn(['REVIEWED', 'RESOLVED', 'REJECTED'])
-  status: 'REVIEWED' | 'RESOLVED' | 'REJECTED';
+  readonly status: 'REVIEWED' | 'RESOLVED' | 'REJECTED';
 
   @ApiPropertyOptional({ example: 'Report reviewed and action taken' })
   @IsOptional()
   @IsString()
   @SanitizeText()
-  adminNote?: string;
+  readonly adminNote?: string;
 }
 
 export class GetReportsQueryDTO {
   @ApiPropertyOptional({ enum: ['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED'] })
   @IsOptional()
   @IsIn(['PENDING', 'REVIEWED', 'RESOLVED', 'REJECTED'])
-  status?: 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'REJECTED';
+  readonly status?: 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'REJECTED';
 }
 
 export class ResolveReportOutput {
   @ApiProperty({ example: true })
-  resolved: boolean;
+  readonly resolved: boolean;
 }
 
 export interface CreateReportInput {

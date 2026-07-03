@@ -1,20 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StartConversationUseCase } from './start-conversation.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { BlockRepository } from '@/modules/users/repositories/block.repository';
 import { BadRequestError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
 
-const mockPrisma = {
-  user: {
-    findUnique: jest.fn().mockResolvedValue({ id: 'user-2', displayName: 'Jane' }),
-  },
-  directConversation: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-  },
-  follow: {
-    findFirst: jest.fn(),
-  },
+const mockRepo = {
+  findUserById: jest.fn().mockResolvedValue(right({ id: 'user-2', displayName: 'Jane' })),
+  findDirectConversationBetweenUsers: jest.fn(),
+  createDirectConversation: jest.fn(),
+  findFollow: jest.fn(),
 };
 
 const mockBlockRepository = {
@@ -28,7 +23,7 @@ describe('StartConversationUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StartConversationUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: ConversationRepository, useValue: mockRepo },
         { provide: BlockRepository, useValue: mockBlockRepository },
       ],
     }).compile();
@@ -44,7 +39,7 @@ describe('StartConversationUseCase', () => {
   });
 
   it('should return existing conversation if one exists', async () => {
-    mockPrisma.directConversation.findFirst.mockResolvedValue({ id: 'conv-1', status: 'ACTIVE' });
+    mockRepo.findDirectConversationBetweenUsers.mockResolvedValue(right({ id: 'conv-1', status: 'ACTIVE' }));
     const result = await sut.execute('user-1', 'user-2');
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
@@ -54,9 +49,9 @@ describe('StartConversationUseCase', () => {
   });
 
   it('should create ACTIVE conversation if following', async () => {
-    mockPrisma.directConversation.findFirst.mockResolvedValue(null);
-    mockPrisma.follow.findFirst.mockResolvedValue({ id: 'follow-1' });
-    mockPrisma.directConversation.create.mockResolvedValue({ id: 'conv-2', status: 'ACTIVE' });
+    mockRepo.findDirectConversationBetweenUsers.mockResolvedValue(right(null));
+    mockRepo.findFollow.mockResolvedValue(right({ id: 'follow-1' }));
+    mockRepo.createDirectConversation.mockResolvedValue(right({ id: 'conv-2', status: 'ACTIVE' }));
 
     const result = await sut.execute('user-1', 'user-2');
     expect(result.isRight()).toBe(true);
@@ -66,9 +61,9 @@ describe('StartConversationUseCase', () => {
   });
 
   it('should create PENDING conversation if not following', async () => {
-    mockPrisma.directConversation.findFirst.mockResolvedValue(null);
-    mockPrisma.follow.findFirst.mockResolvedValue(null);
-    mockPrisma.directConversation.create.mockResolvedValue({ id: 'conv-3', status: 'PENDING' });
+    mockRepo.findDirectConversationBetweenUsers.mockResolvedValue(right(null));
+    mockRepo.findFollow.mockResolvedValue(right(null));
+    mockRepo.createDirectConversation.mockResolvedValue(right({ id: 'conv-3', status: 'PENDING' }));
 
     const result = await sut.execute('user-1', 'user-2');
     expect(result.isRight()).toBe(true);

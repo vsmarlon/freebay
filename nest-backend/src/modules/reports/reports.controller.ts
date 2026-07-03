@@ -5,22 +5,14 @@ import { Roles } from '@/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { CreateReportUseCase } from './usecases/create-report.usecase';
-import { GetReportsUseCase } from './usecases/get-reports.usecase';
-import { ResolveReportUseCase } from './usecases/resolve-report.usecase';
+import { ReportsService } from './api/reports.service';
 import { CreateReportDTO, ResolveReportDTO, GetReportsQueryDTO } from './dtos/report.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
 
 @ApiTags('Reports')
 @Controller('reports')
 export class ReportsController {
-  constructor(
-    private createReportUseCase: CreateReportUseCase,
-    private getReportsUseCase: GetReportsUseCase,
-    private resolveReportUseCase: ResolveReportUseCase,
-  ) {}
+  constructor(private readonly reportsService: ReportsService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -33,15 +25,7 @@ export class ReportsController {
     responseStatus: 201,
   })
   async create(@CurrentUser() user: AuthUser, @Body() body: CreateReportDTO) {
-    const result = await this.createReportUseCase.execute({
-      reporterId: user.userId,
-      ...body,
-    });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.reportsService.create(user.userId, body);
   }
 
   @Get()
@@ -56,12 +40,7 @@ export class ReportsController {
     ],
   })
   async findAll(@Query() query: GetReportsQueryDTO) {
-    const result = await this.getReportsUseCase.execute(query.status);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return { reports: result.value };
+    return this.reportsService.findAll(query);
   }
 
   @Post(':id/resolve')
@@ -76,14 +55,6 @@ export class ReportsController {
     errors: [{ status: 404, description: 'Report not found' }],
   })
   async resolve(@Param('id') id: string, @Body() body: ResolveReportDTO) {
-    const result = await this.resolveReportUseCase.execute({
-      reportId: id,
-      ...body,
-    });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.reportsService.resolve(id, body);
   }
 }

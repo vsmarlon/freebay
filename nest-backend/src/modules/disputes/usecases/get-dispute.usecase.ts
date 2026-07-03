@@ -1,28 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 import { GetDisputeOutput } from '../dtos/dispute.dto';
+import { PrismaDisputeRepository } from '../repositories/dispute.repository';
 
 @Injectable()
 export class GetDisputeUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private disputeRepo: PrismaDisputeRepository) {}
 
   async execute(disputeId: string, userId: string): Promise<Either<AppError, GetDisputeOutput>> {
-    const dispute = await this.prisma.dispute.findUnique({
-      where: { id: disputeId },
-      include: {
-        order: {
-          include: {
-            buyer: { select: USER_SELECT_MINIMAL },
-            seller: { select: USER_SELECT_MINIMAL },
-            product: true,
-          },
-        },
-        openedBy: { select: { id: true, displayName: true } },
-      },
-    });
+    const dispute = await this.disputeRepo.findByIdWithDetails(disputeId);
 
     if (!dispute) {
       return left(new NotFoundError('Dispute'));

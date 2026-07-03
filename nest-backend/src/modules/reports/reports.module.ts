@@ -1,17 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ReportsController } from './reports.controller';
-import { CreateReportUseCase } from './usecases/create-report.usecase';
-import { GetReportsUseCase } from './usecases/get-reports.usecase';
-import { ResolveReportUseCase } from './usecases/resolve-report.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ReportsUseCasesModule } from './usecases/reports-usecases.module';
+import { ReportsApiModule } from './api/reports-api.module';
 
 @Module({
+  imports: [ReportsUseCasesModule, ReportsApiModule],
   controllers: [ReportsController],
-  providers: [
-    CreateReportUseCase,
-    GetReportsUseCase,
-    ResolveReportUseCase,
-    PrismaService,
-  ],
 })
 export class ReportsModule {}

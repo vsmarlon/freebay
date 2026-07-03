@@ -10,8 +10,9 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ConversationRepository } from './domain/repositories/conversation.repository';
 import { SendMessageUseCase } from './usecases/send-message.usecase';
+import { ChatThreadAccessService } from './services/chat-thread-access.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { BlockRepository } from '@/modules/users/repositories/block.repository';
 
@@ -34,8 +35,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private tokenValidator: JwtTokenValidatorService,
-    private prisma: PrismaService,
+    private conversationRepository: ConversationRepository,
     private sendMessageUseCase: SendMessageUseCase,
+    private threadAccess: ChatThreadAccessService,
     private notificationService: NotificationService,
     private blockRepository: BlockRepository,
   ) {}
@@ -70,38 +72,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const user = this.connectedUsers.get(client.id);
     if (!user) return;
 
-    const directConv = await this.prisma.directConversation.findUnique({
-      where: { id: data.conversationId },
-    });
-
-    let otherUserId: string | undefined;
-
-    if (directConv) {
-      if (directConv.user1Id !== user.userId && directConv.user2Id !== user.userId) {
-        return { error: 'Not a participant of this conversation' };
-      }
-      otherUserId = directConv.user1Id === user.userId ? directConv.user2Id : directConv.user1Id;
-    } else {
-      const order = await this.prisma.order.findUnique({
-        where: { id: data.conversationId },
-      });
-
-      if (!order || (order.buyerId !== user.userId && order.sellerId !== user.userId)) {
-        return { error: 'Not a participant of this conversation' };
-      }
-      otherUserId = order.buyerId === user.userId ? order.sellerId : order.buyerId;
+    const resolved = await this.threadAccess.resolveThread(user.userId, data.conversationId);
+    if (resolved.isLeft()) {
+      return { error: 'Not a participant of this conversation' };
     }
 
-    if (otherUserId) {
-      const blockedByOther = await this.blockRepository.isBlocked(otherUserId, user.userId);
-      if (blockedByOther) {
-        return { error: 'You cannot join this conversation' };
-      }
+    const { otherUserId } = resolved.value;
 
-      const userBlockedOther = await this.blockRepository.isBlocked(user.userId, otherUserId);
-      if (userBlockedOther) {
-        return { error: 'You cannot join this conversation' };
-      }
+    const [blockedByOther, userBlockedOther] = await Promise.all([
+      this.blockRepository.isBlocked(otherUserId, user.userId),
+      this.blockRepository.isBlocked(user.userId, otherUserId),
+    ]);
+
+    if (blockedByOther || userBlockedOther) {
+      return { error: 'You cannot join this conversation' };
     }
 
     client.join(`conversation:${data.conversationId}`);
@@ -131,11 +115,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!user) return { error: 'Unauthorized' };
 
     const message = await this.sendMessage(user.userId, data.conversationId, data.content);
-    
+
     if (message) {
       this.server.to(`conversation:${data.conversationId}`).emit('new_message', message);
     }
-    
+
     return { event: 'message_sent', data: message };
   }
 
@@ -156,20 +140,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return null;
     }
 
-    const conversation = await this.prisma.directConversation.findUnique({
-      where: { id: conversationId },
-      include: {
-        user1: { select: { id: true, displayName: true } },
-        user2: { select: { id: true, displayName: true } },
-      },
-    });
+    const convResult = await this.conversationRepository.findDirectConversationById(conversationId);
+    if (convResult.isLeft() || !convResult.value) return null;
 
-    if (conversation) {
-      const otherUserId = conversation.user1Id === userId ? conversation.user2Id : conversation.user1Id;
-      const senderName = conversation.user1Id === userId ? conversation.user1.displayName : conversation.user2.displayName;
-      await this.notificationService.notifyNewMessage(otherUserId, senderName, conversationId);
-    }
+    const conversation = convResult.value;
 
-    return result.value;
+    const otherUserId = conversation.user1Id === userId ? conversation.user2Id : conversation.user1Id;
+    const resultValue = result.value;
+
+    const senderName = await this.getSenderName(userId);
+    await this.notificationService.notifyNewMessage(otherUserId, senderName, conversationId);
+
+    return resultValue;
+  }
+
+  private async getSenderName(userId: string): Promise<string> {
+    const userResult = await this.conversationRepository.findUserById(userId);
+    if (userResult.isLeft() || !userResult.value) return 'Alguém';
+    return userResult.value.displayName || 'Alguém';
   }
 }

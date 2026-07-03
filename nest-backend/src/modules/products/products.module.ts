@@ -1,16 +1,23 @@
 import { Module } from '@nestjs/common';
 import { ProductsController } from './products.controller';
-import { CreateProductUseCase, DeleteProductUseCase, UpdateProductUseCase } from './usecases/product.usecase';
-import { PrismaProductRepository } from './repositories/product.repository';
+import { ProductsService } from './api/products.service';
+import { CreateProductUseCaseModule } from './usecases/create-product/create-product.usecase.module';
+import { UpdateProductUseCaseModule } from './usecases/update-product/update-product.usecase.module';
+import { DeleteProductUseCaseModule } from './usecases/delete-product/delete-product.usecase.module';
+import { GetProductsUseCaseModule } from './usecases/get-products/get-products.usecase.module';
+import { GetProductByIdUseCaseModule } from './usecases/get-products/get-product-by-id.usecase.module';
+import { GetMyProductsUseCaseModule } from './usecases/get-products/get-my-products.usecase.module';
 
 @Module({
-  controllers: [ProductsController],
-  providers: [
-    CreateProductUseCase,
-    UpdateProductUseCase,
-    DeleteProductUseCase,
-    PrismaProductRepository,
+  imports: [
+    CreateProductUseCaseModule,
+    UpdateProductUseCaseModule,
+    DeleteProductUseCaseModule,
+    GetProductsUseCaseModule,
+    GetProductByIdUseCaseModule,
+    GetMyProductsUseCaseModule,
   ],
-  exports: [PrismaProductRepository],
+  controllers: [ProductsController],
+  providers: [ProductsController, ProductsService],
 })
 export class ProductsModule {}

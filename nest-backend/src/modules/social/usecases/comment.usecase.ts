@@ -1,31 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaCommentRepository, PrismaPostRepository } from '../repositories/social.repository';
+import { PostRepository } from '../domain/repositories/post.repository';
+import { CommentRepository } from '../domain/repositories/comment.repository';
 import { CreateCommentInput, CreateCommentOutput } from '../dtos/social.dto';
 
 @Injectable()
 export class CommentUseCase {
   constructor(
-    private commentRepository: PrismaCommentRepository,
-    private postRepository: PrismaPostRepository,
+    private readonly commentRepository: CommentRepository,
+    private readonly postRepository: PostRepository,
   ) {}
 
   async execute(input: CreateCommentInput): Promise<Either<AppError, CreateCommentOutput>> {
-    const comment = await this.commentRepository.create({
+    const result = await this.commentRepository.create({
       content: input.content,
       post: { connect: { id: input.postId } },
       user: { connect: { id: input.userId } },
+      ...(input.parentId ? { parent: { connect: { id: input.parentId } } } : {}),
     });
+    if (isLeft(result)) return left(result.value);
 
-    await this.postRepository.incrementCommentsCount(input.postId);
+    await this.postRepository.update(input.postId, { commentsCount: { increment: 1 } });
 
     return right({
-      id: comment.id,
+      id: result.value.id,
       postId: input.postId,
       userId: input.userId,
       content: input.content,
-      createdAt: comment.createdAt,
+      createdAt: result.value.createdAt,
     });
   }
 }

@@ -45,20 +45,20 @@
 
 ### Enum migrations `[HIGH]`
 - [ ] `Withdrawal.status` — currently bare `String`; migrate to `WithdrawalStatus` enum
-- [ ] `DirectConversation.status` — currently bare `String`; migrate to `ConversationStatus` enum
-
-### Missing `onDelete` constraints `[MED]`
-- [ ] `Order → Product` — missing `onDelete`
-- [ ] `Dispute → Order` — missing `onDelete`
-- [ ] `Category` self-reference — missing `onDelete`
-- [ ] `Comment → User` — missing `onDelete`
-- [ ] `CommentLike → User` — missing `onDelete`
+- [x] `DirectConversation.status` — already `ConversationStatus` enum in schema
 
 ### Missing indexes `[MED]`
-- [ ] `Report.reportedUserId`
-- [ ] `Report.postId`
-- [ ] `DirectMessage.senderId`
-- [ ] Review other FK columns for missing indexes
+- [x] `Report.reportedUserId` — already indexed
+- [ ] `Report.reportedPostId` — missing index
+- [ ] Audit all FK columns for missing indexes
+
+### Resolved — onDelete constraints
+All onDelete constraints verified present in schema:
+- `Order → Product` — `onDelete: Restrict`
+- `Dispute → Order` — `onDelete: Cascade`
+- `Category` self-reference — `onDelete: SetNull`
+- `Comment → User` — `onDelete: Cascade`
+- `CommentLike → User` — `onDelete: Cascade`
 
 ### Schema drift
 - [ ] Capture base schema as a migration (only `PasswordRecoveryCode` migration exists — if the schema is recreated from scratch it won't match)
@@ -81,10 +81,80 @@
 
 ---
 
+## Reviews with Photos + Product Quantity `[done — this session]`
+
+> Implemented in parallel. Reviews refactored to Clean Architecture (api/ → usecases/ → domain/ → data/);
+> product quantity with stock validation at checkout, soldCount tracking, and status transitions.
+
+### Backend
+- [x] `ReviewImage` model in Prisma schema + migration `20260625000001`
+- [x] Products: `quantity Int @default(1)` + `soldCount Int @default(0)` in schema
+- [x] Reviews refactored: `domain/repositories/review.repository.ts` (abstract), `data/repositories/review-database.repository.ts` (concrete), `api/` (Controller+Service+Module+DTo), `usecases/create-review/`, `get-user-reviews/`, `can-review-order/`
+- [x] `POST /reviews/orders/:orderId/images` — multipart upload (memoryStorage, 5MB limit), returns `{ imageId, url }`
+- [x] `CreateReviewUseCase` — transação Prisma atômica com `ReviewImage.create`
+- [x] Stock no checkout: `CreateOrderUseCase`, `CancelOrderUseCase`, `charge.completed`/`charge.expired` webhooks, `checkout-cart` — validam `quantity - soldCount`, incrementam/decrementam `soldCount`, setam `SOLD` quando esgota
+- [x] Todo backend compila com `tsc --noEmit` (erros só em módulos não modificados: reports, users, wallet)
+
+### Frontend
+- [x] `review_entity.dart` — campo `images: List<String>` com `@JsonKey(defaultValue: [])`
+- [x] `review_service.dart` — `uploadReviewImage()` (compress + multipart) + `createReview()` com upload sequencial
+- [x] `create_review_page.dart` — image picker (câmera/galeria), preview grid max 5, upload progressivo
+- [x] `review_card.dart` — galeria horizontal com `FullScreenImageViewer` ao tocar
+- [x] `product_entity.dart` — campos `quantity` e `soldCount`
+- [x] `product_detail_page.dart` — indicador de estoque (verde/laranja/"Última unidade"/"Vendido"/"Esgotado"), seletor de quantidade no bottom sheet (multi-unit)
+
+### Known tech debt
+- [ ] Upload de imagens em data URI (não base64 inline no backend) — migrar para upload direto S3/R2 com presigned URLs
+- [ ] Validar `flutter analyze` no frontend
+- [ ] Testar fluxos E2E: criar review com fotos, comprar produto multi-unidade, cancelamento parcial, webhook de expiração
+
+---
+
 ## Testing & CI
 
 ### Backend
 - [ ] `[HIGH]` Expand specs for untested modules: cart, category, chat, favorites, reports, tasks, repositories
+- [x] `[MED]` Pilot `effect`-based integration tests on Disputes module — **done**, via the Domain Modeling +
+  TDD initiative on Disputes (see `nest-backend/src/modules/disputes/CONTEXT.md` and
+  `nest-backend/CONTEXT.md`/ADR-0001). Shipped beyond the original Fase 0–5 breakdown below: an explicit
+  `DisputeTransitionPolicy` domain model, a deduped `DisputeResolutionExecutionService` (eliminating the
+  drift risk between `ResolveDisputeUseCase` and `DisputeCleanupTask`), and a new `WithdrawDisputeUseCase`
+  making the previously-dead `CANCELLED` status reachable (ADR-0002). The original phase breakdown is kept
+  below for history; all of Fase 0–4 landed, folded into the broader initiative rather than as standalone PRs.
+
+  <details><summary>Original Fase 0–5 breakdown (historical)</summary>
+
+  **Fase 0 — Setup (1 PR)**
+  - [x] 0.1: Adicionar `effect` (latest stable) em `nest-backend/package.json` — `npm install effect`
+  - [x] 0.2: Rodar `npx tsc --noEmit` — confirmar que `effect` não quebra a compilação existente
+  - [x] 0.3: Rodar `npm test` — confirmar que specs existentes continuam passando
+  - [x] 0.4: Rodar `npm run test:integration` — confirmar que setup de integração existente funciona (Postgres + truncate)
+  - [x] 0.5: Criar `src/modules/disputes/effect-harness/tags.ts` — `Context.Tag<PrismaService>` e `Context.Tag<NotificationService>`
+  - [x] 0.6: Criar `src/modules/disputes/effect-harness/live-prisma.layer.ts` — Layer que conecta `PrismaClient` real contra `.env.test` (reusar pool de `setup-integration.ts` ou instanciar igual)
+  - [x] 0.7: Criar `src/modules/disputes/effect-harness/test-notifications.layer.ts` — Layer que grava chamadas num array em vez de mandar FCM
+  - [x] 0.8: Criar `src/modules/disputes/effect-harness/index.ts` — barrel export
+
+  **Fase 1 — OpenDispute + TestClock (TDD)**
+  - [x] 1.1–1.5: 47h59m/48h01m boundary tests, `now?: Date` injectable parameter on `open-dispute.usecase.ts`, `TestClock` demo
+  - [x] 1.6: Seed helper extracted (`userFactory`/`productFactory`/`orderFactory`)
+
+  **Fase 2 — Double-resolve guard (TDD + bugfix)**
+  - [x] 2.1–2.4: guard added — routed through `DisputeTransitionPolicy.canResolve` (covers `RESOLVED` *and*
+    `CANCELLED`, not just the originally-proposed `RESOLVED` check)
+  - [x] 2.5: full suite green
+
+  **Fase 3 — Auto-expiry cron (TDD)**
+  - [x] 3.1–3.4: done — and the wallet-mutation logic the cron uses is now shared with `ResolveDisputeUseCase`
+    via `DisputeResolutionExecutionService`, not a separate inline copy
+
+  **Fase 4 — SubmitEvidence status transitions (TDD)**
+  - [x] 4.1–4.6: done — same `DisputeTransitionPolicy` guard pattern as Fase 2
+
+  **Fase 5 — Limpeza e verificação final**
+  - [x] 5.1–5.5: see Verification section of the Disputes domain-modeling plan
+
+  </details>
+
 - [ ] `[MED]` Set coverage thresholds in jest config
 - [ ] `[MED]` Remove `console.*` warnings from `main.ts` (use `Logger` instead)
 
@@ -101,31 +171,6 @@
 - [ ] `[LOW]` Set up deployment pipeline
 
 ---
-
-## Round-3 Bugs `[CRIT]`
-
-### Fixes applied (pending manual verification — do not mark complete)
-
-- [ ] **Sidebar swipe** → `frontend/lib/features/social/presentation/pages/feed_page.dart` — set `drawerEnableOpenDragGesture: false` (was `true`), deleted stale comments in `feed_page.dart` and `app_shell.dart`
-- [ ] **Conversations not updating** → Added real-time Socket.IO client:
-  - Added `socket_io_client: ^3.0.2` to `pubspec.yaml`
-  - New `frontend/lib/shared/services/chat_socket_service.dart` — connects to backend `/chat` namespace, joins/leaves rooms, sends messages, broadcasts `messageStream`
-  - New `frontend/lib/features/chat/presentation/providers/chat_socket_provider.dart` — service lifecycle provider
-  - New `ChatListController` (`chat_provider.dart:75-119`) — `StateNotifier` seeded from `chatsProvider`, patches list on socket `new_message` events; exposed as `liveChatListProvider`
-  - `chat_conversation_page.dart` — joins room on load, listens for incoming messages (deduped by `msg['id']`), sends via socket (REST fallback)
-  - `chat_list_page.dart` — switched from `chatsProvider` to `liveChatListProvider`
-  - `app_shell.dart` — added `WidgetsBindingObserver`, connects/disconnects socket based on `authControllerProvider`, reconnects on app resume
-- [ ] **Date crash** → `chat_conversation_page.dart:533` — guard `DateTime.parse` with `msg['createdAt'] is String`; same fix in `chat_entity.dart:45-48`
-- [ ] **Wallet loading/design** →
-  - New `frontend/lib/core/components/shimmer_skeleton.dart` — `ShimmerBlock` and `WalletSkeleton` static tonal blocks
-  - `wallet_page.dart` — replaced `CircularProgressIndicator` with `WalletSkeleton`, wrapped "Visão da carteira" in `SectionTitle`, applied surface-hierarchy colors, collapsed duplicate `if (isGuest) ... else ...` into single call
-- [ ] **Post like/repost spinner** → `post_details_page.dart:234-300` — removed all three `.refresh()` calls after `toggleLike`, `toggleRepost`, and `sharePost` (override providers already keep state in sync)
-- [ ] **Theme toggle** → `profile_settings_sheet.dart:51-67` — replaced `PopupMenuButton<ThemeMode>` with inline `Row` of three `_ThemeOption` buttons (S/L/D) to avoid stale overlay snapshot
-- [ ] **Biometry config** →
-  - `MainActivity.kt` — changed `FlutterActivity` to `FlutterFragmentActivity`
-  - `AndroidManifest.xml` — added `<uses-permission android:name="android.permission.USE_BIOMETRIC"/>`
-  - `Info.plist` — added `NSFaceIDUsageDescription` string
-- [ ] **Explore/Following dropdown dark mode** → verified: `FeedTypeDropdown` already uses `context.textPrimary` (dark-mode aware), `context.surfaceColor` (dark-mode aware), and explicit `AppColors` for active state — no changes needed
 
 ## Chat Features `[HIGH]`
 

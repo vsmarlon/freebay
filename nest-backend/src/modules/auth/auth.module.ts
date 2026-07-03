@@ -1,36 +1,12 @@
 import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { AuthController } from './auth.controller';
-import { RegisterUseCase } from './usecases/register.usecase';
-import { LoginUseCase } from './usecases/login.usecase';
-import { GuestUseCase } from './usecases/guest.usecase';
-import { PrismaUserRepository } from './repositories/prisma-user.repository';
-import { PrismaPasswordRecoveryRepository } from './repositories/password-recovery.repository';
+import { AuthApiModule } from './api/auth.module';
+import { AuthUseCasesModule } from './usecases/auth-usecases.module';
 import { JwtStrategy } from './guards/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
-import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
-import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
-import { ResendService } from './services/resend.service';
 
 @Module({
-  imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-  ],
-  controllers: [AuthController],
-  providers: [
-    RegisterUseCase,
-    LoginUseCase,
-    GuestUseCase,
-    RequestPasswordRecoveryUseCase,
-    VerifyPasswordRecoveryCodeUseCase,
-    ResetPasswordUseCase,
-    PrismaUserRepository,
-    PrismaPasswordRecoveryRepository,
-    ResendService,
-    JwtStrategy,
-    JwtAuthGuard,
-  ],
-  exports: [PrismaUserRepository, PrismaPasswordRecoveryRepository, JwtAuthGuard],
+  imports: [AuthUseCasesModule, AuthApiModule],
+  providers: [JwtStrategy, JwtAuthGuard],
+  exports: [JwtAuthGuard, AuthUseCasesModule],
 })
 export class AuthModule {}

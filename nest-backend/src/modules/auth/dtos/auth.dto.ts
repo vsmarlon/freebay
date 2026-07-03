@@ -8,50 +8,50 @@ export class RegisterDTO {
   @MinLength(2)
   @MaxLength(50)
   @SanitizeText()
-  displayName: string;
+  readonly displayName: string;
 
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
-  email: string;
+  readonly email: string;
 
   @ApiProperty({ example: '********', minLength: 8, maxLength: 100 })
   @IsString()
   @MinLength(8)
   @MaxLength(100)
-  password: string;
+  readonly password: string;
 
   @ApiPropertyOptional({ example: 'São Paulo' })
   @IsOptional()
   @IsString()
   @SanitizeText()
-  city?: string;
+  readonly city?: string;
 
   @ApiPropertyOptional({ example: 'SP' })
   @IsOptional()
   @IsString()
-  state?: string;
+  readonly state?: string;
 }
 
 export class LoginDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
-  email: string;
+  readonly email: string;
 
   @ApiProperty({ example: '********', minLength: 8 })
   @IsString()
   @MinLength(8)
-  password: string;
+  readonly password: string;
 }
 
 export class LogoutDTO {
   @ApiPropertyOptional({ description: 'Refresh token to blacklist alongside the access token' })
   @IsOptional()
   @IsString()
-  refreshToken?: string;
+  readonly refreshToken?: string;
 }
 
 export class ForgotPasswordDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
-  email: string;
+  readonly email: string;
 }

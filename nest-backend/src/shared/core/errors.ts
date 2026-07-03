@@ -1,10 +1,17 @@
-export class AppError {
+export class AppError extends Error {
+  readonly message: string;
   constructor(
     public readonly code: string,
-    public readonly message: string,
+    message: string,
     public readonly statusCode: number = 400,
-  ) {}
+  ) {
+    super(message);
+    this.message = message;
+    this.name = 'AppError';
+  }
 }
+
+export type Failure = AppError;
 
 export class InvalidCredentialsError extends AppError {
   constructor() {

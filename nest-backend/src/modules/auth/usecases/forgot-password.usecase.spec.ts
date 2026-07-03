@@ -1,11 +1,12 @@
 import { ForgotPasswordUseCase } from './forgot-password.usecase';
-import { PrismaUserRepository } from '../repositories/prisma-user.repository';
+import { UserRepository } from '../domain/repositories/user.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { EmailService } from '@/shared/infra/email/email.service';
+import { right } from '@/shared/core/either';
 
 describe('ForgotPasswordUseCase', () => {
   let sut: ForgotPasswordUseCase;
-  let userRepository: jest.Mocked<Partial<PrismaUserRepository>>;
+  let userRepository: jest.Mocked<Partial<UserRepository>>;
   let redisService: jest.Mocked<Partial<RedisService>>;
   let emailService: jest.Mocked<Partial<EmailService>>;
 
@@ -24,14 +25,14 @@ describe('ForgotPasswordUseCase', () => {
     emailService = { sendPasswordReset: jest.fn() };
 
     sut = new ForgotPasswordUseCase(
-      userRepository as PrismaUserRepository,
+      userRepository as UserRepository,
       redisService as RedisService,
       emailService as EmailService,
     );
   });
 
   it('returns right(void) and sends email when user exists', async () => {
-    userRepository.findByEmail = jest.fn().mockResolvedValue(mockUser);
+    userRepository.findByEmail = jest.fn().mockResolvedValue(right(mockUser));
     redisService.add = jest.fn().mockResolvedValue(undefined);
     emailService.sendPasswordReset = jest.fn().mockResolvedValue(undefined);
 
@@ -50,7 +51,7 @@ describe('ForgotPasswordUseCase', () => {
   });
 
   it('returns right(void) silently when user does NOT exist (no enumeration)', async () => {
-    userRepository.findByEmail = jest.fn().mockResolvedValue(null);
+    userRepository.findByEmail = jest.fn().mockResolvedValue(right(null));
 
     const result = await sut.execute({ email: 'ghost@example.com' });
 

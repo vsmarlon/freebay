@@ -7,7 +7,7 @@ export type ChatThreadTypeParam = 'ORDER' | 'DIRECT';
 export class StartConversationDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
-  targetUserId: string;
+  readonly targetUserId: string;
 }
 
 export class SendMessageDTO {
@@ -15,17 +15,17 @@ export class SendMessageDTO {
   @IsString()
   @IsNotEmpty()
   @SanitizeText()
-  content: string;
+  readonly content: string;
 }
 
 export class ConversationResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string;
+  readonly id: string;
 
   @ApiProperty({
     example: { id: 'uuid', displayName: 'John Doe', avatarUrl: null, isVerified: true },
   })
-  otherUser: {
+  readonly otherUser: {
     id: string;
     displayName: string;
     avatarUrl: string | null;
@@ -33,55 +33,55 @@ export class ConversationResponse {
   };
 
   @ApiProperty({ example: { content: 'Last message', createdAt: '2026-06-17T12:00:00.000Z' }, nullable: true })
-  lastMessage: { content: string; createdAt: Date } | null;
+  readonly lastMessage: { content: string; createdAt: Date } | null;
 
   @ApiProperty({ example: 3 })
-  unreadCount: number;
+  readonly unreadCount: number;
 
   @ApiProperty({ example: 'ACTIVE' })
-  status: 'ACTIVE' | 'PENDING';
+  readonly status: 'ACTIVE' | 'PENDING';
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  createdAt: Date;
+  readonly createdAt: Date;
 }
 
 export class MessageResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string;
+  readonly id: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  conversationId: string;
+  readonly conversationId: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  senderId: string;
+  readonly senderId: string;
 
   @ApiProperty({ example: 'Olá, ainda tem disponível?' })
-  content: string | null;
+  readonly content: string | null;
 
   @ApiProperty({ example: 'TEXT' })
-  type: string;
+  readonly type: string;
 
   @ApiProperty({ example: null, nullable: true })
-  readAt: Date | null;
+  readonly readAt: Date | null;
 
   @ApiProperty({ example: null, nullable: true })
-  deliveredAt: Date | null;
+  readonly deliveredAt: Date | null;
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  createdAt: Date;
+  readonly createdAt: Date;
 }
 
 export class StartConversationOutput {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  conversationId: string;
+  readonly conversationId: string;
 
   @ApiProperty({ example: 'PENDING' })
-  status: string;
+  readonly status: string;
 }
 
 export class AcceptConversationOutput {
   @ApiProperty({ example: true })
-  accepted: boolean;
+  readonly accepted: boolean;
 }
 
 export interface SendMessageInput {
@@ -149,7 +149,7 @@ export interface AcceptConversationInput {
 export class UpdatePreferenceDTO {
   @ApiProperty({ enum: ['DEFAULT', 'CRIMSON', 'COBALT', 'FOREST', 'AMBER', 'SLATE'], example: 'DEFAULT' })
   @IsString()
-  theme: string;
+  readonly theme: string;
 }
 
 export interface ConversationPreferenceSummary {

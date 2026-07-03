@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Either, left, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../../orders/repositories/order.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -22,11 +22,11 @@ export class CreatePixPaymentUseCase {
   ) {}
 
   async execute(input: CreatePixPaymentInput): Promise<Either<AppError, CreatePixPaymentOutput>> {
-    const order = await this.orderRepository.findById(input.orderId);
-    if (!order) {
-      return left(new NotFoundError('Order'));
-    }
+    const orderResult = await this.orderRepository.findById(input.orderId);
+    if (isLeft(orderResult)) return left(orderResult.value);
+    if (!orderResult.value) return left(new NotFoundError('Order'));
 
+    const order = orderResult.value;
     if (order.buyerId !== input.userId) {
       return left(new BadRequestError('Order does not belong to this user'));
     }
@@ -135,10 +135,22 @@ export class ProcessWebhookUseCase {
       }
 
       await this.prisma.$transaction(async (tx) => {
-        await tx.product.update({
-          where: { id: transaction.order.productId },
-          data: { status: 'SOLD' },
-        });
+        const webhookProduct = await tx.product.findUnique({ where: { id: transaction.order.productId } });
+        if (webhookProduct && webhookProduct.quantity > 1) {
+          const newSoldCount = webhookProduct.soldCount + 1;
+          await tx.product.update({
+            where: { id: transaction.order.productId },
+            data: {
+              soldCount: newSoldCount,
+              ...(newSoldCount >= webhookProduct.quantity ? { status: 'SOLD' as const } : {}),
+            },
+          });
+        } else {
+          await tx.product.update({
+            where: { id: transaction.order.productId },
+            data: { status: 'SOLD' },
+          });
+        }
 
         await tx.transaction.update({
           where: { id: transaction.id },
@@ -193,13 +205,25 @@ export class ProcessWebhookUseCase {
           data: { status: 'CANCELLED' },
         });
 
-        await tx.product.updateMany({
-          where: {
-            id: transaction.order.productId,
-            status: 'PAUSED',
-          },
-          data: { status: 'ACTIVE' },
-        });
+        const expiredProduct = await tx.product.findUnique({ where: { id: transaction.order.productId } });
+        if (expiredProduct && expiredProduct.quantity > 1) {
+          const newSoldCount = expiredProduct.soldCount - 1;
+          await tx.product.update({
+            where: { id: transaction.order.productId },
+            data: {
+              soldCount: newSoldCount >= 0 ? newSoldCount : 0,
+              ...(expiredProduct.status === 'SOLD' && newSoldCount < expiredProduct.quantity ? { status: 'ACTIVE' as const } : {}),
+            },
+          });
+        } else {
+          await tx.product.updateMany({
+            where: {
+              id: transaction.order.productId,
+              status: 'PAUSED',
+            },
+            data: { status: 'ACTIVE' },
+          });
+        }
       });
 
       return right({ processed: true });

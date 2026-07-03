@@ -43,7 +43,7 @@ flutter build apk --debug
 
 ### Root `Makefile`
 
-References a `backend/` directory that does not exist in this repo (the backend lives in `nest-backend/`) — `make test` / `make test-unit` will fail with `cd backend` errors. Run the backend/frontend commands above directly instead of relying on the Makefile until it's updated.
+Run after finishing large work.
 
 ---
 
@@ -129,7 +129,6 @@ Do NOT `throw` business errors in controllers — return `left(new AppError(…)
 Every use case file must contain **exactly one exported class**. This keeps each file focused and testable (`let sut: SomeUseCase`). Current exceptions tracked in `TODO.md`:
 - `modules/social/usecases/social.usecase.ts` — 9 classes (refactor pending)
 - `modules/chat/usecases/chat.usecase.ts` — 5 classes
-- `modules/disputes/usecases/dispute.usecase.ts` — 5 classes
 - `modules/reports/usecases/report.usecase.ts` — 3 classes
 
 New use cases should always be one-per-file.

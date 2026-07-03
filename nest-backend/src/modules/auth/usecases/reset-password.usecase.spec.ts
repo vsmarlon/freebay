@@ -1,14 +1,15 @@
 import * as bcrypt from 'bcryptjs';
-import { PrismaUserRepository } from '../repositories/prisma-user.repository';
-import { PrismaPasswordRecoveryRepository } from '../repositories/password-recovery.repository';
+import { UserRepository } from '../domain/repositories/user.repository';
+import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
 import { RecoveryCodeNotFoundError } from '@/shared/core/errors';
 import { ResetPasswordUseCase } from './reset-password.usecase';
 import { RedisService } from '@/shared/infra/redis/redis.service';
+import { right } from '@/shared/core/either';
 
 describe('ResetPasswordUseCase', () => {
   let sut: ResetPasswordUseCase;
-  let userRepository: jest.Mocked<Partial<PrismaUserRepository>>;
-  let recoveryRepository: jest.Mocked<Partial<PrismaPasswordRecoveryRepository>>;
+  let userRepository: jest.Mocked<Partial<UserRepository>>;
+  let recoveryRepository: jest.Mocked<Partial<PasswordRecoveryRepository>>;
   let redisService: jest.Mocked<Partial<RedisService>>;
 
   beforeEach(() => {
@@ -20,14 +21,14 @@ describe('ResetPasswordUseCase', () => {
     recoveryRepository = {
       findLatestByEmail: jest.fn(),
       markUsed: jest.fn(),
-    };
+    } as jest.Mocked<Partial<PasswordRecoveryRepository>>;
     redisService = {
       add: jest.fn(),
     };
 
     sut = new ResetPasswordUseCase(
-      userRepository as PrismaUserRepository,
-      recoveryRepository as PrismaPasswordRecoveryRepository,
+      userRepository as UserRepository,
+      recoveryRepository as PasswordRecoveryRepository,
       redisService as RedisService,
     );
   });
@@ -35,15 +36,15 @@ describe('ResetPasswordUseCase', () => {
   it('resets password and marks code as used when code is valid', async () => {
     const codeHash = await bcrypt.hash('123456', 10);
 
-    recoveryRepository.findLatestByEmail = jest.fn().mockResolvedValue({
+    recoveryRepository.findLatestByEmail = jest.fn().mockResolvedValue(right({
       id: 'recovery-1',
       codeHash,
       usedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
-    });
-    userRepository.findByEmail = jest.fn().mockResolvedValue({ id: 'user-1' });
-    userRepository.update = jest.fn().mockResolvedValue({ id: 'user-1' });
-    recoveryRepository.markUsed = jest.fn().mockResolvedValue({ id: 'recovery-1' });
+    }));
+    userRepository.findByEmail = jest.fn().mockResolvedValue(right({ id: 'user-1' }));
+    userRepository.update = jest.fn().mockResolvedValue(right({ id: 'user-1' }));
+    recoveryRepository.markUsed = jest.fn().mockResolvedValue(right({ id: 'recovery-1' }));
 
     const result = await sut.execute({
       email: 'user@test.com',
@@ -65,7 +66,7 @@ describe('ResetPasswordUseCase', () => {
   });
 
   it('returns left(RecoveryCodeNotFoundError) when recovery code is not found', async () => {
-    recoveryRepository.findLatestByEmail = jest.fn().mockResolvedValue(null);
+    recoveryRepository.findLatestByEmail = jest.fn().mockResolvedValue(right(null));
 
     const result = await sut.execute({
       email: 'user@test.com',

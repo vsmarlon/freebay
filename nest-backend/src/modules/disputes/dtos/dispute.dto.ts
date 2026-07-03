@@ -6,13 +6,13 @@ import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 export class OpenDisputeDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
-  orderId: string;
+  readonly orderId: string;
 
   @ApiProperty({ example: 'Produto não corresponde à descrição' })
   @IsString()
   @MinLength(1)
   @SanitizeText()
-  reason: string;
+  readonly reason: string;
 }
 
 export class ResolveDisputeDTO {
@@ -20,44 +20,49 @@ export class ResolveDisputeDTO {
   @IsString()
   @MinLength(1)
   @SanitizeText()
-  resolution: string;
+  readonly resolution: string;
 
   @ApiProperty({ enum: ['BUYER', 'SELLER'] })
   @IsIn(['BUYER', 'SELLER'])
-  winner: 'BUYER' | 'SELLER';
+  readonly winner: 'BUYER' | 'SELLER';
 }
 
 export class OpenDisputeOutput {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string;
+  readonly id: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  orderId: string;
+  readonly orderId: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  openedById: string;
+  readonly openedById: string;
 
   @ApiProperty({ example: 'Produto não corresponde à descrição' })
-  reason: string;
+  readonly reason: string;
 
   @ApiProperty({ example: 'OPEN' })
-  status: string;
+  readonly status: string;
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  createdAt: Date;
+  readonly createdAt: Date;
 
   @ApiProperty({ example: '2026-07-17T12:00:00.000Z' })
-  expiresAt: Date;
+  readonly expiresAt: Date;
 }
 
 export class SubmitEvidenceOutput {
   @ApiProperty({ example: true })
-  submitted: boolean;
+  readonly submitted: boolean;
 }
 
 export class ResolveDisputeOutput {
   @ApiProperty({ example: true })
-  resolved: boolean;
+  readonly resolved: boolean;
+}
+
+export class WithdrawDisputeOutput {
+  @ApiProperty({ example: true })
+  readonly withdrawn: boolean;
 }
 
 export interface OpenDisputeInput {

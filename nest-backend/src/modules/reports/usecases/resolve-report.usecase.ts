@@ -1,31 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ReportRepository } from '../domain/repositories/report.repository';
 
 @Injectable()
 export class ResolveReportUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly reportRepository: ReportRepository) {}
 
   async execute(input: { reportId: string; status: 'REVIEWED' | 'RESOLVED' | 'REJECTED'; adminNote?: string }): Promise<Either<AppError, { resolved: boolean }>> {
-    const report = await this.prisma.report.findUnique({
-      where: { id: input.reportId },
+    const reportResult = await this.reportRepository.findReportById(input.reportId);
+    if (isLeft(reportResult)) return left(reportResult.value);
+    if (!reportResult.value) return left(new NotFoundError('Report'));
+
+    const updateResult = await this.reportRepository.updateReport(input.reportId, {
+      status: input.status,
+      reviewedAt: new Date(),
     });
+    if (isLeft(updateResult)) return left(updateResult.value);
 
-    if (!report) {
-      return left(new NotFoundError('Report'));
-    }
-
-    await this.prisma.report.update({
-      where: { id: input.reportId },
-      data: { status: input.status, reviewedAt: new Date() },
-    });
-
-    if (input.status === 'RESOLVED' && report.reportedUserId) {
-      await this.prisma.user.update({
-        where: { id: report.reportedUserId },
-        data: { isVerified: false },
+    if (input.status === 'RESOLVED' && reportResult.value.reportedUserId) {
+      const userUpdateResult = await this.reportRepository.updateUser(reportResult.value.reportedUserId, {
+        isVerified: false,
       });
+      if (isLeft(userUpdateResult)) return left(userUpdateResult.value);
     }
 
     return right({ resolved: true });

@@ -1,22 +1,19 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { PrismaCategoryRepository } from './repositories/category.repository';
+import { CategoryService } from './api/category.service';
 
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoryController {
-  constructor(private categoryRepository: PrismaCategoryRepository) {}
+  constructor(private readonly categoryService: CategoryService) {}
 
   @Get()
   @ApiDoc({
     summary: 'List all categories',
   })
   async findAll() {
-    const categories = await this.categoryRepository.findAll();
-    return { categories };
+    return this.categoryService.findAll();
   }
 
   @Get(':id')
@@ -26,10 +23,6 @@ export class CategoryController {
     errors: [{ status: 404, description: 'Category not found' }],
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const category = await this.categoryRepository.findById(id);
-    if (!category) {
-      return left(new AppError('NOT_FOUND', 'Categoria não encontrada'));
-    }
-    return { category };
+    return this.categoryService.findOne(id);
   }
 }

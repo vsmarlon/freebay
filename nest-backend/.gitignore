@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+.env.test
 *.log
 coverage/
+coverage-integration/
 freebaythebay-firebase-adminsdk-fbsvc-dca2b26598*.json

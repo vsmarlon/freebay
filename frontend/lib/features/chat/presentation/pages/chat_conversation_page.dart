@@ -18,8 +18,6 @@ import 'package:freebay/features/chat/presentation/providers/chat_provider.dart'
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
-import 'package:freebay/features/chat/domain/usecases/report_chat_usecase.dart';
-import 'package:freebay/features/profile/data/services/block_service.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
@@ -51,6 +49,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
   bool _isLoading = true;
   bool _isSending = false;
   ConversationPreference? _preference;
+  Color _accentColor = AppColors.primaryContainer;
   StreamSubscription<Map<String, dynamic>>? _socketSubscription;
 
   @override
@@ -104,6 +103,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
           _preference = prefData != null
               ? ConversationPreference.fromJson(prefData)
               : null;
+          _accentColor = _computeAccentColor();
           _isLoading = false;
         });
         _scrollToBottom();
@@ -138,10 +138,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         socketService.sendMessage(widget.chatId, content);
         _messageController.clear();
       } else {
-        await HttpClient.instance.post(
-          '/chat/conversations/${widget.chatId}/messages',
-          data: {'content': content},
-        );
+        final result = await ref
+            .read(chatRepositoryProvider)
+            .sendMessage(widget.chatId, content);
+        if (result.isLeft()) throw Exception('send failed');
         _messageController.clear();
         await _loadMessages();
       }
@@ -159,7 +159,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     final result = await usecase(widget.chatId, _threadType, theme);
     result.fold(
       (failure) => AppSnackbar.error(context, failure.message),
-      (pref) => setState(() => _preference = pref),
+      (pref) => setState(() {
+        _preference = pref;
+        _accentColor = _computeAccentColor();
+      }),
     );
   }
 
@@ -419,12 +422,12 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                   : selectedReason ?? 'SPAM';
               if (reason.isEmpty) return;
 
-              final usecase = ReportChatUsecase();
+              final usecase = ref.read(reportChatUsecaseProvider);
               final result = await usecase(
                 targetId: widget.chatId,
                 targetType: targetType,
                 reason: reason,
-                description: targetType == 'MESSAGE' ? null : null,
+                description: null,
               );
               result.fold(
                 (failure) => AppSnackbar.error(ctx, failure.message),
@@ -479,15 +482,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
 
     if (confirmed != true) return;
 
-    final blockService = BlockService();
-    final result = await blockService.block(otherUserId);
+    final usecase = ref.read(blockUserUsecaseProvider);
+    final result = await usecase(otherUserId);
     result.fold(
       (failure) => AppSnackbar.error(context, failure.message),
       (_) => AppSnackbar.success(context, 'Usuário bloqueado'),
     );
   }
 
-  Color _accentColor() {
+  Color _computeAccentColor() {
     final themeName = _preference?.theme ?? 'DEFAULT';
     final match = ChatTheme.fromApiValue(themeName);
     return Color(int.parse(match.accentHex.replaceFirst('#', '0xFF')));
@@ -498,7 +501,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final currentUserId = authState.valueOrNull?.id;
-    final accentColor = _accentColor();
+    final accentColor = _accentColor;
     final bgUrl = _preference?.backgroundUrl;
 
     return Scaffold(

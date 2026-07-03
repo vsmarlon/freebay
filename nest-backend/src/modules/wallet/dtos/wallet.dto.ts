@@ -7,79 +7,79 @@ export class WithdrawDTO {
   @ApiProperty({ example: 5000, description: 'Amount in cents' })
   @IsInt()
   @IsPositive()
-  amount: number;
+  readonly amount: number;
 
   @ApiProperty({ example: 'test@example.com' })
   @IsString()
   @MinLength(1)
-  pixKey: string;
+  readonly pixKey: string;
 
   @ApiProperty({ enum: PIX_KEY_TYPES })
   @IsIn(PIX_KEY_TYPES)
-  pixKeyType: 'CPF' | 'EMAIL' | 'PHONE' | 'RANDOM';
+  readonly pixKeyType: 'CPF' | 'EMAIL' | 'PHONE' | 'RANDOM';
 }
 
 export class BankAccountDTO {
   @ApiProperty({ example: '237' })
   @IsString()
   @MinLength(3)
-  bankCode: string;
+  readonly bankCode: string;
 
   @ApiProperty({ example: '12345' })
   @IsString()
   @MinLength(1)
-  accountNumber: string;
+  readonly accountNumber: string;
 
   @ApiProperty({ example: '1' })
   @IsString()
   @MinLength(1)
-  accountCheckDigit: string;
+  readonly accountCheckDigit: string;
 
   @ApiProperty({ example: '0001' })
   @IsString()
   @MinLength(1)
-  branchNumber: string;
+  readonly branchNumber: string;
 
   @ApiProperty({ example: '0' })
   @IsString()
   @MinLength(1)
-  branchCheckDigit: string;
+  readonly branchCheckDigit: string;
 
   @ApiProperty({ example: 'John Doe' })
   @IsString()
   @MinLength(1)
-  holderName: string;
+  readonly holderName: string;
 
   @ApiProperty({ example: '12345678901' })
   @IsString()
   @MinLength(11)
   @MaxLength(14)
-  holderDocument: string;
+  readonly holderDocument: string;
 }
 
 export class WalletResponse {
   @ApiProperty({ example: 100000 })
-  balance: number;
+  readonly balance: number;
 
   @ApiProperty({ example: 25000 })
-  pendingBalance: number;
+  readonly pendingBalance: number;
 
   @ApiProperty({ example: 75000 })
-  availableBalance: number;
+  readonly availableBalance: number;
 }
 
 export class WithdrawalResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string;
+  readonly id: string;
 
   @ApiProperty({ example: 5000 })
-  amount: number;
+  readonly amount: number;
 
   @ApiProperty({ example: 'PENDING' })
-  status: string;
+  readonly status: string;
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  createdAt: Date;
+  readonly createdAt: Date;
 }
 
 export interface GetWalletOutput {

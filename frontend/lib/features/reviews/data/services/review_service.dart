@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 
@@ -19,14 +22,67 @@ class ReviewService {
     return 'Erro ao conectar com o servidor.';
   }
 
+  Future<Either<Failure, String>> uploadReviewImage({
+    required String orderId,
+    required String filePath,
+  }) async {
+    try {
+      final filename = filePath.split(Platform.pathSeparator).last;
+      final multipartFile = await ImageUploadService.compressedMultipartFile(
+        filePath,
+        filename: filename,
+      );
+
+      final formData = FormData.fromMap({
+        'file': multipartFile,
+      });
+
+      final response = await HttpClient.instance.post(
+        '/reviews/orders/$orderId/images',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          receiveTimeout: const Duration(seconds: 30),
+          sendTimeout: const Duration(seconds: 60),
+        ),
+      );
+
+      if (response.statusCode == 201 && response.data != null) {
+        final url = response.data['data']?['url'] as String? ??
+            response.data['url'] as String?;
+        if (url != null) {
+          return Right(url);
+        }
+        return Left(ServerFailure('Erro ao obter URL da imagem.'));
+      } else {
+        return Left(ServerFailure(_extractErrorMessage(response.data)));
+      }
+    } catch (e) {
+      return Left(ServerFailure(_extractErrorMessage(e)));
+    }
+  }
+
   Future<Either<Failure, ReviewEntity>> createReview({
     required String orderId,
     required String reviewedId,
     required String type,
     required int score,
     String? comment,
+    List<String> imagePaths = const [],
   }) async {
     try {
+      final List<String> imageUrls = [];
+      for (final path in imagePaths) {
+        final result = await uploadReviewImage(
+          orderId: orderId,
+          filePath: path,
+        );
+        if (result.isLeft()) {
+          return Left(result.getLeft().toNullable()!);
+        }
+        imageUrls.add(result.getOrElse(() => ''));
+      }
+
       final response = await HttpClient.instance.post(
         '/reviews/orders/$orderId',
         data: {
@@ -34,6 +90,7 @@ class ReviewService {
           'type': type,
           'score': score,
           if (comment != null && comment.isNotEmpty) 'comment': comment,
+          if (imageUrls.isNotEmpty) 'imageIds': imageUrls,
         },
       );
 

@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { BlockRepository } from '@/modules/users/repositories/block.repository';
 import { StartConversationOutput } from '../dtos/chat.dto';
 
 @Injectable()
 export class StartConversationUseCase {
   constructor(
-    private prisma: PrismaService,
-    private blockRepository: BlockRepository,
+    private readonly conversationRepository: ConversationRepository,
+    private readonly blockRepository: BlockRepository,
   ) {}
 
   async execute(initiatorId: string, targetUserId: string): Promise<Either<AppError, StartConversationOutput>> {
@@ -17,51 +17,35 @@ export class StartConversationUseCase {
       return left(new BadRequestError('Cannot start conversation with yourself'));
     }
 
-    const targetUser = await this.prisma.user.findUnique({ where: { id: targetUserId } });
-    if (!targetUser) {
-      return left(new NotFoundError('User'));
+    const userResult = await this.conversationRepository.findUserById(targetUserId);
+    if (isLeft(userResult)) return left(userResult.value);
+    if (!userResult.value) return left(new NotFoundError('User'));
+
+    const [isBlocked, isBlockedByOther] = await Promise.all([
+      this.blockRepository.isBlocked(initiatorId, targetUserId),
+      this.blockRepository.isBlocked(targetUserId, initiatorId),
+    ]);
+    if (isBlocked) return left(new ForbiddenError('Você bloqueou este usuário'));
+    if (isBlockedByOther) return left(new ForbiddenError('Você foi bloqueado por este usuário'));
+
+    const existingResult = await this.conversationRepository.findDirectConversationBetweenUsers(initiatorId, targetUserId);
+    if (isLeft(existingResult)) return left(existingResult.value);
+    if (existingResult.value) {
+      return right({ conversationId: existingResult.value.id, status: existingResult.value.status });
     }
 
-    const isBlocked = await this.blockRepository.isBlocked(initiatorId, targetUserId);
-    if (isBlocked) {
-      return left(new ForbiddenError('Você bloqueou este usuário'));
-    }
+    const followResult = await this.conversationRepository.findFollow(initiatorId, targetUserId);
+    if (isLeft(followResult)) return left(followResult.value);
 
-    const isBlockedByOther = await this.blockRepository.isBlocked(targetUserId, initiatorId);
-    if (isBlockedByOther) {
-      return left(new ForbiddenError('Você foi bloqueado por este usuário'));
-    }
+    const status = followResult.value ? 'ACTIVE' : 'PENDING';
 
-    const existingConv = await this.prisma.directConversation.findFirst({
-      where: {
-        OR: [
-          { user1Id: initiatorId, user2Id: targetUserId },
-          { user1Id: targetUserId, user2Id: initiatorId },
-        ],
-      },
+    const createResult = await this.conversationRepository.createDirectConversation({
+      user1: { connect: { id: initiatorId } },
+      user2: { connect: { id: targetUserId } },
+      status,
     });
+    if (isLeft(createResult)) return left(createResult.value);
 
-    if (existingConv) {
-      return right({ conversationId: existingConv.id, status: existingConv.status });
-    }
-
-    const isFollowing = await this.prisma.follow.findFirst({
-      where: {
-        followerId: initiatorId,
-        followingId: targetUserId,
-      },
-    });
-
-    const status = isFollowing ? 'ACTIVE' : 'PENDING';
-
-    const newConv = await this.prisma.directConversation.create({
-      data: {
-        user1Id: initiatorId,
-        user2Id: targetUserId,
-        status,
-      },
-    });
-
-    return right({ conversationId: newConv.id, status });
+    return right({ conversationId: createResult.value.id, status });
   }
 }

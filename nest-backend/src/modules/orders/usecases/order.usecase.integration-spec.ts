@@ -189,7 +189,7 @@ describe('CreateOrderUseCase Integration', () => {
       }
     });
 
-    it('should mark product as SOLD after order creation', async () => {
+    it('should reserve product as PAUSED after order creation (not SOLD until payment confirms)', async () => {
       // Arrange
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
@@ -215,7 +215,7 @@ describe('CreateOrderUseCase Integration', () => {
         where: { id: product.id },
       });
 
-      expect(updatedProduct?.status).toBe('SOLD');
+      expect(updatedProduct?.status).toBe('PAUSED');
     });
 
     it('should create orders for different products', async () => {

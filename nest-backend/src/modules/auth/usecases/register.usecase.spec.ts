@@ -1,16 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUseCase } from './register.usecase';
-import { PrismaUserRepository } from '../repositories/prisma-user.repository';
+import { UserRepository } from '../domain/repositories/user.repository';
 import { EmailAlreadyExistsError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
 
 describe('RegisterUseCase', () => {
   let sut: RegisterUseCase;
-  let mockUserRepository: any;
+  let mockUserRepository: jest.Mocked<Partial<UserRepository>>;
 
   beforeEach(async () => {
     mockUserRepository = {
-      findByEmail: jest.fn().mockResolvedValue(null),
-      create: jest.fn().mockResolvedValue({
+      findByEmail: jest.fn().mockResolvedValue(right(null)),
+      create: jest.fn().mockResolvedValue(right({
         id: 'user-123',
         displayName: 'John Doe',
         email: 'john@example.com',
@@ -30,13 +31,13 @@ describe('RegisterUseCase', () => {
         totalReviews: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }),
-    };
+      })),
+    } as jest.Mocked<Partial<UserRepository>>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RegisterUseCase,
-        { provide: PrismaUserRepository, useValue: mockUserRepository },
+        { provide: UserRepository, useValue: mockUserRepository },
       ],
     }).compile();
 
@@ -63,12 +64,12 @@ describe('RegisterUseCase', () => {
   });
 
   it('should return error if email already exists', async () => {
-    mockUserRepository.findByEmail = jest.fn().mockResolvedValue({
+    mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'existing-user',
       email: 'john@example.com',
       passwordHash: 'hashedpassword',
       displayName: 'John Doe',
-    });
+    }));
 
     const input = {
       displayName: 'John Doe',

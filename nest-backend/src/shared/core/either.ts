@@ -1,3 +1,5 @@
+import type { Failure } from './errors';
+
 export type Either<L, R> = Left<L> | Right<R>;
 
 export class Left<L> {
@@ -34,3 +36,7 @@ export const isLeft = <L, R>(either: Either<L, R>): either is Left<L> =>
 
 export const isRight = <L, R>(either: Either<L, R>): either is Right<R> =>
   either._tag === 'right';
+
+export type RepositoryResponse<T> = Promise<Either<Failure, T>>;
+export type UsecaseResponse<T> = Promise<Either<Failure, T>>;
+export type EntityResponse<T> = Either<Failure, T>;

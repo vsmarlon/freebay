@@ -20,7 +20,7 @@ export class LoggingInterceptor implements NestInterceptor {
     'code',
   ]);
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<JsonValue | void> {
     const request = context.switchToHttp().getRequest();
     const { method, url, body, headers } = request;
     const now = Date.now();
@@ -39,7 +39,7 @@ export class LoggingInterceptor implements NestInterceptor {
           const responseTime = Date.now() - now;
           this.logger.log(`[RESPONSE] ${method} ${url} - ${responseTime}ms`);
           if (data && typeof data === 'object' && 'data' in data) {
-            const responseData = (data as { data: unknown }).data;
+            const responseData = (data as { data: JsonValue }).data;
             if (responseData !== undefined && responseData !== null) {
               const dataStr = JSON.stringify(this.redact(responseData));
               if (dataStr.length <= 1000) {
@@ -58,7 +58,7 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 
-  private redact(value: unknown): unknown {
+  private redact(value: JsonValue): JsonValue {
     if (Array.isArray(value)) {
       return value.map((item) => this.redact(item));
     }
@@ -70,8 +70,10 @@ export class LoggingInterceptor implements NestInterceptor {
     return Object.fromEntries(
       Object.entries(value).map(([key, nestedValue]) => [
         key,
-        this.sensitiveKeys.has(key) ? '[REDACTED]' : this.redact(nestedValue),
+        this.sensitiveKeys.has(key) ? '[REDACTED]' : this.redact(nestedValue as JsonValue),
       ]),
     );
   }
 }
+
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];

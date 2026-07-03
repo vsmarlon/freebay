@@ -1,34 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { Either, left, right, isLeft } from '@/shared/core/either';
+import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
+import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { AcceptConversationOutput } from '../dtos/chat.dto';
 
 @Injectable()
 export class AcceptConversationUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly conversationRepository: ConversationRepository) {}
 
   async execute(conversationId: string, userId: string): Promise<Either<AppError, AcceptConversationOutput>> {
-    const conversation = await this.prisma.directConversation.findUnique({
-      where: { id: conversationId },
-    });
+    const convResult = await this.conversationRepository.findDirectConversationById(conversationId);
+    if (isLeft(convResult)) return left(convResult.value);
+    const conversation = convResult.value;
 
-    if (!conversation) {
-      return left(new NotFoundError('Conversation'));
-    }
-
+    if (!conversation) return left(new NotFoundError('Conversation'));
     if (conversation.user1Id !== userId && conversation.user2Id !== userId) {
       return left(new BadRequestError('Not authorized'));
     }
-
     if (conversation.status !== 'PENDING') {
       return left(new BadRequestError('Conversation is not pending'));
     }
 
-    await this.prisma.directConversation.update({
-      where: { id: conversationId },
-      data: { status: 'ACTIVE' },
+    const updateResult = await this.conversationRepository.updateDirectConversation(conversationId, {
+      status: 'ACTIVE',
     });
+    if (isLeft(updateResult)) return left(updateResult.value);
 
     return right({ accepted: true });
   }

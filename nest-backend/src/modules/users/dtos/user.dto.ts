@@ -35,47 +35,47 @@ export class UpdateProfileDTO {
   @MinLength(2)
   @MaxLength(50)
   @SanitizeText()
-  displayName?: string;
+  readonly displayName?: string;
 
   @ApiPropertyOptional({ example: 'Bio text here...', maxLength: 150 })
   @IsOptional()
   @IsString()
   @MaxLength(150)
   @SanitizeText()
-  bio?: string;
+  readonly bio?: string;
 
   @ApiPropertyOptional({ example: 'São Paulo' })
   @IsOptional()
   @IsString()
   @SanitizeText()
-  city?: string;
+  readonly city?: string;
 
   @ApiPropertyOptional({ example: 'SP' })
   @IsOptional()
   @IsString()
-  state?: string;
+  readonly state?: string;
 
   @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
   @IsOptional()
   @IsUrl()
-  avatarUrl?: string;
+  readonly avatarUrl?: string;
 
   @ApiPropertyOptional({ example: '529.982.247-25' })
   @IsOptional()
   @Validate(IsCpfOrCnpjConstraint)
-  cpf?: string;
+  readonly cpf?: string;
 }
 
 export class UpdateFcmTokenDTO {
   @ApiPropertyOptional({ example: 'fcm-token-value' })
   @IsOptional()
   @IsString()
-  fcmToken?: string;
+  readonly fcmToken?: string;
 
   @ApiPropertyOptional({ example: { orders: true, follows: true, messages: true } })
   @IsOptional()
   @IsObject()
-  notificationPrefs?: Record<string, boolean>;
+  readonly notificationPrefs?: Record<string, boolean>;
 }
 
 export class OffsetPaginationQueryDTO {
@@ -85,14 +85,14 @@ export class OffsetPaginationQueryDTO {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  readonly limit?: number;
 
   @ApiPropertyOptional({ example: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  offset?: number;
+  readonly offset?: number;
 }
 
 export class UserSearchQueryDTO {
@@ -100,12 +100,12 @@ export class UserSearchQueryDTO {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  q?: string;
+  readonly q?: string;
 
   @ApiPropertyOptional({ description: 'Pagination cursor' })
   @IsOptional()
   @IsString()
-  cursor?: string;
+  readonly cursor?: string;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()
@@ -113,7 +113,7 @@ export class UserSearchQueryDTO {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  readonly limit?: number;
 }
 
 export class SuggestionsQueryDTO {
@@ -123,7 +123,7 @@ export class SuggestionsQueryDTO {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  readonly limit?: number;
 }
 
 export interface GetProfileInput {

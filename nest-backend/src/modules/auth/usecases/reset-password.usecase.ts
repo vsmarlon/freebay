@@ -7,21 +7,23 @@ import {
   RecoveryCodeExpiredError,
   RecoveryCodeNotFoundError,
 } from '@/shared/core/errors';
-import { PrismaPasswordRecoveryRepository } from '../repositories/password-recovery.repository';
-import { PrismaUserRepository } from '../repositories/prisma-user.repository';
+import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
+import { UserRepository } from '../domain/repositories/user.repository';
 import { ResetPasswordDTO } from '../dtos/password-recovery.dto';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
-    private userRepository: PrismaUserRepository,
-    private recoveryRepository: PrismaPasswordRecoveryRepository,
-    private redisService: RedisService,
+    private readonly userRepository: UserRepository,
+    private readonly recoveryRepository: PasswordRecoveryRepository,
+    private readonly redisService: RedisService,
   ) {}
 
   async execute(input: ResetPasswordDTO): Promise<Either<AppError, { reset: boolean }>> {
-    const recovery = await this.recoveryRepository.findLatestByEmail(input.email);
+    const recoveryResult = await this.recoveryRepository.findLatestByEmail(input.email);
+    if (recoveryResult.isLeft()) return left(recoveryResult.value);
+    const recovery = recoveryResult.value;
 
     if (!recovery) {
       return left(new RecoveryCodeNotFoundError());
@@ -41,14 +43,21 @@ export class ResetPasswordUseCase {
     }
 
     const passwordHash = await bcrypt.hash(input.newPassword, 12);
-    const user = await this.userRepository.findByEmail(input.email);
+
+    const userResult = await this.userRepository.findByEmail(input.email);
+    if (userResult.isLeft()) return left(userResult.value);
+    const user = userResult.value;
 
     if (!user) {
       return left(new RecoveryCodeNotFoundError());
     }
 
-    await this.userRepository.update(user.id, { passwordHash });
-    await this.recoveryRepository.markUsed(recovery.id);
+    const updateResult = await this.userRepository.update(user.id, { passwordHash });
+    if (updateResult.isLeft()) return left(updateResult.value);
+
+    const markResult = await this.recoveryRepository.markUsed(recovery.id);
+    if (markResult.isLeft()) return left(markResult.value);
+
     await this.redisService.add(
       `user_tokens_invalid_before:${user.id}`,
       Math.floor(Date.now() / 1000).toString(),

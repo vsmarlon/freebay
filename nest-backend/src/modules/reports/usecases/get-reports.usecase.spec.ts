@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetReportsUseCase } from './get-reports.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ReportRepository } from '../domain/repositories/report.repository';
+import { right } from '@/shared/core/either';
 
-const mockPrisma = {
-  report: { findMany: jest.fn() },
+const mockRepo = {
+  findAllReports: jest.fn(),
 };
 
 describe('GetReportsUseCase', () => {
@@ -13,7 +14,7 @@ describe('GetReportsUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetReportsUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: ReportRepository, useValue: mockRepo },
       ],
     }).compile();
 
@@ -23,10 +24,10 @@ describe('GetReportsUseCase', () => {
 
   it('should return all reports when no status filter', async () => {
     const now = new Date();
-    mockPrisma.report.findMany.mockResolvedValue([
+    mockRepo.findAllReports.mockResolvedValue(right([
       { id: 'r-1', reason: 'SPAM', description: null, status: 'PENDING', createdAt: now, reporterId: 'u-1', reportedUserId: 'u-2', reportedPostId: null },
       { id: 'r-2', reason: 'INAPPROPRIATE', description: 'Bad content', status: 'RESOLVED', createdAt: now, reporterId: 'u-1', reportedUserId: null, reportedPostId: 'p-1' },
-    ]);
+    ]));
 
     const result = await sut.execute();
     expect(result.isRight()).toBe(true);
@@ -34,18 +35,15 @@ describe('GetReportsUseCase', () => {
   });
 
   it('should filter reports by status', async () => {
-    mockPrisma.report.findMany.mockResolvedValue([{ id: 'r-1' }]);
+    mockRepo.findAllReports.mockResolvedValue(right([{ id: 'r-1' }]));
 
     const result = await sut.execute('PENDING');
     expect(result.isRight()).toBe(true);
-    expect(mockPrisma.report.findMany).toHaveBeenCalledWith({
-      where: { status: 'PENDING' },
-      orderBy: { createdAt: 'desc' },
-    });
+    expect(mockRepo.findAllReports).toHaveBeenCalledWith({ status: 'PENDING' });
   });
 
   it('should return empty list when no reports', async () => {
-    mockPrisma.report.findMany.mockResolvedValue([]);
+    mockRepo.findAllReports.mockResolvedValue(right([]));
     const result = await sut.execute();
     expect(result.isRight()).toBe(true);
     if (result.isRight()) expect(result.value).toEqual([]);

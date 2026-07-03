@@ -15,9 +15,10 @@ import { ChatModule } from './modules/chat/chat.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
 import { ReportsModule } from './modules/reports/reports.module';
-import { ReviewsModule } from './modules/reviews/reviews.module';
+import { ReviewsModule } from './modules/reviews/api/reviews.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { CartModule } from './modules/cart/cart.module';
+import { StoriesModule } from './modules/stories/stories.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
@@ -65,6 +66,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     ReviewsModule,
     FavoritesModule,
     CartModule,
+    StoriesModule,
     TasksModule,
   ],
   providers: [

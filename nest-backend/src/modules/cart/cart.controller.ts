@@ -4,21 +4,16 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { AppError } from '@/shared/core/errors';
-import { left } from '@/shared/core/either';
-import { PrismaCartRepository } from './repositories/cart.repository';
-import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
+import { CartService } from './cart.service';
 import { AddToCartDTO, UpdateCartItemDTO, CartResponse, CheckoutCartResponse } from './dtos/cart.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { isLeft } from '@/shared/core/either';
 
 @ApiTags('Cart')
 @Controller('cart')
 @UseGuards(JwtAuthGuard, NonGuestGuard)
 export class CartController {
-  constructor(
-    private readonly cartRepository: PrismaCartRepository,
-    private readonly checkoutCartUseCase: CheckoutCartUseCase,
-  ) {}
+  constructor(private readonly cartService: CartService) {}
 
   @Get()
   @ApiBearerAuth()
@@ -28,21 +23,9 @@ export class CartController {
     responseType: CartResponse,
   })
   async getCart(@CurrentUser() user: AuthUser) {
-    const items = await this.cartRepository.getUserCart(user.userId);
-    const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-    const totalPrice = items.reduce((acc, item) => acc + item.quantity * item.product.price, 0);
-
-    return {
-      items: items.map((item) => ({
-        id: item.id,
-        productId: item.productId,
-        quantity: item.quantity,
-        subtotal: item.quantity * item.product.price,
-        product: item.product,
-      })),
-      totalItems,
-      totalPrice,
-    };
+    const result = await this.cartService.getCart(user.userId);
+    if (isLeft(result)) throw result.value;
+    return result.value;
   }
 
   @Post('checkout')
@@ -54,14 +37,8 @@ export class CartController {
     responseType: CheckoutCartResponse,
   })
   async checkout(@CurrentUser() user: AuthUser) {
-    const result = await this.checkoutCartUseCase.execute({
-      userId: user.userId,
-    });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-
+    const result = await this.cartService.checkout({ userId: user.userId });
+    if (isLeft(result)) throw result.value;
     return result.value;
   }
 
@@ -82,19 +59,13 @@ export class CartController {
     @CurrentUser() user: AuthUser,
     @Body() body: AddToCartDTO,
   ) {
-    const quantity = Math.min(Math.max(body.quantity ?? 1, 1), 10);
-    const product = await this.cartRepository.findProductById(productId);
-
-    if (!product || product.status !== 'ACTIVE') {
-      return left(new AppError('NOT_FOUND', 'Produto não encontrado'));
-    }
-
-    if (product.sellerId === user.userId) {
-      return left(new AppError('FORBIDDEN', 'Você não pode adicionar seu próprio produto ao carrinho'));
-    }
-
-    const item = await this.cartRepository.addOrIncrement(user.userId, productId, quantity);
-    return { item };
+    const result = await this.cartService.addToCart({
+      userId: user.userId,
+      productId,
+      quantity: body.quantity ?? 1,
+    });
+    if (isLeft(result)) throw result.value;
+    return result.value;
   }
 
   @Patch(':productId')
@@ -111,18 +82,13 @@ export class CartController {
     @CurrentUser() user: AuthUser,
     @Body() body: UpdateCartItemDTO,
   ) {
-    const quantity = body.quantity;
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
-      return left(new AppError('BAD_REQUEST', 'Quantidade deve ser entre 1 e 10'));
-    }
-
-    const existing = await this.cartRepository.findItem(user.userId, productId);
-    if (!existing) {
-      return left(new AppError('NOT_FOUND', 'Item no carrinho'));
-    }
-
-    const item = await this.cartRepository.updateQuantity(user.userId, productId, quantity);
-    return { item };
+    const result = await this.cartService.updateCartItem({
+      userId: user.userId,
+      productId,
+      quantity: body.quantity,
+    });
+    if (isLeft(result)) throw result.value;
+    return result.value;
   }
 
   @Delete(':productId')
@@ -134,13 +100,9 @@ export class CartController {
     errors: [{ status: 404, description: 'Item not found in cart' }],
   })
   async removeFromCart(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
-    const existing = await this.cartRepository.findItem(user.userId, productId);
-    if (!existing) {
-      return left(new AppError('NOT_FOUND', 'Item no carrinho'));
-    }
-
-    await this.cartRepository.remove(user.userId, productId);
-    return { removed: true };
+    const result = await this.cartService.removeFromCart({ userId: user.userId, productId });
+    if (isLeft(result)) throw result.value;
+    return result.value;
   }
 
   @Delete()
@@ -150,7 +112,8 @@ export class CartController {
     auth: true,
   })
   async clearCart(@CurrentUser() user: AuthUser) {
-    await this.cartRepository.clear(user.userId);
-    return { cleared: true };
+    const result = await this.cartService.clearCart(user.userId);
+    if (isLeft(result)) throw result.value;
+    return result.value;
   }
 }

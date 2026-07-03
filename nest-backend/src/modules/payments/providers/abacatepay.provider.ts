@@ -46,7 +46,7 @@ export class AbacatePayProvider {
     }
   }
 
-  verifyWebhook(signature: string, body: unknown): boolean {
+  verifyWebhook(signature: string, body: string | Record<string, string | number | boolean | null | object | undefined>): boolean {
     if (!this.webhookSecret) {
       return process.env.NODE_ENV !== 'production';
     }

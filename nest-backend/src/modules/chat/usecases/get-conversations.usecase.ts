@@ -1,42 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right } from '@/shared/core/either';
+import { Either, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
+import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationWithStatus } from '../dtos/chat.dto';
 
 @Injectable()
 export class GetConversationsUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly conversationRepository: ConversationRepository) {}
 
   async execute(userId: string): Promise<Either<AppError, ConversationWithStatus[]>> {
-    const conversations = await this.prisma.directConversation.findMany({
-      where: {
-        OR: [{ user1Id: userId }, { user2Id: userId }],
-      },
-      orderBy: { lastMessageAt: 'desc' },
-      include: {
-        user1: { select: USER_SELECT_BASIC },
-        user2: { select: USER_SELECT_BASIC },
-        messages: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
-    });
+    const convsResult = await this.conversationRepository.findDirectConversationsByUser(userId);
+    if (isLeft(convsResult)) return convsResult;
 
-    await this.prisma.directMessage.updateMany({
-      where: {
-        conversationId: { in: conversations.map(c => c.id) },
-        senderId: { not: userId },
-        deliveredAt: null,
-      },
-      data: { deliveredAt: new Date() },
-    });
+    const delResult = await this.conversationRepository.markMessagesDelivered(userId, userId);
+    if (isLeft(delResult)) return delResult;
 
-    const result: ConversationWithStatus[] = conversations.map(conv => {
+    const result: ConversationWithStatus[] = convsResult.value.map(conv => {
       const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1;
-      const unreadCount = conv.messages.filter(m => 
+      const unreadCount = conv.messages.filter(m =>
         m.senderId !== userId && !m.readAt
       ).length;
       const lastMsg = conv.messages[0];

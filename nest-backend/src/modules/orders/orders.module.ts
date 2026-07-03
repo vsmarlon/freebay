@@ -1,25 +1,13 @@
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
-import { CreateOrderUseCase, ConfirmDeliveryUseCase, ActivateEscrowUseCase, MarkAsShippedUseCase, MarkAsDeliveredUseCase, CancelOrderUseCase } from './usecases/order.usecase';
-import { PrismaOrderRepository } from './repositories/order.repository';
-import { PrismaProductRepository } from '../products/repositories/product.repository';
-import { PrismaWalletRepository } from '../wallet/repositories/wallet.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { OrdersService } from './orders.service';
+import { OrderUseCasesModule } from './usecases/order-usecases.module';
+import { PrismaOrderRepository } from './data/repositories/order-database.repository';
 
 @Module({
+  imports: [OrderUseCasesModule],
   controllers: [OrdersController],
-  providers: [
-    CreateOrderUseCase,
-    ConfirmDeliveryUseCase,
-    ActivateEscrowUseCase,
-    MarkAsShippedUseCase,
-    MarkAsDeliveredUseCase,
-    CancelOrderUseCase,
-    PrismaOrderRepository,
-    PrismaProductRepository,
-    PrismaWalletRepository,
-    PrismaService,
-  ],
-  exports: [PrismaOrderRepository],
+  providers: [OrdersService],
+  exports: [PrismaOrderRepository, OrdersService],
 })
 export class OrdersModule {}

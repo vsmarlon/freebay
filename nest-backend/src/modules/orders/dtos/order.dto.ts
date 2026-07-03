@@ -4,30 +4,30 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateOrderDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
-  productId: string;
+  readonly productId: string;
 }
 
 export class OrderResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string;
+  readonly id: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  buyerId: string;
+  readonly buyerId: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  sellerId: string;
+  readonly sellerId: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  productId: string;
+  readonly productId: string;
 
   @ApiProperty({ example: 15000 })
-  amount: number;
+  readonly amount: number;
 
   @ApiProperty({ example: 'PENDING' })
-  status: string;
+  readonly status: string;
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  createdAt: Date;
+  readonly createdAt: Date;
 }
 
 export interface CreateOrderInput {
@@ -56,19 +56,19 @@ export interface ConfirmDeliveryInput {
 export class MarkAsShippedDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
-  orderId: string;
+  readonly orderId: string;
 }
 
 export class MarkAsDeliveredDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
-  orderId: string;
+  readonly orderId: string;
 }
 
 export class CancelOrderDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
-  orderId: string;
+  readonly orderId: string;
 }
 
 export interface MarkAsShippedInput {

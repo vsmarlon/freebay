@@ -5,15 +5,17 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
 import { OpenDisputeInput, OpenDisputeOutput } from '../dtos/dispute.dto';
 import { NotificationService } from '../../notifications/services/notification.service';
+import { PrismaDisputeRepository } from '../repositories/dispute.repository';
 
 @Injectable()
 export class OpenDisputeUseCase {
   constructor(
     private prisma: PrismaService,
+    private disputeRepo: PrismaDisputeRepository,
     private notificationService: NotificationService,
   ) {}
 
-  async execute(input: OpenDisputeInput): Promise<Either<AppError, OpenDisputeOutput>> {
+  async execute(input: OpenDisputeInput, now?: Date): Promise<Either<AppError, OpenDisputeOutput>> {
     const order = await this.prisma.order.findUnique({
       where: { id: input.orderId },
       include: { dispute: true },
@@ -35,23 +37,20 @@ export class OpenDisputeUseCase {
       return left(new BadRequestError('Order must be CONFIRMED or DELIVERED to open dispute'));
     }
 
+    const currentTime = now ?? new Date();
     const deliveryTime = order.deliveryConfirmedAt || order.createdAt;
-    const hoursSinceDelivery = (Date.now() - deliveryTime.getTime()) / (1000 * 60 * 60);
+    const hoursSinceDelivery = (currentTime.getTime() - deliveryTime.getTime()) / (1000 * 60 * 60);
     if (hoursSinceDelivery > 48) {
       return left(new BadRequestError('Dispute window has expired (48h after delivery)'));
     }
 
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 72);
+    const expiresAt = new Date(currentTime.getTime() + 72 * 60 * 60 * 1000);
 
-    const dispute = await this.prisma.dispute.create({
-      data: {
-        order: { connect: { id: input.orderId } },
-        openedBy: { connect: { id: input.userId } },
-        reason: input.reason,
-        status: 'OPEN',
-        expiresAt,
-      },
+    const dispute = await this.disputeRepo.create({
+      orderId: input.orderId,
+      openedById: input.userId,
+      reason: input.reason,
+      expiresAt,
     });
 
     await this.prisma.order.update({
@@ -60,9 +59,11 @@ export class OpenDisputeUseCase {
     });
 
     const otherUserId = order.buyerId === input.userId ? order.sellerId : order.buyerId;
-    await this.notificationService.notifyDispute(otherUserId, dispute.id, 'Uma disputa foi aberta em um dos seus pedidos');
-    await this.notificationService.notifyOrderStatus(input.userId, order.id, 'DISPUTED');
-    await this.notificationService.notifyOrderStatus(otherUserId, order.id, 'DISPUTED');
+    await Promise.all([
+      this.notificationService.notifyDispute(otherUserId, dispute.id, 'Uma disputa foi aberta em um dos seus pedidos'),
+      this.notificationService.notifyOrderStatus(input.userId, order.id, 'DISPUTED'),
+      this.notificationService.notifyOrderStatus(otherUserId, order.id, 'DISPUTED'),
+    ]);
 
     return right({
       id: dispute.id,

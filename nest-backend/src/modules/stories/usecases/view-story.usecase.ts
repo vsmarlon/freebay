@@ -1,0 +1,22 @@
+import { Injectable } from '@nestjs/common';
+import { Either, left, right, isLeft } from '@/shared/core/either';
+import { AppError, NotFoundError } from '@/shared/core/errors';
+import { StoryRepository } from '../domain/repositories/story.repository';
+
+@Injectable()
+export class ViewStoryUseCase {
+  constructor(private readonly storyRepository: StoryRepository) {}
+
+  async execute(input: { storyId: string; viewerId: string }): Promise<Either<AppError, { viewed: boolean }>> {
+    const storyResult = await this.storyRepository.findById(input.storyId);
+    if (isLeft(storyResult)) return left(storyResult.value);
+    if (!storyResult.value) return left(new NotFoundError('Story'));
+
+    if (input.viewerId) {
+      const viewResult = await this.storyRepository.upsertView(input.storyId, input.viewerId);
+      if (isLeft(viewResult)) return left(viewResult.value);
+    }
+
+    return right({ viewed: true });
+  }
+}

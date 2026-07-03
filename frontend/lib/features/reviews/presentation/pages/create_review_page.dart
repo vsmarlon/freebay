@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
@@ -10,7 +13,6 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
@@ -38,11 +40,55 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
   int _score = 0;
   final _commentController = TextEditingController();
   bool _isSubmitting = false;
+  final List<File> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
+  static const int _maxImages = 5;
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    if (_selectedImages.length >= _maxImages) return;
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Câmera'),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galeria'),
+              onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picked = await _picker.pickImage(
+      source: source,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+
+    if (picked != null && mounted) {
+      setState(() => _selectedImages.add(File(picked.path)));
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() => _selectedImages.removeAt(index));
   }
 
   Future<void> _submitReview() async {
@@ -65,6 +111,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
       type: widget.reviewType,
       score: _score,
       comment: _commentController.text.trim(),
+      imagePaths: _selectedImages.map((f) => f.path).toList(),
     );
 
     setState(() => _isSubmitting = false);
@@ -267,6 +314,122 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                       ],
                     ),
                   ),
+                  Spacing.vLg,
+                  Container(
+                    width: double.infinity,
+                    color: isDark
+                        ? AppColors.surfaceContainerDark
+                        : AppColors.surfaceContainerLowest,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Fotos (opcional)',
+                              style: TextStyle(
+                                fontFamily: AppTypography.fontFamily,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.5,
+                                color: AppColors.outline,
+                              ),
+                            ),
+                            if (_selectedImages.isNotEmpty)
+                              Text(
+                                '${_selectedImages.length}/$_maxImages',
+                                style: TextStyle(
+                                  fontFamily: AppTypography.fontFamily,
+                                  fontSize: 12,
+                                  color: AppColors.outline,
+                                ),
+                              ),
+                          ],
+                        ),
+                        Spacing.vSm,
+                        SizedBox(
+                          height: 100,
+                          child: Row(
+                            children: [
+                              if (_selectedImages.length < _maxImages)
+                                GestureDetector(
+                                  onTap: _isSubmitting ? null : _pickImage,
+                                  child: Container(
+                                    width: 100,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColors.outline,
+                                        width: 2,
+                                      ),
+                                      color: isDark
+                                          ? AppColors.surfaceDark
+                                          : AppColors.surface,
+                                    ),
+                                    child: const Icon(
+                                      Icons.add_photo_alternate_outlined,
+                                      color: AppColors.outline,
+                                      size: 32,
+                                    ),
+                                  ),
+                                ),
+                              if (_selectedImages.isNotEmpty)
+                                const SizedBox(width: 8),
+                              Expanded(
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: _selectedImages.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(width: 8),
+                                  itemBuilder: (context, index) {
+                                    return Stack(
+                                      children: [
+                                        Container(
+                                          width: 100,
+                                          height: 100,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: AppColors.outline,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: Image.file(
+                                            _selectedImages[index],
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 4,
+                                          right: 4,
+                                          child: GestureDetector(
+                                            onTap: _isSubmitting
+                                                ? null
+                                                : () => _removeImage(index),
+                                            child: Container(
+                                              width: 24,
+                                              height: 24,
+                                              color: Colors.black87,
+                                              child: const Icon(
+                                                Icons.close,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   Spacing.vXl,
                   SizedBox(
                     width: double.infinity,
@@ -289,7 +452,30 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             child: Center(
                               child: _isSubmitting
-                                  ? const ShimmerBlock(width: 20, height: 20)
+                                  ? const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.onPrimary,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Enviando...',
+                                          style: TextStyle(
+                                            fontFamily:
+                                                AppTypography.fontFamily,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.onPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    )
                                   : Text(
                                       'Enviar avaliação',
                                       style: TextStyle(

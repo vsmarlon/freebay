@@ -1,14 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ResolveReportUseCase } from './resolve-report.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { ReportRepository } from '../domain/repositories/report.repository';
 import { NotFoundError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
 
-const mockPrisma = {
-  report: {
-    findUnique: jest.fn(),
-    update: jest.fn(),
-  },
-  user: { update: jest.fn() },
+const mockRepo = {
+  findReportById: jest.fn(),
+  updateReport: jest.fn(),
+  updateUser: jest.fn(),
 };
 
 describe('ResolveReportUseCase', () => {
@@ -18,7 +17,7 @@ describe('ResolveReportUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ResolveReportUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: ReportRepository, useValue: mockRepo },
       ],
     }).compile();
 
@@ -27,40 +26,37 @@ describe('ResolveReportUseCase', () => {
   });
 
   it('should return error if report not found', async () => {
-    mockPrisma.report.findUnique.mockResolvedValue(null);
+    mockRepo.findReportById.mockResolvedValue(right(null));
     const result = await sut.execute({ reportId: 'r-1', status: 'RESOLVED' });
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
   it('should resolve report and deactivate user verification', async () => {
-    mockPrisma.report.findUnique.mockResolvedValue({ id: 'r-1', reportedUserId: 'u-2' });
-    mockPrisma.report.update.mockResolvedValue({});
-    mockPrisma.user.update.mockResolvedValue({});
+    mockRepo.findReportById.mockResolvedValue(right({ id: 'r-1', reportedUserId: 'u-2' }));
+    mockRepo.updateReport.mockResolvedValue(right({}));
+    mockRepo.updateUser.mockResolvedValue(right({}));
 
     const result = await sut.execute({ reportId: 'r-1', status: 'RESOLVED' });
     expect(result.isRight()).toBe(true);
-    expect(mockPrisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'u-2' },
-      data: { isVerified: false },
-    });
+    expect(mockRepo.updateUser).toHaveBeenCalledWith('u-2', { isVerified: false });
   });
 
   it('should review report without deactivating verification', async () => {
-    mockPrisma.report.findUnique.mockResolvedValue({ id: 'r-1', reportedUserId: 'u-2' });
-    mockPrisma.report.update.mockResolvedValue({});
+    mockRepo.findReportById.mockResolvedValue(right({ id: 'r-1', reportedUserId: 'u-2' }));
+    mockRepo.updateReport.mockResolvedValue(right({}));
 
     const result = await sut.execute({ reportId: 'r-1', status: 'REVIEWED' });
     expect(result.isRight()).toBe(true);
-    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockRepo.updateUser).not.toHaveBeenCalled();
   });
 
   it('should reject report without side effects', async () => {
-    mockPrisma.report.findUnique.mockResolvedValue({ id: 'r-1', reportedUserId: 'u-2' });
-    mockPrisma.report.update.mockResolvedValue({});
+    mockRepo.findReportById.mockResolvedValue(right({ id: 'r-1', reportedUserId: 'u-2' }));
+    mockRepo.updateReport.mockResolvedValue(right({}));
 
     const result = await sut.execute({ reportId: 'r-1', status: 'REJECTED', adminNote: 'No violation found' });
     expect(result.isRight()).toBe(true);
-    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockRepo.updateUser).not.toHaveBeenCalled();
   });
 });

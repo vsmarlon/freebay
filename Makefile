@@ -1,6 +1,6 @@
 .PHONY: help test test-unit test-integration
 
-BACKEND_DIR  := backend
+BACKEND_DIR  := nest-backend
 FRONTEND_DIR := frontend
 
 # ─── default ────────────────────────────────────────────────────────────────

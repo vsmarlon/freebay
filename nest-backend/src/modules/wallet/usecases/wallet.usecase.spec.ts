@@ -4,14 +4,16 @@ import { NotFoundError, InsufficientBalanceError } from '@/shared/core/errors';
 import { PrismaWalletRepository } from '../repositories/wallet.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
+type MockPrisma = Record<string, Record<string, jest.Mock> | jest.Mock>;
+
 describe('GetWalletUseCase', () => {
   let sut: GetWalletUseCase;
-  let mockWalletRepository: any;
+  let mockWalletRepository: jest.Mocked<Partial<PrismaWalletRepository>>;
 
   beforeEach(async () => {
     mockWalletRepository = {
       findByUserId: jest.fn(),
-    };
+    } as jest.Mocked<Partial<PrismaWalletRepository>>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -55,13 +57,13 @@ describe('GetWalletUseCase', () => {
 
 describe('WithdrawUseCase', () => {
   let sut: WithdrawUseCase;
-  let mockWalletRepository: any;
-  let mockPrisma: any;
+  let mockWalletRepository: jest.Mocked<Partial<PrismaWalletRepository>>;
+  let mockPrisma: MockPrisma;
 
   beforeEach(async () => {
     mockWalletRepository = {
       findByUserId: jest.fn(),
-    };
+    } as jest.Mocked<Partial<PrismaWalletRepository>>;
 
     mockPrisma = {
       withdrawal: {
@@ -73,7 +75,7 @@ describe('WithdrawUseCase', () => {
       wallet: {
         update: jest.fn().mockResolvedValue({}),
       },
-    };
+    } as MockPrisma;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

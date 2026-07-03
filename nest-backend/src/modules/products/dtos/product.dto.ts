@@ -21,42 +21,49 @@ export class CreateProductDTO {
   @MinLength(3)
   @MaxLength(100)
   @SanitizeText()
-  title: string;
+  readonly title: string;
 
   @ApiProperty({ example: 'Description of the product...', minLength: 10, maxLength: 5000 })
   @IsString()
   @MinLength(10)
   @MaxLength(5000)
   @SanitizeText()
-  description: string;
+  readonly description: string;
 
   @ApiProperty({ example: 150000, description: 'Price in cents (BRL)' })
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  price: number;
+  readonly price: number;
 
   @ApiProperty({ enum: ['NEW', 'USED'], example: 'USED' })
   @IsIn(['NEW', 'USED'])
-  condition: 'NEW' | 'USED';
+  readonly condition: 'NEW' | 'USED';
 
   @ApiProperty({ example: 'category-uuid' })
   @IsString()
-  categoryId: string;
+  readonly categoryId: string;
 
   @ApiPropertyOptional({ example: ['https://example.com/img.jpg'], type: [String], maxItems: 10 })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   @ArrayMaxSize(10)
-  images?: string[];
+  readonly images?: string[];
+
+  @ApiPropertyOptional({ example: 5, description: 'Stock quantity (default 1)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  readonly quantity?: number;
 }
 
 export class ProductQueryDTO {
   @ApiPropertyOptional({ description: 'Pagination cursor' })
   @IsOptional()
   @IsString()
-  cursor?: string;
+  readonly cursor?: string;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()
@@ -64,32 +71,32 @@ export class ProductQueryDTO {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  readonly limit?: number;
 
   @ApiPropertyOptional({ description: 'Search query' })
   @IsOptional()
   @IsString()
   @MaxLength(200)
-  search?: string;
+  readonly search?: string;
 
   @ApiPropertyOptional({ description: 'Category UUID filter' })
   @IsOptional()
   @IsString()
-  category?: string;
+  readonly category?: string;
 
   @ApiPropertyOptional({ description: 'Minimum price in cents' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  minPrice?: number;
+  readonly minPrice?: number;
 
   @ApiPropertyOptional({ description: 'Maximum price in cents' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  maxPrice?: number;
+  readonly maxPrice?: number;
 }
 
 export class UpdateProductDTO {
@@ -99,7 +106,7 @@ export class UpdateProductDTO {
   @MinLength(3)
   @MaxLength(100)
   @SanitizeText()
-  title?: string;
+  readonly title?: string;
 
   @ApiPropertyOptional({ example: 'Updated description', minLength: 10, maxLength: 5000 })
   @IsOptional()
@@ -107,29 +114,36 @@ export class UpdateProductDTO {
   @MinLength(10)
   @MaxLength(5000)
   @SanitizeText()
-  description?: string;
+  readonly description?: string;
 
   @ApiPropertyOptional({ example: 150000, description: 'Price in cents (BRL)' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  price?: number;
+  readonly price?: number;
 
   @ApiPropertyOptional({ enum: ['NEW', 'USED'], example: 'USED' })
   @IsOptional()
   @IsIn(['NEW', 'USED'])
-  condition?: 'NEW' | 'USED';
+  readonly condition?: 'NEW' | 'USED';
 
   @ApiPropertyOptional({ enum: ['ACTIVE', 'PAUSED'], example: 'ACTIVE' })
   @IsOptional()
   @IsIn(['ACTIVE', 'PAUSED'])
-  status?: 'ACTIVE' | 'PAUSED';
+  readonly status?: 'ACTIVE' | 'PAUSED';
 
   @ApiPropertyOptional({ example: 'category-uuid' })
   @IsOptional()
   @IsString()
-  categoryId?: string;
+  readonly categoryId?: string;
+
+  @ApiPropertyOptional({ example: 5, description: 'Stock quantity (default 1)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  readonly quantity?: number;
 }
 
 export interface CreateProductInput {
@@ -140,6 +154,7 @@ export interface CreateProductInput {
   condition: 'NEW' | 'USED';
   categoryId: string;
   images: string[];
+  quantity?: number;
 }
 
 export interface CreateProductOutput {
@@ -151,6 +166,8 @@ export interface CreateProductOutput {
   categoryId: string;
   sellerId: string;
   status: string;
+  quantity: number;
+  soldCount: number;
   createdAt: Date;
 }
 
@@ -168,6 +185,7 @@ export interface UpdateProductInput {
   condition?: 'NEW' | 'USED';
   status?: 'ACTIVE' | 'PAUSED';
   categoryId?: string;
+  quantity?: number;
 }
 
 export interface UpdateProductOutput {
@@ -179,6 +197,8 @@ export interface UpdateProductOutput {
   categoryId: string;
   sellerId: string;
   status: string;
+  quantity: number;
+  soldCount: number;
   createdAt: Date;
 }
 

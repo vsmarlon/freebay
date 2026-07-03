@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
+import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { FollowRepository } from '../repositories/follow.repository';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { BlockRepository } from '../repositories/block.repository';
@@ -29,15 +29,17 @@ import {
 
 @Injectable()
 export class GetProfileUseCase {
-  constructor(private userRepository: PrismaUserRepository) {}
+  constructor(private userRepository: UserRepository) {}
 
   async execute(input: GetProfileInput): Promise<Either<AppError, UserResponse>> {
-    const user = await this.userRepository.findById(input.userId);
-    if (!user) {
+    const userResult = await this.userRepository.findById(input.userId);
+    if (isLeft(userResult)) {
+      return left(userResult.value);
+    }
+    if (!userResult.value) {
       return left(new NotFoundError('User'));
     }
-
-    return right(toUserResponse(user));
+    return right(toUserResponse(userResult.value));
   }
 }
 
@@ -48,29 +50,37 @@ export class GetUserStatsUseCase {
     private followRepository: FollowRepository,
   ) {}
 
-  async execute(input: GetUserStatsInput): Promise<UserStatsResponse> {
-    const [salesCount, purchasesCount, followersCount, followingCount] = await Promise.all([
+  async execute(input: GetUserStatsInput): Promise<Either<AppError, UserStatsResponse>> {
+    const [salesCountResult, purchasesCountResult] = await Promise.all([
       this.orderRepository.countBySellerId(input.userId),
       this.orderRepository.countByBuyerId(input.userId),
+    ]);
+
+    if (isLeft(salesCountResult)) return left(salesCountResult.value);
+    if (isLeft(purchasesCountResult)) return left(purchasesCountResult.value);
+
+    const [followersCount, followingCount] = await Promise.all([
       this.followRepository.getFollowersCount(input.userId),
       this.followRepository.getFollowingCount(input.userId),
     ]);
 
-    return { salesCount, purchasesCount, followersCount, followingCount };
+    return right({ salesCount: salesCountResult.value, purchasesCount: purchasesCountResult.value, followersCount, followingCount });
   }
 }
 
 @Injectable()
 export class UpdateProfileUseCase {
-  constructor(private userRepository: PrismaUserRepository) {}
+  constructor(private userRepository: UserRepository) {}
 
   async execute(input: UpdateProfileInput): Promise<Either<AppError, UserResponse>> {
-    const user = await this.userRepository.update(input.userId, input);
-    if (!user) {
+    const userResult = await this.userRepository.update(input.userId, input);
+    if (isLeft(userResult)) {
+      return left(userResult.value);
+    }
+    if (!userResult.value) {
       return left(new NotFoundError('User'));
     }
-
-    return right(toUserResponse(user));
+    return right(toUserResponse(userResult.value));
   }
 }
 
@@ -103,7 +113,7 @@ export class UpdateFcmTokenUseCase {
 @Injectable()
 export class FollowUserUseCase {
   constructor(
-    private userRepository: PrismaUserRepository,
+    private userRepository: UserRepository,
     private followRepository: FollowRepository,
     private notificationService: NotificationService,
   ) {}
@@ -113,8 +123,11 @@ export class FollowUserUseCase {
       return left(new BadRequestError('Cannot follow yourself'));
     }
 
-    const targetUser = await this.userRepository.findById(input.followingId);
-    if (!targetUser) {
+    const targetResult = await this.userRepository.findById(input.followingId);
+    if (isLeft(targetResult)) {
+      return left(targetResult.value);
+    }
+    if (!targetResult.value) {
       return left(new NotFoundError('User'));
     }
 
@@ -128,9 +141,9 @@ export class FollowUserUseCase {
       throw error;
     }
 
-    const follower = await this.userRepository.findById(input.followerId);
-    if (follower) {
-      await this.notificationService.notifyNewFollower(input.followingId, follower.displayName);
+    const followerResult = await this.userRepository.findById(input.followerId);
+    if (!isLeft(followerResult) && followerResult.value) {
+      await this.notificationService.notifyNewFollower(input.followingId, followerResult.value.displayName);
     }
 
     const [followersCount, followingCount] = await Promise.all([
@@ -145,7 +158,6 @@ export class FollowUserUseCase {
 @Injectable()
 export class UnfollowUserUseCase {
   constructor(
-    private userRepository: PrismaUserRepository,
     private followRepository: FollowRepository,
   ) {}
 
@@ -172,7 +184,7 @@ export class UnfollowUserUseCase {
 @Injectable()
 export class BlockUserUseCase {
   constructor(
-    private userRepository: PrismaUserRepository,
+    private userRepository: UserRepository,
     private blockRepository: BlockRepository,
   ) {}
 
@@ -181,8 +193,11 @@ export class BlockUserUseCase {
       return left(new BadRequestError('Cannot block yourself'));
     }
 
-    const targetUser = await this.userRepository.findById(input.blockedId);
-    if (!targetUser) {
+    const targetResult = await this.userRepository.findById(input.blockedId);
+    if (isLeft(targetResult)) {
+      return left(targetResult.value);
+    }
+    if (!targetResult.value) {
       return left(new NotFoundError('User'));
     }
 
@@ -221,12 +236,14 @@ export class UnblockUserUseCase {
 
 @Injectable()
 export class SearchUsersUseCase {
-  constructor(private userRepository: PrismaUserRepository) {}
+  constructor(private userRepository: UserRepository) {}
 
-  async execute(input: SearchUsersInput): Promise<SearchUserResponse[]> {
-    const users = await this.userRepository.searchUsers(input.query, input.limit, input.cursor);
-
-    return users.map((u) => ({
+  async execute(input: SearchUsersInput): Promise<Either<AppError, SearchUserResponse[]>> {
+    const result = await this.userRepository.searchUsers(input.query, input.limit, input.cursor);
+    if (isLeft(result)) {
+      return left(result.value);
+    }
+    return right(result.value.map((u) => ({
       id: u.id,
       displayName: u.displayName,
       avatarUrl: u.avatarUrl,
@@ -236,18 +253,20 @@ export class SearchUsersUseCase {
       totalReviews: u.totalReviews,
       followersCount: u._count?.followers || 0,
       followingCount: u._count?.following || 0,
-    }));
+    })));
   }
 }
 
 @Injectable()
 export class GetSuggestionsUseCase {
-  constructor(private userRepository: PrismaUserRepository) {}
+  constructor(private userRepository: UserRepository) {}
 
-  async execute(input: GetSuggestionsInput): Promise<SuggestionResponse[]> {
-    const suggestions = await this.userRepository.getSuggestions(input.userId, input.limit);
-
-    return suggestions.map((u) => ({
+  async execute(input: GetSuggestionsInput): Promise<Either<AppError, SuggestionResponse[]>> {
+    const result = await this.userRepository.getSuggestions(input.userId, input.limit);
+    if (isLeft(result)) {
+      return left(result.value);
+    }
+    return right(result.value.map((u) => ({
       id: u.id,
       displayName: u.displayName,
       avatarUrl: u.avatarUrl,
@@ -258,6 +277,6 @@ export class GetSuggestionsUseCase {
       followersCount: u.followersCount,
       followingCount: u.followingCount,
       mutualCount: u.mutualCount,
-    }));
+    })));
   }
 }

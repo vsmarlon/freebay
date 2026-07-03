@@ -18,7 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaUserRepository } from '@/modules/auth/repositories/prisma-user.repository';
+import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { FollowRepository } from './repositories/follow.repository';
 import { BlockRepository } from './repositories/block.repository';
 import { GetUserStatsUseCase } from './usecases/user.usecase';
@@ -41,7 +41,7 @@ import {
   toUserResponse,
 } from './mappers/user.mapper';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
+import { left, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
 
@@ -50,7 +50,7 @@ import { validateImageFile } from '@/shared/utils/image-upload.utils';
 export class UsersController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly userRepository: PrismaUserRepository,
+    private readonly userRepository: UserRepository,
     private readonly followRepository: FollowRepository,
     private readonly blockRepository: BlockRepository,
     private readonly getUserStatsUseCase: GetUserStatsUseCase,
@@ -67,10 +67,14 @@ export class UsersController {
   })
   async getMe(@CurrentUser() user: AuthUser) {
     const userId = user.userId;
-    const userRecord = await this.userRepository.findById(userId);
-    if (!userRecord) {
+    const userResult = await this.userRepository.findById(userId);
+    if (isLeft(userResult)) {
+      return left(userResult.value);
+    }
+    if (!userResult.value) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
+    const userRecord = userResult.value;
 
     const [postsCount, productsCount, activeStory] = await Promise.all([
       this.prisma.post.count({ where: { userId } }),
@@ -114,8 +118,11 @@ export class UsersController {
     const userId = user.userId;
     const data = { ...body } as Record<string, unknown>;
     if (data.cpf) data.cpf = (data.cpf as string).replace(/\D/g, '');
-    const updated = await this.userRepository.update(userId, data);
-    return toUserResponse(updated);
+    const updateResult = await this.userRepository.update(userId, data);
+    if (isLeft(updateResult)) {
+      return left(updateResult.value);
+    }
+    return toUserResponse(updateResult.value);
   }
 
   @Post('me/avatar')
@@ -148,10 +155,13 @@ export class UsersController {
     }
 
     const dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-    const updated = await this.userRepository.update(user.userId, {
+    const updateResult = await this.userRepository.update(user.userId, {
       avatarUrl: dataUri,
     });
-    return toUserResponse(updated);
+    if (isLeft(updateResult)) {
+      return left(updateResult.value);
+    }
+    return toUserResponse(updateResult.value);
   }
 
   @Patch('me/fcm-token')
@@ -232,7 +242,11 @@ export class UsersController {
   })
   async searchUsers(@Query() query: UserSearchQueryDTO) {
     const parsedLimit = query.limit ?? 20;
-    const users = await this.userRepository.searchUsers(query.q || '', parsedLimit, query.cursor);
+    const searchResult = await this.userRepository.searchUsers(query.q || '', parsedLimit, query.cursor);
+    if (isLeft(searchResult)) {
+      return left(searchResult.value);
+    }
+    const users = searchResult.value;
 
     return {
       users: users.map((u) => ({
@@ -263,7 +277,11 @@ export class UsersController {
   async getSuggestions(@CurrentUser() user: AuthUser, @Query() query: SuggestionsQueryDTO) {
     const userId = user.userId;
     const parsedLimit = query.limit ?? 10;
-    const suggestions = await this.userRepository.getSuggestions(userId, parsedLimit);
+    const suggestionsResult = await this.userRepository.getSuggestions(userId, parsedLimit);
+    if (isLeft(suggestionsResult)) {
+      return left(suggestionsResult.value);
+    }
+    const suggestions = suggestionsResult.value;
 
     return {
       users: suggestions.map((u) => ({
@@ -289,10 +307,14 @@ export class UsersController {
     errors: [{ status: 404, description: 'User not found' }],
   })
   async getUser(@Param('id', ParseUUIDPipe) id: string) {
-    const userRecord = await this.userRepository.findById(id);
-    if (!userRecord) {
+    const userResult = await this.userRepository.findById(id);
+    if (isLeft(userResult)) {
+      return left(userResult.value);
+    }
+    if (!userResult.value) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
+    const userRecord = userResult.value;
 
     const [postsCount, productsCount, activeStory] = await Promise.all([
       this.prisma.post.count({ where: { userId: id } }),
@@ -330,8 +352,11 @@ export class UsersController {
       return left(new AppError('INVALID_OPERATION', 'Você não pode seguir a si mesmo'));
     }
 
-    const targetUser = await this.userRepository.findById(followingId);
-    if (!targetUser) {
+    const targetResult = await this.userRepository.findById(followingId);
+    if (isLeft(targetResult)) {
+      return left(targetResult.value);
+    }
+    if (!targetResult.value) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
 
@@ -435,8 +460,11 @@ export class UsersController {
     const parsedLimit = query.limit ?? 20;
     const parsedOffset = query.offset ?? 0;
 
-    const targetUser = await this.userRepository.findById(id);
-    if (!targetUser) {
+    const targetResult = await this.userRepository.findById(id);
+    if (isLeft(targetResult)) {
+      return left(targetResult.value);
+    }
+    if (!targetResult.value) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
 
@@ -474,8 +502,11 @@ export class UsersController {
     const parsedLimit = query.limit ?? 20;
     const parsedOffset = query.offset ?? 0;
 
-    const targetUser = await this.userRepository.findById(id);
-    if (!targetUser) {
+    const targetResult = await this.userRepository.findById(id);
+    if (isLeft(targetResult)) {
+      return left(targetResult.value);
+    }
+    if (!targetResult.value) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
 
@@ -534,8 +565,11 @@ export class UsersController {
       return left(new AppError('INVALID_OPERATION', 'Você não pode bloquear a si mesmo'));
     }
 
-    const targetUser = await this.userRepository.findById(blockedId);
-    if (!targetUser) {
+    const targetResult = await this.userRepository.findById(blockedId);
+    if (isLeft(targetResult)) {
+      return left(targetResult.value);
+    }
+    if (!targetResult.value) {
       return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
     }
 

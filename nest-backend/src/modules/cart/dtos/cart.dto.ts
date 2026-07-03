@@ -9,7 +9,7 @@ export class AddToCartDTO {
   @IsInt()
   @Min(1)
   @Max(10)
-  quantity?: number;
+  readonly quantity?: number;
 }
 
 export class UpdateCartItemDTO {
@@ -18,7 +18,7 @@ export class UpdateCartItemDTO {
   @IsInt()
   @Min(1)
   @Max(10)
-  quantity: number;
+  readonly quantity!: number;
 }
 
 export interface CheckoutCartInput {
@@ -44,64 +44,73 @@ export interface CheckoutCartOutput {
 
 export class CheckoutCartItemResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  orderId: string;
+  readonly orderId!: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  productId: string;
+  readonly productId!: string;
 
   @ApiProperty({ example: 'iPhone 15' })
-  productTitle: string;
+  readonly productTitle!: string;
 
   @ApiProperty({ example: 1 })
-  quantity: number;
+  readonly quantity!: number;
 
   @ApiProperty({ example: 15000 })
-  amount: number;
+  readonly amount!: number;
 
   @ApiProperty({ example: '00020126580014BR.GOV.BCB.PIX...' })
-  pixQrCode: string;
+  readonly pixQrCode!: string;
 
   @ApiProperty({ example: 'data:image/png;base64,...' })
-  pixImage: string;
+  readonly pixImage!: string;
 
   @ApiProperty({ example: '2026-06-17T13:00:00.000Z' })
-  expiresAt: Date;
+  readonly expiresAt!: Date;
 }
 
 export class CheckoutCartResponse {
   @ApiProperty({ type: [CheckoutCartItemResponse] })
-  items: CheckoutCartItemResponse[];
+  readonly items!: CheckoutCartItemResponse[];
 
   @ApiProperty({ example: 3 })
-  totalOrders: number;
+  readonly totalOrders!: number;
 
   @ApiProperty({ example: 45000 })
-  totalAmount: number;
+  readonly totalAmount!: number;
 }
 
 export class CartItemResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  id: string;
+  readonly id!: string;
 
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  productId: string;
+  readonly productId!: string;
 
   @ApiProperty({ example: 2 })
-  quantity: number;
+  readonly quantity!: number;
 
   @ApiProperty({ example: 30000 })
-  subtotal: number;
+  readonly subtotal!: number;
 
-  product: unknown;
+  readonly product!: CartItemProduct;
+}
+
+export interface CartItemProduct {
+  id: string;
+  title: string;
+  price: number;
+  sellerId: string;
+  images: { id: string; url: string }[];
+  seller: { id: string; displayName: string; avatarUrl: string | null; isVerified: boolean };
 }
 
 export class CartResponse {
   @ApiProperty({ type: [CartItemResponse] })
-  items: CartItemResponse[];
+  readonly items!: CartItemResponse[];
 
   @ApiProperty({ example: 5 })
-  totalItems: number;
+  readonly totalItems!: number;
 
   @ApiProperty({ example: 75000 })
-  totalPrice: number;
+  readonly totalPrice!: number;
 }

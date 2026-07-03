@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { CategoryController } from './category.controller';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaCategoryRepository } from './repositories/category.repository';
+import { CategoryUseCasesModule } from './usecases/category-usecases.module';
+import { CategoryApiModule } from './api/category-api.module';
 
 @Module({
+  imports: [CategoryUseCasesModule, CategoryApiModule],
   controllers: [CategoryController],
-  providers: [PrismaService, PrismaCategoryRepository],
 })
 export class CategoryModule {}

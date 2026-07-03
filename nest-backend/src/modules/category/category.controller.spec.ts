@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoryController } from './category.controller';
-import { PrismaCategoryRepository } from './repositories/category.repository';
+import { CategoryService } from './api/category.service';
 
-const mockCategoryRepository = {
+const mockService = {
   findAll: jest.fn(),
-  findById: jest.fn(),
+  findOne: jest.fn(),
 };
 
 describe('CategoryController', () => {
@@ -14,7 +14,7 @@ describe('CategoryController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CategoryController],
       providers: [
-        { provide: PrismaCategoryRepository, useValue: mockCategoryRepository },
+        { provide: CategoryService, useValue: mockService },
       ],
     }).compile();
 
@@ -23,23 +23,22 @@ describe('CategoryController', () => {
   });
 
   it('should return all categories', async () => {
-    mockCategoryRepository.findAll.mockResolvedValue([
-      { id: 'cat-1', name: 'Electronics', slug: 'electronics', children: [] },
-    ]);
-    const result: any = await controller.findAll();
+    mockService.findAll.mockResolvedValue({
+      categories: [{ id: 'cat-1', name: 'Electronics', slug: 'electronics', children: [] }],
+    });
+    const result = await controller.findAll();
     expect(result.categories).toHaveLength(1);
   });
 
   it('should return category by id', async () => {
-    mockCategoryRepository.findById.mockResolvedValue({ id: 'cat-1', name: 'Electronics' });
-    const result: any = await controller.findOne('cat-1');
+    mockService.findOne.mockResolvedValue({ category: { id: 'cat-1', name: 'Electronics' } });
+    const result = await controller.findOne('cat-1');
     expect(result.category).toBeDefined();
     expect(result.category.name).toBe('Electronics');
   });
 
-  it('should return left error when category not found', async () => {
-    mockCategoryRepository.findById.mockResolvedValue(null);
-    const result = await controller.findOne('nonexistent');
-    expect(result).toBeDefined();
+  it('should throw when category not found', async () => {
+    mockService.findOne.mockRejectedValue(new Error('Not found'));
+    await expect(controller.findOne('nonexistent')).rejects.toThrow();
   });
 });

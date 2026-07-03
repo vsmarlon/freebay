@@ -2,23 +2,24 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, EmailAlreadyExistsError } from '@/shared/core/errors';
-import { PrismaUserRepository } from '../repositories/prisma-user.repository';
+import { UserRepository } from '../domain/repositories/user.repository';
 import { RegisterDTO } from '../dtos/auth.dto';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
 
 @Injectable()
 export class RegisterUseCase {
-  constructor(private userRepository: PrismaUserRepository) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: RegisterDTO): Promise<Either<AppError, AuthResponse>> {
-    const existingUser = await this.userRepository.findByEmail(input.email);
-    if (existingUser) {
+    const existingResult = await this.userRepository.findByEmail(input.email);
+    if (existingResult.isLeft()) return left(existingResult.value);
+    if (existingResult.value) {
       return left(new EmailAlreadyExistsError());
     }
 
     const passwordHash = await bcrypt.hash(input.password, 12);
 
-    const user = await this.userRepository.create({
+    const createResult = await this.userRepository.create({
       displayName: input.displayName,
       email: input.email,
       passwordHash,
@@ -36,7 +37,8 @@ export class RegisterUseCase {
       reputationScore: 0,
       totalReviews: 0,
     });
+    if (createResult.isLeft()) return left(createResult.value);
 
-    return right(toAuthResponse(user));
+    return right(toAuthResponse(createResult.value));
   }
 }
