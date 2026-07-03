@@ -274,9 +274,7 @@ class _NavItem extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: Container(
           height: 64,
-          color: isSelected
-              ? (isWallet ? AppColors.success : AppColors.primaryContainer)
-              : Colors.transparent,
+          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

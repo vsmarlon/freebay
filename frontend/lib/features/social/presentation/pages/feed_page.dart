@@ -126,26 +126,54 @@ class _FeedPageState extends ConsumerState<FeedPage>
         .where((post) => _matchesContentFilter(post, contentFilter))
         .toList();
 
+    final header = Column(
+      children: [
+        _buildFeedTitle(feedType, contentFilter),
+        Spacing.vSm,
+        _buildCreatorRow(),
+      ],
+    );
+
     if (feedState.error != null && feedState.posts.isEmpty) {
-      return EmptyState.error(
-        message: 'Verifique sua conexão e tente novamente',
-        onRetry: () {
-          final type = ref.read(feedTypeProvider);
-          ref.read(feedProvider.notifier).loadFeed(
-                refresh: true,
-                feedType: type == FeedType.following ? 'following' : 'explore',
-              );
-        },
+      return Column(
+        children: [
+          header,
+          Expanded(
+            child: EmptyState.error(
+              message: 'Verifique sua conexão e tente novamente',
+              onRetry: () {
+                final type = ref.read(feedTypeProvider);
+                ref.read(feedProvider.notifier).loadFeed(
+                      refresh: true,
+                      feedType:
+                          type == FeedType.following ? 'following' : 'explore',
+                    );
+              },
+            ),
+          ),
+        ],
       );
     }
 
     if (feedState.posts.isEmpty && !feedState.isLoading) {
-      return EmptyState.noPosts();
+      return Column(
+        children: [
+          header,
+          Expanded(child: EmptyState.noPosts()),
+        ],
+      );
     }
 
     if (filteredPosts.isEmpty && !feedState.isLoading) {
-      return EmptyState.noResults(
-        subtitle: 'Troque entre posts sociais e vendas quando quiser.',
+      return Column(
+        children: [
+          header,
+          Expanded(
+            child: EmptyState.noResults(
+              subtitle: 'Troque entre posts sociais e vendas quando quiser.',
+            ),
+          ),
+        ],
       );
     }
 
@@ -165,6 +193,8 @@ class _FeedPageState extends ConsumerState<FeedPage>
             return Column(
               children: [
                 _buildFeedTitle(feedType, contentFilter),
+                Spacing.vSm,
+                _buildCreatorRow(),
                 Spacing.vSm,
                 _buildInputArea(),
               ],
@@ -203,6 +233,31 @@ class _FeedPageState extends ConsumerState<FeedPage>
               currentFilter: contentFilter,
               onChanged: (filter) =>
                   ref.read(feedContentFilterProvider.notifier).state = filter,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreatorRow() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: _CreatorActionButton(
+              icon: Icons.auto_stories_outlined,
+              label: 'STORY',
+              onTap: () => context.push('/create-story'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _CreatorActionButton(
+              icon: Icons.edit_outlined,
+              label: 'POST',
+              onTap: _openCreateChooser,
             ),
           ),
         ],
@@ -342,6 +397,49 @@ class _HeaderIcon extends StatelessWidget {
           border: Border.all(color: context.borderColor, width: 2),
         ),
         child: Icon(icon, color: context.textPrimary, size: 20),
+      ),
+    );
+  }
+}
+
+class _CreatorActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _CreatorActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          border: Border.all(color: context.borderColor, width: 2),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: AppColors.primaryContainer),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: AppColors.primaryContainer,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

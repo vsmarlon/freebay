@@ -32,14 +32,16 @@ class _WalletCardState extends State<WalletCard> {
   void initState() {
     super.initState();
     SharedPreferences.getInstance().then((prefs) {
-      if (mounted) setState(() => _valuesHidden = prefs.getBool(_prefKey) ?? false);
+      if (mounted)
+        setState(() => _valuesHidden = prefs.getBool(_prefKey) ?? false);
     });
   }
 
   void _toggleHidden() {
     final next = !_valuesHidden;
     setState(() => _valuesHidden = next);
-    SharedPreferences.getInstance().then((prefs) => prefs.setBool(_prefKey, next));
+    SharedPreferences.getInstance()
+        .then((prefs) => prefs.setBool(_prefKey, next));
   }
 
   String _masked(String value) => _valuesHidden ? 'R\$ •••' : value;
@@ -143,12 +145,12 @@ class _WalletCardState extends State<WalletCard> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.success.withAlpha(25),
+                color: AppColors.primaryContainer.withAlpha(25),
                 borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
                 Icons.account_balance_wallet_outlined,
-                color: AppColors.success,
+                color: AppColors.primaryContainer,
                 size: 20,
               ),
             ),
@@ -160,8 +162,8 @@ class _WalletCardState extends State<WalletCard> {
                   Text('Saldo', style: AppTypography.bodySmall),
                   const SizedBox(height: 2),
                   Text(
-                    _masked(
-                        CurrencyUtils.formatCents(widget.availableBalanceInCents)),
+                    _masked(CurrencyUtils.formatCents(
+                        widget.availableBalanceInCents)),
                     style: AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
                       color: context.textPrimary,
@@ -186,7 +188,9 @@ class _WalletCardState extends State<WalletCard> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border.all(
-          color: solid ? AppColors.onPrimary : AppColors.onPrimary.withValues(alpha: 0.38),
+          color: solid
+              ? AppColors.onPrimary
+              : AppColors.onPrimary.withValues(alpha: 0.38),
           width: 2,
         ),
       ),

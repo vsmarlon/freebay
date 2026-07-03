@@ -59,7 +59,7 @@ class FeedDrawer extends ConsumerWidget {
       child: SafeArea(
         child: Column(
           children: [
-            Expanded(
+            Flexible(
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
