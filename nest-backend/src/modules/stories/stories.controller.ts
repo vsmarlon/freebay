@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { StoriesService } from './api/stories.service';
+import { StoriesService } from './stories.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';

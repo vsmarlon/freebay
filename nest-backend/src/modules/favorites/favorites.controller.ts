@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { FavoritesService } from './api/favorites.service';
+import { FavoritesService } from './favorites.service';
 import { FavoritesResponse, CheckFavoriteResponse, ToggleFavoriteResponse } from './dtos/favorite.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 

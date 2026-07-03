@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { isLeft } from '@/shared/core/either';
-import { GetFavoritesUseCase } from '../usecases/get-favorites.usecase';
-import { CheckFavoriteUseCase } from '../usecases/check-favorite.usecase';
-import { ToggleFavoriteUseCase } from '../usecases/toggle-favorite.usecase';
+import { GetFavoritesUseCase } from './usecases/get-favorites.usecase';
+import { CheckFavoriteUseCase } from './usecases/check-favorite.usecase';
+import { ToggleFavoriteUseCase } from './usecases/toggle-favorite.usecase';
 
 @Injectable()
 export class FavoritesService {

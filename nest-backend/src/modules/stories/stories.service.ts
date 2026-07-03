@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { GetStoriesUseCase } from '../usecases/get-stories.usecase';
-import { GetUserStoriesUseCase } from '../usecases/get-user-stories.usecase';
-import { CreateStoryUseCase } from '../usecases/create-story.usecase';
-import { ViewStoryUseCase } from '../usecases/view-story.usecase';
-import { DeleteStoryUseCase } from '../usecases/delete-story.usecase';
+import { GetStoriesUseCase } from './usecases/get-stories.usecase';
+import { GetUserStoriesUseCase } from './usecases/get-user-stories.usecase';
+import { CreateStoryUseCase } from './usecases/create-story.usecase';
+import { ViewStoryUseCase } from './usecases/view-story.usecase';
+import { DeleteStoryUseCase } from './usecases/delete-story.usecase';
 
 @Injectable()
 export class StoriesService {

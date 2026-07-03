@@ -1,7 +1,7 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { CategoryService } from './api/category.service';
+import { CategoryService } from './category.service';
 
 @ApiTags('Categories')
 @Controller('categories')
