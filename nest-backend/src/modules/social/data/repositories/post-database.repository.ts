@@ -32,13 +32,34 @@ export class PrismaPostRepository implements PostRepository {
         });
         where.userId = { in: follows.map((f) => f.followingId) };
       }
+
+      const limit = query.limit ?? 20;
       const posts = await this.prisma.post.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        take: query.limit ?? 20,
+        take: limit * 3,
         include: POST_INCLUDE,
       });
-      return right(posts as PostPayload[]);
+
+      let ranked: typeof posts;
+
+      if (query.type === 'following') {
+        ranked = posts.slice(0, limit);
+      } else {
+        const now = Date.now();
+        ranked = posts
+          .map((post) => {
+            const ageHours = (now - new Date(post.createdAt).getTime()) / 3_600_000;
+            const engagement = post.likesCount * 3 + post.commentsCount * 5 + post.sharesCount * 4;
+            const score = (engagement + 1) * Math.exp(-ageHours / 48);
+            return { post, score };
+          })
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit)
+          .map(({ post }) => post);
+      }
+
+      return right(ranked as PostPayload[]);
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar feed'));
     }

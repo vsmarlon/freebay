@@ -58,7 +58,7 @@ export class SocialController {
       type: query.type ?? 'explore',
     });
     if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
+      return { posts: [] };
     }
     return { posts: result.value };
   }
