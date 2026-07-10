@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
@@ -46,12 +46,15 @@ export class OpenDisputeUseCase {
 
     const expiresAt = new Date(currentTime.getTime() + 72 * 60 * 60 * 1000);
 
-    const dispute = await this.disputeRepo.create({
+    const disputeResult = await this.disputeRepo.create({
       orderId: input.orderId,
       openedById: input.userId,
       reason: input.reason,
       expiresAt,
     });
+
+    if (isLeft(disputeResult)) return left(disputeResult.value);
+    const dispute = disputeResult.value;
 
     await this.prisma.order.update({
       where: { id: input.orderId },

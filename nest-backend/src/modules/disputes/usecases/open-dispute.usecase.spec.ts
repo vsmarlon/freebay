@@ -4,6 +4,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PrismaDisputeRepository } from '../repositories/dispute.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
 
 const mockNotificationService = {
   notifyDispute: jest.fn().mockResolvedValue(undefined),
@@ -60,7 +61,7 @@ describe('OpenDisputeUseCase', () => {
 
   it('should open a dispute successfully', async () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
-    mockDisputeRepo.create.mockResolvedValue(mockDispute);
+    mockDisputeRepo.create.mockResolvedValue(right(mockDispute));
     mockPrisma.order.update.mockResolvedValue({ ...mockOrder, status: 'DISPUTED' });
 
     const result = await sut.execute({

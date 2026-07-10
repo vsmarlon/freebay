@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
+import { AppError, NotFoundError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { PrismaDisputeRepository } from '../repositories/dispute.repository';
@@ -28,22 +28,26 @@ export class ResolveDisputeUseCase {
       return left(new BadRequestError(`Dispute cannot be resolved while it is ${dispute.status}`));
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.dispute.update({
-        where: { id: input.disputeId },
-        data: {
-          resolution: input.resolution,
-          status: 'RESOLVED',
-          resolvedAt: new Date(),
-        },
-      });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.dispute.update({
+          where: { id: input.disputeId },
+          data: {
+            resolution: input.resolution,
+            status: 'RESOLVED',
+            resolvedAt: new Date(),
+          },
+        });
 
-      if (input.winner === 'BUYER') {
-        await this.resolutionExecution.resolveInFavorOfBuyer(tx, dispute);
-      } else {
-        await this.resolutionExecution.resolveInFavorOfSeller(tx, dispute);
-      }
-    });
+        if (input.winner === 'BUYER') {
+          await this.resolutionExecution.resolveInFavorOfBuyer(tx, dispute);
+        } else {
+          await this.resolutionExecution.resolveInFavorOfSeller(tx, dispute);
+        }
+      });
+    } catch {
+      return left(new DatabaseError('Failed to resolve dispute'));
+    }
 
     const buyerMsg = input.winner === 'BUYER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do vendedor';
     const sellerMsg = input.winner === 'SELLER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do comprador';

@@ -3,6 +3,8 @@ import { Dispute, Order, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 import { GetDisputeOutput, GetUserDisputesOutput } from '../dtos/dispute.dto';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError, DatabaseError } from '@/shared/core/errors';
 
 export type DisputeWithOrder = Dispute & { order: Order };
 
@@ -15,16 +17,21 @@ export class PrismaDisputeRepository {
     openedById: string;
     reason: string;
     expiresAt: Date;
-  }): Promise<Dispute> {
-    return this.prisma.dispute.create({
-      data: {
-        order: { connect: { id: data.orderId } },
-        openedBy: { connect: { id: data.openedById } },
-        reason: data.reason,
-        status: 'OPEN',
-        expiresAt: data.expiresAt,
-      },
-    });
+  }): Promise<Either<AppError, Dispute>> {
+    try {
+      const dispute = await this.prisma.dispute.create({
+        data: {
+          order: { connect: { id: data.orderId } },
+          openedBy: { connect: { id: data.openedById } },
+          reason: data.reason,
+          status: 'OPEN',
+          expiresAt: data.expiresAt,
+        },
+      });
+      return right(dispute);
+    } catch {
+      return left(new DatabaseError('Failed to create dispute'));
+    }
   }
 
   async findById(id: string): Promise<DisputeWithOrder | null> {

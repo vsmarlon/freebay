@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { left } from '@/shared/core/either';
+import { left, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
@@ -34,7 +34,8 @@ export class WalletController {
   async getWallet(@CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const result = await this.getWalletUseCase.execute(userId);
-    return result;
+    if (isLeft(result)) return result;
+    return result.value;
   }
 
   @Post('withdraw')

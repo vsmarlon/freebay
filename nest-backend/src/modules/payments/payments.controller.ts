@@ -19,8 +19,6 @@ import { WebhookGuard } from '@/shared/guards/webhook.guard';
 import { CreatePixPaymentUseCase, ProcessWebhookUseCase } from './usecases/payment.usecase';
 import { ProcessWebhookInput, CreatePixPaymentOutput } from './dtos/payment.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -59,9 +57,7 @@ export class PaymentsController {
       idempotencyKey,
     });
 
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
-    }
+    if (result.isLeft()) return result;
 
     return result.value;
   }
@@ -84,9 +80,7 @@ export class PaymentsController {
       data: body.data,
     });
 
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
-    }
+    if (result.isLeft()) return result;
 
     return result.value;
   }

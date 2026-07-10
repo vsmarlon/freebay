@@ -106,3 +106,39 @@ export class RecoveryCodeAlreadyUsedError extends AppError {
     super('RECOVERY_CODE_ALREADY_USED', 'Código de recuperação já utilizado', 409);
   }
 }
+
+export class PhoneCodeNotFoundError extends AppError {
+  constructor() {
+    super('PHONE_CODE_NOT_FOUND', 'Código de verificação inválido ou expirado', 404);
+  }
+}
+
+export class PhoneCodeExpiredError extends AppError {
+  constructor() {
+    super('PHONE_CODE_EXPIRED', 'Código de verificação expirado', 410);
+  }
+}
+
+export class PhoneCodeAttemptsExceededError extends AppError {
+  constructor() {
+    super('PHONE_CODE_ATTEMPTS_EXCEEDED', 'Limite de tentativas excedido', 429);
+  }
+}
+
+export class PhoneCodeAlreadyUsedError extends AppError {
+  constructor() {
+    super('PHONE_CODE_ALREADY_USED', 'Código de verificação já utilizado', 409);
+  }
+}
+
+export class DatabaseError extends AppError {
+  constructor(message = 'Database error') {
+    super('DB_ERROR', message, 500);
+  }
+}
+
+export class NotImplementedError extends AppError {
+  constructor(feature: string) {
+    super('NOT_IMPLEMENTED', `${feature} is not yet implemented`, 501);
+  }
+}
