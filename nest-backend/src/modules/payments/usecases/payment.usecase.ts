@@ -108,8 +108,6 @@ export class CreatePixPaymentUseCase {
 
 @Injectable()
 export class ProcessWebhookUseCase {
-  private readonly logger = new Logger(ProcessWebhookUseCase.name);
-
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
