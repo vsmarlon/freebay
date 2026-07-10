@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { GetWalletUseCase, WithdrawUseCase, RegisterBankAccountUseCase } from './usecases/wallet.usecase';
+import { GetWalletUseCase } from './usecases/get-wallet.usecase';
+import { WithdrawUseCase } from './usecases/withdraw.usecase';
+import { RegisterBankAccountUseCase } from './usecases/register-bank-account.usecase';
 import { WithdrawDTO, BankAccountDTO, WalletResponse } from './dtos/wallet.dto';
 import { PrismaWalletRepository } from './repositories/wallet.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';

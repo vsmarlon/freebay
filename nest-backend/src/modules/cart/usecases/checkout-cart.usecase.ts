@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
 import { CartRepository } from '../domain/repositories/cart.repository';
-import { CreatePixPaymentUseCase } from '@/modules/payments/usecases/payment.usecase';
+import { CreatePixPaymentUseCase } from '@/modules/payments/usecases/create-pix-payment.usecase';
 
 import { CheckoutCartInput, CheckoutCartItemOutput, CheckoutCartOutput } from '../dtos/cart.dto';
 

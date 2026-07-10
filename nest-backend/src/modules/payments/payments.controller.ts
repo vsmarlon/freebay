@@ -16,7 +16,8 @@ import { Public } from '@/shared/decorators/public.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { WebhookGuard } from '@/shared/guards/webhook.guard';
-import { CreatePixPaymentUseCase, ProcessWebhookUseCase } from './usecases/payment.usecase';
+import { CreatePixPaymentUseCase } from './usecases/create-pix-payment.usecase';
+import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
 import { ProcessWebhookInput, CreatePixPaymentOutput } from './dtos/payment.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
