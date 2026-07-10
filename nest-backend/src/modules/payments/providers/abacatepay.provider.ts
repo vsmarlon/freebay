@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
 import { Either, left, right } from '@/shared/core/either';
@@ -6,7 +6,7 @@ import { AppError } from '@/shared/core/errors';
 import { PixChargeRequest, PixChargeResponse } from './abacatepay.types';
 
 @Injectable()
-export class AbacatePayProvider {
+export class AbacatePayProvider implements OnModuleInit {
   private readonly logger = new Logger(AbacatePayProvider.name);
   private readonly apiKey: string;
   private readonly webhookSecret: string;
@@ -15,6 +15,12 @@ export class AbacatePayProvider {
   constructor(private readonly config: ConfigService) {
     this.apiKey = this.config.get('ABACATEPAY_API_KEY') || '';
     this.webhookSecret = this.config.get('ABACATEPAY_WEBHOOK_SECRET') || '';
+  }
+
+  onModuleInit() {
+    if (!this.webhookSecret) {
+      throw new Error('ABACATEPAY_WEBHOOK_SECRET is not configured');
+    }
   }
 
   async createPixCharge(request: PixChargeRequest): Promise<Either<AppError, PixChargeResponse>> {
@@ -48,7 +54,7 @@ export class AbacatePayProvider {
 
   verifyWebhook(signature: string, body: string | Record<string, string | number | boolean | null | object | undefined>): boolean {
     if (!this.webhookSecret) {
-      return process.env.NODE_ENV !== 'production';
+      return false;
     }
 
     if (!signature) {

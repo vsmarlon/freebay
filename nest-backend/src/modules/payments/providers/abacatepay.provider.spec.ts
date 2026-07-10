@@ -58,21 +58,15 @@ describe('AbacatePayProvider', () => {
   });
 
   describe('verifyWebhook - no secret', () => {
-    it('should allow in non-production', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'development';
-
-      const module: TestingModule = await Test.createTestingModule({
+    it('should throw on module init when webhook secret is not configured', async () => {
+      const module = await Test.createTestingModule({
         providers: [
           AbacatePayProvider,
           { provide: ConfigService, useValue: { get: () => '' } },
         ],
       }).compile();
 
-      const provider = module.get<AbacatePayProvider>(AbacatePayProvider);
-      expect(provider.verifyWebhook('any', {})).toBe(true);
-
-      process.env.NODE_ENV = originalEnv;
+      await expect(module.init()).rejects.toThrow('ABACATEPAY_WEBHOOK_SECRET is not configured');
     });
   });
 });
