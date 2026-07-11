@@ -166,7 +166,9 @@ model User {
   conversationPreferences ConversationPreference[]
   messageReactions        MessageReaction[]
   notifications           Notification[]
-  submittedReports        Report[]                 @relation("SubmittedReports")
+  postMentions            PostMention[]         @relation("PostMentions")
+  commentMentions         CommentMention[]      @relation("CommentMentions")
+  submittedReports        Report[]              @relation("SubmittedReports")
   reportedUserReports     Report[]                 @relation("ReportedUserReports")
   bugReports              BugReport[]
   fcmToken                String?
@@ -285,15 +287,30 @@ model Post {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user                User        @relation(fields: [userId], references: [id])
+  user                User          @relation(fields: [userId], references: [id])
   product             Product?
   comments            Comment[]
   likes               Like[]
   shares              Share[]
   savedBy             SavedPost[]
-  reportedPostReports Report[]    @relation("ReportedPostReports")
+  mentions            PostMention[]
+  reportedPostReports Report[]      @relation("ReportedPostReports")
 
   @@index([userId, createdAt])
+}
+
+model PostMention {
+  id              String   @id @default(uuid())
+  postId          String
+  mentionedUserId String
+  createdAt       DateTime @default(now())
+
+  post          Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mentionedUser User @relation("PostMentions", fields: [mentionedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, mentionedUserId])
+  @@index([postId])
+  @@index([mentionedUserId])
 }
 
 model Comment {
@@ -310,9 +327,24 @@ model Comment {
   parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
   replies      Comment[]     @relation("CommentReplies")
   commentLikes CommentLike[]
+  mentions     CommentMention[]
 
   @@index([postId])
   @@index([parentId])
+}
+
+model CommentMention {
+  id              String   @id @default(uuid())
+  commentId       String
+  mentionedUserId String
+  createdAt       DateTime @default(now())
+
+  comment       Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  mentionedUser User    @relation("CommentMentions", fields: [mentionedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, mentionedUserId])
+  @@index([commentId])
+  @@index([mentionedUserId])
 }
 
 model Like {
@@ -754,6 +786,7 @@ enum NotificationType {
   MESSAGE
   DISPUTE
   PAYMENT
+  MENTION
 }
 
 model Notification {
