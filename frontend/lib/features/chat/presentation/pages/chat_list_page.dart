@@ -225,8 +225,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                                           context.push(
                                             '/chat/${chat.id}',
                                             extra: {
-                                              'oderName': chat.otherName,
-                                              'oderAvatarUrl':
+                                              'orderName': chat.otherName,
+                                              'orderAvatarUrl':
                                                   chat.otherAvatarUrl,
                                               'chatType': chat.threadType.name,
                                             },

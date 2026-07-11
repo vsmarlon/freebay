@@ -191,8 +191,8 @@ class ArchivedChatsPage extends ConsumerWidget {
             context.push(
               '/chat/${chat.id}',
               extra: {
-                'oderName': chat.otherName,
-                'oderAvatarUrl': chat.otherAvatarUrl,
+                'orderName': chat.otherName,
+                'orderAvatarUrl': chat.otherAvatarUrl,
                 'chatType': chat.threadType.name,
               },
             );
