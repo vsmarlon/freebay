@@ -121,7 +121,7 @@ class _AppTextFieldState extends State<AppTextField> {
       maxLength: widget.maxLength,
       style: TextStyle(color: context.textPrimary),
       decoration: InputDecoration(
-        labelText: widget.label,
+        labelText: widget.label.isEmpty ? null : widget.label,
         hintText: widget.hint,
         errorText: widget.errorText,
         prefixIcon: widget.prefixIcon != null

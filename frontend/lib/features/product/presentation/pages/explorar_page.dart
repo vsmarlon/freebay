@@ -101,41 +101,57 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
               ),
             ],
           ),
-          Material(
-            color: context.surfaceColor,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: context.isDark
-                  ? AppColors.white
-                  : AppColors.primaryContainer,
-              unselectedLabelColor: AppColors.mediumGray,
-              indicatorColor: AppColors.primaryContainer,
-              tabs: const [
-                Tab(text: 'Produtos'),
-                Tab(text: 'Pessoas'),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: AppTextField(
-              controller: _searchController,
-              label: '',
-              hint: _tabController.index == 1
-                  ? 'Buscar pessoas...'
-                  : 'Buscar produtos...',
-              prefixIcon: Icons.search,
-              onFieldSubmitted: (_) => _onSearch(),
-              onChanged: _onSearchDebounced,
-            ),
-          ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildProdutosTab(selectedCategory, categoriesAsync),
-                _buildPessoasTab(),
+            child: NestedScrollView(
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                SliverAppBar(
+                  automaticallyImplyLeading: false,
+                  primary: false,
+                  floating: true,
+                  snap: true,
+                  pinned: false,
+                  elevation: 0,
+                  backgroundColor: context.surfaceColor,
+                  surfaceTintColor: Colors.transparent,
+                  toolbarHeight: 72,
+                  titleSpacing: 0,
+                  title: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: AppTextField(
+                      controller: _searchController,
+                      label: '',
+                      hint: _tabController.index == 1
+                          ? 'Buscar pessoas...'
+                          : 'Buscar produtos...',
+                      prefixIcon: Icons.search,
+                      onFieldSubmitted: (_) => _onSearch(),
+                      onChanged: _onSearchDebounced,
+                    ),
+                  ),
+                  bottom: TabBar(
+                    controller: _tabController,
+                    labelColor: context.isDark
+                        ? AppColors.white
+                        : AppColors.primaryContainer,
+                    unselectedLabelColor: AppColors.mediumGray,
+                    indicatorColor: AppColors.primaryContainer,
+                    tabs: const [
+                      Tab(text: 'Produtos'),
+                      Tab(text: 'Pessoas'),
+                    ],
+                  ),
+                ),
               ],
+              body: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildProdutosTab(selectedCategory, categoriesAsync),
+                  _buildPessoasTab(),
+                ],
+              ),
             ),
           ),
         ],
@@ -200,41 +216,55 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           child: productsAsync.when(
             data: (products) {
               if (products.isEmpty) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    EmptyState(
-                      icon: Icons.search_off,
-                      title: 'NENHUM PRODUTO',
-                      subtitle: 'Nenhum produto encontrado.',
-                    ),
-                    if (searchQuery.isNotEmpty || selectedCategory != null) ...[
-                      Spacing.vSm,
-                      InkWell(
-                        onTap: () {
-                          _searchController.clear();
-                          ref.read(searchQueryProvider.notifier).state = '';
-                          ref.read(selectedCategoryProvider.notifier).state =
-                              null;
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          color: context.surfaceColor,
-                          child: Text(
-                            'Limpar filtros',
-                            style: TextStyle(
-                              fontFamily: AppTypography.fontFamily,
-                              fontWeight: FontWeight.w700,
-                              color: context.textPrimary,
-                            ),
-                          ),
-                        ),
+                return LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
-                    ],
-                  ],
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          EmptyState(
+                            icon: Icons.search_off,
+                            title: 'NENHUM PRODUTO',
+                            subtitle: 'Nenhum produto encontrado.',
+                          ),
+                          if (searchQuery.isNotEmpty ||
+                              selectedCategory != null) ...[
+                            Spacing.vSm,
+                            InkWell(
+                              onTap: () {
+                                _searchController.clear();
+                                ref.read(searchQueryProvider.notifier).state =
+                                    '';
+                                ref
+                                        .read(selectedCategoryProvider.notifier)
+                                        .state =
+                                    null;
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                color: context.surfaceColor,
+                                child: Text(
+                                  'Limpar filtros',
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.fontFamily,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 );
               }
 
@@ -324,17 +354,27 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
     final searchQuery = _searchController.text;
 
     if (searchQuery.isEmpty && searchState.users.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.person_search, size: 64, color: AppColors.mediumGray),
-            Spacing.vMd,
-            Text(
-              'Busque por pessoas...',
-              style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
+      return LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.person_search,
+                  size: 64,
+                  color: AppColors.mediumGray,
+                ),
+                Spacing.vMd,
+                Text(
+                  'Busque por pessoas...',
+                  style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
