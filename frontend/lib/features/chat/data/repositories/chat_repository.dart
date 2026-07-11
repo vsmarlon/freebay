@@ -156,12 +156,14 @@ class ChatRepository implements IChatRepository {
     String type = 'TEXT',
     String? attachmentUrl,
     String? replyToId,
+    Map<String, dynamic>? metadata,
   }) async {
     try {
       final data = <String, dynamic>{'type': type};
       if (content != null) data['content'] = content;
       if (attachmentUrl != null) data['attachmentUrl'] = attachmentUrl;
       if (replyToId != null) data['replyToId'] = replyToId;
+      if (metadata != null) data['metadata'] = metadata;
       final response = await HttpClient.instance.post(
         '/chat/conversations/$conversationId/messages',
         data: data,

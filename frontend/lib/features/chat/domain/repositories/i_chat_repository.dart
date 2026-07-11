@@ -16,6 +16,7 @@ abstract class IChatRepository {
     String type,
     String? attachmentUrl,
     String? replyToId,
+    Map<String, dynamic>? metadata,
   });
   Future<Either<Failure, void>> deleteMessage(
     String conversationId,

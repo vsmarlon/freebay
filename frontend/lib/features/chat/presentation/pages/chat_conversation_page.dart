@@ -23,6 +23,7 @@ import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
+import 'package:freebay/features/chat/presentation/pages/location_picker_page.dart';
 
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
@@ -713,9 +714,30 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
           },
         );
       },
-      onLocationTap: () {
-        if (mounted) {
-          AppSnackbar.success(context, 'Em breve');
+      onLocationTap: () async {
+        final result = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(builder: (_) => const LocationPickerPage()),
+        );
+        if (result != null && mounted) {
+          final repo = ref.read(chatRepositoryProvider);
+          final sendResult = await repo.sendRichMessage(
+            conversationId: widget.chatId,
+            type: 'LOCATION',
+            metadata: result,
+          );
+          sendResult.fold(
+            (failure) {
+              if (mounted) {
+                AppSnackbar.error(context, failure.message);
+              }
+            },
+            (_) {
+              if (mounted) {
+                _loadMessages();
+              }
+            },
+          );
         }
       },
       onProductTap: () {
