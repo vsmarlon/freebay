@@ -329,6 +329,7 @@ model Comment {
   commentLikes CommentLike[]
   mentions     CommentMention[]
 
+  @@index([userId])
   @@index([postId])
   @@index([parentId])
 }
@@ -357,6 +358,7 @@ model Like {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+  @@index([userId])
   @@index([postId])
 }
 
@@ -370,6 +372,7 @@ model CommentLike {
   comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
+  @@index([userId])
   @@index([commentId])
 }
 
@@ -383,6 +386,7 @@ model Share {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+  @@index([userId])
   @@index([postId])
 }
 
