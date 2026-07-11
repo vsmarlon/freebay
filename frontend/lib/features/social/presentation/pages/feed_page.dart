@@ -140,6 +140,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
                   _HeaderIcon(
                     icon: Icons.account_balance_wallet_outlined,
                     route: '/wallet',
+                    useGo: true,
                   ),
                 ],
               ),
@@ -378,13 +379,18 @@ class _SkeletonFeedPost extends StatelessWidget {
 class _HeaderIcon extends StatelessWidget {
   final IconData icon;
   final String route;
+  final bool useGo;
 
-  const _HeaderIcon({required this.icon, required this.route});
+  const _HeaderIcon({
+    required this.icon,
+    required this.route,
+    this.useGo = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push(route),
+      onTap: () => useGo ? context.go(route) : context.push(route),
       child: Container(
         width: 40,
         height: 40,
