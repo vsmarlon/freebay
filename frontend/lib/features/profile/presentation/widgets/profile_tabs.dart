@@ -160,7 +160,7 @@ class _PostGridTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () => context.push('/post/${post.id}'),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surfaceContainer,
