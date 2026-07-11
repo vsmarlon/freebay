@@ -16,6 +16,8 @@ import 'package:freebay/features/chat/presentation/providers/chat_socket_provide
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_header.dart';
+import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/presentation/widgets/attachment_bottom_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
@@ -567,23 +569,30 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                             itemCount: _messages.length,
                             itemBuilder: (context, index) {
                               final msg = _messages[index];
-                              final isMe = msg['senderId'] == currentUserId;
+                              final msgEntity = MessageEntity.fromJson(
+                                msg as Map<String, dynamic>,
+                              );
+                              final isMe = msgEntity.senderId == currentUserId;
                               final prevIsMe = index > 0
-                                  ? _messages[index - 1]['senderId'] ==
+                                  ? (_messages[index - 1]['senderId']
+                                            as String?) ==
                                         currentUserId
                                   : false;
                               final isConsecutive = isMe == prevIsMe;
                               return MessageBubble(
-                                content: msg['content'] ?? '',
+                                message: msgEntity,
                                 isMe: isMe,
                                 isDark: isDark,
                                 isConsecutive: isConsecutive,
                                 accentColor: accentColor,
-                                createdAt: msg['createdAt'] is String
-                                    ? DateTime.parse(msg['createdAt'])
-                                    : null,
-                                readAt: msg['readAt'],
-                                deliveredAt: msg['deliveredAt'],
+                                onLongPressMessage: () =>
+                                    _showReactionPicker(msgEntity),
+                                onSwipeToReply: () =>
+                                    _handleSwipeToReply(msgEntity),
+                                onReactionTap: (emoji) =>
+                                    _reactToMessage(msgEntity.id, emoji),
+                                onReactionLongPress: (emoji, details) =>
+                                    _showReactionPicker(msgEntity),
                               );
                             },
                           ),
@@ -626,6 +635,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       ),
       child: Row(
         children: [
+          BrutalistIconButton(
+            icon: Icons.add,
+            onTap: _showAttachmentSheet,
+            size: 48,
+            iconSize: 24,
+            iconColor: context.textPrimary,
+            borderColor: context.borderColor,
+          ),
+          Spacing.hSm,
           Expanded(
             child: TextField(
               controller: _messageController,
@@ -670,5 +688,108 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         ],
       ),
     );
+  }
+
+  void _showAttachmentSheet() {
+    showAttachmentSheet(
+      context: context,
+      onMediaReady: (result) async {
+        final repo = ref.read(chatRepositoryProvider);
+        final sendResult = await repo.sendRichMessage(
+          conversationId: widget.chatId,
+          type: result.type,
+          attachmentUrl: result.url,
+        );
+        sendResult.fold(
+          (failure) {
+            if (mounted) {
+              AppSnackbar.error(context, failure.message);
+            }
+          },
+          (_) {
+            if (mounted) {
+              _loadMessages();
+            }
+          },
+        );
+      },
+      onLocationTap: () {
+        if (mounted) {
+          AppSnackbar.success(context, 'Em breve');
+        }
+      },
+      onProductTap: () {
+        if (mounted) {
+          AppSnackbar.success(context, 'Em breve');
+        }
+      },
+      onError: (message) {
+        if (mounted) {
+          AppSnackbar.error(context, message);
+        }
+      },
+    );
+  }
+
+  void _showReactionPicker(MessageEntity message) {
+    const emojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Material(
+        color: context.isDark ? AppColors.surfaceDark : AppColors.white,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: emojis.map((emoji) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _reactToMessage(message.id, emoji);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: context.borderColor, width: 2),
+                    ),
+                    child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reactToMessage(String messageId, String emoji) async {
+    final repo = ref.read(chatRepositoryProvider);
+    final result = await repo.reactToMessage(widget.chatId, messageId, emoji);
+    result.fold(
+      (failure) {
+        if (mounted) {
+          AppSnackbar.error(context, failure.message);
+        }
+      },
+      (_) {
+        if (mounted) {
+          _loadMessages();
+        }
+      },
+    );
+  }
+
+  void _handleSwipeToReply(MessageEntity message) {
+    final content = message.content ?? '';
+    if (content.isNotEmpty) {
+      _messageController.text = '> $content\n';
+      _messageController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _messageController.text.length),
+      );
+    }
   }
 }
