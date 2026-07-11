@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, DirectConversation, User, DirectMessage, ConversationPreference } from '@prisma/client';
+import { Prisma, DirectConversation, User, DirectMessage, ConversationPreference, MessageReaction } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
@@ -169,5 +169,68 @@ export class ConversationDatabaseRepository implements ConversationRepository {
         where: { userId, isDeleted: false },
       }));
     } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar preferências')); }
+  }
+
+  async findDirectMessageById(id: string): RepositoryResponse<DirectMessage | null> {
+    try {
+      const msg = await this.prisma.directMessage.findUnique({ where: { id } });
+      return right(msg);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar mensagem')); }
+  }
+
+  async softDeleteDirectMessage(id: string): RepositoryResponse<void> {
+    try {
+      await this.prisma.directMessage.update({ where: { id }, data: { deletedAt: new Date() } });
+      return right(undefined);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao apagar mensagem')); }
+  }
+
+  async findReactionByUserAndMessage(userId: string, messageId: string, model: 'DIRECT' | 'ORDER'): RepositoryResponse<MessageReaction | null> {
+    try {
+      const where = model === 'DIRECT'
+        ? { userId, directMessageId: messageId }
+        : { userId, chatMessageId: messageId };
+      const reaction = await this.prisma.messageReaction.findFirst({ where });
+      return right(reaction);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar reação')); }
+  }
+
+  async upsertReaction(data: { userId: string; messageId: string; emoji: string; model: 'DIRECT' | 'ORDER' }): RepositoryResponse<void> {
+    try {
+      const existing = await this.findReactionByUserAndMessage(data.userId, data.messageId, data.model);
+      if (existing.isRight() && existing.value) {
+        await this.prisma.messageReaction.update({
+          where: { id: existing.value.id },
+          data: { emoji: data.emoji },
+        });
+      } else {
+        const msgField = data.model === 'DIRECT' ? 'directMessageId' : 'chatMessageId';
+        await this.prisma.messageReaction.create({
+          data: {
+            userId: data.userId,
+            [msgField]: data.messageId,
+            emoji: data.emoji,
+          },
+        });
+      }
+      return right(undefined);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao registrar reação')); }
+  }
+
+  async deleteReaction(reactionId: string): RepositoryResponse<void> {
+    try {
+      await this.prisma.messageReaction.delete({ where: { id: reactionId } });
+      return right(undefined);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao remover reação')); }
+  }
+
+  async getReactionsForMessage(messageId: string, model: 'DIRECT' | 'ORDER'): RepositoryResponse<{ emoji: string; userId: string }[]> {
+    try {
+      const where = model === 'DIRECT'
+        ? { directMessageId: messageId }
+        : { chatMessageId: messageId };
+      const reactions = await this.prisma.messageReaction.findMany({ where, select: { emoji: true, userId: true } });
+      return right(reactions);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar reações')); }
   }
 }

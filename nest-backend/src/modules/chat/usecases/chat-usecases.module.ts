@@ -19,6 +19,8 @@ import { DeleteConversationUseCase } from './delete-conversation.usecase';
 import { SetConversationThemeUseCase } from './set-conversation-theme.usecase';
 import { SetConversationBackgroundUseCase } from './set-conversation-background.usecase';
 import { OgScraperService } from '../services/og-scraper.service';
+import { DeleteMessageUseCase } from './delete-message.usecase';
+import { ToggleReactionUseCase } from './toggle-reaction.usecase';
 
 @Module({
   providers: [
@@ -40,6 +42,8 @@ import { OgScraperService } from '../services/og-scraper.service';
     SetConversationThemeUseCase,
     SetConversationBackgroundUseCase,
     OgScraperService,
+    DeleteMessageUseCase,
+    ToggleReactionUseCase,
   ],
   exports: [
     ConversationRepository,
@@ -55,6 +59,9 @@ import { OgScraperService } from '../services/og-scraper.service';
     DeleteConversationUseCase,
     SetConversationThemeUseCase,
     SetConversationBackgroundUseCase,
+    OgScraperService,
+    DeleteMessageUseCase,
+    ToggleReactionUseCase,
   ],
 })
 export class ChatUseCasesModule {}
