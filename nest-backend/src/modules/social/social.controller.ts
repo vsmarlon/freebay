@@ -273,6 +273,7 @@ export class SocialController {
       postId: id,
       content: body.content,
       parentId: body.parentId,
+      mentionIds: body.mentionIds,
     });
     if (result.isLeft()) {
       return left(new AppError(result.value.code, result.value.message));
