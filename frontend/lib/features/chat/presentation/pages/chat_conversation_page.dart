@@ -19,6 +19,8 @@ import 'package:freebay/features/chat/presentation/widgets/chat_header.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/attachment_bottom_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:freebay/features/chat/presentation/widgets/reaction_picker_overlay.dart';
+import 'package:freebay/features/chat/presentation/widgets/who_reacted_sheet.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
@@ -586,14 +588,17 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                                 isDark: isDark,
                                 isConsecutive: isConsecutive,
                                 accentColor: accentColor,
-                                onLongPressMessage: () =>
-                                    _showReactionPicker(msgEntity),
+                                onLongPressMessage: () => showReactionPicker(
+                                  context,
+                                  (emoji) =>
+                                      _reactToMessage(msgEntity.id, emoji),
+                                ),
                                 onSwipeToReply: () =>
                                     _handleSwipeToReply(msgEntity),
                                 onReactionTap: (emoji) =>
                                     _reactToMessage(msgEntity.id, emoji),
                                 onReactionLongPress: (emoji, details) =>
-                                    _showReactionPicker(msgEntity),
+                                    _showWhoReactedSheet(msgEntity, emoji),
                               );
                             },
                           ),
@@ -753,38 +758,12 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     );
   }
 
-  void _showReactionPicker(MessageEntity message) {
-    const emojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
-
+  void _showWhoReactedSheet(MessageEntity message, String emoji) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Material(
-        color: context.isDark ? AppColors.surfaceDark : AppColors.white,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: emojis.map((emoji) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _reactToMessage(message.id, emoji);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: context.borderColor, width: 2),
-                    ),
-                    child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ),
+      builder: (_) =>
+          WhoReactedSheet(reactions: message.reactions, initialEmoji: emoji),
     );
   }
 
