@@ -6,3 +6,5 @@ dist/
 coverage/
 coverage-integration/
 freebaythebay-firebase-adminsdk-fbsvc-dca2b26598*.json
+uploads/*
+!uploads/.gitkeep
