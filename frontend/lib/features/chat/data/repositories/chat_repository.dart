@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/either/either.dart';
@@ -144,8 +145,15 @@ class ChatRepository implements IChatRepository {
         return Right(ConversationPreference.fromJson(prefData));
       }
       return const Left(ServerFailure('Erro ao alterar plano de fundo'));
-    } catch (e) {
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 413) {
+        return const Left(
+          ServerFailure('Imagem muito grande. Escolha uma imagem menor.'),
+        );
+      }
       return const Left(ServerFailure('Erro de conexão'));
+    } catch (_) {
+      return const Left(ServerFailure('Erro ao alterar plano de fundo'));
     }
   }
 
