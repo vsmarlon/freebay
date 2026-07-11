@@ -18,6 +18,7 @@ import { ArchiveConversationUseCase } from './archive-conversation.usecase';
 import { DeleteConversationUseCase } from './delete-conversation.usecase';
 import { SetConversationThemeUseCase } from './set-conversation-theme.usecase';
 import { SetConversationBackgroundUseCase } from './set-conversation-background.usecase';
+import { OgScraperService } from '../services/og-scraper.service';
 
 @Module({
   providers: [
@@ -38,6 +39,7 @@ import { SetConversationBackgroundUseCase } from './set-conversation-background.
     DeleteConversationUseCase,
     SetConversationThemeUseCase,
     SetConversationBackgroundUseCase,
+    OgScraperService,
   ],
   exports: [
     ConversationRepository,

@@ -3,13 +3,16 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { OgScraperService } from '../services/og-scraper.service';
 import { SendMessageInput, SendMessageOutput } from '../dtos/chat.dto';
+import { Prisma, DirectMessage, MessageType } from '@prisma/client';
 
 @Injectable()
 export class SendMessageUseCase {
   constructor(
     private readonly conversationRepository: ConversationRepository,
     private readonly blockRepository: BlockRepository,
+    private readonly ogScraper: OgScraperService,
   ) {}
 
   async execute(input: SendMessageInput): Promise<Either<AppError, SendMessageOutput>> {
@@ -37,11 +40,25 @@ export class SendMessageUseCase {
     if (isBlockedResult.value) return left(new ForbiddenError('Você bloqueou este usuário'));
     if (isBlockedByOtherResult.value) return left(new ForbiddenError('Você foi bloqueado por este usuário'));
 
+    const messageType = (input.type ?? 'TEXT') as MessageType;
+    let metadata: Record<string, unknown> | null = input.metadata ?? null;
+
+    if (messageType === 'TEXT' && input.content) {
+      const url = this.ogScraper.extractFirstUrl(input.content);
+      if (url) {
+        const og = await this.ogScraper.scrape(url);
+        if (og) metadata = og as unknown as Record<string, unknown>;
+      }
+    }
+
     const messageResult = await this.conversationRepository.createDirectMessage({
       conversation: { connect: { id: input.conversationId } },
       sender: { connect: { id: input.senderId } },
-      content: input.content,
-      type: 'TEXT',
+      content: input.content ?? null,
+      type: messageType,
+      attachmentUrl: input.attachmentUrl ?? null,
+      metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
+      replyTo: input.replyToId ? { connect: { id: input.replyToId } } : undefined,
     }, true);
     if (isLeft(messageResult)) return left(messageResult.value);
 
@@ -50,13 +67,16 @@ export class SendMessageUseCase {
     });
     if (isLeft(updateResult)) return left(updateResult.value);
 
-    const msg = messageResult.value;
+    const msg = messageResult.value as DirectMessage;
     return right({
       id: msg.id,
       conversationId: msg.conversationId,
       senderId: msg.senderId,
-      content: msg.content ?? '',
+      content: msg.content ?? null,
       type: msg.type,
+      attachmentUrl: msg.attachmentUrl ?? null,
+      metadata: (msg.metadata as Record<string, unknown>) ?? null,
+      replyToId: msg.replyToId ?? null,
       createdAt: msg.createdAt,
     });
   }

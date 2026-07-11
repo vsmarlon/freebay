@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SendMessageUseCase } from './send-message.usecase';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { OgScraperService } from '../services/og-scraper.service';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
@@ -15,6 +16,11 @@ const mockBlockRepository = {
   isBlocked: jest.fn().mockResolvedValue(right(false)),
 };
 
+const mockOgScraper = {
+  extractFirstUrl: jest.fn().mockReturnValue(null),
+  scrape: jest.fn(),
+};
+
 describe('SendMessageUseCase', () => {
   let sut: SendMessageUseCase;
 
@@ -24,6 +30,7 @@ describe('SendMessageUseCase', () => {
         SendMessageUseCase,
         { provide: ConversationRepository, useValue: mockRepo },
         { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: OgScraperService, useValue: mockOgScraper },
       ],
     }).compile();
 

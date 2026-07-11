@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID } from 'class-validator';
+import { IsString, IsUUID, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
@@ -11,11 +11,29 @@ export class StartConversationDTO {
 }
 
 export class SendMessageDTO {
-  @ApiProperty({ example: 'Olá, ainda tem disponível?' })
+  @ApiProperty({ example: 'Olá!', required: false })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @SanitizeText()
-  readonly content: string;
+  readonly content?: string;
+
+  @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
+  @IsString()
+  @IsOptional()
+  readonly type?: string;
+
+  @ApiProperty({ example: '/uploads/chat/abc.jpg', required: false })
+  @IsString()
+  @IsOptional()
+  readonly attachmentUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  readonly replyToId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  readonly metadata?: Record<string, unknown>;
 }
 
 export class ConversationResponse {
@@ -87,15 +105,22 @@ export class AcceptConversationOutput {
 export interface SendMessageInput {
   senderId: string;
   conversationId: string;
-  content: string;
+  content?: string;
+  type?: 'TEXT' | 'IMAGE' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD';
+  attachmentUrl?: string;
+  replyToId?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface SendMessageOutput {
   id: string;
   conversationId: string;
   senderId: string;
-  content: string;
+  content: string | null;
   type: string;
+  attachmentUrl: string | null;
+  metadata: Record<string, unknown> | null;
+  replyToId: string | null;
   createdAt: Date;
 }
 
