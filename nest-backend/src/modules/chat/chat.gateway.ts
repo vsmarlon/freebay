@@ -12,6 +12,8 @@ import { Server, Socket } from 'socket.io';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 import { ConversationRepository } from './domain/repositories/conversation.repository';
 import { SendMessageUseCase } from './usecases/send-message.usecase';
+import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
+import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
 import { ChatThreadAccessService } from './services/chat-thread-access.service';
 import { NotificationService } from '../notifications/services/notification.service';
 import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
@@ -32,11 +34,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private connectedUsers = new Map<string, AuthenticatedUser>();
+  private userSockets = new Map<string, string>();
 
   constructor(
     private tokenValidator: JwtTokenValidatorService,
     private conversationRepository: ConversationRepository,
     private sendMessageUseCase: SendMessageUseCase,
+    private deleteMessageUseCase: DeleteMessageUseCase,
+    private toggleReactionUseCase: ToggleReactionUseCase,
     private threadAccess: ChatThreadAccessService,
     private notificationService: NotificationService,
     private blockRepository: BlockRepository,
@@ -52,14 +57,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
       this.connectedUsers.set(client.id, { userId: payload.userId, email: payload.email });
+      this.userSockets.set(payload.userId, client.id);
       this.logger.log(`Client connected: ${client.id}, userId: ${payload.userId}`);
+
+      client.broadcast.emit('user_online', { userId: payload.userId, lastSeenAt: null });
     } catch (error) {
       this.logger.error('WebSocket authentication failed', error);
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
+    const user = this.connectedUsers.get(client.id);
+    if (user) {
+      this.userSockets.delete(user.userId);
+      const now = new Date();
+      client.broadcast.emit('user_offline', { userId: user.userId, lastSeenAt: now.toISOString() });
+    }
     this.connectedUsers.delete(client.id);
     this.logger.log(`Client disconnected: ${client.id}`);
   }
@@ -135,6 +149,59 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!user) return;
 
     client.to(`conversation:${data.conversationId}`).emit('user_typing', { userId: user.userId });
+  }
+
+  @SubscribeMessage('typing_stop')
+  handleTypingStop(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string },
+  ) {
+    const user = this.connectedUsers.get(client.id);
+    if (!user) return;
+
+    client.to(`conversation:${data.conversationId}`).emit('user_stopped_typing', { userId: user.userId });
+  }
+
+  @SubscribeMessage('delete_message')
+  async handleDeleteMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string; messageId: string },
+  ) {
+    const user = this.connectedUsers.get(client.id);
+    if (!user) return { error: 'Unauthorized' };
+
+    const result = await this.deleteMessageUseCase.execute({
+      messageId: data.messageId,
+      userId: user.userId,
+      conversationId: data.conversationId,
+    });
+    if (result.isLeft()) return { error: result.value.message };
+
+    this.server.to(`conversation:${data.conversationId}`).emit('message_deleted', { messageId: data.messageId });
+    return { event: 'message_deleted' };
+  }
+
+  @SubscribeMessage('toggle_reaction')
+  async handleToggleReaction(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string; messageId: string; emoji: string },
+  ) {
+    const user = this.connectedUsers.get(client.id);
+    if (!user) return { error: 'Unauthorized' };
+
+    const result = await this.toggleReactionUseCase.execute({
+      userId: user.userId,
+      messageId: data.messageId,
+      emoji: data.emoji,
+      messageModel: 'DIRECT',
+    });
+    if (result.isLeft()) return { error: result.value.message };
+
+    this.server.to(`conversation:${data.conversationId}`).emit('reaction_updated', {
+      messageId: data.messageId,
+      reactions: result.value.reactions,
+    });
+    return { event: 'reaction_updated', data: result.value };
   }
 
   private async sendMessage(userId: string, conversationId: string, content: string) {

@@ -10,6 +10,8 @@ import { ArchiveConversationUseCase } from '../usecases/archive-conversation.use
 import { DeleteConversationUseCase } from '../usecases/delete-conversation.usecase';
 import { SetConversationThemeUseCase } from '../usecases/set-conversation-theme.usecase';
 import { SetConversationBackgroundUseCase } from '../usecases/set-conversation-background.usecase';
+import { DeleteMessageUseCase } from '../usecases/delete-message.usecase';
+import { ToggleReactionUseCase } from '../usecases/toggle-reaction.usecase';
 import { StartConversationDTO, SendMessageDTO } from '../dtos/chat.dto';
 
 @Injectable()
@@ -25,6 +27,8 @@ export class ChatService {
     private readonly deleteConversationUseCase: DeleteConversationUseCase,
     private readonly setConversationThemeUseCase: SetConversationThemeUseCase,
     private readonly setConversationBackgroundUseCase: SetConversationBackgroundUseCase,
+    private readonly deleteMessageUseCase: DeleteMessageUseCase,
+    private readonly toggleReactionUseCase: ToggleReactionUseCase,
   ) {}
 
   async getConversations(userId: string, query?: string, archived?: boolean) {
@@ -62,6 +66,10 @@ export class ChatService {
       senderId: userId,
       conversationId,
       content: body.content,
+      type: body.type as any,
+      attachmentUrl: body.attachmentUrl,
+      replyToId: body.replyToId,
+      metadata: body.metadata,
     });
     if (isLeft(result)) throw result.value;
     return result.value;
@@ -89,5 +97,17 @@ export class ChatService {
     const result = await this.setConversationBackgroundUseCase.execute(userId, conversationId, backgroundUrl);
     if (isLeft(result)) throw result.value;
     return { preference: result.value };
+  }
+
+  async deleteMessage(userId: string, messageId: string, conversationId: string) {
+    const result = await this.deleteMessageUseCase.execute({ messageId, userId, conversationId });
+    if (isLeft(result)) throw result.value;
+    return { deleted: true };
+  }
+
+  async toggleReaction(userId: string, messageId: string, emoji: string, messageModel: 'DIRECT' | 'ORDER') {
+    const result = await this.toggleReactionUseCase.execute({ userId, messageId, emoji, messageModel });
+    if (isLeft(result)) throw result.value;
+    return result.value;
   }
 }

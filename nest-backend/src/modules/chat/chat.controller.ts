@@ -97,4 +97,29 @@ export class ChatController {
   async setBackground(@Param('id') id: string, @Body() body: { backgroundUrl: string }, @CurrentUser() user: AuthUser) {
     return this.chatService.setBackground(user.userId, id, body.backgroundUrl);
   }
+
+  @Delete('conversations/:convId/messages/:msgId')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiDoc({ summary: 'Soft-delete a message (sender only)', auth: true })
+  async deleteMessage(
+    @Param('convId') convId: string,
+    @Param('msgId') msgId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.chatService.deleteMessage(user.userId, msgId, convId);
+  }
+
+  @Post('conversations/:convId/messages/:msgId/react')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiDoc({ summary: 'Toggle a reaction on a message', auth: true })
+  async reactToMessage(
+    @Param('convId') convId: string,
+    @Param('msgId') msgId: string,
+    @Body() body: { emoji: string },
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.chatService.toggleReaction(user.userId, msgId, body.emoji, 'DIRECT');
+  }
 }
