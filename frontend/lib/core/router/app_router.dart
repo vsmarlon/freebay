@@ -375,11 +375,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: AppRoutes.faq, builder: (context, state) => const FaqPage()),
     GoRoute(
       path: AppRoutes.notifications,
-      pageBuilder: (context, state) => _buildPageWithSlideTransition(
-        context: context,
-        state: state,
-        child: const NotificationsPage(),
-      ),
+      builder: (context, state) => const NotificationsPage(),
     ),
     GoRoute(
       path: AppRoutes.profilePosts,
