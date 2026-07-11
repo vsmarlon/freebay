@@ -5,6 +5,8 @@ import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
+import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
 import 'package:freebay/features/chat/domain/repositories/i_chat_repository.dart';
 
 class ChatRepository implements IChatRepository {
@@ -143,6 +145,77 @@ class ChatRepository implements IChatRepository {
       }
       return const Left(ServerFailure('Erro ao alterar plano de fundo'));
     } catch (e) {
+      return const Left(ServerFailure('Erro de conexão'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, MessageEntity>> sendRichMessage({
+    required String conversationId,
+    String? content,
+    String type = 'TEXT',
+    String? attachmentUrl,
+    String? replyToId,
+  }) async {
+    try {
+      final data = <String, dynamic>{'type': type};
+      if (content != null) data['content'] = content;
+      if (attachmentUrl != null) data['attachmentUrl'] = attachmentUrl;
+      if (replyToId != null) data['replyToId'] = replyToId;
+      final response = await HttpClient.instance.post(
+        '/chat/conversations/$conversationId/messages',
+        data: data,
+      );
+      if (response.statusCode == 201 && response.data != null) {
+        return Right(
+          MessageEntity.fromJson(response.data['data'] as Map<String, dynamic>),
+        );
+      }
+      return const Left(ServerFailure('Falha ao enviar mensagem'));
+    } catch (_) {
+      return const Left(ServerFailure('Erro de conexão'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteMessage(
+    String conversationId,
+    String messageId,
+  ) async {
+    try {
+      await HttpClient.instance.delete(
+        '/chat/conversations/$conversationId/messages/$messageId',
+      );
+      return const Right(null);
+    } catch (_) {
+      return const Left(ServerFailure('Erro ao apagar mensagem'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<MessageReactionEntity>>> reactToMessage(
+    String conversationId,
+    String messageId,
+    String emoji,
+  ) async {
+    try {
+      final response = await HttpClient.instance.post(
+        '/chat/conversations/$conversationId/messages/$messageId/react',
+        data: {'emoji': emoji},
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final list = response.data['data']['reactions'] as List;
+        return Right(
+          list
+              .map(
+                (e) =>
+                    MessageReactionEntity.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+        );
+      }
+      return const Left(ServerFailure('Falha ao reagir'));
+    } catch (_) {
       return const Left(ServerFailure('Erro de conexão'));
     }
   }
