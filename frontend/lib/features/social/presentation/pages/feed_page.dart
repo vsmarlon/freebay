@@ -91,7 +91,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
     final headerHeight = MediaQuery.of(context).padding.top + 66;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: context.appBarColor,
       body: Stack(
         children: [
           Positioned.fill(
