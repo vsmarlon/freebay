@@ -23,6 +23,9 @@ class ChatSocketService {
   io.Socket? _socket;
 
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
+  final _typingController = StreamController<Map<String, dynamic>>.broadcast();
+  final _presenceController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   Timer? _reconnectTimer;
 
@@ -32,6 +35,8 @@ class ChatSocketService {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
+  Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
+  Stream<Map<String, dynamic>> get presenceStream => _presenceController.stream;
 
   String get _wsUrl {
     final apiUrl = AppConfig.apiBaseUrl;
@@ -78,6 +83,26 @@ class ChatSocketService {
       ..on('new_message', (data) {
         if (data is Map<String, dynamic>) {
           _messageController.add(data);
+        }
+      })
+      ..on('user_typing', (data) {
+        if (data is Map<String, dynamic>) {
+          _typingController.add({...data, 'typing': true});
+        }
+      })
+      ..on('user_stopped_typing', (data) {
+        if (data is Map<String, dynamic>) {
+          _typingController.add({...data, 'typing': false});
+        }
+      })
+      ..on('user_online', (data) {
+        if (data is Map<String, dynamic>) {
+          _presenceController.add({...data, 'online': true});
+        }
+      })
+      ..on('user_offline', (data) {
+        if (data is Map<String, dynamic>) {
+          _presenceController.add({...data, 'online': false});
         }
       });
 
@@ -159,6 +184,10 @@ class ChatSocketService {
     _socket?.emit('typing', {'conversationId': conversationId});
   }
 
+  void stopTyping(String conversationId) {
+    _socket?.emit('typing_stop', {'conversationId': conversationId});
+  }
+
   bool get isConnected => _socket?.connected ?? false;
 
   /// Returns how many messages are currently waiting in the outbox.
@@ -167,5 +196,7 @@ class ChatSocketService {
   void dispose() {
     disconnect();
     _messageController.close();
+    _typingController.close();
+    _presenceController.close();
   }
 }

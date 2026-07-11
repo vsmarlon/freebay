@@ -21,6 +21,7 @@ import 'package:freebay/features/chat/presentation/widgets/attachment_bottom_she
 import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:freebay/features/chat/presentation/widgets/reaction_picker_overlay.dart';
 import 'package:freebay/features/chat/presentation/widgets/who_reacted_sheet.dart';
+import 'package:freebay/features/chat/presentation/widgets/typing_indicator_bubble.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
@@ -56,16 +57,26 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
   ConversationPreference? _preference;
   Color _accentColor = AppColors.primaryContainer;
   StreamSubscription<Map<String, dynamic>>? _socketSubscription;
+  StreamSubscription<Map<String, dynamic>>? _typingSubscription;
+  StreamSubscription<Map<String, dynamic>>? _presenceSubscription;
+  Timer? _typingDebounce;
+  bool _otherUserTyping = false;
+  bool _otherUserOnline = false;
+  DateTime? _otherUserLastSeen;
 
   @override
   void initState() {
     super.initState();
+    _messageController.addListener(_onTextChanged);
     _loadMessages();
   }
 
   @override
   void dispose() {
     _socketSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _presenceSubscription?.cancel();
+    _typingDebounce?.cancel();
     final socketService = ref.read(chatSocketServiceProvider);
     socketService.leaveConversation(widget.chatId);
     _messageController.dispose();
@@ -73,10 +84,24 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     super.dispose();
   }
 
+  void _onTextChanged() {
+    if (_messageController.text.isNotEmpty) {
+      final socketService = ref.read(chatSocketServiceProvider);
+      socketService.sendTyping(widget.chatId);
+      _typingDebounce?.cancel();
+      _typingDebounce = Timer(const Duration(seconds: 2), () {
+        socketService.stopTyping(widget.chatId);
+      });
+    }
+  }
+
   void _setupSocketListener() {
     _socketSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _presenceSubscription?.cancel();
     final socketService = ref.read(chatSocketServiceProvider);
     socketService.joinConversation(widget.chatId);
+
     _socketSubscription = socketService.messageStream.listen((msg) {
       final msgConvId = msg['conversationId'] as String?;
       if (msgConvId != widget.chatId) return;
@@ -87,6 +112,29 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         _messages.add(msg);
       });
       _scrollToBottom();
+    });
+
+    final authState = ref.read(authControllerProvider);
+    final currentUserId = authState.valueOrNull?.id;
+
+    _typingSubscription = socketService.typingStream.listen((data) {
+      final userId = data['userId'] as String?;
+      if (userId == null || userId == currentUserId) return;
+      if (!mounted) return;
+      setState(() => _otherUserTyping = data['typing'] == true);
+    });
+
+    _presenceSubscription = socketService.presenceStream.listen((data) {
+      final userId = data['userId'] as String?;
+      final otherUserId = _findOtherUserId();
+      if (userId == null || userId != otherUserId) return;
+      if (!mounted) return;
+      setState(() {
+        _otherUserOnline = data['online'] == true;
+        if (data['online'] != true && data['lastSeenAt'] != null) {
+          _otherUserLastSeen = DateTime.tryParse(data['lastSeenAt'] as String);
+        }
+      });
     });
   }
 
@@ -540,6 +588,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
             avatarUrl: widget.orderAvatarUrl,
             chatType: widget.chatType,
             accentColor: accentColor,
+            isOnline: _otherUserOnline,
+            lastSeenAt: _otherUserLastSeen,
             onBack: () => context.pop(),
             onConfig: _showThreeDotMenu,
           ),
@@ -604,6 +654,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                           ),
                         ),
                 ),
+                if (_otherUserTyping) const TypingIndicatorBubble(),
                 _buildInputBar(isDark, accentColor),
               ],
             ),
