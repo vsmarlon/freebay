@@ -207,19 +207,21 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     }
   }
 
-  void _onThemeChanged(String theme) async {
+  void _onThemeChanged(String theme, StateSetter setSheetState) async {
     final usecase = ref.read(setChatThemeUsecaseProvider);
     final result = await usecase(widget.chatId, _threadType, theme);
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (pref) => setState(() {
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      pref,
+    ) {
+      setState(() {
         _preference = pref;
         _accentColor = _computeAccentColor();
-      }),
-    );
+      });
+      setSheetState(() {});
+    });
   }
 
-  Future<void> _onBackgroundChanged() async {
+  Future<void> _onBackgroundChanged(StateSetter setSheetState) async {
     final xfile = await _picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 1024,
@@ -232,37 +234,43 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
 
     final usecase = ref.read(setChatBackgroundUsecaseProvider);
     final result = await usecase(widget.chatId, _threadType, dataUri);
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (pref) => setState(() => _preference = pref),
-    );
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      pref,
+    ) {
+      setState(() => _preference = pref);
+      setSheetState(() {});
+    });
   }
 
-  void _onRemoveBackground() async {
+  void _onRemoveBackground(StateSetter setSheetState) async {
     final usecase = ref.read(setChatBackgroundUsecaseProvider);
     final result = await usecase(widget.chatId, _threadType, '');
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (pref) => setState(() => _preference = pref),
-    );
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      pref,
+    ) {
+      setState(() => _preference = pref);
+      setSheetState(() {});
+    });
   }
 
   void _showConfigSheet() {
     showBrutalistSheet(
       context: context,
       title: 'PERSONALIZAR',
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildThemeSection(),
-          Spacing.vMd,
-          _buildBackgroundSection(),
-        ],
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildThemeSection(setSheetState),
+            Spacing.vMd,
+            _buildBackgroundSection(setSheetState),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildThemeSection() {
+  Widget _buildThemeSection(StateSetter setSheetState) {
     final currentTheme = _preference?.theme ?? 'DEFAULT';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,7 +291,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
           children: ChatTheme.values.map((t) {
             final isSelected = t.apiValue == currentTheme;
             return GestureDetector(
-              onTap: () => _onThemeChanged(t.apiValue),
+              onTap: () => _onThemeChanged(t.apiValue, setSheetState),
               child: Container(
                 width: 40,
                 height: 40,
@@ -313,7 +321,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     );
   }
 
-  Widget _buildBackgroundSection() {
+  Widget _buildBackgroundSection(StateSetter setSheetState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -332,7 +340,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
             _buildBgButton(
               icon: Icons.image_outlined,
               label: 'ESCOLHER FOTO',
-              onTap: _onBackgroundChanged,
+              onTap: () => _onBackgroundChanged(setSheetState),
             ),
             Spacing.hSm,
             if (_preference?.backgroundUrl != null &&
@@ -340,7 +348,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
               _buildBgButton(
                 icon: Icons.delete_outline,
                 label: 'REMOVER',
-                onTap: _onRemoveBackground,
+                onTap: () => _onRemoveBackground(setSheetState),
               ),
           ],
         ),
