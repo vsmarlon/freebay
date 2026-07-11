@@ -1,3 +1,4 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,7 @@ import 'package:freebay/features/social/presentation/providers/feed_provider.dar
 import 'package:freebay/features/social/presentation/widgets/comment_skeleton_row.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
@@ -51,17 +53,34 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     super.dispose();
   }
 
-  void _syncTree() {
+  static const _maxIndentDepth = 4;
+
+  void _syncTree({bool bumpVersion = true}) {
     final root = TreeNode<CommentEntity>.root();
     for (final comment in _comments) {
       final node = TreeNode<CommentEntity>(key: comment.id, data: comment);
-      for (final reply in comment.replies) {
-        node.add(TreeNode<CommentEntity>(key: reply.id, data: reply));
-      }
+      _addReplies(node, comment.replies, 2);
       root.add(node);
     }
     _rootNode = root;
-    _treeVersion++;
+    if (bumpVersion) _treeVersion++;
+  }
+
+  void _addReplies(
+    TreeNode<CommentEntity> parent,
+    List<CommentEntity> replies,
+    int depth,
+  ) {
+    for (final reply in replies) {
+      final node = TreeNode<CommentEntity>(key: reply.id, data: reply);
+      parent.add(node);
+      if (reply.replies.isEmpty) continue;
+      if (depth >= _maxIndentDepth) {
+        _addReplies(parent, reply.replies, depth + 1);
+      } else {
+        _addReplies(node, reply.replies, depth + 1);
+      }
+    }
   }
 
   Future<void> _loadComments({bool refresh = false}) async {
@@ -69,7 +88,6 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     setState(() {
       _isLoading = true;
       _error = null;
-      if (refresh) _comments = [];
     });
 
     try {
@@ -92,6 +110,27 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
         _error = 'Erro ao carregar comentários';
         _isLoading = false;
       });
+    }
+  }
+
+  /// Silently re-fetches comments after sending without showing a loading
+  /// indicator or bumping the tree version (preserves scroll & expansion).
+  Future<void> _refreshAfterSend() async {
+    try {
+      final repo = ref.read(socialRepositoryProvider);
+      final result = await repo.getComments(widget.postId);
+      result.fold(
+        (_) {}, // silently ignore — existing comments remain visible
+        (comments) {
+          if (!mounted) return;
+          setState(() {
+            _comments = comments;
+            _syncTree(bumpVersion: false);
+          });
+        },
+      );
+    } catch (_) {
+      // silently ignore — the comment was already sent successfully
     }
   }
 
@@ -132,9 +171,9 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
       result.fold(
         (failure) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(failure.message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(failure.message)));
         },
         (_) {
           if (parentId != null) {
@@ -142,7 +181,10 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
           } else {
             _newCommentController.clear();
           }
-          _loadComments(refresh: true);
+          ref
+              .read(feedProvider.notifier)
+              .updatePostCommentCount(widget.postId, 1);
+          _refreshAfterSend();
         },
       );
     } finally {
@@ -174,10 +216,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
               ),
             ),
           ),
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Post', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Comentários'),
-          ]),
+          BrutalistBreadcrumb(items: context.breadcrumbs),
           _buildNewCommentInput(),
           Spacing.vXs,
           Expanded(child: _buildBody(context)),
@@ -196,10 +235,14 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
           Container(
             width: 32,
             height: 32,
-            color:
-                context.isDark ? AppColors.backgroundDark : AppColors.lightGray,
-            child:
-                const Icon(Icons.person, size: 16, color: AppColors.mediumGray),
+            color: context.isDark
+                ? AppColors.backgroundDark
+                : AppColors.lightGray,
+            child: const Icon(
+              Icons.person,
+              size: 16,
+              color: AppColors.mediumGray,
+            ),
           ),
           Spacing.hSm,
           Expanded(
@@ -216,10 +259,13 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor:
-                    isDark ? AppColors.backgroundDark : AppColors.lightGray,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                fillColor: isDark
+                    ? AppColors.backgroundDark
+                    : AppColors.lightGray,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 isDense: true,
               ),
               style: TextStyle(
@@ -327,8 +373,9 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
-                            color:
-                                isDark ? AppColors.white : AppColors.darkGray,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.darkGray,
                           ),
                         ),
                         Spacing.hXs,
@@ -354,8 +401,10 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                     GestureDetector(
                       onTap: () => isReplying
                           ? _cancelReply()
-                          : _activateReply(node.key,
-                              displayName: comment.user?.displayName),
+                          : _activateReply(
+                              node.key,
+                              displayName: comment.user?.displayName,
+                            ),
                       child: Text(
                         isReplying ? 'Cancelar' : 'Responder',
                         style: TextStyle(

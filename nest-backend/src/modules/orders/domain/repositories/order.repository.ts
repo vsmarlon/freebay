@@ -1,4 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
+import { Prisma } from '@prisma/client';
 import { OrderFullPayload, OrderProductPayload } from '../../types/order.types';
 
 export interface CreateOrderTxData {
@@ -23,10 +24,19 @@ export interface CancelOrderTxData {
   amount: number;
   status: string;
   quantity: number;
+  sellerId: string;
+  sellerAmount: number;
+}
+
+export interface ProductForOrder {
+  id: string;
+  sellerId: string;
+  price: number;
 }
 
 export abstract class OrderRepository {
   abstract findById(id: string): RepositoryResponse<OrderFullPayload | null>;
+  abstract findProductForOrder(productId: string): RepositoryResponse<ProductForOrder | null>;
   abstract findByBuyerId(buyerId: string): RepositoryResponse<OrderProductPayload[]>;
   abstract findBySellerId(sellerId: string): RepositoryResponse<OrderProductPayload[]>;
   abstract countBySellerId(sellerId: string): RepositoryResponse<number>;
@@ -36,4 +46,6 @@ export abstract class OrderRepository {
   abstract confirmDelivery(data: ConfirmDeliveryData): RepositoryResponse<void>;
   abstract activateEscrow(orderId: string, sellerId: string, sellerAmount: number): RepositoryResponse<void>;
   abstract cancelOrder(data: CancelOrderTxData): RepositoryResponse<void>;
+  abstract confirm(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
+  abstract cancel(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
 }

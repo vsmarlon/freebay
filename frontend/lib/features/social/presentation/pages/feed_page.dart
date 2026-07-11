@@ -11,11 +11,13 @@ import 'package:freebay/features/social/presentation/widgets/create_composer_she
 import 'package:freebay/core/components/app_refresh_indicator.dart';
 import 'package:freebay/core/components/app_shell_scaffold_key.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/hide_on_scroll.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
@@ -25,9 +27,10 @@ class FeedPage extends ConsumerStatefulWidget {
 }
 
 class _FeedPageState extends ConsumerState<FeedPage>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late final HideOnScrollController _headerHide;
 
   @override
   bool get wantKeepAlive => true;
@@ -44,6 +47,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
       curve: Curves.linear,
     );
     _animationController.forward();
+    _headerHide = HideOnScrollController(vsync: this);
 
     // ref.read is allowed in initState() per Riverpod docs — one-time seeding.
     final currentState = ref.read(feedProvider);
@@ -51,10 +55,13 @@ class _FeedPageState extends ConsumerState<FeedPage>
     if (currentState.posts.isEmpty && !currentState.isLoading) {
       Future.microtask(() {
         if (!mounted) return;
-        ref.read(feedProvider.notifier).loadFeed(
+        ref
+            .read(feedProvider.notifier)
+            .loadFeed(
               refresh: true,
-              feedType:
-                  feedType == FeedType.following ? 'following' : 'explore',
+              feedType: feedType == FeedType.following
+                  ? 'following'
+                  : 'explore',
             );
       });
     }
@@ -63,12 +70,15 @@ class _FeedPageState extends ConsumerState<FeedPage>
   @override
   void dispose() {
     _animationController.dispose();
+    _headerHide.dispose();
     super.dispose();
   }
 
   void _onFeedTypeChanged(FeedType type) {
     ref.read(feedTypeProvider.notifier).state = type;
-    ref.read(feedProvider.notifier).loadFeed(
+    ref
+        .read(feedProvider.notifier)
+        .loadFeed(
           refresh: true,
           feedType: type == FeedType.following ? 'following' : 'explore',
         );
@@ -78,40 +88,61 @@ class _FeedPageState extends ConsumerState<FeedPage>
   Widget build(BuildContext context) {
     super.build(context);
     final feedState = ref.watch(feedProvider);
+    final headerHeight = MediaQuery.of(context).padding.top + 66;
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      body: Column(
+      body: Stack(
         children: [
-          PageHeader(
-            text: 'FREEBAY',
-            exclamation: '!',
-            leading: GestureDetector(
-              onTap: () => appShellScaffoldKey.currentState?.openDrawer(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(top: headerHeight),
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _headerHide.handleNotification,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: _buildBody(feedState),
                 ),
-                child: Icon(Icons.menu, color: context.textPrimary, size: 20),
               ),
             ),
-            actions: [
-              _HeaderIcon(
-                icon: Icons.notifications_outlined,
-                route: '/notifications',
-              ),
-              _HeaderIcon(
-                icon: Icons.account_balance_wallet_outlined,
-                route: '/wallet',
-              ),
-            ],
           ),
-          Expanded(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: _buildBody(feedState),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: ScrollAwareBar(
+              animation: _headerHide.animation,
+              height: headerHeight,
+              edge: ScrollBarEdge.top,
+              child: PageHeader(
+                text: 'FREEBAY',
+                exclamation: '!',
+                leading: GestureDetector(
+                  onTap: () => appShellScaffoldKey.currentState?.openDrawer(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: context.borderColor, width: 2),
+                    ),
+                    child: Icon(
+                      Icons.menu,
+                      color: context.textPrimary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                actions: [
+                  _HeaderIcon(
+                    icon: Icons.notifications_outlined,
+                    route: '/notifications',
+                  ),
+                  _HeaderIcon(
+                    icon: Icons.account_balance_wallet_outlined,
+                    route: '/wallet',
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -127,11 +158,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
         .toList();
 
     final header = Column(
-      children: [
-        _buildFeedTitle(feedType, contentFilter),
-        Spacing.vSm,
-        _buildCreatorRow(),
-      ],
+      children: [_buildFeedTitle(feedType, contentFilter), Spacing.vSm],
     );
 
     if (feedState.error != null && feedState.posts.isEmpty) {
@@ -143,10 +170,13 @@ class _FeedPageState extends ConsumerState<FeedPage>
               message: 'Verifique sua conexão e tente novamente',
               onRetry: () {
                 final type = ref.read(feedTypeProvider);
-                ref.read(feedProvider.notifier).loadFeed(
+                ref
+                    .read(feedProvider.notifier)
+                    .loadFeed(
                       refresh: true,
-                      feedType:
-                          type == FeedType.following ? 'following' : 'explore',
+                      feedType: type == FeedType.following
+                          ? 'following'
+                          : 'explore',
                     );
               },
             ),
@@ -180,7 +210,9 @@ class _FeedPageState extends ConsumerState<FeedPage>
     return AppRefreshIndicator(
       onRefresh: () async {
         final type = ref.read(feedTypeProvider);
-        ref.read(feedProvider.notifier).loadFeed(
+        ref
+            .read(feedProvider.notifier)
+            .loadFeed(
               refresh: true,
               feedType: type == FeedType.following ? 'following' : 'explore',
             );
@@ -194,8 +226,6 @@ class _FeedPageState extends ConsumerState<FeedPage>
               children: [
                 _buildFeedTitle(feedType, contentFilter),
                 Spacing.vSm,
-                _buildCreatorRow(),
-                Spacing.vSm,
                 _buildInputArea(),
               ],
             );
@@ -203,16 +233,15 @@ class _FeedPageState extends ConsumerState<FeedPage>
           if (index == filteredPosts.length + 1) {
             return _buildLoadingMore();
           }
-          return FeedPostItem(post: filteredPosts[index - 1]);
+          return RepaintBoundary(
+            child: FeedPostItem(post: filteredPosts[index - 1]),
+          );
         },
       ),
     );
   }
 
-  Widget _buildFeedTitle(
-    FeedType feedType,
-    FeedContentFilter contentFilter,
-  ) {
+  Widget _buildFeedTitle(FeedType feedType, FeedContentFilter contentFilter) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Column(
@@ -233,31 +262,6 @@ class _FeedPageState extends ConsumerState<FeedPage>
               currentFilter: contentFilter,
               onChanged: (filter) =>
                   ref.read(feedContentFilterProvider.notifier).state = filter,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCreatorRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _CreatorActionButton(
-              icon: Icons.auto_stories_outlined,
-              label: 'STORY',
-              onTap: () => context.push('/create-story'),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _CreatorActionButton(
-              icon: Icons.edit_outlined,
-              label: 'POST',
-              onTap: _openCreateChooser,
             ),
           ),
         ],
@@ -286,10 +290,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: context.surfaceColor,
-          border: Border.all(
-            color: AppColors.onSurface,
-            width: 2,
-          ),
+          border: Border.all(color: AppColors.onSurface, width: 2),
         ),
         child: Row(
           children: [
@@ -309,7 +310,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
             Spacing.hSm,
             Expanded(
               child: Text(
-                'Criar post social ou anuncio de venda',
+                'Criar post social ou anúncio de venda',
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
@@ -317,11 +318,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
                 ),
               ),
             ),
-            const Icon(
-              Icons.add,
-              color: AppColors.primaryContainer,
-              size: 20,
-            ),
+            const Icon(Icons.add, color: AppColors.primaryContainer, size: 20),
           ],
         ),
       ),
@@ -330,16 +327,14 @@ class _FeedPageState extends ConsumerState<FeedPage>
 
   void _openCreateChooser() {
     HapticFeedback.lightImpact();
-    showModalBottomSheet(
+    showBrutalistSheet(
       context: context,
+      title: 'O QUE VOCÊ QUER CRIAR?',
       builder: (_) => const CreateComposerSheet(),
     );
   }
 
-  bool _matchesContentFilter(
-    PostEntity post,
-    FeedContentFilter contentFilter,
-  ) {
+  bool _matchesContentFilter(PostEntity post, FeedContentFilter contentFilter) {
     switch (contentFilter) {
       case FeedContentFilter.socialOnly:
         return post.type != 'PRODUCT';
@@ -397,49 +392,6 @@ class _HeaderIcon extends StatelessWidget {
           border: Border.all(color: context.borderColor, width: 2),
         ),
         child: Icon(icon, color: context.textPrimary, size: 20),
-      ),
-    );
-  }
-}
-
-class _CreatorActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _CreatorActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: context.surfaceColor,
-          border: Border.all(color: context.borderColor, width: 2),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 16, color: AppColors.primaryContainer),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-                color: AppColors.primaryContainer,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

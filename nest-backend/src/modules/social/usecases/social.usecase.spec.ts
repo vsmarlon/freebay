@@ -123,7 +123,7 @@ describe('LikePostUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.liked).toBe(true);
+      expect(result.value).toBeUndefined();
     }
     expect(mockLikeRepository.createLike).toHaveBeenCalled();
     expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { increment: 1 } });
@@ -176,7 +176,7 @@ describe('UnlikePostUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.unliked).toBe(true);
+      expect(result.value).toBeUndefined();
     }
     expect(mockLikeRepository.deletePostLikeByUser).toHaveBeenCalledWith('user-123', 'post-123');
     expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { decrement: 1 } });

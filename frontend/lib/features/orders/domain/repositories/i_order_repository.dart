@@ -1,6 +1,6 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/data/services/order_service.dart';
+import 'package:freebay/features/orders/data/entities/order_list_response.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
 abstract class IOrderRepository {

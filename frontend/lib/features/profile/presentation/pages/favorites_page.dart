@@ -59,106 +59,106 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                       padding: const EdgeInsets.all(16),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.7,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
-                      itemCount: 6,
-                      itemBuilder: (_, __) => const AppCard.skeleton(),
-                    )
-                  : state.products.isEmpty
-                      ? ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.22),
-                            Icon(
-                              Icons.favorite_border,
-                              size: 80,
-                              color: isDark
-                                  ? AppColors.mediumGray
-                                  : AppColors.mediumGray,
-                            ),
-                            const SizedBox(height: 20),
-                            Text(
-                              'Você ainda não tem favoritos',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: AppTypography.headlineFontFamily,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? AppColors.white
-                                    : AppColors.darkGray,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Toque no coração dos produtos para salvar aqui.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.mediumGray,
-                              ),
-                            ),
-                          ],
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             childAspectRatio: 0.7,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
                           ),
-                          itemCount: state.products.length,
-                          itemBuilder: (context, index) {
-                            final product = state.products[index];
-                            return Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: AppCard(
-                                    title: product.title,
-                                    priceInCents: product.price,
-                                    imageUrl: product.imageUrl,
-                                    variant: AppCardVariant.compact,
-                                    onTap: () =>
-                                        context.push('/products/${product.id}'),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: InkWell(
-                                    onTap: () {
-                                      HapticFeedback.lightImpact();
-                                      ref
-                                          .read(favoritesProvider.notifier)
-                                          .toggleFavorite(product.id);
-                                    },
-                                    child: Container(
-                                      width: 32,
-                                      height: 32,
-                                      color: isDark
-                                          ? AppColors.surfaceDark
-                                          : AppColors.white,
-                                      child: const Icon(
-                                        Icons.favorite,
-                                        size: 18,
-                                        color: AppColors.error,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
+                      itemCount: 6,
+                      itemBuilder: (_, _) => const AppCard.skeleton(),
+                    )
+                  : state.products.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.22,
                         ),
+                        Icon(
+                          Icons.favorite_border,
+                          size: 80,
+                          color: isDark
+                              ? AppColors.mediumGray
+                              : AppColors.mediumGray,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Você ainda não tem favoritos',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: AppTypography.headlineFontFamily,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.darkGray,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Toque no coração dos produtos para salvar aqui.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            color: isDark
+                                ? AppColors.mediumGray
+                                : AppColors.mediumGray,
+                          ),
+                        ),
+                      ],
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.7,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                      itemCount: state.products.length,
+                      itemBuilder: (context, index) {
+                        final product = state.products[index];
+                        return Stack(
+                          children: [
+                            Positioned.fill(
+                              child: AppCard(
+                                title: product.title,
+                                priceInCents: product.price,
+                                imageUrl: product.imageUrl,
+                                variant: AppCardVariant.compact,
+                                onTap: () =>
+                                    context.push('/products/${product.id}'),
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: InkWell(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  ref
+                                      .read(favoritesProvider.notifier)
+                                      .toggleFavorite(product.id);
+                                },
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  color: isDark
+                                      ? AppColors.surfaceDark
+                                      : AppColors.white,
+                                  child: const Icon(
+                                    Icons.favorite,
+                                    size: 18,
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
             ),
           ),
         ],

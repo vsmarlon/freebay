@@ -6,15 +6,16 @@ import 'package:freebay/core/components/app_card.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/features/product/data/repositories/product_repository.dart';
+import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 
 final myProductsProvider = FutureProvider<List<ProductEntity>>((ref) async {
-  final repository = ProductRepository();
+  final repository = ref.watch(productRepositoryProvider);
   final result = await repository.getMyProducts();
   return result.fold(
     (failure) => throw Exception(failure.message),
@@ -66,11 +67,7 @@ class MyProductsPage extends ConsumerWidget {
               data: (products) {
                 return Column(
                   children: [
-                    BrutalistBreadcrumb(items: [
-                      BreadcrumbItem(
-                          label: 'Perfil', onTap: () => context.pop()),
-                      const BreadcrumbItem(label: 'Meus An\u00fancios'),
-                    ]),
+                    BrutalistBreadcrumb(items: context.breadcrumbs),
                     Expanded(
                       child: products.isEmpty
                           ? EmptyState(
@@ -92,16 +89,19 @@ class MyProductsPage extends ConsumerWidget {
                                 padding: const EdgeInsets.all(16),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 0.75,
-                                ),
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 0.75,
+                                    ),
                                 itemCount: products.length,
                                 itemBuilder: (context, index) {
                                   final product = products[index];
                                   return _buildProductCard(
-                                      context, product, isDark);
+                                    context,
+                                    product,
+                                    isDark,
+                                  );
                                 },
                               ),
                             ),
@@ -118,15 +118,18 @@ class MyProductsPage extends ConsumerWidget {
                   childAspectRatio: 0.7,
                 ),
                 itemCount: 6,
-                itemBuilder: (_, __) => const AppCard.skeleton(),
+                itemBuilder: (_, _) => const AppCard.skeleton(),
                 physics: const NeverScrollableScrollPhysics(),
               ),
               error: (err, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: AppColors.error),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.error,
+                    ),
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar an\u00fancios',
@@ -145,7 +148,10 @@ class MyProductsPage extends ConsumerWidget {
   }
 
   Widget _buildProductCard(
-      BuildContext context, ProductEntity product, bool isDark) {
+    BuildContext context,
+    ProductEntity product,
+    bool isDark,
+  ) {
     final price = product.price > 0 ? product.price / 100 : 0.0;
 
     return GestureDetector(
@@ -155,7 +161,9 @@ class MyProductsPage extends ConsumerWidget {
           color: isDark ? AppColors.surfaceDark : AppColors.white,
           borderRadius: BorderRadius.zero,
           border: Border.all(
-              color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
+            color: AppColors.onSurface.withValues(alpha: 0.15),
+            width: 2,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,8 +172,9 @@ class MyProductsPage extends ConsumerWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color:
-                      isDark ? AppColors.backgroundDark : AppColors.lightGray,
+                  color: isDark
+                      ? AppColors.backgroundDark
+                      : AppColors.lightGray,
                 ),
                 child: product.imageUrl != null && product.imageUrl!.isNotEmpty
                     ? Image.network(product.imageUrl!, fit: BoxFit.cover)

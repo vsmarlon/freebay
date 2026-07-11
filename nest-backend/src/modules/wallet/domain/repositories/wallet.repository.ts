@@ -18,4 +18,6 @@ export abstract class WalletRepository {
   abstract updateBalance(userId: string, data: Prisma.WalletUpdateInput): RepositoryResponse<Wallet>;
   abstract updateRecipient(userId: string, recipientId: string): RepositoryResponse<Wallet>;
   abstract findUserById(userId: string): RepositoryResponse<{ id: string } | null>;
+  abstract creditPending(userId: string, amount: number, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
+  abstract findWithdrawalByIdempotencyKey(key: string): RepositoryResponse<Withdrawal | null>;
 }

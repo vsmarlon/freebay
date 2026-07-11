@@ -7,7 +7,7 @@ import { OrderRepository } from '../domain/repositories/order.repository';
 export class ActivateEscrowUseCase {
   constructor(private readonly orderRepository: OrderRepository) {}
 
-  async execute(orderId: string): Promise<Either<AppError, { activated: boolean }>> {
+  async execute(orderId: string): Promise<Either<AppError, void>> {
     const orderResult = await this.orderRepository.findById(orderId);
     if (isLeft(orderResult)) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
@@ -19,6 +19,6 @@ export class ActivateEscrowUseCase {
     );
     if (isLeft(result)) return left(result.value);
 
-    return right({ activated: true });
+    return right(undefined);
   }
 }

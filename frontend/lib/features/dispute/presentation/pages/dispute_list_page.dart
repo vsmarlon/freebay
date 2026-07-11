@@ -8,6 +8,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
@@ -24,7 +25,8 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
   void initState() {
     super.initState();
     Future.microtask(
-        () => ref.read(disputeListProvider.notifier).loadDisputes());
+      () => ref.read(disputeListProvider.notifier).loadDisputes(),
+    );
   }
 
   @override
@@ -52,10 +54,7 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
               ),
             ),
           ),
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Minhas Disputas'),
-          ]),
+          BrutalistBreadcrumb(items: context.breadcrumbs),
           Expanded(child: _buildBody(state)),
         ],
       ),
@@ -106,8 +105,10 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
                       ref.read(disputeListProvider.notifier).loadDisputes(),
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    child:
-                        Text('Tentar novamente', style: AppTypography.button),
+                    child: Text(
+                      'Tentar novamente',
+                      style: AppTypography.button,
+                    ),
                   ),
                 ),
               ),
@@ -130,21 +131,23 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: state.disputes.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final dispute = state.disputes[index];
           return BrutalistBox(
             child: ListTile(
-              title: Text('Disputa #${dispute.id.split('-').first}',
-                  style: AppTypography.bodyMedium),
+              title: Text(
+                'Disputa #${dispute.id.split('-').first}',
+                style: AppTypography.bodyMedium,
+              ),
               subtitle: Text(
                 dispute.status.label,
                 style: AppTypography.bodySmall.copyWith(
                   color: dispute.isOpen
                       ? AppColors.warning
                       : dispute.isResolved
-                          ? AppColors.success
-                          : AppColors.onSurfaceVariant,
+                      ? AppColors.success
+                      : AppColors.onSurfaceVariant,
                 ),
               ),
               trailing: const Icon(Icons.chevron_right),

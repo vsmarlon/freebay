@@ -6,10 +6,12 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/features/profile/data/services/block_service.dart';
+import 'package:freebay/features/profile/data/entities/block_responses.dart';
 import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final blockServiceProvider = Provider<BlockService>((ref) {
   return BlockService();
@@ -38,25 +40,11 @@ class BlockedUsersPage extends ConsumerWidget {
         children: [
           PageHeader(
             text: 'USUÁRIOS BLOQUEADOS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
-            breadcrumbs: [
-              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-              const BreadcrumbItem(label: 'Usuários Bloqueados'),
-            ],
+            breadcrumbs: context.breadcrumbs,
           ),
           Expanded(
             child: blockedUsersAsync.when(
@@ -120,17 +108,19 @@ class BlockedUsersPage extends ConsumerWidget {
                         ),
                       );
               },
-              loading: () => const Center(
-                child: ShimmerBlock(width: 20, height: 20),
-              ),
+              loading: () =>
+                  const Center(child: ShimmerBlock(width: 20, height: 20)),
               error: (err, stack) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.error),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: AppColors.error,
+                      ),
                       Spacing.vMd,
                       Text(
                         'Erro ao carregar usuários bloqueados',

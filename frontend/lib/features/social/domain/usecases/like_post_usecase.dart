@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';

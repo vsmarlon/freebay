@@ -22,6 +22,10 @@ export class OrdersService {
     return this.orderRepository.findById(id);
   }
 
+  async findProductForOrder(productId: string) {
+    return this.orderRepository.findProductForOrder(productId);
+  }
+
   async findByBuyerId(buyerId: string) {
     return this.orderRepository.findByBuyerId(buyerId);
   }

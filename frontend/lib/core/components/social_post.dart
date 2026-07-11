@@ -8,6 +8,7 @@ import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class SocialPost extends StatefulWidget {
   final String userId;
@@ -89,18 +90,21 @@ class _SocialPostState extends State<SocialPost> {
   @pragma('vm:entry-point')
   void _handleShareExternal() {
     HapticFeedback.lightImpact();
-    showModalBottomSheet(
+    showBrutalistSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      title: 'COMPARTILHAR POST',
       builder: (context) => PostShareBottomSheet(
         userName: widget.userName,
         content: widget.content,
         onShareExternal: () async {
           Navigator.pop(context);
           final text = widget.content ?? '';
-          await Share.share(
-            '${text.isNotEmpty ? '$text\n\n' : ''}Check out this post on FreeBay!',
-            subject: 'Post from ${widget.userName}',
+          await SharePlus.instance.share(
+            ShareParams(
+              text:
+                  '${text.isNotEmpty ? '$text\n\n' : ''}Check out this post on FreeBay!',
+              subject: 'Post from ${widget.userName}',
+            ),
           );
         },
         onShareAsPost: () {
@@ -150,13 +154,11 @@ class _SocialPostState extends State<SocialPost> {
         ),
         decoration: BoxDecoration(
           color: context.surfaceColor,
-          border: Border.all(
-            color: context.borderColor,
-            width: 2,
-          ),
+          border: Border.all(color: context.borderColor, width: 2),
         ),
-        child:
-            hasImage ? _buildProductLayout(context) : _buildTextLayout(context),
+        child: hasImage
+            ? _buildProductLayout(context)
+            : _buildTextLayout(context),
       ),
     );
   }
@@ -181,8 +183,8 @@ class _SocialPostState extends State<SocialPost> {
                   curve: Curves.linear,
                   transform: _isImagePressed
                       ? (Matrix4.identity()
-                        ..setEntry(0, 0, 1.02)
-                        ..setEntry(1, 1, 1.02))
+                          ..setEntry(0, 0, 1.02)
+                          ..setEntry(1, 1, 1.02))
                       : Matrix4.identity(),
                   child: Container(
                     color: context.surfaceMidColor,
@@ -225,13 +227,12 @@ class _SocialPostState extends State<SocialPost> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: AppColors.brutalistGradient,
-          ),
+          decoration: BoxDecoration(gradient: AppColors.brutalistGradient),
           child: Text(
             widget.content ?? '',
-            style:
-                AppTypography.bodyMedium.copyWith(color: AppColors.onPrimary),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.onPrimary,
+            ),
           ),
         ),
         _buildActionsRow(),
@@ -244,10 +245,7 @@ class _SocialPostState extends State<SocialPost> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-            color: context.borderColor,
-            width: 2,
-          ),
+          bottom: BorderSide(color: context.borderColor, width: 2),
         ),
       ),
       child: Row(
@@ -264,12 +262,13 @@ class _SocialPostState extends State<SocialPost> {
                 color: AppColors.primaryContainer,
                 borderRadius: BorderRadius.zero,
               ),
-              child: widget.userAvatarUrl != null &&
+              child:
+                  widget.userAvatarUrl != null &&
                       widget.userAvatarUrl!.isNotEmpty
                   ? Image.network(
                       widget.userAvatarUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
+                      errorBuilder: (_, _, _) => const Icon(
                         Icons.person,
                         color: AppColors.onPrimary,
                         size: 20,

@@ -31,30 +31,34 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeStr =
-        createdAt != null ? DateFormat('HH:mm').format(createdAt!) : '';
+    final timeStr = createdAt != null
+        ? DateFormat('HH:mm').format(createdAt!)
+        : '';
 
     return Padding(
       padding: EdgeInsets.only(bottom: isConsecutive ? 2 : 8),
       child: Column(
-        crossAxisAlignment:
-            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isMe
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment:
-                isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isMe
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
-              if (!isMe) const Spacer(),
               Flexible(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isMe
                         ? accentColor
                         : (isDark
-                            ? AppColors.surfaceDark
-                            : AppColors.surfaceContainerLow),
+                              ? AppColors.surfaceDark
+                              : AppColors.surfaceContainerLow),
                     borderRadius: BorderRadius.zero,
                   ),
                   child: Text(
@@ -69,16 +73,19 @@ class MessageBubble extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isMe) const Spacer(),
             ],
           ),
           Padding(
             padding: EdgeInsets.only(
-                top: 2, left: isMe ? 0 : 4, right: isMe ? 4 : 0),
+              top: 2,
+              left: isMe ? 0 : 4,
+              right: isMe ? 4 : 0,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment:
-                  isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+              mainAxisAlignment: isMe
+                  ? MainAxisAlignment.end
+                  : MainAxisAlignment.start,
               children: [
                 if (timeStr.isNotEmpty)
                   Text(
@@ -91,10 +98,7 @@ class MessageBubble extends StatelessWidget {
                   ),
                 if (isMe) ...[
                   const SizedBox(width: 4),
-                  _ReadStatusIcon(
-                    isRead: _isRead,
-                    isDelivered: _isDelivered,
-                  ),
+                  _ReadStatusIcon(isRead: _isRead, isDelivered: _isDelivered),
                 ],
               ],
             ),
@@ -109,10 +113,7 @@ class _ReadStatusIcon extends StatelessWidget {
   final bool isRead;
   final bool isDelivered;
 
-  const _ReadStatusIcon({
-    required this.isRead,
-    required this.isDelivered,
-  });
+  const _ReadStatusIcon({required this.isRead, required this.isDelivered});
 
   @override
   Widget build(BuildContext context) {
@@ -134,9 +135,7 @@ class _ReadStatusIcon extends StatelessWidget {
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.done, size: 14, color: context.textSecondary),
-      ],
+      children: [Icon(Icons.done, size: 14, color: context.textSecondary)],
     );
   }
 }

@@ -26,6 +26,9 @@ sealed class Either<L, R> {
       return onRight((this as Right<L, R>).value);
     }
   }
+
+  /// Returns the [Right] value or the result of [dflt] if this is a [Left]
+  R getOrElse(R Function() dflt) => fold((_) => dflt(), (r) => r);
 }
 
 class Left<L, R> extends Either<L, R> {

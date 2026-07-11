@@ -56,82 +56,84 @@ class FeedDrawer extends ConsumerWidget {
     final bio = user?.bio;
 
     return Drawer(
-      child: SafeArea(
-        child: Column(
-          children: [
-            Flexible(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  _Header(
-                    name: user?.displayName ?? 'Usuário',
-                    avatarUrl: user?.avatarUrl,
-                    isVerified: user?.isVerified ?? false,
-                    onTap: () => _goProfile(context),
-                  ),
-                  _StatsStrip(
-                    followers: user?.followersCount ?? 0,
-                    following: user?.followingCount ?? 0,
-                    sales: user?.salesCount ?? 0,
-                    reputation: user?.reputationScore ?? 0,
-                    onFollowers: () {
-                      _closeDrawer(context);
-                      context.push('/profile/followers');
-                    },
-                    onFollowing: () {
-                      _closeDrawer(context);
-                      context.push('/profile/following');
-                    },
-                  ),
-                  if (bio != null && bio.isNotEmpty) _BioBlock(bio: bio),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: ProfileMenuList(showLogout: false),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                    child: BrutalistBox(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          MenuListTile(
-                            icon: Icons.settings_outlined,
-                            label: 'Configurações',
-                            onTap: () {
-                              _closeDrawer(context);
-                              showProfileSettingsSheet(context);
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.help_outline,
-                            label: 'Ajuda e suporte',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/faq');
-                            },
-                          ),
-                        ],
+      child: RepaintBoundary(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Flexible(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _Header(
+                      name: user?.displayName ?? 'Usuário',
+                      avatarUrl: user?.avatarUrl,
+                      isVerified: user?.isVerified ?? false,
+                      onTap: () => _goProfile(context),
+                    ),
+                    _StatsStrip(
+                      followers: user?.followersCount ?? 0,
+                      following: user?.followingCount ?? 0,
+                      sales: user?.salesCount ?? 0,
+                      reputation: user?.reputationScore ?? 0,
+                      onFollowers: () {
+                        _closeDrawer(context);
+                        context.push('/profile/followers');
+                      },
+                      onFollowing: () {
+                        _closeDrawer(context);
+                        context.push('/profile/following');
+                      },
+                    ),
+                    if (bio != null && bio.isNotEmpty) _BioBlock(bio: bio),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: ProfileMenuList(showLogout: false),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      child: BrutalistBox(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            MenuListTile(
+                              icon: Icons.settings_outlined,
+                              label: 'Configurações',
+                              onTap: () {
+                                _closeDrawer(context);
+                                showProfileSettingsSheet(context);
+                              },
+                            ),
+                            MenuListTile(
+                              icon: Icons.help_outline,
+                              label: 'Ajuda e suporte',
+                              onTap: () {
+                                _closeDrawer(context);
+                                context.push('/faq');
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            _Footer(
-              isDark: ref.watch(isDarkModeProvider),
-              onToggleTheme: () =>
-                  ref.read(themeModeProvider.notifier).toggleTheme(),
-              onSettings: () {
-                _closeDrawer(context);
-                showProfileSettingsSheet(context);
-              },
-              onLogout: () => _confirmLogout(context, ref),
-              onReportBug: () {
-                _closeDrawer(context);
-                showBugReportSheet(context);
-              },
-            ),
-          ],
+              _Footer(
+                isDark: ref.watch(isDarkModeProvider),
+                onToggleTheme: () =>
+                    ref.read(themeModeProvider.notifier).toggleTheme(),
+                onSettings: () {
+                  _closeDrawer(context);
+                  showProfileSettingsSheet(context);
+                },
+                onLogout: () => _confirmLogout(context, ref),
+                onReportBug: () {
+                  _closeDrawer(context);
+                  showBugReportSheet(context);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -342,21 +344,16 @@ class _Footer extends StatelessWidget {
         child: Row(
           children: [
             _FooterAction(
-              icon:
-                  isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+              icon: isDark
+                  ? Icons.dark_mode_outlined
+                  : Icons.light_mode_outlined,
               label: isDark ? 'ESCURO' : 'CLARO',
               onTap: onToggleTheme,
             ),
             const Spacer(),
-            _FooterAction(
-              icon: Icons.bug_report_outlined,
-              onTap: onReportBug,
-            ),
+            _FooterAction(icon: Icons.bug_report_outlined, onTap: onReportBug),
             Spacing.hSm,
-            _FooterAction(
-              icon: Icons.settings_outlined,
-              onTap: onSettings,
-            ),
+            _FooterAction(icon: Icons.settings_outlined, onTap: onSettings),
             Spacing.hSm,
             _FooterAction(
               icon: Icons.logout,
@@ -390,7 +387,7 @@ class _FooterAction extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

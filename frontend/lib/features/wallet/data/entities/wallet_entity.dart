@@ -1,26 +1,24 @@
-class WalletEntity {
-  final int availableBalance; // centavos
-  final int pendingBalance; // centavos
-  final int balance; // centavos
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  const WalletEntity({
-    required this.availableBalance,
-    required this.pendingBalance,
-    required this.balance,
-  });
+part 'wallet_entity.freezed.dart';
+part 'wallet_entity.g.dart';
 
-  factory WalletEntity.fromJson(Map<String, dynamic> json) {
-    final availableBalance = (json['availableBalance'] as num?)?.toInt() ?? 0;
-    final pendingBalance = (json['pendingBalance'] as num?)?.toInt() ?? 0;
-    return WalletEntity(
-      availableBalance: availableBalance,
-      pendingBalance: pendingBalance,
-      balance: (json['balance'] as num?)?.toInt() ??
-          availableBalance + pendingBalance,
-    );
-  }
+@freezed
+abstract class WalletEntity with _$WalletEntity {
+  const WalletEntity._();
+
+  const factory WalletEntity({
+    @Default(0) int availableBalance,
+    @Default(0) int pendingBalance,
+    int? balance,
+  }) = _WalletEntity;
+
+  factory WalletEntity.fromJson(Map<String, dynamic> json) =>
+      _$WalletEntityFromJson(json);
+
+  int get totalBalance => balance ?? (availableBalance + pendingBalance);
 
   double get availableReal => availableBalance / 100;
   double get pendingReal => pendingBalance / 100;
-  double get balanceReal => balance / 100;
+  double get balanceReal => totalBalance / 100;
 }

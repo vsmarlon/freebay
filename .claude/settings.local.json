@@ -32,7 +32,11 @@
       "Bash(npx eslint *)",
       "Bash(npx jest *)",
       "Bash(node -e \"const m = require\\('sanitize-html'\\); console.log\\(typeof m, Object.keys\\(m\\)\\);\")",
-      "Bash(xargs -I{} sh -c 'echo ==={}===; tail -15 \"{}\"')"
+      "Bash(xargs -I{} sh -c 'echo ==={}===; tail -15 \"{}\"')",
+      "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse --show-toplevel)",
+      "Bash(cat \"$\\(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse --show-toplevel\\)/.superpowers/sdd/progress.md\")",
+      "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" log --oneline -5)",
+      "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse HEAD)"
     ]
   }
 }

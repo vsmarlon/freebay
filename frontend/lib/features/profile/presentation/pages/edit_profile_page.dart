@@ -6,11 +6,13 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/utils/value_utils.dart';
+import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -27,11 +29,35 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _stateController = TextEditingController();
   final _cpfController = TextEditingController();
   bool _isLoading = false;
+  String _originalMaskedCpf = '';
 
   @override
   void initState() {
     super.initState();
     _loadProfileData();
+    _cpfController.addListener(_onCpfChanged);
+  }
+
+  void _onCpfChanged() {
+    final text = _cpfController.text;
+    if (text.contains('*')) return; // Don't format the masked CPF
+    final digits = text.replaceAll(RegExp(r'\D'), '');
+
+    String formatted = text;
+    if (digits.isEmpty) {
+      formatted = '';
+    } else if (digits.length == 11) {
+      formatted = ValueUtils.formatCPF(digits);
+    } else if (digits.length == 14) {
+      formatted = ValueUtils.formatCNPJ(digits);
+    }
+
+    if (formatted != text) {
+      _cpfController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
   }
 
   void _loadProfileData() {
@@ -41,6 +67,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _bioController.text = user.bio ?? '';
       _cityController.text = user.city ?? '';
       _stateController.text = user.state ?? '';
+      _originalMaskedCpf = user.cpf ?? '';
+      _cpfController.text = _originalMaskedCpf;
     });
   }
 
@@ -61,7 +89,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
     try {
       final repository = ref.read(profileRepositoryProvider);
-      final cpfDigits = _cpfController.text.replaceAll(RegExp(r'\D'), '');
+      final cpfText = _cpfController.text.trim();
+      final isPristine = cpfText == _originalMaskedCpf;
+      final cpfDigits = isPristine
+          ? null
+          : cpfText.replaceAll(RegExp(r'\D'), '');
+
       final result = await repository.updateProfile(
         displayName: _displayNameController.text.trim(),
         bio: _bioController.text.trim().isEmpty
@@ -73,18 +106,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         state: _stateController.text.trim().isEmpty
             ? null
             : _stateController.text.trim(),
-        cpf: cpfDigits.isEmpty ? null : cpfDigits,
+        cpf: cpfDigits?.isEmpty == true ? null : cpfDigits,
       );
 
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(failure.message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(failure.message)));
         },
-        (_) {
+        (updatedUser) {
+          ref.read(authControllerProvider.notifier).setUser(updatedUser);
           ref.invalidate(profileFutureProvider('me'));
-          ref.invalidate(authControllerProvider);
           context.pop();
         },
       );
@@ -106,27 +139,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         children: [
           PageHeader(
             text: 'EDITAR PERFIL',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
             actions: [
               InkWell(
                 onTap: _isLoading ? null : _saveProfile,
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: _isLoading
                       ? const ShimmerBlock(width: 80, height: 80)
                       : const Text(
@@ -139,10 +163,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 ),
               ),
             ],
-            breadcrumbs: [
-              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-              const BreadcrumbItem(label: 'Editar Perfil'),
-            ],
+            breadcrumbs: context.breadcrumbs,
           ),
           Expanded(
             child: profileAsync.when(
@@ -154,27 +175,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Spacing.vMd,
-                      Text(
-                        'Nome',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      TextFormField(
+                      AppTextField(
                         controller: _displayNameController,
-                        decoration: InputDecoration(
-                          hintText: 'Seu nome',
-                          filled: true,
-                          fillColor: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.surfaceLight,
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
+                        label: 'Nome',
+                        hint: 'Seu nome',
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Nome é obrigatório';
@@ -186,128 +190,52 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         },
                       ),
                       Spacing.vLg,
-                      Text(
-                        'Bio',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      TextFormField(
+                      AppTextField(
                         controller: _bioController,
+                        label: 'Bio',
+                        hint: 'Conte um pouco sobre você',
                         maxLines: 3,
                         maxLength: 150,
-                        decoration: InputDecoration(
-                          hintText: 'Conte um pouco sobre você',
-                          filled: true,
-                          fillColor: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.surfaceLight,
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
                       ),
-                      Spacing.vMd,
-                      Text(
-                        'Cidade',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      TextFormField(
+                      Spacing.vLg,
+                      AppTextField(
                         controller: _cityController,
-                        decoration: InputDecoration(
-                          hintText: 'Sua cidade',
-                          filled: true,
-                          fillColor: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.surfaceLight,
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
+                        label: 'Cidade',
+                        hint: 'Sua cidade',
                       ),
                       Spacing.vLg,
-                      Text(
-                        'Estado',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      TextFormField(
+                      AppTextField(
                         controller: _stateController,
-                        decoration: InputDecoration(
-                          hintText: 'Seu estado',
-                          filled: true,
-                          fillColor: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.surfaceLight,
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
+                        label: 'Estado',
+                        hint: 'Seu estado',
                       ),
                       Spacing.vLg,
-                      Row(
-                        children: [
-                          Text(
-                            'CPF / CNPJ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  isDark ? AppColors.white : AppColors.darkGray,
-                            ),
-                          ),
-                          Spacing.hSm,
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            color: AppColors.primaryContainer,
-                            child: const Text(
-                              'Obrigatório para compras',
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Spacing.vSm,
-                      TextFormField(
+                      AppTextField(
                         controller: _cpfController,
+                        label: 'CPF / CNPJ',
+                        hint:
+                            'Digite seu CPF (11 dígitos) ou CNPJ (14 dígitos)',
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(14)
-                        ],
-                        decoration: InputDecoration(
-                          hintText:
-                              'Somente números (CPF: 11 dígitos, CNPJ: 14)',
-                          filled: true,
-                          fillColor: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.surfaceLight,
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.zero,
-                            borderSide: BorderSide.none,
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d\-./*]'),
                           ),
-                        ),
+                          LengthLimitingTextInputFormatter(18),
+                        ],
                         validator: (value) {
                           if (value == null || value.isEmpty) return null;
+                          if (value == _originalMaskedCpf) return null;
+
                           final digits = value.replaceAll(RegExp(r'\D'), '');
-                          if (digits.length != 11 && digits.length != 14) {
+                          if (digits.length == 11) {
+                            if (!ValueUtils.validateCPF(digits)) {
+                              return 'CPF inválido';
+                            }
+                          } else if (digits.length == 14) {
+                            if (!ValueUtils.validateCNPJ(digits)) {
+                              return 'CNPJ inválido';
+                            }
+                          } else {
                             return 'CPF deve ter 11 dígitos, CNPJ 14 dígitos';
                           }
                           return null;
@@ -317,15 +245,17 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   ),
                 ),
               ),
-              loading: () => const Center(
-                child: ShimmerBlock(width: 20, height: 20),
-              ),
+              loading: () =>
+                  const Center(child: ShimmerBlock(width: 20, height: 20)),
               error: (err, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: AppColors.error),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.error,
+                    ),
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar perfil',

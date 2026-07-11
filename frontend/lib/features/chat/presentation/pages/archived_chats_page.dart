@@ -32,14 +32,19 @@ class ArchivedChatsPage extends ConsumerWidget {
                   decoration: BoxDecoration(
                     border: Border.all(color: context.borderColor, width: 2),
                   ),
-                  child: Icon(Icons.arrow_back,
-                      color: context.textPrimary, size: 20),
+                  child: Icon(
+                    Icons.arrow_back,
+                    color: context.textPrimary,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
           ),
           Expanded(
-            child: ref.watch(archivedChatsProvider).when(
+            child: ref
+                .watch(archivedChatsProvider)
+                .when(
                   data: (chats) {
                     if (chats.isEmpty) {
                       return const EmptyState(
@@ -55,13 +60,18 @@ class ArchivedChatsPage extends ConsumerWidget {
                       child: ListView.builder(
                         itemCount: chats.length,
                         itemBuilder: (context, index) => _buildArchivedItem(
-                            context, isDark, chats[index], ref),
+                          context,
+                          isDark,
+                          chats[index],
+                          ref,
+                        ),
                       ),
                     );
                   },
                   loading: () => _buildLoadingChat(context),
-                  error: (_, __) => const Center(
-                      child: Text('Erro ao carregar conversas arquivadas')),
+                  error: (_, _) => const Center(
+                    child: Text('Erro ao carregar conversas arquivadas'),
+                  ),
                 ),
           ),
         ],
@@ -95,7 +105,11 @@ class ArchivedChatsPage extends ConsumerWidget {
   }
 
   Widget _buildArchivedItem(
-      BuildContext context, bool isDark, ChatEntity chat, WidgetRef ref) {
+    BuildContext context,
+    bool isDark,
+    ChatEntity chat,
+    WidgetRef ref,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Container(
@@ -110,8 +124,10 @@ class ArchivedChatsPage extends ConsumerWidget {
           ),
         ),
         child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           leading: Container(
             width: 56,
             height: 56,
@@ -119,15 +135,18 @@ class ArchivedChatsPage extends ConsumerWidget {
               image: chat.otherAvatarUrl != null
                   ? DecorationImage(
                       image: NetworkImage(chat.otherAvatarUrl!),
-                      fit: BoxFit.cover)
+                      fit: BoxFit.cover,
+                    )
                   : null,
               color: isDark
                   ? AppColors.mediumGray.withAlpha(51)
                   : AppColors.lightGray,
             ),
             child: chat.otherAvatarUrl == null
-                ? Icon(Icons.person,
-                    color: isDark ? AppColors.white : AppColors.mediumGray)
+                ? Icon(
+                    Icons.person,
+                    color: isDark ? AppColors.white : AppColors.mediumGray,
+                  )
                 : null,
           ),
           title: Text(
@@ -160,17 +179,23 @@ class ArchivedChatsPage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   border: Border.all(color: context.borderColor, width: 2),
                 ),
-                child:
-                    Icon(Icons.unarchive, color: context.textPrimary, size: 18),
+                child: Icon(
+                  Icons.unarchive,
+                  color: context.textPrimary,
+                  size: 18,
+                ),
               ),
             ),
           ),
           onTap: () {
-            context.push('/chat/${chat.id}', extra: {
-              'oderName': chat.otherName,
-              'oderAvatarUrl': chat.otherAvatarUrl,
-              'chatType': chat.threadType.name,
-            });
+            context.push(
+              '/chat/${chat.id}',
+              extra: {
+                'oderName': chat.otherName,
+                'oderAvatarUrl': chat.otherAvatarUrl,
+                'chatType': chat.threadType.name,
+              },
+            );
           },
         ),
       ),

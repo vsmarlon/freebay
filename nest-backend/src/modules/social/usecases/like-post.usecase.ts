@@ -12,14 +12,14 @@ export class LikePostUseCase {
     private readonly likeRepository: LikeRepository,
   ) {}
 
-  async execute(input: LikePostInput): Promise<Either<AppError, { liked: boolean }>> {
+  async execute(input: LikePostInput): Promise<Either<AppError, void>> {
     const postResult = await this.postRepository.findById(input.postId);
     if (isLeft(postResult)) return left(postResult.value);
     if (!postResult.value) return left(new NotFoundError('Post'));
 
     const existingResult = await this.likeRepository.findPostLike(input.userId, input.postId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (existingResult.value) return right({ liked: true });
+    if (existingResult.value) return right(undefined);
 
     const createResult = await this.likeRepository.createLike({
       user: { connect: { id: input.userId } },
@@ -28,6 +28,6 @@ export class LikePostUseCase {
     if (isLeft(createResult)) return left(createResult.value);
 
     await this.postRepository.update(input.postId, { likesCount: { increment: 1 } });
-    return right({ liked: true });
+    return right(undefined);
   }
 }

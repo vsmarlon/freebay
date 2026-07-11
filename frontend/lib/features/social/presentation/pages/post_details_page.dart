@@ -1,3 +1,4 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_button.dart';
@@ -21,6 +22,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
@@ -120,13 +122,8 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
       backgroundColor: context.bgColor,
       body: Column(
         children: [
-          const PageHeader(
-            text: 'POST',
-          ),
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Post'),
-          ]),
+          const PageHeader(text: 'POST'),
+          BrutalistBreadcrumb(items: context.breadcrumbs),
           Expanded(child: _buildBody(context, state)),
         ],
       ),
@@ -230,7 +227,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           SliverToBoxAdapter(
             child: SocialPost(
               userId: post.user.id,
-              userName: post.user.displayName,
+              userName: post.user.displayNameOrDefault,
               userAvatarUrl: post.user.avatarUrl,
               content: post.content,
               imageUrl: post.imageUrl,
@@ -251,15 +248,18 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   }
                   return false;
                 }
-                final success =
-                    await ref.read(likesProvider.notifier).toggleLike(
-                          post.id,
-                          initialIsLiked: post.isLiked,
-                          initialCount: post.likesCount,
-                        );
+                final success = await ref
+                    .read(likesProvider.notifier)
+                    .toggleLike(
+                      post.id,
+                      initialIsLiked: post.isLiked,
+                      initialCount: post.likesCount,
+                    );
                 if (success) {
                   final newLikesState = ref.read(likesProvider);
-                  ref.read(feedProvider.notifier).updatePostLike(
+                  ref
+                      .read(feedProvider.notifier)
+                      .updatePostLike(
                         post.id,
                         newLikesState.getLikedOverride(post.id) ?? post.isLiked,
                         newLikesState.getCountOverride(post.id) ??
@@ -276,10 +276,9 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   }
                   return false;
                 }
-                return ref.read(savesProvider.notifier).toggleSave(
-                      post.id,
-                      initialIsSaved: post.isSaved,
-                    );
+                return ref
+                    .read(savesProvider.notifier)
+                    .toggleSave(post.id, initialIsSaved: post.isSaved);
               },
               onRepost: () async {
                 final user = ref.read(authControllerProvider).valueOrNull;
@@ -289,15 +288,18 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   }
                   return false;
                 }
-                final success =
-                    await ref.read(repostsProvider.notifier).toggleRepost(
-                          post.id,
-                          initialIsReposted: post.hasReposted,
-                          initialCount: post.sharesCount,
-                        );
+                final success = await ref
+                    .read(repostsProvider.notifier)
+                    .toggleRepost(
+                      post.id,
+                      initialIsReposted: post.hasReposted,
+                      initialCount: post.sharesCount,
+                    );
                 if (success) {
                   final newRepostsState = ref.read(repostsProvider);
-                  ref.read(feedProvider.notifier).updateSharesCount(
+                  ref
+                      .read(feedProvider.notifier)
+                      .updateSharesCount(
                         post.id,
                         newRepostsState.getCountOverride(post.id) ??
                             post.sharesCount,
@@ -311,7 +313,9 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
                     AppSnackbar.warning(
-                        context, 'Faça login para compartilhar');
+                      context,
+                      'Faça login para compartilhar',
+                    );
                   }
                   return;
                 }
@@ -372,12 +376,13 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   showRootNode: false,
                   expansionIndicatorBuilder: (context, node) =>
                       ChevronIndicator.rightDown(
-                    tree: node,
-                    color: context.textPrimary,
-                    padding: const EdgeInsets.all(8),
+                        tree: node,
+                        color: context.textPrimary,
+                        padding: const EdgeInsets.all(8),
+                      ),
+                  indentation: const Indentation(
+                    style: IndentStyle.squareJoint,
                   ),
-                  indentation:
-                      const Indentation(style: IndentStyle.squareJoint),
                   builder: (context, node) {
                     final comment = node.data;
                     if (comment == null) return const SizedBox.shrink();
@@ -415,7 +420,9 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               }
               return;
             }
-            await ref.read(commentLikesProvider.notifier).toggleLike(
+            await ref
+                .read(commentLikesProvider.notifier)
+                .toggleLike(
                   comment.id,
                   initialIsLiked: comment.isLiked,
                   initialCount: comment.likesCount,

@@ -1,3 +1,4 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
@@ -32,8 +33,8 @@ class PostDetailsController {
       },
       (_) {
         textController.clear();
-        _ref.read(postDetailsProvider(postId).notifier).refresh();
-        _ref.invalidate(feedProvider);
+        _ref.read(postDetailsProvider(postId).notifier).refreshComments();
+        _ref.read(feedProvider.notifier).updatePostCommentCount(postId, 1);
         return true;
       },
     );
@@ -46,5 +47,5 @@ class PostDetailsController {
 
 final postDetailsControllerProvider =
     Provider.family<PostDetailsController, String>(
-  (ref, postId) => PostDetailsController(ref, postId),
-);
+      (ref, postId) => PostDetailsController(ref, postId),
+    );

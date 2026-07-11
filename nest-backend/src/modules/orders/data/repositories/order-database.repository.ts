@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { OrderRepository, CreateOrderTxData, ConfirmDeliveryData, CancelOrderTxData } from '../../domain/repositories/order.repository';
+import { AppError, DatabaseError } from '@/shared/core/errors';
+import { OrderRepository, CreateOrderTxData, ConfirmDeliveryData, CancelOrderTxData, ProductForOrder } from '../../domain/repositories/order.repository';
 import { OrderFullPayload, OrderProductPayload, ORDER_INCLUDE_FULL, ORDER_INCLUDE_PRODUCT } from '../../types/order.types';
+import { Product, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PrismaOrderRepository implements OrderRepository {
@@ -18,6 +19,18 @@ export class PrismaOrderRepository implements OrderRepository {
       return right(order as OrderFullPayload | null);
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar pedido'));
+    }
+  }
+
+  async findProductForOrder(productId: string): RepositoryResponse<ProductForOrder | null> {
+    try {
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
+        select: { id: true, sellerId: true, price: true },
+      });
+      return right(product);
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar produto'));
     }
   }
 
@@ -78,7 +91,10 @@ export class PrismaOrderRepository implements OrderRepository {
 
       const order = await this.prisma.$transaction(async (tx) => {
         if (product.quantity > 1) {
-          const current = await tx.product.findUnique({ where: { id: data.productId } });
+          const products = await tx.$queryRaw<Product[]>`
+            SELECT * FROM "Product" WHERE id = ${data.productId} FOR UPDATE
+          `;
+          const current = products[0];
           if (!current || current.quantity <= current.soldCount) {
             throw new AppError('BAD_REQUEST', 'Produto sem estoque');
           }
@@ -224,11 +240,44 @@ export class PrismaOrderRepository implements OrderRepository {
               data: { availableBalance: { increment: data.amount } },
             });
           }
+          const sellerWallet = await tx.wallet.findUnique({ where: { userId: data.sellerId } });
+          if (sellerWallet) {
+            await tx.wallet.update({
+              where: { userId: data.sellerId },
+              data: { pendingBalance: { decrement: data.sellerAmount } },
+            });
+          }
         }
       });
       return right(void 0);
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao cancelar pedido'));
+    }
+  }
+
+  async confirm(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
+    try {
+      const client = tx ?? this.prisma;
+      await client.order.update({
+        where: { id: orderId },
+        data: { status: 'CONFIRMED', escrowStatus: 'HELD' },
+      });
+      return right(undefined);
+    } catch {
+      return left(new DatabaseError('Failed to confirm order'));
+    }
+  }
+
+  async cancel(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
+    try {
+      const client = tx ?? this.prisma;
+      await client.order.update({
+        where: { id: orderId },
+        data: { status: 'CANCELLED' },
+      });
+      return right(undefined);
+    } catch {
+      return left(new DatabaseError('Failed to cancel order'));
     }
   }
 }

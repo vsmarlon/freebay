@@ -1,11 +1,15 @@
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const String _biometryEnabledKey = 'biometry_enabled';
 
 class BiometryService {
   final LocalAuthentication _localAuth = LocalAuthentication();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
 
   Future<bool> isAvailable() async {
     try {
@@ -33,8 +37,9 @@ class BiometryService {
     }
   }
 
-  Future<bool> authenticate(
-      {String reason = 'Autentique para continuar'}) async {
+  Future<bool> authenticate({
+    String reason = 'Autentique para continuar',
+  }) async {
     try {
       return await _localAuth.authenticate(
         localizedReason: reason,
@@ -50,8 +55,8 @@ class BiometryService {
 
   Future<bool> isEnabled() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_biometryEnabledKey) ?? false;
+      final value = await _secureStorage.read(key: _biometryEnabledKey);
+      return value == 'true';
     } catch (e) {
       return false;
     }
@@ -59,8 +64,10 @@ class BiometryService {
 
   Future<void> setEnabled(bool enabled) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_biometryEnabledKey, enabled);
+      await _secureStorage.write(
+        key: _biometryEnabledKey,
+        value: enabled.toString(),
+      );
     } catch (e) {
       // Silently fail
     }

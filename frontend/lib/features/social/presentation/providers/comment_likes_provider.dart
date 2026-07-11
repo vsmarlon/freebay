@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 
 class CommentLikesState {
   /// Map of comment IDs to their liked status override (null means use entity value)
   final Map<String, bool> likedOverrides;
+
   /// Map of comment IDs to their like count override (null means use entity value)
   final Map<String, int> countOverrides;
 
@@ -33,7 +34,11 @@ class CommentLikesNotifier extends StateNotifier<CommentLikesState> {
   CommentLikesNotifier(this._repository) : super(const CommentLikesState());
 
   /// Toggles like status. If no override exists, it uses initial values from the entity.
-  Future<bool> toggleLike(String commentId, {required bool initialIsLiked, required int initialCount}) async {
+  Future<bool> toggleLike(
+    String commentId, {
+    required bool initialIsLiked,
+    required int initialCount,
+  }) async {
     final currentLiked = state.likedOverrides[commentId] ?? initialIsLiked;
     final currentCount = state.countOverrides[commentId] ?? initialCount;
 
@@ -47,11 +52,11 @@ class CommentLikesNotifier extends StateNotifier<CommentLikesState> {
     );
 
     try {
-      final result = newIsLiked 
+      final result = newIsLiked
           ? await _repository.likeComment(commentId)
           : await _repository.unlikeComment(commentId);
 
-      if (result.isLeft()) {
+      if (result.isLeft) {
         // Rollback on failure
         state = state.copyWith(
           likedOverrides: {...state.likedOverrides, commentId: currentLiked},
@@ -73,6 +78,6 @@ class CommentLikesNotifier extends StateNotifier<CommentLikesState> {
 
 final commentLikesProvider =
     StateNotifierProvider<CommentLikesNotifier, CommentLikesState>((ref) {
-  final repository = ref.read(socialRepositoryProvider);
-  return CommentLikesNotifier(repository);
-});
+      final repository = ref.read(socialRepositoryProvider);
+      return CommentLikesNotifier(repository);
+    });

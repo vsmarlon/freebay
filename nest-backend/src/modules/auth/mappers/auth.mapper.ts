@@ -15,9 +15,9 @@ export interface GuestResponse {
 }
 
 export const toAuthResponse = (user: User): AuthResponse => ({
-  user: toUserResponse(user),
+  user: toUserResponse(user, undefined, true),
 });
 
 export const toLoginResponse = (user: User): LoginResponse => ({
-  user: toUserResponse(user),
+  user: toUserResponse(user, undefined, true),
 });

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { DisputeWithOrder } from '../repositories/dispute.repository';
+import { DisputeWithOrder } from '../domain/repositories/dispute.repository';
 
 @Injectable()
 export class DisputeResolutionExecutionService {
@@ -15,6 +15,14 @@ export class DisputeResolutionExecutionService {
       await tx.wallet.update({
         where: { userId: dispute.order.buyerId },
         data: { availableBalance: { increment: dispute.order.amount } },
+      });
+    }
+
+    const sellerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.sellerId } });
+    if (sellerWallet) {
+      await tx.wallet.update({
+        where: { userId: dispute.order.sellerId },
+        data: { pendingBalance: { decrement: dispute.order.sellerAmount } },
       });
     }
   }

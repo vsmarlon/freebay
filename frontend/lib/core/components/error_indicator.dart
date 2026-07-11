@@ -8,16 +8,23 @@ class ErrorIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.error, width: 2),
-        ),
-        child: Icon(
-          Icons.bug_report_outlined,
-          color: AppColors.error,
-          size: 20,
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: InkWell(
+        onTap: onTap,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.error, width: 2),
+            ),
+            child: const Icon(
+              Icons.bug_report_outlined,
+              color: AppColors.error,
+              size: 20,
+            ),
+          ),
         ),
       ),
     );

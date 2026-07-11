@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient, Wallet, Withdrawal, Prisma } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, DatabaseError } from '@/shared/core/errors';
 import { WalletRepository, TransactionEntry } from '../../domain/repositories/wallet.repository';
 
 @Injectable()
@@ -95,6 +95,31 @@ export class WalletDatabaseRepository implements WalletRepository {
       return right(await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } }));
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
+    }
+  }
+
+  async creditPending(userId: string, amount: number, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
+    try {
+      const client = tx ?? this.prisma;
+      await client.wallet.upsert({
+        where: { userId },
+        create: {
+          user: { connect: { id: userId } },
+          pendingBalance: amount,
+        },
+        update: { pendingBalance: { increment: amount } },
+      });
+      return right(undefined);
+    } catch {
+      return left(new DatabaseError('Failed to credit pending balance'));
+    }
+  }
+
+  async findWithdrawalByIdempotencyKey(key: string): RepositoryResponse<Withdrawal | null> {
+    try {
+      return right(await this.prisma.withdrawal.findUnique({ where: { idempotencyKey: key } }));
+    } catch {
+      return left(new DatabaseError('Failed to find withdrawal by idempotency key'));
     }
   }
 }

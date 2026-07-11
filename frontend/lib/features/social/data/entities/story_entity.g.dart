@@ -6,15 +6,15 @@ part of 'story_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-StoryUserEntity _$StoryUserEntityFromJson(Map<String, dynamic> json) =>
-    StoryUserEntity(
+_StoryUserEntity _$StoryUserEntityFromJson(Map<String, dynamic> json) =>
+    _StoryUserEntity(
       id: json['id'] as String,
       displayName: json['displayName'] as String,
       avatarUrl: json['avatarUrl'] as String?,
       isVerified: json['isVerified'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$StoryUserEntityToJson(StoryUserEntity instance) =>
+Map<String, dynamic> _$StoryUserEntityToJson(_StoryUserEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'displayName': instance.displayName,
@@ -22,17 +22,17 @@ Map<String, dynamic> _$StoryUserEntityToJson(StoryUserEntity instance) =>
       'isVerified': instance.isVerified,
     };
 
-StoryEntity _$StoryEntityFromJson(Map<String, dynamic> json) => StoryEntity(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
-      imageUrl: json['imageUrl'] as String,
-      expiresAt: DateTime.parse(json['expiresAt'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      user: StoryUserEntity.fromJson(json['user'] as Map<String, dynamic>),
-      isViewed: json['isViewed'] as bool? ?? false,
-    );
+_StoryEntity _$StoryEntityFromJson(Map<String, dynamic> json) => _StoryEntity(
+  id: json['id'] as String,
+  userId: json['userId'] as String,
+  imageUrl: json['imageUrl'] as String,
+  expiresAt: DateTime.parse(json['expiresAt'] as String),
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  user: StoryUserEntity.fromJson(json['user'] as Map<String, dynamic>),
+  isViewed: json['isViewed'] as bool? ?? false,
+);
 
-Map<String, dynamic> _$StoryEntityToJson(StoryEntity instance) =>
+Map<String, dynamic> _$StoryEntityToJson(_StoryEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'userId': instance.userId,

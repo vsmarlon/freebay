@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
@@ -12,9 +12,11 @@ abstract class IProductRepository {
   });
   Future<Either<Failure, ProductEntity>> getProductById(String id);
   Future<Either<Failure, ProductEntity>> createProduct(
-      Map<String, dynamic> productData);
+    Map<String, dynamic> productData,
+  );
   Future<Either<Failure, ProductEntity>> updateProduct(
     String id,
     Map<String, dynamic> productData,
   );
+  Future<Either<Failure, List<ProductEntity>>> getMyProducts();
 }

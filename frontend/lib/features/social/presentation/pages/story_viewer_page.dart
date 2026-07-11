@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 
 class StoryViewerPage extends ConsumerStatefulWidget {
   final List<StoryEntity> stories;
@@ -125,11 +125,12 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
                 value: index < _currentIndex
                     ? 1.0
                     : index == _currentIndex
-                        ? (_isPaused ? 0.0 : null)
-                        : 0.0,
+                    ? (_isPaused ? 0.0 : null)
+                    : 0.0,
                 backgroundColor: AppColors.onPrimary.withValues(alpha: 0.3),
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(AppColors.onPrimary),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.onPrimary,
+                ),
               ),
             ),
           );
@@ -219,10 +220,7 @@ class _StoryPage extends StatefulWidget {
   final StoryEntity story;
   final bool isPaused;
 
-  const _StoryPage({
-    required this.story,
-    required this.isPaused,
-  });
+  const _StoryPage({required this.story, required this.isPaused});
 
   @override
   State<_StoryPage> createState() => _StoryPageState();

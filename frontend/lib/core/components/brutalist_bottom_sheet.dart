@@ -16,16 +16,28 @@ Future<T?> showBrutalistSheet<T>({
   return showModalBottomSheet<T>(
     context: context,
     backgroundColor: Colors.transparent,
+    isScrollControlled: true,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
     builder: (sheetContext) {
-      return Container(
-        color: sheetContext.isDark ? AppColors.surfaceDark : AppColors.white,
-        child: BrutalistSheetScaffold(
-          title: title,
-          builder: builder,
-          useSafeArea: useSafeArea,
-          showDragHandle: showDragHandle,
-          padding: padding,
+      final media = MediaQuery.of(sheetContext);
+      return Padding(
+        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
+          child: Material(
+            color: sheetContext.isDark
+                ? AppColors.surfaceDark
+                : AppColors.white,
+            child: SingleChildScrollView(
+              child: BrutalistSheetScaffold(
+                title: title,
+                builder: builder,
+                useSafeArea: useSafeArea,
+                showDragHandle: showDragHandle,
+                padding: padding,
+              ),
+            ),
+          ),
         ),
       );
     },

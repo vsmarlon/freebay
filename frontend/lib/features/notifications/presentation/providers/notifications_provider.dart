@@ -1,24 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/features/notifications/data/models/notification_model.dart';
+import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/data/repositories/notification_repository.dart';
+import 'package:freebay/features/notifications/domain/repositories/i_notification_repository.dart';
 
-final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
+final notificationRepositoryProvider = Provider<INotificationRepository>((ref) {
   return NotificationRepository();
 });
 
-final notificationsProvider = StateNotifierProvider<NotificationsNotifier,
-    AsyncValue<List<NotificationModel>>>((ref) {
-  return NotificationsNotifier(ref.read(notificationRepositoryProvider));
-});
+final notificationsProvider =
+    StateNotifierProvider<
+      NotificationsNotifier,
+      AsyncValue<List<NotificationEntity>>
+    >((ref) {
+      return NotificationsNotifier(ref.read(notificationRepositoryProvider));
+    });
 
-final unreadCountProvider =
-    StateNotifierProvider<UnreadCountNotifier, int>((ref) {
+final unreadCountProvider = StateNotifierProvider<UnreadCountNotifier, int>((
+  ref,
+) {
   return UnreadCountNotifier(ref.read(notificationRepositoryProvider));
 });
 
 class NotificationsNotifier
-    extends StateNotifier<AsyncValue<List<NotificationModel>>> {
-  final NotificationRepository _repository;
+    extends StateNotifier<AsyncValue<List<NotificationEntity>>> {
+  final INotificationRepository _repository;
 
   NotificationsNotifier(this._repository) : super(const AsyncValue.loading()) {
     loadNotifications();
@@ -50,7 +55,7 @@ class NotificationsNotifier
 }
 
 class UnreadCountNotifier extends StateNotifier<int> {
-  final NotificationRepository _repository;
+  final INotificationRepository _repository;
 
   UnreadCountNotifier(this._repository) : super(0) {
     loadUnreadCount();

@@ -3,7 +3,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { PrismaDisputeRepository } from '../repositories/dispute.repository';
+import { DisputeRepository } from '../domain/repositories/dispute.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 
@@ -11,15 +11,17 @@ import { DisputeResolutionExecutionService } from '../services/dispute-resolutio
 export class ResolveDisputeUseCase {
   constructor(
     private prisma: PrismaService,
-    private disputeRepo: PrismaDisputeRepository,
+    private disputeRepo: DisputeRepository,
     private notificationService: NotificationService,
     private transitionPolicy: DisputeTransitionPolicy,
     private resolutionExecution: DisputeResolutionExecutionService,
   ) {}
 
-  async execute(input: { disputeId: string; resolution: string; winner: 'BUYER' | 'SELLER' }): Promise<Either<AppError, { resolved: boolean }>> {
-    const dispute = await this.disputeRepo.findById(input.disputeId);
+  async execute(input: { disputeId: string; resolution: string; winner: 'BUYER' | 'SELLER' }): Promise<Either<AppError, void>> {
+    const disputeResult = await this.disputeRepo.findById(input.disputeId);
+    if (disputeResult.isLeft()) return left(disputeResult.value);
 
+    const dispute = disputeResult.value;
     if (!dispute) {
       return left(new NotFoundError('Dispute'));
     }
@@ -56,6 +58,6 @@ export class ResolveDisputeUseCase {
       this.notificationService.notifyDispute(dispute.order.sellerId, dispute.id, sellerMsg),
     ]);
 
-    return right({ resolved: true });
+    return right(undefined);
   }
 }

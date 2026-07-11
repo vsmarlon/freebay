@@ -11,18 +11,18 @@ export class SavePostUseCase {
     private readonly savedPostRepository: SavedPostRepository,
   ) {}
 
-  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, { saved: boolean }>> {
+  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {
     const postResult = await this.postRepository.findById(input.postId);
     if (isLeft(postResult)) return left(postResult.value);
     if (!postResult.value) return left(new NotFoundError('Post'));
 
     const existingResult = await this.savedPostRepository.findByUserAndPost(input.userId, input.postId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (existingResult.value) return right({ saved: true });
+    if (existingResult.value) return right(undefined);
 
     const saveResult = await this.savedPostRepository.save(input.userId, input.postId);
     if (isLeft(saveResult)) return left(saveResult.value);
 
-    return right({ saved: true });
+    return right(undefined);
   }
 }

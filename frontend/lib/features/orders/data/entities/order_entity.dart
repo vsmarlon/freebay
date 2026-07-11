@@ -1,8 +1,8 @@
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
+part 'order_entity.freezed.dart';
 part 'order_entity.g.dart';
 
 enum OrderStatus {
@@ -14,45 +14,26 @@ enum OrderStatus {
   cancelled,
   disputed;
 
-  static OrderStatus fromString(String value) {
-    switch (value.toUpperCase()) {
-      case 'PENDING':
-        return OrderStatus.pending;
-      case 'CONFIRMED':
-        return OrderStatus.confirmed;
-      case 'SHIPPED':
-        return OrderStatus.shipped;
-      case 'DELIVERED':
-        return OrderStatus.delivered;
-      case 'COMPLETED':
-        return OrderStatus.completed;
-      case 'CANCELLED':
-        return OrderStatus.cancelled;
-      case 'DISPUTED':
-        return OrderStatus.disputed;
-      default:
-        return OrderStatus.pending;
-    }
-  }
+  static OrderStatus fromString(String value) => switch (value.toUpperCase()) {
+    'PENDING' => OrderStatus.pending,
+    'CONFIRMED' => OrderStatus.confirmed,
+    'SHIPPED' => OrderStatus.shipped,
+    'DELIVERED' => OrderStatus.delivered,
+    'COMPLETED' => OrderStatus.completed,
+    'CANCELLED' => OrderStatus.cancelled,
+    'DISPUTED' => OrderStatus.disputed,
+    _ => OrderStatus.pending,
+  };
 
-  String get label {
-    switch (this) {
-      case OrderStatus.pending:
-        return 'Pendente';
-      case OrderStatus.confirmed:
-        return 'Confirmado';
-      case OrderStatus.shipped:
-        return 'Enviado';
-      case OrderStatus.delivered:
-        return 'Entregue';
-      case OrderStatus.completed:
-        return 'Concluído';
-      case OrderStatus.cancelled:
-        return 'Cancelado';
-      case OrderStatus.disputed:
-        return 'Em Disputa';
-    }
-  }
+  String get label => switch (this) {
+    OrderStatus.pending => 'Pendente',
+    OrderStatus.confirmed => 'Confirmado',
+    OrderStatus.shipped => 'Enviado',
+    OrderStatus.delivered => 'Entregue',
+    OrderStatus.completed => 'Concluído',
+    OrderStatus.cancelled => 'Cancelado',
+    OrderStatus.disputed => 'Em Disputa',
+  };
 
   String toApiString() => name.toUpperCase();
 }
@@ -62,153 +43,85 @@ enum EscrowStatus {
   released,
   refunded;
 
-  static EscrowStatus fromString(String value) {
-    switch (value.toUpperCase()) {
-      case 'HELD':
-        return EscrowStatus.held;
-      case 'RELEASED':
-        return EscrowStatus.released;
-      case 'REFUNDED':
-        return EscrowStatus.refunded;
-      default:
-        return EscrowStatus.held;
-    }
-  }
+  static EscrowStatus fromString(String value) => switch (value.toUpperCase()) {
+    'HELD' => EscrowStatus.held,
+    'RELEASED' => EscrowStatus.released,
+    'REFUNDED' => EscrowStatus.refunded,
+    _ => EscrowStatus.held,
+  };
 
-  String get label {
-    switch (this) {
-      case EscrowStatus.held:
-        return 'Em custódia';
-      case EscrowStatus.released:
-        return 'Liberado';
-      case EscrowStatus.refunded:
-        return 'Reembolsado';
-    }
-  }
+  String get label => switch (this) {
+    EscrowStatus.held => 'Em custódia',
+    EscrowStatus.released => 'Liberado',
+    EscrowStatus.refunded => 'Reembolsado',
+  };
 
   String toApiString() => name.toUpperCase();
 }
 
-@JsonSerializable()
-class OrderUserInfo extends Equatable {
-  final String id;
-  final String? displayName;
-  final String? avatarUrl;
-  @JsonKey(defaultValue: false)
-  final bool isVerified;
+String _orderStatusToJson(OrderStatus s) => s.toApiString();
+String _escrowStatusToJson(EscrowStatus s) => s.toApiString();
 
-  const OrderUserInfo({
-    required this.id,
-    this.displayName,
-    this.avatarUrl,
-    this.isVerified = false,
-  });
+@freezed
+abstract class OrderUserInfo with _$OrderUserInfo {
+  const OrderUserInfo._();
 
-  String get displayNameOrDefault => displayName ?? 'Usuário';
+  const factory OrderUserInfo({
+    required String id,
+    String? displayName,
+    String? avatarUrl,
+    @Default(false) bool isVerified,
+  }) = _OrderUserInfo;
 
   factory OrderUserInfo.fromJson(Map<String, dynamic> json) =>
       _$OrderUserInfoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OrderUserInfoToJson(this);
-
-  @override
-  List<Object?> get props => [id, displayName, avatarUrl, isVerified];
+  String get displayNameOrDefault => displayName ?? 'Usuário';
 }
 
-@JsonSerializable()
-class OrderEntity extends Equatable {
-  final String id;
-  final String buyerId;
-  final String sellerId;
-  final String productId;
-  @JsonKey(defaultValue: 0)
-  final int amount;
-  @JsonKey(defaultValue: 0)
-  final int platformFee;
-  @JsonKey(defaultValue: 0)
-  final int sellerAmount;
-  @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson)
-  final OrderStatus status;
-  @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson)
-  final EscrowStatus escrowStatus;
-  final DateTime createdAt;
-  final DateTime? deliveryConfirmedAt;
-  final ProductEntity? product;
-  final OrderUserInfo? buyer;
-  final OrderUserInfo? seller;
+@freezed
+abstract class OrderEntity with _$OrderEntity {
+  const OrderEntity._();
 
-  const OrderEntity({
-    required this.id,
-    required this.buyerId,
-    required this.sellerId,
-    required this.productId,
-    required this.amount,
-    required this.platformFee,
-    required this.sellerAmount,
-    required this.status,
-    required this.escrowStatus,
-    required this.createdAt,
-    this.deliveryConfirmedAt,
-    this.product,
-    this.buyer,
-    this.seller,
-  });
-
-  double get amountInReais => amount / 100;
-  double get platformFeeInReais => platformFee / 100;
-  double get sellerAmountInReais => sellerAmount / 100;
-
-  String get formattedAmount => CurrencyUtils.formatCents(amount);
-  String get formattedPlatformFee => CurrencyUtils.formatCents(platformFee);
-  String get formattedSellerAmount => CurrencyUtils.formatCents(sellerAmount);
-
-  String get shortId => id.length > 8 ? id.substring(0, 8) : id;
+  const factory OrderEntity({
+    required String id,
+    required String buyerId,
+    required String sellerId,
+    required String productId,
+    @Default(0) int amount,
+    @Default(0) int platformFee,
+    @Default(0) int sellerAmount,
+    @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson)
+    required OrderStatus status,
+    @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson)
+    required EscrowStatus escrowStatus,
+    required DateTime createdAt,
+    DateTime? deliveryConfirmedAt,
+    ProductEntity? product,
+    OrderUserInfo? buyer,
+    OrderUserInfo? seller,
+  }) = _OrderEntity;
 
   factory OrderEntity.fromJson(Map<String, dynamic> json) =>
       _$OrderEntityFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OrderEntityToJson(this);
-
-  @override
-  List<Object?> get props => [
-        id,
-        buyerId,
-        sellerId,
-        productId,
-        amount,
-        platformFee,
-        sellerAmount,
-        status,
-        escrowStatus,
-        createdAt,
-        deliveryConfirmedAt,
-        product,
-        buyer,
-        seller,
-      ];
+  double get amountInReais => amount / 100;
+  double get platformFeeInReais => platformFee / 100;
+  double get sellerAmountInReais => sellerAmount / 100;
+  String get formattedAmount => CurrencyUtils.formatCents(amount);
+  String get formattedPlatformFee => CurrencyUtils.formatCents(platformFee);
+  String get formattedSellerAmount => CurrencyUtils.formatCents(sellerAmount);
+  String get shortId => id.length > 8 ? id.substring(0, 8) : id;
 }
 
-String _orderStatusToJson(OrderStatus status) => status.toApiString();
-String _escrowStatusToJson(EscrowStatus status) => status.toApiString();
-
-@JsonSerializable()
-class CanReviewResponse extends Equatable {
-  @JsonKey(defaultValue: false)
-  final bool canReview;
-  final String? reviewType;
-  final String? reason;
-
-  const CanReviewResponse({
-    required this.canReview,
-    this.reviewType,
-    this.reason,
-  });
+@freezed
+abstract class CanReviewResponse with _$CanReviewResponse {
+  const factory CanReviewResponse({
+    @Default(false) bool canReview,
+    String? reviewType,
+    String? reason,
+  }) = _CanReviewResponse;
 
   factory CanReviewResponse.fromJson(Map<String, dynamic> json) =>
       _$CanReviewResponseFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CanReviewResponseToJson(this);
-
-  @override
-  List<Object?> get props => [canReview, reviewType, reason];
 }

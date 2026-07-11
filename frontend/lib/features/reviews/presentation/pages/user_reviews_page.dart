@@ -10,28 +10,26 @@ import 'package:freebay/features/reviews/domain/usecases/get_user_reviews_usecas
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
-final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>(
-  (ref, userId) async {
-    final usecase = ref.watch(getUserReviewsUsecaseProvider);
-    final result = await usecase(GetUserReviewsParams(userId: userId));
-    return result.fold(
-      (failure) => throw Exception(failure.message),
-      (response) => response,
-    );
-  },
-);
+final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
+  ref,
+  userId,
+) async {
+  final usecase = ref.watch(getUserReviewsUsecaseProvider);
+  final result = await usecase(GetUserReviewsParams(userId: userId));
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (response) => response,
+  );
+});
 
 class UserReviewsPage extends ConsumerStatefulWidget {
   final String userId;
   final String? userName;
 
-  const UserReviewsPage({
-    super.key,
-    required this.userId,
-    this.userName,
-  });
+  const UserReviewsPage({super.key, required this.userId, this.userName});
 
   @override
   ConsumerState<UserReviewsPage> createState() => _UserReviewsPageState();
@@ -57,7 +55,10 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
 
     final result = await ref.read(getUserReviewsUsecaseProvider)(
       GetUserReviewsParams(
-          userId: widget.userId, limit: _limit, offset: _offset),
+        userId: widget.userId,
+        limit: _limit,
+        offset: _offset,
+      ),
     );
 
     result.fold(
@@ -120,10 +121,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
               ),
             ),
           ),
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Avaliações'),
-          ]),
+          BrutalistBreadcrumb(items: context.breadcrumbs),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refresh,

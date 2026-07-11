@@ -8,17 +8,14 @@ import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import 'package:freebay/features/social/data/entities/post_entity.dart'
-    hide UserEntity;
+import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
 class ProfileTabs extends ConsumerWidget {
   final UserEntity user;
 
-  const ProfileTabs({
-    super.key,
-    required this.user,
-  });
+  const ProfileTabs({super.key, required this.user});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,6 +31,11 @@ class _PostsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final postsAsync = ref.watch(userPostsProvider(userId));
+
+    final authState = ref.watch(authControllerProvider);
+    final currentUser = authState.valueOrNull;
+    final isOwnProfile =
+        currentUser != null && !currentUser.isGuest && currentUser.id == userId;
 
     return postsAsync.when(
       data: (posts) {
@@ -58,20 +60,22 @@ class _PostsTab extends ConsumerWidget {
                       color: context.textPrimary,
                     ),
                   ),
-                  Spacing.vSm,
-                  const Text(
-                    'Compartilhe momentos no seu perfil',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.mediumGray,
+                  if (isOwnProfile) ...[
+                    Spacing.vSm,
+                    const Text(
+                      'Compartilhe momentos no seu perfil',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.mediumGray,
+                      ),
                     ),
-                  ),
-                  Spacing.vLg,
-                  AppButton(
-                    label: 'Criar post',
-                    size: AppButtonSize.compact,
-                    onPressed: () => context.push('/create-story'),
-                  ),
+                    Spacing.vLg,
+                    AppButton(
+                      label: 'Criar post',
+                      size: AppButtonSize.compact,
+                      onPressed: () => context.push('/create-story'),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -97,6 +101,7 @@ class _PostsTab extends ConsumerWidget {
       loading: () => Padding(
         padding: const EdgeInsets.all(8),
         child: GridView(
+          shrinkWrap: true,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             crossAxisSpacing: 4,
@@ -113,7 +118,36 @@ class _PostsTab extends ConsumerWidget {
           ],
         ),
       ),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.mediumGray.withAlpha(100),
+              ),
+              Spacing.vMd,
+              Text(
+                'Não foi possível carregar os posts',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: context.textPrimary,
+                ),
+              ),
+              Spacing.vLg,
+              AppButton(
+                label: 'Tentar novamente',
+                size: AppButtonSize.compact,
+                onPressed: () => ref.invalidate(userPostsProvider(userId)),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -136,7 +170,7 @@ class _PostGridTile extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: post.imageUrl!,
                 fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => _placeholder(),
+                errorWidget: (_, _, _) => _placeholder(),
               )
             : _placeholder(),
       ),
@@ -145,11 +179,7 @@ class _PostGridTile extends StatelessWidget {
 
   Widget _placeholder() {
     return const Center(
-      child: Icon(
-        Icons.photo,
-        color: AppColors.mediumGray,
-        size: 24,
-      ),
+      child: Icon(Icons.photo, color: AppColors.mediumGray, size: 24),
     );
   }
 }

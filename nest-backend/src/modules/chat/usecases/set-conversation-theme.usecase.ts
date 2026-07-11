@@ -3,14 +3,14 @@ import { ChatTheme } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { PrismaConversationPreferenceRepository } from '../repositories/conversation-preference.repository';
+import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
 import { ConversationPreference } from '@prisma/client';
 
 @Injectable()
 export class SetConversationThemeUseCase {
   constructor(
     private threadAccess: ChatThreadAccessService,
-    private preferenceRepo: PrismaConversationPreferenceRepository,
+    private preferenceRepo: ConversationPreferenceRepository,
   ) {}
 
   async execute(
@@ -25,13 +25,14 @@ export class SetConversationThemeUseCase {
 
     const { orderId, directConversationId } = resolved.value;
 
-    const updated = await this.preferenceRepo.upsert({
+    const result = await this.preferenceRepo.upsert({
       userId,
       orderId,
       directConversationId,
       theme: theme as ChatTheme,
     });
+    if (result.isLeft()) return left(result.value);
 
-    return right(updated);
+    return right(result.value);
   }
 }

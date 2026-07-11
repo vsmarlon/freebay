@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';

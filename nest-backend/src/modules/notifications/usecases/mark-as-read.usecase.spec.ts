@@ -38,7 +38,7 @@ describe('MarkAsReadUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.marked).toBe(true);
+      expect(result.value).toBeUndefined();
     }
   });
 

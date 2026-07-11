@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Body, Param, UseGuards, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
@@ -15,7 +16,7 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
   @ApiDoc({

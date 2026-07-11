@@ -201,7 +201,7 @@ export class SocialController {
   }
 
   @Get('posts/liked')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
   @ApiBearerAuth()
   @ApiDoc({
     summary: 'Get liked posts',

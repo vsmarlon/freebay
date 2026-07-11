@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
 import 'package:freebay/features/cart/data/services/cart_service.dart';
@@ -16,8 +16,10 @@ class CartRepository implements ICartRepository {
   }
 
   @override
-  Future<Either<Failure, void>> addToCart(String productId,
-      {int quantity = 1}) {
+  Future<Either<Failure, void>> addToCart(
+    String productId, {
+    int quantity = 1,
+  }) {
     return _service.addToCart(productId, quantity: quantity);
   }
 

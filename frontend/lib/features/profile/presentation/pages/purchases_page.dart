@@ -8,7 +8,7 @@ import 'package:freebay/features/orders/presentation/providers/order_providers.d
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -72,10 +72,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                 ),
               ),
             ),
-            breadcrumbs: [
-              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-              const BreadcrumbItem(label: 'Minhas Compras'),
-            ],
+            breadcrumbs: context.breadcrumbs,
           ),
           Expanded(child: _buildBody(state)),
         ],
@@ -118,11 +115,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.error_outlined,
-              color: AppColors.error,
-              size: 48,
-            ),
+            const Icon(Icons.error_outlined, color: AppColors.error, size: 48),
             Spacing.vMd,
             Text(
               state.error!,

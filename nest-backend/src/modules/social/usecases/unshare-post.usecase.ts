@@ -11,15 +11,15 @@ export class UnsharePostUseCase {
     private readonly shareRepository: ShareRepository,
   ) {}
 
-  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, { unshared: boolean }>> {
+  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {
     const existingResult = await this.shareRepository.findByUserAndPost(input.userId, input.postId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (!existingResult.value) return right({ unshared: true });
+    if (!existingResult.value) return right(undefined);
 
     const deleteResult = await this.shareRepository.delete(input.userId, input.postId);
     if (isLeft(deleteResult)) return left(deleteResult.value);
 
     await this.postRepository.update(input.postId, { sharesCount: { decrement: 1 } });
-    return right({ unshared: true });
+    return right(undefined);
   }
 }

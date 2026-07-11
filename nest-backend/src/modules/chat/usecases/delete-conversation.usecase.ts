@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, ForbiddenError } from '@/shared/core/errors';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { PrismaConversationPreferenceRepository } from '../repositories/conversation-preference.repository';
+import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
 import { ConversationPreference } from '@prisma/client';
 
 @Injectable()
 export class DeleteConversationUseCase {
   constructor(
     private threadAccess: ChatThreadAccessService,
-    private preferenceRepo: PrismaConversationPreferenceRepository,
+    private preferenceRepo: ConversationPreferenceRepository,
   ) {}
 
   async execute(
@@ -27,13 +27,14 @@ export class DeleteConversationUseCase {
       return left(new ForbiddenError('Só é possível excluir após o pedido ser concluído ou cancelado'));
     }
 
-    const updated = await this.preferenceRepo.upsert({
+    const result = await this.preferenceRepo.upsert({
       userId,
       orderId,
       directConversationId,
       isDeleted: true,
     });
+    if (result.isLeft()) return left(result.value);
 
-    return right(updated);
+    return right(result.value);
   }
 }

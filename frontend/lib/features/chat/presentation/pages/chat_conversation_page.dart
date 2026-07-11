@@ -24,15 +24,15 @@ import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
-  final String oderName;
-  final String? oderAvatarUrl;
+  final String orderName;
+  final String? orderAvatarUrl;
   final String chatType;
 
   const ChatConversationPage({
     super.key,
     required this.chatId,
-    required this.oderName,
-    this.oderAvatarUrl,
+    required this.orderName,
+    this.orderAvatarUrl,
     this.chatType = 'order',
   });
 
@@ -141,7 +141,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         final result = await ref
             .read(chatRepositoryProvider)
             .sendMessage(widget.chatId, content);
-        if (result.isLeft()) throw Exception('send failed');
+        if (result.isLeft) throw Exception('send failed');
         _messageController.clear();
         await _loadMessages();
       }
@@ -167,8 +167,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
   }
 
   Future<void> _onBackgroundChanged() async {
-    final xfile =
-        await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1024);
+    final xfile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+    );
     if (xfile == null) return;
 
     final bytes = await xfile.readAsBytes();
@@ -212,13 +214,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('COR DE DESTAQUE',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: context.textSecondary,
-            )),
+        Text(
+          'COR DE DESTAQUE',
+          style: TextStyle(
+            fontFamily: AppTypography.fontFamily,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: context.textSecondary,
+          ),
+        ),
         Spacing.vSm,
         Wrap(
           spacing: 12,
@@ -231,8 +235,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color:
-                      Color(int.parse(t.accentHex.replaceFirst('#', '0xFF'))),
+                  color: Color(
+                    int.parse(t.accentHex.replaceFirst('#', '0xFF')),
+                  ),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryContainer
@@ -241,8 +246,11 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                   ),
                 ),
                 child: isSelected
-                    ? const Icon(Icons.check,
-                        color: AppColors.onPrimary, size: 20)
+                    ? const Icon(
+                        Icons.check,
+                        color: AppColors.onPrimary,
+                        size: 20,
+                      )
                     : null,
               ),
             );
@@ -256,13 +264,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('PLANO DE FUNDO',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: context.textSecondary,
-            )),
+        Text(
+          'PLANO DE FUNDO',
+          style: TextStyle(
+            fontFamily: AppTypography.fontFamily,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: context.textSecondary,
+          ),
+        ),
         Spacing.vSm,
         Row(
           children: [
@@ -304,13 +314,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
             children: [
               Icon(icon, size: 16, color: context.textPrimary),
               Spacing.hSm,
-              Text(label,
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: context.textPrimary,
-                  )),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: context.textPrimary,
+                ),
+              ),
             ],
           ),
         ),
@@ -319,49 +331,53 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
   }
 
   void _showThreeDotMenu() {
-    showModalBottomSheet(
+    showBrutalistSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.palette_outlined),
-              title: const Text('Personalizar'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showConfigSheet();
-              },
+      title: 'OPÇÕES DA CONVERSA',
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.palette_outlined),
+            title: const Text('Personalizar'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _showConfigSheet();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.flag_outlined, color: AppColors.error),
+            title: const Text(
+              'Denunciar conversa',
+              style: TextStyle(color: AppColors.error),
             ),
-            ListTile(
-              leading: const Icon(Icons.flag_outlined, color: AppColors.error),
-              title: const Text('Denunciar conversa',
-                  style: TextStyle(color: AppColors.error)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showReportDialog('CONVERSATION');
-              },
+            onTap: () {
+              Navigator.pop(ctx);
+              _showReportDialog('CONVERSATION');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.block, color: AppColors.error),
+            title: const Text(
+              'Bloquear usuário',
+              style: TextStyle(color: AppColors.error),
             ),
-            ListTile(
-              leading: const Icon(Icons.block, color: AppColors.error),
-              title: const Text('Bloquear usuário',
-                  style: TextStyle(color: AppColors.error)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _blockUser();
-              },
+            onTap: () {
+              Navigator.pop(ctx);
+              _blockUser();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.archive_outlined),
+            title: Text(
+              _preference?.isArchived == true ? 'Restaurar' : 'Arquivar',
             ),
-            ListTile(
-              leading: const Icon(Icons.archive_outlined),
-              title: Text(
-                  _preference?.isArchived == true ? 'Restaurar' : 'Arquivar'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _archiveChat();
-              },
-            ),
-          ],
-        ),
+            onTap: () {
+              Navigator.pop(ctx);
+              _archiveChat();
+            },
+          ),
+        ],
       ),
     );
   }
@@ -370,15 +386,14 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     final usecase = ref.read(archiveChatUsecaseProvider);
     final isArchived = _preference?.isArchived ?? false;
     final result = await usecase(widget.chatId, _threadType, !isArchived);
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (_) {
-        ref.invalidate(chatsProvider);
-        AppSnackbar.success(
-            context, isArchived ? 'Conversa restaurada' : 'Conversa arquivada');
-        context.pop();
-      },
-    );
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
+      ref.invalidate(chatsProvider);
+      AppSnackbar.success(
+        context,
+        isArchived ? 'Conversa restaurada' : 'Conversa arquivada',
+      );
+      context.pop();
+    });
   }
 
   void _showReportDialog(String targetType) {
@@ -398,7 +413,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                 DropdownMenuItem(value: 'SPAM', child: Text('Spam')),
                 DropdownMenuItem(value: 'HARASSMENT', child: Text('Assédio')),
                 DropdownMenuItem(
-                    value: 'INAPPROPRIATE', child: Text('Conteúdo impróprio')),
+                  value: 'INAPPROPRIATE',
+                  child: Text('Conteúdo impróprio'),
+                ),
                 DropdownMenuItem(value: 'OTHER', child: Text('Outro')),
               ],
               onChanged: (v) => selectedReason = v,
@@ -413,8 +430,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () async {
               final reason = selectedReason == 'OTHER'
@@ -465,16 +483,20 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Bloquear usuário?'),
-        content:
-            const Text('Você não poderá mais receber mensagens deste usuário.'),
+        content: const Text(
+          'Você não poderá mais receber mensagens deste usuário.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Bloquear',
-                style: TextStyle(color: AppColors.error)),
+            child: const Text(
+              'Bloquear',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -509,8 +531,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       body: Column(
         children: [
           ChatHeader(
-            name: widget.oderName,
-            avatarUrl: widget.oderAvatarUrl,
+            name: widget.orderName,
+            avatarUrl: widget.orderAvatarUrl,
             chatType: widget.chatType,
             accentColor: accentColor,
             onBack: () => context.pop(),
@@ -523,49 +545,49 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                   child: _isLoading
                       ? _buildLoadingSkeleton()
                       : _messages.isEmpty
-                          ? const EmptyState(
-                              icon: Icons.chat_bubble_outline,
-                              title: 'NENHUMA MENSAGEM',
-                              subtitle:
-                                  'Envie a primeira mensagem para iniciar a conversa.',
-                            )
-                          : Container(
-                              decoration: bgUrl != null && bgUrl.isNotEmpty
-                                  ? BoxDecoration(
-                                      image: DecorationImage(
-                                        image: NetworkImage(bgUrl),
-                                        fit: BoxFit.cover,
-                                        opacity: 0.15,
-                                      ),
-                                    )
-                                  : null,
-                              child: ListView.builder(
-                                controller: _scrollController,
-                                padding: const EdgeInsets.all(16),
-                                itemCount: _messages.length,
-                                itemBuilder: (context, index) {
-                                  final msg = _messages[index];
-                                  final isMe = msg['senderId'] == currentUserId;
-                                  final prevIsMe = index > 0
-                                      ? _messages[index - 1]['senderId'] ==
-                                          currentUserId
-                                      : false;
-                                  final isConsecutive = isMe == prevIsMe;
-                                  return MessageBubble(
-                                    content: msg['content'] ?? '',
-                                    isMe: isMe,
-                                    isDark: isDark,
-                                    isConsecutive: isConsecutive,
-                                    accentColor: accentColor,
-                                    createdAt: msg['createdAt'] is String
-                                        ? DateTime.parse(msg['createdAt'])
-                                        : null,
-                                    readAt: msg['readAt'],
-                                    deliveredAt: msg['deliveredAt'],
-                                  );
-                                },
-                              ),
-                            ),
+                      ? const EmptyState(
+                          icon: Icons.chat_bubble_outline,
+                          title: 'NENHUMA MENSAGEM',
+                          subtitle:
+                              'Envie a primeira mensagem para iniciar a conversa.',
+                        )
+                      : Container(
+                          decoration: bgUrl != null && bgUrl.isNotEmpty
+                              ? BoxDecoration(
+                                  image: DecorationImage(
+                                    image: NetworkImage(bgUrl),
+                                    fit: BoxFit.cover,
+                                    opacity: 0.15,
+                                  ),
+                                )
+                              : null,
+                          child: ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              final msg = _messages[index];
+                              final isMe = msg['senderId'] == currentUserId;
+                              final prevIsMe = index > 0
+                                  ? _messages[index - 1]['senderId'] ==
+                                        currentUserId
+                                  : false;
+                              final isConsecutive = isMe == prevIsMe;
+                              return MessageBubble(
+                                content: msg['content'] ?? '',
+                                isMe: isMe,
+                                isDark: isDark,
+                                isConsecutive: isConsecutive,
+                                accentColor: accentColor,
+                                createdAt: msg['createdAt'] is String
+                                    ? DateTime.parse(msg['createdAt'])
+                                    : null,
+                                readAt: msg['readAt'],
+                                deliveredAt: msg['deliveredAt'],
+                              );
+                            },
+                          ),
+                        ),
                 ),
                 _buildInputBar(isDark, accentColor),
               ],
@@ -584,11 +606,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
             child: Row(
-              mainAxisAlignment:
-                  isLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
-              children: [
-                ShimmerBlock(width: 200, height: 40),
-              ],
+              mainAxisAlignment: isLeft
+                  ? MainAxisAlignment.start
+                  : MainAxisAlignment.end,
+              children: [ShimmerBlock(width: 200, height: 40)],
             ),
           );
         }),
@@ -611,8 +632,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
               decoration: InputDecoration(
                 hintText: 'Digite uma mensagem...',
                 filled: true,
-                fillColor:
-                    isDark ? AppColors.backgroundDark : AppColors.lightGray,
+                fillColor: isDark
+                    ? AppColors.backgroundDark
+                    : AppColors.lightGray,
                 border: const OutlineInputBorder(
                   borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: AppColors.outline),
@@ -625,8 +647,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                   borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: accentColor, width: 2),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               maxLines: null,
               textInputAction: TextInputAction.send,

@@ -1,22 +1,26 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/features/product/domain/repositories/i_category_repository.dart';
 
-class CategoryRepository {
+class CategoryRepository implements ICategoryRepository {
+  @override
   Future<Either<Failure, List<CategoryEntity>>> getCategories() async {
     try {
       final response = await HttpClient.instance.get('/categories');
 
       if (response.statusCode == 200 && response.data != null) {
         final payload = response.data as Map<String, dynamic>;
-        final categoriesData = payload['categories'] as List<dynamic>? ??
+        final categoriesData =
+            payload['categories'] as List<dynamic>? ??
             ((payload['data'] as Map<String, dynamic>?)?['categories']
                     as List<dynamic>? ??
                 <dynamic>[]);
         final categories = categoriesData
             .map(
-                (json) => CategoryEntity.fromJson(json as Map<String, dynamic>))
+              (json) => CategoryEntity.fromJson(json as Map<String, dynamic>),
+            )
             .toList();
         return Right(categories);
       }

@@ -7,7 +7,7 @@ import { StoryRepository } from '../domain/repositories/story.repository';
 export class DeleteStoryUseCase {
   constructor(private readonly storyRepository: StoryRepository) {}
 
-  async execute(input: { storyId: string; userId: string }): Promise<Either<AppError, { deleted: boolean }>> {
+  async execute(input: { storyId: string; userId: string }): Promise<Either<AppError, void>> {
     const storyResult = await this.storyRepository.findById(input.storyId);
     if (isLeft(storyResult)) return left(storyResult.value);
     if (!storyResult.value) return left(new NotFoundError('Story'));
@@ -19,6 +19,6 @@ export class DeleteStoryUseCase {
     const deleteResult = await this.storyRepository.delete(input.storyId);
     if (isLeft(deleteResult)) return left(deleteResult.value);
 
-    return right({ deleted: true });
+    return right(undefined);
   }
 }

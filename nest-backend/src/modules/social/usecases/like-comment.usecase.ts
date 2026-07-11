@@ -7,10 +7,10 @@ import { LikeRepository } from '../domain/repositories/like.repository';
 export class LikeCommentUseCase {
   constructor(private readonly likeRepository: LikeRepository) {}
 
-  async execute(input: { userId: string; commentId: string }): Promise<Either<AppError, { liked: boolean }>> {
+  async execute(input: { userId: string; commentId: string }): Promise<Either<AppError, void>> {
     const existingResult = await this.likeRepository.findCommentLike(input.userId, input.commentId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (existingResult.value) return right({ liked: true });
+    if (existingResult.value) return right(undefined);
 
     const createResult = await this.likeRepository.createCommentLike({
       user: { connect: { id: input.userId } },
@@ -18,6 +18,6 @@ export class LikeCommentUseCase {
     });
     if (isLeft(createResult)) return left(createResult.value);
 
-    return right({ liked: true });
+    return right(undefined);
   }
 }

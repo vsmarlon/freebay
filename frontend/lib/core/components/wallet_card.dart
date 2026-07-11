@@ -32,16 +32,18 @@ class _WalletCardState extends State<WalletCard> {
   void initState() {
     super.initState();
     SharedPreferences.getInstance().then((prefs) {
-      if (mounted)
+      if (mounted) {
         setState(() => _valuesHidden = prefs.getBool(_prefKey) ?? false);
+      }
     });
   }
 
   void _toggleHidden() {
     final next = !_valuesHidden;
     setState(() => _valuesHidden = next);
-    SharedPreferences.getInstance()
-        .then((prefs) => prefs.setBool(_prefKey, next));
+    SharedPreferences.getInstance().then(
+      (prefs) => prefs.setBool(_prefKey, next),
+    );
   }
 
   String _masked(String value) => _valuesHidden ? 'R\$ •••' : value;
@@ -162,8 +164,9 @@ class _WalletCardState extends State<WalletCard> {
                   Text('Saldo', style: AppTypography.bodySmall),
                   const SizedBox(height: 2),
                   Text(
-                    _masked(CurrencyUtils.formatCents(
-                        widget.availableBalanceInCents)),
+                    _masked(
+                      CurrencyUtils.formatCents(widget.availableBalanceInCents),
+                    ),
                     style: AppTypography.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
                       color: context.textPrimary,

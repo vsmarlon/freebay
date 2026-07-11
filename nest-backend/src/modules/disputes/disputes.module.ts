@@ -6,7 +6,8 @@ import { SubmitEvidenceUseCase } from './usecases/submit-evidence.usecase';
 import { ResolveDisputeUseCase } from './usecases/resolve-dispute.usecase';
 import { GetUserDisputesUseCase } from './usecases/get-user-disputes.usecase';
 import { WithdrawDisputeUseCase } from './usecases/withdraw-dispute.usecase';
-import { PrismaDisputeRepository } from './repositories/dispute.repository';
+import { DisputeRepository } from './domain/repositories/dispute.repository';
+import { PrismaDisputeRepository } from './data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from './services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from './services/dispute-resolution-execution.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -21,6 +22,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
     GetUserDisputesUseCase,
     WithdrawDisputeUseCase,
     PrismaDisputeRepository,
+    { provide: DisputeRepository, useExisting: PrismaDisputeRepository },
     DisputeTransitionPolicy,
     DisputeResolutionExecutionService,
     PrismaService,

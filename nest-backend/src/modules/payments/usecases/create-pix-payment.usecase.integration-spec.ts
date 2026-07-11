@@ -1,5 +1,6 @@
 import { CreatePixPaymentUseCase } from './create-pix-payment.usecase';
 import { PrismaOrderRepository } from '../../orders/repositories/order.repository';
+import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
 import { AbacatePayProvider } from '../providers/abacatepay.provider';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
@@ -14,15 +15,18 @@ const mockAbacatePay = {
 describe('CreatePixPaymentUseCase Integration', () => {
   let sut: CreatePixPaymentUseCase;
   let orderRepository: PrismaOrderRepository;
+  let userRepository: UserDatabaseRepository;
   let userFactory: UserFactory;
   let productFactory: ProductFactory;
 
   beforeEach(() => {
     orderRepository = new PrismaOrderRepository(prisma as PrismaService);
+    userRepository = new UserDatabaseRepository(prisma as PrismaService);
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
     sut = new CreatePixPaymentUseCase(
       orderRepository,
+      userRepository,
       prisma as PrismaService,
       mockAbacatePay,
     );

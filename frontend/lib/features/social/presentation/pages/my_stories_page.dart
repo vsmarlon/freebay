@@ -5,16 +5,19 @@ import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/features/social/data/repositories/social_repository.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
-final userStoriesProvider =
-    FutureProvider.family<List<StoryEntity>, String>((ref, userId) async {
-  final repository = SocialRepository();
+final userStoriesProvider = FutureProvider.family<List<StoryEntity>, String>((
+  ref,
+  userId,
+) async {
+  final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getUserStories(userId);
   return result.fold(
     (failure) => throw Exception(failure.message),
@@ -68,11 +71,7 @@ class MyStoriesPage extends ConsumerWidget {
               data: (stories) {
                 return Column(
                   children: [
-                    BrutalistBreadcrumb(items: [
-                      BreadcrumbItem(
-                          label: 'Perfil', onTap: () => context.pop()),
-                      const BreadcrumbItem(label: 'Minhas Hist\u00f3rias'),
-                    ]),
+                    BrutalistBreadcrumb(items: [...context.breadcrumbs]),
                     Expanded(
                       child: stories.isEmpty
                           ? EmptyState(
@@ -93,16 +92,20 @@ class MyStoriesPage extends ConsumerWidget {
                                 padding: const EdgeInsets.all(16),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                  childAspectRatio: 0.7,
-                                ),
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                      childAspectRatio: 0.7,
+                                    ),
                                 itemCount: stories.length,
                                 itemBuilder: (context, index) {
                                   final story = stories[index];
                                   return _buildStoryTile(
-                                      context, ref, story, isDark);
+                                    context,
+                                    ref,
+                                    story,
+                                    isDark,
+                                  );
                                 },
                               ),
                             ),
@@ -131,8 +134,11 @@ class MyStoriesPage extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: AppColors.error),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.error,
+                    ),
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar hist\u00f3rias',
@@ -151,7 +157,11 @@ class MyStoriesPage extends ConsumerWidget {
   }
 
   Widget _buildStoryTile(
-      BuildContext context, WidgetRef ref, StoryEntity story, bool isDark) {
+    BuildContext context,
+    WidgetRef ref,
+    StoryEntity story,
+    bool isDark,
+  ) {
     final now = DateTime.now();
     final expiry = story.expiresAt;
     final isExpired = expiry.isBefore(now);
@@ -166,7 +176,9 @@ class MyStoriesPage extends ConsumerWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.zero,
               border: Border.all(
-                  color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
+                color: AppColors.onSurface.withValues(alpha: 0.15),
+                width: 2,
+              ),
               image: story.imageUrl.isNotEmpty
                   ? DecorationImage(
                       image: NetworkImage(story.imageUrl),
@@ -186,10 +198,7 @@ class MyStoriesPage extends ConsumerWidget {
                 color: AppColors.onSurface.withValues(alpha: 0.5),
               ),
               child: const Center(
-                child: Icon(
-                  Icons.access_time,
-                  color: AppColors.onPrimary,
-                ),
+                child: Icon(Icons.access_time, color: AppColors.onPrimary),
               ),
             ),
         ],
@@ -198,7 +207,11 @@ class MyStoriesPage extends ConsumerWidget {
   }
 
   void _showDeleteDialog(
-      BuildContext context, WidgetRef ref, StoryEntity story, bool isDark) {
+    BuildContext context,
+    WidgetRef ref,
+    StoryEntity story,
+    bool isDark,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -223,23 +236,21 @@ class MyStoriesPage extends ConsumerWidget {
               child: Text(
                 'Cancelar',
                 style: TextStyle(
-                    color: isDark ? AppColors.white : AppColors.darkGray),
+                  color: isDark ? AppColors.white : AppColors.darkGray,
+                ),
               ),
             ),
           ),
           InkWell(
             onTap: () async {
               Navigator.pop(context);
-              final repository = SocialRepository();
+              final repository = ref.read(socialRepositoryProvider);
               await repository.deleteStory(story.id);
               ref.invalidate(userStoriesProvider(userId));
             },
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                'Excluir',
-                style: TextStyle(color: AppColors.error),
-              ),
+              child: Text('Excluir', style: TextStyle(color: AppColors.error)),
             ),
           ),
         ],

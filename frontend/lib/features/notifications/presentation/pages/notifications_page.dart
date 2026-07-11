@@ -5,7 +5,7 @@ import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/utils/time_utils.dart';
-import 'package:freebay/features/notifications/data/models/notification_model.dart';
+import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
@@ -47,8 +47,10 @@ class NotificationsPage extends ConsumerWidget {
                   ref.read(notificationsProvider.notifier).markAllAsRead();
                 },
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Icon(
                     Icons.done_all,
                     color: theme.brightness == Brightness.dark
@@ -66,7 +68,9 @@ class NotificationsPage extends ConsumerWidget {
                   itemCount: 6,
                   itemBuilder: (_, i) => Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 16),
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -161,7 +165,7 @@ class NotificationsPage extends ConsumerWidget {
 }
 
 class _NotificationTile extends ConsumerWidget {
-  final NotificationModel notification;
+  final NotificationEntity notification;
 
   const _NotificationTile({required this.notification});
 
@@ -192,16 +196,13 @@ class _NotificationTile extends ConsumerWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            notification.body,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          Text(notification.body, maxLines: 2, overflow: TextOverflow.ellipsis),
           Spacing.vXs,
           Text(
             timeAgo,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
           ),
         ],
       ),

@@ -7,7 +7,7 @@ import { StoryRepository } from '../domain/repositories/story.repository';
 export class ViewStoryUseCase {
   constructor(private readonly storyRepository: StoryRepository) {}
 
-  async execute(input: { storyId: string; viewerId: string }): Promise<Either<AppError, { viewed: boolean }>> {
+  async execute(input: { storyId: string; viewerId: string }): Promise<Either<AppError, void>> {
     const storyResult = await this.storyRepository.findById(input.storyId);
     if (isLeft(storyResult)) return left(storyResult.value);
     if (!storyResult.value) return left(new NotFoundError('Story'));
@@ -17,6 +17,6 @@ export class ViewStoryUseCase {
       if (isLeft(viewResult)) return left(viewResult.value);
     }
 
-    return right({ viewed: true });
+    return right(undefined);
   }
 }

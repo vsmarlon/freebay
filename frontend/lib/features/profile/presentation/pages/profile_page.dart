@@ -47,10 +47,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             text: 'PERFIL',
             actions: [
               IconButton(
-                icon: Icon(
-                  Icons.settings_outlined,
-                  color: context.textPrimary,
-                ),
+                icon: Icon(Icons.settings_outlined, color: context.textPrimary),
                 onPressed: () => showProfileSettingsSheet(context),
               ),
               IconButton(
@@ -84,7 +81,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                             followingCount: stats.followingCount,
                           ),
                           loading: () => ProfileHeader(user: u),
-                          error: (_, __) => ProfileHeader(user: u),
+                          error: (_, _) => ProfileHeader(user: u),
                         ),
                         Spacing.vMd,
                         Container(
@@ -165,8 +162,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: AppColors.error),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: AppColors.error,
+                      ),
                       Spacing.vMd,
                       Text(
                         'Erro ao carregar perfil',

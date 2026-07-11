@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WithdrawUseCase } from './withdraw.usecase';
 import { NotFoundError, InsufficientBalanceError } from '@/shared/core/errors';
-import { PrismaWalletRepository } from '../repositories/wallet.repository';
+import { WalletRepository } from '../domain/repositories/wallet.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
 type MockPrisma = Record<string, Record<string, jest.Mock> | jest.Mock>;
@@ -14,7 +14,7 @@ describe('WithdrawUseCase', () => {
   beforeEach(async () => {
     mockWalletRepository = {
       findByUserId: jest.fn(),
-    } as jest.Mocked<Partial<PrismaWalletRepository>>;
+    } as jest.Mocked<Partial<WalletRepository>>;
 
     mockPrisma = {
       $transaction: jest.fn().mockImplementation((cb) => cb(mockPrisma)),
@@ -37,7 +37,7 @@ describe('WithdrawUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WithdrawUseCase,
-        { provide: PrismaWalletRepository, useValue: mockWalletRepository },
+        { provide: WalletRepository, useValue: mockWalletRepository },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
@@ -50,12 +50,26 @@ describe('WithdrawUseCase', () => {
   });
 
   it('should allow withdrawal when sufficient balance', async () => {
-    mockWalletRepository.findByUserId.mockResolvedValue({
+    const wallet = {
       id: 'wallet-123',
       userId: 'user-123',
       availableBalance: 10000,
       pendingBalance: 2000,
-    });
+      totalEarned: 0,
+      recipientId: null,
+      createdAt: new Date(),
+    };
+    const createdWithdrawal = {
+      id: 'withdrawal-123',
+      walletId: 'wallet-123',
+      amount: 5000,
+      status: 'PENDING',
+      idempotencyKey: null,
+      createdAt: new Date(),
+    };
+    (mockPrisma as any).$queryRaw = jest.fn().mockResolvedValue([wallet]);
+    (mockPrisma.withdrawal as any).create = jest.fn().mockResolvedValue(createdWithdrawal);
+    (mockPrisma.wallet as any).update = jest.fn().mockResolvedValue({});
 
     const input = {
       userId: 'user-123',
@@ -68,8 +82,9 @@ describe('WithdrawUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.withdrawalId).toBeDefined();
+      expect(result.value.id).toBe('withdrawal-123');
       expect(result.value.status).toBe('PENDING');
+      expect(result.value.amount).toBe(5000);
     }
   });
 
@@ -197,10 +212,15 @@ describe('WithdrawUseCase', () => {
   it('should return existing withdrawal if idempotencyKey already exists', async () => {
     const existingWithdrawal = {
       id: 'existing-withdrawal-id',
+      walletId: 'wallet-123',
       status: 'PENDING',
       amount: 5000,
+      idempotencyKey: 'dup-key-123',
+      createdAt: new Date(),
     };
-    (mockPrisma.withdrawal as any).findUnique = jest.fn().mockResolvedValue(existingWithdrawal);
+    mockWalletRepository.findWithdrawalByIdempotencyKey = jest.fn().mockResolvedValue(
+      { isRight: () => true, value: existingWithdrawal },
+    );
 
     const input = {
       userId: 'user-123',
@@ -214,35 +234,40 @@ describe('WithdrawUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.withdrawalId).toBe('existing-withdrawal-id');
+      expect(result.value.id).toBe('existing-withdrawal-id');
+      expect(result.value.status).toBe('PENDING');
+      expect(result.value.amount).toBe(5000);
     }
-    expect((mockPrisma.withdrawal as any).findUnique).toHaveBeenCalledWith({
-      where: { idempotencyKey: 'dup-key-123' },
-    });
+    expect(mockWalletRepository.findWithdrawalByIdempotencyKey).toHaveBeenCalledWith('dup-key-123');
   });
 
   it('should return existing withdrawal if concurrency race condition returns unique key constraint error', async () => {
-    const existingWithdrawal = {
-      id: 'raced-withdrawal-id',
-      status: 'PENDING',
-      amount: 5000,
-    };
-
-    (mockPrisma.withdrawal as any).findUnique = jest.fn()
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(existingWithdrawal);
-
-    (mockPrisma.withdrawal as any).create = jest.fn().mockRejectedValue({
-      code: 'P2002',
-      message: 'Unique constraint failed on the fields: (idempotencyKey)',
-    });
-
-    mockWalletRepository.findByUserId.mockResolvedValue({
+    const wallet = {
       id: 'wallet-123',
       userId: 'user-123',
       availableBalance: 10000,
       pendingBalance: 0,
+      totalEarned: 0,
+      recipientId: null,
+      createdAt: new Date(),
+    };
+    const existingWithdrawal = {
+      id: 'raced-withdrawal-id',
+      walletId: 'wallet-123',
+      status: 'PENDING',
+      amount: 5000,
+      idempotencyKey: 'race-key-123',
+      createdAt: new Date(),
+    };
+
+    mockWalletRepository.findWithdrawalByIdempotencyKey = jest.fn()
+      .mockResolvedValueOnce({ isRight: () => true, value: null })
+      .mockResolvedValueOnce({ isRight: () => true, value: existingWithdrawal });
+
+    (mockPrisma as any).$queryRaw = jest.fn().mockResolvedValue([wallet]);
+    (mockPrisma.withdrawal as any).create = jest.fn().mockRejectedValue({
+      code: 'P2002',
+      message: 'Unique constraint failed on the fields: (idempotencyKey)',
     });
 
     const input = {
@@ -257,7 +282,9 @@ describe('WithdrawUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.withdrawalId).toBe('raced-withdrawal-id');
+      expect(result.value.id).toBe('raced-withdrawal-id');
+      expect(result.value.status).toBe('PENDING');
+      expect(result.value.amount).toBe(5000);
     }
   });
 });

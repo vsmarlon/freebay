@@ -39,7 +39,10 @@ describe('EscrowReleaseTask', () => {
     ]);
     mockPrisma.$transaction.mockImplementation(async (cb) => {
       const tx = {
-        order: { update: jest.fn().mockResolvedValue({}) },
+        order: {
+          update: jest.fn().mockResolvedValue({}),
+          findUnique: jest.fn().mockResolvedValue({ id: 'order-1', status: 'DELIVERED', dispute: null }),
+        },
         wallet: {
           findUnique: jest.fn().mockResolvedValue({ userId: sellerId }),
           update: jest.fn().mockResolvedValue({}),

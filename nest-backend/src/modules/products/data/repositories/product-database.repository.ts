@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, DatabaseError } from '@/shared/core/errors';
 import { ProductRepository } from '../../domain/repositories/product.repository';
 import { ProductDetailPayload, ProductListPayload, FindManyParams, PRODUCT_DETAIL_INCLUDE, PRODUCT_LIST_INCLUDE } from '../../types/product.types';
 
@@ -89,6 +89,60 @@ export class ProductDatabaseRepository implements ProductRepository {
       return right(void 0);
     } catch (e) {
       return left(new AppError('DATABASE_ERROR', (e as Error).message));
+    }
+  }
+
+  async updateInventoryOnSale(productId: string, tx?: Prisma.TransactionClient) {
+    try {
+      const client = tx ?? this.prisma;
+      const product = await client.product.findUnique({ where: { id: productId } });
+      if (!product) return left(new DatabaseError('Product not found'));
+
+      if (product.quantity > 1) {
+        const newSoldCount = product.soldCount + 1;
+        await client.product.update({
+          where: { id: productId },
+          data: {
+            soldCount: newSoldCount,
+            ...(newSoldCount >= product.quantity ? { status: 'SOLD' as const } : {}),
+          },
+        });
+      } else {
+        await client.product.update({
+          where: { id: productId },
+          data: { status: 'SOLD' },
+        });
+      }
+      return right(undefined);
+    } catch {
+      return left(new DatabaseError('Failed to update inventory on sale'));
+    }
+  }
+
+  async restoreInventoryOnExpiry(productId: string, tx?: Prisma.TransactionClient) {
+    try {
+      const client = tx ?? this.prisma;
+      const product = await client.product.findUnique({ where: { id: productId } });
+      if (!product) return left(new DatabaseError('Product not found'));
+
+      if (product.quantity > 1) {
+        const newSoldCount = Math.max(product.soldCount - 1, 0);
+        await client.product.update({
+          where: { id: productId },
+          data: {
+            soldCount: newSoldCount,
+            ...(product.status === 'SOLD' && newSoldCount < product.quantity ? { status: 'ACTIVE' as const } : {}),
+          },
+        });
+      } else {
+        await client.product.updateMany({
+          where: { id: productId, status: 'PAUSED' },
+          data: { status: 'ACTIVE' },
+        });
+      }
+      return right(undefined);
+    } catch {
+      return left(new DatabaseError('Failed to restore inventory on expiry'));
     }
   }
 }

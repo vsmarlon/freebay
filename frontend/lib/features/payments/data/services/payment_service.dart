@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/features/payments/data/entities/pix_payment_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
@@ -23,9 +23,7 @@ class PaymentService {
         options: Options(
           headers: idempotencyKey == null
               ? null
-              : {
-                  'idempotency-key': idempotencyKey,
-                },
+              : {'idempotency-key': idempotencyKey},
         ),
       );
 

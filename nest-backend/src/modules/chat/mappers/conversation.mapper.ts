@@ -63,8 +63,8 @@ export class ConversationMapper {
     preference?: ConversationPreference | null,
   ): UnifiedConversationResponse {
     const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1;
-    const lastMsg = conv.messages[0];
-    const unreadCount = conv.messages.filter(m =>
+    const lastMsg = conv.messages?.[0] ?? null;
+    const unreadCount = (conv.messages ?? []).filter(m =>
       m.senderId !== userId && !m.readAt
     ).length;
 

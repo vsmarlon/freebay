@@ -1,3 +1,4 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -82,9 +83,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
         _isTakingPicture = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao tirar foto: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao tirar foto: $e')));
       }
     }
   }
@@ -119,9 +120,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
       if (mounted) {
         result.fold(
           (failure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(failure.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(failure.message)));
           },
           (story) {
             ref.invalidate(storiesProvider);
@@ -131,9 +132,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao enviar story: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao enviar story: $e')));
       }
     } finally {
       if (mounted) {
@@ -184,13 +185,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
       body: Stack(
         children: [
           if (_isInitialized && _cameraController != null)
-            SizedBox.expand(
-              child: CameraPreview(_cameraController!),
-            )
+            SizedBox.expand(child: CameraPreview(_cameraController!))
           else
-            const Center(
-              child: ShimmerBlock(width: 24, height: 24),
-            ),
+            const Center(child: ShimmerBlock(width: 24, height: 24)),
           SafeArea(
             child: Column(
               children: [
@@ -200,22 +197,31 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.close,
-                            color: AppColors.onPrimary, size: 28),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.onPrimary,
+                          size: 28,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.flip_camera_ios,
-                                color: AppColors.onPrimary, size: 28),
+                            icon: const Icon(
+                              Icons.flip_camera_ios,
+                              color: AppColors.onPrimary,
+                              size: 28,
+                            ),
                             onPressed: _cameras != null && _cameras!.length > 1
                                 ? _switchCamera
                                 : null,
                           ),
                           IconButton(
-                            icon: const Icon(Icons.photo_library,
-                                color: AppColors.onPrimary, size: 28),
+                            icon: const Icon(
+                              Icons.photo_library,
+                              color: AppColors.onPrimary,
+                              size: 28,
+                            ),
                             onPressed: _pickFromGallery,
                           ),
                         ],
@@ -232,8 +238,10 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        border:
-                            Border.all(color: AppColors.onPrimary, width: 4),
+                        border: Border.all(
+                          color: AppColors.onPrimary,
+                          width: 4,
+                        ),
                       ),
                       child: Container(
                         margin: const EdgeInsets.all(4),
@@ -260,10 +268,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
       body: Stack(
         children: [
           SizedBox.expand(
-            child: Image.file(
-              File(_capturedImagePath!),
-              fit: BoxFit.cover,
-            ),
+            child: Image.file(File(_capturedImagePath!), fit: BoxFit.cover),
           ),
           SafeArea(
             child: Column(
@@ -274,8 +279,11 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.close,
-                            color: AppColors.onPrimary, size: 28),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.onPrimary,
+                          size: 28,
+                        ),
                         onPressed: () {
                           setState(() {
                             _capturedImagePath = null;
@@ -285,10 +293,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                       if (_isLoading)
                         const ShimmerBlock(width: 20, height: 20)
                       else
-                        AppButton(
-                          label: 'Publicar',
-                          onPressed: _uploadStory,
-                        ),
+                        AppButton(label: 'Publicar', onPressed: _uploadStory),
                     ],
                   ),
                 ),

@@ -35,7 +35,7 @@ export class ProductsService {
   async findOne(id: string) {
     try {
       const result = await this.getProductByIdUseCase.execute(id);
-      if (result.isRight()) return { product: result.value };
+      if (result.isRight()) return result.value;
       return { error: result.value.message };
     } catch (err) {
       this.logger.error(err);

@@ -8,3 +8,5 @@ export * from './block-user.usecase';
 export * from './unblock-user.usecase';
 export * from './search-users.usecase';
 export * from './get-suggestions.usecase';
+export * from './register-phone.usecase';
+export * from './verify-phone.usecase';

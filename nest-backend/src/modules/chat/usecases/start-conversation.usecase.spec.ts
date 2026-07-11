@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StartConversationUseCase } from './start-conversation.usecase';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/repositories/block.repository';
+import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
 import { BadRequestError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
@@ -13,7 +13,7 @@ const mockRepo = {
 };
 
 const mockBlockRepository = {
-  isBlocked: jest.fn().mockResolvedValue(false),
+  isBlocked: jest.fn().mockResolvedValue(right(false)),
 };
 
 describe('StartConversationUseCase', () => {

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/repositories/block.repository';
+import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
 import { SendMessageInput, SendMessageOutput } from '../dtos/chat.dto';
 
 @Injectable()
@@ -28,12 +28,14 @@ export class SendMessageUseCase {
       ? conversation.user2Id
       : conversation.user1Id;
 
-    const [isBlocked, isBlockedByOther] = await Promise.all([
+    const [isBlockedResult, isBlockedByOtherResult] = await Promise.all([
       this.blockRepository.isBlocked(input.senderId, otherUserId),
       this.blockRepository.isBlocked(otherUserId, input.senderId),
     ]);
-    if (isBlocked) return left(new ForbiddenError('Você bloqueou este usuário'));
-    if (isBlockedByOther) return left(new ForbiddenError('Você foi bloqueado por este usuário'));
+    if (isBlockedResult.isLeft()) return left(isBlockedResult.value);
+    if (isBlockedByOtherResult.isLeft()) return left(isBlockedByOtherResult.value);
+    if (isBlockedResult.value) return left(new ForbiddenError('Você bloqueou este usuário'));
+    if (isBlockedByOtherResult.value) return left(new ForbiddenError('Você foi bloqueado por este usuário'));
 
     const messageResult = await this.conversationRepository.createDirectMessage({
       conversation: { connect: { id: input.conversationId } },

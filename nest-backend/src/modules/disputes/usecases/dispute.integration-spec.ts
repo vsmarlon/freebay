@@ -7,7 +7,7 @@ import { OpenDisputeUseCase } from './open-dispute.usecase';
 import { ResolveDisputeUseCase } from './resolve-dispute.usecase';
 import { SubmitEvidenceUseCase } from './submit-evidence.usecase';
 import { WithdrawDisputeUseCase } from './withdraw-dispute.usecase';
-import { PrismaDisputeRepository } from '../repositories/dispute.repository';
+import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 import { PrismaTag, NotificationTag } from '../effect-harness/tags';

@@ -53,10 +53,7 @@ class PageHeader extends ConsumerWidget {
       decoration: BoxDecoration(
         color: context.appBarColor,
         border: Border(
-          bottom: BorderSide(
-            color: context.borderColor,
-            width: 2,
-          ),
+          bottom: BorderSide(color: context.borderColor, width: 2),
         ),
       ),
       child: Column(
@@ -69,11 +66,7 @@ class PageHeader extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 if (leading != null) ...[
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: leading!,
-                  ),
+                  SizedBox(width: 40, height: 40, child: leading!),
                   const SizedBox(width: 12),
                 ],
                 Expanded(
@@ -106,11 +99,11 @@ class PageHeader extends ConsumerWidget {
                     ),
                   ),
                 ),
-                ...trailingActions.map((a) => SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: a,
-                    )),
+                Wrap(
+                  spacing: 8,
+                  runAlignment: WrapAlignment.center,
+                  children: trailingActions,
+                ),
               ],
             ),
           ),

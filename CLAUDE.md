@@ -80,7 +80,7 @@ src/
 
 ### DI wiring
 
-Standard Nest DI: every controller, use case, and repository is `@Injectable()`, registered in its module's `providers: []`, and injected via constructor. Nothing is manually `new`'d in route files. Most modules now inject the **abstract** `domain/repositories/*.repository.ts` class into use cases (e.g. `private readonly orderRepository: OrderRepository`), bound to its concrete `data/repositories/*-database.repository.ts` implementation via `{ provide: AbstractRepo, useExisting: ConcreteRepo }` in the module's providers array — concrete repositories inject `PrismaService` to run queries, use cases never do. `payments` and `notifications` haven't been migrated yet and still inject the concrete Prisma repository class directly (e.g. `private orderRepository: PrismaOrderRepository`), with no abstract layer.
+Standard Nest DI: every controller, use case, and repository is `@Injectable()`, registered in its module's `providers: []`, and injected via constructor. Nothing is manually `new`'d in route files. Most modules now inject the **abstract** `domain/repositories/*.repository.ts` class into use cases (e.g. `private readonly orderRepository: OrderRepository`), bound to its concrete `data/repositories/*-database.repository.ts` implementation via `{ provide: AbstractRepo, useExisting: ConcreteRepo }` in the module's providers array — concrete repositories inject `PrismaService` to run queries, use cases never do. The `payments` module has abstract repos for `TransactionRepository`, `ProductRepository` (tx methods), `OrderRepository` (tx methods), and `WalletRepository` (tx methods) — but still uses `PrismaService` directly for the `$transaction` wrapper and transaction-table CRUD. The `notifications` module still injects the concrete Prisma repository class directly with no abstract layer.
 
 ### Either pattern
 
@@ -96,7 +96,27 @@ async execute(input: Input): Promise<Either<AppError, Output>> {
 // controller checks the result (see full convention below)
 ```
 
-`AppError` subclasses live in `shared/core/errors.ts` (`NotFoundError`, `UnauthorizedError`, `ForbiddenError`, `EmailAlreadyExistsError`, `InvalidCredentialsError`, `InsufficientBalanceError`, etc.) and carry `code`, `message`, `statusCode`.
+`AppError` subclasses live in `shared/core/errors.ts` (`NotFoundError`, `UnauthorizedError`, `ForbiddenError`, `EmailAlreadyExistsError`, `InvalidCredentialsError`, `InsufficientBalanceError`, `DatabaseError`, `NotImplementedError`, etc.) and carry `code`, `message`, `statusCode`.
+
+### Void return convention for mutations
+
+Pure-mutation usecases that don't return meaningful data should use `Either<AppError, void>` instead of `Either<AppError, { verb: boolean }>`. Return `right(undefined)` on success. Controllers should just check `result.isLeft()` — no `.verb` field access needed. Query usecases that need to return data (e.g. `check-favorite` → `{ isFavorited: boolean }`, `confirm-delivery` → `{ sellerAmount: number }`) keep their output types.
+
+### Transactional repository pattern
+
+Repository methods that need to participate in `prisma.$transaction` accept an optional `tx?: Prisma.TransactionClient` parameter. The usecase wraps the transaction via `this.prisma.$transaction(async (tx) => { ... })` and passes `tx` to each repo call:
+
+```typescript
+// repository method signature
+abstract creditPending(userId: string, amount: number, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
+
+// usecase
+await this.prisma.$transaction(async (tx) => {
+  await this.productRepo.updateInventoryOnSale(productId, tx);
+  await this.orderRepo.confirm(orderId, tx);
+  await this.walletRepo.creditPending(sellerId, amount, tx);
+});
+```
 
 ### Controller response-shaping convention
 
@@ -152,7 +172,9 @@ DTOs in `modules/<feature>/dtos/` use **class-validator** decorators (`@IsString
 
 - All monetary values stored in **cents** (`Int`) — never `Float`.
 - Use the `@/` path alias for imports from `src/` (e.g. `@/shared/core/either`).
-- Most modules inject an abstract `domain/repositories/*.repository.ts` class (bound to a concrete `data/repositories/*-database.repository.ts` implementation via `useExisting`); `payments`/`notifications` still inject the concrete Prisma class directly. Either way, keep method signatures strongly typed (real enums, not bare `string`).
+- Most modules inject an abstract `domain/repositories/*.repository.ts` class (bound to a concrete `data/repositories/*-database.repository.ts` implementation via `useExisting`); `notifications` still injects the concrete Prisma class directly. `payments` uses abstract repos but still injects `PrismaService` for the `$transaction` wrapper. Either way, keep method signatures strongly typed (real enums, not bare `string`).
+- Use `DatabaseError` for infrastructure/DB failures in catch blocks, not bare `AppError('INTERNAL_ERROR', ...)`. Use `NotImplementedError` for stubbed/placeholder usecases.
+- Mutation usecases that don't return meaningful data should use `Either<AppError, void>` (return `right(undefined)`) instead of `Either<AppError, { verb: boolean }>`.
 - Files: kebab-case (`register.usecase.ts`, `prisma-user.repository.ts`). Classes: PascalCase. Test files: `.spec.ts`, colocated next to the file under test.
 - Rate limiting via `@nestjs/throttler` is applied globally (`APP_GUARD` in `app.module.ts`) with `short`/`medium`/`long` buckets; sensitive routes (e.g. `auth/register`) add a tighter `@Throttle(...)` override.
 - **Throttler buckets** (from `app.module.ts`): `short` = 10 req/s, `medium` = 60 req/min (default), `long` = 1000 req/h. Override per route with `@Throttle({ short: { limit, ttl } })`.
@@ -171,9 +193,9 @@ WebSocket events mirror CRUD operations on messages. For history/management, use
 
 ### Frontend routing & guards
 
-Routes are configured in `frontend/lib/core/router/app_router.dart` using **go_router** with a `ShellRoute` (bottom nav tabs). Guard logic uses Riverpod state:
+Routes are configured in `frontend/lib/core/router/app_router.dart` using **go_router** with a `StatefulShellRoute` (bottom nav tabs). All route path strings are centralized as `static const` variables in `frontend/lib/core/router/app_routes.dart` (e.g. `AppRoutes.feed`, `AppRoutes.login`). Hardcoded path strings should not be used. Guard logic uses Riverpod state:
 
-- **Auth gate:** `redirect` callback checks the auth provider. Unauthenticated users are redirected to `/login` except for public routes (marked via a list of public paths).
+- **Auth gate:** `redirect` callback checks the auth provider. Unauthenticated users are redirected to `AppRoutes.login` except for public routes (marked via a list of public paths).
 - **Guest vs authenticated:** Guest users can browse public content but are redirected to login for guarded actions.
 - **Page transitions:** `CustomTransitionPage` with slide + fade, 150ms/`Curves.linear` per the design system.
 
@@ -263,7 +285,7 @@ lib/
     ├── models/, config/, templates/
 ```
 
-Note: the `dartz` package is also a dependency, but `shared/either/either.dart` is the project's own Either — prefer it for consistency within a feature unless the surrounding code already uses `dartz`.
+Note: The hand-rolled `shared/either/either.dart` is the project's own Either implementation and is used universally. Do not import `dartz` for Either. All entity, repository, usecase, and UI files must use this custom implementation.
 
 ### Tab pages inside the swipeable shell
 

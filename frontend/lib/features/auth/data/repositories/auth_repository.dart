@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/services/http_client.dart';
@@ -84,7 +84,10 @@ class AuthRepository implements IAuthRepository {
 
   @override
   Future<Either<Failure, UserEntity>> login(
-      String email, String password, bool rememberMe) async {
+    String email,
+    String password,
+    bool rememberMe,
+  ) async {
     try {
       if (kDebugMode) {
         debugPrint('[AUTH] Iniciando login...');
@@ -164,7 +167,10 @@ class AuthRepository implements IAuthRepository {
 
   @override
   Future<Either<Failure, UserEntity>> register(
-      String email, String password, String displayName) async {
+    String email,
+    String password,
+    String displayName,
+  ) async {
     try {
       if (kDebugMode) {
         debugPrint('[AUTH] Iniciando registro...');
@@ -175,7 +181,7 @@ class AuthRepository implements IAuthRepository {
         data: {
           'email': email,
           'password': password,
-          'displayName': displayName
+          'displayName': displayName,
         },
       );
 
@@ -221,7 +227,9 @@ class AuthRepository implements IAuthRepository {
         return const Right(null);
       }
 
-      return const Left(ServerFailure('Falha ao solicitar recuperação de senha.'));
+      return const Left(
+        ServerFailure('Falha ao solicitar recuperação de senha.'),
+      );
     } on DioException catch (e) {
       return Left(mapDioExceptionToFailure(e));
     } catch (e) {
@@ -230,7 +238,10 @@ class AuthRepository implements IAuthRepository {
   }
 
   @override
-  Future<Either<Failure, bool>> verifyPasswordRecoveryCode(String email, String code) async {
+  Future<Either<Failure, bool>> verifyPasswordRecoveryCode(
+    String email,
+    String code,
+  ) async {
     try {
       final response = await HttpClient.instance.post(
         '/auth/verify-reset-code',
@@ -250,7 +261,11 @@ class AuthRepository implements IAuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> resetPassword(String email, String code, String newPassword) async {
+  Future<Either<Failure, void>> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
     try {
       final response = await HttpClient.instance.post(
         '/auth/reset-password',

@@ -85,6 +85,27 @@ export class PrismaPostRepository implements PostRepository {
       const where: Prisma.PostWhereInput = {
         content: { contains: query.query, mode: 'insensitive' },
       };
+
+      if (query.userId) {
+        if (query.filter === 'following') {
+          where.user = {
+            followers: {
+              some: {
+                followerId: query.userId,
+              },
+            },
+          };
+        } else if (query.filter === 'followers') {
+          where.user = {
+            following: {
+              some: {
+                followingId: query.userId,
+              },
+            },
+          };
+        }
+      }
+
       const posts = await this.prisma.post.findMany({
         where,
         orderBy: { createdAt: 'desc' },

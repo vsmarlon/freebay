@@ -6,8 +6,8 @@ part of 'comment_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-CommentEntity _$CommentEntityFromJson(Map<String, dynamic> json) =>
-    CommentEntity(
+_CommentEntity _$CommentEntityFromJson(Map<String, dynamic> json) =>
+    _CommentEntity(
       id: json['id'] as String,
       content: json['content'] as String,
       userId: json['userId'] as String,
@@ -19,13 +19,14 @@ CommentEntity _$CommentEntityFromJson(Map<String, dynamic> json) =>
       user: json['user'] == null
           ? null
           : UserEntity.fromJson(json['user'] as Map<String, dynamic>),
-      replies: (json['replies'] as List<dynamic>?)
+      replies:
+          (json['replies'] as List<dynamic>?)
               ?.map((e) => CommentEntity.fromJson(e as Map<String, dynamic>))
               .toList() ??
-          [],
+          const [],
     );
 
-Map<String, dynamic> _$CommentEntityToJson(CommentEntity instance) =>
+Map<String, dynamic> _$CommentEntityToJson(_CommentEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'content': instance.content,

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, BadRequestError } from '@/shared/core/errors';
-import { FollowRepository } from '../repositories/follow.repository';
+import { AppError } from '@/shared/core/errors';
+import { FollowRepository } from '../domain/repositories/follow.repository';
 import { FollowResponse } from '../mappers/user.mapper';
 import { FollowUserInput } from '../dtos/user.dto';
 
@@ -12,21 +12,17 @@ export class UnfollowUserUseCase {
   ) {}
 
   async execute(input: FollowUserInput): Promise<Either<AppError, FollowResponse>> {
-    try {
-      await this.followRepository.unfollow(input.followerId, input.followingId);
-    } catch (error: unknown) {
-      const err = error as { code?: string };
-      if (err.code === 'P2025') {
-        return left(new BadRequestError('Not following'));
-      }
-      return left(new AppError('DB_ERROR', 'Erro ao deixar de seguir usuário'));
-    }
+    const unfollowResult = await this.followRepository.unfollow(input.followerId, input.followingId);
+    if (unfollowResult.isLeft()) return left(unfollowResult.value);
 
-    const [followersCount, followingCount] = await Promise.all([
+    const [followersCountResult, followingCountResult] = await Promise.all([
       this.followRepository.getFollowersCount(input.followingId),
       this.followRepository.getFollowingCount(input.followingId),
     ]);
 
-    return right({ following: false, followersCount, followingCount });
+    if (followersCountResult.isLeft()) return left(followersCountResult.value);
+    if (followingCountResult.isLeft()) return left(followingCountResult.value);
+
+    return right({ following: false, followersCount: followersCountResult.value, followingCount: followingCountResult.value });
   }
 }

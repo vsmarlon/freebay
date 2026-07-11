@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_entity.dart';
 import 'package:freebay/features/wallet/data/services/wallet_service.dart';
 import 'package:freebay/features/wallet/domain/repositories/i_wallet_repository.dart';

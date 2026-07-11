@@ -7,14 +7,14 @@ import { SavedPostRepository } from '../domain/repositories/saved-post.repositor
 export class UnsavePostUseCase {
   constructor(private readonly savedPostRepository: SavedPostRepository) {}
 
-  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, { unsaved: boolean }>> {
+  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {
     const existingResult = await this.savedPostRepository.findByUserAndPost(input.userId, input.postId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (!existingResult.value) return right({ unsaved: true });
+    if (!existingResult.value) return right(undefined);
 
     const unsaveResult = await this.savedPostRepository.unsave(input.userId, input.postId);
     if (isLeft(unsaveResult)) return left(unsaveResult.value);
 
-    return right({ unsaved: true });
+    return right(undefined);
   }
 }

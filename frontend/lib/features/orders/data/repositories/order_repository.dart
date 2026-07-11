@@ -1,6 +1,7 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/data/services/order_service.dart';
+import 'package:freebay/features/orders/data/entities/order_list_response.dart';
 import 'package:freebay/features/orders/domain/repositories/i_order_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
@@ -21,7 +22,10 @@ class OrderRepository implements IOrderRepository {
     String? status,
   }) {
     return _service.getMyPurchases(
-        limit: limit, offset: offset, status: status);
+      limit: limit,
+      offset: offset,
+      status: status,
+    );
   }
 
   @override

@@ -27,12 +27,12 @@ class AppCard extends StatelessWidget {
   });
 
   const AppCard.skeleton({super.key})
-      : variant = AppCardVariant.skeleton,
-        title = '',
-        priceInCents = 0,
-        imageUrl = null,
-        score = null,
-        onTap = null;
+    : variant = AppCardVariant.skeleton,
+      title = '',
+      priceInCents = 0,
+      imageUrl = null,
+      score = null,
+      onTap = null;
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +52,8 @@ class AppCard extends StatelessWidget {
           border: Border.all(
             color: context.isDark
                 ? AppColors.mediumGray.withValues(alpha: 0.2)
-                : AppColors.lightGray,
-            width: 1,
+                : AppColors.black,
+            width: context.isDark ? 1 : 2,
           ),
         ),
         clipBehavior: Clip.antiAlias,
@@ -84,7 +84,9 @@ class AppCard extends StatelessWidget {
                         price,
                         style: AppTypography.bodyLarge.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: context.isDark ? AppColors.accentGreenLight : AppColors.black,
+                          color: context.isDark
+                              ? AppColors.accentGreenLight
+                              : AppColors.black,
                         ),
                       ),
                       if (score != null) ...[

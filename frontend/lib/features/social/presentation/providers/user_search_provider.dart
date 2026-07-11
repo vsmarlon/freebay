@@ -1,12 +1,8 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
-import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
-
-final socialRepositoryProvider = Provider<ISocialRepository>((ref) {
-  return SocialRepository();
-});
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 
 class UserSearchState {
   final List<UserSearchEntity> users;
@@ -56,16 +52,11 @@ class UserSearchNotifier extends StateNotifier<UserSearchState> {
       users: refresh ? [] : state.users,
     );
 
-    final result = await _repository.searchUsers(
-      query: query,
-      cursor: cursor,
-    );
+    final result = await _repository.searchUsers(query: query, cursor: cursor);
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (users) => state = state.copyWith(
         users: refresh ? users : [...state.users, ...users],
         isLoading: false,
@@ -82,9 +73,9 @@ class UserSearchNotifier extends StateNotifier<UserSearchState> {
 
 final userSearchProvider =
     StateNotifierProvider<UserSearchNotifier, UserSearchState>((ref) {
-  final repository = ref.watch(socialRepositoryProvider);
-  return UserSearchNotifier(repository);
-});
+      final repository = ref.watch(socialRepositoryProvider);
+      return UserSearchNotifier(repository);
+    });
 
 class SuggestionsState {
   final List<UserSearchEntity> users;
@@ -123,20 +114,15 @@ class SuggestionsNotifier extends StateNotifier<SuggestionsState> {
     final result = await _repository.getSuggestions();
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
-      (users) => state = state.copyWith(
-        users: users,
-        isLoading: false,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
+      (users) => state = state.copyWith(users: users, isLoading: false),
     );
   }
 }
 
 final suggestionsProvider =
     StateNotifierProvider<SuggestionsNotifier, SuggestionsState>((ref) {
-  final repository = ref.watch(socialRepositoryProvider);
-  return SuggestionsNotifier(repository);
-});
+      final repository = ref.watch(socialRepositoryProvider);
+      return SuggestionsNotifier(repository);
+    });

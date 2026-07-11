@@ -1,6 +1,6 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
 class RepostsState {
   final Map<String, bool> repostedOverrides;
@@ -30,8 +30,13 @@ class RepostsNotifier extends StateNotifier<RepostsState> {
 
   RepostsNotifier(this._repository) : super(const RepostsState());
 
-  Future<bool> toggleRepost(String postId, {required bool initialIsReposted, required int initialCount}) async {
-    final currentReposted = state.repostedOverrides[postId] ?? initialIsReposted;
+  Future<bool> toggleRepost(
+    String postId, {
+    required bool initialIsReposted,
+    required int initialCount,
+  }) async {
+    final currentReposted =
+        state.repostedOverrides[postId] ?? initialIsReposted;
     final currentCount = state.countOverrides[postId] ?? initialCount;
 
     final newIsReposted = !currentReposted;
@@ -43,13 +48,16 @@ class RepostsNotifier extends StateNotifier<RepostsState> {
     );
 
     try {
-      final result = newIsReposted 
+      final result = newIsReposted
           ? await _repository.repost(postId)
           : await _repository.unrepost(postId);
 
-      if (result.isLeft()) {
+      if (result.isLeft) {
         state = state.copyWith(
-          repostedOverrides: {...state.repostedOverrides, postId: currentReposted},
+          repostedOverrides: {
+            ...state.repostedOverrides,
+            postId: currentReposted,
+          },
           countOverrides: {...state.countOverrides, postId: currentCount},
         );
         return false;
@@ -61,7 +69,10 @@ class RepostsNotifier extends StateNotifier<RepostsState> {
       return true;
     } catch (e) {
       state = state.copyWith(
-        repostedOverrides: {...state.repostedOverrides, postId: currentReposted},
+        repostedOverrides: {
+          ...state.repostedOverrides,
+          postId: currentReposted,
+        },
         countOverrides: {...state.countOverrides, postId: currentCount},
       );
       return false;
@@ -69,7 +80,9 @@ class RepostsNotifier extends StateNotifier<RepostsState> {
   }
 }
 
-final repostsProvider = StateNotifierProvider<RepostsNotifier, RepostsState>((ref) {
+final repostsProvider = StateNotifierProvider<RepostsNotifier, RepostsState>((
+  ref,
+) {
   final repository = ref.read(socialRepositoryProvider);
   return RepostsNotifier(repository);
 });

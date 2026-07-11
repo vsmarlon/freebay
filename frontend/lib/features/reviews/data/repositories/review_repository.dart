@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/data/services/review_service.dart';
 import 'package:freebay/features/reviews/domain/repositories/i_review_repository.dart';
@@ -43,8 +43,12 @@ class ReviewRepository implements IReviewRepository {
     int limit = 10,
     int offset = 0,
   }) {
-    return _service.getUserReviews(userId,
-        type: type, limit: limit, offset: offset);
+    return _service.getUserReviews(
+      userId,
+      type: type,
+      limit: limit,
+      offset: offset,
+    );
   }
 
   @override

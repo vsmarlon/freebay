@@ -12,6 +12,7 @@ import 'package:freebay/features/favorites/presentation/providers/favorites_prov
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/product_detail_bottom_sheet.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class ProductDetailPage extends ConsumerWidget {
   final String productId;
@@ -33,18 +34,23 @@ class ProductDetailPage extends ConsumerWidget {
   }
 
   Widget _buildContent(
-      BuildContext context, WidgetRef ref, ProductEntity product) {
+    BuildContext context,
+    WidgetRef ref,
+    ProductEntity product,
+  ) {
     final isDark = context.isDark;
     final priceFormatted = CurrencyUtils.formatCents(product.price);
     final conditionLabel = product.condition == 'NEW' ? 'NOVO' : 'USADO';
     final favoriteAsync = ref.watch(isFavoritedProvider(product.id));
     final favoritesState = ref.watch(favoritesProvider);
-    final isFavorited = favoritesState.isFavorited(product.id) ||
+    final isFavorited =
+        favoritesState.isFavorited(product.id) ||
         (favoriteAsync.value ?? false);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -69,7 +75,7 @@ class ProductDetailPage extends ConsumerWidget {
                             gradient: LinearGradient(
                               colors: [
                                 AppColors.primaryPurpleLight,
-                                AppColors.accentGreenLight
+                                AppColors.accentGreenLight,
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -88,22 +94,28 @@ class ProductDetailPage extends ConsumerWidget {
                     right: 16,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.black.withValues(alpha: 0.54),
                         borderRadius: BorderRadius.zero,
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.photo_library,
-                              color: Colors.white, size: 16),
+                          const Icon(
+                            Icons.photo_library,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                           const SizedBox(width: 4),
                           Text(
-                              product.imageUrl != null &&
-                                      product.imageUrl!.isNotEmpty
-                                  ? '1'
-                                  : '0',
-                              style: const TextStyle(color: Colors.white)),
+                            product.imageUrl != null &&
+                                    product.imageUrl!.isNotEmpty
+                                ? '1'
+                                : '0',
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ],
                       ),
                     ),
@@ -111,17 +123,11 @@ class ProductDetailPage extends ConsumerWidget {
                 ],
               ),
             ),
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.black38 : Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.arrow_back,
-                    color: isDark ? Colors.white : Colors.black),
-              ),
-              onPressed: () => Navigator.pop(context),
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              onTap: () => Navigator.pop(context),
+              iconColor: isDark ? Colors.white : Colors.black,
+              borderColor: isDark ? Colors.white : Colors.black,
             ),
             actions: [
               IconButton(
@@ -131,14 +137,19 @@ class ProductDetailPage extends ConsumerWidget {
                     color: isDark ? Colors.black38 : Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.share,
-                      color: isDark ? Colors.white : Colors.black),
+                  child: Icon(
+                    Icons.share,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
                 ),
                 onPressed: () async {
                   final url = 'https://freebay.app/products/${product.id}';
-                  await Share.share(
-                    'Confira este produto no FreeBay: ${product.title}\n$url',
-                    subject: product.title,
+                  await SharePlus.instance.share(
+                    ShareParams(
+                      text:
+                          'Confira este produto no FreeBay: ${product.title}\n$url',
+                      subject: product.title,
+                    ),
                   );
                 },
               ),
@@ -165,11 +176,14 @@ class ProductDetailPage extends ConsumerWidget {
                   }
                   if (!ok) {
                     AppSnackbar.error(
-                        context, 'Não foi possível atualizar favoritos');
+                      context,
+                      'Não foi possível atualizar favoritos',
+                    );
                     return;
                   }
-                  final nowFavorited =
-                      ref.read(favoritesProvider).isFavorited(product.id);
+                  final nowFavorited = ref
+                      .read(favoritesProvider)
+                      .isFavorited(product.id);
                   AppSnackbar.success(
                     context,
                     nowFavorited
@@ -200,7 +214,9 @@ class ProductDetailPage extends ConsumerWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.accentGreen.withAlpha(25),
                           borderRadius: BorderRadius.zero,
@@ -232,8 +248,9 @@ class ProductDetailPage extends ConsumerWidget {
                   Text(
                     'Pagamento via PIX com custódia até a confirmação do pedido.',
                     style: TextStyle(
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                      color: isDark
+                          ? AppColors.mediumGray
+                          : AppColors.mediumGray,
                       fontSize: 12,
                     ),
                   ),
@@ -274,8 +291,10 @@ class ProductDetailPage extends ConsumerWidget {
                       CircleAvatar(
                         radius: 24,
                         backgroundColor: AppColors.primaryPurple.withAlpha(25),
-                        child: const Icon(Icons.person,
-                            color: AppColors.primaryPurple),
+                        child: const Icon(
+                          Icons.person,
+                          color: AppColors.primaryPurple,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -312,7 +331,9 @@ class ProductDetailPage extends ConsumerWidget {
                         onTap: () => context.push('/user/${product.sellerId}'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: isDark
                                 ? AppColors.surfaceDark
@@ -424,17 +445,11 @@ class ProductDetailPage extends ConsumerWidget {
                   : AppColors.lightGray,
             ),
           ),
-          leading: IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.black38 : Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.arrow_back,
-                  color: isDark ? Colors.white : Colors.black),
-            ),
-            onPressed: () => Navigator.pop(context),
+          leading: BrutalistIconButton(
+            icon: Icons.arrow_back,
+            onTap: () => Navigator.pop(context),
+            iconColor: isDark ? Colors.white : Colors.black,
+            borderColor: isDark ? Colors.white : Colors.black,
           ),
         ),
         SliverToBoxAdapter(
@@ -474,7 +489,11 @@ class ProductDetailPage extends ConsumerWidget {
   }
 
   Widget _buildError(
-      BuildContext context, WidgetRef ref, Object err, StackTrace? stack) {
+    BuildContext context,
+    WidgetRef ref,
+    Object err,
+    StackTrace? stack,
+  ) {
     final isDark = context.isDark;
     return Center(
       child: Padding(
@@ -514,14 +533,13 @@ class ProductDetailPage extends ConsumerWidget {
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.surfaceDark : AppColors.white,
                       borderRadius: BorderRadius.zero,
-                      border: Border.all(
-                        color: AppColors.mediumGray,
-                        width: 1,
-                      ),
+                      border: Border.all(color: AppColors.mediumGray, width: 1),
                     ),
                     child: Text(
                       'Voltar',
@@ -537,7 +555,9 @@ class ProductDetailPage extends ConsumerWidget {
                   onTap: () => ref.invalidate(productByIdProvider(productId)),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     decoration: const BoxDecoration(
                       color: AppColors.primaryPurple,
                       borderRadius: BorderRadius.zero,

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../../orders/repositories/order.repository';
+import { UserRepository } from '../../auth/domain/repositories/user.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { AbacatePayProvider } from '../providers/abacatepay.provider';
 import { CreatePixPaymentInput, CreatePixPaymentOutput } from '../dtos/payment.dto';
@@ -12,6 +13,7 @@ export class CreatePixPaymentUseCase {
 
   constructor(
     private orderRepository: PrismaOrderRepository,
+    private userRepository: UserRepository,
     private prisma: PrismaService,
     private abacatePay: AbacatePayProvider,
   ) {}
@@ -26,9 +28,16 @@ export class CreatePixPaymentUseCase {
       return left(new BadRequestError('Order does not belong to this user'));
     }
 
-    const customerName = input.customerName ?? (await this.prisma.user.findUnique({ where: { id: input.userId }, select: { displayName: true } }))?.displayName ?? '';
-    const customerEmail = input.customerEmail ?? (await this.prisma.user.findUnique({ where: { id: input.userId }, select: { email: true } }))?.email ?? '';
-    const customerTaxId = input.customerTaxId ?? (await this.prisma.user.findUnique({ where: { id: input.userId }, select: { cpf: true } }))?.cpf;
+    const needsUserFetch = !input.customerName || !input.customerEmail || !input.customerTaxId;
+    const userResult = needsUserFetch
+      ? await this.userRepository.findPaymentInfo(input.userId)
+      : right(null);
+    if (isLeft(userResult)) return left(userResult.value);
+
+    const user = userResult.value;
+    const customerName  = input.customerName  ?? user?.displayName ?? '';
+    const customerEmail = input.customerEmail ?? user?.email ?? '';
+    const customerTaxId = input.customerTaxId ?? user?.cpf;
 
     if (!customerTaxId) {
       return left(new BadRequestError('Adicione seu CPF no perfil antes de realizar uma compra'));

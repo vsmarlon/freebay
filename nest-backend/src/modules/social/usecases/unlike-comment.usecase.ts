@@ -7,14 +7,14 @@ import { LikeRepository } from '../domain/repositories/like.repository';
 export class UnlikeCommentUseCase {
   constructor(private readonly likeRepository: LikeRepository) {}
 
-  async execute(input: { userId: string; commentId: string }): Promise<Either<AppError, { unliked: boolean }>> {
+  async execute(input: { userId: string; commentId: string }): Promise<Either<AppError, void>> {
     const existingResult = await this.likeRepository.findCommentLike(input.userId, input.commentId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (!existingResult.value) return right({ unliked: true });
+    if (!existingResult.value) return right(undefined);
 
     const deleteResult = await this.likeRepository.deleteCommentLike(input);
     if (isLeft(deleteResult)) return left(deleteResult.value);
 
-    return right({ unliked: true });
+    return right(undefined);
   }
 }

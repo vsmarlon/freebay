@@ -17,6 +17,6 @@ export class UpdateProfileUseCase {
     if (!userResult.value) {
       return left(new NotFoundError('User'));
     }
-    return right(toUserResponse(userResult.value));
+    return right(toUserResponse(userResult.value, undefined, true));
   }
 }

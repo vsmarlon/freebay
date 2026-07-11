@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/payments/data/entities/pix_payment_entity.dart';
 import 'package:freebay/features/payments/data/services/payment_service.dart';
 import 'package:freebay/features/payments/domain/repositories/i_payment_repository.dart';

@@ -1,13 +1,57 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
+/// Box name for the product catalog cache.
+const _kProductCacheBox = 'product_catalog_cache';
+
+/// Serialises a [ProductEntity] to a JSON-compatible map for Hive storage.
+Map<String, dynamic> _entityToMap(ProductEntity e) => e.toJson();
+
+/// Deserialises a Hive-stored map back into a [ProductEntity].
+ProductEntity _mapToEntity(dynamic raw) =>
+    ProductEntity.fromJson(Map<String, dynamic>.from(raw as Map));
+
 class ProductRepository implements IProductRepository {
+  // ── Hive cache helpers ───────────────────────────────────────────────────
+
+  /// Opens (or returns the already-open) product cache box.
+  Future<Box> _cacheBox() => Hive.openBox(_kProductCacheBox);
+
+  /// Writes [products] into Hive under the given [cacheKey].
+  Future<void> _writeCache(
+    String cacheKey,
+    List<ProductEntity> products,
+  ) async {
+    try {
+      final box = await _cacheBox();
+      await box.put(cacheKey, products.map(_entityToMap).toList());
+    } catch (e) {
+      if (kDebugMode) debugPrint('[PRODUCT CACHE] write error: $e');
+    }
+  }
+
+  /// Returns cached products for [cacheKey], or null if the cache is empty.
+  Future<List<ProductEntity>?> _readCache(String cacheKey) async {
+    try {
+      final box = await _cacheBox();
+      final raw = box.get(cacheKey) as List?;
+      if (raw == null || raw.isEmpty) return null;
+      return raw.map(_mapToEntity).toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[PRODUCT CACHE] read error: $e');
+      return null;
+    }
+  }
+
+  // ── Repository interface ─────────────────────────────────────────────────
+
   @override
   Future<Either<Failure, ProductEntity>> getProductById(String id) async {
     try {
@@ -21,17 +65,7 @@ class ProductRepository implements IProductRepository {
       if (response.statusCode == 200 && response.data != null) {
         final responseData = response.data['data'] as Map<String, dynamic>;
         final productData = responseData['product'] as Map<String, dynamic>;
-        
-        // Extract seller info
-        if (productData['seller'] != null) {
-          productData['sellerName'] = productData['seller']['displayName'];
-          productData['sellerAvatar'] = productData['seller']['avatarUrl'];
-        }
-        final images = productData['images'] as List?;
-        if (images != null && images.isNotEmpty) {
-          final firstImage = images.first as Map;
-          productData['imageUrl'] = firstImage['url'];
-        }
+
         return Right(ProductEntity.fromJson(productData));
       }
       return const Left(NotFoundFailure('Produto não encontrado.'));
@@ -57,17 +91,23 @@ class ProductRepository implements IProductRepository {
     int? maxPrice,
     String? cursor,
   }) async {
+    // Build a deterministic cache key from the query parameters.
+    final cacheKey =
+        'products|s:$search|cat:$category|min:$minPrice|max:$maxPrice|cur:$cursor';
+
     try {
       final queryParams = <String, dynamic>{
         if (search != null && search.isNotEmpty) 'search': search,
         if (category != null && category.isNotEmpty) 'category': category,
-        if (minPrice != null) 'minPrice': minPrice,
-        if (maxPrice != null) 'maxPrice': maxPrice,
-        if (cursor != null) 'cursor': cursor,
+        'minPrice': ?minPrice,
+        'maxPrice': ?maxPrice,
+        'cursor': ?cursor,
       };
 
-      final response = await HttpClient.instance
-          .get('/products', queryParameters: queryParams);
+      final response = await HttpClient.instance.get(
+        '/products',
+        queryParameters: queryParams,
+      );
 
       if (kDebugMode) {
         debugPrint('[PRODUCT] getProducts status: ${response.statusCode}');
@@ -80,17 +120,11 @@ class ProductRepository implements IProductRepository {
 
         final products = productsData.map((json) {
           final map = Map<String, dynamic>.from(json as Map);
-          if (map['seller'] != null) {
-            map['sellerName'] = map['seller']['displayName'];
-            map['sellerAvatar'] = map['seller']['avatarUrl'];
-          }
-          final images = map['images'] as List?;
-          if (images != null && images.isNotEmpty) {
-            final firstImage = images.first as Map;
-            map['imageUrl'] = firstImage['url'];
-          }
           return ProductEntity.fromJson(map);
         }).toList();
+
+        // Persist fresh results for offline fallback.
+        await _writeCache(cacheKey, products);
 
         return Right(products);
       } else {
@@ -100,19 +134,37 @@ class ProductRepository implements IProductRepository {
       if (kDebugMode) {
         debugPrint('[PRODUCT] getProducts DioException: ${e.type}');
       }
+
+      // Network failure — serve stale cache if available.
+      final cached = await _readCache(cacheKey);
+      if (cached != null) {
+        if (kDebugMode) {
+          debugPrint(
+            '[PRODUCT] getProducts serving ${cached.length} cached products',
+          );
+        }
+        return Right(cached);
+      }
+
       return Left(mapDioExceptionToFailure(e));
     } catch (e, stack) {
       if (kDebugMode) {
         debugPrint('[PRODUCT] getProducts error: $e');
         debugPrint('[PRODUCT] getProducts stack: $stack');
       }
+
+      // Generic failure — serve stale cache if available.
+      final cached = await _readCache(cacheKey);
+      if (cached != null) return Right(cached);
+
       return const Left(UnknownFailure());
     }
   }
 
   @override
   Future<Either<Failure, ProductEntity>> createProduct(
-      Map<String, dynamic> productData) async {
+    Map<String, dynamic> productData,
+  ) async {
     try {
       final imagePath = productData.remove('imagePath') as String?;
       if (kDebugMode) {
@@ -134,11 +186,14 @@ class ProductRepository implements IProductRepository {
         options: Options(contentType: 'multipart/form-data'),
       );
       if (kDebugMode) {
-        debugPrint('[PRODUCT REPO] createProduct status=${response.statusCode}');
+        debugPrint(
+          '[PRODUCT REPO] createProduct status=${response.statusCode}',
+        );
         debugPrint('[PRODUCT REPO] createProduct response=${response.data}');
       }
       if (response.statusCode == 201 && response.data != null) {
-        return Right(ProductEntity.fromJson(response.data['data']));
+        final data = response.data['data'] as Map<String, dynamic>;
+        return Right(ProductEntity.fromJson(data));
       } else {
         return const Left(ServerFailure('Erro ao criar anúncio.'));
       }
@@ -181,6 +236,7 @@ class ProductRepository implements IProductRepository {
     }
   }
 
+  @override
   Future<Either<Failure, List<ProductEntity>>> getMyProducts() async {
     try {
       final response = await HttpClient.instance.get('/products/mine/all');
@@ -196,15 +252,6 @@ class ProductRepository implements IProductRepository {
 
         final products = productsData.map((json) {
           final map = Map<String, dynamic>.from(json as Map);
-          if (map['seller'] != null) {
-            map['sellerName'] = map['seller']['displayName'];
-            map['sellerAvatar'] = map['seller']['avatarUrl'];
-          }
-          final images = map['images'] as List?;
-          if (images != null && images.isNotEmpty) {
-            final firstImage = images.first as Map;
-            map['imageUrl'] = firstImage['url'];
-          }
           return ProductEntity.fromJson(map);
         }).toList();
 

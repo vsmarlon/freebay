@@ -6,34 +6,33 @@ part of 'chat_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-ChatEntity _$ChatEntityFromJson(Map<String, dynamic> json) => ChatEntity(
-      id: json['id'] as String,
-      threadType: _threadTypeFromJson(json['threadType'] as String?),
-      otherUserId: json['otherUserId'] as String,
-      otherName: json['otherName'] as String,
-      otherAvatarUrl: json['otherAvatarUrl'] as String?,
-      lastMessage: json['lastMessage'] as String?,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      unread: json['unread'] as bool? ?? false,
-      isArchived: json['isArchived'] as bool? ?? false,
-      orderStatus: json['orderStatus'] as String?,
-      preference: json['preference'] == null
-          ? null
-          : ConversationPreference.fromJson(
-              json['preference'] as Map<String, dynamic>),
-    );
+_ChatEntity _$ChatEntityFromJson(Map<String, dynamic> json) => _ChatEntity(
+  id: json['id'] as String,
+  threadType: _threadTypeFromJson(json['threadType'] as String?),
+  otherUser: UserEntity.fromJson(json['otherUser'] as Map<String, dynamic>),
+  lastMessageInfo: json['lastMessage'] == null
+      ? null
+      : LastMessageInfo.fromJson(json['lastMessage'] as Map<String, dynamic>),
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  preference: json['preference'] == null
+      ? null
+      : ConversationPreference.fromJson(
+          json['preference'] as Map<String, dynamic>,
+        ),
+  orderInfo: json['orderInfo'] == null
+      ? null
+      : OrderInfo.fromJson(json['orderInfo'] as Map<String, dynamic>),
+  unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
+);
 
-Map<String, dynamic> _$ChatEntityToJson(ChatEntity instance) =>
+Map<String, dynamic> _$ChatEntityToJson(_ChatEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'threadType': _threadTypeToJson(instance.threadType),
-      'otherUserId': instance.otherUserId,
-      'otherName': instance.otherName,
-      'otherAvatarUrl': instance.otherAvatarUrl,
-      'lastMessage': instance.lastMessage,
-      'timestamp': instance.timestamp.toIso8601String(),
-      'unread': instance.unread,
-      'isArchived': instance.isArchived,
-      'orderStatus': instance.orderStatus,
+      'otherUser': instance.otherUser,
+      'lastMessage': instance.lastMessageInfo,
+      'createdAt': instance.createdAt.toIso8601String(),
       'preference': instance.preference,
+      'orderInfo': instance.orderInfo,
+      'unreadCount': instance.unreadCount,
     };

@@ -1,36 +1,10 @@
-import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
+import 'package:freebay/shared/either/either.dart';
+
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 
-class OrderListResponse {
-  final List<OrderEntity> orders;
-  final int total;
-  final int limit;
-  final int offset;
-
-  const OrderListResponse({
-    required this.orders,
-    required this.total,
-    required this.limit,
-    required this.offset,
-  });
-
-  factory OrderListResponse.fromJson(Map<String, dynamic> json) {
-    return OrderListResponse(
-      orders: (json['orders'] as List<dynamic>?)
-              ?.map((e) => OrderEntity.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      total: json['total'] as int? ?? 0,
-      limit: json['limit'] as int? ?? 10,
-      offset: json['offset'] as int? ?? 0,
-    );
-  }
-
-  bool get hasMore => offset + orders.length < total;
-}
+import 'package:freebay/features/orders/data/entities/order_list_response.dart';
 
 class OrderService {
   Map<String, dynamic> _extractPayload(dynamic data) {
@@ -51,31 +25,18 @@ class OrderService {
     return <String, dynamic>{};
   }
 
-  String _extractErrorMessage(dynamic error) {
-    if (error is DioException) {
-      final responseData = error.response?.data;
-      if (responseData != null && responseData is Map) {
-        final errorObj = responseData['error'];
-        if (errorObj != null && errorObj is Map) {
-          final message = errorObj['message'];
-          if (message != null) return message.toString();
-        }
-      }
-    }
-    return 'Erro ao conectar com o servidor.';
-  }
-
   Future<Either<Failure, OrderEntity>> getOrder(String orderId) async {
     try {
       final response = await HttpClient.instance.get('/orders/$orderId');
 
       if (response.statusCode == 200 && response.data != null) {
-        return Right(OrderEntity.fromJson(_extractPayload(response.data)));
+        final payload = _extractPayload(response.data);
+        return Right(OrderEntity.fromJson(payload));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
@@ -85,10 +46,7 @@ class OrderService {
     String? status,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'limit': limit,
-        'offset': offset,
-      };
+      final queryParams = <String, dynamic>{'limit': limit, 'offset': offset};
       if (status != null) {
         queryParams['status'] = status;
       }
@@ -101,10 +59,10 @@ class OrderService {
       if (response.statusCode == 200 && response.data != null) {
         return Right(OrderListResponse.fromJson(response.data['data']));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
@@ -114,10 +72,7 @@ class OrderService {
     String? status,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'limit': limit,
-        'offset': offset,
-      };
+      final queryParams = <String, dynamic>{'limit': limit, 'offset': offset};
       if (status != null) {
         queryParams['status'] = status;
       }
@@ -130,10 +85,10 @@ class OrderService {
       if (response.statusCode == 200 && response.data != null) {
         return Right(OrderListResponse.fromJson(response.data['data']));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
@@ -144,12 +99,13 @@ class OrderService {
       );
 
       if (response.statusCode == 201 && response.data != null) {
-        return Right(OrderEntity.fromJson(response.data['data']));
+        final data = response.data['data'] as Map<String, dynamic>;
+        return Right(OrderEntity.fromJson(data));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
@@ -162,12 +118,13 @@ class OrderService {
 
       if ((response.statusCode == 200 || response.statusCode == 201) &&
           response.data != null) {
-        return Right(OrderEntity.fromJson(_extractPayload(response.data)));
+        final payload = _extractPayload(response.data);
+        return Right(OrderEntity.fromJson(payload));
       }
 
-      return Left(ServerFailure(_extractErrorMessage(response.data)));
+      return const Left(ServerFailure('Erro na requisição'));
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
@@ -178,17 +135,19 @@ class OrderService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        return Right(OrderEntity.fromJson(response.data['data']));
+        final data = response.data['data'] as Map<String, dynamic>;
+        return Right(OrderEntity.fromJson(data));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
   Future<Either<Failure, CanReviewResponse>> canReviewOrder(
-      String orderId) async {
+    String orderId,
+  ) async {
     try {
       final response = await HttpClient.instance.get(
         '/reviews/orders/$orderId/can-review',

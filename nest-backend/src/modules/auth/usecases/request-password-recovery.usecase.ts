@@ -15,13 +15,13 @@ export class RequestPasswordRecoveryUseCase {
     private readonly resendService: ResendService,
   ) {}
 
-  async execute(input: RequestPasswordRecoveryDTO): Promise<Either<AppError, { sent: boolean }>> {
+  async execute(input: RequestPasswordRecoveryDTO): Promise<Either<AppError, void>> {
     const userResult = await this.userRepository.findByEmail(input.email);
     if (userResult.isLeft()) return left(userResult.value);
     const user = userResult.value;
 
     if (!user) {
-      return right({ sent: true });
+      return right(undefined);
     }
 
     const deleteResult = await this.recoveryRepository.deleteManyForUser(user.id);
@@ -43,6 +43,6 @@ export class RequestPasswordRecoveryUseCase {
     const sentResult = await this.recoveryRepository.markSent(createResult.value.id, resendMessageId);
     if (sentResult.isLeft()) return left(sentResult.value);
 
-    return right({ sent: true });
+    return right(undefined);
   }
 }

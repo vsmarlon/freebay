@@ -27,6 +27,15 @@ export const COMMENT_INCLUDE = {
 
 export type CommentPayload = Prisma.CommentGetPayload<{ include: typeof COMMENT_INCLUDE }>;
 
+export const COMMENT_FLAT_INCLUDE = {
+  user: { select: { id: true, displayName: true, avatarUrl: true } },
+  _count: { select: { commentLikes: true } },
+} satisfies Prisma.CommentInclude;
+
+export type CommentFlatPayload = Prisma.CommentGetPayload<{ include: typeof COMMENT_FLAT_INCLUDE }>;
+
+export type CommentTree = CommentFlatPayload & { replies: CommentTree[] };
+
 export interface UserPostEntry {
   post: PostPayload;
   repostedAt: Date | null;

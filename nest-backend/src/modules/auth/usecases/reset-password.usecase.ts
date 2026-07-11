@@ -20,7 +20,7 @@ export class ResetPasswordUseCase {
     private readonly redisService: RedisService,
   ) {}
 
-  async execute(input: ResetPasswordDTO): Promise<Either<AppError, { reset: boolean }>> {
+  async execute(input: ResetPasswordDTO): Promise<Either<AppError, void>> {
     const recoveryResult = await this.recoveryRepository.findLatestByEmail(input.email);
     if (recoveryResult.isLeft()) return left(recoveryResult.value);
     const recovery = recoveryResult.value;
@@ -64,6 +64,6 @@ export class ResetPasswordUseCase {
       60 * 60 * 24 * 30,
     );
 
-    return right({ reset: true });
+    return right(undefined);
   }
 }

@@ -50,11 +50,8 @@ class PostDetailsNotifier extends StateNotifier<PostDetailsState> {
   final GetPostCommentsUseCase _getPostComments;
   final String postId;
 
-  PostDetailsNotifier(
-    this._getPostDetails,
-    this._getPostComments,
-    this.postId,
-  ) : super(PostDetailsState()) {
+  PostDetailsNotifier(this._getPostDetails, this._getPostComments, this.postId)
+    : super(PostDetailsState()) {
     _loadData();
   }
 
@@ -73,12 +70,9 @@ class PostDetailsNotifier extends StateNotifier<PostDetailsState> {
     );
 
     List<CommentEntity> comments = [];
-    commentsResult.fold(
-      (failure) {
-        errorMessage ??= failure.message;
-      },
-      (data) => comments = data,
-    );
+    commentsResult.fold((failure) {
+      errorMessage ??= failure.message;
+    }, (data) => comments = data);
 
     state = state.copyWith(
       isLoading: false,
@@ -91,14 +85,23 @@ class PostDetailsNotifier extends StateNotifier<PostDetailsState> {
   Future<void> refresh() async {
     await _loadData();
   }
+
+  /// Silently re-fetches only comments without showing a loading state.
+  /// Used after posting a comment so the list updates without flashing.
+  Future<void> refreshComments() async {
+    final commentsResult = await _getPostComments(postId);
+    commentsResult.fold(
+      (_) {}, // silently ignore errors — existing comments stay visible
+      (data) => state = state.copyWith(comments: data),
+    );
+  }
 }
 
-final postDetailsProvider =
-    StateNotifierProvider.family<PostDetailsNotifier, PostDetailsState, String>(
-        (ref, postId) {
-  return PostDetailsNotifier(
-    ref.watch(getPostDetailsUseCaseProvider),
-    ref.watch(getPostCommentsUseCaseProvider),
-    postId,
-  );
-});
+final postDetailsProvider = StateNotifierProvider.autoDispose
+    .family<PostDetailsNotifier, PostDetailsState, String>((ref, postId) {
+      return PostDetailsNotifier(
+        ref.watch(getPostDetailsUseCaseProvider),
+        ref.watch(getPostCommentsUseCaseProvider),
+        postId,
+      );
+    });

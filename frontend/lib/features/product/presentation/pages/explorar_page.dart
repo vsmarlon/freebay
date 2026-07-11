@@ -1,3 +1,4 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -97,15 +98,16 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                   color: AppColors.primaryContainer,
                 ),
                 onPressed: () => context.push('/products/create'),
-              )
+              ),
             ],
           ),
           Material(
             color: context.surfaceColor,
             child: TabBar(
               controller: _tabController,
-              labelColor:
-                  context.isDark ? AppColors.white : AppColors.primaryContainer,
+              labelColor: context.isDark
+                  ? AppColors.white
+                  : AppColors.primaryContainer,
               unselectedLabelColor: AppColors.mediumGray,
               indicatorColor: AppColors.primaryContainer,
               tabs: const [
@@ -141,16 +143,20 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
     );
   }
 
-  Widget _buildProdutosTab(String? selectedCategory,
-      AsyncValue<List<CategoryEntity>> categoriesAsync) {
+  Widget _buildProdutosTab(
+    String? selectedCategory,
+    AsyncValue<List<CategoryEntity>> categoriesAsync,
+  ) {
     final searchQuery = ref.watch(searchQueryProvider);
 
-    final productsAsync = ref.watch(productsFeedProvider(
-      GetProductsParams(
-        search: searchQuery.isEmpty ? null : searchQuery,
-        category: selectedCategory,
+    final productsAsync = ref.watch(
+      productsFeedProvider(
+        GetProductsParams(
+          search: searchQuery.isEmpty ? null : searchQuery,
+          category: selectedCategory,
+        ),
       ),
-    ));
+    );
 
     return Column(
       children: [
@@ -181,7 +187,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                   childAspectRatio: 0.7,
                 ),
                 itemCount: 6,
-                itemBuilder: (_, __) => const AppCard.skeleton(),
+                itemBuilder: (_, _) => const AppCard.skeleton(),
                 physics: const NeverScrollableScrollPhysics(),
               ),
             ),
@@ -213,7 +219,9 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           color: context.surfaceColor,
                           child: Text(
                             'Limpar filtros',
@@ -231,12 +239,14 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
               }
 
               return RefreshIndicator(
-                onRefresh: () => ref.refresh(productsFeedProvider(
-                  GetProductsParams(
-                    search: searchQuery.isEmpty ? null : searchQuery,
-                    category: selectedCategory,
-                  ),
-                ).future),
+                onRefresh: () => ref.refresh(
+                  productsFeedProvider(
+                    GetProductsParams(
+                      search: searchQuery.isEmpty ? null : searchQuery,
+                      category: selectedCategory,
+                    ),
+                  ).future,
+                ),
                 color: AppColors.primaryContainer,
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),
@@ -249,12 +259,14 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    return AppCard(
-                      imageUrl: product.imageUrl,
-                      title: product.title,
-                      priceInCents: product.price,
-                      variant: AppCardVariant.compact,
-                      onTap: () => context.push('/products/${product.id}'),
+                    return RepaintBoundary(
+                      child: AppCard(
+                        imageUrl: product.imageUrl,
+                        title: product.title,
+                        priceInCents: product.price,
+                        variant: AppCardVariant.compact,
+                        onTap: () => context.push('/products/${product.id}'),
+                      ),
                     );
                   },
                 ),
@@ -275,8 +287,11 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline,
-                      color: AppColors.error, size: 48),
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.error,
+                    size: 48,
+                  ),
                   Spacing.vMd,
                   Text(
                     'Erro ao carregar\nerro: $err',
@@ -286,13 +301,15 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                   Spacing.vMd,
                   AppButton(
                     label: 'Tentar novamente',
-                    onPressed: () => ref.invalidate(productsFeedProvider(
-                      GetProductsParams(
-                        search: searchQuery.isEmpty ? null : searchQuery,
-                        category: selectedCategory,
+                    onPressed: () => ref.invalidate(
+                      productsFeedProvider(
+                        GetProductsParams(
+                          search: searchQuery.isEmpty ? null : searchQuery,
+                          category: selectedCategory,
+                        ),
                       ),
-                    )),
-                  )
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -8,7 +8,7 @@ import { MarkAsDeliveredInput } from '../dtos/order.dto';
 export class MarkAsDeliveredUseCase {
   constructor(private readonly orderRepository: OrderRepository) {}
 
-  async execute(input: MarkAsDeliveredInput): Promise<Either<AppError, { delivered: boolean }>> {
+  async execute(input: MarkAsDeliveredInput): Promise<Either<AppError, void>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
     if (isLeft(orderResult)) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
@@ -27,6 +27,6 @@ export class MarkAsDeliveredUseCase {
     });
     if (isLeft(result)) return left(result.value);
 
-    return right({ delivered: true });
+    return right(undefined);
   }
 }

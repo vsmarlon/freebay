@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
@@ -18,4 +18,7 @@ abstract class IProfileRepository {
   });
 
   Future<Either<Failure, UserEntity>> updateAvatar(String imagePath);
+  Future<Either<Failure, UserEntity>> updateBanner(String imagePath);
+  Future<Either<Failure, void>> registerPhone(String phone);
+  Future<Either<Failure, UserEntity>> verifyPhone(String code);
 }

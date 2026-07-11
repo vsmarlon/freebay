@@ -1,7 +1,7 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
-import 'user_search_provider.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
 
 class PostSearchState {
   final List<PostEntity> posts;
@@ -48,8 +48,11 @@ class PostSearchNotifier extends StateNotifier<PostSearchState> {
 
   PostSearchNotifier(this._repository) : super(const PostSearchState());
 
-  Future<void> search(
-      {String? query, String? filter, bool refresh = false}) async {
+  Future<void> search({
+    String? query,
+    String? filter,
+    bool refresh = false,
+  }) async {
     if (state.isLoading) return;
 
     final newQuery = query ?? state.query;
@@ -71,10 +74,8 @@ class PostSearchNotifier extends StateNotifier<PostSearchState> {
     );
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (posts) => state = state.copyWith(
         posts: refresh ? posts : [...state.posts, ...posts],
         isLoading: false,
@@ -91,6 +92,6 @@ class PostSearchNotifier extends StateNotifier<PostSearchState> {
 
 final postSearchProvider =
     StateNotifierProvider<PostSearchNotifier, PostSearchState>((ref) {
-  final repository = ref.watch(socialRepositoryProvider);
-  return PostSearchNotifier(repository);
-});
+      final repository = ref.watch(socialRepositoryProvider);
+      return PostSearchNotifier(repository);
+    });

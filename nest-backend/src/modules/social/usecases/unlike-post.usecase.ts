@@ -12,15 +12,15 @@ export class UnlikePostUseCase {
     private readonly likeRepository: LikeRepository,
   ) {}
 
-  async execute(input: LikePostInput): Promise<Either<AppError, { unliked: boolean }>> {
+  async execute(input: LikePostInput): Promise<Either<AppError, void>> {
     const existingResult = await this.likeRepository.findPostLike(input.userId, input.postId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (!existingResult.value) return right({ unliked: true });
+    if (!existingResult.value) return right(undefined);
 
     const deleteResult = await this.likeRepository.deletePostLikeByUser(input.userId, input.postId);
     if (isLeft(deleteResult)) return left(deleteResult.value);
 
     await this.postRepository.update(input.postId, { likesCount: { decrement: 1 } });
-    return right({ unliked: true });
+    return right(undefined);
   }
 }

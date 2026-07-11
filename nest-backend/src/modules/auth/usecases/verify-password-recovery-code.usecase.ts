@@ -15,7 +15,7 @@ import { VerifyPasswordRecoveryCodeDTO } from '../dtos/password-recovery.dto';
 export class VerifyPasswordRecoveryCodeUseCase {
   constructor(private readonly recoveryRepository: PasswordRecoveryRepository) {}
 
-  async execute(input: VerifyPasswordRecoveryCodeDTO): Promise<Either<AppError, { verified: boolean }>> {
+  async execute(input: VerifyPasswordRecoveryCodeDTO): Promise<Either<AppError, void>> {
     const recoveryResult = await this.recoveryRepository.findLatestByEmail(input.email);
     if (recoveryResult.isLeft()) return left(recoveryResult.value);
     const recovery = recoveryResult.value;
@@ -42,6 +42,6 @@ export class VerifyPasswordRecoveryCodeUseCase {
       return left(new RecoveryCodeNotFoundError());
     }
 
-    return right({ verified: true });
+    return right(undefined);
   }
 }

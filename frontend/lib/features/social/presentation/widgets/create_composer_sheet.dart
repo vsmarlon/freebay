@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/theme/app_typography.dart';
@@ -11,33 +10,28 @@ class CreateComposerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BrutalistSheetScaffold(
-      title: 'O QUE VOCE QUER CRIAR?',
-      showDragHandle: false,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _CreateComposerOption(
-            icon: Icons.forum_outlined,
-            title: 'Post social',
-            subtitle: 'Publicacoes, opinioes e interacoes para o feed.',
-            onTap: () {
-              Navigator.of(context).pop();
-              context.push('/create-post');
-            },
-          ),
-          _CreateComposerOption(
-            icon: Icons.sell_outlined,
-            title: 'Anuncio de venda',
-            subtitle: 'Item para catalogo com preco, categoria e imagem.',
-            onTap: () {
-              Navigator.of(context).pop();
-              context.push('/products/create');
-            },
-          ),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _CreateComposerOption(
+          icon: Icons.forum_outlined,
+          title: 'Post social',
+          subtitle: 'Publicações, opiniões e interações para o feed.',
+          onTap: () {
+            Navigator.of(context).pop();
+            context.push('/create-post');
+          },
+        ),
+        _CreateComposerOption(
+          icon: Icons.sell_outlined,
+          title: 'Anúncio de venda',
+          subtitle: 'Item para catálogo com preço, categoria e imagem.',
+          onTap: () {
+            Navigator.of(context).pop();
+            context.push('/products/create');
+          },
+        ),
+      ],
     );
   }
 }

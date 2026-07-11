@@ -1,3 +1,4 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -6,6 +7,7 @@ import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
+import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class CommentBottomSheet extends ConsumerStatefulWidget {
   final PostEntity post;
@@ -45,13 +47,15 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       if (mounted) {
         result.fold(
           (failure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(failure.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(failure.message)));
           },
           (_) {
             _commentController.clear();
-            ref.invalidate(feedProvider);
+            ref
+                .read(feedProvider.notifier)
+                .updatePostCommentCount(widget.post.id, 1);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Comentário adicionado!')),
             );
@@ -60,9 +64,9 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao comentar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao comentar: $e')));
       }
     } finally {
       if (mounted) {
@@ -88,15 +92,6 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.mediumGray,
-                borderRadius: BorderRadius.zero,
-              ),
-            ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -162,15 +157,16 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
   }
 }
 
-void showCommentSheet(BuildContext context, PostEntity post,
-    {String? parentId}) {
-  showModalBottomSheet(
+void showCommentSheet(
+  BuildContext context,
+  PostEntity post, {
+  String? parentId,
+}) {
+  showBrutalistSheet(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => CommentBottomSheet(
-      post: post,
-      parentId: parentId,
-    ),
+    title: 'COMENTÁRIOS',
+    showDragHandle: true,
+    padding: EdgeInsets.zero,
+    builder: (context) => CommentBottomSheet(post: post, parentId: parentId),
   );
 }

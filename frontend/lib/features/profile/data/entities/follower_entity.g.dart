@@ -6,8 +6,8 @@ part of 'follower_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-FollowerEntity _$FollowerEntityFromJson(Map<String, dynamic> json) =>
-    FollowerEntity(
+_FollowerEntity _$FollowerEntityFromJson(Map<String, dynamic> json) =>
+    _FollowerEntity(
       id: json['id'] as String,
       displayName: json['displayName'] as String? ?? 'Usuário',
       avatarUrl: json['avatarUrl'] as String?,
@@ -16,7 +16,7 @@ FollowerEntity _$FollowerEntityFromJson(Map<String, dynamic> json) =>
       isFollowing: json['isFollowing'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$FollowerEntityToJson(FollowerEntity instance) =>
+Map<String, dynamic> _$FollowerEntityToJson(_FollowerEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'displayName': instance.displayName,

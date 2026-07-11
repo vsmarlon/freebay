@@ -3,9 +3,11 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaConversationPreferenceRepository } from '../repositories/conversation-preference.repository';
+import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
+import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { BlockRepository } from '@/modules/users/repositories/block.repository';
+import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { SendMessageUseCase } from './send-message.usecase';
 import { GetConversationsUseCase } from './get-conversations.usecase';
 import { GetMessagesUseCase } from './get-messages.usecase';
@@ -22,8 +24,10 @@ import { SetConversationBackgroundUseCase } from './set-conversation-background.
     { provide: PrismaClient, useExisting: PrismaService },
     { provide: ConversationRepository, useClass: ConversationDatabaseRepository },
     PrismaConversationPreferenceRepository,
+    { provide: ConversationPreferenceRepository, useExisting: PrismaConversationPreferenceRepository },
     ChatThreadAccessService,
-    BlockRepository,
+    PrismaBlockRepository,
+    { provide: BlockRepository, useExisting: PrismaBlockRepository },
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,

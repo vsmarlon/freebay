@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class ReputationStars extends StatelessWidget {
   final double score;
@@ -21,24 +22,19 @@ class ReputationStars extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ...List.generate(5, (index) {
-          final starValue = index + 1;
-          IconData icon;
-          Color color;
-
-          if (score >= starValue) {
-            icon = Icons.star;
-            color = AppColors.warning;
-          } else if (score >= starValue - 0.5) {
-            icon = Icons.star_half;
-            color = AppColors.warning;
-          } else {
-            icon = Icons.star_outline;
-            color = AppColors.mediumGray.withAlpha(128);
-          }
-
-          return Icon(icon, size: size, color: color);
-        }),
+        RatingBar.builder(
+          initialRating: score,
+          minRating: 0,
+          direction: Axis.horizontal,
+          allowHalfRating: true,
+          itemCount: 5,
+          itemSize: size,
+          ignoreGestures: true,
+          unratedColor: AppColors.mediumGray.withAlpha(128),
+          itemBuilder: (context, _) =>
+              const Icon(Icons.star, color: AppColors.warning),
+          onRatingUpdate: (_) {},
+        ),
         if (showCount && reviewCount > 0) ...[
           Spacing.hXs,
           Text(

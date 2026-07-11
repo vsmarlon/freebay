@@ -8,7 +8,7 @@ import { UpdateFcmTokenInput } from '../dtos/user.dto';
 export class UpdateFcmTokenUseCase {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(input: UpdateFcmTokenInput): Promise<Either<AppError, { success: boolean }>> {
+  async execute(input: UpdateFcmTokenInput): Promise<Either<AppError, void>> {
     const updateData: Record<string, unknown> = {};
     if (input.fcmToken !== undefined) {
       updateData.fcmToken = input.fcmToken;
@@ -18,7 +18,7 @@ export class UpdateFcmTokenUseCase {
     }
 
     if (Object.keys(updateData).length === 0) {
-      return right({ success: true });
+      return right(undefined);
     }
 
     const userResult = await this.userRepository.update(input.userId, updateData);
@@ -26,6 +26,6 @@ export class UpdateFcmTokenUseCase {
       return left(userResult.value);
     }
 
-    return right({ success: true });
+    return right(undefined);
   }
 }

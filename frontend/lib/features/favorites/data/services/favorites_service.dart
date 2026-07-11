@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
@@ -20,7 +20,9 @@ class FavoritesService {
 
   Future<Either<Failure, bool>> isFavorited(String productId) async {
     try {
-      final response = await HttpClient.instance.get('/favorites/check/$productId');
+      final response = await HttpClient.instance.get(
+        '/favorites/check/$productId',
+      );
       final data = response.data['data'] as Map<String, dynamic>?;
       final isFavorited = data?['isFavorited'] as bool? ?? false;
       return Right(isFavorited);
@@ -39,15 +41,6 @@ class FavoritesService {
 
       final products = productsData.map((item) {
         final map = Map<String, dynamic>.from(item as Map);
-        if (map['seller'] != null) {
-          map['sellerName'] = map['seller']['displayName'];
-          map['sellerAvatar'] = map['seller']['avatarUrl'];
-        }
-        final images = map['images'] as List?;
-        if (images != null && images.isNotEmpty) {
-          final firstImage = images.first as Map;
-          map['imageUrl'] = firstImage['url'];
-        }
         return ProductEntity.fromJson(map);
       }).toList();
 

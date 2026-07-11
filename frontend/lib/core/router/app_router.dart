@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'navigation_tracker.dart';
+import 'app_routes.dart';
+
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/presentation/pages/splash_page.dart';
 import 'package:freebay/features/auth/presentation/pages/login_page.dart';
@@ -53,8 +56,6 @@ import 'package:freebay/features/dispute/presentation/pages/create_dispute_page.
 import 'package:freebay/core/components/app_shell.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<NavigatorState> _shellNavigatorKey =
-    GlobalKey<NavigatorState>();
 
 CustomTransitionPage<void> _buildPageWithSlideTransition({
   required BuildContext context,
@@ -89,43 +90,97 @@ CustomTransitionPage<void> _buildPageWithSlideTransition({
 final routerRefreshNotifier = ValueNotifier<int>(0);
 
 final List<String> _publicRoutes = [
-  '/splash',
-  '/login',
-  '/register',
-  '/recover-password',
-  '/reset-password',
+  AppRoutes.splash,
+  AppRoutes.login,
+  AppRoutes.register,
+  AppRoutes.recoverPassword,
+  AppRoutes.resetPassword,
+];
+
+final List<String> _guestRestrictedRoutes = [
+  AppRoutes.wallet,
+  AppRoutes.chat,
+  AppRoutes.profile,
+  AppRoutes.checkout,
+  AppRoutes.orders,
+  AppRoutes.disputes,
+  AppRoutes.reviews,
 ];
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/splash',
+  initialLocation: AppRoutes.splash,
   refreshListenable: routerRefreshNotifier,
   redirect: (context, state) {
-    final isPublic = _publicRoutes.any((p) => state.matchedLocation == p);
-    if (isPublic) return null;
-
     final container = ProviderScope.containerOf(context, listen: false);
     final authState = container.read(authControllerProvider);
-    final user = authState.valueOrNull;
-    if (user == null) {
-      return '/login';
+
+    // Keep user on splash during initial loading state
+    if (authState.isLoading) {
+      if (state.matchedLocation != AppRoutes.splash) {
+        return AppRoutes.splash;
+      }
+      return null;
     }
 
-    if (state.matchedLocation != '/onboarding' &&
+    final user = authState.valueOrNull;
+
+    // Unauthenticated user handling
+    if (user == null) {
+      if (state.matchedLocation == AppRoutes.splash) {
+        return AppRoutes.login;
+      }
+      final isPublic = _publicRoutes.any((p) => state.matchedLocation == p);
+      if (!isPublic) {
+        return AppRoutes.login;
+      }
+      updateCurrentLocation(state.matchedLocation);
+      return null;
+    }
+
+    // Authenticated user handling
+    if (user.isGuest) {
+      // Guests navigating to restricted routes go to /login
+      final isRestricted = _guestRestrictedRoutes.any(
+        (p) =>
+            state.matchedLocation == p ||
+            state.matchedLocation.startsWith('$p/'),
+      );
+      if (isRestricted) {
+        return AppRoutes.login;
+      }
+      // Guest landing on splash goes to /feed
+      if (state.matchedLocation == AppRoutes.splash) {
+        return AppRoutes.feed;
+      }
+    } else {
+      // Non-guest authenticated users are redirected away from splash/login/register to /feed
+      final isAuthScreen =
+          state.matchedLocation == AppRoutes.splash ||
+          state.matchedLocation == AppRoutes.login ||
+          state.matchedLocation == AppRoutes.register;
+      if (isAuthScreen) {
+        return AppRoutes.feed;
+      }
+    }
+
+    // Onboarding check for non-guest users
+    if (state.matchedLocation != AppRoutes.onboarding &&
         !user.isGuest &&
         !container.read(hasSeenOnboardingProvider)) {
-      return '/onboarding';
+      return AppRoutes.onboarding;
     }
 
+    updateCurrentLocation(state.matchedLocation);
     return null;
   },
   routes: [
     GoRoute(
-      path: '/splash',
+      path: AppRoutes.splash,
       builder: (context, state) => const SplashPage(),
     ),
     GoRoute(
-      path: '/login',
+      path: AppRoutes.login,
       pageBuilder: (context, state) => _buildPageWithSlideTransition(
         context: context,
         state: state,
@@ -133,7 +188,7 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/register',
+      path: AppRoutes.register,
       pageBuilder: (context, state) => _buildPageWithSlideTransition(
         context: context,
         state: state,
@@ -141,7 +196,7 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/recover-password',
+      path: AppRoutes.recoverPassword,
       pageBuilder: (context, state) => _buildPageWithSlideTransition(
         context: context,
         state: state,
@@ -149,7 +204,7 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/reset-password',
+      path: AppRoutes.resetPassword,
       pageBuilder: (context, state) => _buildPageWithSlideTransition(
         context: context,
         state: state,
@@ -160,112 +215,133 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/onboarding',
+      path: AppRoutes.onboarding,
       builder: (context, state) => const OnboardingPage(),
     ),
     GoRoute(
-      path: '/create-post',
+      path: AppRoutes.createPost,
       builder: (context, state) => const CreatePostPage(),
     ),
     GoRoute(
-      path: '/post/:id',
+      path: AppRoutes.postDetails,
       builder: (context, state) =>
           PostDetailsPage(postId: state.pathParameters['id']!),
       routes: [
         GoRoute(
-          path: 'comments',
+          path: AppRoutes.comments,
           builder: (context, state) =>
               CommentsPage(postId: state.pathParameters['id']!),
         ),
       ],
     ),
     GoRoute(
-      path: '/posts/search',
+      path: AppRoutes.postSearch,
       builder: (context, state) => const PostSearchPage(),
     ),
     GoRoute(
-      path: '/products/create',
+      path: AppRoutes.createProduct,
       builder: (context, state) => const CreateProductPage(),
     ),
     GoRoute(
-      path: '/products/:id',
+      path: AppRoutes.productDetail,
       builder: (context, state) =>
           ProductDetailPage(productId: state.pathParameters['id']!),
       routes: [
         GoRoute(
-          path: 'edit',
+          path: AppRoutes.editProduct,
           builder: (context, state) =>
               EditProductPage(productId: state.pathParameters['id']!),
         ),
       ],
     ),
     GoRoute(
-      path: '/story',
-      builder: (context, state) => StoryViewerWrapper(
-        indexParam: state.uri.queryParameters['index'],
-      ),
+      path: AppRoutes.story,
+      builder: (context, state) =>
+          StoryViewerWrapper(indexParam: state.uri.queryParameters['index']),
     ),
     GoRoute(
-      path: '/create-story',
+      path: AppRoutes.createStory,
       builder: (context, state) => const CreateStoryPage(),
     ),
     GoRoute(
-      path: '/user/:id',
+      path: AppRoutes.userProfile,
       builder: (context, state) =>
           UserProfilePage(userId: state.pathParameters['id']!),
     ),
     // Shell routes (with bottom nav)
-    ShellRoute(
-      navigatorKey: _shellNavigatorKey,
-      builder: (context, state, child) => AppShell(child: child),
-      routes: [
-        GoRoute(
-          path: '/feed',
-          pageBuilder: (context, state) => _buildPageWithSlideTransition(
-            context: context,
-            state: state,
-            child: const FeedPage(),
-          ),
+    StatefulShellRoute.indexedStack(
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state, navigationShell) {
+        return AppShell(navigationShell: navigationShell);
+      },
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.feed,
+              pageBuilder: (context, state) => _buildPageWithSlideTransition(
+                context: context,
+                state: state,
+                child: const FeedPage(),
+              ),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/explore',
-          pageBuilder: (context, state) => _buildPageWithSlideTransition(
-            context: context,
-            state: state,
-            child: const ExplorarPage(),
-          ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.explore,
+              pageBuilder: (context, state) => _buildPageWithSlideTransition(
+                context: context,
+                state: state,
+                child: const ExplorarPage(),
+              ),
+            ),
+            GoRoute(
+              path: AppRoutes.products,
+              pageBuilder: (context, state) => _buildPageWithSlideTransition(
+                context: context,
+                state: state,
+                child: const ProductListPage(),
+              ),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/products',
-          pageBuilder: (context, state) => _buildPageWithSlideTransition(
-            context: context,
-            state: state,
-            child: const ProductListPage(),
-          ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.wallet,
+              pageBuilder: (context, state) => _buildPageWithSlideTransition(
+                context: context,
+                state: state,
+                child: const WalletPage(),
+              ),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/wallet',
-          pageBuilder: (context, state) => _buildPageWithSlideTransition(
-            context: context,
-            state: state,
-            child: const WalletPage(),
-          ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.chat,
+              pageBuilder: (context, state) => _buildPageWithSlideTransition(
+                context: context,
+                state: state,
+                child: const ChatListPage(),
+              ),
+            ),
+          ],
         ),
-        GoRoute(
-          path: '/chat',
-          pageBuilder: (context, state) => _buildPageWithSlideTransition(
-            context: context,
-            state: state,
-            child: const ChatListPage(),
-          ),
-        ),
-        GoRoute(
-          path: '/profile',
-          pageBuilder: (context, state) => _buildPageWithSlideTransition(
-            context: context,
-            state: state,
-            child: const ProfilePage(),
-          ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.profile,
+              pageBuilder: (context, state) => _buildPageWithSlideTransition(
+                context: context,
+                state: state,
+                child: const ProfilePage(),
+              ),
+            ),
+          ],
         ),
       ],
     ),
@@ -273,35 +349,32 @@ final GoRouter appRouter = GoRouter(
     // full-screen over the bottom nav. `/chat/new` is declared before
     // `/chat/:chatId` so "new" is not captured as a chat id.
     GoRoute(
-      path: '/chat/new',
+      path: AppRoutes.chatNew,
       builder: (context, state) => const NewChatPage(),
     ),
     GoRoute(
-      path: '/chat/archived',
+      path: AppRoutes.chatArchived,
       builder: (context, state) => const ArchivedChatsPage(),
     ),
     GoRoute(
-      path: '/chat/:chatId',
+      path: AppRoutes.chatConversation,
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         return ChatConversationPage(
           chatId: state.pathParameters['chatId']!,
-          oderName: extra?['oderName'] ?? 'Chat',
-          oderAvatarUrl: extra?['oderAvatarUrl'],
+          orderName: extra?['orderName'] ?? 'Chat',
+          orderAvatarUrl: extra?['orderAvatarUrl'],
           chatType: extra?['chatType'] ?? 'order',
         );
       },
     ),
     GoRoute(
-      path: '/profile/blocked',
+      path: AppRoutes.profileBlocked,
       builder: (context, state) => const BlockedUsersPage(),
     ),
+    GoRoute(path: AppRoutes.faq, builder: (context, state) => const FaqPage()),
     GoRoute(
-      path: '/faq',
-      builder: (context, state) => const FaqPage(),
-    ),
-    GoRoute(
-      path: '/notifications',
+      path: AppRoutes.notifications,
       pageBuilder: (context, state) => _buildPageWithSlideTransition(
         context: context,
         state: state,
@@ -309,72 +382,72 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/profile/posts',
+      path: AppRoutes.profilePosts,
       builder: (context, state) {
         final userId = state.uri.queryParameters['userId'] ?? 'me';
         return MyPostsPage(userId: userId);
       },
     ),
     GoRoute(
-      path: '/profile/stories',
+      path: AppRoutes.profileStories,
       builder: (context, state) {
         final userId = state.uri.queryParameters['userId'] ?? 'me';
         return MyStoriesPage(userId: userId);
       },
     ),
     GoRoute(
-      path: '/profile/products',
+      path: AppRoutes.profileProducts,
       builder: (context, state) => const MyProductsPage(),
     ),
     GoRoute(
-      path: '/profile/liked',
+      path: AppRoutes.profileLiked,
       builder: (context, state) => const LikedPostsPage(),
     ),
     GoRoute(
-      path: '/profile/favorites',
+      path: AppRoutes.profileFavorites,
       builder: (context, state) => const FavoritesPage(),
     ),
     GoRoute(
-      path: '/profile/saved',
+      path: AppRoutes.profileSaved,
       builder: (context, state) => const SavedPostsPage(),
     ),
     GoRoute(
-      path: '/profile/purchases',
+      path: AppRoutes.profilePurchases,
       builder: (context, state) => const PurchasesPage(),
     ),
     GoRoute(
-      path: '/profile/payment',
+      path: AppRoutes.profilePayment,
       builder: (context, state) => const PaymentPage(),
     ),
     GoRoute(
-      path: '/profile/edit',
+      path: AppRoutes.profileEdit,
       builder: (context, state) => const EditProfilePage(),
     ),
     GoRoute(
-      path: '/profile/followers',
+      path: AppRoutes.profileFollowers,
       builder: (context, state) =>
           FollowersPage(userId: state.uri.queryParameters['userId'] ?? 'me'),
     ),
     GoRoute(
-      path: '/profile/following',
+      path: AppRoutes.profileFollowing,
       builder: (context, state) =>
           FollowingPage(userId: state.uri.queryParameters['userId'] ?? 'me'),
     ),
     GoRoute(
-      path: '/cart',
+      path: AppRoutes.cart,
       builder: (context, state) => const CartPage(),
     ),
     GoRoute(
-      path: '/checkout/cart',
+      path: AppRoutes.checkoutCart,
       builder: (context, state) => const CartCheckoutPage(),
     ),
     GoRoute(
-      path: '/orders/:orderId',
+      path: AppRoutes.orderDetail,
       builder: (context, state) =>
           OrderDetailPage(orderId: state.pathParameters['orderId']!),
     ),
     GoRoute(
-      path: '/user/:id/reviews',
+      path: AppRoutes.userReviews,
       builder: (context, state) {
         final userName = state.uri.queryParameters['name'];
         return UserReviewsPage(
@@ -384,9 +457,14 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/reviews/create',
+      path: AppRoutes.createReview,
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
+        final extra = state.extra as Map<String, dynamic>?;
+        if (extra == null) {
+          return const Scaffold(
+            body: Center(child: Text('Error: Missing review details.')),
+          );
+        }
         return CreateReviewPage(
           orderId: extra['orderId'] as String,
           reviewedId: extra['reviewedId'] as String,
@@ -397,22 +475,22 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/disputes',
+      path: AppRoutes.disputes,
       builder: (context, state) => const DisputeListPage(),
     ),
     GoRoute(
-      path: '/disputes/:disputeId',
-      builder: (context, state) =>
-          DisputeDetailPage(disputeId: state.pathParameters['disputeId']!),
-    ),
-    GoRoute(
-      path: '/disputes/create/:orderId',
+      path: AppRoutes.createDispute,
       builder: (context, state) =>
           CreateDisputePage(orderId: state.pathParameters['orderId']!),
     ),
     GoRoute(
-      path: '/:path(.*)',
-      redirect: (context, state) => '/login',
+      path: AppRoutes.disputeDetail,
+      builder: (context, state) =>
+          DisputeDetailPage(disputeId: state.pathParameters['disputeId']!),
+    ),
+    GoRoute(
+      path: AppRoutes.wildCard,
+      redirect: (context, state) => AppRoutes.login,
     ),
   ],
 );

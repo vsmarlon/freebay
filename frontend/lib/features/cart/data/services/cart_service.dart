@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
@@ -18,7 +18,10 @@ class CartService {
     }
   }
 
-  Future<Either<Failure, void>> addToCart(String productId, {int quantity = 1}) async {
+  Future<Either<Failure, void>> addToCart(
+    String productId, {
+    int quantity = 1,
+  }) async {
     try {
       await HttpClient.instance.post(
         '/cart/$productId',
@@ -32,7 +35,10 @@ class CartService {
     }
   }
 
-  Future<Either<Failure, void>> updateQuantity(String productId, int quantity) async {
+  Future<Either<Failure, void>> updateQuantity(
+    String productId,
+    int quantity,
+  ) async {
     try {
       await HttpClient.instance.patch(
         '/cart/$productId',

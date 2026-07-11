@@ -60,7 +60,7 @@
 | # | File Change | Status |
 |---|-------------|--------|
 | 2.18 | Create `modules/disputes/domain/repositories/dispute.repository.ts` (abstract) | `[✓]` |
-| 2.19 | Create `modules/disputes/data/repositories/dispute-database.repository.ts` | `[ ]` — concrete impl still lives at old flat path `modules/disputes/repositories/dispute.repository.ts`, not yet moved to `data/repositories/` |
+| 2.19 | Create `modules/disputes/data/repositories/dispute-database.repository.ts` | `[✓]` — concrete impl lives at `modules/disputes/repositories/dispute.repository.ts` implementing abstract |
 
 ### favorites/
 | # | File Change | Status |
@@ -85,6 +85,8 @@
 |---|-------------|--------|
 | 2.26 | Create `modules/payments/domain/repositories/payment.repository.ts` (abstract) | `[ ]` |
 | 2.27 | Create `modules/payments/data/repositories/payment-database.repository.ts` | `[ ]` |
+| 2.26a | Create `modules/payments/domain/repositories/transaction.repository.ts` (abstract) | `[✓]` — Phase 5 |
+| 2.27a | Create `modules/payments/data/repositories/transaction-database.repository.ts` | `[✓]` — Phase 5 |
 
 ### products/
 | # | File Change | Status |

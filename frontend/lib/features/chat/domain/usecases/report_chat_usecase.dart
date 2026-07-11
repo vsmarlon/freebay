@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
@@ -11,12 +11,15 @@ class ReportChatUsecase {
     String? description,
   }) async {
     try {
-      await HttpClient.instance.post('/reports', data: {
-        'targetId': targetId,
-        'targetType': targetType,
-        'reason': reason,
-        'description': description ?? '',
-      });
+      await HttpClient.instance.post(
+        '/reports',
+        data: {
+          'targetId': targetId,
+          'targetType': targetType,
+          'reason': reason,
+          'description': description ?? '',
+        },
+      );
       return const Right(null);
     } catch (e) {
       if (e is DioException) {

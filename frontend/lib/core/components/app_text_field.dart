@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 
@@ -18,6 +19,9 @@ class AppTextField extends StatefulWidget {
   final void Function(String)? onChanged;
   final void Function(String)? onFieldSubmitted;
   final FocusNode? focusNode;
+  final String? errorText;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   const AppTextField({
     super.key,
@@ -36,6 +40,9 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.onFieldSubmitted,
     this.focusNode,
+    this.errorText,
+    this.inputFormatters,
+    this.maxLength,
   });
 
   @override
@@ -110,12 +117,13 @@ class _AppTextFieldState extends State<AppTextField> {
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onFieldSubmitted,
       focusNode: _focusNode,
-      style: TextStyle(
-        color: context.textPrimary,
-      ),
+      inputFormatters: widget.inputFormatters,
+      maxLength: widget.maxLength,
+      style: TextStyle(color: context.textPrimary),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
+        errorText: widget.errorText,
         prefixIcon: widget.prefixIcon != null
             ? Icon(widget.prefixIcon, color: AppColors.mediumGray)
             : null,

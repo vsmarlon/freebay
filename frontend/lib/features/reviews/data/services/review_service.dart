@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
@@ -8,20 +8,6 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 
 class ReviewService {
-  String _extractErrorMessage(dynamic error) {
-    if (error is DioException) {
-      final responseData = error.response?.data;
-      if (responseData != null && responseData is Map) {
-        final errorObj = responseData['error'];
-        if (errorObj != null && errorObj is Map) {
-          final message = errorObj['message'];
-          if (message != null) return message.toString();
-        }
-      }
-    }
-    return 'Erro ao conectar com o servidor.';
-  }
-
   Future<Either<Failure, String>> uploadReviewImage({
     required String orderId,
     required String filePath,
@@ -33,9 +19,7 @@ class ReviewService {
         filename: filename,
       );
 
-      final formData = FormData.fromMap({
-        'file': multipartFile,
-      });
+      final formData = FormData.fromMap({'file': multipartFile});
 
       final response = await HttpClient.instance.post(
         '/reviews/orders/$orderId/images',
@@ -48,17 +32,18 @@ class ReviewService {
       );
 
       if (response.statusCode == 201 && response.data != null) {
-        final url = response.data['data']?['url'] as String? ??
+        final url =
+            response.data['data']?['url'] as String? ??
             response.data['url'] as String?;
         if (url != null) {
           return Right(url);
         }
         return Left(ServerFailure('Erro ao obter URL da imagem.'));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
@@ -77,7 +62,7 @@ class ReviewService {
           orderId: orderId,
           filePath: path,
         );
-        if (result.isLeft()) {
+        if (result.isLeft) {
           return Left((result as Left<Failure, String>).value);
         }
         imageUrls.add(result.getOrElse(() => ''));
@@ -97,10 +82,10 @@ class ReviewService {
       if (response.statusCode == 201 && response.data != null) {
         return Right(ReviewEntity.fromJson(response.data['data']));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 
@@ -111,10 +96,7 @@ class ReviewService {
     int offset = 0,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'limit': limit,
-        'offset': offset,
-      };
+      final queryParams = <String, dynamic>{'limit': limit, 'offset': offset};
       if (type != null) {
         queryParams['type'] = type;
       }
@@ -127,10 +109,10 @@ class ReviewService {
       if (response.statusCode == 200 && response.data != null) {
         return Right(ReviewListResponse.fromJson(response.data['data']));
       } else {
-        return Left(ServerFailure(_extractErrorMessage(response.data)));
+        return const Left(ServerFailure('Erro na requisição'));
       }
     } catch (e) {
-      return Left(ServerFailure(_extractErrorMessage(e)));
+      return const Left(ServerFailure('Erro de conexão'));
     }
   }
 

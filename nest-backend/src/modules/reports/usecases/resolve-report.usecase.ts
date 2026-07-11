@@ -7,7 +7,7 @@ import { ReportRepository } from '../domain/repositories/report.repository';
 export class ResolveReportUseCase {
   constructor(private readonly reportRepository: ReportRepository) {}
 
-  async execute(input: { reportId: string; status: 'REVIEWED' | 'RESOLVED' | 'REJECTED'; adminNote?: string }): Promise<Either<AppError, { resolved: boolean }>> {
+  async execute(input: { reportId: string; status: 'REVIEWED' | 'RESOLVED' | 'REJECTED'; adminNote?: string }): Promise<Either<AppError, void>> {
     const reportResult = await this.reportRepository.findReportById(input.reportId);
     if (isLeft(reportResult)) return left(reportResult.value);
     if (!reportResult.value) return left(new NotFoundError('Report'));
@@ -25,6 +25,6 @@ export class ResolveReportUseCase {
       if (isLeft(userUpdateResult)) return left(userUpdateResult.value);
     }
 
-    return right({ resolved: true });
+    return right(undefined);
   }
 }

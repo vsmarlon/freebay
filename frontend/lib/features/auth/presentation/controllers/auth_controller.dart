@@ -11,27 +11,41 @@ import 'package:freebay/features/auth/domain/usecases/verify_password_recovery_c
 import 'package:freebay/features/auth/domain/usecases/reset_password_usecase.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
+import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
+import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
+import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
+import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
   return AuthRepository();
 });
 
-final loginUsecaseProvider =
-    Provider((ref) => LoginUsecase(ref.watch(authRepositoryProvider)));
-final registerUsecaseProvider =
-    Provider((ref) => RegisterUsecase(ref.watch(authRepositoryProvider)));
-final logoutUsecaseProvider =
-    Provider((ref) => LogoutUsecase(ref.watch(authRepositoryProvider)));
-final getCurrentUserUsecaseProvider =
-    Provider((ref) => GetCurrentUserUsecase(ref.watch(authRepositoryProvider)));
-final guestLoginUsecaseProvider =
-    Provider((ref) => GuestLoginUsecase(ref.watch(authRepositoryProvider)));
+final loginUsecaseProvider = Provider(
+  (ref) => LoginUsecase(ref.watch(authRepositoryProvider)),
+);
+final registerUsecaseProvider = Provider(
+  (ref) => RegisterUsecase(ref.watch(authRepositoryProvider)),
+);
+final logoutUsecaseProvider = Provider(
+  (ref) => LogoutUsecase(ref.watch(authRepositoryProvider)),
+);
+final getCurrentUserUsecaseProvider = Provider(
+  (ref) => GetCurrentUserUsecase(ref.watch(authRepositoryProvider)),
+);
+final guestLoginUsecaseProvider = Provider(
+  (ref) => GuestLoginUsecase(ref.watch(authRepositoryProvider)),
+);
 final requestPasswordRecoveryUsecaseProvider = Provider(
-    (ref) => RequestPasswordRecoveryUsecase(ref.watch(authRepositoryProvider)));
-final verifyPasswordRecoveryCodeUsecaseProvider = Provider((ref) =>
-    VerifyPasswordRecoveryCodeUsecase(ref.watch(authRepositoryProvider)));
-final resetPasswordUsecaseProvider =
-    Provider((ref) => ResetPasswordUsecase(ref.watch(authRepositoryProvider)));
+  (ref) => RequestPasswordRecoveryUsecase(ref.watch(authRepositoryProvider)),
+);
+final verifyPasswordRecoveryCodeUsecaseProvider = Provider(
+  (ref) => VerifyPasswordRecoveryCodeUsecase(ref.watch(authRepositoryProvider)),
+);
+final resetPasswordUsecaseProvider = Provider(
+  (ref) => ResetPasswordUsecase(ref.watch(authRepositoryProvider)),
+);
 
 // Whether the post-login onboarding carousel has been seen, seeded once
 // during auth init alongside the session itself so the router's redirect
@@ -40,18 +54,18 @@ final hasSeenOnboardingProvider = StateProvider<bool>((ref) => false);
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<UserEntity?>>((ref) {
-  return AuthController(
-    ref,
-    ref.watch(loginUsecaseProvider),
-    ref.watch(registerUsecaseProvider),
-    ref.watch(logoutUsecaseProvider),
-    ref.watch(getCurrentUserUsecaseProvider),
-    ref.watch(guestLoginUsecaseProvider),
-    ref.watch(requestPasswordRecoveryUsecaseProvider),
-    ref.watch(verifyPasswordRecoveryCodeUsecaseProvider),
-    ref.watch(resetPasswordUsecaseProvider),
-  );
-});
+      return AuthController(
+        ref,
+        ref.watch(loginUsecaseProvider),
+        ref.watch(registerUsecaseProvider),
+        ref.watch(logoutUsecaseProvider),
+        ref.watch(getCurrentUserUsecaseProvider),
+        ref.watch(guestLoginUsecaseProvider),
+        ref.watch(requestPasswordRecoveryUsecaseProvider),
+        ref.watch(verifyPasswordRecoveryCodeUsecaseProvider),
+        ref.watch(resetPasswordUsecaseProvider),
+      );
+    });
 
 // Controller
 class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
@@ -104,28 +118,42 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     );
   }
 
-  Future<void> login(String email, String password,
-      {bool rememberMe = false}) async {
+  Future<void> login(
+    String email,
+    String password, {
+    bool rememberMe = false,
+  }) async {
     state = const AsyncValue.loading();
     final result = await _loginUsecase(
-        LoginParams(email: email, password: password, rememberMe: rememberMe));
+      LoginParams(email: email, password: password, rememberMe: rememberMe),
+    );
 
     result.fold(
-        (failure) =>
-            state = AsyncValue.error(failure.message, StackTrace.current),
-        (user) => state = AsyncValue.data(user));
+      (failure) =>
+          state = AsyncValue.error(failure.message, StackTrace.current),
+      (user) => state = AsyncValue.data(user),
+    );
   }
 
   Future<void> register(
-      String email, String password, String displayName) async {
+    String email,
+    String password,
+    String displayName,
+  ) async {
     state = const AsyncValue.loading();
-    final result = await _registerUsecase(RegisterParams(
-        email: email, password: password, displayName: displayName));
+    final result = await _registerUsecase(
+      RegisterParams(
+        email: email,
+        password: password,
+        displayName: displayName,
+      ),
+    );
 
     result.fold(
-        (failure) =>
-            state = AsyncValue.error(failure.message, StackTrace.current),
-        (user) => state = AsyncValue.data(user));
+      (failure) =>
+          state = AsyncValue.error(failure.message, StackTrace.current),
+      (user) => state = AsyncValue.data(user),
+    );
   }
 
   Future<void> loginAsGuest() async {
@@ -133,9 +161,22 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     final result = await _guestLoginUsecase();
 
     result.fold(
-        (failure) =>
-            state = AsyncValue.error(failure.message, StackTrace.current),
-        (user) => state = AsyncValue.data(user));
+      (failure) =>
+          state = AsyncValue.error(failure.message, StackTrace.current),
+      (user) => state = AsyncValue.data(user),
+    );
+  }
+
+  void _invalidateUserProviders() {
+    _ref.invalidate(walletProvider);
+    _ref.invalidate(cartProvider);
+    _ref.invalidate(disputeListProvider);
+    _ref.invalidate(purchasesListProvider);
+    _ref.invalidate(salesListProvider);
+    _ref.invalidate(notificationsProvider);
+    _ref.invalidate(unreadCountProvider);
+    _ref.invalidate(chatsProvider);
+    _ref.invalidate(liveChatListProvider);
   }
 
   Future<void> logout() async {
@@ -143,14 +184,19 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     final result = await _logoutUsecase();
 
     result.fold(
-        (failure) =>
-            state = AsyncValue.error(failure.message, StackTrace.current),
-        (_) => state = const AsyncValue.data(null));
+      (failure) =>
+          state = AsyncValue.error(failure.message, StackTrace.current),
+      (_) {
+        _invalidateUserProviders();
+        state = const AsyncValue.data(null);
+      },
+    );
   }
 
   Future<void> requestPasswordRecovery(String email) async {
     await _requestPasswordRecoveryUsecase(
-        RequestPasswordRecoveryParams(email: email));
+      RequestPasswordRecoveryParams(email: email),
+    );
   }
 
   Future<bool> verifyPasswordRecoveryCode(String email, String code) async {
@@ -161,7 +207,10 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
   }
 
   Future<void> resetPassword(
-      String email, String code, String newPassword) async {
+    String email,
+    String code,
+    String newPassword,
+  ) async {
     await _resetPasswordUsecase(
       ResetPasswordParams(email: email, code: code, newPassword: newPassword),
     );
@@ -178,6 +227,11 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
 
   Future<void> forceLogout() async {
     await StorageService.clearTokens();
+    _invalidateUserProviders();
     state = const AsyncValue.data(null);
+  }
+
+  void setUser(UserEntity? user) {
+    state = AsyncValue.data(user);
   }
 }

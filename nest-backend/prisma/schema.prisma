@@ -158,6 +158,7 @@ model User {
   favorites       Favorite[]
   cartItems       CartItem[]
   passwordRecoveryCodes PasswordRecoveryCode[]
+  phoneVerificationCodes PhoneVerificationCode[]
   convosAsUser1   DirectConversation[] @relation("User1Convos")
   convosAsUser2   DirectConversation[] @relation("User2Convos")
   directMessages  DirectMessage[]
@@ -186,6 +187,27 @@ model PasswordRecoveryCode {
   requestedIp      String?
   userAgent        String?
   resendMessageId  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([userId, usedAt, expiresAt])
+  @@index([codeHash])
+}
+
+model PhoneVerificationCode {
+  id                String    @id @default(uuid())
+  userId            String
+  phone             String
+  codeHash          String
+  attempts          Int       @default(0)
+  maxAttempts       Int       @default(5)
+  requestedAt       DateTime  @default(now())
+  sentAt            DateTime?
+  expiresAt         DateTime
+  usedAt            DateTime?
+  provider          String?
+  providerMessageId String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -410,11 +432,12 @@ model Wallet {
 }
 
 model Withdrawal {
-  id        String   @id @default(uuid())
-  walletId  String
-  amount    Int
-  status    String   @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
-  createdAt DateTime @default(now())
+  id             String   @id @default(uuid())
+  walletId       String
+  amount         Int
+  status         String   @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
 
   wallet Wallet @relation(fields: [walletId], references: [id])
 

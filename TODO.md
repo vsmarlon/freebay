@@ -7,16 +7,31 @@
 
 ## Backend
 
-### God-file usecase splits `[HIGH]`
-- [x] Split `modules/social/usecases/social.usecase.ts` — 9 classes → `create-post`, `like-post`, `unlike-post`, `comment`, `create-story`, `get-stories`, `get-user-stories`, `view-story`, `delete-story`
-- [x] Split `modules/chat/usecases/chat.usecase.ts` — 5 classes → `send-message`, `get-conversations`, `get-messages`, `start-conversation`, `accept-conversation`
-- [x] Split `modules/disputes/usecases/dispute.usecase.ts` — 5 classes → `open-dispute`, `get-dispute`, `get-user-disputes`, `submit-evidence`, `resolve-dispute`
-- [x] Split `modules/reports/usecases/report.usecase.ts` — 3 classes → `create-report`, `get-reports`, `resolve-report`
+### KNOWN ISSUES:
+ 
+- [ ] - [Nest] 22100  - 10/07/2026, 21:28:31   ERROR [AllExceptionsFilter] [UNHANDLED] PATCH /chat/conversations/1d260245-1896-4aa8-b99e-b9b5307f80e1/background - request entity too large
+PayloadTooLargeError: request entity too large
+    at readStream (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\raw-body\index.js:163:17)
+    at getRawBody (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\raw-body\index.js:116:12)
+    at read (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\body-parser\lib\read.js:113:3)
+    at jsonParser (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\body-parser\lib\types\json.js:88:5)
+    at Layer.handleRequest (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\router\lib\layer.js:152:17)
+    at trimPrefix (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\router\index.js:342:13)
+    at C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\router\index.js:297:9
+    at processParams (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\router\index.js:582:12)
+    at next (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\router\index.js:291:5)
+    at internalNext (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\helmet\index.cjs:531:6)
+esse erro acaba estourando no frontend, quebrando o chat devemos apenas mostrar uma mensagem no alert snackbar utilizado como componente no app caso a imagem seja maior q o permitido.
+além disso vamos começar a salvar as imagens em discos para facilitar a migracao para um s3 ou bucket aws.
 
-### Either anti-pattern fixes `[HIGH]`
-- [x] `modules/cart/cart.controller.ts` — all business errors now use `left()` instead of `throw`
-- [x] `modules/cart/usecases/checkout-cart.usecase.ts` — pre-check availability instead of `throw` inside transaction
-- [x] `modules/social/social.controller.ts` — `createStory` uses `left()` instead of `throw BadRequestException`
+### Backend Cleanup Phases 5–10 `[done — 2026-07-09]`
+- [x] Phase 5: ProcessWebhookUseCase decomposition — repos injected instead of raw PrismaService
+- [x] Phase 6: N+1 fix in CreatePixPaymentUseCase — single `findPaymentInfo` query
+- [x] Phase 7: ~30 mutation usecases converted from `Either<AppError, { verb: boolean }>` to `Either<AppError, void>`
+- [x] Phase 8: RegisterBankAccountUseCase stubbed with `NotImplementedError`
+- [x] Phase 9: P2002 leak in withdraw.usecase.ts moved to `WalletRepository.findWithdrawalByIdempotencyKey`
+- [x] Phase 10: Documentation updated (CLAUDE.md, IMPROVEDARCH.md, REVIEWEDARCHITECTURETODO.md)
+- [ ] Create GitHub issue: "feat: implement real PagBank recipient registration in RegisterBankAccountUseCase"
 
 ### Missing specs `[HIGH]`
 - [ ] Add controller specs (0 of 15 controllers have tests)
@@ -29,6 +44,40 @@
 ---
 
 ## Frontend
+## KNOWN ISSUES
+### STATE
+- [ ] comment count doesnt add up whenever we comment on a post.(inside the comment section flow, updates correctly after we go back to the explore page)
+
+### OVERALL 
+
+- [ ] check if we are excluding the tokens propelry after logout(hasseenonboarding and others..)
+- [ ] why we dont have any utils C:\Users\Qiyana\Documents\GitHub\ME\freebay\frontend\lib\shared\utils . we need to ensure we are using utils throught the app to reduce code and help with generic stuff
+
+### FEED
+- [ ] feed scroll leaves a header black bar background that obfuscates the view whenever u scroll down. needs to be hidden when scrolled so the feed fits entire screen. 
+- [ ] ao clicar no botão de wallet sou redirecionado mas o freebay que fica ativo na navbar(parece que ainda esta internamente na rota do freebay, ja que posso dar swipe e abrir o drawer) e só se conserta se eu pressionar o back button.
+- [ ] ao clicar nas notificações nao consigo voltar com o gesto de swipe como em outras telas, tem a ver com o drawer ou é algo de não pushar a rota?
+### CHAT
+- [ ] investigate the cause of this: on chatW/ConnectivityManager.CallbackHandler(  357): callback not found for CALLBACK_AVAILABLE message
+- [ ] "nenhuma conversa aqruivada" o texto não esta centralizado.
+- [ ] Chat nao renderiza as conversas disponiveis na main page do chat. investigar o fluxo.
+
+### Perfil
+- [ ] verificação do perfil show modal aparece por cima da navbar e ao abrir o teclado a tela sobe e depois volta ao normal(investigue, provavelmente é um bug com o scroll que fizemos no feed) botão de fechar está mt dificil de ver no dark mode
+- [ ] não consigo clicar em algum post que o usuario criou(no perfil dele) para abrir a tela do post(a mesma usada no feed.)
+- [ ] não consigo dar swipe para trocar as abas(swipe horizontal para trocar de paginas)
+- [ ] AO dar follow e unfollow na mesma pessoa, não consigo seguir ela novamente, pois da o erro de already following(nao devia ser o caso) investigue. 
+[Nest] 22100  - 10/07/2026, 21:41:57   DEBUG [HTTP] [AUTH_HEADER] [REDACTED]
+[Nest] 22100  - 10/07/2026, 21:41:57   ERROR [HTTP] [ERROR] POST /users/a48388c5-a63e-4e1a-adf7-3d257f383868/follow - 30ms - Already following
+[Nest] 22100  - 10/07/2026, 21:41:57    WARN [AllExceptionsFilter] [APP] POST /users/a48388c5-a63e-4e1a-adf7-3d257f383868/follow - BAD_REQUEST: Already following
+
+### Explorar
+- [ ] filtro precisa ser exibido de uma forma melhor atualmente ocupa muito espaço na tela, também deve recolher o header e bottom nav ao scrollar 
+- [ ] input não tem nenhum texto "Buscar Produto" até eu selecionar o input
+- [ ] ao abrir o teclado a tela meio que quebra e temos o Another exception was thrown: A RenderFlex overflowed by 52 pixels on the bottom. overflow, talvez seja pq nao usamos singlechild scrollview? 
+- [ ] ao trocar para a pagina de procurar pessoas o texto de input não é atualizado para buscar pessoas. achho que essa busca deve ser simplifcada tambem, talvez colocar em um novo botao nav.
+
+
 
 ### Design-system violations `[MED]`
 - [x] `core/router/app_router.dart` — page transitions already use 150ms `Curves.linear` (`_buildPageWithSlideTransition`); stale item, no longer an issue

@@ -122,7 +122,7 @@ describe('ConfirmDeliveryUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.confirmed).toBe(true);
+      expect(result.value.sellerAmount).toBe(9000);
     }
     expect(mockOrderRepository.confirmDelivery).toHaveBeenCalledWith({
       orderId: 'order-123',

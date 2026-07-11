@@ -14,7 +14,7 @@ import { ConversationRepository } from './domain/repositories/conversation.repos
 import { SendMessageUseCase } from './usecases/send-message.usecase';
 import { ChatThreadAccessService } from './services/chat-thread-access.service';
 import { NotificationService } from '../notifications/services/notification.service';
-import { BlockRepository } from '@/modules/users/repositories/block.repository';
+import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
 
 interface AuthenticatedUser {
   userId: string;
@@ -79,10 +79,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const { otherUserId } = resolved.value;
 
-    const [blockedByOther, userBlockedOther] = await Promise.all([
+    const [blockedByOtherResult, userBlockedOtherResult] = await Promise.all([
       this.blockRepository.isBlocked(otherUserId, user.userId),
       this.blockRepository.isBlocked(user.userId, otherUserId),
     ]);
+
+    const blockedByOther = !blockedByOtherResult.isLeft() && blockedByOtherResult.value;
+    const userBlockedOther = !userBlockedOtherResult.isLeft() && userBlockedOtherResult.value;
 
     if (blockedByOther || userBlockedOther) {
       return { error: 'You cannot join this conversation' };

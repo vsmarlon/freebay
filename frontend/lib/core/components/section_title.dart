@@ -42,7 +42,7 @@ class SectionTitle extends StatelessWidget {
               color: isDark ? AppColors.white : AppColors.onSurface,
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );

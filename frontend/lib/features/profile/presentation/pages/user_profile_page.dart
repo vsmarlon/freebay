@@ -6,34 +6,32 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/reputation_stars.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/data/services/follow_service.dart';
+import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
+import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
 
 final followServiceProvider = Provider<FollowService>((ref) => FollowService());
 
 final followStatusProvider =
     FutureProvider.family<FollowStatusResponse?, String>((ref, userId) async {
-  final authState = ref.watch(authControllerProvider);
-  final user = authState.valueOrNull;
+      final authState = ref.watch(authControllerProvider);
+      final user = authState.valueOrNull;
 
-  if (user == null || user.isGuest) {
-    return null;
-  }
+      if (user == null || user.isGuest) {
+        return null;
+      }
 
-  final service = ref.watch(followServiceProvider);
-  final result = await service.getFollowStatus(userId);
+      final service = ref.watch(followServiceProvider);
+      final result = await service.getFollowStatus(userId);
 
-  return result.fold(
-    (failure) => null,
-    (status) => status,
-  );
-});
+      return result.fold((failure) => null, (status) => status);
+    });
 
 class UserProfilePage extends ConsumerWidget {
   final String userId;
@@ -71,9 +69,8 @@ class UserProfilePage extends ConsumerWidget {
             child: profileAsync.when(
               data: (profileUser) =>
                   _buildProfileContent(context, ref, isDark, profileUser),
-              loading: () => const Center(
-                child: ShimmerBlock(width: 60, height: 60),
-              ),
+              loading: () =>
+                  const Center(child: ShimmerBlock(width: 60, height: 60)),
               error: (error, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -113,10 +110,15 @@ class UserProfilePage extends ConsumerWidget {
   }
 
   Widget _buildProfileContent(
-      BuildContext context, WidgetRef ref, bool isDark, UserEntity user) {
+    BuildContext context,
+    WidgetRef ref,
+    bool isDark,
+    UserEntity user,
+  ) {
     final authState = ref.watch(authControllerProvider);
     final currentUser = authState.valueOrNull;
-    final isOwnProfile = currentUser != null &&
+    final isOwnProfile =
+        currentUser != null &&
         !currentUser.isGuest &&
         currentUser.id == user.id;
     final followStatusAsync = !isOwnProfile
@@ -125,187 +127,83 @@ class UserProfilePage extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              UserAvatar(
-                imageUrl: user.avatarUrl,
-                size: AppAvatarSize.large,
-                isVerified: user.isVerified,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            followStatusAsync.when(
+              data: (status) => ProfileHeader(
+                user: user,
+                followersCount: status?.followersCount ?? 0,
+                followingCount: status?.followingCount ?? 0,
               ),
-              Spacing.vMd,
-              Text(
-                user.displayNameOrDefault,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+              loading: () => ProfileHeader(user: user),
+              error: (_, _) => ProfileHeader(user: user),
+            ),
+            Spacing.vLg,
+            if (!isOwnProfile && currentUser != null && !currentUser.isGuest)
+              followStatusAsync.when(
+                data: (status) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      label: (status?.isFollowing ?? false)
+                          ? 'Seguindo'
+                          : 'Seguir',
+                      variant: (status?.isFollowing ?? false)
+                          ? AppButtonVariant.ghost
+                          : AppButtonVariant.primary,
+                      onPressed: () async {
+                        final service = ref.read(followServiceProvider);
+                        final result = (status?.isFollowing ?? false)
+                            ? await service.unfollow(user.id)
+                            : await service.follow(user.id);
+
+                        if (result.isRight) {
+                          ref.invalidate(followStatusProvider(user.id));
+                        }
+                      },
+                    ),
+                  ),
                 ),
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: ShimmerBlock(height: 48),
+                ),
+                error: (_, _) => const SizedBox.shrink(),
+              )
+            else if (!isOwnProfile)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildFollowPrompt(context, isDark),
               ),
-              if (user.bio != null && user.bio!.isNotEmpty) ...[
-                Spacing.vSm,
-                Text(
-                  user.bio!,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              Spacing.vMd,
-              if (user.reputationScore > 0)
-                GestureDetector(
-                  onTap: () => context.push(
-                    '/user/${user.id}/reviews?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ReputationStars(
-                        score: user.reputationScore.toDouble(),
-                        reviewCount: user.totalReviews,
-                      ),
-                      Spacing.hXs,
-                      Icon(
-                        Icons.chevron_right,
-                        size: 20,
-                        color: isDark
-                            ? AppColors.mediumGray
-                            : AppColors.mediumGray,
-                      ),
-                    ],
-                  ),
-                ),
-              if (user.reputationScore <= 0 && user.totalReviews == 0)
-                Text(
-                  'Sem avaliações',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
-                ),
-              Spacing.vLg,
-              if (!isOwnProfile && currentUser != null && !currentUser.isGuest)
-                followStatusAsync.when(
-                  data: (status) =>
-                      _buildFollowButton(context, ref, user.id, isDark, status),
-                  loading: () => SkeletonPage(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 16),
-                        const ShimmerBlock(height: 80, width: 80),
-                        const SizedBox(height: 12),
-                        const ShimmerBlock(height: 20, width: 160),
-                        const SizedBox(height: 6),
-                        const ShimmerBlock(height: 14, width: 100),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const ShimmerBlock(height: 20, width: 40),
-                                  const SizedBox(height: 4),
-                                  const ShimmerBlock(height: 12, width: 60),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const ShimmerBlock(height: 20, width: 40),
-                                  const SizedBox(height: 4),
-                                  const ShimmerBlock(height: 12, width: 60),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const ShimmerBlock(height: 20, width: 40),
-                                  const SizedBox(height: 4),
-                                  const ShimmerBlock(height: 12, width: 60),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        const ShimmerBlock(height: 40),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(child: ShimmerBlock(height: 120)),
-                            const SizedBox(width: 8),
-                            Expanded(child: ShimmerBlock(height: 120)),
-                            const SizedBox(width: 8),
-                            Expanded(child: ShimmerBlock(height: 120)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  error: (_, __) =>
-                      _buildFollowButton(context, ref, user.id, isDark, null),
-                )
-              else if (!isOwnProfile)
-                _buildFollowPrompt(context, isDark),
-              Spacing.vMd,
-              if (user.city != null && user.city!.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                    ),
-                    Spacing.hXs,
-                    Text(
-                      user.city!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark
-                            ? AppColors.mediumGray
-                            : AppColors.mediumGray,
-                      ),
-                    ),
-                  ],
-                ),
-                Spacing.vMd,
-              ],
-              if (user.totalReviews > 0)
-                GestureDetector(
+            if (user.reputationScore > 0)
+              Center(
+                child: GestureDetector(
                   onTap: () => context.push(
                     '/user/${user.id}/reviews?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
                   ),
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.surfaceContainerDark
                           : AppColors.surfaceContainerHighest,
                       border: Border.all(
-                          color: AppColors.onSurface.withValues(alpha: 0.15),
-                          width: 2),
+                        color: AppColors.onSurface.withValues(alpha: 0.15),
+                        width: 2,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.star,
-                          size: 18,
-                          color: AppColors.warning,
-                        ),
+                        Icon(Icons.star, size: 18, color: AppColors.warning),
                         Spacing.hSm,
                         Text(
                           '${user.reputationScore.toStringAsFixed(1)} (${user.totalReviews} ${user.totalReviews == 1 ? 'avaliação' : 'avaliações'})',
@@ -313,8 +211,9 @@ class UserProfilePage extends ConsumerWidget {
                             fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color:
-                                isDark ? AppColors.white : AppColors.darkGray,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.darkGray,
                           ),
                         ),
                         Spacing.hXs,
@@ -326,86 +225,34 @@ class UserProfilePage extends ConsumerWidget {
                       ],
                     ),
                   ),
-                )
-              else
-                Text(
-                  'Sem avaliações ainda',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                ),
+              )
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Sem avaliações ainda',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark
+                          ? AppColors.mediumGray
+                          : AppColors.mediumGray,
+                    ),
                   ),
                 ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFollowButton(BuildContext context, WidgetRef ref, String userId,
-      bool isDark, FollowStatusResponse? status) {
-    final isFollowing = status?.isFollowing ?? false;
-    final followersCount = status?.followersCount ?? 0;
-    final followingCount = status?.followingCount ?? 0;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildStatChip('Seguidores', followersCount, isDark),
-            Spacing.hLg,
-            _buildStatChip('Seguindo', followingCount, isDark),
+              ),
+            Container(
+              width: double.infinity,
+              height: 1,
+              margin: const EdgeInsets.only(bottom: 16),
+              color: isDark
+                  ? AppColors.outlineVariant.withAlpha(40)
+                  : AppColors.surfaceContainerHigh,
+            ),
+            ProfileTabs(user: user),
           ],
         ),
-        Spacing.vMd,
-        SizedBox(
-          width: double.infinity,
-          child: AppButton(
-            label: isFollowing ? 'Seguindo' : 'Seguir',
-            variant:
-                isFollowing ? AppButtonVariant.ghost : AppButtonVariant.primary,
-            onPressed: () async {
-              final service = ref.read(followServiceProvider);
-              final result = isFollowing
-                  ? await service.unfollow(userId)
-                  : await service.follow(userId);
-
-              if (result.isRight()) {
-                ref.invalidate(followStatusProvider(userId));
-              }
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatChip(String label, int count, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.zero,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$count',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.white : AppColors.darkGray,
-            ),
-          ),
-          Spacing.hXs,
-          Text(
-            label,
-            style: TextStyle(
-              color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-            ),
-          ),
-        ],
       ),
     );
   }

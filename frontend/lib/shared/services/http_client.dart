@@ -21,7 +21,8 @@ class LoggingInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (kDebugMode) {
       debugPrint(
-          '[HTTP] ${response.statusCode} ${response.requestOptions.uri}');
+        '[HTTP] ${response.statusCode} ${response.requestOptions.uri}',
+      );
       if (response.data != null) {
         debugPrint('[BODY] ${_prettyJson(response.data)}');
       }
@@ -33,7 +34,8 @@ class LoggingInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (kDebugMode) {
       debugPrint(
-          '[HTTP ERROR] ${err.response?.statusCode} ${err.requestOptions.uri}');
+        '[HTTP ERROR] ${err.response?.statusCode} ${err.requestOptions.uri}',
+      );
       debugPrint('[HTTP ERROR TYPE] ${err.type}');
       if (err.type == DioExceptionType.connectionError) {
         debugPrint(
@@ -47,10 +49,29 @@ class LoggingInterceptor extends Interceptor {
     handler.next(err);
   }
 
+  dynamic _sanitizeData(dynamic data) {
+    if (data is Map) {
+      return data.map((key, value) => MapEntry(key, _sanitizeData(value)));
+    } else if (data is List) {
+      return data.map((item) => _sanitizeData(item)).toList();
+    } else if (data is String) {
+      if (data.startsWith('data:image/') ||
+          (data.length > 100 &&
+              !data.contains(' ') &&
+              (data.contains('base64') ||
+                  RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(data)))) {
+        final prefix = data.substring(0, data.length > 60 ? 60 : data.length);
+        return '$prefix... [TRUNCATED, length: ${data.length}]';
+      }
+    }
+    return data;
+  }
+
   String _prettyJson(dynamic json) {
     try {
+      final sanitized = _sanitizeData(json);
       final encoder = JsonEncoder.withIndent('  ');
-      return encoder.convert(json);
+      return encoder.convert(sanitized);
     } catch (_) {
       return json.toString();
     }
@@ -100,13 +121,15 @@ class HttpClient {
             final refreshToken = await StorageService.getRefreshToken();
             if (refreshToken != null) {
               try {
-                final refreshDio = Dio(BaseOptions(
-                  baseUrl: dio.options.baseUrl,
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer $refreshToken',
-                  },
-                ));
+                final refreshDio = Dio(
+                  BaseOptions(
+                    baseUrl: dio.options.baseUrl,
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer $refreshToken',
+                    },
+                  ),
+                );
                 final response = await refreshDio.post('/auth/refresh');
                 final data = response.data['data'];
                 final newToken = data['token'] as String;
@@ -136,43 +159,73 @@ class HttpClient {
     return dio;
   }
 
-  Future<Response> get(String path,
-      {Object? data,
-      Map<String, dynamic>? queryParameters,
-      Options? options}) async {
-    return instance.get(path,
-        data: data, queryParameters: queryParameters, options: options);
+  Future<Response> get(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return instance.get(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
-  Future<Response> post(String path,
-      {Object? data,
-      Map<String, dynamic>? queryParameters,
-      Options? options}) async {
-    return instance.post(path,
-        data: data, queryParameters: queryParameters, options: options);
+  Future<Response> post(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return instance.post(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
-  Future<Response> put(String path,
-      {Object? data,
-      Map<String, dynamic>? queryParameters,
-      Options? options}) async {
-    return instance.put(path,
-        data: data, queryParameters: queryParameters, options: options);
+  Future<Response> put(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return instance.put(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
-  Future<Response> delete(String path,
-      {Object? data,
-      Map<String, dynamic>? queryParameters,
-      Options? options}) async {
-    return instance.delete(path,
-        data: data, queryParameters: queryParameters, options: options);
+  Future<Response> delete(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return instance.delete(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 
-  Future<Response> patch(String path,
-      {Object? data,
-      Map<String, dynamic>? queryParameters,
-      Options? options}) async {
-    return instance.patch(path,
-        data: data, queryParameters: queryParameters, options: options);
+  Future<Response> patch(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return instance.patch(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
   }
 }

@@ -8,7 +8,7 @@ import { CancelOrderInput } from '../dtos/order.dto';
 export class CancelOrderUseCase {
   constructor(private readonly orderRepository: OrderRepository) {}
 
-  async execute(input: CancelOrderInput): Promise<Either<AppError, { cancelled: boolean }>> {
+  async execute(input: CancelOrderInput): Promise<Either<AppError, void>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
     if (isLeft(orderResult)) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
@@ -30,9 +30,11 @@ export class CancelOrderUseCase {
       amount: order.amount,
       status: order.status,
       quantity: productQuantity,
+      sellerId: order.sellerId,
+      sellerAmount: order.sellerAmount,
     });
     if (isLeft(result)) return left(result.value);
 
-    return right({ cancelled: true });
+    return right(undefined);
   }
 }

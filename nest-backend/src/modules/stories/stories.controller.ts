@@ -98,7 +98,7 @@ export class StoriesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, NonGuestGuard)
   @ApiBearerAuth()
   @ApiDoc({
     summary: 'Delete a story',
@@ -114,6 +114,8 @@ export class StoriesController {
   }
 
   @Post(':id/view')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiDoc({
     summary: 'View a story',
     description: 'Marks a story as viewed by the current user',

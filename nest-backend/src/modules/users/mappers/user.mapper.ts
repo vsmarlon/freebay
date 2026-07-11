@@ -43,6 +43,9 @@ export class UserResponse {
   @ApiProperty({ example: true })
   hasCpf: boolean;
 
+  @ApiPropertyOptional({ example: '123.***.***-00' })
+  cpf?: string;
+
   @ApiProperty({ example: 12 })
   postsCount: number;
 
@@ -155,6 +158,7 @@ export interface UserResponseExtras {
 export const toUserResponse = (
   user: User,
   extras?: UserResponseExtras,
+  isOwner: boolean = false,
 ): UserResponse => ({
   id: user.id,
   displayName: user.displayName,
@@ -167,8 +171,15 @@ export const toUserResponse = (
   reputationScore: user.reputationScore,
   totalReviews: user.totalReviews,
   createdAt: user.createdAt,
-  role: user.role,
-  hasCpf: !!user.cpf,
+  role: isOwner ? user.role : 'USER',
+  hasCpf: isOwner ? !!user.cpf : false,
+  cpf: isOwner && user.cpf
+    ? user.cpf.length === 11
+      ? `${user.cpf.substring(0, 3)}.***.***-${user.cpf.substring(9)}`
+      : user.cpf.length === 14
+        ? `${user.cpf.substring(0, 2)}.***.***/****-${user.cpf.substring(12)}`
+        : '***'
+    : undefined,
   postsCount: extras?.postsCount ?? 0,
   productsCount: extras?.productsCount ?? 0,
   hasActiveStory: extras?.hasActiveStory ?? false,

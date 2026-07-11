@@ -1,69 +1,34 @@
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/features/product/data/entities/product_image_entity.dart';
 
+part 'product_entity.freezed.dart';
 part 'product_entity.g.dart';
 
-@JsonSerializable()
-class ProductEntity extends Equatable {
-  final String id;
-  final String title;
-  final String description;
-  final int price;
-  final String condition;
-  final String status;
-  final String sellerId;
-  final String? postId;
+@freezed
+abstract class ProductEntity with _$ProductEntity {
+  const ProductEntity._();
 
-  @JsonKey(name: 'sellerName')
-  final String? sellerName;
-
-  @JsonKey(name: 'sellerAvatar')
-  final String? sellerAvatar;
-
-  @JsonKey(name: 'imageUrl')
-  final String? imageUrl;
-
-  @JsonKey(defaultValue: 1)
-  final int quantity;
-
-  @JsonKey(defaultValue: 0)
-  final int soldCount;
-
-  const ProductEntity({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.price,
-    required this.condition,
-    required this.status,
-    required this.sellerId,
-    this.postId,
-    this.sellerName,
-    this.sellerAvatar,
-    this.imageUrl,
-    this.quantity = 1,
-    this.soldCount = 0,
-  });
+  const factory ProductEntity({
+    required String id,
+    required String title,
+    required String description,
+    required int price,
+    required String condition,
+    required String status,
+    required String sellerId,
+    String? postId,
+    UserEntity? seller,
+    List<ProductImageEntity>? images,
+    @Default(1) int quantity,
+    @Default(0) int soldCount,
+  }) = _ProductEntity;
 
   factory ProductEntity.fromJson(Map<String, dynamic> json) =>
       _$ProductEntityFromJson(json);
 
-  Map<String, dynamic> toJson() => _$ProductEntityToJson(this);
-
-  @override
-  List<Object?> get props => [
-        id,
-        title,
-        description,
-        price,
-        condition,
-        status,
-        sellerId,
-        postId,
-        sellerName,
-        sellerAvatar,
-        imageUrl,
-        quantity,
-        soldCount,
-      ];
+  String? get sellerName => seller?.displayName;
+  String? get sellerAvatar => seller?.avatarUrl;
+  String? get imageUrl =>
+      (images != null && images!.isNotEmpty) ? images!.first.url : null;
 }

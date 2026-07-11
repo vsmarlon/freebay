@@ -4,7 +4,7 @@ import { GetWalletUseCase } from './usecases/get-wallet.usecase';
 import { WithdrawUseCase } from './usecases/withdraw.usecase';
 import { RegisterBankAccountUseCase } from './usecases/register-bank-account.usecase';
 import { WithdrawDTO, BankAccountDTO, WalletResponse } from './dtos/wallet.dto';
-import { PrismaWalletRepository } from './repositories/wallet.repository';
+import { WalletRepository } from './domain/repositories/wallet.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
@@ -21,7 +21,7 @@ export class WalletController {
     private readonly getWalletUseCase: GetWalletUseCase,
     private readonly withdrawUseCase: WithdrawUseCase,
     private readonly registerBankAccountUseCase: RegisterBankAccountUseCase,
-    private readonly walletRepository: PrismaWalletRepository,
+    private readonly walletRepository: WalletRepository,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -90,8 +90,11 @@ export class WalletController {
   })
   async getTransactions(@CurrentUser() user: AuthUser) {
     const userId = user.userId;
-    const transactions = await this.walletRepository.getTransactions(userId);
-    return { transactions };
+    const result = await this.walletRepository.getTransactions(userId);
+    if (result.isLeft()) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return { transactions: result.value };
   }
 
   @Get('withdrawals')
@@ -103,13 +106,16 @@ export class WalletController {
   })
   async getWithdrawals(@CurrentUser() user: AuthUser) {
     const userId = user.userId;
-    const wallet = await this.walletRepository.findByUserId(userId);
-    if (!wallet) {
+    const walletResult = await this.walletRepository.findByUserId(userId);
+    if (walletResult.isLeft()) {
+      return left(new AppError(walletResult.value.code, walletResult.value.message));
+    }
+    if (!walletResult.value) {
       return { withdrawals: [] };
     }
 
     const withdrawals = await this.prisma.withdrawal.findMany({
-      where: { walletId: wallet.id },
+      where: { walletId: walletResult.value.id },
       orderBy: { createdAt: 'desc' },
     });
     return { withdrawals };

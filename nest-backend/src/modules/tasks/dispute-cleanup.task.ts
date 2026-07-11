@@ -25,6 +25,14 @@ export class DisputeCleanupTask {
 
     for (const dispute of expiredDisputes) {
       await this.prisma.$transaction(async (tx) => {
+        const currentDispute = await tx.dispute.findUnique({
+          where: { id: dispute.id },
+        });
+
+        if (!currentDispute || !['OPEN', 'AWAITING_SELLER', 'AWAITING_BUYER'].includes(currentDispute.status)) {
+          return;
+        }
+
         await tx.dispute.update({
           where: { id: dispute.id },
           data: {

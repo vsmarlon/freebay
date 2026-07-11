@@ -17,10 +17,10 @@ export class GetConversationsUseCase {
 
     const result: ConversationWithStatus[] = convsResult.value.map(conv => {
       const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1;
-      const unreadCount = conv.messages.filter(m =>
+      const unreadCount = (conv.messages ?? []).filter(m =>
         m.senderId !== userId && !m.readAt
       ).length;
-      const lastMsg = conv.messages[0];
+      const lastMsg = conv.messages?.[0] ?? null;
 
       return {
         id: conv.id,

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/shared/services/storage_service.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
@@ -21,7 +20,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   late Animation<Offset> _slideAnimation;
 
   Timer? _animationTimer;
-  Timer? _authCheckTimer;
 
   @override
   void initState() {
@@ -41,10 +39,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.linear,
-    ));
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.linear));
     _startAnimations();
   }
 
@@ -52,32 +47,12 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     _animationTimer = Timer(const Duration(milliseconds: 50), () {
       _fadeController.forward();
       _slideController.forward();
-      _checkAuthAndNavigate();
-    });
-  }
-
-  Future<void> _checkAuthAndNavigate() async {
-    final tokenFuture = StorageService.getToken();
-    final isGuestFuture = StorageService.getIsGuest();
-
-    _authCheckTimer = Timer(const Duration(milliseconds: 400), () async {
-      if (!mounted) return;
-      final token = await tokenFuture;
-      final isGuest = await isGuestFuture;
-      if (!mounted) return;
-
-      if (token != null || isGuest) {
-        context.go('/feed');
-      } else {
-        context.go('/login');
-      }
     });
   }
 
   @override
   void dispose() {
     _animationTimer?.cancel();
-    _authCheckTimer?.cancel();
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
@@ -89,9 +64,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.brutalistGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.brutalistGradient),
         child: Stack(
           children: [
             _BrutalistGrid(),
@@ -100,9 +73,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               child: Column(
                 children: [
                   _buildHeader(),
-                  Expanded(
-                    child: _buildMainContent(),
-                  ),
+                  Expanded(child: _buildMainContent()),
                   _buildFooter(),
                 ],
               ),
@@ -168,7 +139,10 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                   Spacing.vMd,
                   ShaderMask(
                     shaderCallback: (bounds) => LinearGradient(
-                      colors: [AppColors.onPrimary, AppColors.onPrimary.withAlpha(230)],
+                      colors: [
+                        AppColors.onPrimary,
+                        AppColors.onPrimary.withAlpha(230),
+                      ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ).createShader(bounds),
@@ -233,19 +207,27 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   Widget _buildStats() {
     return Row(
       children: [
-        const Expanded(child: _StatBlock(value: '0%', label: 'Trading Fees')),
+        const Expanded(
+          child: _StatBlock(value: '0%', label: 'Trading Fees'),
+        ),
         Container(
-          width: 1, height: 40,
+          width: 1,
+          height: 40,
           color: AppColors.onPrimary.withAlpha(26),
           margin: const EdgeInsets.symmetric(horizontal: 16),
         ),
-        const Expanded(child: _StatBlock(value: 'Instant', label: 'Verification')),
+        const Expanded(
+          child: _StatBlock(value: 'Instant', label: 'Verification'),
+        ),
         Container(
-          width: 1, height: 40,
+          width: 1,
+          height: 40,
           color: AppColors.onPrimary.withAlpha(26),
           margin: const EdgeInsets.symmetric(horizontal: 16),
         ),
-        const Expanded(child: _StatBlock(value: 'Global', label: 'Reach Access')),
+        const Expanded(
+          child: _StatBlock(value: 'Global', label: 'Reach Access'),
+        ),
       ],
     );
   }
@@ -298,9 +280,7 @@ class _BrutalistGrid extends StatelessWidget {
     return Positioned.fill(
       child: Opacity(
         opacity: 0.03,
-        child: CustomPaint(
-          painter: _GridPainter(),
-        ),
+        child: CustomPaint(painter: _GridPainter()),
       ),
     );
   }
@@ -337,46 +317,31 @@ class _GridLines extends StatelessWidget {
           left: MediaQuery.of(context).size.width * 0.25,
           top: 0,
           bottom: 0,
-          child: Container(
-            width: 1,
-            color: AppColors.onPrimary.withAlpha(13),
-          ),
+          child: Container(width: 1, color: AppColors.onPrimary.withAlpha(13)),
         ),
         Positioned(
           left: MediaQuery.of(context).size.width * 0.5,
           top: 0,
           bottom: 0,
-          child: Container(
-            width: 1,
-            color: AppColors.onPrimary.withAlpha(13),
-          ),
+          child: Container(width: 1, color: AppColors.onPrimary.withAlpha(13)),
         ),
         Positioned(
           left: MediaQuery.of(context).size.width * 0.75,
           top: 0,
           bottom: 0,
-          child: Container(
-            width: 1,
-            color: AppColors.onPrimary.withAlpha(13),
-          ),
+          child: Container(width: 1, color: AppColors.onPrimary.withAlpha(13)),
         ),
         Positioned(
           top: MediaQuery.of(context).size.height * 0.33,
           left: 0,
           right: 0,
-          child: Container(
-            height: 1,
-            color: AppColors.onPrimary.withAlpha(13),
-          ),
+          child: Container(height: 1, color: AppColors.onPrimary.withAlpha(13)),
         ),
         Positioned(
           top: MediaQuery.of(context).size.height * 0.66,
           left: 0,
           right: 0,
-          child: Container(
-            height: 1,
-            color: AppColors.onPrimary.withAlpha(13),
-          ),
+          child: Container(height: 1, color: AppColors.onPrimary.withAlpha(13)),
         ),
       ],
     );
@@ -458,10 +423,7 @@ class _StatBlock extends StatelessWidget {
   final String value;
   final String label;
 
-  const _StatBlock({
-    required this.value,
-    required this.label,
-  });
+  const _StatBlock({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {

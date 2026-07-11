@@ -16,6 +16,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_search_bar.dart';
+import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -83,16 +84,15 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   Future<void> _archiveChat(ChatEntity chat) async {
     final usecase = ref.read(archiveChatUsecaseProvider);
     final result = await usecase(chat.id, chat.threadType, !chat.isArchived);
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (_) {
-        ref.invalidate(chatsProvider);
-        ref.invalidate(liveChatListProvider);
-        ref.invalidate(archivedChatsProvider);
-        AppSnackbar.success(context,
-            chat.isArchived ? 'Conversa restaurada' : 'Conversa arquivada');
-      },
-    );
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
+      ref.invalidate(chatsProvider);
+      ref.invalidate(liveChatListProvider);
+      ref.invalidate(archivedChatsProvider);
+      AppSnackbar.success(
+        context,
+        chat.isArchived ? 'Conversa restaurada' : 'Conversa arquivada',
+      );
+    });
   }
 
   void _confirmDelete(ChatEntity chat) {
@@ -101,18 +101,22 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir conversa'),
         content: const Text(
-            'Esta ação não pode ser desfeita. A conversa será ocultada para você.'),
+          'Esta ação não pode ser desfeita. A conversa será ocultada para você.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               _deleteChat(chat);
             },
-            child:
-                const Text('Excluir', style: TextStyle(color: AppColors.error)),
+            child: const Text(
+              'Excluir',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -122,53 +126,51 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   Future<void> _deleteChat(ChatEntity chat) async {
     final usecase = ref.read(deleteChatUsecaseProvider);
     final result = await usecase(chat.id, chat.threadType);
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (_) {
-        ref.invalidate(chatsProvider);
-        ref.invalidate(liveChatListProvider);
-        ref.invalidate(archivedChatsProvider);
-        AppSnackbar.success(context, 'Conversa excluída');
-      },
-    );
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
+      ref.invalidate(chatsProvider);
+      ref.invalidate(liveChatListProvider);
+      ref.invalidate(archivedChatsProvider);
+      AppSnackbar.success(context, 'Conversa excluída');
+    });
   }
 
   void _showContextMenu(ChatEntity chat) {
-    showModalBottomSheet(
+    showBrutalistSheet(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(chat.isArchived ? Icons.unarchive : Icons.archive),
-              title: Text(chat.isArchived ? 'Restaurar' : 'Arquivar'),
-              enabled: _canModifyOrderChat(chat),
-              onTap: () {
-                Navigator.pop(ctx);
-                _archiveChat(chat);
-              },
+      title: 'OPÇÕES DE CONVERSA',
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(chat.isArchived ? Icons.unarchive : Icons.archive),
+            title: Text(chat.isArchived ? 'Restaurar' : 'Arquivar'),
+            enabled: _canModifyOrderChat(chat),
+            onTap: () {
+              Navigator.pop(ctx);
+              _archiveChat(chat);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: AppColors.error),
+            title: const Text(
+              'Excluir',
+              style: TextStyle(color: AppColors.error),
             ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: AppColors.error),
-              title: const Text('Excluir',
-                  style: TextStyle(color: AppColors.error)),
-              enabled: _canModifyOrderChat(chat),
-              onTap: () {
-                Navigator.pop(ctx);
-                _confirmDelete(chat);
-              },
-            ),
-            if (!_canModifyOrderChat(chat))
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Text(
-                  'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
-                  style: TextStyle(fontSize: 12, color: AppColors.mediumGray),
-                ),
+            enabled: _canModifyOrderChat(chat),
+            onTap: () {
+              Navigator.pop(ctx);
+              _confirmDelete(chat);
+            },
+          ),
+          if (!_canModifyOrderChat(chat))
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Text(
+                'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
+                style: TextStyle(fontSize: 12, color: AppColors.mediumGray),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -197,7 +199,9 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                 : Column(
                     children: [
                       _buildSearchBar(isDark),
-                      ref.watch(liveChatListProvider).when(
+                      ref
+                          .watch(liveChatListProvider)
+                          .when(
                             data: (chats) {
                               final filteredChats = _filterAndSortChats(chats);
                               if (filteredChats.isEmpty) {
@@ -218,13 +222,15 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                                         isDark: isDark,
                                         canSwipe: _canModifyOrderChat(chat),
                                         onTap: () {
-                                          context
-                                              .push('/chat/${chat.id}', extra: {
-                                            'oderName': chat.otherName,
-                                            'oderAvatarUrl':
-                                                chat.otherAvatarUrl,
-                                            'chatType': chat.threadType.name,
-                                          });
+                                          context.push(
+                                            '/chat/${chat.id}',
+                                            extra: {
+                                              'oderName': chat.otherName,
+                                              'oderAvatarUrl':
+                                                  chat.otherAvatarUrl,
+                                              'chatType': chat.threadType.name,
+                                            },
+                                          );
                                         },
                                         onLongPress: () =>
                                             _showContextMenu(chat),

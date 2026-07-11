@@ -7,7 +7,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 export class MarkAsReadUseCase {
   constructor(private prisma: PrismaService) {}
 
-  async execute(notificationId: string, userId: string): Promise<Either<AppError, { marked: boolean }>> {
+  async execute(notificationId: string, userId: string): Promise<Either<AppError, void>> {
     const notification = await this.prisma.notification.findUnique({
       where: { id: notificationId },
     });
@@ -25,6 +25,6 @@ export class MarkAsReadUseCase {
       data: { read: true },
     });
 
-    return right({ marked: true });
+    return right(undefined);
   }
 }

@@ -1,57 +1,37 @@
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
+part 'story_entity.freezed.dart';
 part 'story_entity.g.dart';
 
-@JsonSerializable()
-class StoryUserEntity extends Equatable {
-  final String id;
-  final String displayName;
-  final String? avatarUrl;
-  final bool isVerified;
-
-  const StoryUserEntity({
-    required this.id,
-    required this.displayName,
-    this.avatarUrl,
-    this.isVerified = false,
-  });
+@freezed
+abstract class StoryUserEntity with _$StoryUserEntity {
+  const factory StoryUserEntity({
+    required String id,
+    required String displayName,
+    String? avatarUrl,
+    @Default(false) bool isVerified,
+  }) = _StoryUserEntity;
 
   factory StoryUserEntity.fromJson(Map<String, dynamic> json) =>
       _$StoryUserEntityFromJson(json);
-  Map<String, dynamic> toJson() => _$StoryUserEntityToJson(this);
-
-  @override
-  List<Object?> get props => [id, displayName, avatarUrl, isVerified];
 }
 
-@JsonSerializable()
-class StoryEntity extends Equatable {
-  final String id;
-  final String userId;
-  final String imageUrl;
-  final DateTime expiresAt;
-  final DateTime createdAt;
-  final StoryUserEntity user;
-  final bool isViewed;
+@freezed
+abstract class StoryEntity with _$StoryEntity {
+  const StoryEntity._();
 
-  const StoryEntity({
-    required this.id,
-    required this.userId,
-    required this.imageUrl,
-    required this.expiresAt,
-    required this.createdAt,
-    required this.user,
-    this.isViewed = false,
-  });
+  const factory StoryEntity({
+    required String id,
+    required String userId,
+    required String imageUrl,
+    required DateTime expiresAt,
+    required DateTime createdAt,
+    required StoryUserEntity user,
+    @Default(false) bool isViewed,
+  }) = _StoryEntity;
 
   factory StoryEntity.fromJson(Map<String, dynamic> json) =>
       _$StoryEntityFromJson(json);
-  Map<String, dynamic> toJson() => _$StoryEntityToJson(this);
 
   bool get isExpired => expiresAt.isBefore(DateTime.now());
-
-  @override
-  List<Object?> get props =>
-      [id, userId, imageUrl, expiresAt, createdAt, user, isViewed];
 }

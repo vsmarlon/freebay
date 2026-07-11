@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
+import 'package:freebay/features/chat/data/entities/last_message_info.dart';
 import 'package:freebay/features/chat/data/repositories/chat_repository.dart';
 import 'package:freebay/features/chat/domain/repositories/i_chat_repository.dart';
 import 'package:freebay/features/chat/domain/usecases/archive_chat_usecase.dart';
@@ -41,8 +42,9 @@ final setChatThemeUsecaseProvider = Provider<SetChatThemeUsecase>((ref) {
   return SetChatThemeUsecase(ref.watch(chatRepositoryProvider));
 });
 
-final setChatBackgroundUsecaseProvider =
-    Provider<SetChatBackgroundUsecase>((ref) {
+final setChatBackgroundUsecaseProvider = Provider<SetChatBackgroundUsecase>((
+  ref,
+) {
   return SetChatBackgroundUsecase(ref.watch(chatRepositoryProvider));
 });
 
@@ -56,8 +58,9 @@ final chatsProvider = FutureProvider<List<ChatEntity>>((ref) async {
   );
 });
 
-final archivedChatsProvider =
-    FutureProvider.autoDispose<List<ChatEntity>>((ref) async {
+final archivedChatsProvider = FutureProvider.autoDispose<List<ChatEntity>>((
+  ref,
+) async {
   final repository = ref.watch(chatRepositoryProvider);
   final result = await repository.getArchivedChats();
 
@@ -93,8 +96,9 @@ class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
 
     final content = msg['content'] as String? ?? '';
     final createdAtStr = msg['createdAt'] as String?;
-    final createdAt =
-        createdAtStr != null ? DateTime.parse(createdAtStr) : DateTime.now();
+    final createdAt = createdAtStr != null
+        ? DateTime.parse(createdAtStr)
+        : DateTime.now();
     final senderId = msg['senderId'] as String? ?? '';
 
     final authState = _ref.read(authControllerProvider);
@@ -104,13 +108,19 @@ class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
     final updatedList = currentList.map((chat) {
       if (chat.id != conversationId) return chat;
       return chat.copyWith(
-        lastMessage: content,
-        timestamp: createdAt,
-        unread: !isFromMe,
+        lastMessageInfo: LastMessageInfo(
+          content: content,
+          createdAt: createdAt,
+        ),
+        unreadCount: isFromMe ? 0 : chat.unreadCount + 1,
       );
     }).toList();
 
-    updatedList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    updatedList.sort((a, b) {
+      final aTime = a.lastMessageInfo?.createdAt ?? a.createdAt;
+      final bTime = b.lastMessageInfo?.createdAt ?? b.createdAt;
+      return bTime.compareTo(aTime);
+    });
     state = AsyncValue.data(updatedList);
   }
 
@@ -122,7 +132,8 @@ class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
 }
 
 final liveChatListProvider =
-    StateNotifierProvider<ChatListController, AsyncValue<List<ChatEntity>>>(
-        (ref) {
-  return ChatListController(ref);
-});
+    StateNotifierProvider<ChatListController, AsyncValue<List<ChatEntity>>>((
+      ref,
+    ) {
+      return ChatListController(ref);
+    });

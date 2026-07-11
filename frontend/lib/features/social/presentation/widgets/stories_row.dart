@@ -18,12 +18,15 @@ class StoriesRow extends ConsumerWidget {
     return storiesAsync.when(
       data: (response) => _buildRow(context, ref, response.stories),
       loading: () => const SizedBox(height: 84),
-      error: (_, __) => const SizedBox(height: 84),
+      error: (_, _) => const SizedBox(height: 84),
     );
   }
 
   Widget _buildRow(
-      BuildContext context, WidgetRef ref, List<StoryEntity> stories) {
+    BuildContext context,
+    WidgetRef ref,
+    List<StoryEntity> stories,
+  ) {
     return SizedBox(
       height: 84,
       child: ListView.builder(
@@ -42,8 +45,7 @@ class StoriesRow extends ConsumerWidget {
               final current =
                   ref.read(storiesProvider).valueOrNull?.stories ?? [];
               if (current.isNotEmpty) {
-                final storyIndex =
-                    current.indexWhere((s) => s.id == story.id);
+                final storyIndex = current.indexWhere((s) => s.id == story.id);
                 context.push('/story?index=$storyIndex');
               }
             },
@@ -74,10 +76,7 @@ class _AddStoryItem extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 color: context.surfaceColor,
-                border: Border.all(
-                  color: AppColors.primaryContainer,
-                  width: 2,
-                ),
+                border: Border.all(color: AppColors.primaryContainer, width: 2),
               ),
               child: const Icon(
                 Icons.add,
@@ -111,10 +110,7 @@ class _StoryItem extends StatelessWidget {
   final StoryEntity story;
   final VoidCallback onTap;
 
-  const _StoryItem({
-    required this.story,
-    required this.onTap,
-  });
+  const _StoryItem({required this.story, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -144,11 +140,7 @@ class _StoryItem extends StatelessWidget {
                 color: context.surfaceColor,
               ),
               child: story.imageUrl.isEmpty
-                  ? const Icon(
-                      Icons.person,
-                      color: AppColors.outline,
-                      size: 24,
-                    )
+                  ? const Icon(Icons.person, color: AppColors.outline, size: 24)
                   : null,
             ),
             Spacing.vXs,

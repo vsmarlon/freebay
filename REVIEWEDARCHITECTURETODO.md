@@ -85,9 +85,9 @@ expected failures must return `left(Failure)` and usecases must NOT inject `Pris
 - [ ] **1.2** `orders/data/repositories/order-database.repository.ts` — remove `throw new AppError('BAD_REQUEST', ...)` at lines 83, 99
 - [ ] **1.3** `chat/repositories/conversation-preference.repository.ts` — remove `throw new Error(...)` at line 48
 - [ ] **1.4** `auth/api/auth.service.ts` — replace `throw new AppError(...)` in all catch blocks with `return ResponseEntity.error(...)`
-- [ ] **1.5** `disputes/usecases/open-dispute.usecase.ts` — replace direct `PrismaService` injection with `DisputeRepository`
-- [ ] **1.6** `disputes/usecases/resolve-dispute.usecase.ts` — replace direct `PrismaService` injection
-- [ ] **1.7** `disputes/usecases/withdraw-dispute.usecase.ts` — replace direct `PrismaService` injection
+- [✓] **1.5** `disputes/usecases/open-dispute.usecase.ts` — replaced direct `PrismaService` injection with `DisputeRepository` (Phase 4)
+- [✓] **1.6** `disputes/usecases/resolve-dispute.usecase.ts` — replaced direct `PrismaService` injection (Phase 4)
+- [✓] **1.7** `disputes/usecases/withdraw-dispute.usecase.ts` — replaced direct `PrismaService` injection with repo methods; P2002 leak moved to `WalletRepository.findWithdrawalByIdempotencyKey` (Phase 9)
 
 ---
 
@@ -115,7 +115,7 @@ Break down monolith files into single-responsibility usecase files.
 - [ ] **3.1** **Users Monolith** (`users/usecases/user.usecase.ts`) — split into 10 separate usecases (GetProfile, GetUserStats, UpdateProfile, UpdateFcmToken, FollowUser, UnfollowUser, BlockUser, UnblockUser, SearchUsers, GetSuggestions)
 - [ ] **3.2** **Notifications Monolith** (`notifications/usecases/notification.usecase.ts`) — split into 3 separate usecases (GetNotifications, MarkAsRead, RegisterFcmToken)
 - [ ] **3.3** **Payments Monolith** (`payments/usecases/payment.usecase.ts`) — split into 2 separate usecases (CreatePixPayment, ProcessWebhook)
-- [ ] **3.4** **Wallet Monolith** (`wallet/usecases/wallet.usecase.ts`) — split into 3 separate usecases (GetWallet, Withdraw, RegisterBankAccount)
+- [✓] **3.4** **Wallet Monolith** (`wallet/usecases/wallet.usecase.ts`) — split into 3 separate usecases (GetWallet, Withdraw, RegisterBankAccount)
 
 ---
 
@@ -139,8 +139,8 @@ Create layers for modules that bypass abstract repositories or have no service a
 - [ ] **4.11** Delete old concrete directory `disputes/repositories/`
 
 ### Wallet Module
-- [ ] **4.12** Create `wallet/domain/repositories/wallet.repository.ts` (abstract)
-- [ ] **4.13** Create `wallet/data/repositories/wallet-database.repository.ts`
+- [✓] **4.12** Create `wallet/domain/repositories/wallet.repository.ts` (abstract) — Phase 4
+- [✓] **4.13** Create `wallet/data/repositories/wallet-database.repository.ts` — Phase 4
 - [ ] **4.14** Create `wallet/wallet.service.ts` directly under `wallet/`
 - [ ] **4.15** Refactor `wallet.controller.ts` to inject only `WalletService` (currently injects concrete repo + PrismaService)
 - [ ] **4.16** Delete old concrete directory `wallet/repositories/`

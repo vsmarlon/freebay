@@ -1,18 +1,26 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, DatabaseError } from '@/shared/core/errors';
+import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { ProcessWebhookInput } from '../dtos/payment.dto';
+import { ProductRepository } from '../../products/domain/repositories/product.repository';
+import { TransactionRepository } from '../domain/repositories/transaction.repository';
+import { OrderRepository } from '../../orders/domain/repositories/order.repository';
+import { WalletRepository } from '../../wallet/domain/repositories/wallet.repository';
 
 @Injectable()
 export class ProcessWebhookUseCase {
   constructor(
-    private prisma: PrismaService,
+    private productRepo: ProductRepository,
+    private transactionRepo: TransactionRepository,
+    private orderRepo: OrderRepository,
+    private walletRepo: WalletRepository,
     private notificationService: NotificationService,
+    private prisma: PrismaService,
   ) {}
 
-  async execute(input: ProcessWebhookInput): Promise<Either<AppError, { processed: boolean }>> {
+  async execute(input: ProcessWebhookInput): Promise<Either<DatabaseError, { processed: boolean }>> {
     const { event, data } = input;
 
     if (event === 'charge.completed') {
@@ -22,55 +30,23 @@ export class ProcessWebhookUseCase {
         return right({ processed: false });
       }
 
-      const transaction = await this.prisma.transaction.findFirst({
-        where: { idempotencyKey: correlationID },
-        include: { order: { include: { buyer: true, seller: true } } },
-      });
+      const transactionResult = await this.transactionRepo.findByIdempotencyKey(correlationID);
+      if (transactionResult.isLeft()) return left(transactionResult.value);
 
+      const transaction = transactionResult.value;
       if (!transaction) {
         return right({ processed: false });
       }
 
       try {
         await this.prisma.$transaction(async (tx) => {
-          const webhookProduct = await tx.product.findUnique({ where: { id: transaction.order.productId } });
-          if (webhookProduct && webhookProduct.quantity > 1) {
-            const newSoldCount = webhookProduct.soldCount + 1;
-            await tx.product.update({
-              where: { id: transaction.order.productId },
-              data: {
-                soldCount: newSoldCount,
-                ...(newSoldCount >= webhookProduct.quantity ? { status: 'SOLD' as const } : {}),
-              },
-            });
-          } else {
-            await tx.product.update({
-              where: { id: transaction.order.productId },
-              data: { status: 'SOLD' },
-            });
-          }
-
-          await tx.transaction.update({
-            where: { id: transaction.id },
-            data: { status: 'PAID', paidAt: new Date() },
-          });
-
-          await tx.order.update({
-            where: { id: transaction.orderId },
-            data: { status: 'CONFIRMED', escrowStatus: 'HELD' },
-          });
-
-          await tx.wallet.upsert({
-            where: { userId: transaction.order.sellerId },
-            create: {
-              user: { connect: { id: transaction.order.sellerId } },
-              pendingBalance: transaction.sellerAmount,
-            },
-            update: { pendingBalance: { increment: transaction.sellerAmount } },
-          });
+          await this.productRepo.updateInventoryOnSale(transaction.order.productId, tx);
+          await this.transactionRepo.markAsPaid(transaction.id, tx);
+          await this.orderRepo.confirm(transaction.orderId, tx);
+          await this.walletRepo.creditPending(transaction.order.sellerId, transaction.sellerAmount, tx);
         });
       } catch {
-        return left(new DatabaseError('Failed to process webhook'));
+        return left(new DatabaseError('Failed to process payment webhook'));
       }
 
       await this.notificationService.notifyPayment(transaction.order.sellerId, transaction.amount);
@@ -86,46 +62,19 @@ export class ProcessWebhookUseCase {
         return right({ processed: false });
       }
 
-      const transaction = await this.prisma.transaction.findFirst({
-        where: { idempotencyKey: correlationID },
-        include: { order: true },
-      });
+      const transactionResult = await this.transactionRepo.findByIdempotencyKey(correlationID);
+      if (transactionResult.isLeft()) return left(transactionResult.value);
 
+      const transaction = transactionResult.value;
       if (!transaction) {
         return right({ processed: false });
       }
 
       try {
         await this.prisma.$transaction(async (tx) => {
-          await tx.transaction.update({
-            where: { id: transaction.id },
-            data: { status: 'FAILED' },
-          });
-
-          await tx.order.update({
-            where: { id: transaction.orderId },
-            data: { status: 'CANCELLED' },
-          });
-
-          const expiredProduct = await tx.product.findUnique({ where: { id: transaction.order.productId } });
-          if (expiredProduct && expiredProduct.quantity > 1) {
-            const newSoldCount = expiredProduct.soldCount - 1;
-            await tx.product.update({
-              where: { id: transaction.order.productId },
-              data: {
-                soldCount: newSoldCount >= 0 ? newSoldCount : 0,
-                ...(expiredProduct.status === 'SOLD' && newSoldCount < expiredProduct.quantity ? { status: 'ACTIVE' as const } : {}),
-              },
-            });
-          } else {
-            await tx.product.updateMany({
-              where: {
-                id: transaction.order.productId,
-                status: 'PAUSED',
-              },
-              data: { status: 'ACTIVE' },
-            });
-          }
+          await this.transactionRepo.markAsFailed(transaction.id, tx);
+          await this.orderRepo.cancel(transaction.orderId, tx);
+          await this.productRepo.restoreInventoryOnExpiry(transaction.order.productId, tx);
         });
       } catch {
         return left(new DatabaseError('Failed to process webhook'));

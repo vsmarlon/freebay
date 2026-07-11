@@ -10,16 +10,14 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class EditProductPage extends ConsumerStatefulWidget {
   final String productId;
 
-  const EditProductPage({
-    super.key,
-    required this.productId,
-  });
+  const EditProductPage({super.key, required this.productId});
 
   @override
   ConsumerState<EditProductPage> createState() => _EditProductPageState();
@@ -52,9 +50,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
       backgroundColor: context.bgColor,
       body: Column(
         children: [
-          PageHeader(
-            text: 'EDITAR ANÚNCIO',
-          ),
+          PageHeader(text: 'EDITAR ANÚNCIO'),
           Expanded(
             child: productAsync.when(
               loading: () => const SkeletonPage(
@@ -75,7 +71,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
                   ],
                 ),
               ),
-              error: (_, __) => Center(
+              error: (_, _) => Center(
                 child: Text(
                   'Não foi possível carregar o anúncio.',
                   style: TextStyle(
@@ -102,8 +98,9 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
     _titleController.text = product.title;
     _descriptionController.text = product.description;
-    _priceController.text =
-        (product.price / 100).toStringAsFixed(2).replaceAll('.', ',');
+    _priceController.text = (product.price / 100)
+        .toStringAsFixed(2)
+        .replaceAll('.', ',');
     _status = product.status == 'PAUSED' ? 'PAUSED' : 'ACTIVE';
     _isNewProduct = product.condition == 'NEW';
     _didPrefill = true;
@@ -113,10 +110,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        BrutalistBreadcrumb(items: [
-          BreadcrumbItem(label: 'Produtos', onTap: () => context.pop()),
-          const BreadcrumbItem(label: 'Editar Anúncio'),
-        ]),
+        BrutalistBreadcrumb(items: context.breadcrumbs),
         Spacing.vMd,
         AppTextField(
           controller: _titleController,
@@ -216,12 +210,10 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
   Future<void> _submit(BuildContext context, ProductEntity product) async {
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
-    final price = ((double.tryParse(
-                  _priceController.text.replaceAll(',', '.'),
-                ) ??
-                0) *
-            100)
-        .toInt();
+    final price =
+        ((double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0) *
+                100)
+            .toInt();
 
     if (title.length < 3 || description.length < 10 || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -235,16 +227,15 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
     setState(() => _isLoading = true);
 
-    final result = await ref.read(productRepositoryProvider).updateProduct(
-      widget.productId,
-      {
-        'title': title,
-        'description': description,
-        'price': price,
-        'condition': _isNewProduct ? 'NEW' : 'USED',
-        'status': _status,
-      },
-    );
+    final result = await ref
+        .read(productRepositoryProvider)
+        .updateProduct(widget.productId, {
+          'title': title,
+          'description': description,
+          'price': price,
+          'condition': _isNewProduct ? 'NEW' : 'USED',
+          'status': _status,
+        });
 
     if (!mounted) {
       return;
@@ -265,9 +256,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
         setState(() => _isLoading = false);
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Anúncio atualizado com sucesso.'),
-          ),
+          const SnackBar(content: Text('Anúncio atualizado com sucesso.')),
         );
       },
     );

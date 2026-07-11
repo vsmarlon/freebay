@@ -1,67 +1,23 @@
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
+part 'conversation_preference.freezed.dart';
 part 'conversation_preference.g.dart';
 
-@JsonSerializable()
-class ConversationPreference extends Equatable {
-  final String id;
-  final String userId;
-  final String? orderId;
-  final String? directConversationId;
-  @JsonKey(defaultValue: false)
-  final bool isArchived;
-  @JsonKey(defaultValue: false)
-  final bool isDeleted;
-  @JsonKey(defaultValue: 'DEFAULT')
-  final String theme;
-  final String? backgroundUrl;
-
-  const ConversationPreference({
-    required this.id,
-    required this.userId,
-    this.orderId,
-    this.directConversationId,
-    this.isArchived = false,
-    this.isDeleted = false,
-    this.theme = 'DEFAULT',
-    this.backgroundUrl,
-  });
+@freezed
+abstract class ConversationPreference with _$ConversationPreference {
+  const factory ConversationPreference({
+    required String id,
+    required String userId,
+    String? orderId,
+    String? directConversationId,
+    @Default(false) bool isArchived,
+    @Default(false) bool isDeleted,
+    @Default('DEFAULT') String theme,
+    String? backgroundUrl,
+  }) = _ConversationPreference;
 
   factory ConversationPreference.fromJson(Map<String, dynamic> json) =>
       _$ConversationPreferenceFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ConversationPreferenceToJson(this);
-
-  ConversationPreference copyWith({
-    bool? isArchived,
-    bool? isDeleted,
-    String? theme,
-    String? backgroundUrl,
-  }) {
-    return ConversationPreference(
-      id: id,
-      userId: userId,
-      orderId: orderId,
-      directConversationId: directConversationId,
-      isArchived: isArchived ?? this.isArchived,
-      isDeleted: isDeleted ?? this.isDeleted,
-      theme: theme ?? this.theme,
-      backgroundUrl: backgroundUrl ?? this.backgroundUrl,
-    );
-  }
-
-  @override
-  List<Object?> get props => [
-        id,
-        userId,
-        orderId,
-        directConversationId,
-        isArchived,
-        isDeleted,
-        theme,
-        backgroundUrl
-      ];
 }
 
 enum ChatTheme {
@@ -78,7 +34,7 @@ enum ChatTheme {
   final String accentHex;
 
   static ChatTheme fromApiValue(String value) => ChatTheme.values.firstWhere(
-        (t) => t.apiValue == value,
-        orElse: () => ChatTheme.defaultTheme,
-      );
+    (t) => t.apiValue == value,
+    orElse: () => ChatTheme.defaultTheme,
+  );
 }

@@ -1,5 +1,5 @@
 import 'package:freebay/shared/errors/failures.dart';
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/shared/services/http_client.dart';
@@ -13,7 +13,9 @@ class GetPostDetailsUseCase {
     try {
       final response = await _httpClient.get('/social/posts/$postId');
       final data = response.data['data'] ?? response.data;
-      final postJson = data is Map<String, dynamic> ? (data['post'] ?? data) : data;
+      final postJson = data is Map<String, dynamic>
+          ? (data['post'] ?? data)
+          : data;
       return Right(PostEntity.fromJson(postJson as Map<String, dynamic>));
     } catch (e) {
       return const Left(ServerFailure('Erro ao carregar post'));
@@ -40,7 +42,10 @@ class GetPostCommentsUseCase {
         return const Right([]);
       }
       return Right(
-          commentsList.map((e) => CommentEntity.fromJson(e as Map<String, dynamic>)).toList());
+        commentsList
+            .map((e) => CommentEntity.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
     } catch (e) {
       return const Left(ServerFailure('Erro ao carregar comentários'));
     }

@@ -75,7 +75,7 @@ export class UserDatabaseRepository implements UserRepository {
       const suggestions = await this.prisma.user.findMany({
         where: {
           id: { not: userId },
-          following: { some: { followerId: { in: followingIds } } },
+          followers: { some: { followerId: { in: followingIds } } },
           NOT: { followers: { some: { followerId: userId } } },
         },
         take: limit,
@@ -88,19 +88,41 @@ export class UserDatabaseRepository implements UserRepository {
           reputationScore: true,
           totalReviews: true,
           _count: { select: { followers: true, following: true } },
+          followers: {
+            where: { followerId: { in: followingIds } },
+            select: { followerId: true },
+          },
         },
       });
 
       return right(
         suggestions.map((u) => ({
-          ...u,
+          id: u.id,
+          displayName: u.displayName,
+          avatarUrl: u.avatarUrl,
+          bio: u.bio,
+          isVerified: u.isVerified,
+          reputationScore: u.reputationScore,
+          totalReviews: u.totalReviews,
           followersCount: u._count.followers,
           followingCount: u._count.following,
-          mutualCount: 0,
+          mutualCount: u.followers.length,
         })),
       );
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar sugestões'));
+    }
+  }
+
+  async findPaymentInfo(userId: string): RepositoryResponse<{ displayName: string; email: string; cpf: string | null } | null> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { displayName: true, email: true, cpf: true },
+      });
+      return right(user);
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar informações de pagamento'));
     }
   }
 }

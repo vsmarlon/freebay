@@ -7,6 +7,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/payments/data/entities/pix_payment_entity.dart';
@@ -18,7 +19,10 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key});
@@ -63,38 +67,25 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     }
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       body: Column(
         children: [
           PageHeader(
             text: isCartCheckout ? 'CHECKOUT' : 'PAGAMENTO PIX',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                  size: 20,
-                ),
-              ),
             ),
           ),
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Produto', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Pagamento'),
-          ]),
+          BrutalistBreadcrumb(items: context.breadcrumbs),
           Expanded(
             child: isCartCheckout
                 ? _buildCartUnavailable(context)
                 : productId == null
-                    ? _buildInvalidState(context)
-                    : _buildProductCheckout(context, productId),
+                ? _buildInvalidState(context)
+                : _buildProductCheckout(context, productId),
           ),
         ],
       ),
@@ -180,10 +171,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     );
   }
 
-  Widget _buildProductCheckout(
-    BuildContext context,
-    String productId,
-  ) {
+  Widget _buildProductCheckout(BuildContext context, String productId) {
     final productAsync = ref.watch(productByIdProvider(productId));
 
     return productAsync.when(
@@ -203,7 +191,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           ],
         ),
       ),
-      error: (_, __) => _buildInvalidState(context),
+      error: (_, _) => _buildInvalidState(context),
       data: (product) {
         if (_pixPayment != null) {
           return PixPaymentView(
@@ -239,8 +227,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color:
-                      isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+                  color: isDark
+                      ? AppColors.onPrimaryContainer
+                      : AppColors.primary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -258,8 +247,10 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 color: isDark
                     ? AppColors.surfaceDark
                     : AppColors.surfaceContainerHighest,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 child: Text(
                   formattedPrice,
                   style: TextStyle(
@@ -299,7 +290,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 validator: (value) {
                   if (value == null ||
                       value.trim().isEmpty ||
-                      !value.contains('@')) {
+                      !ValueUtils.validateEmail(value)) {
                     return 'Informe um email valido';
                   }
                   return null;
@@ -312,7 +303,15 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
-                  if (digits.length < 11 || digits.length > 14) {
+                  if (digits.length == 11) {
+                    if (!ValueUtils.validateCPF(digits)) {
+                      return 'Informe um CPF válido';
+                    }
+                  } else if (digits.length == 14) {
+                    if (!ValueUtils.validateCNPJ(digits)) {
+                      return 'Informe um CNPJ válido';
+                    }
+                  } else {
                     return 'Informe um CPF ou CNPJ valido';
                   }
                   return null;
@@ -339,47 +338,19 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     required String? Function(String?) validator,
     TextInputType? keyboardType,
   }) {
-    final isDark = context.isDark;
-    return TextFormField(
+    return AppTextField(
       controller: controller,
-      keyboardType: keyboardType,
+      label: hint,
+      hint: hint,
       validator: validator,
-      style: TextStyle(
-        fontFamily: AppTypography.fontFamily,
-        color: isDark ? AppColors.white : AppColors.onSurface,
-      ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          color: isDark ? AppColors.mediumGray : AppColors.onSurfaceVariant,
-        ),
-        filled: true,
-        fillColor: isDark
-            ? AppColors.surfaceContainerLowDark
-            : AppColors.surfaceContainerLowest,
-        enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.outline),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.primaryContainer, width: 2),
-        ),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.error),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: BorderSide(color: AppColors.error, width: 2),
-        ),
-      ),
+      keyboardType: keyboardType,
     );
   }
 
   Future<void> _submitCheckout(
-      BuildContext context, ProductEntity product) async {
+    BuildContext context,
+    ProductEntity product,
+  ) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }

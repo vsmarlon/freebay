@@ -1,7 +1,34 @@
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
+
+class _CompressParams {
+  final Uint8List bytes;
+  final int quality;
+  final int maxDimension;
+
+  const _CompressParams(this.bytes, this.quality, this.maxDimension);
+}
+
+Uint8List? _decodeResizeEncode(_CompressParams params) {
+  final decoded = img.decodeImage(params.bytes);
+  if (decoded == null) return null;
+
+  final largestSide = decoded.width > decoded.height
+      ? decoded.width
+      : decoded.height;
+  final resized = largestSide > params.maxDimension
+      ? img.copyResize(
+          decoded,
+          width: decoded.width >= decoded.height ? params.maxDimension : null,
+          height: decoded.height > decoded.width ? params.maxDimension : null,
+        )
+      : decoded;
+
+  return Uint8List.fromList(img.encodeJpg(resized, quality: params.quality));
+}
 
 class ImageUploadService {
   ImageUploadService._();
@@ -12,41 +39,34 @@ class ImageUploadService {
     String path, {
     required String filename,
   }) async {
-    int quality = 90;
-    int minWidth = 1600;
-    int minHeight = 1600;
+    final originalBytes = await File(path).readAsBytes();
 
-    Uint8List? compressed = await FlutterImageCompress.compressWithFile(
-      path,
-      quality: quality,
-      minWidth: minWidth,
-      minHeight: minHeight,
-      format: CompressFormat.jpeg,
-      keepExif: false,
+    int quality = 90;
+    int maxDimension = 1600;
+
+    Uint8List? compressed = await compute<_CompressParams, Uint8List?>(
+      _decodeResizeEncode,
+      _CompressParams(originalBytes, quality, maxDimension),
     );
 
     if (compressed == null) {
       throw Exception('Não foi possível preparar a imagem para upload.');
     }
 
-    while (compressed != null && compressed.length > maxUploadBytes && quality > 50) {
+    while (compressed != null &&
+        compressed.length > maxUploadBytes &&
+        quality > 50) {
       quality -= 8;
       if (quality <= 74) {
-        minWidth = 1280;
-        minHeight = 1280;
+        maxDimension = 1280;
       }
       if (quality <= 66) {
-        minWidth = 1080;
-        minHeight = 1080;
+        maxDimension = 1080;
       }
 
-      compressed = await FlutterImageCompress.compressWithFile(
-        path,
-        quality: quality,
-        minWidth: minWidth,
-        minHeight: minHeight,
-        format: CompressFormat.jpeg,
-        keepExif: false,
+      compressed = await compute<_CompressParams, Uint8List?>(
+        _decodeResizeEncode,
+        _CompressParams(originalBytes, quality, maxDimension),
       );
 
       if (compressed == null) {

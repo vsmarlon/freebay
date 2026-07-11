@@ -8,7 +8,7 @@ import { DeleteProductInput } from '../../dtos/product.dto';
 export class DeleteProductUseCase {
   constructor(private readonly productRepository: ProductRepository) {}
 
-  async execute(input: DeleteProductInput): Promise<Either<AppError, { deleted: boolean }>> {
+  async execute(input: DeleteProductInput): Promise<Either<AppError, void>> {
     const product = await this.productRepository.findById(input.productId);
     if (product.isLeft()) return left(product.value);
     if (!product.value) return left(new NotFoundError('Product'));
@@ -20,6 +20,6 @@ export class DeleteProductUseCase {
     const deleted = await this.productRepository.delete(input.productId);
     if (deleted.isLeft()) return left(deleted.value);
 
-    return right({ deleted: true });
+    return right(undefined);
   }
 }

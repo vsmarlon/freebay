@@ -7,48 +7,39 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
-import 'package:freebay/features/social/presentation/pages/feed_page.dart';
-import 'package:freebay/features/product/presentation/pages/product_list_page.dart';
-import 'package:freebay/features/wallet/presentation/pages/wallet_page.dart';
-import 'package:freebay/features/chat/presentation/pages/chat_list_page.dart';
-import 'package:freebay/features/profile/presentation/pages/profile_page.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_fab.dart';
 import 'package:freebay/core/components/app_shell_scaffold_key.dart';
+import 'package:freebay/core/components/hide_on_scroll.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
 
-class AppShell extends StatefulWidget {
-  final Widget child;
+const double kNavBarContentHeight = 64;
 
-  const AppShell({super.key, required this.child});
+class AppShell extends StatefulWidget {
+  final StatefulNavigationShell navigationShell;
+
+  const AppShell({super.key, required this.navigationShell});
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
-  late final PageController _pageController;
-
-  static const _pages = [
-    FeedPage(),
-    ProductListPage(),
-    WalletPage(),
-    ChatListPage(),
-    ProfilePage(),
-  ];
+class _AppShellState extends State<AppShell>
+    with WidgetsBindingObserver, TickerProviderStateMixin {
+  late final HideOnScrollController _navHide;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _pageController = PageController();
+    _navHide = HideOnScrollController(vsync: this);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _pageController.dispose();
+    _navHide.dispose();
     super.dispose();
   }
 
@@ -65,51 +56,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  int _getSelectedIndex(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith('/feed')) return 0;
-    if (location.startsWith('/post')) return 0;
-    if (location.startsWith('/products') || location.startsWith('/explore')) {
-      return 1;
-    }
-    if (location.startsWith('/wallet')) return 2;
-    if (location.startsWith('/chat')) return 3;
-    if (location.startsWith('/profile')) return 4;
-    return 0;
-  }
-
-  void _onDestinationSelected(BuildContext context, int index) {
+  void _onDestinationSelected(int index) {
     HapticFeedback.lightImpact();
-    if (_pageController.hasClients) {
-      _pageController.jumpToPage(index);
-    }
-    switch (index) {
-      case 0:
-        context.go('/feed');
-      case 1:
-        context.go('/products');
-      case 2:
-        context.go('/wallet');
-      case 3:
-        context.go('/chat');
-      case 4:
-        context.go('/profile');
-    }
-  }
-
-  void _onPageChanged(BuildContext context, int index) {
-    switch (index) {
-      case 0:
-        context.go('/feed');
-      case 1:
-        context.go('/products');
-      case 2:
-        context.go('/wallet');
-      case 3:
-        context.go('/chat');
-      case 4:
-        context.go('/profile');
-    }
+    widget.navigationShell.goBranch(
+      index,
+      initialLocation: index == widget.navigationShell.currentIndex,
+    );
   }
 
   Widget? _fabFor(BuildContext context, int selectedIndex) {
@@ -125,17 +77,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = _getSelectedIndex(context);
-
-    if (_pageController.hasClients &&
-        _pageController.page?.round() != selectedIndex) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_pageController.hasClients &&
-            _pageController.page?.round() != selectedIndex) {
-          _pageController.jumpToPage(selectedIndex);
-        }
-      });
-    }
+    final selectedIndex = widget.navigationShell.currentIndex;
 
     return Consumer(
       builder: (context, ref, _) {
@@ -149,23 +91,49 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           }
         });
 
+        final navBarHeight =
+            kNavBarContentHeight + MediaQuery.of(context).padding.bottom;
+        final fab = _fabFor(context, selectedIndex);
+
         return Scaffold(
           key: appShellScaffoldKey,
           drawer: const FeedDrawer(),
           drawerEnableOpenDragGesture: selectedIndex == 0,
           drawerEdgeDragWidth: 48,
-          body: PageView(
-            controller: _pageController,
-            physics: const ClampingScrollPhysics(),
-            onPageChanged: (index) => _onPageChanged(context, index),
-            children: _pages,
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _navHide.handleNotification,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      padding: MediaQuery.of(
+                        context,
+                      ).padding.copyWith(bottom: navBarHeight),
+                    ),
+                    child: widget.navigationShell,
+                  ),
+                ),
+              ),
+              if (fab != null)
+                Positioned(right: 16, bottom: navBarHeight + 16, child: fab),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ScrollAwareBar(
+                  animation: _navHide.animation,
+                  height: navBarHeight,
+                  edge: ScrollBarEdge.bottom,
+                  child: _BrutalistNavBar(
+                    selectedIndex: selectedIndex,
+                    onDestinationSelected: (index) =>
+                        _onDestinationSelected(index),
+                  ),
+                ),
+              ),
+            ],
           ),
-          bottomNavigationBar: _BrutalistNavBar(
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (index) =>
-                _onDestinationSelected(context, index),
-          ),
-          floatingActionButton: _fabFor(context, selectedIndex),
         );
       },
     );
@@ -188,12 +156,7 @@ class _BrutalistNavBar extends StatelessWidget {
         color: context.isDark
             ? AppColors.surfaceDark
             : AppColors.surfaceContainerLowest,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.onSurface,
-            width: 2,
-          ),
-        ),
+        border: Border(top: BorderSide(color: AppColors.onSurface, width: 2)),
       ),
       child: SafeArea(
         top: false,
@@ -283,8 +246,8 @@ class _NavItem extends StatelessWidget {
                 color: isSelected
                     ? AppColors.onPrimary
                     : (isDark
-                        ? AppColors.inverseOnSurface
-                        : AppColors.onSurface),
+                          ? AppColors.inverseOnSurface
+                          : AppColors.onSurface),
                 size: 24,
               ),
               Spacing.vXs,
@@ -298,8 +261,8 @@ class _NavItem extends StatelessWidget {
                   color: isSelected
                       ? AppColors.onPrimary
                       : (isDark
-                          ? AppColors.inverseOnSurface
-                          : AppColors.onSurface),
+                            ? AppColors.inverseOnSurface
+                            : AppColors.onSurface),
                 ),
               ),
             ],

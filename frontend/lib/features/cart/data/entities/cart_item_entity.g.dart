@@ -6,8 +6,8 @@ part of 'cart_item_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-CartItemEntity _$CartItemEntityFromJson(Map<String, dynamic> json) =>
-    CartItemEntity(
+_CartItemEntity _$CartItemEntityFromJson(Map<String, dynamic> json) =>
+    _CartItemEntity(
       id: json['id'] as String,
       productId: json['productId'] as String,
       quantity: (json['quantity'] as num).toInt(),
@@ -15,7 +15,7 @@ CartItemEntity _$CartItemEntityFromJson(Map<String, dynamic> json) =>
       product: ProductEntity.fromJson(json['product'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$CartItemEntityToJson(CartItemEntity instance) =>
+Map<String, dynamic> _$CartItemEntityToJson(_CartItemEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'productId': instance.productId,

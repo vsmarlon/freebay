@@ -8,7 +8,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/features/social/presentation/providers/post_search_provider.dart';
-import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/components/page_header.dart';
@@ -35,11 +35,9 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
   void _onSearchDebounced(String query) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      ref.read(postSearchProvider.notifier).search(
-            query: query,
-            filter: _selectedFilter,
-            refresh: true,
-          );
+      ref
+          .read(postSearchProvider.notifier)
+          .search(query: query, filter: _selectedFilter, refresh: true);
     });
   }
 
@@ -47,11 +45,9 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
     setState(() {
       _selectedFilter = filter;
     });
-    ref.read(postSearchProvider.notifier).search(
-          query: _searchController.text,
-          filter: filter,
-          refresh: true,
-        );
+    ref
+        .read(postSearchProvider.notifier)
+        .search(query: _searchController.text, filter: filter, refresh: true);
   }
 
   @override
@@ -63,13 +59,13 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
       backgroundColor: context.bgColor,
       body: Column(
         children: [
-          PageHeader(
-            text: 'BUSCAR POSTS',
+          PageHeader(text: 'BUSCAR POSTS'),
+          BrutalistBreadcrumb(
+            items: [
+              BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
+              const BreadcrumbItem(label: 'Buscar'),
+            ],
           ),
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
-            const BreadcrumbItem(label: 'Buscar'),
-          ]),
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -82,7 +78,9 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
-                          ref.read(postSearchProvider.notifier).search(
+                          ref
+                              .read(postSearchProvider.notifier)
+                              .search(
                                 query: '',
                                 filter: _selectedFilter,
                                 refresh: true,
@@ -125,9 +123,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
             ),
           ),
           Spacing.vMd,
-          Expanded(
-            child: _buildContent(searchState),
-          ),
+          Expanded(child: _buildContent(searchState)),
         ],
       ),
     );
@@ -148,20 +144,17 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
             notification.metrics.extentAfter < 200 &&
             state.hasMore &&
             !state.isLoading) {
-          ref.read(postSearchProvider.notifier).search(
-                query: state.query,
-                filter: state.filter,
-              );
+          ref
+              .read(postSearchProvider.notifier)
+              .search(query: state.query, filter: state.filter);
         }
         return false;
       },
       child: RefreshIndicator(
         onRefresh: () async {
-          ref.read(postSearchProvider.notifier).search(
-                query: state.query,
-                filter: state.filter,
-                refresh: true,
-              );
+          ref
+              .read(postSearchProvider.notifier)
+              .search(query: state.query, filter: state.filter, refresh: true);
         },
         child: ListView.builder(
           padding: const EdgeInsets.all(16),
@@ -179,7 +172,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
             final isLiked = post.isLiked;
             return SocialPost(
               userId: post.user.id,
-              userName: post.user.displayName,
+              userName: post.user.displayName ?? 'Unknown',
               userAvatarUrl: post.user.avatarUrl,
               content: post.content,
               imageUrl: post.imageUrl,
@@ -198,7 +191,9 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                 } else {
                   await repo.likePost(post.id);
                 }
-                ref.read(postSearchProvider.notifier).search(
+                ref
+                    .read(postSearchProvider.notifier)
+                    .search(
                       query: state.query,
                       filter: state.filter,
                       refresh: true,
@@ -238,8 +233,9 @@ class _FilterChip extends StatelessWidget {
               : context.surfaceMidColor,
           borderRadius: BorderRadius.zero,
           border: Border.all(
-            color:
-                isSelected ? AppColors.primaryContainer : context.borderColor,
+            color: isSelected
+                ? AppColors.primaryContainer
+                : context.borderColor,
           ),
         ),
         child: Text(

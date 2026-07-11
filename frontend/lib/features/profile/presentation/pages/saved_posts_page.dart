@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 
 class SavedPostsPage extends StatelessWidget {
@@ -33,10 +33,7 @@ class SavedPostsPage extends StatelessWidget {
                 ),
               ),
             ),
-            breadcrumbs: [
-              BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-              const BreadcrumbItem(label: 'Salvos'),
-            ],
+            breadcrumbs: context.breadcrumbs,
           ),
           Expanded(
             child: Center(
@@ -61,8 +58,9 @@ class SavedPostsPage extends StatelessWidget {
                   Text(
                     'Funcionalidade em desenvolvimento',
                     style: TextStyle(
-                      color:
-                          isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                      color: isDark
+                          ? AppColors.mediumGray
+                          : AppColors.mediumGray,
                     ),
                   ),
                 ],

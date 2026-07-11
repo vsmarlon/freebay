@@ -6,8 +6,8 @@ part of 'user_search_entity.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-UserSearchEntity _$UserSearchEntityFromJson(Map<String, dynamic> json) =>
-    UserSearchEntity(
+_UserSearchEntity _$UserSearchEntityFromJson(Map<String, dynamic> json) =>
+    _UserSearchEntity(
       id: json['id'] as String,
       displayName: json['displayName'] as String,
       avatarUrl: json['avatarUrl'] as String?,
@@ -19,7 +19,7 @@ UserSearchEntity _$UserSearchEntityFromJson(Map<String, dynamic> json) =>
       followingCount: (json['followingCount'] as num?)?.toInt() ?? 0,
     );
 
-Map<String, dynamic> _$UserSearchEntityToJson(UserSearchEntity instance) =>
+Map<String, dynamic> _$UserSearchEntityToJson(_UserSearchEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'displayName': instance.displayName,

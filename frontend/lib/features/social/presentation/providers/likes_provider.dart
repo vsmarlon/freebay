@@ -1,10 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 
 class LikesState {
   /// Map of post IDs to their liked status override (null means use entity value)
   final Map<String, bool> likedOverrides;
+
   /// Map of post IDs to their like count override (null means use entity value)
   final Map<String, int> countOverrides;
 
@@ -33,7 +34,11 @@ class LikesNotifier extends StateNotifier<LikesState> {
   LikesNotifier(this._repository) : super(const LikesState());
 
   /// Toggles like status. If no override exists, it uses initial values from the entity.
-  Future<bool> toggleLike(String postId, {required bool initialIsLiked, required int initialCount}) async {
+  Future<bool> toggleLike(
+    String postId, {
+    required bool initialIsLiked,
+    required int initialCount,
+  }) async {
     final currentLiked = state.likedOverrides[postId] ?? initialIsLiked;
     final currentCount = state.countOverrides[postId] ?? initialCount;
 
@@ -47,11 +52,11 @@ class LikesNotifier extends StateNotifier<LikesState> {
     );
 
     try {
-      final result = newIsLiked 
+      final result = newIsLiked
           ? await _repository.likePost(postId)
           : await _repository.unlikePost(postId);
 
-      if (result.isLeft()) {
+      if (result.isLeft) {
         // Rollback on failure
         state = state.copyWith(
           likedOverrides: {...state.likedOverrides, postId: currentLiked},

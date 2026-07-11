@@ -32,7 +32,7 @@ describe('RegisterFcmTokenUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.registered).toBe(true);
+      expect(result.value).toBeUndefined();
     }
     expect(mockPrisma.user.update).toHaveBeenCalledWith({
       where: { id: 'user-123' },

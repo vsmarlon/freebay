@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetUserDisputesUseCase } from './get-user-disputes.usecase';
-import { PrismaDisputeRepository } from '../repositories/dispute.repository';
+import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { right } from '@/shared/core/either';
 
 const mockDisputeRepo = {
   findByUserId: jest.fn(),
@@ -20,7 +21,7 @@ describe('GetUserDisputesUseCase', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GetUserDisputesUseCase, { provide: PrismaDisputeRepository, useValue: mockDisputeRepo }],
+      providers: [GetUserDisputesUseCase, { provide: DisputeRepository, useValue: mockDisputeRepo }],
     }).compile();
 
     sut = module.get<GetUserDisputesUseCase>(GetUserDisputesUseCase);
@@ -28,7 +29,7 @@ describe('GetUserDisputesUseCase', () => {
   });
 
   it('should return user disputes', async () => {
-    mockDisputeRepo.findByUserId.mockResolvedValue([mockDispute]);
+    mockDisputeRepo.findByUserId.mockResolvedValue(right([mockDispute]));
 
     const result = await sut.execute('buyer-123');
 

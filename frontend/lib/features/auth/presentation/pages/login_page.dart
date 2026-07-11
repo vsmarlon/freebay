@@ -11,6 +11,8 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
+import 'package:freebay/core/utils/value_utils.dart';
+import 'package:freebay/core/components/centered_form_wrapper.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -41,13 +43,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
       parent: _animationController,
       curve: Curves.linear,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.linear,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.linear),
+        );
     _animationController.forward();
 
     Future.microtask(() async {
@@ -74,7 +73,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Future<void> _handleLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _errorMessage = null);
-      await ref.read(authControllerProvider.notifier).login(
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(
             _emailController.text.trim(),
             _passwordController.text.trim(),
             rememberMe: _rememberMe,
@@ -92,8 +93,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
           if (user != null) context.go('/feed');
         },
         error: (err, _) {
-          setState(() => _errorMessage =
-              err is String ? err : 'Erro ao fazer login. Tente novamente.');
+          setState(
+            () => _errorMessage = err is String
+                ? err
+                : 'Erro ao fazer login. Tente novamente.',
+          );
         },
       );
     });
@@ -119,159 +123,164 @@ class _LoginPageState extends ConsumerState<LoginPage>
               opacity: _fadeAnimation,
               child: SlideTransition(
                 position: _slideAnimation,
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Image.asset(
-                            'assets/freebay-textonly.png',
-                            height: 56,
-                            fit: BoxFit.contain,
-                            color: context.isDark
-                                ? AppColors.white
-                                : AppColors.primaryContainer,
-                          ),
-                          Spacing.vXl,
-                          AppTextField(
-                            controller: _emailController,
-                            label: 'E-mail',
-                            hint: 'seu@email.com',
-                            keyboardType: TextInputType.emailAddress,
-                            prefixIcon: Icons.email_outlined,
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return 'Informe seu e-mail';
-                              }
-                              if (!v.contains('@') || !v.contains('.')) {
-                                return 'E-mail inválido';
-                              }
-                              return null;
-                            },
-                          ),
-                          Spacing.vMd,
-                          AppTextField(
-                            controller: _passwordController,
-                            label: 'Senha',
-                            hint: '*********',
-                            obscureText: true,
-                            showPasswordToggle: true,
-                            prefixIcon: Icons.lock_outline,
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return 'Informe sua senha';
-                              }
-                              if (v.length < 8) return 'Mínimo 8 caracteres';
-                              return null;
-                            },
-                          ),
-                          Spacing.vSm,
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _rememberMe,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _rememberMe = value ?? false;
-                                  });
-                                },
-                                activeColor: AppColors.primaryContainer,
+                child: CenteredFormWrapper(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Image.asset(
+                          'assets/freebay-textonly.png',
+                          height: 56,
+                          fit: BoxFit.contain,
+                          color: context.isDark
+                              ? AppColors.white
+                              : AppColors.primaryContainer,
+                        ),
+                        Spacing.vXl,
+                        AppTextField(
+                          controller: _emailController,
+                          label: 'E-mail',
+                          hint: 'seu@email.com',
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: Icons.email_outlined,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Informe seu e-mail';
+                            }
+                            if (!ValueUtils.validateEmail(v)) {
+                              return 'E-mail inválido';
+                            }
+                            return null;
+                          },
+                        ),
+                        Spacing.vMd,
+                        AppTextField(
+                          controller: _passwordController,
+                          label: 'Senha',
+                          hint: '*********',
+                          obscureText: true,
+                          showPasswordToggle: true,
+                          prefixIcon: Icons.lock_outline,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Informe sua senha';
+                            }
+                            if (v.length < 8) return 'Mínimo 8 caracteres';
+                            return null;
+                          },
+                        ),
+                        Spacing.vSm,
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberMe = value ?? false;
+                                });
+                              },
+                              activeColor: AppColors.primaryContainer,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.zero,
                               ),
-                              Text(
-                                'Manter logado',
+                              side: BorderSide(
+                                color: context.isDark
+                                    ? AppColors.white
+                                    : AppColors.onSurface,
+                                width: 2,
+                              ),
+                            ),
+                            Text(
+                              'Manter logado',
+                              style: TextStyle(color: context.textPrimary),
+                            ),
+                          ],
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: InkWell(
+                            onTap: () => context.push('/recover-password'),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                              child: Text(
+                                'Esqueceu a senha?',
                                 style: TextStyle(
-                                  color: context.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: InkWell(
-                              onTap: () => context.push('/recover-password'),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 6),
-                                child: Text(
-                                  'Esqueceu a senha?',
-                                  style: TextStyle(
-                                    color: AppColors.primaryContainer,
-                                  ),
+                                  color: AppColors.primaryContainer,
                                 ),
                               ),
                             ),
                           ),
-                          if (_errorMessage != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: AppColors.error,
-                                fontSize: 13,
+                        ),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        Spacing.vMd,
+                        AppButton(
+                          label: 'Entrar',
+                          isLoading: authState.isLoading,
+                          onPressed: _handleLogin,
+                        ),
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: authState.isLoading
+                              ? null
+                              : () async {
+                                  setState(() => _errorMessage = null);
+                                  await ref
+                                      .read(authControllerProvider.notifier)
+                                      .loginAsGuest();
+                                },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Entrar como convidado',
+                              style: TextStyle(
+                                color: AppColors.mediumGray,
+                                fontSize: 14,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                          ],
-                          Spacing.vMd,
-                          AppButton(
-                            label: 'Entrar',
-                            isLoading: authState.isLoading,
-                            onPressed: _handleLogin,
                           ),
-                          const SizedBox(height: 12),
-                          InkWell(
-                            onTap: authState.isLoading
-                                ? null
-                                : () async {
-                                    setState(() => _errorMessage = null);
-                                    await ref
-                                        .read(authControllerProvider.notifier)
-                                        .loginAsGuest();
-                                  },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Text(
-                                'Entrar como convidado',
-                                style: TextStyle(
-                                  color: AppColors.mediumGray,
-                                  fontSize: 14,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
+                        ),
+                        Spacing.vSm,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Não tem conta? ',
+                              style: TextStyle(color: context.textPrimary),
                             ),
-                          ),
-                          Spacing.vSm,
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Não tem conta? ',
-                                style: TextStyle(
-                                  color: context.textPrimary,
+                            InkWell(
+                              onTap: () => context.push('/register'),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 4,
                                 ),
-                              ),
-                              InkWell(
-                                onTap: () => context.push('/register'),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 4),
-                                  child: Text(
-                                    'Criar conta',
-                                    style: TextStyle(
-                                      color: AppColors.primaryContainer,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                child: Text(
+                                  'Criar conta',
+                                  style: TextStyle(
+                                    color: AppColors.primaryContainer,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),

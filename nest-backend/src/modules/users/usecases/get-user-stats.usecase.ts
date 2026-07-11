@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
-import { FollowRepository } from '../repositories/follow.repository';
+import { FollowRepository } from '../domain/repositories/follow.repository';
 import { UserStatsResponse } from '../mappers/user.mapper';
 import { GetUserStatsInput } from '../dtos/user.dto';
 
@@ -22,16 +22,19 @@ export class GetUserStatsUseCase {
     if (isLeft(salesCountResult)) return left(salesCountResult.value);
     if (isLeft(purchasesCountResult)) return left(purchasesCountResult.value);
 
-    const [followersCount, followingCount] = await Promise.all([
+    const [followersCountResult, followingCountResult] = await Promise.all([
       this.followRepository.getFollowersCount(input.userId),
       this.followRepository.getFollowingCount(input.userId),
     ]);
 
+    if (isLeft(followersCountResult)) return left(followersCountResult.value);
+    if (isLeft(followingCountResult)) return left(followingCountResult.value);
+
     return right({
       salesCount: salesCountResult.value,
       purchasesCount: purchasesCountResult.value,
-      followersCount,
-      followingCount,
+      followersCount: followersCountResult.value,
+      followingCount: followingCountResult.value,
     });
   }
 }

@@ -36,7 +36,12 @@ describe('DisputeCleanupTask', () => {
     const dispute = { id: 'dispute-1', order: { id: 'order-1', sellerId: 'seller-1', sellerAmount: 9000 } };
     mockPrisma.dispute.findMany.mockResolvedValue([dispute]);
     mockPrisma.$transaction.mockImplementation(async (cb) => {
-      const tx = { dispute: { update: jest.fn().mockResolvedValue({}) } };
+      const tx = {
+        dispute: {
+          update: jest.fn().mockResolvedValue({}),
+          findUnique: jest.fn().mockResolvedValue({ status: 'OPEN' }),
+        },
+      };
       return cb(tx);
     });
 

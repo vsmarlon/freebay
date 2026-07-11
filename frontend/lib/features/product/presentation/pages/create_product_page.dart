@@ -16,8 +16,10 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/features/product/presentation/widgets/category_selector_field.dart';
 import 'package:freebay/features/product/presentation/widgets/product_preview_card.dart';
 import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/features/social/presentation/widgets/local_image_inspector.dart';
+import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
@@ -37,12 +39,99 @@ class CreateProductPage extends HookConsumerWidget {
     useListenable(priceController);
     final categoriesAsync = ref.watch(flatCategoriesProvider);
     final authState = ref.watch(authControllerProvider);
+
+    final breadcrumbs = context.breadcrumbs;
     final currentUser = authState.valueOrNull;
 
     final pricePreview = _displayPrice(priceController.text);
     final selectedCategory = categoriesAsync.valueOrNull
         ?.where((category) => category.id == selectedCategoryId.value)
         .firstOrNull;
+
+    Future<void> pickImage(bool fromCamera) async {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 82,
+      );
+      if (image != null) {
+        selectedImagePath.value = image.path;
+      }
+    }
+
+    void openImagePreview() {
+      if (selectedImagePath.value == null) return;
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          opaque: false,
+          barrierColor: Colors.black,
+          transitionDuration: const Duration(milliseconds: 200),
+          pageBuilder: (_, _, _) => LocalImageFullScreen(
+            path: selectedImagePath.value!,
+            onEdit: () {
+              Navigator.of(context).pop();
+              showBrutalistSheet(
+                context: context,
+                title: 'OPÇÕES DE IMAGEM',
+                builder: (ctx) => ImageOptionsSheet(
+                  hasImage: selectedImagePath.value != null,
+                  onPickGallery: () {
+                    Navigator.pop(ctx);
+                    pickImage(false);
+                  },
+                  onPickCamera: () {
+                    Navigator.pop(ctx);
+                    pickImage(true);
+                  },
+                  onView: () {
+                    Navigator.pop(ctx);
+                    openImagePreview();
+                  },
+                  onRemove: () {
+                    Navigator.pop(ctx);
+                    selectedImagePath.value = null;
+                  },
+                ),
+              );
+            },
+          ),
+          transitionsBuilder: (_, animation, _, child) =>
+              FadeTransition(opacity: animation, child: child),
+        ),
+      );
+    }
+
+    void showImageOptions() {
+      showBrutalistSheet(
+        context: context,
+        title: 'OPÇÕES DE IMAGEM',
+        builder: (ctx) => ImageOptionsSheet(
+          hasImage: selectedImagePath.value != null,
+          onPickGallery: () {
+            Navigator.pop(ctx);
+            pickImage(false);
+          },
+          onPickCamera: () {
+            Navigator.pop(ctx);
+            pickImage(true);
+          },
+          onView: selectedImagePath.value != null
+              ? () {
+                  Navigator.pop(ctx);
+                  openImagePreview();
+                }
+              : null,
+          onRemove: selectedImagePath.value != null
+              ? () {
+                  Navigator.pop(ctx);
+                  selectedImagePath.value = null;
+                }
+              : null,
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -65,10 +154,7 @@ class CreateProductPage extends HookConsumerWidget {
                 ),
               ),
             ),
-            breadcrumbs: [
-              BreadcrumbItem(label: 'Produtos', onTap: () => context.pop()),
-              const BreadcrumbItem(label: 'Novo Anúncio'),
-            ],
+            breadcrumbs: breadcrumbs,
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -85,22 +171,26 @@ class CreateProductPage extends HookConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'ANUNCIO SEPARADO DO FEED SOCIAL',
+                          'ANÚNCIO × PUBLICAÇÃO SOCIAL',
                           style: TextStyle(
                             fontFamily: AppTypography.headlineFontFamily,
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color:
-                                isDark ? AppColors.white : AppColors.onSurface,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.onSurface,
                           ),
                         ),
                         Spacing.vSm,
                         Text(
-                          'Use anuncios para vender com preco, categoria e imagem. Posts sociais continuam no feed, enquanto sua reputacao fica visivel no perfil e nas avaliacoes.',
+                          'Anúncios ficam separados do feed social. '
+                          'Defina preço, categoria e condição — sua reputação e avaliações aparecem no seu perfil.',
                           style: TextStyle(
                             color: isDark
                                 ? AppColors.inverseOnSurface
                                 : AppColors.onSurface,
                             height: 1.4,
+                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -135,15 +225,17 @@ class CreateProductPage extends HookConsumerWidget {
                     controller: priceController,
                     label: 'Preço',
                     hint: '0,00',
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     onChanged: (value) {
                       final normalized = _formatCurrencyInput(value);
                       if (normalized != value) {
                         priceController.value = TextEditingValue(
                           text: normalized,
                           selection: TextSelection.collapsed(
-                              offset: normalized.length),
+                            offset: normalized.length,
+                          ),
                         );
                       }
                     },
@@ -158,32 +250,23 @@ class CreateProductPage extends HookConsumerWidget {
                   ),
                   Spacing.vMd,
                   InkWell(
-                    onTap: () async {
-                      final picker = ImagePicker();
-                      final image = await picker.pickImage(
-                        source: ImageSource.gallery,
-                        maxWidth: 1600,
-                        maxHeight: 1600,
-                        imageQuality: 82,
-                      );
-                      if (image != null) {
-                        selectedImagePath.value = image.path;
-                      }
-                    },
+                    onTap: showImageOptions,
                     child: Container(
                       height: 56,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       color: isDark ? AppColors.surfaceDark : AppColors.white,
                       child: Row(
                         children: [
-                          const Icon(Icons.image_outlined,
-                              color: AppColors.primaryContainer),
+                          const Icon(
+                            Icons.image_outlined,
+                            color: AppColors.primaryContainer,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               selectedImagePath.value == null
                                   ? 'Selecionar imagem do produto'
-                                  : 'Imagem selecionada',
+                                  : 'Imagem selecionada (Toque para ver/editar)',
                               style: TextStyle(
                                 color: isDark
                                     ? AppColors.white
@@ -192,6 +275,13 @@ class CreateProductPage extends HookConsumerWidget {
                               ),
                             ),
                           ),
+                          if (selectedImagePath.value != null) ...[
+                            Icon(
+                              Icons.check_circle,
+                              color: AppColors.primaryContainer,
+                              size: 20,
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -245,7 +335,9 @@ class CreateProductPage extends HookConsumerWidget {
 
                       if (description.length < 10) {
                         AppSnackbar.error(
-                            context, 'Adicione uma descrição mais completa.');
+                          context,
+                          'Adicione uma descrição mais completa.',
+                        );
                         return;
                       }
 
@@ -261,7 +353,9 @@ class CreateProductPage extends HookConsumerWidget {
 
                       if (selectedImagePath.value == null) {
                         AppSnackbar.error(
-                            context, 'Adicione uma imagem do produto.');
+                          context,
+                          'Adicione uma imagem do produto.',
+                        );
                         return;
                       }
 
@@ -269,14 +363,18 @@ class CreateProductPage extends HookConsumerWidget {
                         debugPrint('[PRODUCT UI] publishing product...');
                         debugPrint('[PRODUCT UI] title=$title');
                         debugPrint(
-                            '[PRODUCT UI] descriptionLength=${description.length}');
+                          '[PRODUCT UI] descriptionLength=${description.length}',
+                        );
                         debugPrint('[PRODUCT UI] priceCents=$price');
                         debugPrint(
-                            '[PRODUCT UI] condition=${isNewProduct.value ? 'NEW' : 'USED'}');
+                          '[PRODUCT UI] condition=${isNewProduct.value ? 'NEW' : 'USED'}',
+                        );
                         debugPrint(
-                            '[PRODUCT UI] categoryId=${selectedCategoryId.value}');
+                          '[PRODUCT UI] categoryId=${selectedCategoryId.value}',
+                        );
                         debugPrint(
-                            '[PRODUCT UI] imagePath=${selectedImagePath.value}');
+                          '[PRODUCT UI] imagePath=${selectedImagePath.value}',
+                        );
                       }
 
                       isLoading.value = true;
@@ -308,11 +406,14 @@ class CreateProductPage extends HookConsumerWidget {
                       } catch (_) {
                         if (kDebugMode) {
                           debugPrint(
-                              '[PRODUCT UI] unexpected publish exception');
+                            '[PRODUCT UI] unexpected publish exception',
+                          );
                         }
                         if (context.mounted) {
                           AppSnackbar.error(
-                              context, 'Não foi possível publicar o anúncio.');
+                            context,
+                            'Não foi possível publicar o anúncio.',
+                          );
                         }
                       } finally {
                         isLoading.value = false;

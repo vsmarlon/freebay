@@ -1,8 +1,11 @@
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/features/chat/data/entities/last_message_info.dart';
+import 'package:freebay/features/chat/data/entities/order_info.dart';
 
+part 'chat_entity.freezed.dart';
 part 'chat_entity.g.dart';
 
 ChatThreadType _threadTypeFromJson(String? value) =>
@@ -11,90 +14,31 @@ ChatThreadType _threadTypeFromJson(String? value) =>
 String _threadTypeToJson(ChatThreadType type) =>
     type == ChatThreadType.order ? 'ORDER' : 'DIRECT';
 
-@JsonSerializable()
-class ChatEntity extends Equatable {
-  final String id;
-  @JsonKey(fromJson: _threadTypeFromJson, toJson: _threadTypeToJson)
-  final ChatThreadType threadType;
-  final String otherUserId;
-  final String otherName;
-  final String? otherAvatarUrl;
-  final String? lastMessage;
-  final DateTime timestamp;
-  final bool unread;
-  final bool isArchived;
-  final String? orderStatus;
-  final ConversationPreference? preference;
+@freezed
+abstract class ChatEntity with _$ChatEntity {
+  const ChatEntity._();
 
-  const ChatEntity({
-    required this.id,
-    required this.threadType,
-    required this.otherUserId,
-    required this.otherName,
-    this.otherAvatarUrl,
-    this.lastMessage,
-    required this.timestamp,
-    this.unread = false,
-    this.isArchived = false,
-    this.orderStatus,
-    this.preference,
-  });
-
-  factory ChatEntity.fromJson(Map<String, dynamic> json) {
-    final timestamp = json['lastMessage']?['createdAt'] as String? ??
-        json['createdAt'] as String? ??
-        DateTime.now().toIso8601String();
-
-    final normalized = Map<String, dynamic>.from(json)
-      ..['otherUserId'] = json['otherUser']?['id'] as String? ?? ''
-      ..['otherName'] =
-          json['otherUser']?['displayName'] as String? ?? 'Usuário'
-      ..['otherAvatarUrl'] = json['otherUser']?['avatarUrl'] as String?
-      ..['lastMessage'] = json['lastMessage']?['content'] as String?
-      ..['timestamp'] = timestamp
-      ..['unread'] = (json['unreadCount'] as int? ?? 0) > 0
-      ..['isArchived'] = json['preference']?['isArchived'] as bool? ?? false
-      ..['orderStatus'] = json['orderInfo']?['status'] as String?;
-
-    return _$ChatEntityFromJson(normalized);
-  }
-
-  Map<String, dynamic> toJson() => _$ChatEntityToJson(this);
-
-  ChatEntity copyWith({
-    bool? unread,
-    bool? isArchived,
+  const factory ChatEntity({
+    required String id,
+    @JsonKey(fromJson: _threadTypeFromJson, toJson: _threadTypeToJson)
+    required ChatThreadType threadType,
+    required UserEntity otherUser,
+    @JsonKey(name: 'lastMessage') LastMessageInfo? lastMessageInfo,
+    required DateTime createdAt,
     ConversationPreference? preference,
-    String? lastMessage,
-    DateTime? timestamp,
-    String? orderStatus,
-  }) {
-    return ChatEntity(
-      id: id,
-      threadType: threadType,
-      otherUserId: otherUserId,
-      otherName: otherName,
-      otherAvatarUrl: otherAvatarUrl,
-      lastMessage: lastMessage ?? this.lastMessage,
-      timestamp: timestamp ?? this.timestamp,
-      unread: unread ?? this.unread,
-      isArchived: isArchived ?? this.isArchived,
-      orderStatus: orderStatus ?? this.orderStatus,
-      preference: preference ?? this.preference,
-    );
-  }
+    OrderInfo? orderInfo,
+    @Default(0) int unreadCount,
+  }) = _ChatEntity;
 
-  @override
-  List<Object?> get props => [
-        id,
-        threadType,
-        otherUserId,
-        otherName,
-        lastMessage,
-        timestamp,
-        unread,
-        isArchived,
-        orderStatus,
-        preference,
-      ];
+  factory ChatEntity.fromJson(Map<String, dynamic> json) =>
+      _$ChatEntityFromJson(json);
+
+  String get otherUserId => otherUser.id;
+  String get otherName => otherUser.displayNameOrDefault;
+  String? get otherAvatarUrl => otherUser.avatarUrl;
+  String? get lastMessage => lastMessageInfo?.content;
+  DateTime get timestamp => lastMessageInfo?.createdAt ?? createdAt;
+  bool get unread => unreadCount > 0;
+  bool get isArchived => preference?.isArchived ?? false;
+  String? get orderStatus => orderInfo?.status;
 }

@@ -11,9 +11,10 @@ import {
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
@@ -64,6 +65,19 @@ export class UpdateProfileDTO {
   @IsOptional()
   @Validate(IsCpfOrCnpjConstraint)
   readonly cpf?: string;
+}
+
+export class RegisterPhoneDTO {
+  @ApiProperty({ example: '11999999999' })
+  @IsString()
+  @IsNotEmpty()
+  readonly phone: string;
+}
+
+export class VerifyPhoneDTO {
+  @ApiProperty({ example: '123456' })
+  @IsString()
+  readonly code: string;
 }
 
 export class UpdateFcmTokenDTO {

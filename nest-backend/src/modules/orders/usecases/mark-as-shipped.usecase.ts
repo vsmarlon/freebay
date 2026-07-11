@@ -8,7 +8,7 @@ import { MarkAsShippedInput } from '../dtos/order.dto';
 export class MarkAsShippedUseCase {
   constructor(private readonly orderRepository: OrderRepository) {}
 
-  async execute(input: MarkAsShippedInput): Promise<Either<AppError, { shipped: boolean }>> {
+  async execute(input: MarkAsShippedInput): Promise<Either<AppError, void>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
     if (isLeft(orderResult)) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
@@ -24,6 +24,6 @@ export class MarkAsShippedUseCase {
     const result = await this.orderRepository.update(input.orderId, { status: 'SHIPPED' });
     if (isLeft(result)) return left(result.value);
 
-    return right({ shipped: true });
+    return right(undefined);
   }
 }

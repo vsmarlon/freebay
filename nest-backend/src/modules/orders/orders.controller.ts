@@ -38,7 +38,7 @@ export class OrdersController {
     errors: [{ status: 404, description: 'Product not found' }],
   })
   async create(@CurrentUser() user: AuthUser, @Body() body: CreateOrderDTO) {
-    const productResult = await this.ordersService.findOne(body.productId);
+    const productResult = await this.ordersService.findProductForOrder(body.productId);
     if (isLeft(productResult)) throw productResult.value;
 
     const product = productResult.value;
@@ -48,7 +48,7 @@ export class OrdersController {
       buyerId: user.userId,
       sellerId: product.sellerId,
       productId: product.id,
-      amount: product.amount,
+      amount: product.price,
       platformFeePercent: 10,
     });
 

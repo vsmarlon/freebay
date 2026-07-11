@@ -6,6 +6,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
@@ -59,11 +60,7 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  BrutalistBreadcrumb(items: [
-                    BreadcrumbItem(
-                        label: 'Disputas', onTap: () => context.pop()),
-                    const BreadcrumbItem(label: 'Abrir Disputa'),
-                  ]),
+                  BrutalistBreadcrumb(items: context.breadcrumbs),
                   Spacing.vMd,
                   Text('Descreva o problema', style: AppTypography.h3),
                   Spacing.vSm,
@@ -97,8 +94,10 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
                             child: Center(
                               child: _isSubmitting
                                   ? const ShimmerBlock(width: 20, height: 20)
-                                  : const Text('Abrir Disputa',
-                                      style: AppTypography.button),
+                                  : const Text(
+                                      'Abrir Disputa',
+                                      style: AppTypography.button,
+                                    ),
                             ),
                           ),
                         ),
@@ -141,8 +140,9 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
       } else {
         final errorMsg =
             response.data?['error']?['message'] ?? 'Erro ao abrir disputa';
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(errorMsg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
       }
     } catch (e) {
       if (!mounted) return;

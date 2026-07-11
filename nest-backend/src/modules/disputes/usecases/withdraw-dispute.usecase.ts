@@ -3,22 +3,23 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { PrismaDisputeRepository } from '../repositories/dispute.repository';
+import { DisputeRepository } from '../domain/repositories/dispute.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
-import { WithdrawDisputeOutput } from '../dtos/dispute.dto';
 
 @Injectable()
 export class WithdrawDisputeUseCase {
   constructor(
     private prisma: PrismaService,
-    private disputeRepo: PrismaDisputeRepository,
+    private disputeRepo: DisputeRepository,
     private transitionPolicy: DisputeTransitionPolicy,
     private notificationService: NotificationService,
   ) {}
 
-  async execute(input: { disputeId: string; userId: string }): Promise<Either<AppError, WithdrawDisputeOutput>> {
-    const dispute = await this.disputeRepo.findById(input.disputeId);
+  async execute(input: { disputeId: string; userId: string }): Promise<Either<AppError, void>> {
+    const disputeResult = await this.disputeRepo.findById(input.disputeId);
+    if (disputeResult.isLeft()) return left(disputeResult.value);
 
+    const dispute = disputeResult.value;
     if (!dispute) {
       return left(new NotFoundError('Dispute'));
     }
@@ -46,6 +47,6 @@ export class WithdrawDisputeUseCase {
     const otherUserId = dispute.order.buyerId === input.userId ? dispute.order.sellerId : dispute.order.buyerId;
     await this.notificationService.notifyDispute(otherUserId, dispute.id, 'A disputa foi retirada pelo solicitante');
 
-    return right({ withdrawn: true });
+    return right(undefined);
   }
 }

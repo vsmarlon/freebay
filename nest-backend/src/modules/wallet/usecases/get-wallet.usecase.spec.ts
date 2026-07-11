@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetWalletUseCase } from './get-wallet.usecase';
-import { PrismaWalletRepository } from '../repositories/wallet.repository';
+import { WalletRepository } from '../domain/repositories/wallet.repository';
+import { right } from '@/shared/core/either';
 
 describe('GetWalletUseCase', () => {
   let sut: GetWalletUseCase;
@@ -9,12 +10,12 @@ describe('GetWalletUseCase', () => {
   beforeEach(async () => {
     mockWalletRepository = {
       findByUserId: jest.fn(),
-    } as jest.Mocked<Partial<PrismaWalletRepository>>;
+    } as jest.Mocked<Partial<WalletRepository>>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetWalletUseCase,
-        { provide: PrismaWalletRepository, useValue: mockWalletRepository },
+        { provide: WalletRepository, useValue: mockWalletRepository },
       ],
     }).compile();
 
@@ -26,12 +27,12 @@ describe('GetWalletUseCase', () => {
   });
 
   it('should return wallet with calculated available balance', async () => {
-    mockWalletRepository.findByUserId.mockResolvedValue({
+    mockWalletRepository.findByUserId.mockResolvedValue(right({
       id: 'wallet-123',
       userId: 'user-123',
       availableBalance: 8000,
       pendingBalance: 2000,
-    });
+    }));
 
     const result = await sut.execute('user-123');
 
@@ -44,7 +45,7 @@ describe('GetWalletUseCase', () => {
   });
 
   it('should return zeros if wallet not found', async () => {
-    mockWalletRepository.findByUserId.mockResolvedValue(null);
+    mockWalletRepository.findByUserId.mockResolvedValue(right(null));
 
     const result = await sut.execute('user-123');
 

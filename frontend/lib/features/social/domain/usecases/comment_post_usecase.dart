@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
@@ -7,8 +7,11 @@ class CommentPostParams {
   final String postId;
   final String content;
   final String? parentId;
-  CommentPostParams(
-      {required this.postId, required this.content, this.parentId});
+  CommentPostParams({
+    required this.postId,
+    required this.content,
+    this.parentId,
+  });
 }
 
 class CommentPostUsecase implements Usecase<void, CommentPostParams> {
@@ -18,7 +21,10 @@ class CommentPostUsecase implements Usecase<void, CommentPostParams> {
 
   @override
   Future<Either<Failure, void>> call(CommentPostParams params) async {
-    return await _repository.commentPost(params.postId, params.content,
-        parentId: params.parentId);
+    return await _repository.commentPost(
+      params.postId,
+      params.content,
+      parentId: params.parentId,
+    );
   }
 }

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePixPaymentUseCase } from './create-pix-payment.usecase';
 import { PrismaOrderRepository } from '../../orders/repositories/order.repository';
+import { UserRepository } from '../../auth/domain/repositories/user.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { AbacatePayProvider } from '../providers/abacatepay.provider';
 import { NotFoundError, BadRequestError, AppError } from '@/shared/core/errors';
@@ -10,6 +11,9 @@ describe('CreatePixPaymentUseCase', () => {
   let sut: CreatePixPaymentUseCase;
   let mockOrderRepository: {
     findById: jest.Mock;
+  };
+  let mockUserRepository: {
+    findPaymentInfo: jest.Mock;
   };
   let mockPrisma: {
     transaction: {
@@ -34,6 +38,10 @@ describe('CreatePixPaymentUseCase', () => {
   beforeEach(async () => {
     mockOrderRepository = {
       findById: jest.fn(),
+    };
+
+    mockUserRepository = {
+      findPaymentInfo: jest.fn().mockResolvedValue(right(null)),
     };
 
     mockPrisma = {
@@ -61,6 +69,7 @@ describe('CreatePixPaymentUseCase', () => {
       providers: [
         CreatePixPaymentUseCase,
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: UserRepository, useValue: mockUserRepository },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AbacatePayProvider, useValue: mockAbacatePay },
       ],

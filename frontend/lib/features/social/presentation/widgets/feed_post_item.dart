@@ -49,7 +49,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: SocialPost(
           userId: post.user.id,
-          userName: post.user.displayName,
+          userName: post.user.displayNameOrDefault,
           userAvatarUrl: post.user.avatarUrl,
           content: post.content,
           imageUrl: post.imageUrl,
@@ -72,10 +72,9 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               }
               return false;
             }
-            return ref.read(savesProvider.notifier).toggleSave(
-                  post.id,
-                  initialIsSaved: post.isSaved,
-                );
+            return ref
+                .read(savesProvider.notifier)
+                .toggleSave(post.id, initialIsSaved: post.isSaved);
           },
           onLike: () async {
             final user = ref.read(authControllerProvider).valueOrNull;
@@ -85,14 +84,18 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               }
               return false;
             }
-            final success = await ref.read(likesProvider.notifier).toggleLike(
+            final success = await ref
+                .read(likesProvider.notifier)
+                .toggleLike(
                   post.id,
                   initialIsLiked: post.isLiked,
                   initialCount: post.likesCount,
                 );
             if (success && context.mounted) {
               final newLikesState = ref.read(likesProvider);
-              ref.read(feedProvider.notifier).updatePostLike(
+              ref
+                  .read(feedProvider.notifier)
+                  .updatePostLike(
                     post.id,
                     newLikesState.getLikedOverride(post.id) ?? post.isLiked,
                     newLikesState.getCountOverride(post.id) ?? post.likesCount,
@@ -108,15 +111,18 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               }
               return false;
             }
-            final success =
-                await ref.read(repostsProvider.notifier).toggleRepost(
-                      post.id,
-                      initialIsReposted: post.hasReposted,
-                      initialCount: post.sharesCount,
-                    );
+            final success = await ref
+                .read(repostsProvider.notifier)
+                .toggleRepost(
+                  post.id,
+                  initialIsReposted: post.hasReposted,
+                  initialCount: post.sharesCount,
+                );
             if (success && context.mounted) {
               final newRepostsState = ref.read(repostsProvider);
-              ref.read(feedProvider.notifier).updateSharesCount(
+              ref
+                  .read(feedProvider.notifier)
+                  .updateSharesCount(
                     post.id,
                     newRepostsState.getCountOverride(post.id) ??
                         post.sharesCount,

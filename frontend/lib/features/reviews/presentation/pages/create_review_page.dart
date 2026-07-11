@@ -14,7 +14,10 @@ import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/features/social/presentation/widgets/local_image_inspector.dart';
+import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class CreateReviewPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -53,23 +56,13 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
   Future<void> _pickImage() async {
     if (_selectedImages.length >= _maxImages) return;
 
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await showBrutalistSheet<ImageSource>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Câmera'),
-              onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Galeria'),
-              onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
-            ),
-          ],
-        ),
+      title: 'OPÇÕES DE IMAGEM',
+      builder: (ctx) => ImageOptionsSheet(
+        hasImage: false,
+        onPickGallery: () => Navigator.of(ctx).pop(ImageSource.gallery),
+        onPickCamera: () => Navigator.of(ctx).pop(ImageSource.camera),
       ),
     );
 
@@ -85,6 +78,67 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
     if (picked != null && mounted) {
       setState(() => _selectedImages.add(File(picked.path)));
     }
+  }
+
+  void _openImagePreview(int index) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (_, _, _) => LocalImageFullScreen(
+          path: _selectedImages[index].path,
+          onEdit: () {
+            Navigator.of(context).pop();
+            _showImageOptions(index);
+          },
+        ),
+        transitionsBuilder: (_, animation, _, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
+  void _showImageOptions(int index) {
+    showBrutalistSheet(
+      context: context,
+      title: 'OPÇÕES DE IMAGEM',
+      builder: (ctx) => ImageOptionsSheet(
+        hasImage: true,
+        onPickGallery: () async {
+          Navigator.pop(ctx);
+          final picked = await _picker.pickImage(
+            source: ImageSource.gallery,
+            maxWidth: 1920,
+            maxHeight: 1920,
+            imageQuality: 85,
+          );
+          if (picked != null && mounted) {
+            setState(() => _selectedImages[index] = File(picked.path));
+          }
+        },
+        onPickCamera: () async {
+          Navigator.pop(ctx);
+          final picked = await _picker.pickImage(
+            source: ImageSource.camera,
+            maxWidth: 1920,
+            maxHeight: 1920,
+            imageQuality: 85,
+          );
+          if (picked != null && mounted) {
+            setState(() => _selectedImages[index] = File(picked.path));
+          }
+        },
+        onView: () {
+          Navigator.pop(ctx);
+          _openImagePreview(index);
+        },
+        onRemove: () {
+          Navigator.pop(ctx);
+          _removeImage(index);
+        },
+      ),
+    );
   }
 
   void _removeImage(int index) {
@@ -159,11 +213,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                 decoration: BoxDecoration(
                   border: Border.all(color: context.borderColor, width: 2),
                 ),
-                child: Icon(
-                  Icons.close,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
+                child: Icon(Icons.close, color: context.textPrimary, size: 20),
               ),
             ),
           ),
@@ -173,10 +223,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  BrutalistBreadcrumb(items: [
-                    BreadcrumbItem(label: 'Perfil', onTap: () => context.pop()),
-                    const BreadcrumbItem(label: 'Avaliar'),
-                  ]),
+                  BrutalistBreadcrumb(items: context.breadcrumbs),
                   Spacing.vMd,
                   UserAvatar(
                     imageUrl: widget.reviewedAvatarUrl,
@@ -282,9 +329,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                           ),
                           decoration: InputDecoration(
                             hintText: 'Conte como foi sua experiência...',
-                            hintStyle: TextStyle(
-                              color: AppColors.outline,
-                            ),
+                            hintStyle: TextStyle(color: AppColors.outline),
                             filled: true,
                             fillColor: isDark
                                 ? AppColors.surfaceDark
@@ -302,8 +347,9 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                             ),
                             disabledBorder: const OutlineInputBorder(
                               borderRadius: BorderRadius.zero,
-                              borderSide:
-                                  BorderSide(color: AppColors.outlineVariant),
+                              borderSide: BorderSide(
+                                color: AppColors.outlineVariant,
+                              ),
                             ),
                             counterStyle: TextStyle(
                               fontFamily: AppTypography.fontFamily,
@@ -382,23 +428,26 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                                 child: ListView.separated(
                                   scrollDirection: Axis.horizontal,
                                   itemCount: _selectedImages.length,
-                                  separatorBuilder: (_, __) =>
+                                  separatorBuilder: (_, _) =>
                                       const SizedBox(width: 8),
                                   itemBuilder: (context, index) {
                                     return Stack(
                                       children: [
-                                        Container(
-                                          width: 100,
-                                          height: 100,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: AppColors.outline,
-                                              width: 2,
+                                        GestureDetector(
+                                          onTap: () => _openImagePreview(index),
+                                          child: Container(
+                                            width: 100,
+                                            height: 100,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: AppColors.outline,
+                                                width: 2,
+                                              ),
                                             ),
-                                          ),
-                                          child: Image.file(
-                                            _selectedImages[index],
-                                            fit: BoxFit.cover,
+                                            child: Image.file(
+                                              _selectedImages[index],
+                                              fit: BoxFit.cover,
+                                            ),
                                           ),
                                         ),
                                         Positioned(
@@ -436,8 +485,9 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     width: double.infinity,
                     child: AppButton(
                       label: 'Enviar avaliação',
-                      onPressed:
-                          _score > 0 && !_isSubmitting ? _submitReview : null,
+                      onPressed: _score > 0 && !_isSubmitting
+                          ? _submitReview
+                          : null,
                       isLoading: _isSubmitting,
                     ),
                   ),

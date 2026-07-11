@@ -1,6 +1,6 @@
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
 class SavesState {
   /// Map of post IDs to their saved status override (null means use entity value)
@@ -25,25 +25,25 @@ class SavesNotifier extends StateNotifier<SavesState> {
     final newIsSaved = !currentSaved;
 
     // Apply optimistic update
-    state = state.copyWith(savedOverrides: {...state.savedOverrides, postId: newIsSaved});
+    state = state.copyWith(
+      savedOverrides: {...state.savedOverrides, postId: newIsSaved},
+    );
 
     final result = currentSaved
         ? await _repository.unsavePost(postId)
         : await _repository.savePost(postId);
 
-    return result.fold(
-      (_) {
-        // Rollback on failure
-        state = state.copyWith(savedOverrides: {...state.savedOverrides, postId: currentSaved});
-        return false;
-      },
-      (_) => true,
-    );
+    return result.fold((_) {
+      // Rollback on failure
+      state = state.copyWith(
+        savedOverrides: {...state.savedOverrides, postId: currentSaved},
+      );
+      return false;
+    }, (_) => true);
   }
 }
 
-final savesProvider =
-    StateNotifierProvider<SavesNotifier, SavesState>((ref) {
+final savesProvider = StateNotifierProvider<SavesNotifier, SavesState>((ref) {
   final repository = ref.read(socialRepositoryProvider);
   return SavesNotifier(repository);
 });

@@ -4,15 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/features/social/data/repositories/social_repository.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
-  final repository = SocialRepository();
+  final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getLikedPosts();
   return result.fold(
     (failure) => throw Exception(failure.message),
@@ -55,11 +56,7 @@ class LikedPostsPage extends ConsumerWidget {
               data: (posts) {
                 return Column(
                   children: [
-                    BrutalistBreadcrumb(items: [
-                      BreadcrumbItem(
-                          label: 'Perfil', onTap: () => context.pop()),
-                      const BreadcrumbItem(label: 'Posts Curtidos'),
-                    ]),
+                    BrutalistBreadcrumb(items: [...context.breadcrumbs]),
                     Expanded(
                       child: posts.isEmpty
                           ? const EmptyState(
@@ -75,10 +72,10 @@ class LikedPostsPage extends ConsumerWidget {
                                 padding: const EdgeInsets.all(8),
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  crossAxisSpacing: 4,
-                                  mainAxisSpacing: 4,
-                                ),
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: 4,
+                                      mainAxisSpacing: 4,
+                                    ),
                                 itemCount: posts.length,
                                 itemBuilder: (context, index) {
                                   final post = posts[index];
@@ -99,7 +96,7 @@ class LikedPostsPage extends ConsumerWidget {
                     mainAxisSpacing: 4,
                   ),
                   itemCount: 9,
-                  itemBuilder: (_, __) => const ShimmerBlock(height: 120),
+                  itemBuilder: (_, _) => const ShimmerBlock(height: 120),
                   physics: const NeverScrollableScrollPhysics(),
                 ),
               ),
@@ -107,8 +104,11 @@ class LikedPostsPage extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: AppColors.error),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.error,
+                    ),
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar posts curtidos',
@@ -135,36 +135,33 @@ class LikedPostsPage extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
           border: Border.all(
-              color: AppColors.onSurface.withValues(alpha: 0.15), width: 2),
+            color: AppColors.onSurface.withValues(alpha: 0.15),
+            width: 2,
+          ),
         ),
         child: imageUrl != null && imageUrl.isNotEmpty
             ? Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.image,
-                  color: AppColors.mediumGray,
-                ),
+                errorBuilder: (_, _, _) =>
+                    const Icon(Icons.image, color: AppColors.mediumGray),
               )
             : post.content != null && post.content!.isNotEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text(
-                        post.content!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    post.content!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? AppColors.white : AppColors.darkGray,
                     ),
-                  )
-                : const Icon(
-                    Icons.article_outlined,
-                    color: AppColors.mediumGray,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                ),
+              )
+            : const Icon(Icons.article_outlined, color: AppColors.mediumGray),
       ),
     );
   }

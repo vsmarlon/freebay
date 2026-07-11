@@ -1,5 +1,5 @@
 import { DisputeResolutionExecutionService } from './dispute-resolution-execution.service';
-import { DisputeWithOrder } from '../repositories/dispute.repository';
+import { DisputeWithOrder } from '../domain/repositories/dispute.repository';
 
 describe('DisputeResolutionExecutionService', () => {
   let sut: DisputeResolutionExecutionService;

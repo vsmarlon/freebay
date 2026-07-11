@@ -25,6 +25,15 @@ export class EscrowReleaseTask {
       if (order.dispute) continue;
 
       await this.prisma.$transaction(async (tx) => {
+        const currentOrder = await tx.order.findUnique({
+          where: { id: order.id },
+          include: { dispute: true },
+        });
+
+        if (!currentOrder || currentOrder.status !== 'DELIVERED' || currentOrder.dispute) {
+          return;
+        }
+
         await tx.order.update({
           where: { id: order.id },
           data: { status: 'COMPLETED', escrowStatus: 'RELEASED' },

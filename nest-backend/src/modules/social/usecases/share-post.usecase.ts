@@ -11,14 +11,14 @@ export class SharePostUseCase {
     private readonly shareRepository: ShareRepository,
   ) {}
 
-  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, { shared: boolean }>> {
+  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {
     const postResult = await this.postRepository.findById(input.postId);
     if (isLeft(postResult)) return left(postResult.value);
     if (!postResult.value) return left(new NotFoundError('Post'));
 
     const existingResult = await this.shareRepository.findByUserAndPost(input.userId, input.postId);
     if (isLeft(existingResult)) return left(existingResult.value);
-    if (existingResult.value) return right({ shared: true });
+    if (existingResult.value) return right(undefined);
 
     const createResult = await this.shareRepository.create({
       user: { connect: { id: input.userId } },
@@ -27,6 +27,6 @@ export class SharePostUseCase {
     if (isLeft(createResult)) return left(createResult.value);
 
     await this.postRepository.update(input.postId, { sharesCount: { increment: 1 } });
-    return right({ shared: true });
+    return right(undefined);
   }
 }

@@ -7,6 +7,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
@@ -25,9 +26,11 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref
-        .read(disputeDetailProvider(widget.disputeId).notifier)
-        .loadDispute());
+    Future.microtask(
+      () => ref
+          .read(disputeDetailProvider(widget.disputeId).notifier)
+          .loadDispute(),
+    );
   }
 
   @override
@@ -65,9 +68,8 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
             child: state.isLoading
                 ? _buildSkeleton(context)
                 : state.dispute == null
-                    ? Center(
-                        child: Text(state.error ?? 'Disputa não encontrada'))
-                    : _buildContent(state),
+                ? Center(child: Text(state.error ?? 'Disputa não encontrada'))
+                : _buildContent(state),
           ),
         ],
       ),
@@ -114,11 +116,7 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          BrutalistBreadcrumb(items: [
-            BreadcrumbItem(
-                label: 'Disputas', onTap: () => Navigator.pop(context)),
-            const BreadcrumbItem(label: 'Detalhes da Disputa'),
-          ]),
+          BrutalistBreadcrumb(items: context.breadcrumbs),
           Spacing.vMd,
           BrutalistBox(
             child: Column(
@@ -166,8 +164,10 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
                     child: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Center(
-                        child: Text('Enviar Evidência',
-                            style: AppTypography.button),
+                        child: Text(
+                          'Enviar Evidência',
+                          style: AppTypography.button,
+                        ),
                       ),
                     ),
                   ),
@@ -201,9 +201,12 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
       children: [
         SizedBox(
           width: 100,
-          child: Text(label,
-              style: AppTypography.bodySmall
-                  .copyWith(color: AppColors.onSurfaceVariant)),
+          child: Text(
+            label,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
         ),
         Expanded(child: Text(value, style: AppTypography.bodyMedium)),
       ],

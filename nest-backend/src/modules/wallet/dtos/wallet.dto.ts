@@ -1,4 +1,4 @@
-import { IsInt, IsPositive, IsString, MinLength, MaxLength, IsIn } from 'class-validator';
+import { IsInt, IsPositive, IsString, MinLength, MaxLength, IsIn, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 const PIX_KEY_TYPES = ['CPF', 'EMAIL', 'PHONE', 'RANDOM'] as const;
@@ -17,6 +17,12 @@ export class WithdrawDTO {
   @ApiProperty({ enum: PIX_KEY_TYPES })
   @IsIn(PIX_KEY_TYPES)
   readonly pixKeyType: 'CPF' | 'EMAIL' | 'PHONE' | 'RANDOM';
+
+  @ApiProperty({ example: 'some-unique-uuid-key', required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  readonly idempotencyKey?: string;
 }
 
 export class BankAccountDTO {
@@ -93,4 +99,5 @@ export interface WithdrawInput {
   amount: number;
   pixKey: string;
   pixKeyType: 'CPF' | 'EMAIL' | 'PHONE' | 'RANDOM';
+  idempotencyKey?: string;
 }

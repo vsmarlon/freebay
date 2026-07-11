@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards, HttpCode, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
@@ -19,7 +20,7 @@ import { Prisma } from '@prisma/client';
 
 @ApiTags('Disputes')
 @Controller('disputes')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, NonGuestGuard)
 export class DisputesController {
   constructor(
     private openDisputeUseCase: OpenDisputeUseCase,

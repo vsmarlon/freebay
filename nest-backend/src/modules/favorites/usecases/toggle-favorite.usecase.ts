@@ -7,7 +7,7 @@ import { FavoriteRepository } from '../domain/repositories/favorite.repository';
 export class ToggleFavoriteUseCase {
   constructor(private readonly favoriteRepository: FavoriteRepository) {}
 
-  async execute(userId: string, productId: string): Promise<Either<AppError, { favorited: boolean }>> {
+  async execute(userId: string, productId: string): Promise<Either<AppError, void>> {
     const productResult = await this.favoriteRepository.findProductById(productId);
     if (isLeft(productResult)) {
       return left(productResult.value);
@@ -30,7 +30,7 @@ export class ToggleFavoriteUseCase {
       if (isLeft(deleteResult)) {
         return left(deleteResult.value);
       }
-      return right({ favorited: false });
+      return right(undefined);
     }
 
     const createResult = await this.favoriteRepository.create(userId, productId);
@@ -38,6 +38,6 @@ export class ToggleFavoriteUseCase {
       return left(createResult.value);
     }
 
-    return right({ favorited: true });
+    return right(undefined);
   }
 }

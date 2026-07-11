@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { BlockRepository } from '../repositories/block.repository';
+import { BlockRepository } from '../domain/repositories/block.repository';
 import { BlockResponse } from '../mappers/user.mapper';
 import { BlockUserInput } from '../dtos/user.dto';
 
@@ -26,15 +26,8 @@ export class BlockUserUseCase {
       return left(new NotFoundError('User'));
     }
 
-    try {
-      await this.blockRepository.block(input.blockerId, input.blockedId);
-    } catch (error: unknown) {
-      const err = error as { code?: string };
-      if (err.code === 'P2002') {
-        return left(new BadRequestError('Already blocked'));
-      }
-      return left(new AppError('DB_ERROR', 'Erro ao bloquear usuário'));
-    }
+    const blockResult = await this.blockRepository.block(input.blockerId, input.blockedId);
+    if (blockResult.isLeft()) return left(blockResult.value);
 
     return right({ blocked: true });
   }

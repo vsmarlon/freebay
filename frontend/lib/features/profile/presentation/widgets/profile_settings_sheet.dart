@@ -9,9 +9,20 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/profile/presentation/widgets/phone_verification_sheet.dart';
+import 'package:freebay/core/components/app_snackbar.dart';
 
 final biometryServiceProvider = Provider<BiometryService>((ref) {
   return BiometryService();
+});
+
+final biometryAvailableProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(biometryServiceProvider).isAvailable();
+});
+
+final biometryEnabledProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(biometryServiceProvider).isEnabled();
 });
 
 void showProfileSettingsSheet(BuildContext context) {
@@ -22,6 +33,11 @@ void showProfileSettingsSheet(BuildContext context) {
       return Consumer(
         builder: (consumerContext, consumerRef, _) {
           final currentThemeMode = consumerRef.watch(themeModeProvider);
+          final user = consumerRef.watch(authControllerProvider).valueOrNull;
+          final isAvailable =
+              consumerRef.watch(biometryAvailableProvider).valueOrNull ?? false;
+          final isEnabled =
+              consumerRef.watch(biometryEnabledProvider).valueOrNull ?? false;
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -32,22 +48,20 @@ void showProfileSettingsSheet(BuildContext context) {
                   currentThemeMode == ThemeMode.dark
                       ? Icons.dark_mode
                       : currentThemeMode == ThemeMode.light
-                          ? Icons.light_mode
-                          : Icons.brightness_auto,
+                      ? Icons.light_mode
+                      : Icons.brightness_auto,
                   color: consumerContext.textPrimary,
                 ),
                 title: Text(
                   'Tema',
-                  style: TextStyle(
-                    color: consumerContext.textPrimary,
-                  ),
+                  style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 subtitle: Text(
                   currentThemeMode == ThemeMode.dark
                       ? 'Escuro'
                       : currentThemeMode == ThemeMode.light
-                          ? 'Claro'
-                          : 'Sistema',
+                      ? 'Claro'
+                      : 'Sistema',
                   style: const TextStyle(color: AppColors.mediumGray),
                 ),
                 trailing: Row(
@@ -86,60 +100,80 @@ void showProfileSettingsSheet(BuildContext context) {
                 ),
                 title: Text(
                   'Biometria',
-                  style: TextStyle(
-                    color: consumerContext.textPrimary,
-                  ),
+                  style: TextStyle(color: consumerContext.textPrimary),
                 ),
-                subtitle: FutureBuilder<bool>(
-                  future:
-                      consumerRef.read(biometryServiceProvider).isAvailable(),
-                  builder: (context, snapshot) {
-                    if (snapshot.data == true) {
-                      return const Text(
-                        'Usar biometria para login',
-                        style: TextStyle(color: AppColors.mediumGray),
-                      );
-                    }
-                    return const Text(
-                      'Não disponível no dispositivo',
-                      style: TextStyle(color: AppColors.mediumGray),
-                    );
-                  },
+                subtitle: Text(
+                  isAvailable
+                      ? 'Usar biometria para login'
+                      : 'Não disponível no dispositivo',
+                  style: const TextStyle(color: AppColors.mediumGray),
                 ),
-                trailing: FutureBuilder<bool>(
-                  future: consumerRef.read(biometryServiceProvider).isEnabled(),
-                  builder: (context, snapshot) {
-                    if (snapshot.data == true) {
-                      return Switch(
-                        value: snapshot.data ?? false,
+                trailing: isAvailable
+                    ? _BrutalistSwitch(
+                        value: isEnabled,
                         onChanged: (value) async {
+                          if (value) {
+                            final authenticated = await consumerRef
+                                .read(biometryServiceProvider)
+                                .authenticate();
+                            if (!authenticated) {
+                              return;
+                            }
+                          }
                           await consumerRef
                               .read(biometryServiceProvider)
                               .setEnabled(value);
-                          consumerRef.invalidate(biometryServiceProvider);
+                          consumerRef.invalidate(biometryEnabledProvider);
                         },
-                        activeTrackColor: AppColors.primaryContainer,
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
+                      )
+                    : const SizedBox.shrink(),
               ),
               Spacing.vMd,
               ListTile(
-                leading: Icon(
-                  Icons.edit,
-                  color: consumerContext.textPrimary,
-                ),
+                leading: Icon(Icons.edit, color: consumerContext.textPrimary),
                 title: Text(
                   'Editar perfil',
-                  style: TextStyle(
-                    color: consumerContext.textPrimary,
-                  ),
+                  style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 onTap: () {
                   Navigator.pop(consumerContext);
                   context.push('/profile/edit');
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.verified_user_outlined,
+                  color: consumerContext.textPrimary,
+                ),
+                title: Text(
+                  'Verificação da conta',
+                  style: TextStyle(color: consumerContext.textPrimary),
+                ),
+                subtitle: Text(
+                  (user?.isVerified ?? false)
+                      ? 'Conta verificada'
+                      : 'Solicitar selo de verificação',
+                  style: const TextStyle(
+                    color: AppColors.mediumGray,
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: (user?.isVerified ?? false)
+                    ? const Icon(
+                        Icons.verified,
+                        color: AppColors.primaryContainer,
+                      )
+                    : const Icon(Icons.arrow_forward_ios, size: 14),
+                onTap: () {
+                  Navigator.pop(consumerContext);
+                  if (user?.isVerified ?? false) {
+                    AppSnackbar.success(
+                      context,
+                      'Seu perfil já está verificado!',
+                    );
+                  } else {
+                    showPhoneVerificationSheet(context);
+                  }
                 },
               ),
               ListTile(
@@ -149,9 +183,7 @@ void showProfileSettingsSheet(BuildContext context) {
                 ),
                 title: Text(
                   'Ajuda e suporte',
-                  style: TextStyle(
-                    color: consumerContext.textPrimary,
-                  ),
+                  style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 onTap: () {
                   Navigator.pop(consumerContext);
@@ -248,8 +280,9 @@ class _ThemeOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryContainer : Colors.transparent,
           border: Border.all(
-            color:
-                isSelected ? AppColors.primaryContainer : context.borderColor,
+            color: isSelected
+                ? AppColors.primaryContainer
+                : context.borderColor,
             width: 2,
           ),
         ),
@@ -263,6 +296,55 @@ class _ThemeOption extends StatelessWidget {
               color: isSelected ? AppColors.onPrimary : context.textPrimary,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BrutalistSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _BrutalistSwitch({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final borderColor = isDark ? AppColors.white : AppColors.onSurface;
+    final activeColor = AppColors.primaryContainer;
+    final trackColor = value
+        ? activeColor
+        : (isDark
+              ? AppColors.surfaceContainerDark
+              : AppColors.surfaceContainerLow);
+
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: Container(
+        width: 48,
+        height: 24,
+        decoration: BoxDecoration(
+          color: trackColor,
+          border: Border.all(color: borderColor, width: 2),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeInOut,
+              left: value ? 24 : 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: value ? AppColors.onPrimary : borderColor,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

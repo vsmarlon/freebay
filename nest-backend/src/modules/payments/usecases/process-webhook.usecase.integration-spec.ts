@@ -3,19 +3,32 @@ import { prisma } from '../../../../test/setup-integration';
 import { isRight } from '@/shared/core/either';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
+import { ProductRepository } from '../../products/domain/repositories/product.repository';
+import { TransactionRepository } from '../domain/repositories/transaction.repository';
+import { OrderRepository } from '../../orders/domain/repositories/order.repository';
+import { WalletRepository } from '../../wallet/domain/repositories/wallet.repository';
 
 const mockNotificationService = {
   notifyPayment: jest.fn().mockResolvedValue(undefined),
   notifyOrderStatus: jest.fn().mockResolvedValue(undefined),
 } as unknown as NotificationService;
 
+const mockProductRepo = {} as ProductRepository;
+const mockTransactionRepo = {} as TransactionRepository;
+const mockOrderRepo = {} as OrderRepository;
+const mockWalletRepo = {} as WalletRepository;
+
 describe('ProcessWebhookUseCase Integration', () => {
   let sut: ProcessWebhookUseCase;
 
   beforeEach(() => {
     sut = new ProcessWebhookUseCase(
-      prisma as PrismaService,
+      mockProductRepo,
+      mockTransactionRepo,
+      mockOrderRepo,
+      mockWalletRepo,
       mockNotificationService,
+      prisma as PrismaService,
     );
     jest.clearAllMocks();
   });

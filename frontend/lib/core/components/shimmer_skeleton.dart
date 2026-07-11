@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:shimmer/shimmer.dart';
 
-class ShimmerBlock extends StatefulWidget {
+class ShimmerBlock extends StatelessWidget {
   final double width;
   final double height;
   final double? borderRadius;
@@ -19,68 +20,31 @@ class ShimmerBlock extends StatefulWidget {
   });
 
   @override
-  State<ShimmerBlock> createState() => _ShimmerBlockState();
-}
-
-class _ShimmerBlockState extends State<ShimmerBlock>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final base = widget.baseColor ??
+    final base =
+        baseColor ??
         (context.isDark
             ? AppColors.surfaceContainerDark
             : AppColors.surfaceContainerLow);
-    final highlight = widget.highlightColor ??
+    final highlight =
+        highlightColor ??
         (context.isDark
             ? AppColors.surfaceContainerLowDark
             : AppColors.surfaceContainerLowest);
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return ShaderMask(
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: [base, highlight, base],
-              stops: [
-                _controller.value - 0.3,
-                _controller.value,
-                _controller.value + 0.3,
-              ].map((s) => s.clamp(0.0, 1.0)).toList(),
-              begin: Alignment(-1, 0),
-              end: Alignment(1, 0),
-            ).createShader(bounds);
-          },
-          child: Container(
-            width: widget.width,
-            height: widget.height,
-            decoration: BoxDecoration(
-              color: base,
-              borderRadius: widget.borderRadius != null
-                  ? BorderRadius.circular(widget.borderRadius!)
-                  : BorderRadius.zero,
-            ),
-          ),
-        );
-      },
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: base,
+          borderRadius: borderRadius != null
+              ? BorderRadius.circular(borderRadius!)
+              : BorderRadius.zero,
+        ),
+      ),
     );
   }
 }
@@ -145,8 +109,9 @@ class WalletSkeleton extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            color:
-                context.isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            color: context.isDark
+                ? AppColors.surfaceDark
+                : AppColors.surfaceLight,
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

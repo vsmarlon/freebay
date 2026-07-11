@@ -63,34 +63,28 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   Future<void> loadFavorites() async {
     state = state.copyWith(isLoading: true);
     final result = await _getFavoritesUsecase();
-    result.fold(
-      (_) => state = state.copyWith(isLoading: false),
-      (products) {
-        final ids = products.map((p) => p.id).toSet();
-        state = state.copyWith(
-          isLoading: false,
-          products: products,
-          favoritedProductIds: ids,
-        );
-      },
-    );
+    result.fold((_) => state = state.copyWith(isLoading: false), (products) {
+      final ids = products.map((p) => p.id).toSet();
+      state = state.copyWith(
+        isLoading: false,
+        products: products,
+        favoritedProductIds: ids,
+      );
+    });
   }
 
   Future<bool> initializeFavoriteStatus(String productId) async {
     final result = await _isFavoritedUsecase(productId);
-    return result.fold(
-      (_) => false,
-      (isFavorited) {
-        final ids = Set<String>.from(state.favoritedProductIds);
-        if (isFavorited) {
-          ids.add(productId);
-        } else {
-          ids.remove(productId);
-        }
-        state = state.copyWith(favoritedProductIds: ids);
-        return isFavorited;
-      },
-    );
+    return result.fold((_) => false, (isFavorited) {
+      final ids = Set<String>.from(state.favoritedProductIds);
+      if (isFavorited) {
+        ids.add(productId);
+      } else {
+        ids.remove(productId);
+      }
+      state = state.copyWith(favoritedProductIds: ids);
+      return isFavorited;
+    });
   }
 
   Future<bool> toggleFavorite(String productId) async {
@@ -139,15 +133,17 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
 
 final favoritesProvider =
     StateNotifierProvider<FavoritesNotifier, FavoritesState>((ref) {
-  return FavoritesNotifier(
-    ref.watch(getFavoritesUsecaseProvider),
-    ref.watch(isFavoritedUsecaseProvider),
-    ref.watch(toggleFavoriteUsecaseProvider),
-  );
-});
+      return FavoritesNotifier(
+        ref.watch(getFavoritesUsecaseProvider),
+        ref.watch(isFavoritedUsecaseProvider),
+        ref.watch(toggleFavoriteUsecaseProvider),
+      );
+    });
 
-final isFavoritedProvider =
-    FutureProvider.family<bool, String>((ref, productId) async {
+final isFavoritedProvider = FutureProvider.autoDispose.family<bool, String>((
+  ref,
+  productId,
+) async {
   final result = await ref.read(isFavoritedUsecaseProvider)(productId);
   return result.fold((_) => false, (value) => value);
 });

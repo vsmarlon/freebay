@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaDisputeRepository } from './dispute.repository';
+import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
 describe('PrismaDisputeRepository', () => {

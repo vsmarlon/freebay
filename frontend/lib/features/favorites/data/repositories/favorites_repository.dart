@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/favorites/data/services/favorites_service.dart';
 import 'package:freebay/features/favorites/domain/repositories/i_favorites_repository.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';

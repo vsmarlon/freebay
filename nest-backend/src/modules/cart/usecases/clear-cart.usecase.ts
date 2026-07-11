@@ -7,10 +7,10 @@ import { CartRepository } from '../domain/repositories/cart.repository';
 export class ClearCartUseCase {
   constructor(private readonly cartRepository: CartRepository) {}
 
-  async execute(userId: string): Promise<Either<AppError, { cleared: boolean }>> {
+  async execute(userId: string): Promise<Either<AppError, void>> {
     const result = await this.cartRepository.clear(userId);
     if (isLeft(result)) return left(result.value);
 
-    return right({ cleared: true });
+    return right(undefined);
   }
 }

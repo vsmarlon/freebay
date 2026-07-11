@@ -49,6 +49,10 @@ export class ConversationDatabaseRepository implements ConversationRepository {
         include: {
           user1: { select: USER_SELECT_BASIC },
           user2: { select: USER_SELECT_BASIC },
+          messages: {
+            select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
+            orderBy: { createdAt: 'desc' },
+          },
         },
         orderBy: { lastMessageAt: 'desc' },
       });

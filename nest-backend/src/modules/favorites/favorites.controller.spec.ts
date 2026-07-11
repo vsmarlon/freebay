@@ -61,14 +61,14 @@ describe('FavoritesController', () => {
   });
 
   it('should add favorite', async () => {
-    mockService.toggleFavorite.mockResolvedValue({ favorited: true });
+    mockService.toggleFavorite.mockResolvedValue(undefined);
     const result = await controller.toggleFavorite('prod-1', mockUser);
-    expect(result.favorited).toBe(true);
+    expect(result).toBeUndefined();
   });
 
   it('should remove favorite if already favorited', async () => {
-    mockService.toggleFavorite.mockResolvedValue({ favorited: false });
+    mockService.toggleFavorite.mockResolvedValue(undefined);
     const result = await controller.toggleFavorite('prod-1', mockUser);
-    expect(result.favorited).toBe(false);
+    expect(result).toBeUndefined();
   });
 });

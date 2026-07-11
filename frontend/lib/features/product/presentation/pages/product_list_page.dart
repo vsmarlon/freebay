@@ -13,6 +13,7 @@ import 'package:freebay/features/product/domain/usecases/get_products_usecase.da
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/hide_on_scroll.dart';
 
 class ProductListPage extends ConsumerStatefulWidget {
   const ProductListPage({super.key});
@@ -22,18 +23,26 @@ class ProductListPage extends ConsumerStatefulWidget {
 }
 
 class _ProductListPageState extends ConsumerState<ProductListPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   final _searchController = TextEditingController();
   bool _showFilters = false;
   Timer? _debounceTimer;
+  late final HideOnScrollController _headerHide;
 
   @override
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    _headerHide = HideOnScrollController(vsync: this);
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _debounceTimer?.cancel();
+    _headerHide.dispose();
     super.dispose();
   }
 
@@ -56,151 +65,195 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
-    final productsAsync = ref.watch(productsFeedProvider(
-      GetProductsParams(
-        search: searchQuery.isEmpty ? null : searchQuery,
-        category: selectedCategory,
+    final productsAsync = ref.watch(
+      productsFeedProvider(
+        GetProductsParams(
+          search: searchQuery.isEmpty ? null : searchQuery,
+          category: selectedCategory,
+        ),
       ),
-    ));
+    );
+
+    final headerHeight = MediaQuery.of(context).padding.top + 66;
 
     return Scaffold(
       backgroundColor: context.bgColor,
-      body: Column(
+      body: Stack(
         children: [
-          PageHeader(
-            text: 'EXPLORAR',
-            actions: [
-              IconButton(
-                icon: Icon(
-                  _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                  color: context.isDark
-                      ? AppColors.white
-                      : AppColors.primaryContainer,
-                ),
-                onPressed: () => setState(() => _showFilters = !_showFilters),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: AppTextField(
-              controller: _searchController,
-              label: '',
-              hint: 'Buscar produtos...',
-              prefixIcon: Icons.search,
-              onFieldSubmitted: (_) => _onSearch(),
-              onChanged: _onSearchDebounced,
-            ),
-          ),
-          if (_showFilters)
-            categoriesAsync.when(
-              data: (categories) {
-                if (categories.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.category_outlined,
-                    title: 'SEM CATEGORIAS',
-                    subtitle: 'Nenhuma categoria disponível',
-                  );
-                }
-                return CategoryFilterPanel(
-                  categories: categories,
-                  selectedCategory: selectedCategory,
-                  onCategorySelected: (id) =>
-                      ref.read(selectedCategoryProvider.notifier).state = id,
-                );
-              },
-              loading: () => Padding(
-                padding: const EdgeInsets.all(16),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: 6,
-                  itemBuilder: (_, __) => const AppCard.skeleton(),
-                  physics: const NeverScrollableScrollPhysics(),
-                ),
-              ),
-              error: (err, _) => Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Erro ao carregar categorias: $err'),
-              ),
-            ),
-          Expanded(
-            child: productsAsync.when(
-              data: (products) {
-                if (products.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.search_off,
-                    title: 'NENHUM PRODUTO',
-                    subtitle: searchQuery.isNotEmpty || selectedCategory != null
-                        ? 'Tente limpar os filtros'
-                        : 'Nenhum produto encontrado.',
-                  );
-                }
-                return AppRefreshIndicator(
-                  onRefresh: () => ref.refresh(productsFeedProvider(
-                    GetProductsParams(
-                      search: searchQuery.isEmpty ? null : searchQuery,
-                      category: selectedCategory,
-                    ),
-                  ).future),
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.7,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return AppCard(
-                        imageUrl: product.imageUrl,
-                        title: product.title,
-                        priceInCents: product.price,
-                        variant: AppCardVariant.compact,
-                        onTap: () => context.push('/products/${product.id}'),
-                      );
-                    },
-                  ),
-                );
-              },
-              loading: () => GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                ),
-                itemCount: 6,
-                itemBuilder: (context, index) => const AppCard.skeleton(),
-              ),
-              error: (err, stack) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  AppDialog.showError(
-                    context: context,
-                    title: 'Erro ao carregar',
-                    subtitle: err.toString(),
-                    onOk: () => ref.invalidate(productsFeedProvider(
-                      GetProductsParams(
-                        search: searchQuery.isEmpty ? null : searchQuery,
-                        category: selectedCategory,
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(top: headerHeight),
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _headerHide.handleNotification,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: AppTextField(
+                        controller: _searchController,
+                        label: '',
+                        hint: 'Buscar produtos...',
+                        prefixIcon: Icons.search,
+                        onFieldSubmitted: (_) => _onSearch(),
+                        onChanged: _onSearchDebounced,
                       ),
-                    )),
-                  );
-                });
-                return EmptyState(
-                  icon: Icons.search_off,
-                  title: 'ERRO',
-                  subtitle: 'Tente novamente mais tarde',
-                );
-              },
+                    ),
+                    if (_showFilters)
+                      categoriesAsync.when(
+                        data: (categories) {
+                          if (categories.isEmpty) {
+                            return EmptyState(
+                              icon: Icons.category_outlined,
+                              title: 'SEM CATEGORIAS',
+                              subtitle: 'Nenhuma categoria disponível',
+                            );
+                          }
+                          return CategoryFilterPanel(
+                            categories: categories,
+                            selectedCategory: selectedCategory,
+                            onCategorySelected: (id) =>
+                                ref
+                                        .read(selectedCategoryProvider.notifier)
+                                        .state =
+                                    id,
+                          );
+                        },
+                        loading: () => Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.7,
+                                ),
+                            itemCount: 6,
+                            itemBuilder: (_, _) => const AppCard.skeleton(),
+                            physics: const NeverScrollableScrollPhysics(),
+                          ),
+                        ),
+                        error: (err, _) => Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text('Erro ao carregar categorias: $err'),
+                        ),
+                      ),
+                    Expanded(
+                      child: productsAsync.when(
+                        data: (products) {
+                          if (products.isEmpty) {
+                            return EmptyState(
+                              icon: Icons.search_off,
+                              title: 'NENHUM PRODUTO',
+                              subtitle:
+                                  searchQuery.isNotEmpty ||
+                                      selectedCategory != null
+                                  ? 'Tente limpar os filtros'
+                                  : 'Nenhum produto encontrado.',
+                            );
+                          }
+                          return AppRefreshIndicator(
+                            onRefresh: () => ref.refresh(
+                              productsFeedProvider(
+                                GetProductsParams(
+                                  search: searchQuery.isEmpty
+                                      ? null
+                                      : searchQuery,
+                                  category: selectedCategory,
+                                ),
+                              ).future,
+                            ),
+                            child: GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 0.7,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                  ),
+                              itemCount: products.length,
+                              itemBuilder: (context, index) {
+                                final product = products[index];
+                                return AppCard(
+                                  imageUrl: product.imageUrl,
+                                  title: product.title,
+                                  priceInCents: product.price,
+                                  variant: AppCardVariant.compact,
+                                  onTap: () =>
+                                      context.push('/products/${product.id}'),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        loading: () => GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.7,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
+                          itemCount: 6,
+                          itemBuilder: (context, index) =>
+                              const AppCard.skeleton(),
+                        ),
+                        error: (err, stack) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            AppDialog.showError(
+                              context: context,
+                              title: 'Erro ao carregar',
+                              subtitle: err.toString(),
+                              onOk: () => ref.invalidate(
+                                productsFeedProvider(
+                                  GetProductsParams(
+                                    search: searchQuery.isEmpty
+                                        ? null
+                                        : searchQuery,
+                                    category: selectedCategory,
+                                  ),
+                                ),
+                              ),
+                            );
+                          });
+                          return EmptyState(
+                            icon: Icons.search_off,
+                            title: 'ERRO',
+                            subtitle: 'Tente novamente mais tarde',
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: ScrollAwareBar(
+              animation: _headerHide.animation,
+              height: headerHeight,
+              edge: ScrollBarEdge.top,
+              child: PageHeader(
+                text: 'EXPLORAR',
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                      color: context.isDark
+                          ? AppColors.white
+                          : AppColors.primaryContainer,
+                    ),
+                    onPressed: () =>
+                        setState(() => _showFilters = !_showFilters),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

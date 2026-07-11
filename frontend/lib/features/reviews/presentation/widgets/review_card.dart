@@ -12,11 +12,7 @@ class ReviewCard extends StatelessWidget {
   final ReviewEntity review;
   final VoidCallback? onTapUser;
 
-  const ReviewCard({
-    super.key,
-    required this.review,
-    this.onTapUser,
-  });
+  const ReviewCard({super.key, required this.review, this.onTapUser});
 
   @override
   Widget build(BuildContext context) {
@@ -93,8 +89,9 @@ class ReviewCard extends StatelessWidget {
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 14,
                 height: 1.5,
-                color:
-                    isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+                color: isDark
+                    ? AppColors.inverseOnSurface
+                    : AppColors.onSurface,
               ),
             ),
           ],
@@ -105,26 +102,21 @@ class ReviewCard extends StatelessWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: review.images.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                    onTap: () => showFullScreenImage(
-                      context,
-                      review.images[index],
-                    ),
+                    onTap: () =>
+                        showFullScreenImage(context, review.images[index]),
                     child: Container(
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: AppColors.outline,
-                          width: 2,
-                        ),
+                        border: Border.all(color: AppColors.outline, width: 2),
                       ),
                       child: Image.network(
                         review.images[index],
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, _, _) => Container(
                           color: isDark
                               ? AppColors.surfaceDark
                               : AppColors.surface,

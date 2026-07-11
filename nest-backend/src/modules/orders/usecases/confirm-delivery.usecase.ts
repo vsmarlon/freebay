@@ -8,7 +8,7 @@ import { ConfirmDeliveryInput } from '../dtos/order.dto';
 export class ConfirmDeliveryUseCase {
   constructor(private readonly orderRepository: OrderRepository) {}
 
-  async execute(input: ConfirmDeliveryInput): Promise<Either<AppError, { confirmed: boolean; sellerAmount: number }>> {
+  async execute(input: ConfirmDeliveryInput): Promise<Either<AppError, { sellerAmount: number }>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
     if (isLeft(orderResult)) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
@@ -29,6 +29,6 @@ export class ConfirmDeliveryUseCase {
     });
     if (isLeft(result)) return left(result.value);
 
-    return right({ confirmed: true, sellerAmount: order.sellerAmount });
+    return right({ sellerAmount: order.sellerAmount });
   }
 }

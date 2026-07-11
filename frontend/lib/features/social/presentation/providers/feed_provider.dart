@@ -1,11 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
-
-final socialRepositoryProvider = Provider<ISocialRepository>((ref) {
-  return SocialRepository();
-});
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 
 enum FeedType { explore, following }
 
@@ -13,8 +9,9 @@ enum FeedContentFilter { all, socialOnly, sellingOnly }
 
 final feedTypeProvider = StateProvider<FeedType>((ref) => FeedType.explore);
 
-final feedContentFilterProvider =
-    StateProvider<FeedContentFilter>((ref) => FeedContentFilter.all);
+final feedContentFilterProvider = StateProvider<FeedContentFilter>(
+  (ref) => FeedContentFilter.all,
+);
 
 class FeedState {
   final List<PostEntity> posts;
@@ -53,8 +50,10 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   FeedNotifier(this._repository) : super(const FeedState());
 
-  Future<void> loadFeed(
-      {bool refresh = false, String feedType = 'explore'}) async {
+  Future<void> loadFeed({
+    bool refresh = false,
+    String feedType = 'explore',
+  }) async {
     if (state.isLoading) return;
 
     final cursor = refresh ? null : state.cursor;
@@ -68,10 +67,8 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final result = await _repository.getFeed(cursor: cursor, type: feedType);
 
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (posts) => state = state.copyWith(
         posts: refresh ? posts : [...state.posts, ...posts],
         isLoading: false,
@@ -99,6 +96,16 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final updatedPosts = state.posts.map((post) {
       if (post.id == postId) {
         return post.copyWith(sharesCount: newCount);
+      }
+      return post;
+    }).toList();
+    state = state.copyWith(posts: updatedPosts);
+  }
+
+  void updatePostCommentCount(String postId, int delta) {
+    final updatedPosts = state.posts.map((post) {
+      if (post.id == postId) {
+        return post.copyWith(commentsCount: post.commentsCount + delta);
       }
       return post;
     }).toList();

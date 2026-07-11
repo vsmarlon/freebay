@@ -1,78 +1,24 @@
-import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
+part 'comment_entity.freezed.dart';
 part 'comment_entity.g.dart';
 
-@JsonSerializable()
-class CommentEntity extends Equatable {
-  final String id;
-  final String content;
-  final String userId;
-  final String postId;
-  final String? parentId;
-  final int likesCount;
-  final bool isLiked;
-  final DateTime createdAt;
-  final UserEntity? user; // Backend might optionally join user data
-
-  @JsonKey(defaultValue: [])
-  final List<CommentEntity> replies;
-
-  const CommentEntity({
-    required this.id,
-    required this.content,
-    required this.userId,
-    required this.postId,
-    this.parentId,
-    this.likesCount = 0,
-    this.isLiked = false,
-    required this.createdAt,
-    this.user,
-    this.replies = const [],
-  });
+@freezed
+abstract class CommentEntity with _$CommentEntity {
+  const factory CommentEntity({
+    required String id,
+    required String content,
+    required String userId,
+    required String postId,
+    String? parentId,
+    @Default(0) int likesCount,
+    @Default(false) bool isLiked,
+    required DateTime createdAt,
+    UserEntity? user,
+    @Default([]) List<CommentEntity> replies,
+  }) = _CommentEntity;
 
   factory CommentEntity.fromJson(Map<String, dynamic> json) =>
       _$CommentEntityFromJson(json);
-  Map<String, dynamic> toJson() => _$CommentEntityToJson(this);
-
-  CommentEntity copyWith({
-    String? id,
-    String? content,
-    String? userId,
-    String? postId,
-    String? parentId,
-    int? likesCount,
-    bool? isLiked,
-    DateTime? createdAt,
-    UserEntity? user,
-    List<CommentEntity>? replies,
-  }) {
-    return CommentEntity(
-      id: id ?? this.id,
-      content: content ?? this.content,
-      userId: userId ?? this.userId,
-      postId: postId ?? this.postId,
-      parentId: parentId ?? this.parentId,
-      likesCount: likesCount ?? this.likesCount,
-      isLiked: isLiked ?? this.isLiked,
-      createdAt: createdAt ?? this.createdAt,
-      user: user ?? this.user,
-      replies: replies ?? this.replies,
-    );
-  }
-
-  @override
-  List<Object?> get props => [
-        id,
-        content,
-        userId,
-        postId,
-        parentId,
-        likesCount,
-        isLiked,
-        createdAt,
-        user,
-        replies,
-      ];
 }
