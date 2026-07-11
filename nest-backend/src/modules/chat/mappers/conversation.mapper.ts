@@ -117,7 +117,7 @@ export class ConversationMapper {
         status: order.status,
       },
       lastMessage: lastMsg ? {
-        content: lastMsg.content,
+        content: lastMsg.content ?? '',
         createdAt: lastMsg.createdAt.toISOString(),
         senderId: lastMsg.senderId,
       } : null,

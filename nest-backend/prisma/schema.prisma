@@ -114,79 +114,81 @@ enum ReportTargetType {
 // ─── Models ────────────────────────────────────────────
 
 model User {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   displayName     String
-  email           String   @unique
-  emailVerified   Boolean  @default(false)
+  email           String    @unique
+  emailVerified   Boolean   @default(false)
   passwordHash    String
-  cpfHash         String?  @unique
+  cpfHash         String?   @unique
   cpf             String?
   phone           String?
-  phoneVerified   Boolean  @default(false)
+  phoneVerified   Boolean   @default(false)
   city            String?
   state           String?
   avatarUrl       String?
   bannerUrl       String?
-  bio             String?  @db.VarChar(150)
-  isVerified      Boolean  @default(false)
-  isGuest         Boolean  @default(false)
-  role            UserRole @default(USER)
-  reputationScore Float    @default(0)
-  totalReviews    Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  bio             String?   @db.VarChar(150)
+  isVerified      Boolean   @default(false)
+  isGuest         Boolean   @default(false)
+  role            UserRole  @default(USER)
+  reputationScore Float     @default(0)
+  totalReviews    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastSeenAt      DateTime?
 
-  wallet          Wallet?
-  products        Product[]
-  posts           Post[]
-  savedPosts      SavedPost[]
-  ordersAsBuyer   Order[]       @relation("BuyerOrders")
-  ordersAsSeller  Order[]       @relation("SellerOrders")
-  reviewsGiven    Review[]      @relation("ReviewsGiven")
-  reviewsReceived Review[]     @relation("ReviewsReceived")
-  followers       Follow[]      @relation("Following")
-  following       Follow[]      @relation("Followers")
-  blocksGiven      Block[]       @relation("Blocker")
-  blocksReceived  Block[]       @relation("Blocked")
-  disputes        Dispute[]
-  comments        Comment[]
-  likes           Like[]
-  shares          Share[]
-  chatMessages    ChatMessage[]
-  stories         Story[]
-  commentLikes    CommentLike[]
-  favorites       Favorite[]
-  cartItems       CartItem[]
-  passwordRecoveryCodes PasswordRecoveryCode[]
-  phoneVerificationCodes PhoneVerificationCode[]
-  convosAsUser1   DirectConversation[] @relation("User1Convos")
-  convosAsUser2   DirectConversation[] @relation("User2Convos")
-  directMessages  DirectMessage[]
+  wallet                  Wallet?
+  products                Product[]
+  posts                   Post[]
+  savedPosts              SavedPost[]
+  ordersAsBuyer           Order[]                  @relation("BuyerOrders")
+  ordersAsSeller          Order[]                  @relation("SellerOrders")
+  reviewsGiven            Review[]                 @relation("ReviewsGiven")
+  reviewsReceived         Review[]                 @relation("ReviewsReceived")
+  followers               Follow[]                 @relation("Following")
+  following               Follow[]                 @relation("Followers")
+  blocksGiven             Block[]                  @relation("Blocker")
+  blocksReceived          Block[]                  @relation("Blocked")
+  disputes                Dispute[]
+  comments                Comment[]
+  likes                   Like[]
+  shares                  Share[]
+  chatMessages            ChatMessage[]
+  stories                 Story[]
+  commentLikes            CommentLike[]
+  favorites               Favorite[]
+  cartItems               CartItem[]
+  passwordRecoveryCodes   PasswordRecoveryCode[]
+  phoneVerificationCodes  PhoneVerificationCode[]
+  convosAsUser1           DirectConversation[]     @relation("User1Convos")
+  convosAsUser2           DirectConversation[]     @relation("User2Convos")
+  directMessages          DirectMessage[]
   conversationPreferences ConversationPreference[]
-  notifications  Notification[]
-  submittedReports       Report[] @relation("SubmittedReports")
-  reportedUserReports    Report[] @relation("ReportedUserReports")
-  bugReports      BugReport[]
-  fcmToken        String?
-  notificationPrefs Json? @default("{\"orders\":true,\"follows\":true,\"messages\":true,\"disputes\":true}")
+  messageReactions        MessageReaction[]
+  notifications           Notification[]
+  submittedReports        Report[]                 @relation("SubmittedReports")
+  reportedUserReports     Report[]                 @relation("ReportedUserReports")
+  bugReports              BugReport[]
+  fcmToken                String?
+  notificationPrefs       Json?                    @default("{\"orders\":true,\"follows\":true,\"messages\":true,\"disputes\":true}")
 
   @@index([email])
   @@index([createdAt])
 }
 
 model PasswordRecoveryCode {
-  id               String   @id @default(uuid())
-  userId           String
-  codeHash         String
-  attempts         Int      @default(0)
-  maxAttempts      Int      @default(5)
-  requestedAt      DateTime @default(now())
-  sentAt           DateTime?
-  expiresAt        DateTime
-  usedAt           DateTime?
-  requestedIp      String?
-  userAgent        String?
-  resendMessageId  String?
+  id              String    @id @default(uuid())
+  userId          String
+  codeHash        String
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(5)
+  requestedAt     DateTime  @default(now())
+  sentAt          DateTime?
+  expiresAt       DateTime
+  usedAt          DateTime?
+  requestedIp     String?
+  userAgent       String?
+  resendMessageId String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -217,16 +219,16 @@ model PhoneVerificationCode {
 }
 
 model Category {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
-  slug      String     @unique
+  slug      String   @unique
   parentId  String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Category[] @relation("CategoryHierarchy")
-  products  Product[]
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
 
   @@index([parentId])
 }
@@ -235,7 +237,7 @@ model Product {
   id          String        @id @default(uuid())
   title       String
   description String
-  price       Int           // em centavos — nunca float
+  price       Int // em centavos — nunca float
   condition   Condition
   categoryId  String?
   status      ProductStatus @default(ACTIVE)
@@ -247,11 +249,11 @@ model Product {
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
 
-  seller   User           @relation(fields: [sellerId], references: [id])
-  post     Post?          @relation(fields: [postId], references: [id])
-  category Category?      @relation(fields: [categoryId], references: [id])
-  images   ProductImage[]
-  orders   Order[]
+  seller    User           @relation(fields: [sellerId], references: [id])
+  post      Post?          @relation(fields: [postId], references: [id])
+  category  Category?      @relation(fields: [categoryId], references: [id])
+  images    ProductImage[]
+  orders    Order[]
   favorites Favorite[]
   cartItems CartItem[]
 
@@ -261,9 +263,9 @@ model Product {
 }
 
 model ProductImage {
-  id        String  @id @default(uuid())
+  id        String @id @default(uuid())
   url       String
-  order     Int     @default(0)
+  order     Int    @default(0)
   productId String
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -283,30 +285,30 @@ model Post {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id])
-  product  Product?
-  comments Comment[]
-  likes    Like[]
-  shares   Share[]
-  savedBy  SavedPost[]
-  reportedPostReports Report[] @relation("ReportedPostReports")
+  user                User        @relation(fields: [userId], references: [id])
+  product             Product?
+  comments            Comment[]
+  likes               Like[]
+  shares              Share[]
+  savedBy             SavedPost[]
+  reportedPostReports Report[]    @relation("ReportedPostReports")
 
   @@index([userId, createdAt])
 }
 
 model Comment {
-  id        String   @id @default(uuid())
-  content   String
-  userId    String
-  postId    String
-  parentId  String?
-  likesCount Int     @default(0)
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  content    String
+  userId     String
+  postId     String
+  parentId   String?
+  likesCount Int      @default(0)
+  createdAt  DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
-  replies Comment[] @relation("CommentReplies")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent       Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies      Comment[]     @relation("CommentReplies")
   commentLikes CommentLike[]
 
   @@index([postId])
@@ -379,15 +381,15 @@ model Order {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
-  buyer        User          @relation("BuyerOrders", fields: [buyerId], references: [id])
-  seller       User          @relation("SellerOrders", fields: [sellerId], references: [id])
-  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
-  transaction  Transaction?
-  dispute      Dispute?
-  reviews      Review[]
-  chatMessages ChatMessage[]
+  buyer                   User                     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller                  User                     @relation("SellerOrders", fields: [sellerId], references: [id])
+  product                 Product                  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  transaction             Transaction?
+  dispute                 Dispute?
+  reviews                 Review[]
+  chatMessages            ChatMessage[]
   conversationPreferences ConversationPreference[]
-  reportedOrderReports Report[] @relation("ReportedOrderReports")
+  reportedOrderReports    Report[]                 @relation("ReportedOrderReports")
 
   @@index([buyerId])
   @@index([sellerId])
@@ -420,11 +422,11 @@ model Transaction {
 }
 
 model Wallet {
-  id               String       @id @default(uuid())
-  userId           String       @unique
-  availableBalance Int          @default(0)
-  pendingBalance   Int          @default(0)
-  totalEarned      Int          @default(0)
+  id               String  @id @default(uuid())
+  userId           String  @unique
+  availableBalance Int     @default(0)
+  pendingBalance   Int     @default(0)
+  totalEarned      Int     @default(0)
   recipientId      String?
 
   user        User         @relation(fields: [userId], references: [id])
@@ -467,24 +469,24 @@ model Review {
   reviewedId String
   orderId    String
   type       ReviewType
-  score      Int        // 1–5
+  score      Int // 1–5
   comment    String?
   createdAt  DateTime   @default(now())
 
   images   ReviewImage[]
-  reviewer User  @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  reviewed User  @relation("ReviewsReceived", fields: [reviewedId], references: [id])
-  order    Order @relation(fields: [orderId], references: [id])
+  reviewer User          @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewed User          @relation("ReviewsReceived", fields: [reviewedId], references: [id])
+  order    Order         @relation(fields: [orderId], references: [id])
 
   @@unique([reviewerId, orderId, type])
   @@index([reviewedId])
 }
 
 model ReviewImage {
-  id        String   @id @default(uuid())
-  url       String
-  order     Int      @default(0)
-  reviewId  String
+  id       String @id @default(uuid())
+  url      String
+  order    Int    @default(0)
+  reviewId String
 
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
@@ -492,16 +494,25 @@ model ReviewImage {
 }
 
 model ChatMessage {
-  id        String   @id @default(uuid())
-  orderId   String
-  senderId  String
-  content   String
-  readAt    DateTime?
-  createdAt DateTime @default(now())
+  id            String      @id @default(uuid())
+  orderId       String
+  senderId      String
+  content       String?
+  type          MessageType @default(TEXT)
+  attachmentUrl String?
+  metadata      Json?
+  deliveredAt   DateTime?
+  readAt        DateTime?
+  replyToId     String?
+  deletedAt     DateTime?
+  createdAt     DateTime    @default(now())
 
-  order  Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  sender User  @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  reportedChatMsgReports Report[] @relation("ReportedChatMsgReports")
+  order                  Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender                 User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo                ChatMessage?      @relation("CmReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies                ChatMessage[]     @relation("CmReplies")
+  reactions              MessageReaction[]
+  reportedChatMsgReports Report[]          @relation("ReportedChatMsgReports")
 
   @@index([orderId, createdAt])
 }
@@ -543,17 +554,17 @@ model Story {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  user  User       @relation(fields: [userId], references: [id])
+  user  User        @relation(fields: [userId], references: [id])
   views StoryView[]
 
   @@index([userId, expiresAt])
 }
 
 model StoryView {
-  id        String   @id @default(uuid())
-  storyId   String
-  viewerId  String
-  viewedAt  DateTime @default(now())
+  id       String   @id @default(uuid())
+  storyId  String
+  viewerId String
+  viewedAt DateTime @default(now())
 
   story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
 
@@ -566,8 +577,8 @@ model Block {
   blockedId String
   createdAt DateTime @default(now())
 
-  blocker   User @relation("Blocker", fields: [blockerId], references: [id])
-  blocked   User @relation("Blocked", fields: [blockedId], references: [id])
+  blocker User @relation("Blocker", fields: [blockerId], references: [id])
+  blocked User @relation("Blocked", fields: [blockedId], references: [id])
 
   @@unique([blockerId, blockedId])
   @@index([blockerId])
@@ -583,19 +594,37 @@ enum MessageType {
   LOCATION
 }
 
+model MessageReaction {
+  id              String   @id @default(uuid())
+  emoji           String
+  userId          String
+  directMessageId String?
+  chatMessageId   String?
+  createdAt       DateTime @default(now())
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  directMessage DirectMessage? @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+  chatMessage   ChatMessage?   @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, directMessageId])
+  @@unique([userId, chatMessageId])
+  @@index([directMessageId])
+  @@index([chatMessageId])
+}
+
 model DirectConversation {
-  id            String    @id @default(uuid())
+  id            String             @id @default(uuid())
   user1Id       String
   user2Id       String
   status        ConversationStatus @default(PENDING)
-  lastMessageAt DateTime  @default(now())
-  createdAt     DateTime  @default(now())
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
 
-  user1       User                      @relation("User1Convos", fields: [user1Id], references: [id])
-  user2       User                      @relation("User2Convos", fields: [user2Id], references: [id])
-  messages    DirectMessage[]
-  preferences ConversationPreference[]
-  reportedDirectConvReports Report[] @relation("ReportedDirectConvReports")
+  user1                     User                     @relation("User1Convos", fields: [user1Id], references: [id])
+  user2                     User                     @relation("User2Convos", fields: [user2Id], references: [id])
+  messages                  DirectMessage[]
+  preferences               ConversationPreference[]
+  reportedDirectConvReports Report[]                 @relation("ReportedDirectConvReports")
 
   @@unique([user1Id, user2Id])
 }
@@ -610,11 +639,16 @@ model DirectMessage {
   metadata       Json?
   deliveredAt    DateTime?
   readAt         DateTime?
+  replyToId      String?
+  deletedAt      DateTime?
   createdAt      DateTime    @default(now())
 
-  conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  reportedDirectMsgReports Report[] @relation("ReportedDirectMsgReports")
+  conversation             DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender                   User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo                  DirectMessage?     @relation("DmReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies                  DirectMessage[]    @relation("DmReplies")
+  reactions                MessageReaction[]
+  reportedDirectMsgReports Report[]           @relation("ReportedDirectMsgReports")
 
   @@index([conversationId, createdAt])
   @@index([senderId])
@@ -663,29 +697,29 @@ enum ReportStatus {
 }
 
 model Report {
-  id                          String           @id @default(uuid())
-  reporterId                  String
-  reportedUserId              String?
-  reportedPostId              String?
-  targetType                  ReportTargetType @default(USER)
+  id                           String           @id @default(uuid())
+  reporterId                   String
+  reportedUserId               String?
+  reportedPostId               String?
+  targetType                   ReportTargetType @default(USER)
   reportedDirectConversationId String?
   reportedOrderChatId          String?
   reportedDirectMessageId      String?
   reportedChatMessageId        String?
-  reason                      ReportReason
-  description                 String?
-  hideFromUser                Boolean          @default(false)
-  status                      ReportStatus     @default(PENDING)
-  createdAt                   DateTime         @default(now())
-  reviewedAt                  DateTime?
+  reason                       ReportReason
+  description                  String?
+  hideFromUser                 Boolean          @default(false)
+  status                       ReportStatus     @default(PENDING)
+  createdAt                    DateTime         @default(now())
+  reviewedAt                   DateTime?
 
-  reporter              User               @relation("SubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
-  reportedUser          User?              @relation("ReportedUserReports", fields: [reportedUserId], references: [id], onDelete: Cascade)
-  reportedPost          Post?              @relation("ReportedPostReports", fields: [reportedPostId], references: [id], onDelete: Cascade)
-  reportedDirectConv    DirectConversation? @relation("ReportedDirectConvReports", fields: [reportedDirectConversationId], references: [id], onDelete: Cascade)
-  reportedOrder         Order?             @relation("ReportedOrderReports", fields: [reportedOrderChatId], references: [id], onDelete: Cascade)
-  reportedDirectMsg     DirectMessage?     @relation("ReportedDirectMsgReports", fields: [reportedDirectMessageId], references: [id], onDelete: Cascade)
-  reportedChatMsg       ChatMessage?       @relation("ReportedChatMsgReports", fields: [reportedChatMessageId], references: [id], onDelete: Cascade)
+  reporter           User                @relation("SubmittedReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser       User?               @relation("ReportedUserReports", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reportedPost       Post?               @relation("ReportedPostReports", fields: [reportedPostId], references: [id], onDelete: Cascade)
+  reportedDirectConv DirectConversation? @relation("ReportedDirectConvReports", fields: [reportedDirectConversationId], references: [id], onDelete: Cascade)
+  reportedOrder      Order?              @relation("ReportedOrderReports", fields: [reportedOrderChatId], references: [id], onDelete: Cascade)
+  reportedDirectMsg  DirectMessage?      @relation("ReportedDirectMsgReports", fields: [reportedDirectMessageId], references: [id], onDelete: Cascade)
+  reportedChatMsg    ChatMessage?        @relation("ReportedChatMsgReports", fields: [reportedChatMessageId], references: [id], onDelete: Cascade)
 
   @@unique([reporterId, reportedUserId])
   @@unique([reporterId, reportedPostId])
