@@ -58,7 +58,7 @@ export class UploadController {
         'Arquivo ausente ou tipo não permitido (aceitos: jpeg, png, gif, webp)',
       );
     }
-    if (!VALID_CONTEXTS.includes(context as any)) {
+    if (!(VALID_CONTEXTS as readonly string[]).includes(context)) {
       throw new BadRequestException(
         `Context inválido. Use: ${VALID_CONTEXTS.join(', ')}`,
       );

@@ -30,7 +30,7 @@ export class CommentUseCase {
       if (uniqueIds.length > 0) {
         await this.commentRepository.createMentions(result.value.id, uniqueIds);
 
-        const authorName = (result.value as any).user?.displayName ?? 'Alguém';
+        const authorName = result.value.user?.displayName ?? 'Alguém';
         for (const mentionedId of uniqueIds) {
           this.notificationService
             .notifyMention(mentionedId, `@${authorName} te mencionou em um comentário`, result.value.id)

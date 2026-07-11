@@ -66,7 +66,7 @@ export class ChatService {
       senderId: userId,
       conversationId,
       content: body.content,
-      type: body.type as any,
+      type: body.type,
       attachmentUrl: body.attachmentUrl,
       replyToId: body.replyToId,
       metadata: body.metadata,

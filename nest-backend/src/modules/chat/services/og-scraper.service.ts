@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import ogs from 'open-graph-scraper';
+import type { SuccessResult } from 'open-graph-scraper/types/lib/types';
 
 export interface OgMetadata {
   title: string | null;
@@ -25,13 +26,13 @@ export class OgScraperService {
         ogs({ url, timeout: SCRAPE_TIMEOUT_MS }),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), SCRAPE_TIMEOUT_MS + 500)),
       ]);
-      if (!result || 'error' in result) return null;
-      const { result: data } = result as Awaited<ReturnType<typeof ogs>>;
+      if (!result || result.error) return null;
+      const { result: data } = result as SuccessResult;
       return {
-        title: (data as any).ogTitle ?? null,
-        description: (data as any).ogDescription ?? null,
-        imageUrl: (data as any).ogImage?.[0]?.url ?? null,
-        siteName: (data as any).ogSiteName ?? null,
+        title: data.ogTitle ?? null,
+        description: data.ogDescription ?? null,
+        imageUrl: data.ogImage?.[0]?.url ?? null,
+        siteName: data.ogSiteName ?? null,
         url,
       };
     } catch {

@@ -60,8 +60,9 @@ além disso vamos começar a salvar as imagens em discos para facilitar a migrac
 ### CHAT
 - [ ] investigate the cause of this: on chatW/ConnectivityManager.CallbackHandler(  357): callback not found for CALLBACK_AVAILABLE message
 - [ ] "nenhuma conversa aqruivada" o texto não esta centralizado.
-- [ ] Chat nao renderiza as conversas disponiveis na main page do chat. investigar o fluxo.
-
+- [ ] Chat nao renderiza as conversas 
+disponiveis na main page do chat. investigar o fluxo.
+-[ ] ao personalizar e trocar a cor , o 'Check' Não é atualizado conforme eu seleciono a cor
 ### Perfil
 - [ ] verificação do perfil show modal aparece por cima da navbar e ao abrir o teclado a tela sobe e depois volta ao normal(investigue, provavelmente é um bug com o scroll que fizemos no feed) botão de fechar está mt dificil de ver no dark mode
 - [ ] não consigo clicar em algum post que o usuario criou(no perfil dele) para abrir a tela do post(a mesma usada no feed.)

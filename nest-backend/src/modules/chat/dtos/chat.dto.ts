@@ -20,7 +20,7 @@ export class SendMessageDTO {
   @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
   @IsString()
   @IsOptional()
-  readonly type?: string;
+  readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD';
 
   @ApiProperty({ example: '/uploads/chat/abc.jpg', required: false })
   @IsString()
