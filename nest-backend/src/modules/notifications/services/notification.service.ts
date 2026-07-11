@@ -90,4 +90,14 @@ export class NotificationService {
       extraData: { type: 'DISPUTE', action: 'disputes', disputeId },
     });
   }
+
+  async notifyMention(userId: string, body: string, entityId: string) {
+    await this.create({
+      userId,
+      type: 'MENTION',
+      title: 'Menção',
+      body,
+      extraData: { type: 'MENTION', action: 'post', entityId },
+    });
+  }
 }

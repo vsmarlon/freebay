@@ -8,10 +8,12 @@ import { right } from '@/shared/core/either';
 import { PostRepository } from '../domain/repositories/post.repository';
 import { LikeRepository } from '../domain/repositories/like.repository';
 import { CommentRepository } from '../domain/repositories/comment.repository';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 describe('CreatePostUseCase', () => {
   let sut: CreatePostUseCase;
-  let mockPostRepository: { create: jest.Mock };
+  let mockPostRepository: { create: jest.Mock; createMentions: jest.Mock };
+  let mockNotificationService: { notifyMention: jest.Mock };
 
   beforeEach(async () => {
     mockPostRepository = {
@@ -32,12 +34,18 @@ describe('CreatePostUseCase', () => {
           isVerified: false,
         },
       }))),
+      createMentions: jest.fn().mockResolvedValue(right(undefined)),
+    };
+
+    mockNotificationService = {
+      notifyMention: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePostUseCase,
         { provide: PostRepository, useValue: mockPostRepository },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
@@ -79,6 +87,54 @@ describe('CreatePostUseCase', () => {
       expect(result.value.imageUrl).toBe('http://example.com/image.jpg');
       expect(result.value.type).toBe('PRODUCT');
     }
+  });
+
+  it('should create PostMention rows for each mentionId', async () => {
+    const input = {
+      userId: 'user-123',
+      content: 'Hey @friend!',
+      type: 'REGULAR' as const,
+      mentionIds: ['friend-user-id'],
+    };
+
+    const result = await sut.execute(input);
+
+    expect(result.isRight()).toBe(true);
+    expect(mockPostRepository.createMentions).toHaveBeenCalledWith('post-123', ['friend-user-id']);
+    expect(mockNotificationService.notifyMention).toHaveBeenCalledWith(
+      'friend-user-id',
+      expect.stringContaining('mencionou'),
+      'post-123',
+    );
+  });
+
+  it('should filter out author own userId from mentionIds', async () => {
+    const input = {
+      userId: 'user-123',
+      content: 'Hey self!',
+      type: 'REGULAR' as const,
+      mentionIds: ['user-123', 'friend-user-id'],
+    };
+
+    const result = await sut.execute(input);
+
+    expect(result.isRight()).toBe(true);
+    expect(mockPostRepository.createMentions).toHaveBeenCalledWith('post-123', ['friend-user-id']);
+  });
+
+  it('should not create mentions when mentionIds is empty', async () => {
+    const input = {
+      userId: 'user-123',
+      content: 'No mentions',
+      type: 'REGULAR' as const,
+      mentionIds: [],
+    };
+
+    const result = await sut.execute(input);
+
+    expect(result.isRight()).toBe(true);
+    expect(mockPostRepository.createMentions).not.toHaveBeenCalled();
+    expect(mockNotificationService.notifyMention).not.toHaveBeenCalled();
   });
 });
 
@@ -185,8 +241,9 @@ describe('UnlikePostUseCase', () => {
 
 describe('CommentUseCase', () => {
   let sut: CommentUseCase;
-  let mockCommentRepository: { create: jest.Mock };
+  let mockCommentRepository: { create: jest.Mock; createMentions: jest.Mock };
   let mockPostRepository: { update: jest.Mock };
+  let mockNotificationService: { notifyMention: jest.Mock };
 
   beforeEach(async () => {
     mockCommentRepository = {
@@ -197,10 +254,15 @@ describe('CommentUseCase', () => {
         userId: 'user-123',
         createdAt: new Date(),
       })),
+      createMentions: jest.fn().mockResolvedValue(right(undefined)),
     };
 
     mockPostRepository = {
       update: jest.fn().mockResolvedValue(right({})),
+    };
+
+    mockNotificationService = {
+      notifyMention: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -208,6 +270,7 @@ describe('CommentUseCase', () => {
         CommentUseCase,
         { provide: CommentRepository, useValue: mockCommentRepository },
         { provide: PostRepository, useValue: mockPostRepository },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
@@ -234,5 +297,38 @@ describe('CommentUseCase', () => {
       expect(result.value.userId).toBe('user-123');
     }
     expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { commentsCount: { increment: 1 } });
+  });
+
+  it('should create CommentMention rows for each mentionId', async () => {
+    const input = {
+      userId: 'user-123',
+      postId: 'post-123',
+      content: '@friend nice!',
+      mentionIds: ['friend-user-id'],
+    };
+
+    const result = await sut.execute(input);
+
+    expect(result.isRight()).toBe(true);
+    expect(mockCommentRepository.createMentions).toHaveBeenCalledWith('comment-123', ['friend-user-id']);
+    expect(mockNotificationService.notifyMention).toHaveBeenCalledWith(
+      'friend-user-id',
+      expect.stringContaining('comentário'),
+      'comment-123',
+    );
+  });
+
+  it('should filter out author own userId from comment mentionIds', async () => {
+    const input = {
+      userId: 'user-123',
+      postId: 'post-123',
+      content: '@self hi',
+      mentionIds: ['user-123', 'friend-user-id'],
+    };
+
+    const result = await sut.execute(input);
+
+    expect(result.isRight()).toBe(true);
+    expect(mockCommentRepository.createMentions).toHaveBeenCalledWith('comment-123', ['friend-user-id']);
   });
 });

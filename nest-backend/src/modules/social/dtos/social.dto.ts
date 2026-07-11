@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsOptional, IsUUID, IsIn, IsUrl, IsInt, Min, Max } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional, IsUUID, IsIn, IsUrl, IsInt, Min, Max, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
@@ -18,6 +18,12 @@ export class CreatePostDTO {
   @ApiProperty({ enum: ['PRODUCT', 'REGULAR'], example: 'REGULAR' })
   @IsIn(['PRODUCT', 'REGULAR'])
   readonly type: 'PRODUCT' | 'REGULAR';
+
+  @ApiPropertyOptional({ example: ['uuid1', 'uuid2'], required: false, type: [String] })
+  @IsArray()
+  @IsOptional()
+  @IsUUID('all', { each: true })
+  readonly mentionIds?: string[];
 }
 
 export class CreateCommentDTO {
@@ -32,6 +38,12 @@ export class CreateCommentDTO {
   @IsOptional()
   @IsUUID()
   readonly parentId?: string;
+
+  @ApiPropertyOptional({ example: ['uuid1', 'uuid2'], required: false, type: [String] })
+  @IsArray()
+  @IsOptional()
+  @IsUUID('all', { each: true })
+  readonly mentionIds?: string[];
 }
 
 export class GetFeedQueryDTO {
@@ -95,6 +107,7 @@ export interface CreatePostInput {
   content?: string;
   imageUrl?: string;
   type: 'PRODUCT' | 'REGULAR';
+  mentionIds?: string[];
 }
 
 export interface CreatePostOutput {
@@ -125,6 +138,7 @@ export interface CreateCommentInput {
   postId: string;
   content: string;
   parentId?: string;
+  mentionIds?: string[];
 }
 
 export interface CreateCommentOutput {

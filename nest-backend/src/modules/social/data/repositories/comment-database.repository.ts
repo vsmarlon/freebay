@@ -31,4 +31,16 @@ export class PrismaCommentRepository implements CommentRepository {
       return left(new AppError('DB_ERROR', 'Erro ao criar comentário'));
     }
   }
+
+  async createMentions(commentId: string, mentionedUserIds: string[]): RepositoryResponse<void> {
+    try {
+      await this.prisma.commentMention.createMany({
+        data: mentionedUserIds.map((mentionedUserId) => ({ commentId, mentionedUserId })),
+        skipDuplicates: true,
+      });
+      return right(undefined);
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao criar menções no comentário'));
+    }
+  }
 }

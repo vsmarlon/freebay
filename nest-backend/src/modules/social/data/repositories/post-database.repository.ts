@@ -135,4 +135,16 @@ export class PrismaPostRepository implements PostRepository {
       return left(new AppError('DB_ERROR', 'Erro ao atualizar post'));
     }
   }
+
+  async createMentions(postId: string, mentionedUserIds: string[]): RepositoryResponse<void> {
+    try {
+      await this.prisma.postMention.createMany({
+        data: mentionedUserIds.map((mentionedUserId) => ({ postId, mentionedUserId })),
+        skipDuplicates: true,
+      });
+      return right(undefined);
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao criar menções'));
+    }
+  }
 }

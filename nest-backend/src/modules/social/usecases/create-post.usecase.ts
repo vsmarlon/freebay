@@ -3,10 +3,14 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PostRepository } from '../domain/repositories/post.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 @Injectable()
 export class CreatePostUseCase {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(
+    private readonly postRepository: PostRepository,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async execute(input: CreatePostInput): Promise<Either<AppError, CreatePostOutput>> {
     const result = await this.postRepository.create({
@@ -18,6 +22,21 @@ export class CreatePostUseCase {
     if (isLeft(result)) return left(result.value);
 
     const post = result.value;
+
+    if (input.mentionIds && input.mentionIds.length > 0) {
+      const uniqueIds = [...new Set(input.mentionIds)].filter((id) => id !== input.userId);
+      if (uniqueIds.length > 0) {
+        await this.postRepository.createMentions(post.id, uniqueIds);
+
+        const authorName = post.user?.displayName ?? 'Alguém';
+        for (const mentionedId of uniqueIds) {
+          this.notificationService
+            .notifyMention(mentionedId, `@${authorName} te mencionou em uma publicação`, post.id)
+            .catch(() => {});
+        }
+      }
+    }
+
     return right({
       id: post.id,
       content: post.content,

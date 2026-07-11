@@ -28,4 +28,5 @@ export abstract class PostRepository {
   abstract searchPosts(query: SearchPostsQuery): RepositoryResponse<PostPayload[]>;
   abstract create(data: Record<string, unknown>): RepositoryResponse<PostPayload>;
   abstract update(id: string, data: Record<string, unknown>): RepositoryResponse<unknown>;
+  abstract createMentions(postId: string, mentionedUserIds: string[]): RepositoryResponse<void>;
 }
