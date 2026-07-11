@@ -23,6 +23,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { BugReportModule } from './modules/bug-reports/bug-report.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { BugReportModule } from './modules/bug-reports/bug-report.module';
     StoriesModule,
     TasksModule,
     BugReportModule,
+    UploadModule,
   ],
   providers: [
     {
