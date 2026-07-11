@@ -237,6 +237,30 @@ describe('Users UseCases', () => {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
     });
+
+    it('allows re-follow after unfollow', async () => {
+      mockUserRepository.findById.mockResolvedValue(right(mockUser));
+      mockFollowRepository.getFollowersCount.mockResolvedValue(right(1));
+      mockFollowRepository.getFollowingCount.mockResolvedValue(right(1));
+
+      mockFollowRepository.unfollow.mockResolvedValue(right(undefined));
+      const unfollowResult = await unfollowUserUseCase.execute({
+        followerId: 'follower-123',
+        followingId: 'following-123',
+      });
+      expect(unfollowResult.isRight()).toBe(true);
+
+      mockFollowRepository.follow.mockResolvedValue(right(undefined));
+      const refollowResult = await followUserUseCase.execute({
+        followerId: 'follower-123',
+        followingId: 'following-123',
+      });
+
+      expect(refollowResult.isRight()).toBe(true);
+      if (refollowResult.isRight()) {
+        expect(refollowResult.value.following).toBe(true);
+      }
+    });
   });
 
   describe('UnfollowUserUseCase', () => {
