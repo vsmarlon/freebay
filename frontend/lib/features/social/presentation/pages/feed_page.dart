@@ -5,7 +5,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
 import 'package:freebay/core/components/app_refresh_indicator.dart';
@@ -52,6 +51,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
     // ref.read is allowed in initState() per Riverpod docs — one-time seeding.
     final currentState = ref.read(feedProvider);
     final feedType = ref.read(feedTypeProvider);
+    final contentFilter = ref.read(feedContentFilterProvider);
     if (currentState.posts.isEmpty && !currentState.isLoading) {
       Future.microtask(() {
         if (!mounted) return;
@@ -62,6 +62,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
               feedType: feedType == FeedType.following
                   ? 'following'
                   : 'explore',
+              contentFilter: contentFilter.apiValue,
             );
       });
     }
@@ -76,11 +77,36 @@ class _FeedPageState extends ConsumerState<FeedPage>
 
   void _onFeedTypeChanged(FeedType type) {
     ref.read(feedTypeProvider.notifier).state = type;
+    final contentFilter = ref.read(feedContentFilterProvider);
     ref
         .read(feedProvider.notifier)
         .loadFeed(
           refresh: true,
           feedType: type == FeedType.following ? 'following' : 'explore',
+          contentFilter: contentFilter.apiValue,
+        );
+  }
+
+  void _onContentFilterChanged(FeedContentFilter filter) {
+    ref.read(feedContentFilterProvider.notifier).state = filter;
+    final feedType = ref.read(feedTypeProvider);
+    ref
+        .read(feedProvider.notifier)
+        .loadFeed(
+          refresh: true,
+          feedType: feedType == FeedType.following ? 'following' : 'explore',
+          contentFilter: filter.apiValue,
+        );
+  }
+
+  void _loadMore() {
+    final feedType = ref.read(feedTypeProvider);
+    final contentFilter = ref.read(feedContentFilterProvider);
+    ref
+        .read(feedProvider.notifier)
+        .loadFeed(
+          feedType: feedType == FeedType.following ? 'following' : 'explore',
+          contentFilter: contentFilter.apiValue,
         );
   }
 
@@ -98,7 +124,14 @@ class _FeedPageState extends ConsumerState<FeedPage>
             child: Padding(
               padding: EdgeInsets.only(top: headerHeight),
               child: NotificationListener<ScrollNotification>(
-                onNotification: _headerHide.handleNotification,
+                onNotification: (notification) {
+                  _headerHide.handleNotification(notification);
+                  if (notification is ScrollEndNotification &&
+                      notification.metrics.extentAfter < 400) {
+                    _loadMore();
+                  }
+                  return false;
+                },
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: _buildBody(feedState),
@@ -154,9 +187,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
   Widget _buildBody(FeedState feedState) {
     final feedType = ref.watch(feedTypeProvider);
     final contentFilter = ref.watch(feedContentFilterProvider);
-    final filteredPosts = feedState.posts
-        .where((post) => _matchesContentFilter(post, contentFilter))
-        .toList();
+    final posts = feedState.posts;
 
     final header = Column(
       children: [_buildFeedTitle(feedType, contentFilter), Spacing.vSm],
@@ -178,6 +209,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
                       feedType: type == FeedType.following
                           ? 'following'
                           : 'explore',
+                      contentFilter: contentFilter.apiValue,
                     );
               },
             ),
@@ -186,23 +218,17 @@ class _FeedPageState extends ConsumerState<FeedPage>
       );
     }
 
-    if (feedState.posts.isEmpty && !feedState.isLoading) {
-      return Column(
-        children: [
-          header,
-          Expanded(child: EmptyState.noPosts()),
-        ],
-      );
-    }
-
-    if (filteredPosts.isEmpty && !feedState.isLoading) {
+    if (posts.isEmpty && !feedState.isLoading) {
       return Column(
         children: [
           header,
           Expanded(
-            child: EmptyState.noResults(
-              subtitle: 'Troque entre posts sociais e vendas quando quiser.',
-            ),
+            child: contentFilter == FeedContentFilter.all
+                ? EmptyState.noPosts()
+                : EmptyState.noResults(
+                    subtitle:
+                        'Troque entre posts sociais e vendas quando quiser.',
+                  ),
           ),
         ],
       );
@@ -216,11 +242,12 @@ class _FeedPageState extends ConsumerState<FeedPage>
             .loadFeed(
               refresh: true,
               feedType: type == FeedType.following ? 'following' : 'explore',
+              contentFilter: contentFilter.apiValue,
             );
       },
       child: ListView.builder(
         padding: EdgeInsets.zero,
-        itemCount: filteredPosts.length + 1 + (feedState.hasMore ? 1 : 0),
+        itemCount: posts.length + 1 + (feedState.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == 0) {
             return Column(
@@ -231,12 +258,10 @@ class _FeedPageState extends ConsumerState<FeedPage>
               ],
             );
           }
-          if (index == filteredPosts.length + 1) {
+          if (index == posts.length + 1) {
             return _buildLoadingMore();
           }
-          return RepaintBoundary(
-            child: FeedPostItem(post: filteredPosts[index - 1]),
-          );
+          return RepaintBoundary(child: FeedPostItem(post: posts[index - 1]));
         },
       ),
     );
@@ -261,8 +286,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
           Center(
             child: FeedContentFilterBar(
               currentFilter: contentFilter,
-              onChanged: (filter) =>
-                  ref.read(feedContentFilterProvider.notifier).state = filter,
+              onChanged: _onContentFilterChanged,
             ),
           ),
         ],
@@ -333,17 +357,6 @@ class _FeedPageState extends ConsumerState<FeedPage>
       title: 'O QUE VOCÊ QUER CRIAR?',
       builder: (_) => const CreateComposerSheet(),
     );
-  }
-
-  bool _matchesContentFilter(PostEntity post, FeedContentFilter contentFilter) {
-    switch (contentFilter) {
-      case FeedContentFilter.socialOnly:
-        return post.type != 'PRODUCT';
-      case FeedContentFilter.sellingOnly:
-        return post.type == 'PRODUCT';
-      case FeedContentFilter.all:
-        return true;
-    }
   }
 }
 

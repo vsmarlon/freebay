@@ -9,19 +9,28 @@ import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/entities/user_post_entry.dart';
+import 'package:freebay/features/social/data/entities/feed_page_result.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
 
 class SocialRepository implements ISocialRepository {
   @override
-  Future<Either<Failure, List<PostEntity>>> getFeed({
+  Future<Either<Failure, FeedPageResult>> getFeed({
     int limit = 20,
     String? cursor,
+    int? offset,
     String type = 'explore',
+    String contentFilter = 'all',
   }) async {
     try {
       final response = await HttpClient.instance.get(
         '/social/feed',
-        queryParameters: {'limit': limit, 'type': type, 'cursor': ?cursor},
+        queryParameters: {
+          'limit': limit,
+          'type': type,
+          'contentFilter': contentFilter,
+          'cursor': ?cursor,
+          'offset': ?offset,
+        },
       );
 
       if (kDebugMode) {
@@ -38,7 +47,14 @@ class SocialRepository implements ISocialRepository {
         final posts = postsData
             .map((json) => PostEntity.fromJson(json as Map<String, dynamic>))
             .toList();
-        return Right(posts);
+        return Right(
+          FeedPageResult(
+            posts: posts,
+            hasMore: data?['hasMore'] == true,
+            nextCursor: data?['nextCursor'] as String?,
+            nextOffset: data?['nextOffset'] as int?,
+          ),
+        );
       }
       return const Left(ServerFailure('Erro ao carregar feed'));
     } catch (e, stack) {

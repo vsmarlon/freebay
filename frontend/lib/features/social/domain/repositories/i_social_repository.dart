@@ -3,6 +3,7 @@ import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
+import 'package:freebay/features/social/data/entities/feed_page_result.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
 class StoriesResponse {
@@ -13,10 +14,12 @@ class StoriesResponse {
 }
 
 abstract class ISocialRepository {
-  Future<Either<Failure, List<PostEntity>>> getFeed({
+  Future<Either<Failure, FeedPageResult>> getFeed({
     int limit = 20,
     String? cursor,
+    int? offset,
     String type = 'explore',
+    String contentFilter = 'all',
   });
   Future<Either<Failure, PostEntity>> createPost({
     String? content,

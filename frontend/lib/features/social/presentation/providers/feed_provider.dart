@@ -7,6 +7,19 @@ enum FeedType { explore, following }
 
 enum FeedContentFilter { all, socialOnly, sellingOnly }
 
+extension FeedContentFilterApi on FeedContentFilter {
+  String get apiValue {
+    switch (this) {
+      case FeedContentFilter.socialOnly:
+        return 'social';
+      case FeedContentFilter.sellingOnly:
+        return 'selling';
+      case FeedContentFilter.all:
+        return 'all';
+    }
+  }
+}
+
 final feedTypeProvider = StateProvider<FeedType>((ref) => FeedType.explore);
 
 final feedContentFilterProvider = StateProvider<FeedContentFilter>(
@@ -18,6 +31,7 @@ class FeedState {
   final bool isLoading;
   final bool hasMore;
   final String? cursor;
+  final int offset;
   final String? error;
 
   const FeedState({
@@ -25,6 +39,7 @@ class FeedState {
     this.isLoading = false,
     this.hasMore = true,
     this.cursor,
+    this.offset = 0,
     this.error,
   });
 
@@ -33,6 +48,7 @@ class FeedState {
     bool? isLoading,
     bool? hasMore,
     String? cursor,
+    int? offset,
     String? error,
   }) {
     return FeedState(
@@ -40,6 +56,7 @@ class FeedState {
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,
       cursor: cursor ?? this.cursor,
+      offset: offset ?? this.offset,
       error: error,
     );
   }
@@ -53,33 +70,52 @@ class FeedNotifier extends StateNotifier<FeedState> {
   Future<void> loadFeed({
     bool refresh = false,
     String feedType = 'explore',
+    String contentFilter = 'all',
   }) async {
     if (state.isLoading) return;
+    if (!refresh && !state.hasMore) return;
 
-    final cursor = refresh ? null : state.cursor;
+    final isFollowing = feedType == 'following';
+    final cursor = refresh ? null : (isFollowing ? state.cursor : null);
+    final offset = refresh ? 0 : (isFollowing ? 0 : state.offset);
 
     state = state.copyWith(
       isLoading: true,
       error: null,
       posts: refresh ? [] : state.posts,
+      cursor: refresh ? null : state.cursor,
+      offset: refresh ? 0 : state.offset,
     );
 
-    final result = await _repository.getFeed(cursor: cursor, type: feedType);
+    final result = await _repository.getFeed(
+      cursor: cursor,
+      offset: offset,
+      type: feedType,
+      contentFilter: contentFilter,
+    );
 
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (posts) => state = state.copyWith(
-        posts: refresh ? posts : [...state.posts, ...posts],
+      (page) => state = state.copyWith(
+        posts: refresh ? page.posts : [...state.posts, ...page.posts],
         isLoading: false,
-        hasMore: posts.length >= 20,
-        cursor: posts.isNotEmpty ? posts.last.id : state.cursor,
+        hasMore: page.hasMore,
+        cursor: page.nextCursor ?? state.cursor,
+        offset: page.nextOffset ?? state.offset,
       ),
     );
   }
 
-  Future<void> refresh() async {
-    await loadFeed(refresh: true);
+  Future<void> refresh({
+    String feedType = 'explore',
+    String contentFilter = 'all',
+  }) async {
+    await loadFeed(
+      refresh: true,
+      feedType: feedType,
+      contentFilter: contentFilter,
+    );
   }
 
   void updatePostLike(String postId, bool isLiked, int newCount) {
