@@ -12,7 +12,9 @@ abstract class IAuthRepository {
     String email,
     String password,
     String displayName,
+    String username,
   );
+  Future<Either<Failure, bool>> checkUsernameAvailable(String username);
   Future<Either<Failure, UserEntity>> loginAsGuest();
   Future<Either<Failure, void>> logout();
   Future<Either<Failure, bool>> isLoggedIn();

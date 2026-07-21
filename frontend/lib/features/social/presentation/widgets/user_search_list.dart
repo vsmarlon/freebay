@@ -38,10 +38,7 @@ class UserSearchList extends StatelessWidget {
             Spacing.vMd,
             const Text(
               'Nenhum usuário encontrado',
-              style: TextStyle(
-                color: AppColors.mediumGray,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
             ),
           ],
         ),
@@ -85,11 +82,7 @@ class _UserSearchItem extends StatefulWidget {
   final Function(String userId)? onFollow;
   final Function(String userId)? onUnfollow;
 
-  const _UserSearchItem({
-    required this.user,
-    this.onFollow,
-    this.onUnfollow,
-  });
+  const _UserSearchItem({required this.user, this.onFollow, this.onUnfollow});
 
   @override
   State<_UserSearchItem> createState() => _UserSearchItemState();
@@ -155,6 +148,17 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                       ],
                     ],
                   ),
+                  if (widget.user.username != null &&
+                      widget.user.username!.isNotEmpty)
+                    Text(
+                      '@${widget.user.username}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.mediumGray,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   if (widget.user.bio != null && widget.user.bio!.isNotEmpty)
                     Text(
                       widget.user.bio!,

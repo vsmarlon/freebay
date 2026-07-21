@@ -11,6 +11,7 @@ abstract class IProfileRepository {
   Future<Either<Failure, List<FollowerEntity>>> getFollowing(String userId);
   Future<Either<Failure, UserEntity>> updateProfile({
     String? displayName,
+    String? username,
     String? bio,
     String? city,
     String? state,

@@ -145,6 +145,7 @@ class ProfileRepository implements IProfileRepository {
   @override
   Future<Either<Failure, UserEntity>> updateProfile({
     String? displayName,
+    String? username,
     String? bio,
     String? city,
     String? state,
@@ -155,6 +156,7 @@ class ProfileRepository implements IProfileRepository {
         '/users/me',
         data: {
           'displayName': ?displayName,
+          'username': ?username,
           'bio': ?bio,
           'city': ?city,
           'state': ?state,

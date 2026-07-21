@@ -101,6 +101,11 @@ class ValueUtils {
     return emailRegex.hasMatch(email.trim());
   }
 
+  /// Validates username format: 3-20 chars, lowercase letters/numbers/underscore
+  static bool validateUsername(String username) {
+    return RegExp(r'^[a-z0-9_]{3,20}$').hasMatch(username);
+  }
+
   /// Truncates string to a maximum length with an optional suffix
   static String truncate(String text, int maxLength, {String suffix = '...'}) {
     if (text.length <= maxLength) return text;

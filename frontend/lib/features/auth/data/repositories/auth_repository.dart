@@ -170,6 +170,7 @@ class AuthRepository implements IAuthRepository {
     String email,
     String password,
     String displayName,
+    String username,
   ) async {
     try {
       if (kDebugMode) {
@@ -182,6 +183,7 @@ class AuthRepository implements IAuthRepository {
           'email': email,
           'password': password,
           'displayName': displayName,
+          'username': username,
         },
       );
 
@@ -211,6 +213,27 @@ class AuthRepository implements IAuthRepository {
         debugPrint('[AUTH] ERRO register: $e');
         debugPrint('[AUTH] STACK: $stackTrace');
       }
+      return const Left(UnknownFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> checkUsernameAvailable(String username) async {
+    try {
+      final response = await HttpClient.instance.get(
+        '/auth/username-available',
+        queryParameters: {'u': username},
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'];
+        return Right(data['available'] == true);
+      }
+      return const Left(
+        ServerFailure('Não foi possível verificar o nome de usuário.'),
+      );
+    } on DioException catch (e) {
+      return Left(mapDioExceptionToFailure(e));
+    } catch (e) {
       return const Left(UnknownFailure());
     }
   }

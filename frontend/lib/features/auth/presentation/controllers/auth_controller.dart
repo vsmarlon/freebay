@@ -139,6 +139,7 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     String email,
     String password,
     String displayName,
+    String username,
   ) async {
     state = const AsyncValue.loading();
     final result = await _registerUsecase(
@@ -146,6 +147,7 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
         email: email,
         password: password,
         displayName: displayName,
+        username: username,
       ),
     );
 

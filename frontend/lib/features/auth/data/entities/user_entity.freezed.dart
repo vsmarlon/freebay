@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserEntity {
 
- String get id; String? get displayName; String? get email; String? get avatarUrl; String? get bannerUrl; String? get bio; String? get city; String? get state; bool get isVerified; bool get isGuest; bool get hasCpf; String? get cpf; num get reputationScore; int get totalReviews; int get salesCount; int get purchasesCount; int get followersCount; int get followingCount; int get postsCount; int get productsCount; bool get hasActiveStory;
+ String get id; String? get displayName; String? get username; String? get email; String? get avatarUrl; String? get bannerUrl; String? get bio; String? get city; String? get state; bool get isVerified; bool get isGuest; bool get hasCpf; String? get cpf; num get reputationScore; int get totalReviews; int get salesCount; int get purchasesCount; int get followersCount; int get followingCount; int get postsCount; int get productsCount; bool get hasActiveStory;
 /// Create a copy of UserEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $UserEntityCopyWith<UserEntity> get copyWith => _$UserEntityCopyWithImpl<UserEnt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.email, email) || other.email == email)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bannerUrl, bannerUrl) || other.bannerUrl == bannerUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.city, city) || other.city == city)&&(identical(other.state, state) || other.state == state)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.isGuest, isGuest) || other.isGuest == isGuest)&&(identical(other.hasCpf, hasCpf) || other.hasCpf == hasCpf)&&(identical(other.cpf, cpf) || other.cpf == cpf)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.salesCount, salesCount) || other.salesCount == salesCount)&&(identical(other.purchasesCount, purchasesCount) || other.purchasesCount == purchasesCount)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.productsCount, productsCount) || other.productsCount == productsCount)&&(identical(other.hasActiveStory, hasActiveStory) || other.hasActiveStory == hasActiveStory));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.username, username) || other.username == username)&&(identical(other.email, email) || other.email == email)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bannerUrl, bannerUrl) || other.bannerUrl == bannerUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.city, city) || other.city == city)&&(identical(other.state, state) || other.state == state)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.isGuest, isGuest) || other.isGuest == isGuest)&&(identical(other.hasCpf, hasCpf) || other.hasCpf == hasCpf)&&(identical(other.cpf, cpf) || other.cpf == cpf)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.salesCount, salesCount) || other.salesCount == salesCount)&&(identical(other.purchasesCount, purchasesCount) || other.purchasesCount == purchasesCount)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.productsCount, productsCount) || other.productsCount == productsCount)&&(identical(other.hasActiveStory, hasActiveStory) || other.hasActiveStory == hasActiveStory));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,displayName,email,avatarUrl,bannerUrl,bio,city,state,isVerified,isGuest,hasCpf,cpf,reputationScore,totalReviews,salesCount,purchasesCount,followersCount,followingCount,postsCount,productsCount,hasActiveStory]);
+int get hashCode => Object.hashAll([runtimeType,id,displayName,username,email,avatarUrl,bannerUrl,bio,city,state,isVerified,isGuest,hasCpf,cpf,reputationScore,totalReviews,salesCount,purchasesCount,followersCount,followingCount,postsCount,productsCount,hasActiveStory]);
 
 @override
 String toString() {
-  return 'UserEntity(id: $id, displayName: $displayName, email: $email, avatarUrl: $avatarUrl, bannerUrl: $bannerUrl, bio: $bio, city: $city, state: $state, isVerified: $isVerified, isGuest: $isGuest, hasCpf: $hasCpf, cpf: $cpf, reputationScore: $reputationScore, totalReviews: $totalReviews, salesCount: $salesCount, purchasesCount: $purchasesCount, followersCount: $followersCount, followingCount: $followingCount, postsCount: $postsCount, productsCount: $productsCount, hasActiveStory: $hasActiveStory)';
+  return 'UserEntity(id: $id, displayName: $displayName, username: $username, email: $email, avatarUrl: $avatarUrl, bannerUrl: $bannerUrl, bio: $bio, city: $city, state: $state, isVerified: $isVerified, isGuest: $isGuest, hasCpf: $hasCpf, cpf: $cpf, reputationScore: $reputationScore, totalReviews: $totalReviews, salesCount: $salesCount, purchasesCount: $purchasesCount, followersCount: $followersCount, followingCount: $followingCount, postsCount: $postsCount, productsCount: $productsCount, hasActiveStory: $hasActiveStory)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $UserEntityCopyWith<$Res>  {
   factory $UserEntityCopyWith(UserEntity value, $Res Function(UserEntity) _then) = _$UserEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String? displayName, String? email, String? avatarUrl, String? bannerUrl, String? bio, String? city, String? state, bool isVerified, bool isGuest, bool hasCpf, String? cpf, num reputationScore, int totalReviews, int salesCount, int purchasesCount, int followersCount, int followingCount, int postsCount, int productsCount, bool hasActiveStory
+ String id, String? displayName, String? username, String? email, String? avatarUrl, String? bannerUrl, String? bio, String? city, String? state, bool isVerified, bool isGuest, bool hasCpf, String? cpf, num reputationScore, int totalReviews, int salesCount, int purchasesCount, int followersCount, int followingCount, int postsCount, int productsCount, bool hasActiveStory
 });
 
 
@@ -65,10 +65,11 @@ class _$UserEntityCopyWithImpl<$Res>
 
 /// Create a copy of UserEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? displayName = freezed,Object? email = freezed,Object? avatarUrl = freezed,Object? bannerUrl = freezed,Object? bio = freezed,Object? city = freezed,Object? state = freezed,Object? isVerified = null,Object? isGuest = null,Object? hasCpf = null,Object? cpf = freezed,Object? reputationScore = null,Object? totalReviews = null,Object? salesCount = null,Object? purchasesCount = null,Object? followersCount = null,Object? followingCount = null,Object? postsCount = null,Object? productsCount = null,Object? hasActiveStory = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? displayName = freezed,Object? username = freezed,Object? email = freezed,Object? avatarUrl = freezed,Object? bannerUrl = freezed,Object? bio = freezed,Object? city = freezed,Object? state = freezed,Object? isVerified = null,Object? isGuest = null,Object? hasCpf = null,Object? cpf = freezed,Object? reputationScore = null,Object? totalReviews = null,Object? salesCount = null,Object? purchasesCount = null,Object? followersCount = null,Object? followingCount = null,Object? postsCount = null,Object? productsCount = null,Object? hasActiveStory = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String?,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
 as String?,bannerUrl: freezed == bannerUrl ? _self.bannerUrl : bannerUrl // ignore: cast_nullable_to_non_nullable
@@ -173,10 +174,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? email,  String? avatarUrl,  String? bannerUrl,  String? bio,  String? city,  String? state,  bool isVerified,  bool isGuest,  bool hasCpf,  String? cpf,  num reputationScore,  int totalReviews,  int salesCount,  int purchasesCount,  int followersCount,  int followingCount,  int postsCount,  int productsCount,  bool hasActiveStory)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? username,  String? email,  String? avatarUrl,  String? bannerUrl,  String? bio,  String? city,  String? state,  bool isVerified,  bool isGuest,  bool hasCpf,  String? cpf,  num reputationScore,  int totalReviews,  int salesCount,  int purchasesCount,  int followersCount,  int followingCount,  int postsCount,  int productsCount,  bool hasActiveStory)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserEntity() when $default != null:
-return $default(_that.id,_that.displayName,_that.email,_that.avatarUrl,_that.bannerUrl,_that.bio,_that.city,_that.state,_that.isVerified,_that.isGuest,_that.hasCpf,_that.cpf,_that.reputationScore,_that.totalReviews,_that.salesCount,_that.purchasesCount,_that.followersCount,_that.followingCount,_that.postsCount,_that.productsCount,_that.hasActiveStory);case _:
+return $default(_that.id,_that.displayName,_that.username,_that.email,_that.avatarUrl,_that.bannerUrl,_that.bio,_that.city,_that.state,_that.isVerified,_that.isGuest,_that.hasCpf,_that.cpf,_that.reputationScore,_that.totalReviews,_that.salesCount,_that.purchasesCount,_that.followersCount,_that.followingCount,_that.postsCount,_that.productsCount,_that.hasActiveStory);case _:
   return orElse();
 
 }
@@ -194,10 +195,10 @@ return $default(_that.id,_that.displayName,_that.email,_that.avatarUrl,_that.ban
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? email,  String? avatarUrl,  String? bannerUrl,  String? bio,  String? city,  String? state,  bool isVerified,  bool isGuest,  bool hasCpf,  String? cpf,  num reputationScore,  int totalReviews,  int salesCount,  int purchasesCount,  int followersCount,  int followingCount,  int postsCount,  int productsCount,  bool hasActiveStory)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? username,  String? email,  String? avatarUrl,  String? bannerUrl,  String? bio,  String? city,  String? state,  bool isVerified,  bool isGuest,  bool hasCpf,  String? cpf,  num reputationScore,  int totalReviews,  int salesCount,  int purchasesCount,  int followersCount,  int followingCount,  int postsCount,  int productsCount,  bool hasActiveStory)  $default,) {final _that = this;
 switch (_that) {
 case _UserEntity():
-return $default(_that.id,_that.displayName,_that.email,_that.avatarUrl,_that.bannerUrl,_that.bio,_that.city,_that.state,_that.isVerified,_that.isGuest,_that.hasCpf,_that.cpf,_that.reputationScore,_that.totalReviews,_that.salesCount,_that.purchasesCount,_that.followersCount,_that.followingCount,_that.postsCount,_that.productsCount,_that.hasActiveStory);case _:
+return $default(_that.id,_that.displayName,_that.username,_that.email,_that.avatarUrl,_that.bannerUrl,_that.bio,_that.city,_that.state,_that.isVerified,_that.isGuest,_that.hasCpf,_that.cpf,_that.reputationScore,_that.totalReviews,_that.salesCount,_that.purchasesCount,_that.followersCount,_that.followingCount,_that.postsCount,_that.productsCount,_that.hasActiveStory);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -214,10 +215,10 @@ return $default(_that.id,_that.displayName,_that.email,_that.avatarUrl,_that.ban
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? displayName,  String? email,  String? avatarUrl,  String? bannerUrl,  String? bio,  String? city,  String? state,  bool isVerified,  bool isGuest,  bool hasCpf,  String? cpf,  num reputationScore,  int totalReviews,  int salesCount,  int purchasesCount,  int followersCount,  int followingCount,  int postsCount,  int productsCount,  bool hasActiveStory)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? displayName,  String? username,  String? email,  String? avatarUrl,  String? bannerUrl,  String? bio,  String? city,  String? state,  bool isVerified,  bool isGuest,  bool hasCpf,  String? cpf,  num reputationScore,  int totalReviews,  int salesCount,  int purchasesCount,  int followersCount,  int followingCount,  int postsCount,  int productsCount,  bool hasActiveStory)?  $default,) {final _that = this;
 switch (_that) {
 case _UserEntity() when $default != null:
-return $default(_that.id,_that.displayName,_that.email,_that.avatarUrl,_that.bannerUrl,_that.bio,_that.city,_that.state,_that.isVerified,_that.isGuest,_that.hasCpf,_that.cpf,_that.reputationScore,_that.totalReviews,_that.salesCount,_that.purchasesCount,_that.followersCount,_that.followingCount,_that.postsCount,_that.productsCount,_that.hasActiveStory);case _:
+return $default(_that.id,_that.displayName,_that.username,_that.email,_that.avatarUrl,_that.bannerUrl,_that.bio,_that.city,_that.state,_that.isVerified,_that.isGuest,_that.hasCpf,_that.cpf,_that.reputationScore,_that.totalReviews,_that.salesCount,_that.purchasesCount,_that.followersCount,_that.followingCount,_that.postsCount,_that.productsCount,_that.hasActiveStory);case _:
   return null;
 
 }
@@ -229,11 +230,12 @@ return $default(_that.id,_that.displayName,_that.email,_that.avatarUrl,_that.ban
 @JsonSerializable()
 
 class _UserEntity extends UserEntity {
-  const _UserEntity({required this.id, this.displayName, this.email, this.avatarUrl, this.bannerUrl, this.bio, this.city, this.state, this.isVerified = false, this.isGuest = false, this.hasCpf = false, this.cpf, this.reputationScore = 0, this.totalReviews = 0, this.salesCount = 0, this.purchasesCount = 0, this.followersCount = 0, this.followingCount = 0, this.postsCount = 0, this.productsCount = 0, this.hasActiveStory = false}): super._();
+  const _UserEntity({required this.id, this.displayName, this.username, this.email, this.avatarUrl, this.bannerUrl, this.bio, this.city, this.state, this.isVerified = false, this.isGuest = false, this.hasCpf = false, this.cpf, this.reputationScore = 0, this.totalReviews = 0, this.salesCount = 0, this.purchasesCount = 0, this.followersCount = 0, this.followingCount = 0, this.postsCount = 0, this.productsCount = 0, this.hasActiveStory = false}): super._();
   factory _UserEntity.fromJson(Map<String, dynamic> json) => _$UserEntityFromJson(json);
 
 @override final  String id;
 @override final  String? displayName;
+@override final  String? username;
 @override final  String? email;
 @override final  String? avatarUrl;
 @override final  String? bannerUrl;
@@ -267,16 +269,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.email, email) || other.email == email)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bannerUrl, bannerUrl) || other.bannerUrl == bannerUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.city, city) || other.city == city)&&(identical(other.state, state) || other.state == state)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.isGuest, isGuest) || other.isGuest == isGuest)&&(identical(other.hasCpf, hasCpf) || other.hasCpf == hasCpf)&&(identical(other.cpf, cpf) || other.cpf == cpf)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.salesCount, salesCount) || other.salesCount == salesCount)&&(identical(other.purchasesCount, purchasesCount) || other.purchasesCount == purchasesCount)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.productsCount, productsCount) || other.productsCount == productsCount)&&(identical(other.hasActiveStory, hasActiveStory) || other.hasActiveStory == hasActiveStory));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.username, username) || other.username == username)&&(identical(other.email, email) || other.email == email)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bannerUrl, bannerUrl) || other.bannerUrl == bannerUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.city, city) || other.city == city)&&(identical(other.state, state) || other.state == state)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.isGuest, isGuest) || other.isGuest == isGuest)&&(identical(other.hasCpf, hasCpf) || other.hasCpf == hasCpf)&&(identical(other.cpf, cpf) || other.cpf == cpf)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.salesCount, salesCount) || other.salesCount == salesCount)&&(identical(other.purchasesCount, purchasesCount) || other.purchasesCount == purchasesCount)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount)&&(identical(other.postsCount, postsCount) || other.postsCount == postsCount)&&(identical(other.productsCount, productsCount) || other.productsCount == productsCount)&&(identical(other.hasActiveStory, hasActiveStory) || other.hasActiveStory == hasActiveStory));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hashAll([runtimeType,id,displayName,email,avatarUrl,bannerUrl,bio,city,state,isVerified,isGuest,hasCpf,cpf,reputationScore,totalReviews,salesCount,purchasesCount,followersCount,followingCount,postsCount,productsCount,hasActiveStory]);
+int get hashCode => Object.hashAll([runtimeType,id,displayName,username,email,avatarUrl,bannerUrl,bio,city,state,isVerified,isGuest,hasCpf,cpf,reputationScore,totalReviews,salesCount,purchasesCount,followersCount,followingCount,postsCount,productsCount,hasActiveStory]);
 
 @override
 String toString() {
-  return 'UserEntity(id: $id, displayName: $displayName, email: $email, avatarUrl: $avatarUrl, bannerUrl: $bannerUrl, bio: $bio, city: $city, state: $state, isVerified: $isVerified, isGuest: $isGuest, hasCpf: $hasCpf, cpf: $cpf, reputationScore: $reputationScore, totalReviews: $totalReviews, salesCount: $salesCount, purchasesCount: $purchasesCount, followersCount: $followersCount, followingCount: $followingCount, postsCount: $postsCount, productsCount: $productsCount, hasActiveStory: $hasActiveStory)';
+  return 'UserEntity(id: $id, displayName: $displayName, username: $username, email: $email, avatarUrl: $avatarUrl, bannerUrl: $bannerUrl, bio: $bio, city: $city, state: $state, isVerified: $isVerified, isGuest: $isGuest, hasCpf: $hasCpf, cpf: $cpf, reputationScore: $reputationScore, totalReviews: $totalReviews, salesCount: $salesCount, purchasesCount: $purchasesCount, followersCount: $followersCount, followingCount: $followingCount, postsCount: $postsCount, productsCount: $productsCount, hasActiveStory: $hasActiveStory)';
 }
 
 
@@ -287,7 +289,7 @@ abstract mixin class _$UserEntityCopyWith<$Res> implements $UserEntityCopyWith<$
   factory _$UserEntityCopyWith(_UserEntity value, $Res Function(_UserEntity) _then) = __$UserEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? displayName, String? email, String? avatarUrl, String? bannerUrl, String? bio, String? city, String? state, bool isVerified, bool isGuest, bool hasCpf, String? cpf, num reputationScore, int totalReviews, int salesCount, int purchasesCount, int followersCount, int followingCount, int postsCount, int productsCount, bool hasActiveStory
+ String id, String? displayName, String? username, String? email, String? avatarUrl, String? bannerUrl, String? bio, String? city, String? state, bool isVerified, bool isGuest, bool hasCpf, String? cpf, num reputationScore, int totalReviews, int salesCount, int purchasesCount, int followersCount, int followingCount, int postsCount, int productsCount, bool hasActiveStory
 });
 
 
@@ -304,10 +306,11 @@ class __$UserEntityCopyWithImpl<$Res>
 
 /// Create a copy of UserEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? displayName = freezed,Object? email = freezed,Object? avatarUrl = freezed,Object? bannerUrl = freezed,Object? bio = freezed,Object? city = freezed,Object? state = freezed,Object? isVerified = null,Object? isGuest = null,Object? hasCpf = null,Object? cpf = freezed,Object? reputationScore = null,Object? totalReviews = null,Object? salesCount = null,Object? purchasesCount = null,Object? followersCount = null,Object? followingCount = null,Object? postsCount = null,Object? productsCount = null,Object? hasActiveStory = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? displayName = freezed,Object? username = freezed,Object? email = freezed,Object? avatarUrl = freezed,Object? bannerUrl = freezed,Object? bio = freezed,Object? city = freezed,Object? state = freezed,Object? isVerified = null,Object? isGuest = null,Object? hasCpf = null,Object? cpf = freezed,Object? reputationScore = null,Object? totalReviews = null,Object? salesCount = null,Object? purchasesCount = null,Object? followersCount = null,Object? followingCount = null,Object? postsCount = null,Object? productsCount = null,Object? hasActiveStory = null,}) {
   return _then(_UserEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String?,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
 as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
 as String?,bannerUrl: freezed == bannerUrl ? _self.bannerUrl : bannerUrl // ignore: cast_nullable_to_non_nullable

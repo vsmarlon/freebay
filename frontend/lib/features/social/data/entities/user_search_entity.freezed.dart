@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserSearchEntity {
 
- String get id; String get displayName; String? get avatarUrl; String? get bio; bool get isVerified; double get reputationScore; int get totalReviews; int get followersCount; int get followingCount;
+ String get id; String get displayName; String? get username; String? get avatarUrl; String? get bio; bool get isVerified; double get reputationScore; int get totalReviews; int get followersCount; int get followingCount;
 /// Create a copy of UserSearchEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $UserSearchEntityCopyWith<UserSearchEntity> get copyWith => _$UserSearchEntityCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserSearchEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserSearchEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.username, username) || other.username == username)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,displayName,avatarUrl,bio,isVerified,reputationScore,totalReviews,followersCount,followingCount);
+int get hashCode => Object.hash(runtimeType,id,displayName,username,avatarUrl,bio,isVerified,reputationScore,totalReviews,followersCount,followingCount);
 
 @override
 String toString() {
-  return 'UserSearchEntity(id: $id, displayName: $displayName, avatarUrl: $avatarUrl, bio: $bio, isVerified: $isVerified, reputationScore: $reputationScore, totalReviews: $totalReviews, followersCount: $followersCount, followingCount: $followingCount)';
+  return 'UserSearchEntity(id: $id, displayName: $displayName, username: $username, avatarUrl: $avatarUrl, bio: $bio, isVerified: $isVerified, reputationScore: $reputationScore, totalReviews: $totalReviews, followersCount: $followersCount, followingCount: $followingCount)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $UserSearchEntityCopyWith<$Res>  {
   factory $UserSearchEntityCopyWith(UserSearchEntity value, $Res Function(UserSearchEntity) _then) = _$UserSearchEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String displayName, String? avatarUrl, String? bio, bool isVerified, double reputationScore, int totalReviews, int followersCount, int followingCount
+ String id, String displayName, String? username, String? avatarUrl, String? bio, bool isVerified, double reputationScore, int totalReviews, int followersCount, int followingCount
 });
 
 
@@ -65,11 +65,12 @@ class _$UserSearchEntityCopyWithImpl<$Res>
 
 /// Create a copy of UserSearchEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? displayName = null,Object? avatarUrl = freezed,Object? bio = freezed,Object? isVerified = null,Object? reputationScore = null,Object? totalReviews = null,Object? followersCount = null,Object? followingCount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? displayName = null,Object? username = freezed,Object? avatarUrl = freezed,Object? bio = freezed,Object? isVerified = null,Object? reputationScore = null,Object? totalReviews = null,Object? followersCount = null,Object? followingCount = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
 as String?,bio: freezed == bio ? _self.bio : bio // ignore: cast_nullable_to_non_nullable
 as String?,isVerified: null == isVerified ? _self.isVerified : isVerified // ignore: cast_nullable_to_non_nullable
 as bool,reputationScore: null == reputationScore ? _self.reputationScore : reputationScore // ignore: cast_nullable_to_non_nullable
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String displayName,  String? avatarUrl,  String? bio,  bool isVerified,  double reputationScore,  int totalReviews,  int followersCount,  int followingCount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String displayName,  String? username,  String? avatarUrl,  String? bio,  bool isVerified,  double reputationScore,  int totalReviews,  int followersCount,  int followingCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserSearchEntity() when $default != null:
-return $default(_that.id,_that.displayName,_that.avatarUrl,_that.bio,_that.isVerified,_that.reputationScore,_that.totalReviews,_that.followersCount,_that.followingCount);case _:
+return $default(_that.id,_that.displayName,_that.username,_that.avatarUrl,_that.bio,_that.isVerified,_that.reputationScore,_that.totalReviews,_that.followersCount,_that.followingCount);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.id,_that.displayName,_that.avatarUrl,_that.bio,_that.isVer
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String displayName,  String? avatarUrl,  String? bio,  bool isVerified,  double reputationScore,  int totalReviews,  int followersCount,  int followingCount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String displayName,  String? username,  String? avatarUrl,  String? bio,  bool isVerified,  double reputationScore,  int totalReviews,  int followersCount,  int followingCount)  $default,) {final _that = this;
 switch (_that) {
 case _UserSearchEntity():
-return $default(_that.id,_that.displayName,_that.avatarUrl,_that.bio,_that.isVerified,_that.reputationScore,_that.totalReviews,_that.followersCount,_that.followingCount);case _:
+return $default(_that.id,_that.displayName,_that.username,_that.avatarUrl,_that.bio,_that.isVerified,_that.reputationScore,_that.totalReviews,_that.followersCount,_that.followingCount);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.id,_that.displayName,_that.avatarUrl,_that.bio,_that.isVer
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String displayName,  String? avatarUrl,  String? bio,  bool isVerified,  double reputationScore,  int totalReviews,  int followersCount,  int followingCount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String displayName,  String? username,  String? avatarUrl,  String? bio,  bool isVerified,  double reputationScore,  int totalReviews,  int followersCount,  int followingCount)?  $default,) {final _that = this;
 switch (_that) {
 case _UserSearchEntity() when $default != null:
-return $default(_that.id,_that.displayName,_that.avatarUrl,_that.bio,_that.isVerified,_that.reputationScore,_that.totalReviews,_that.followersCount,_that.followingCount);case _:
+return $default(_that.id,_that.displayName,_that.username,_that.avatarUrl,_that.bio,_that.isVerified,_that.reputationScore,_that.totalReviews,_that.followersCount,_that.followingCount);case _:
   return null;
 
 }
@@ -217,11 +218,12 @@ return $default(_that.id,_that.displayName,_that.avatarUrl,_that.bio,_that.isVer
 @JsonSerializable()
 
 class _UserSearchEntity implements UserSearchEntity {
-  const _UserSearchEntity({required this.id, required this.displayName, this.avatarUrl, this.bio, this.isVerified = false, this.reputationScore = 0.0, this.totalReviews = 0, this.followersCount = 0, this.followingCount = 0});
+  const _UserSearchEntity({required this.id, required this.displayName, this.username, this.avatarUrl, this.bio, this.isVerified = false, this.reputationScore = 0.0, this.totalReviews = 0, this.followersCount = 0, this.followingCount = 0});
   factory _UserSearchEntity.fromJson(Map<String, dynamic> json) => _$UserSearchEntityFromJson(json);
 
 @override final  String id;
 @override final  String displayName;
+@override final  String? username;
 @override final  String? avatarUrl;
 @override final  String? bio;
 @override@JsonKey() final  bool isVerified;
@@ -243,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserSearchEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserSearchEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.username, username) || other.username == username)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.bio, bio) || other.bio == bio)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.reputationScore, reputationScore) || other.reputationScore == reputationScore)&&(identical(other.totalReviews, totalReviews) || other.totalReviews == totalReviews)&&(identical(other.followersCount, followersCount) || other.followersCount == followersCount)&&(identical(other.followingCount, followingCount) || other.followingCount == followingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,displayName,avatarUrl,bio,isVerified,reputationScore,totalReviews,followersCount,followingCount);
+int get hashCode => Object.hash(runtimeType,id,displayName,username,avatarUrl,bio,isVerified,reputationScore,totalReviews,followersCount,followingCount);
 
 @override
 String toString() {
-  return 'UserSearchEntity(id: $id, displayName: $displayName, avatarUrl: $avatarUrl, bio: $bio, isVerified: $isVerified, reputationScore: $reputationScore, totalReviews: $totalReviews, followersCount: $followersCount, followingCount: $followingCount)';
+  return 'UserSearchEntity(id: $id, displayName: $displayName, username: $username, avatarUrl: $avatarUrl, bio: $bio, isVerified: $isVerified, reputationScore: $reputationScore, totalReviews: $totalReviews, followersCount: $followersCount, followingCount: $followingCount)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$UserSearchEntityCopyWith<$Res> implements $UserSearchEnti
   factory _$UserSearchEntityCopyWith(_UserSearchEntity value, $Res Function(_UserSearchEntity) _then) = __$UserSearchEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String displayName, String? avatarUrl, String? bio, bool isVerified, double reputationScore, int totalReviews, int followersCount, int followingCount
+ String id, String displayName, String? username, String? avatarUrl, String? bio, bool isVerified, double reputationScore, int totalReviews, int followersCount, int followingCount
 });
 
 
@@ -280,11 +282,12 @@ class __$UserSearchEntityCopyWithImpl<$Res>
 
 /// Create a copy of UserSearchEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? displayName = null,Object? avatarUrl = freezed,Object? bio = freezed,Object? isVerified = null,Object? reputationScore = null,Object? totalReviews = null,Object? followersCount = null,Object? followingCount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? displayName = null,Object? username = freezed,Object? avatarUrl = freezed,Object? bio = freezed,Object? isVerified = null,Object? reputationScore = null,Object? totalReviews = null,Object? followersCount = null,Object? followingCount = null,}) {
   return _then(_UserSearchEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
 as String?,bio: freezed == bio ? _self.bio : bio // ignore: cast_nullable_to_non_nullable
 as String?,isVerified: null == isVerified ? _self.isVerified : isVerified // ignore: cast_nullable_to_non_nullable
 as bool,reputationScore: null == reputationScore ? _self.reputationScore : reputationScore // ignore: cast_nullable_to_non_nullable

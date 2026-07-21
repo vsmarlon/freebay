@@ -12,6 +12,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/core/components/app_text_field.dart';
+import 'package:freebay/core/components/username_field.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -24,12 +25,14 @@ class EditProfilePage extends ConsumerStatefulWidget {
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _displayNameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _bioController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _cpfController = TextEditingController();
   bool _isLoading = false;
   String _originalMaskedCpf = '';
+  String _originalUsername = '';
 
   @override
   void initState() {
@@ -64,6 +67,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final profileAsync = ref.read(profileFutureProvider('me'));
     profileAsync.whenData((user) {
       _displayNameController.text = user.displayName ?? '';
+      _originalUsername = (user.username ?? '').toLowerCase();
+      _usernameController.text = _originalUsername;
       _bioController.text = user.bio ?? '';
       _cityController.text = user.city ?? '';
       _stateController.text = user.state ?? '';
@@ -75,6 +80,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   @override
   void dispose() {
     _displayNameController.dispose();
+    _usernameController.dispose();
     _bioController.dispose();
     _cityController.dispose();
     _stateController.dispose();
@@ -95,8 +101,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ? null
           : cpfText.replaceAll(RegExp(r'\D'), '');
 
+      final usernameText = _usernameController.text.trim().toLowerCase();
       final result = await repository.updateProfile(
         displayName: _displayNameController.text.trim(),
+        username: usernameText == _originalUsername ? null : usernameText,
         bio: _bioController.text.trim().isEmpty
             ? null
             : _bioController.text.trim(),
@@ -188,6 +196,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           }
                           return null;
                         },
+                      ),
+                      Spacing.vLg,
+                      UsernameField(
+                        controller: _usernameController,
+                        initialUsername: _originalUsername,
                       ),
                       Spacing.vLg,
                       AppTextField(

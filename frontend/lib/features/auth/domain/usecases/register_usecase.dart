@@ -7,9 +7,14 @@ class RegisterParams {
   final String email;
   final String password;
   final String displayName;
+  final String username;
 
-  RegisterParams(
-      {required this.email, required this.password, required this.displayName});
+  RegisterParams({
+    required this.email,
+    required this.password,
+    required this.displayName,
+    required this.username,
+  });
 }
 
 class RegisterUsecase implements Usecase<UserEntity, RegisterParams> {
@@ -20,6 +25,10 @@ class RegisterUsecase implements Usecase<UserEntity, RegisterParams> {
   @override
   UsecaseResponse<Failure, UserEntity> call(RegisterParams params) async {
     return await _repository.register(
-        params.email, params.password, params.displayName);
+      params.email,
+      params.password,
+      params.displayName,
+      params.username,
+    );
   }
 }

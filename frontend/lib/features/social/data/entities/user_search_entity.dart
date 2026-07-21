@@ -8,6 +8,7 @@ abstract class UserSearchEntity with _$UserSearchEntity {
   const factory UserSearchEntity({
     required String id,
     required String displayName,
+    String? username,
     String? avatarUrl,
     String? bio,
     @Default(false) bool isVerified,

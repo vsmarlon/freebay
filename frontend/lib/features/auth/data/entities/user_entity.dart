@@ -10,6 +10,7 @@ abstract class UserEntity with _$UserEntity {
   const factory UserEntity({
     required String id,
     String? displayName,
+    String? username,
     String? email,
     String? avatarUrl,
     String? bannerUrl,

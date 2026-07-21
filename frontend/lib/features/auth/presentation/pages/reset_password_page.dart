@@ -128,8 +128,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       showPasswordToggle: true,
                       prefixIcon: Icons.lock_outline,
                       validator: (v) {
-                        if (v == null || v.isEmpty)
+                        if (v == null || v.isEmpty) {
                           return 'Informe a nova senha';
+                        }
                         if (v.length < 8) return 'Mínimo 8 caracteres';
                         return null;
                       },
@@ -143,8 +144,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       showPasswordToggle: true,
                       prefixIcon: Icons.lock_outline,
                       validator: (v) {
-                        if (v == null || v.isEmpty)
+                        if (v == null || v.isEmpty) {
                           return 'Confirme a nova senha';
+                        }
                         if (v != _passwordController.text) {
                           return 'As senhas não coincidem';
                         }

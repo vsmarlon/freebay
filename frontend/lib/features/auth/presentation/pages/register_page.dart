@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/username_field.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -19,6 +20,7 @@ class RegisterPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nameController = useTextEditingController();
+    final usernameController = useTextEditingController();
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
@@ -96,6 +98,8 @@ class RegisterPage extends HookConsumerWidget {
                       },
                     ),
                     Spacing.vMd,
+                    UsernameField(controller: usernameController),
+                    Spacing.vMd,
                     AppTextField(
                       controller: emailController,
                       label: 'E-mail',
@@ -103,8 +107,9 @@ class RegisterPage extends HookConsumerWidget {
                       keyboardType: TextInputType.emailAddress,
                       prefixIcon: Icons.email_outlined,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty)
+                        if (v == null || v.trim().isEmpty) {
                           return 'Informe seu e-mail';
+                        }
                         if (!ValueUtils.validateEmail(v)) {
                           return 'E-mail inválido';
                         }
@@ -168,6 +173,7 @@ class RegisterPage extends HookConsumerWidget {
                                 emailController.text.trim(),
                                 passwordController.text.trim(),
                                 nameController.text.trim(),
+                                usernameController.text.trim().toLowerCase(),
                               );
                         }
                       },

@@ -119,6 +119,17 @@ class ProfileHeader extends ConsumerWidget {
                   ],
                 ],
               ),
+              if (user.username != null && user.username!.isNotEmpty) ...[
+                Spacing.vXs,
+                Text(
+                  '@${user.username}',
+                  style: const TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: 13,
+                    color: AppColors.mediumGray,
+                  ),
+                ),
+              ],
               if (user.bio != null && user.bio!.isNotEmpty) ...[
                 Spacing.vXs,
                 Text(

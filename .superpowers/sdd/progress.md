@@ -11,8 +11,8 @@ Mode: manual execution (phases are sequential/coupled), not implementer+reviewer
 - [x] Phase 1 — Schema & data foundations (username backfilled 4/4 unique, WithdrawalStatus enum, Report.reportedPostId index)
 - [ ] Phase 2 — Feed algorithm (backend)
 - [ ] Phase 3 — Feed frontend + full-page scroll
-- [~] Phase 4 — Username: BACKEND DONE (register/update-profile validate+check uniqueness, GET /auth/username-available, UserResponse.username). Frontend (registration field, edit_profile, @username rendering) still TODO — doing it next, then will mark this phase fully complete.
-  NOTE: reordered Phase 4 backend to run immediately after Phase 1 (not after Phase 2/3) because username is NOT NULL in schema and broke register.usecase.ts / test factory compilation.
+- [x] Phase 4 — Username (backend + frontend). Register/edit-profile validate+check uniqueness, GET /auth/username-available, reusable UsernameField component (core/components/username_field.dart, debounced check via ValueUtils.validateUsername), @username rendered on profile header + user search cards. flutter analyze: 0 issues.
+  NOTE: reordered Phase 4 to run immediately after Phase 1 (not after Phase 2/3) because username is NOT NULL in schema and broke register.usecase.ts / test factory compilation.
 - [ ] Phase 5 — User search + dedicated people-search screen
 - [ ] Phase 6 — Profile friend suggestions
 - [ ] Phase 7 — Chat: unify order+direct, replies, reactions, polish
