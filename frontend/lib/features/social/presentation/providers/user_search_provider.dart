@@ -8,14 +8,14 @@ class UserSearchState {
   final List<UserSearchEntity> users;
   final bool isLoading;
   final bool hasMore;
-  final String? cursor;
+  final int offset;
   final String? error;
 
   const UserSearchState({
     this.users = const [],
     this.isLoading = false,
     this.hasMore = true,
-    this.cursor,
+    this.offset = 0,
     this.error,
   });
 
@@ -23,14 +23,14 @@ class UserSearchState {
     List<UserSearchEntity>? users,
     bool? isLoading,
     bool? hasMore,
-    String? cursor,
+    int? offset,
     String? error,
   }) {
     return UserSearchState(
       users: users ?? this.users,
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,
-      cursor: cursor ?? this.cursor,
+      offset: offset ?? this.offset,
       error: error,
     );
   }
@@ -43,25 +43,27 @@ class UserSearchNotifier extends StateNotifier<UserSearchState> {
 
   Future<void> search({String? query, bool refresh = false}) async {
     if (state.isLoading) return;
+    if (!refresh && !state.hasMore) return;
 
-    final cursor = refresh ? null : state.cursor;
+    final offset = refresh ? 0 : state.offset;
 
     state = state.copyWith(
       isLoading: true,
       error: null,
       users: refresh ? [] : state.users,
+      offset: refresh ? 0 : state.offset,
     );
 
-    final result = await _repository.searchUsers(query: query, cursor: cursor);
+    final result = await _repository.searchUsers(query: query, offset: offset);
 
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (users) => state = state.copyWith(
-        users: refresh ? users : [...state.users, ...users],
+      (page) => state = state.copyWith(
+        users: refresh ? page.users : [...state.users, ...page.users],
         isLoading: false,
-        hasMore: users.length >= 20,
-        cursor: users.isNotEmpty ? users.last.id : state.cursor,
+        hasMore: page.hasMore,
+        offset: page.nextOffset ?? state.offset,
       ),
     );
   }

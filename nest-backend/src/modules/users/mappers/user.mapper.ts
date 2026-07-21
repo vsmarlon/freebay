@@ -96,6 +96,9 @@ export class SearchUserResponse {
   @ApiProperty({ example: 'John Doe' })
   displayName: string;
 
+  @ApiProperty({ example: 'john_doe' })
+  username: string;
+
   @ApiPropertyOptional({ nullable: true })
   avatarUrl: string | null;
 
@@ -124,6 +127,9 @@ export class SuggestionResponse {
 
   @ApiProperty({ example: 'Jane Doe' })
   displayName: string;
+
+  @ApiProperty({ example: 'jane_doe' })
+  username: string;
 
   @ApiPropertyOptional({ nullable: true })
   avatarUrl: string | null;

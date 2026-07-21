@@ -10,6 +10,7 @@ import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/entities/user_post_entry.dart';
 import 'package:freebay/features/social/data/entities/feed_page_result.dart';
+import 'package:freebay/features/social/data/entities/user_search_page_result.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
 
 class SocialRepository implements ISocialRepository {
@@ -339,18 +340,18 @@ class SocialRepository implements ISocialRepository {
   }
 
   @override
-  Future<Either<Failure, List<UserSearchEntity>>> searchUsers({
+  Future<Either<Failure, UserSearchPageResult>> searchUsers({
     String? query,
     int limit = 20,
-    String? cursor,
+    int offset = 0,
   }) async {
     try {
       final response = await HttpClient.instance.get(
         '/users/search',
         queryParameters: {
           'limit': limit,
+          'offset': offset,
           if (query != null && query.isNotEmpty) 'q': query,
-          'cursor': ?cursor,
         },
       );
 
@@ -364,7 +365,13 @@ class SocialRepository implements ISocialRepository {
                 )
                 .toList() ??
             [];
-        return Right(users);
+        return Right(
+          UserSearchPageResult(
+            users: users,
+            hasMore: data['hasMore'] == true,
+            nextOffset: data['nextOffset'] as int?,
+          ),
+        );
       }
       return const Left(ServerFailure('Erro ao buscar usuários'));
     } catch (e) {

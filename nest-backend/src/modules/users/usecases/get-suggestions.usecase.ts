@@ -17,6 +17,7 @@ export class GetSuggestionsUseCase {
     return right(result.value.map((u) => ({
       id: u.id,
       displayName: u.displayName,
+      username: u.username,
       avatarUrl: u.avatarUrl,
       bio: u.bio,
       isVerified: u.isVerified,

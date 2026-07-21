@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/app_button.dart';
@@ -77,7 +80,7 @@ class UserSearchList extends StatelessWidget {
   }
 }
 
-class _UserSearchItem extends StatefulWidget {
+class _UserSearchItem extends ConsumerStatefulWidget {
   final UserSearchEntity user;
   final Function(String userId)? onFollow;
   final Function(String userId)? onUnfollow;
@@ -85,15 +88,22 @@ class _UserSearchItem extends StatefulWidget {
   const _UserSearchItem({required this.user, this.onFollow, this.onUnfollow});
 
   @override
-  State<_UserSearchItem> createState() => _UserSearchItemState();
+  ConsumerState<_UserSearchItem> createState() => _UserSearchItemState();
 }
 
-class _UserSearchItemState extends State<_UserSearchItem> {
-  bool _isFollowing = false;
+class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
   bool _isLoading = false;
+  bool? _isFollowingOverride;
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(authControllerProvider).valueOrNull;
+    final isOwnCard = currentUser != null && currentUser.id == widget.user.id;
+    final followStatus = ref.watch(followStatusProvider(widget.user.id));
+    final isFollowing =
+        _isFollowingOverride ??
+        (followStatus.valueOrNull?.isFollowing ?? false);
+
     return InkWell(
       onTap: () => context.push('/user/${widget.user.id}'),
       child: Padding(
@@ -180,27 +190,30 @@ class _UserSearchItemState extends State<_UserSearchItem> {
                 ],
               ),
             ),
-            Spacing.hSm,
-            AppButton(
-              label: _isFollowing ? 'Seguindo' : 'Seguir',
-              variant: _isFollowing
-                  ? AppButtonVariant.ghost
-                  : AppButtonVariant.primary,
-              size: AppButtonSize.compact,
-              isLoading: _isLoading,
-              onPressed: () async {
-                setState(() => _isLoading = true);
-                if (_isFollowing) {
-                  await widget.onUnfollow?.call(widget.user.id);
-                } else {
-                  await widget.onFollow?.call(widget.user.id);
-                }
-                setState(() {
-                  _isFollowing = !_isFollowing;
-                  _isLoading = false;
-                });
-              },
-            ),
+            if (!isOwnCard) ...[
+              Spacing.hSm,
+              AppButton(
+                label: isFollowing ? 'Seguindo' : 'Seguir',
+                variant: isFollowing
+                    ? AppButtonVariant.ghost
+                    : AppButtonVariant.primary,
+                size: AppButtonSize.compact,
+                isLoading: _isLoading || followStatus.isLoading,
+                onPressed: () async {
+                  setState(() => _isLoading = true);
+                  if (isFollowing) {
+                    await widget.onUnfollow?.call(widget.user.id);
+                  } else {
+                    await widget.onFollow?.call(widget.user.id);
+                  }
+                  ref.invalidate(followStatusProvider(widget.user.id));
+                  setState(() {
+                    _isFollowingOverride = !isFollowing;
+                    _isLoading = false;
+                  });
+                },
+              ),
+            ],
           ],
         ),
       ),

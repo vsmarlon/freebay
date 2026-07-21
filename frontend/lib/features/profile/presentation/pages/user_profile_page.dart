@@ -7,7 +7,7 @@ import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:freebay/features/profile/data/services/follow_service.dart';
+import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -15,23 +15,6 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
-
-final followServiceProvider = Provider<FollowService>((ref) => FollowService());
-
-final followStatusProvider =
-    FutureProvider.family<FollowStatusResponse?, String>((ref, userId) async {
-      final authState = ref.watch(authControllerProvider);
-      final user = authState.valueOrNull;
-
-      if (user == null || user.isGuest) {
-        return null;
-      }
-
-      final service = ref.watch(followServiceProvider);
-      final result = await service.getFollowStatus(userId);
-
-      return result.fold((failure) => null, (status) => status);
-    });
 
 class UserProfilePage extends ConsumerWidget {
   final String userId;

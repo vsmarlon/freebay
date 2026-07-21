@@ -10,20 +10,21 @@ export class SearchUsersUseCase {
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: SearchUsersInput): Promise<Either<AppError, SearchUserResponse[]>> {
-    const result = await this.userRepository.searchUsers(input.query, input.limit, input.cursor);
+    const result = await this.userRepository.searchUsers(input.query, input.limit, input.offset, input.viewerId);
     if (isLeft(result)) {
       return left(result.value);
     }
     return right(result.value.map((u) => ({
       id: u.id,
       displayName: u.displayName,
+      username: u.username,
       avatarUrl: u.avatarUrl,
       bio: u.bio,
       isVerified: u.isVerified,
       reputationScore: u.reputationScore,
       totalReviews: u.totalReviews,
-      followersCount: u._count?.followers || 0,
-      followingCount: u._count?.following || 0,
+      followersCount: u.followersCount,
+      followingCount: u.followingCount,
     })));
   }
 }

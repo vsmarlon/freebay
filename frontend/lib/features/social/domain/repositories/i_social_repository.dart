@@ -4,6 +4,7 @@ import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/entities/feed_page_result.dart';
+import 'package:freebay/features/social/data/entities/user_search_page_result.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
 class StoriesResponse {
@@ -51,10 +52,10 @@ abstract class ISocialRepository {
   Future<Either<Failure, void>> viewStory(String storyId);
   Future<Either<Failure, List<StoryEntity>>> getUserStories(String userId);
 
-  Future<Either<Failure, List<UserSearchEntity>>> searchUsers({
+  Future<Either<Failure, UserSearchPageResult>> searchUsers({
     String? query,
     int limit = 20,
-    String? cursor,
+    int offset = 0,
   });
   Future<Either<Failure, List<UserSearchEntity>>> getSuggestions({
     int limit = 10,

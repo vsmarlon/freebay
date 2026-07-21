@@ -8,7 +8,7 @@ export abstract class UserRepository {
   abstract findByUsername(username: string): RepositoryResponse<User | null>;
   abstract create(data: Prisma.UserCreateInput): RepositoryResponse<User>;
   abstract update(id: string, data: Prisma.UserUpdateInput): RepositoryResponse<User>;
-  abstract searchUsers(query: string, limit: number, cursor?: string): RepositoryResponse<UserSearchResult[]>;
+  abstract searchUsers(query: string, limit: number, offset: number, viewerId?: string): RepositoryResponse<UserSearchResult[]>;
   abstract getSuggestions(userId: string, limit: number): RepositoryResponse<UserSuggestionResult[]>;
   abstract findPaymentInfo(userId: string): RepositoryResponse<{ displayName: string; email: string; cpf: string | null } | null>;
 }

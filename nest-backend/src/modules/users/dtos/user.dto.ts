@@ -125,10 +125,12 @@ export class UserSearchQueryDTO {
   @MaxLength(100)
   readonly q?: string;
 
-  @ApiPropertyOptional({ description: 'Pagination cursor' })
+  @ApiPropertyOptional({ example: 0 })
   @IsOptional()
-  @IsString()
-  readonly cursor?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly offset?: number;
 
   @ApiPropertyOptional({ example: 20 })
   @IsOptional()
@@ -178,7 +180,8 @@ export interface BlockUserInput {
 export interface SearchUsersInput {
   query: string;
   limit: number;
-  cursor?: string;
+  offset: number;
+  viewerId?: string;
 }
 
 export interface GetSuggestionsInput {

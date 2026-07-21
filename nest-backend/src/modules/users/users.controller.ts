@@ -321,13 +321,19 @@ export class UsersController {
     summary: 'Search users',
     queries: [
       { name: 'q', required: false, description: 'Search query' },
-      { name: 'cursor', required: false, description: 'Pagination cursor' },
+      { name: 'offset', required: false, description: 'Pagination offset (default 0)' },
       { name: 'limit', required: false, description: 'Results per page (default 20)' },
     ],
   })
-  async searchUsers(@Query() query: UserSearchQueryDTO) {
+  async searchUsers(@CurrentUser() user: AuthUser, @Query() query: UserSearchQueryDTO) {
     const parsedLimit = query.limit ?? 20;
-    const searchResult = await this.userRepository.searchUsers(query.q || '', parsedLimit, query.cursor);
+    const parsedOffset = query.offset ?? 0;
+    const searchResult = await this.userRepository.searchUsers(
+      query.q || '',
+      parsedLimit,
+      parsedOffset,
+      user?.userId,
+    );
     if (isLeft(searchResult)) {
       return left(searchResult.value);
     }
@@ -337,15 +343,17 @@ export class UsersController {
       users: users.map((u) => ({
         id: u.id,
         displayName: u.displayName,
+        username: u.username,
         avatarUrl: u.avatarUrl,
         bio: u.bio,
         isVerified: u.isVerified,
         reputationScore: u.reputationScore,
         totalReviews: u.totalReviews,
-        followersCount: u._count?.followers || 0,
-        followingCount: u._count?.following || 0,
+        followersCount: u.followersCount,
+        followingCount: u.followingCount,
       })),
-      nextCursor: users.length === parsedLimit ? users[users.length - 1]?.id : null,
+      hasMore: users.length === parsedLimit,
+      nextOffset: users.length === parsedLimit ? parsedOffset + parsedLimit : null,
     };
   }
 
@@ -372,6 +380,7 @@ export class UsersController {
       users: suggestions.map((u) => ({
         id: u.id,
         displayName: u.displayName,
+        username: u.username,
         avatarUrl: u.avatarUrl,
         bio: u.bio,
         isVerified: u.isVerified,

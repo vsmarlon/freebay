@@ -371,11 +371,11 @@ describe('Users UseCases', () => {
   describe('SearchUsersUseCase', () => {
     it('should return search results', async () => {
       const searchResults = [
-        { id: 'user-1', displayName: 'John', avatarUrl: null, bio: null, isVerified: false, reputationScore: 0, totalReviews: 0, _count: { followers: 10, following: 5 } },
+        { id: 'user-1', displayName: 'John', username: 'john', avatarUrl: null, bio: null, isVerified: false, reputationScore: 0, totalReviews: 0, followersCount: 10, followingCount: 5 },
       ];
       mockUserRepository.searchUsers.mockResolvedValue(right(searchResults));
 
-      const result = await searchUsersUseCase.execute({ query: 'John', limit: 20 });
+      const result = await searchUsersUseCase.execute({ query: 'John', limit: 20, offset: 0 });
 
       expect(result.isRight()).toBe(true);
       if (result.isRight()) {
@@ -388,7 +388,7 @@ describe('Users UseCases', () => {
   describe('GetSuggestionsUseCase', () => {
     it('should return suggestion results', async () => {
       const suggestions = [
-        { id: 'user-2', displayName: 'Jane', avatarUrl: null, bio: null, isVerified: true, reputationScore: 4.8, totalReviews: 15, followersCount: 100, followingCount: 50, mutualCount: 5 },
+        { id: 'user-2', displayName: 'Jane', username: 'jane', avatarUrl: null, bio: null, isVerified: true, reputationScore: 4.8, totalReviews: 15, followersCount: 100, followingCount: 50, mutualCount: 5 },
       ];
       mockUserRepository.getSuggestions.mockResolvedValue(right(suggestions));
 

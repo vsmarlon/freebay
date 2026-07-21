@@ -49,24 +49,66 @@ export class UserDatabaseRepository implements UserRepository {
     }
   }
 
-  async searchUsers(query: string, limit: number, cursor?: string): RepositoryResponse<UserSearchResult[]> {
+  async searchUsers(query: string, limit: number, offset: number, viewerId?: string): RepositoryResponse<UserSearchResult[]> {
     try {
-      const users = await this.prisma.user.findMany({
-        where: { displayName: { contains: query, mode: 'insensitive' } },
-        take: limit,
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-        select: {
-          id: true,
-          displayName: true,
-          avatarUrl: true,
-          bio: true,
-          isVerified: true,
-          reputationScore: true,
-          totalReviews: true,
-          _count: { select: { followers: true, following: true } },
-        },
-      });
-      return right(users as UserSearchResult[]);
+      const q = query.trim();
+      const likeAll = `%${q}%`;
+      const prefixLike = `${q}%`;
+
+      const blockFilter = viewerId
+        ? Prisma.sql`
+            AND NOT EXISTS (SELECT 1 FROM "Block" b WHERE b."blockerId" = u.id AND b."blockedId" = ${viewerId})
+            AND NOT EXISTS (SELECT 1 FROM "Block" b WHERE b."blockerId" = ${viewerId} AND b."blockedId" = u.id)
+          `
+        : Prisma.empty;
+
+      const rows = await this.prisma.$queryRaw<
+        Array<{
+          id: string;
+          displayName: string;
+          username: string;
+          avatarUrl: string | null;
+          bio: string | null;
+          isVerified: boolean;
+          reputationScore: number;
+          totalReviews: number;
+          followersCount: bigint;
+          followingCount: bigint;
+        }>
+      >(Prisma.sql`
+        SELECT
+          u.id, u."displayName", u.username, u."avatarUrl", u.bio, u."isVerified",
+          u."reputationScore", u."totalReviews",
+          (SELECT COUNT(*) FROM "Follow" f WHERE f."followingId" = u.id) AS "followersCount",
+          (SELECT COUNT(*) FROM "Follow" f WHERE f."followerId" = u.id) AS "followingCount"
+        FROM "User" u
+        WHERE (u.username ILIKE ${likeAll} OR u."displayName" ILIKE ${likeAll})
+        ${blockFilter}
+        ORDER BY
+          CASE
+            WHEN lower(u.username) = lower(${q}) THEN 0
+            WHEN u.username ILIKE ${prefixLike} THEN 1
+            ELSE 2
+          END,
+          "followersCount" DESC,
+          u.id ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `);
+
+      return right(
+        rows.map((r) => ({
+          id: r.id,
+          displayName: r.displayName,
+          username: r.username,
+          avatarUrl: r.avatarUrl,
+          bio: r.bio,
+          isVerified: r.isVerified,
+          reputationScore: r.reputationScore,
+          totalReviews: r.totalReviews,
+          followersCount: Number(r.followersCount),
+          followingCount: Number(r.followingCount),
+        })),
+      );
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao pesquisar usuários'));
     }
@@ -90,6 +132,7 @@ export class UserDatabaseRepository implements UserRepository {
         select: {
           id: true,
           displayName: true,
+          username: true,
           avatarUrl: true,
           bio: true,
           isVerified: true,
@@ -107,6 +150,7 @@ export class UserDatabaseRepository implements UserRepository {
         suggestions.map((u) => ({
           id: u.id,
           displayName: u.displayName,
+          username: u.username,
           avatarUrl: u.avatarUrl,
           bio: u.bio,
           isVerified: u.isVerified,
