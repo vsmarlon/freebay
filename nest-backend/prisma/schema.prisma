@@ -77,6 +77,13 @@ enum DisputeStatus {
   CANCELLED
 }
 
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum ReviewType {
   BUYER_REVIEWING_SELLER
   SELLER_REVIEWING_BUYER
@@ -116,6 +123,7 @@ enum ReportTargetType {
 model User {
   id              String    @id @default(uuid())
   displayName     String
+  username        String    @unique
   email           String    @unique
   emailVerified   Boolean   @default(false)
   passwordHash    String
@@ -470,12 +478,12 @@ model Wallet {
 }
 
 model Withdrawal {
-  id             String   @id @default(uuid())
+  id             String           @id @default(uuid())
   walletId       String
   amount         Int
-  status         String   @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
-  idempotencyKey String?  @unique
-  createdAt      DateTime @default(now())
+  status         WithdrawalStatus @default(PENDING)
+  idempotencyKey String?          @unique
+  createdAt      DateTime         @default(now())
 
   wallet Wallet @relation(fields: [walletId], references: [id])
 
@@ -766,6 +774,7 @@ model Report {
   @@index([reporterId])
   @@index([status])
   @@index([reportedUserId])
+  @@index([reportedPostId])
   @@index([reportedDirectConversationId])
 }
 

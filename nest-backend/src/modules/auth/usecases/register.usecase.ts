@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, EmailAlreadyExistsError } from '@/shared/core/errors';
+import { AppError, EmailAlreadyExistsError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { RegisterDTO } from '../dtos/auth.dto';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
@@ -17,10 +17,17 @@ export class RegisterUseCase {
       return left(new EmailAlreadyExistsError());
     }
 
+    const existingUsernameResult = await this.userRepository.findByUsername(input.username);
+    if (existingUsernameResult.isLeft()) return left(existingUsernameResult.value);
+    if (existingUsernameResult.value) {
+      return left(new UsernameAlreadyExistsError());
+    }
+
     const passwordHash = await bcrypt.hash(input.password, 12);
 
     const createResult = await this.userRepository.create({
       displayName: input.displayName,
+      username: input.username,
       email: input.email,
       passwordHash,
       emailVerified: false,

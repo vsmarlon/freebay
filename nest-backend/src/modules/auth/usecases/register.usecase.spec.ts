@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUseCase } from './register.usecase';
 import { UserRepository } from '../domain/repositories/user.repository';
-import { EmailAlreadyExistsError } from '@/shared/core/errors';
+import { EmailAlreadyExistsError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
 describe('RegisterUseCase', () => {
@@ -11,9 +11,11 @@ describe('RegisterUseCase', () => {
   beforeEach(async () => {
     mockUserRepository = {
       findByEmail: jest.fn().mockResolvedValue(right(null)),
+      findByUsername: jest.fn().mockResolvedValue(right(null)),
       create: jest.fn().mockResolvedValue(right({
         id: 'user-123',
         displayName: 'John Doe',
+        username: 'john_doe',
         email: 'john@example.com',
         passwordHash: 'hashedpassword',
         emailVerified: false,
@@ -51,6 +53,7 @@ describe('RegisterUseCase', () => {
   it('should register a new user', async () => {
     const input = {
       displayName: 'John Doe',
+      username: 'john_doe',
       email: 'john@example.com',
       password: 'password123',
     };
@@ -73,6 +76,7 @@ describe('RegisterUseCase', () => {
 
     const input = {
       displayName: 'John Doe',
+      username: 'john_doe',
       email: 'john@example.com',
       password: 'password123',
     };
@@ -85,9 +89,34 @@ describe('RegisterUseCase', () => {
     }
   });
 
+  it('should return error if username already exists', async () => {
+    mockUserRepository.findByUsername = jest.fn().mockResolvedValue(right({
+      id: 'existing-user',
+      email: 'someone-else@example.com',
+      passwordHash: 'hashedpassword',
+      displayName: 'Someone Else',
+      username: 'john_doe',
+    }));
+
+    const input = {
+      displayName: 'John Doe',
+      username: 'john_doe',
+      email: 'john@example.com',
+      password: 'password123',
+    };
+
+    const result = await sut.execute(input);
+
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(UsernameAlreadyExistsError);
+    }
+  });
+
   it('should create user with optional city and state', async () => {
     const input = {
       displayName: 'John Doe',
+      username: 'john_doe',
       email: 'john@example.com',
       password: 'password123',
       city: 'São Paulo',
@@ -108,6 +137,7 @@ describe('RegisterUseCase', () => {
   it('should hash password with bcrypt', async () => {
     const input = {
       displayName: 'John Doe',
+      username: 'john_doe',
       email: 'john@example.com',
       password: 'password123',
     };

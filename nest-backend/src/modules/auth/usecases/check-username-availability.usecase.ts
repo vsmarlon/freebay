@@ -1,0 +1,32 @@
+import { Injectable } from '@nestjs/common';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError } from '@/shared/core/errors';
+import { UserRepository } from '../domain/repositories/user.repository';
+import { USERNAME_REGEX } from '../dtos/auth.dto';
+
+export interface CheckUsernameAvailabilityInput {
+  username: string;
+}
+
+export interface CheckUsernameAvailabilityOutput {
+  available: boolean;
+}
+
+@Injectable()
+export class CheckUsernameAvailabilityUseCase {
+  constructor(private readonly userRepository: UserRepository) {}
+
+  async execute(
+    input: CheckUsernameAvailabilityInput,
+  ): Promise<Either<AppError, CheckUsernameAvailabilityOutput>> {
+    const username = input.username.toLowerCase().trim();
+    if (!USERNAME_REGEX.test(username)) {
+      return right({ available: false });
+    }
+
+    const existingResult = await this.userRepository.findByUsername(username);
+    if (existingResult.isLeft()) return left(existingResult.value);
+
+    return right({ available: existingResult.value === null });
+  }
+}

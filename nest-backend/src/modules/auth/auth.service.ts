@@ -11,7 +11,8 @@ import { GuestUseCase } from './usecases/guest.usecase';
 import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
 import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
 import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
-import { RegisterDTO, LoginDTO } from './dtos/auth.dto';
+import { CheckUsernameAvailabilityUseCase } from './usecases/check-username-availability.usecase';
+import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -31,6 +32,7 @@ export class AuthService {
     private readonly requestPasswordRecoveryUseCase: RequestPasswordRecoveryUseCase,
     private readonly verifyPasswordRecoveryCodeUseCase: VerifyPasswordRecoveryCodeUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly checkUsernameAvailabilityUseCase: CheckUsernameAvailabilityUseCase,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
@@ -176,6 +178,18 @@ export class AuthService {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
       throw new AppError('INTERNAL_ERROR', 'Erro interno ao redefinir senha');
+    }
+  }
+
+  async checkUsernameAvailability(input: UsernameAvailabilityQueryDTO) {
+    try {
+      const result = await this.checkUsernameAvailabilityUseCase.execute({ username: input.u });
+      if (result.isLeft()) throw result.value;
+      return result.value;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      this.logger.error(err);
+      throw new AppError('INTERNAL_ERROR', 'Erro interno ao verificar nome de usuário');
     }
   }
 

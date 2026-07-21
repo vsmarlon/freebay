@@ -1,7 +1,9 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -9,7 +11,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDTO, LoginDTO, LogoutDTO } from './dtos/auth.dto';
+import { RegisterDTO, LoginDTO, LogoutDTO, UsernameAvailabilityQueryDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -51,6 +53,17 @@ export class AuthController {
   @Public()
   async register(@Body() body: RegisterDTO) {
     return this.authService.register(body);
+  }
+
+  @Get('username-available')
+  @Throttle({ short: { limit: 10, ttl: 10000 }, medium: { limit: 60, ttl: 60000 } })
+  @ApiDoc({
+    summary: 'Check username availability',
+    description: 'Returns whether a username is valid and not already taken',
+  })
+  @Public()
+  async usernameAvailable(@Query() query: UsernameAvailabilityQueryDTO) {
+    return this.authService.checkUsernameAvailability(query);
   }
 
   @Post('login')

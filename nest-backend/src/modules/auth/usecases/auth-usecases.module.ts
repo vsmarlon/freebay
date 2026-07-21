@@ -7,6 +7,7 @@ import { GuestUseCase } from './guest.usecase';
 import { RequestPasswordRecoveryUseCase } from './request-password-recovery.usecase';
 import { VerifyPasswordRecoveryCodeUseCase } from './verify-password-recovery-code.usecase';
 import { ResetPasswordUseCase } from './reset-password.usecase';
+import { CheckUsernameAvailabilityUseCase } from './check-username-availability.usecase';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
@@ -24,6 +25,7 @@ import { ResendService } from '../services/resend.service';
     RequestPasswordRecoveryUseCase,
     VerifyPasswordRecoveryCodeUseCase,
     ResetPasswordUseCase,
+    CheckUsernameAvailabilityUseCase,
     ResendService,
   ],
   exports: [
@@ -34,6 +36,7 @@ import { ResendService } from '../services/resend.service';
     RequestPasswordRecoveryUseCase,
     VerifyPasswordRecoveryCodeUseCase,
     ResetPasswordUseCase,
+    CheckUsernameAvailabilityUseCase,
     ResendService,
   ],
 })

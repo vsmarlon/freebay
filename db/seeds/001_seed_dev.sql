@@ -13,23 +13,23 @@ ON CONFLICT DO NOTHING;
 
 -- ─── Users ─────────────────────────────────────────────────
 
-INSERT INTO "User" ("id", "displayName", "email", "emailVerified", "passwordHash", "isVerified", "isGuest", "role", "reputationScore", "totalReviews", "createdAt", "updatedAt")
+INSERT INTO "User" ("id", "displayName", "username", "email", "emailVerified", "passwordHash", "isVerified", "isGuest", "role", "reputationScore", "totalReviews", "createdAt", "updatedAt")
 VALUES
-  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Carlos Silva',    'carlos.silva@email.com',    true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.8, 12, NOW() - INTERVAL '180 days', NOW()),
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Ana Beatriz',     'ana.beatriz@email.com',     true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.5,  5, NOW() - INTERVAL '120 days', NOW()),
-  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Rafael Mendes',   'rafael.mendes@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.2,  8, NOW() - INTERVAL '90 days',  NOW()),
-  ('d4e5f6a7-b8c9-0123-defa-234567890123', 'Juliana Costa',   'juliana.costa@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.9, 20, NOW() - INTERVAL '200 days', NOW()),
-  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'Mateus Oliveira', 'mateus.oliveira@email.com', true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.8,  4, NOW() - INTERVAL '60 days',  NOW()),
-  ('f6a7b8c9-d0e1-2345-fabc-456789012345', 'Fernanda Lima',   'fernanda.lima@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.7, 15, NOW() - INTERVAL '150 days', NOW()),
-  ('a7b8c9d0-e1f2-3456-abcd-567890123456', 'Pedro Alves',     'pedro.alves@email.com',     true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.1,  3, NOW() - INTERVAL '45 days',  NOW()),
-  ('b8c9d0e1-f2a3-4567-bcde-678901234567', 'Larissa Santos',  'larissa.santos@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.0,  6, NOW() - INTERVAL '75 days',  NOW()),
-  ('c9d0e1f2-a3b4-5678-cdef-789012345678', 'Diego Ferreira',  'diego.ferreira@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.3,  9, NOW() - INTERVAL '100 days', NOW()),
-  ('d0e1f2a3-b4c5-6789-defa-890123456789', 'Gabriela Rocha',  'gabriela.rocha@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.6, 11, NOW() - INTERVAL '130 days', NOW()),
-  ('e1f2a3b4-c5d6-7890-efab-901234567890', 'Lucas Martins',   'lucas.martins@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.5,  2, NOW() - INTERVAL '30 days',  NOW()),
-  ('f2a3b4c5-d6e7-8901-fabc-012345678901', 'Thiago Barbosa',  'thiago.barbosa@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.4,  7, NOW() - INTERVAL '85 days',  NOW()),
-  ('a3b4c5d6-e7f8-9012-abcd-123456789012', 'Camila Pereira',  'camila.pereira@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.0,  4, NOW() - INTERVAL '55 days',  NOW()),
-  ('b4c5d6e7-f8a9-0123-bcde-234567890123', 'Henrique Souza',  'henrique.souza@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.2,  6, NOW() - INTERVAL '70 days',  NOW()),
-  ('c5d6e7f8-a9b0-1234-cdef-345678901234', 'Isabela Gomes',   'isabela.gomes@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.9,  5, NOW() - INTERVAL '65 days',  NOW())
+  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Carlos Silva',    'carlos_silva',    'carlos.silva@email.com',    true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.8, 12, NOW() - INTERVAL '180 days', NOW()),
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Ana Beatriz',     'ana_beatriz',     'ana.beatriz@email.com',     true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.5,  5, NOW() - INTERVAL '120 days', NOW()),
+  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Rafael Mendes',   'rafael_mendes',   'rafael.mendes@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.2,  8, NOW() - INTERVAL '90 days',  NOW()),
+  ('d4e5f6a7-b8c9-0123-defa-234567890123', 'Juliana Costa',   'juliana_costa',   'juliana.costa@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.9, 20, NOW() - INTERVAL '200 days', NOW()),
+  ('e5f6a7b8-c9d0-1234-efab-345678901234', 'Mateus Oliveira', 'mateus_oliveira', 'mateus.oliveira@email.com', true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.8,  4, NOW() - INTERVAL '60 days',  NOW()),
+  ('f6a7b8c9-d0e1-2345-fabc-456789012345', 'Fernanda Lima',   'fernanda_lima',   'fernanda.lima@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', true,  false, 'USER', 4.7, 15, NOW() - INTERVAL '150 days', NOW()),
+  ('a7b8c9d0-e1f2-3456-abcd-567890123456', 'Pedro Alves',     'pedro_alves',     'pedro.alves@email.com',     true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.1,  3, NOW() - INTERVAL '45 days',  NOW()),
+  ('b8c9d0e1-f2a3-4567-bcde-678901234567', 'Larissa Santos',  'larissa_santos',  'larissa.santos@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.0,  6, NOW() - INTERVAL '75 days',  NOW()),
+  ('c9d0e1f2-a3b4-5678-cdef-789012345678', 'Diego Ferreira',  'diego_ferreira',  'diego.ferreira@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.3,  9, NOW() - INTERVAL '100 days', NOW()),
+  ('d0e1f2a3-b4c5-6789-defa-890123456789', 'Gabriela Rocha',  'gabriela_rocha',  'gabriela.rocha@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.6, 11, NOW() - INTERVAL '130 days', NOW()),
+  ('e1f2a3b4-c5d6-7890-efab-901234567890', 'Lucas Martins',   'lucas_martins',   'lucas.martins@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.5,  2, NOW() - INTERVAL '30 days',  NOW()),
+  ('f2a3b4c5-d6e7-8901-fabc-012345678901', 'Thiago Barbosa',  'thiago_barbosa',  'thiago.barbosa@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.4,  7, NOW() - INTERVAL '85 days',  NOW()),
+  ('a3b4c5d6-e7f8-9012-abcd-123456789012', 'Camila Pereira',  'camila_pereira',  'camila.pereira@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.0,  4, NOW() - INTERVAL '55 days',  NOW()),
+  ('b4c5d6e7-f8a9-0123-bcde-234567890123', 'Henrique Souza',  'henrique_souza',  'henrique.souza@email.com',  true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 4.2,  6, NOW() - INTERVAL '70 days',  NOW()),
+  ('c5d6e7f8-a9b0-1234-cdef-345678901234', 'Isabela Gomes',   'isabela_gomes',   'isabela.gomes@email.com',   true, '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', false, false, 'USER', 3.9,  5, NOW() - INTERVAL '65 days',  NOW())
 ON CONFLICT DO NOTHING;
 
 -- ─── Products ──────────────────────────────────────────────

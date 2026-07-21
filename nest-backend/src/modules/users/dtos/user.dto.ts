@@ -8,15 +8,17 @@ import {
   IsInt,
   Min,
   Max,
+  Matches,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,
   IsNotEmpty,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+import { USERNAME_REGEX } from '@/modules/auth/dtos/auth.dto';
 
 @ValidatorConstraint({ name: 'cpfOrCnpj', async: false })
 export class IsCpfOrCnpjConstraint implements ValidatorConstraintInterface {
@@ -37,6 +39,13 @@ export class UpdateProfileDTO {
   @MaxLength(50)
   @SanitizeText()
   readonly displayName?: string;
+
+  @ApiPropertyOptional({ example: 'john_doe', minLength: 3, maxLength: 20, description: '3-20 chars, lowercase letters/numbers/underscore only' })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @Matches(USERNAME_REGEX, { message: 'Nome de usuário deve ter 3-20 caracteres e conter apenas letras minúsculas, números e underscore' })
+  readonly username?: string;
 
   @ApiPropertyOptional({ example: 'Bio text here...', maxLength: 150 })
   @IsOptional()

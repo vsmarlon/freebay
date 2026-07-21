@@ -123,6 +123,13 @@ export class UsersController {
     const userId = user.userId;
     const data = { ...body } as Record<string, unknown>;
     if (data.cpf) data.cpf = (data.cpf as string).replace(/\D/g, '');
+    if (body.username) {
+      const existingResult = await this.userRepository.findByUsername(body.username);
+      if (isLeft(existingResult)) return left(existingResult.value);
+      if (existingResult.value && existingResult.value.id !== userId) {
+        return left(new AppError('USERNAME_ALREADY_EXISTS', 'Este nome de usuário já está em uso', 409));
+      }
+    }
     const updateResult = await this.userRepository.update(userId, data);
     if (isLeft(updateResult)) {
       return left(updateResult.value);

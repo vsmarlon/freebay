@@ -5,6 +5,7 @@ import { UserSearchResult, UserSuggestionResult } from '../../types/user-search.
 export abstract class UserRepository {
   abstract findById(id: string): RepositoryResponse<User | null>;
   abstract findByEmail(email: string): RepositoryResponse<User | null>;
+  abstract findByUsername(username: string): RepositoryResponse<User | null>;
   abstract create(data: Prisma.UserCreateInput): RepositoryResponse<User>;
   abstract update(id: string, data: Prisma.UserUpdateInput): RepositoryResponse<User>;
   abstract searchUsers(query: string, limit: number, cursor?: string): RepositoryResponse<UserSearchResult[]>;

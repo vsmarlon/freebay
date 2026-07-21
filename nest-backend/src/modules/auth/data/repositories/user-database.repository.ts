@@ -25,6 +25,14 @@ export class UserDatabaseRepository implements UserRepository {
     }
   }
 
+  async findByUsername(username: string): RepositoryResponse<User | null> {
+    try {
+      return right(await this.prisma.user.findUnique({ where: { username } }));
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
+    }
+  }
+
   async create(data: Prisma.UserCreateInput): RepositoryResponse<User> {
     try {
       return right(await this.prisma.user.create({ data }));

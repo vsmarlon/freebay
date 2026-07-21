@@ -25,6 +25,12 @@ export class EmailAlreadyExistsError extends AppError {
   }
 }
 
+export class UsernameAlreadyExistsError extends AppError {
+  constructor() {
+    super('USERNAME_ALREADY_EXISTS', 'Este nome de usuário já está em uso', 409);
+  }
+}
+
 export class UnauthorizedError extends AppError {
   constructor(message = 'Não autorizado') {
     super('UNAUTHORIZED', message, 401);

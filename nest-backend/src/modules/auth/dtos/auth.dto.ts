@@ -1,6 +1,9 @@
-import { IsString, MinLength, MaxLength, IsEmail, IsOptional } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsEmail, IsOptional, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+
+export const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
 
 export class RegisterDTO {
   @ApiProperty({ example: 'John Doe', minLength: 2, maxLength: 50 })
@@ -9,6 +12,12 @@ export class RegisterDTO {
   @MaxLength(50)
   @SanitizeText()
   readonly displayName: string;
+
+  @ApiProperty({ example: 'john_doe', minLength: 3, maxLength: 20, description: '3-20 chars, lowercase letters/numbers/underscore only' })
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @Matches(USERNAME_REGEX, { message: 'Nome de usuário deve ter 3-20 caracteres e conter apenas letras minúsculas, números e underscore' })
+  readonly username: string;
 
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
@@ -54,4 +63,12 @@ export class ForgotPasswordDTO {
   @ApiProperty({ example: 'john@example.com' })
   @IsEmail()
   readonly email: string;
+}
+
+export class UsernameAvailabilityQueryDTO {
+  @ApiProperty({ example: 'john_doe', minLength: 1, maxLength: 20 })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(20)
+  readonly u: string;
 }

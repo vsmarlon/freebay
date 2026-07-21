@@ -1,5 +1,5 @@
 import { PrismaClient, User, UserRole } from '@prisma/client';
-import { generateTestEmail, generateTestCpfHash, hashPassword } from '../utils/test-helpers';
+import { generateTestEmail, generateTestCpfHash, generateTestUsername, hashPassword } from '../utils/test-helpers';
 
 export class UserFactory {
   constructor(private prisma: PrismaClient) {}
@@ -13,6 +13,7 @@ export class UserFactory {
     return this.prisma.user.create({
       data: {
         displayName: overrides.displayName || 'Test User',
+        username: overrides.username || generateTestUsername(),
         email: overrides.email || generateTestEmail(),
         passwordHash,
         emailVerified: overrides.emailVerified ?? false,

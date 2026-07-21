@@ -42,6 +42,13 @@ export function generateTestCpfHash(): string {
 }
 
 /**
+ * Generate a unique username for testing
+ */
+export function generateTestUsername(): string {
+  return `u${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
+}
+
+/**
  * Wait for a specified number of milliseconds
  */
 export function wait(ms: number): Promise<void> {

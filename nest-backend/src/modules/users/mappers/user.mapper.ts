@@ -10,6 +10,9 @@ export class UserResponse {
   @ApiProperty({ example: 'John Doe' })
   displayName: string;
 
+  @ApiProperty({ example: 'john_doe' })
+  username: string;
+
   @ApiPropertyOptional({ example: null, nullable: true })
   avatarUrl: string | null;
 
@@ -162,6 +165,7 @@ export const toUserResponse = (
 ): UserResponse => ({
   id: user.id,
   displayName: user.displayName,
+  username: user.username,
   avatarUrl: user.avatarUrl,
   bannerUrl: user.bannerUrl,
   bio: user.bio,
