@@ -9,7 +9,7 @@ Mode: manual execution (phases are sequential/coupled), not implementer+reviewer
 ## Status
 
 - [x] Phase 1 — Schema & data foundations (username backfilled 4/4 unique, WithdrawalStatus enum, Report.reportedPostId index)
-- [ ] Phase 2 — Feed algorithm (backend)
+- [x] Phase 2 — Feed algorithm (backend): findFeed split into keyset-paginated `following` + ranked/offset-paginated `explore` (engagement*recency-decay*affinity, 300-candidate window). Block-exclusion via Prisma relation filter (blocksGiven/blocksReceived none). contentFilter (all/social/selling) maps to Post.type. Verified query syntax against real dev DB + npx jest src/modules/social green.
 - [ ] Phase 3 — Feed frontend + full-page scroll
 - [x] Phase 4 — Username (backend + frontend). Register/edit-profile validate+check uniqueness, GET /auth/username-available, reusable UsernameField component (core/components/username_field.dart, debounced check via ValueUtils.validateUsername), @username rendered on profile header + user search cards. flutter analyze: 0 issues.
   NOTE: reordered Phase 4 to run immediately after Phase 1 (not after Phase 2/3) because username is NOT NULL in schema and broke register.usecase.ts / test factory compilation.

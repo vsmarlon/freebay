@@ -59,6 +59,23 @@ export class GetFeedQueryDTO {
   @IsOptional()
   @IsIn(['explore', 'following'])
   readonly type?: 'explore' | 'following';
+
+  @ApiPropertyOptional({ description: 'Keyset pagination cursor (type=following only)' })
+  @IsOptional()
+  @IsString()
+  readonly cursor?: string;
+
+  @ApiPropertyOptional({ description: 'Page offset (type=explore only)', example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly offset?: number;
+
+  @ApiPropertyOptional({ enum: ['all', 'social', 'selling'], example: 'all' })
+  @IsOptional()
+  @IsIn(['all', 'social', 'selling'])
+  readonly contentFilter?: 'all' | 'social' | 'selling';
 }
 
 export class GetUserPostsQueryDTO {

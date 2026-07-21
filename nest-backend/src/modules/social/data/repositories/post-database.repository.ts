@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PostRepository, FeedQuery, UserPostsQuery, SearchPostsQuery } from '../../domain/repositories/post.repository';
+import { PostRepository, FeedQuery, FeedResult, UserPostsQuery, SearchPostsQuery } from '../../domain/repositories/post.repository';
 import { PostPayload, POST_INCLUDE } from '../../types/social.types';
 
 @Injectable()
@@ -22,47 +22,109 @@ export class PrismaPostRepository implements PostRepository {
     }
   }
 
-  async findFeed(query: FeedQuery): RepositoryResponse<PostPayload[]> {
+  async findFeed(query: FeedQuery): RepositoryResponse<FeedResult> {
     try {
+      const limit = query.limit ?? 20;
       const where: Prisma.PostWhereInput = {};
-      if (query.type === 'following' && query.userId) {
-        const follows = await this.prisma.follow.findMany({
-          where: { followerId: query.userId },
-          select: { followingId: true },
-        });
-        where.userId = { in: follows.map((f) => f.followingId) };
+
+      if (query.contentFilter === 'social') {
+        where.type = 'REGULAR';
+      } else if (query.contentFilter === 'selling') {
+        where.type = 'PRODUCT';
       }
 
-      const limit = query.limit ?? 20;
-      const posts = await this.prisma.post.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take: limit * 3,
-        include: POST_INCLUDE,
-      });
-
-      let ranked: typeof posts;
+      if (query.userId) {
+        where.AND = [
+          { user: { blocksGiven: { none: { blockedId: query.userId } } } },
+          { user: { blocksReceived: { none: { blockerId: query.userId } } } },
+        ];
+      }
 
       if (query.type === 'following') {
-        ranked = posts.slice(0, limit);
-      } else {
-        const now = Date.now();
-        ranked = posts
-          .map((post) => {
-            const ageHours = (now - new Date(post.createdAt).getTime()) / 3_600_000;
-            const engagement = post.likesCount * 3 + post.commentsCount * 5 + post.sharesCount * 4;
-            const score = (engagement + 1) * Math.exp(-ageHours / 48);
-            return { post, score };
-          })
-          .sort((a, b) => b.score - a.score)
-          .slice(0, limit)
-          .map(({ post }) => post);
+        return right(await this.findFollowingFeed(where, query));
       }
-
-      return right(ranked as PostPayload[]);
+      return right(await this.findExploreFeed(where, query, limit));
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar feed'));
     }
+  }
+
+  private async findFollowingFeed(
+    where: Prisma.PostWhereInput,
+    query: FeedQuery,
+  ): Promise<FeedResult> {
+    const limit = query.limit ?? 20;
+    const followingWhere: Prisma.PostWhereInput = { ...where };
+
+    if (query.userId) {
+      const follows = await this.prisma.follow.findMany({
+        where: { followerId: query.userId },
+        select: { followingId: true },
+      });
+      followingWhere.userId = { in: follows.map((f) => f.followingId) };
+    }
+
+    const posts = await this.prisma.post.findMany({
+      where: followingWhere,
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+      include: POST_INCLUDE,
+    });
+
+    const hasMore = posts.length > limit;
+    const page = posts.slice(0, limit);
+
+    return {
+      posts: page as PostPayload[],
+      hasMore,
+      nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+    };
+  }
+
+  private async findExploreFeed(
+    where: Prisma.PostWhereInput,
+    query: FeedQuery,
+    limit: number,
+  ): Promise<FeedResult> {
+    const CANDIDATE_WINDOW = 300;
+    const offset = query.offset ?? 0;
+
+    let followingIds: string[] = [];
+    if (query.userId) {
+      const follows = await this.prisma.follow.findMany({
+        where: { followerId: query.userId },
+        select: { followingId: true },
+      });
+      followingIds = follows.map((f) => f.followingId);
+    }
+
+    const candidates = await this.prisma.post.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: CANDIDATE_WINDOW,
+      include: POST_INCLUDE,
+    });
+
+    const now = Date.now();
+    const scored = candidates
+      .map((post) => {
+        const ageHours = (now - new Date(post.createdAt).getTime()) / 3_600_000;
+        const engagement = post.likesCount * 3 + post.commentsCount * 5 + post.sharesCount * 4;
+        const affinityBoost = followingIds.includes(post.userId) ? 1.5 : 1;
+        const score = (engagement + 1) * Math.exp(-ageHours / 48) * affinityBoost;
+        return { post, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const page = scored.slice(offset, offset + limit).map(({ post }) => post);
+    const hasMore = offset + limit < scored.length;
+
+    return {
+      posts: page as PostPayload[],
+      hasMore,
+      nextOffset: hasMore ? offset + limit : null,
+    };
   }
 
   async findByUserId(query: UserPostsQuery): RepositoryResponse<PostPayload[]> {

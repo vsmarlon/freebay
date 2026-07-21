@@ -5,6 +5,16 @@ export interface FeedQuery {
   userId?: string;
   limit?: number;
   type?: 'explore' | 'following';
+  cursor?: string;
+  offset?: number;
+  contentFilter?: 'all' | 'social' | 'selling';
+}
+
+export interface FeedResult {
+  posts: PostPayload[];
+  hasMore: boolean;
+  nextCursor?: string | null;
+  nextOffset?: number | null;
 }
 
 export interface UserPostsQuery {
@@ -23,7 +33,7 @@ export interface SearchPostsQuery {
 
 export abstract class PostRepository {
   abstract findById(id: string): RepositoryResponse<PostPayload | null>;
-  abstract findFeed(query: FeedQuery): RepositoryResponse<PostPayload[]>;
+  abstract findFeed(query: FeedQuery): RepositoryResponse<FeedResult>;
   abstract findByUserId(query: UserPostsQuery): RepositoryResponse<PostPayload[]>;
   abstract searchPosts(query: SearchPostsQuery): RepositoryResponse<PostPayload[]>;
   abstract create(data: Record<string, unknown>): RepositoryResponse<PostPayload>;

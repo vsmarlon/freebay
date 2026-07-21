@@ -46,6 +46,9 @@ export class SocialController {
     queries: [
       { name: 'limit', required: false, description: 'Results per page (default 20)' },
       { name: 'type', required: false, description: 'Feed type: "following" or "explore" (default)' },
+      { name: 'cursor', required: false, description: 'Keyset pagination cursor (type=following only)' },
+      { name: 'offset', required: false, description: 'Page offset (type=explore only)' },
+      { name: 'contentFilter', required: false, description: '"all" | "social" | "selling"' },
     ],
   })
   async getFeed(
@@ -56,11 +59,14 @@ export class SocialController {
       userId: user?.userId || '',
       limit: query.limit ?? 20,
       type: query.type ?? 'explore',
+      cursor: query.cursor,
+      offset: query.offset,
+      contentFilter: query.contentFilter,
     });
     if (result.isLeft()) {
-      return { posts: [] };
+      return { posts: [], hasMore: false, nextCursor: null, nextOffset: null };
     }
-    return { posts: result.value };
+    return result.value;
   }
 
   @Get('posts/:id')
