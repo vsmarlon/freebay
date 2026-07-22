@@ -8,6 +8,7 @@ export type TransactionEntry = {
   status: string;
   createdAt: Date;
   type: 'PURCHASE' | 'SALE';
+  productTitle: string | null;
 };
 
 export abstract class WalletRepository {

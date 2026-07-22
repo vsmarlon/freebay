@@ -38,7 +38,11 @@
       "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" log --oneline -5)",
       "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse HEAD)",
       "Read(//c/Users/Qiyana/.claude/**)",
-      "Read(//c/Users/Qiyana/.claude/commands/**)"
+      "Read(//c/Users/Qiyana/.claude/commands/**)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(echo \"exit=$?\")",
+      "PowerShell(\\(Get-Command dart -ErrorAction SilentlyContinue\\).Source; \"---\"; \\(Get-Command fvm -ErrorAction SilentlyContinue\\).Source; \"---\"; \\(Get-Command flutter -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(fvm list *)"
     ]
   }
 }

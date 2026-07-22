@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +24,7 @@ import 'package:freebay/features/chat/presentation/widgets/reaction_picker_overl
 import 'package:freebay/features/chat/presentation/widgets/who_reacted_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/typing_indicator_bubble.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/services/upload_service.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
@@ -235,12 +236,25 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     );
     if (xfile == null) return;
 
-    final bytes = await xfile.readAsBytes();
-    final base64 = base64Encode(bytes);
-    final dataUri = 'data:image/jpeg;base64,$base64';
+    final uploadResult = await UploadService.uploadFile(
+      File(xfile.path),
+      'background',
+    );
+    if (!mounted) return;
+
+    final uploadFailure = uploadResult.leftOrNull;
+    if (uploadFailure != null) {
+      AppSnackbar.error(context, uploadFailure.message);
+      return;
+    }
 
     final usecase = ref.read(setChatBackgroundUsecaseProvider);
-    final result = await usecase(widget.chatId, _threadType, dataUri);
+    final result = await usecase(
+      widget.chatId,
+      _threadType,
+      uploadResult.rightOrNull!,
+    );
+    if (!mounted) return;
     result.fold((failure) => AppSnackbar.error(context, failure.message), (
       pref,
     ) {

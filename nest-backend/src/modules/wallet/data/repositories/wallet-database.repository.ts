@@ -21,11 +21,11 @@ export class WalletDatabaseRepository implements WalletRepository {
       const [ordersAsBuyer, ordersAsSeller] = await Promise.all([
         this.prisma.order.findMany({
           where: { buyerId: userId },
-          select: { id: true, amount: true, status: true, createdAt: true, sellerId: true },
+          select: { id: true, amount: true, status: true, createdAt: true, sellerId: true, product: { select: { title: true } } },
         }),
         this.prisma.order.findMany({
           where: { sellerId: userId },
-          select: { id: true, amount: true, status: true, createdAt: true, sellerAmount: true },
+          select: { id: true, amount: true, status: true, createdAt: true, sellerAmount: true, product: { select: { title: true } } },
         }),
       ]);
 
@@ -36,6 +36,7 @@ export class WalletDatabaseRepository implements WalletRepository {
         status: o.status,
         createdAt: o.createdAt,
         type: 'PURCHASE' as const,
+        productTitle: o.product?.title ?? null,
       }));
 
       const sellerTx: TransactionEntry[] = ordersAsSeller.map((o) => ({
@@ -45,9 +46,14 @@ export class WalletDatabaseRepository implements WalletRepository {
         status: o.status,
         createdAt: o.createdAt,
         type: 'SALE' as const,
+        productTitle: o.product?.title ?? null,
       }));
 
-      return right([...buyerTx, ...sellerTx]);
+      const all = [...buyerTx, ...sellerTx].sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+
+      return right(all);
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar transações'));
     }

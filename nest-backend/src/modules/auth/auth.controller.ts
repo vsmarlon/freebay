@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { RegisterDTO, LoginDTO, LogoutDTO, UsernameAvailabilityQueryDTO } from './dtos/auth.dto';
 import {
@@ -37,6 +38,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post('register')
@@ -124,7 +126,7 @@ export class AuthController {
     if (body?.refreshToken) {
       try {
         const payload = await this.jwtService.verifyAsync<AuthUser>(body.refreshToken, {
-          secret: process.env.JWT_SECRET,
+          secret: this.configService.getOrThrow<string>('JWT_SECRET'),
         });
         if (payload.type === 'refresh' && payload.userId === user.userId) {
           refreshPayload = { jti: payload.jti!, exp: payload.exp! };

@@ -16,11 +16,11 @@ Mode: manual execution (phases are sequential/coupled), not implementer+reviewer
 - [x] Phase 5 — User search + dedicated people-search screen. FULLY DONE. Committed 38d9a21.
   - Backend: `$queryRaw` ranked search (exact/prefix/contains username match, followersCount desc, block-exclusion), offset-paginated `{users, hasMore, nextOffset}`.
   - Frontend: `people_search_page.dart` (new dedicated screen, PageHeader + debounced AppTextField + UserSearchList, empty pre-search state), `AppRoutes.peopleSearch = '/people/search'` + GoRoute registered in `app_router.dart`, search icon (`person_search_outlined`) added to feed header in `feed_page.dart`, `explorar_page.dart` stripped to products-only (no TabController/TabBar/TabBarView/Pessoas tab/userSearchProvider/UserSearchList imports). `flutter analyze`: 0 issues.
-- [ ] Phase 6 — Profile friend suggestions
-- [ ] Phase 7 — Chat: unify order+direct, replies, reactions, polish
-- [ ] Phase 8 — Shared upload foundation
-- [ ] Phase 9 — Wallet (frontend + backend cleanup)
-- [ ] Phase 10 — Product search + category cleanup
-- [ ] Phase 11 — Backend dead-code cleanup & conventions
-- [ ] Phase 12 — Security pass (default-deny) + closing review
-- [ ] Phase 13 — Final verification
+- [ ] Phase 6 — Profile friend suggestions (Code implementation complete, pending review)
+- [ ] Phase 7 — Chat: unify order+direct, replies, reactions, polish (Code implementation complete, pending review)
+- [ ] Phase 8 — Shared upload foundation (Code implementation complete, pending review)
+- [ ] Phase 9 — Wallet (frontend + backend cleanup) (Code implementation complete, pending review)
+- [ ] Phase 10 — Product search + category cleanup (Code implementation complete, pending review)
+- [ ] Phase 11 — Backend dead-code cleanup & conventions (Code implementation complete, pending review)
+- [ ] Phase 12 — Security pass (default-deny) + closing review (Code implementation complete, pending review)
+- [ ] Phase 13 — Final verification (Code implementation complete, pending review)

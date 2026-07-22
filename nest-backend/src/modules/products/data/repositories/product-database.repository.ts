@@ -39,7 +39,12 @@ export class ProductDatabaseRepository implements ProductRepository {
     try {
       const { cursor, limit = 20, search, categoryId, minPrice, maxPrice } = params;
       const where: Prisma.ProductWhereInput = { status: 'ACTIVE' };
-      if (search) where.title = { contains: search, mode: 'insensitive' };
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ];
+      }
       if (categoryId) where.categoryId = categoryId;
       if (minPrice || maxPrice) {
         const priceFilter: Prisma.IntFilter = {};

@@ -10,6 +10,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
+import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
 
 class PeopleSearchPage extends ConsumerStatefulWidget {
   const PeopleSearchPage({super.key});
@@ -21,6 +22,15 @@ class PeopleSearchPage extends ConsumerStatefulWidget {
 class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
   final _searchController = TextEditingController();
   Timer? _debounceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(suggestionsProvider.notifier).loadSuggestions();
+    });
+  }
 
   @override
   void dispose() {
@@ -87,27 +97,29 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
 
   Widget _buildContent(UserSearchState searchState, String query) {
     if (query.isEmpty && searchState.users.isEmpty && !searchState.isLoading) {
-      return LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.person_search,
-                  size: 64,
-                  color: AppColors.mediumGray,
-                ),
-                Spacing.vMd,
-                Text(
-                  'Busque por pessoas...',
-                  style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
-                ),
-              ],
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.person_search,
+                    size: 64,
+                    color: AppColors.mediumGray,
+                  ),
+                  Spacing.vMd,
+                  Text(
+                    'Busque por pessoas...',
+                    style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SuggestionsSection(),
+          ],
         ),
       );
     }

@@ -122,32 +122,44 @@ export class UserDatabaseRepository implements UserRepository {
       });
       const followingIds = following.map((f) => f.followingId);
 
-      const suggestions = await this.prisma.user.findMany({
-        where: {
-          id: { not: userId },
-          followers: { some: { followerId: { in: followingIds } } },
-          NOT: { followers: { some: { followerId: userId } } },
-        },
-        take: limit,
-        select: {
-          id: true,
-          displayName: true,
-          username: true,
-          avatarUrl: true,
-          bio: true,
-          isVerified: true,
-          reputationScore: true,
-          totalReviews: true,
-          _count: { select: { followers: true, following: true } },
-          followers: {
-            where: { followerId: { in: followingIds } },
-            select: { followerId: true },
-          },
-        },
-      });
+      const notBlocked: Prisma.UserWhereInput = {
+        blocksGiven: { none: { blockedId: userId } },
+        blocksReceived: { none: { blockerId: userId } },
+      };
 
-      return right(
-        suggestions.map((u) => ({
+      const baseSelect = {
+        id: true,
+        displayName: true,
+        username: true,
+        avatarUrl: true,
+        bio: true,
+        isVerified: true,
+        reputationScore: true,
+        totalReviews: true,
+        _count: { select: { followers: true, following: true } },
+      } as const;
+
+      const suggestions = followingIds.length
+        ? await this.prisma.user.findMany({
+            where: {
+              id: { not: userId },
+              followers: { some: { followerId: { in: followingIds } } },
+              NOT: { followers: { some: { followerId: userId } } },
+              ...notBlocked,
+            },
+            take: limit * 3,
+            select: {
+              ...baseSelect,
+              followers: {
+                where: { followerId: { in: followingIds } },
+                select: { followerId: true },
+              },
+            },
+          })
+        : [];
+
+      const ranked = suggestions
+        .map((u) => ({
           id: u.id,
           displayName: u.displayName,
           username: u.username,
@@ -159,8 +171,44 @@ export class UserDatabaseRepository implements UserRepository {
           followersCount: u._count.followers,
           followingCount: u._count.following,
           mutualCount: u.followers.length,
+        }))
+        .sort((a, b) =>
+          b.mutualCount !== a.mutualCount
+            ? b.mutualCount - a.mutualCount
+            : b.followersCount - a.followersCount,
+        )
+        .slice(0, limit);
+
+      if (ranked.length >= limit) return right(ranked);
+
+      const alreadySuggested = new Set(ranked.map((u) => u.id));
+      const popular = await this.prisma.user.findMany({
+        where: {
+          id: { not: userId, notIn: [...alreadySuggested] },
+          NOT: { followers: { some: { followerId: userId } } },
+          ...notBlocked,
+        },
+        take: limit - ranked.length,
+        orderBy: { followers: { _count: 'desc' } },
+        select: baseSelect,
+      });
+
+      return right([
+        ...ranked,
+        ...popular.map((u) => ({
+          id: u.id,
+          displayName: u.displayName,
+          username: u.username,
+          avatarUrl: u.avatarUrl,
+          bio: u.bio,
+          isVerified: u.isVerified,
+          reputationScore: u.reputationScore,
+          totalReviews: u.totalReviews,
+          followersCount: u._count.followers,
+          followingCount: u._count.following,
+          mutualCount: 0,
         })),
-      );
+      ]);
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar sugestões'));
     }

@@ -13,6 +13,8 @@ import 'package:freebay/features/profile/presentation/widgets/guest_profile_view
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
+import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -25,6 +27,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(suggestionsProvider.notifier).loadSuggestions();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +103,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                               ? AppColors.outlineVariant.withAlpha(40)
                               : AppColors.surfaceContainerHigh,
                         ),
+                        const SuggestionsSection(),
                         ProfileTabs(user: u),
                       ],
                     ),

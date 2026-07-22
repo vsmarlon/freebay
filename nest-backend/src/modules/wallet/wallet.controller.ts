@@ -8,7 +8,6 @@ import { WalletRepository } from './domain/repositories/wallet.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
@@ -22,7 +21,6 @@ export class WalletController {
     private readonly withdrawUseCase: WithdrawUseCase,
     private readonly registerBankAccountUseCase: RegisterBankAccountUseCase,
     private readonly walletRepository: WalletRepository,
-    private readonly prisma: PrismaService,
   ) {}
 
   @Get()
@@ -114,10 +112,10 @@ export class WalletController {
       return { withdrawals: [] };
     }
 
-    const withdrawals = await this.prisma.withdrawal.findMany({
-      where: { walletId: walletResult.value.id },
-      orderBy: { createdAt: 'desc' },
-    });
-    return { withdrawals };
+    const withdrawalsResult = await this.walletRepository.getWithdrawals(walletResult.value.id);
+    if (withdrawalsResult.isLeft()) {
+      return left(new AppError(withdrawalsResult.value.code, withdrawalsResult.value.message));
+    }
+    return { withdrawals: withdrawalsResult.value };
   }
 }

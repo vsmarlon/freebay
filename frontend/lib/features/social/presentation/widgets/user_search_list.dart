@@ -16,6 +16,7 @@ class UserSearchList extends StatelessWidget {
   final VoidCallback? onLoadMore;
   final Function(String userId)? onFollow;
   final Function(String userId)? onUnfollow;
+  final bool shrinkWrap;
 
   const UserSearchList({
     super.key,
@@ -24,6 +25,7 @@ class UserSearchList extends StatelessWidget {
     this.onLoadMore,
     this.onFollow,
     this.onUnfollow,
+    this.shrinkWrap = false,
   });
 
   @override
@@ -59,6 +61,8 @@ class UserSearchList extends StatelessWidget {
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
+        shrinkWrap: shrinkWrap,
+        physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
         itemCount: users.length + (isLoading ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == users.length) {
