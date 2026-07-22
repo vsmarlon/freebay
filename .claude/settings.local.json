@@ -36,7 +36,9 @@
       "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse --show-toplevel)",
       "Bash(cat \"$\\(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse --show-toplevel\\)/.superpowers/sdd/progress.md\")",
       "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" log --oneline -5)",
-      "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse HEAD)"
+      "Bash(git -C \"C:/Users/Qiyana/Documents/GitHub/ME/freebay\" rev-parse HEAD)",
+      "Read(//c/Users/Qiyana/.claude/**)",
+      "Read(//c/Users/Qiyana/.claude/commands/**)"
     ]
   }
 }

@@ -9,6 +9,7 @@ class AppRoutes {
   static const String postDetails = '/post/:id';
   static const String comments = 'comments';
   static const String postSearch = '/posts/search';
+  static const String peopleSearch = '/people/search';
   static const String createProduct = '/products/create';
   static const String productDetail = '/products/:id';
   static const String editProduct = 'edit';

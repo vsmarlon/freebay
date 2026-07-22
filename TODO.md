@@ -71,6 +71,21 @@ disponiveis na main page do chat. investigar o fluxo.
 [Nest] 22100  - 10/07/2026, 21:41:57   DEBUG [HTTP] [AUTH_HEADER] [REDACTED]
 [Nest] 22100  - 10/07/2026, 21:41:57   ERROR [HTTP] [ERROR] POST /users/a48388c5-a63e-4e1a-adf7-3d257f383868/follow - 30ms - Already following
 [Nest] 22100  - 10/07/2026, 21:41:57    WARN [AllExceptionsFilter] [APP] POST /users/a48388c5-a63e-4e1a-adf7-3d257f383868/follow - BAD_REQUEST: Already following
+-[ ] on click on following: I/flutter (21963): [PROFILE] getFollowers data: {success: true, data: {users: [{id: 41e139d0-ecb8-4cb4-a6f4-08e2bbff5c66, displayName: qqq, avatarUrl: null, isVerified: false, reputationScore: 0}], total: 1, limit: 20, offset: 0}}
+Another exception was thrown: Trailing widget consumes the entire tile width (including ListTile.contentPadding).
+Another exception was thrown: RenderBox was not laid out: _RenderListTile#99784 relayoutBoundary=up12 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderPadding#89684 relayoutBoundary=up11 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderPadding#30b2e relayoutBoundary=up10 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderSemanticsAnnotations#8f406 relayoutBoundary=up9 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderPointerListener#efb84 relayoutBoundary=up8 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderSemanticsAnnotations#bc78c relayoutBoundary=up7 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderMouseRegion#51425 relayoutBoundary=up6 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderSemanticsAnnotations#14385 relayoutBoundary=up5 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: RenderBox was not laid out: RenderRepaintBoundary#58dc3 relayoutBoundary=up4 NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE
+Another exception was thrown: 'package:flutter/src/rendering/sliver_multi_box_adaptor.dart': Failed assertion: line 629 pos 12: 'child.hasSize': is not true.
+Another exception was thrown: Null check operator used on a null value
+Another exception was thrown: Null check operator used on a null value
+Another exception was thrown: RenderBox was not laid out: RenderPadding#30b2e relayoutBoundary=up10 NEEDS-PAINT
 
 ### Explorar
 - [ ] filtro precisa ser exibido de uma forma melhor atualmente ocupa muito espaço na tela, também deve recolher o header e bottom nav ao scrollar 

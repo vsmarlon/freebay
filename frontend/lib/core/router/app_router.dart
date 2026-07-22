@@ -15,6 +15,7 @@ import 'package:freebay/features/onboarding/presentation/pages/onboarding_page.d
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_details_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_search_page.dart';
+import 'package:freebay/features/social/presentation/pages/people_search_page.dart';
 import 'package:freebay/features/social/presentation/pages/create_post_page.dart';
 import 'package:freebay/features/social/presentation/pages/comments_page.dart';
 import 'package:freebay/features/social/presentation/pages/story_viewer_wrapper.dart';
@@ -237,6 +238,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.postSearch,
       builder: (context, state) => const PostSearchPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.peopleSearch,
+      builder: (context, state) => const PeopleSearchPage(),
     ),
     GoRoute(
       path: AppRoutes.createProduct,

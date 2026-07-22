@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -166,6 +167,10 @@ class _FeedPageState extends ConsumerState<FeedPage>
                   ),
                 ),
                 actions: [
+                  _HeaderIcon(
+                    icon: Icons.person_search_outlined,
+                    route: AppRoutes.peopleSearch,
+                  ),
                   _HeaderIcon(
                     icon: Icons.notifications_outlined,
                     route: '/notifications',

@@ -1,4 +1,3 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -13,8 +12,6 @@ import 'package:freebay/features/product/presentation/widgets/category_filter_pa
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
-import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
-import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
@@ -26,23 +23,13 @@ class ExplorarPage extends ConsumerStatefulWidget {
   ConsumerState<ExplorarPage> createState() => _ExplorarPageState();
 }
 
-class _ExplorarPageState extends ConsumerState<ExplorarPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _ExplorarPageState extends ConsumerState<ExplorarPage> {
   final _searchController = TextEditingController();
   bool _showFilters = false;
   Timer? _debounceTimer;
-  final Map<String, bool> _followingMap = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     _debounceTimer?.cancel();
     super.dispose();
@@ -51,24 +38,13 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
   void _onSearchDebounced(String query) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      if (_tabController.index == 1) {
-        ref
-            .read(userSearchProvider.notifier)
-            .search(query: query, refresh: true);
-      } else {
-        ref.read(searchQueryProvider.notifier).state = query;
-      }
+      ref.read(searchQueryProvider.notifier).state = query;
     });
   }
 
   void _onSearch() {
     _debounceTimer?.cancel();
-    final query = _searchController.text;
-    if (_tabController.index == 1) {
-      ref.read(userSearchProvider.notifier).search(query: query, refresh: true);
-    } else {
-      ref.read(searchQueryProvider.notifier).state = query;
-    }
+    ref.read(searchQueryProvider.notifier).state = _searchController.text;
   }
 
   @override
@@ -123,35 +99,15 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                     child: AppTextField(
                       controller: _searchController,
                       label: '',
-                      hint: _tabController.index == 1
-                          ? 'Buscar pessoas...'
-                          : 'Buscar produtos...',
+                      hint: 'Buscar produtos...',
                       prefixIcon: Icons.search,
                       onFieldSubmitted: (_) => _onSearch(),
                       onChanged: _onSearchDebounced,
                     ),
                   ),
-                  bottom: TabBar(
-                    controller: _tabController,
-                    labelColor: context.isDark
-                        ? AppColors.white
-                        : AppColors.primaryContainer,
-                    unselectedLabelColor: AppColors.mediumGray,
-                    indicatorColor: AppColors.primaryContainer,
-                    tabs: const [
-                      Tab(text: 'Produtos'),
-                      Tab(text: 'Pessoas'),
-                    ],
-                  ),
                 ),
               ],
-              body: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildProdutosTab(selectedCategory, categoriesAsync),
-                  _buildPessoasTab(),
-                ],
-              ),
+              body: _buildProdutosTab(selectedCategory, categoriesAsync),
             ),
           ),
         ],
@@ -346,55 +302,6 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPessoasTab() {
-    final searchState = ref.watch(userSearchProvider);
-    final searchQuery = _searchController.text;
-
-    if (searchQuery.isEmpty && searchState.users.isEmpty) {
-      return LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.person_search,
-                  size: 64,
-                  color: AppColors.mediumGray,
-                ),
-                Spacing.vMd,
-                Text(
-                  'Busque por pessoas...',
-                  style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return UserSearchList(
-      users: searchState.users,
-      isLoading: searchState.isLoading,
-      onLoadMore: () {
-        if (searchState.hasMore && !searchState.isLoading) {
-          ref.read(userSearchProvider.notifier).search(query: searchQuery);
-        }
-      },
-      onFollow: (userId) async {
-        await ref.read(socialRepositoryProvider).followUser(userId);
-        setState(() => _followingMap[userId] = true);
-      },
-      onUnfollow: (userId) async {
-        await ref.read(socialRepositoryProvider).unfollowUser(userId);
-        setState(() => _followingMap[userId] = false);
-      },
     );
   }
 }
