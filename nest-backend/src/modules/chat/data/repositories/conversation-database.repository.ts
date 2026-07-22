@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, DirectConversation, User, DirectMessage, ConversationPreference, MessageReaction } from '@prisma/client';
+import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ConversationPreference, MessageReaction } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
@@ -9,7 +9,17 @@ import {
   DirectConversationWithDetails,
   OrderWithChat,
   DirectMessageWithSender,
+  ChatMessageWithSender,
 } from '../../mappers/conversation.mapper';
+
+const REPLY_TO_SELECT = {
+  id: true,
+  senderId: true,
+  content: true,
+  type: true,
+  attachmentUrl: true,
+  deletedAt: true,
+} as const;
 
 @Injectable()
 export class ConversationDatabaseRepository implements ConversationRepository {
@@ -100,9 +110,45 @@ export class ConversationDatabaseRepository implements ConversationRepository {
       return right(await this.prisma.directMessage.findMany({
         where: { conversationId },
         orderBy: { createdAt: 'asc' },
-        include: { sender: { select: USER_SELECT_MINIMAL } },
+        include: {
+          sender: { select: USER_SELECT_MINIMAL },
+          replyTo: { select: REPLY_TO_SELECT },
+        },
       }) as DirectMessageWithSender[]);
     } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens')); }
+  }
+
+  async createChatMessage(data: Prisma.ChatMessageCreateInput, includeSender?: boolean): RepositoryResponse<ChatMessage | ChatMessageWithSender> {
+    try {
+      const query: Prisma.ChatMessageCreateArgs = { data };
+      if (includeSender) {
+        query.include = { sender: { select: USER_SELECT_MINIMAL } };
+      }
+      return right(await this.prisma.chatMessage.create(query) as ChatMessage | ChatMessageWithSender);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao criar mensagem')); }
+  }
+
+  async findChatMessagesByOrder(orderId: string): RepositoryResponse<ChatMessageWithSender[]> {
+    try {
+      return right(await this.prisma.chatMessage.findMany({
+        where: { orderId },
+        orderBy: { createdAt: 'asc' },
+        include: {
+          sender: { select: USER_SELECT_MINIMAL },
+          replyTo: { select: REPLY_TO_SELECT },
+        },
+      }) as ChatMessageWithSender[]);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens')); }
+  }
+
+  async markChatMessagesRead(orderId: string, userId: string): RepositoryResponse<void> {
+    try {
+      await this.prisma.chatMessage.updateMany({
+        where: { orderId, senderId: { not: userId }, readAt: null },
+        data: { readAt: new Date(), deliveredAt: new Date() },
+      });
+      return right(void 0);
+    } catch { return left(new AppError('DB_ERROR', 'Erro ao marcar mensagens')); }
   }
 
   async markMessagesDelivered(conversationId: string, userId: string): RepositoryResponse<void> {

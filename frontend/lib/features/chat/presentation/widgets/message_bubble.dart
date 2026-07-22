@@ -21,6 +21,9 @@ class MessageBubble extends StatelessWidget {
   onReactionLongPress;
   final VoidCallback? onSwipeToReply;
   final VoidCallback? onLongPressMessage;
+  final VoidCallback? onReplyTap;
+  final String? currentUserId;
+  final String? otherUserName;
 
   const MessageBubble({
     super.key,
@@ -33,6 +36,9 @@ class MessageBubble extends StatelessWidget {
     this.onReactionLongPress,
     this.onSwipeToReply,
     this.onLongPressMessage,
+    this.onReplyTap,
+    this.currentUserId,
+    this.otherUserName,
   });
 
   bool get _isRead => message.readAt != null;
@@ -159,7 +165,12 @@ class MessageBubble extends StatelessWidget {
       children: [
         // Reply preview
         if (_hasReply) ...[
-          ReplyPreviewBanner(replyTo: message.replyTo),
+          ReplyPreviewBanner(
+            replyTo: message.replyTo,
+            currentUserId: currentUserId,
+            otherUserName: otherUserName,
+            onTap: onReplyTap,
+          ),
           const SizedBox(height: 6),
         ],
         // Main content by type

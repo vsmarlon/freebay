@@ -150,12 +150,26 @@ export interface GetMessagesInput {
   userId: string;
 }
 
+export interface ReplyToOutput {
+  id: string;
+  senderId: string;
+  content: string | null;
+  type: string;
+  attachmentUrl: string | null;
+  deletedAt: Date | null;
+}
+
 export interface GetMessagesOutput {
   id: string;
   conversationId: string;
   senderId: string;
   content: string | null;
   type: string;
+  attachmentUrl: string | null;
+  metadata: Record<string, unknown> | null;
+  replyToId: string | null;
+  replyTo: ReplyToOutput | null;
+  deletedAt: Date | null;
   readAt: Date | null;
   deliveredAt: Date | null;
   createdAt: Date;

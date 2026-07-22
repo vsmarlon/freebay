@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -19,8 +19,17 @@ import { ApiTags } from '@nestjs/swagger';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
 const VALID_CONTEXTS = ['chat', 'background', 'post', 'avatar'] as const;
-const VALID_MIMETYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+const MIMETYPE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+};
+const MAX_SIZE = 10 * 1024 * 1024;
+
+export function isValidContext(context: unknown): context is (typeof VALID_CONTEXTS)[number] {
+  return typeof context === 'string' && (VALID_CONTEXTS as readonly string[]).includes(context);
+}
 
 @ApiTags('Upload')
 @Controller('uploads')
@@ -33,19 +42,27 @@ export class UploadController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: (req, _file, cb) => {
-          const context = (req.query.context as string) || 'misc';
+          const context = req.query.context;
+          if (!isValidContext(context)) {
+            cb(
+              new BadRequestException(
+                `Context inválido. Use: ${VALID_CONTEXTS.join(', ')}`,
+              ),
+              '',
+            );
+            return;
+          }
           const dir = join(process.cwd(), 'uploads', context);
           mkdirSync(dir, { recursive: true });
           cb(null, dir);
         },
         filename: (_req, file, cb) => {
-          const ext = extname(file.originalname).toLowerCase() || '.jpg';
-          cb(null, `${uuidv4()}${ext}`);
+          cb(null, `${uuidv4()}${MIMETYPE_EXTENSIONS[file.mimetype]}`);
         },
       }),
       limits: { fileSize: MAX_SIZE },
       fileFilter: (_req, file, cb) => {
-        cb(null, VALID_MIMETYPES.includes(file.mimetype));
+        cb(null, file.mimetype in MIMETYPE_EXTENSIONS);
       },
     }),
   )
@@ -58,7 +75,7 @@ export class UploadController {
         'Arquivo ausente ou tipo não permitido (aceitos: jpeg, png, gif, webp)',
       );
     }
-    if (!(VALID_CONTEXTS as readonly string[]).includes(context)) {
+    if (!isValidContext(context)) {
       throw new BadRequestException(
         `Context inválido. Use: ${VALID_CONTEXTS.join(', ')}`,
       );

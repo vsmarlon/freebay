@@ -58,7 +58,7 @@ export class ChatService {
   async getMessages(conversationId: string, userId: string) {
     const result = await this.getMessagesUseCase.execute(conversationId, userId);
     if (isLeft(result)) throw result.value;
-    return { messages: result.value };
+    return result.value;
   }
 
   async sendMessage(userId: string, conversationId: string, body: SendMessageDTO) {
@@ -105,8 +105,8 @@ export class ChatService {
     return { deleted: true };
   }
 
-  async toggleReaction(userId: string, messageId: string, emoji: string, messageModel: 'DIRECT' | 'ORDER') {
-    const result = await this.toggleReactionUseCase.execute({ userId, messageId, emoji, messageModel });
+  async toggleReaction(userId: string, messageId: string, emoji: string, conversationId: string) {
+    const result = await this.toggleReactionUseCase.execute({ userId, messageId, emoji, conversationId });
     if (isLeft(result)) throw result.value;
     return result.value;
   }

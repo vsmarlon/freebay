@@ -6,8 +6,25 @@ import 'package:freebay/features/chat/data/entities/message_entity.dart';
 
 class ReplyPreviewBanner extends StatelessWidget {
   final MessageEntity? replyTo;
+  final String? currentUserId;
+  final String? otherUserName;
+  final VoidCallback? onTap;
 
-  const ReplyPreviewBanner({super.key, this.replyTo});
+  const ReplyPreviewBanner({
+    super.key,
+    this.replyTo,
+    this.currentUserId,
+    this.otherUserName,
+    this.onTap,
+  });
+
+  String get _senderLabel {
+    if (replyTo == null) return '';
+    if (currentUserId != null && replyTo!.senderId == currentUserId) {
+      return 'Você';
+    }
+    return otherUserName ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +39,7 @@ class ReplyPreviewBanner extends StatelessWidget {
         ? 'Localização'
         : 'Mensagem';
 
-    return Container(
+    final banner = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: context.isDark
@@ -37,7 +54,7 @@ class ReplyPreviewBanner extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            isDeleted ? '' : replyTo!.senderId,
+            _senderLabel,
             style: TextStyle(
               fontFamily: AppTypography.headlineFontFamily,
               fontSize: 11,
@@ -62,5 +79,8 @@ class ReplyPreviewBanner extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap == null) return banner;
+    return InkWell(onTap: onTap, child: banner);
   }
 }

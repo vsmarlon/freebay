@@ -120,6 +120,6 @@ export class ChatController {
     @Body() body: { emoji: string },
     @CurrentUser() user: AuthUser,
   ) {
-    return this.chatService.toggleReaction(user.userId, msgId, body.emoji, 'DIRECT');
+    return this.chatService.toggleReaction(user.userId, msgId, body.emoji, convId);
   }
 }

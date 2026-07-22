@@ -126,12 +126,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('send_message')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId: string; content: string },
+    @MessageBody() data: { conversationId: string; content: string; replyToId?: string },
   ) {
     const user = this.connectedUsers.get(client.id);
     if (!user) return { error: 'Unauthorized' };
 
-    const message = await this.sendMessage(user.userId, data.conversationId, data.content);
+    const message = await this.sendMessage(
+      user.userId,
+      data.conversationId,
+      data.content,
+      data.replyToId,
+    );
 
     if (message) {
       this.server.to(`conversation:${data.conversationId}`).emit('new_message', message);
@@ -193,7 +198,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       userId: user.userId,
       messageId: data.messageId,
       emoji: data.emoji,
-      messageModel: 'DIRECT',
+      conversationId: data.conversationId,
     });
     if (result.isLeft()) return { error: result.value.message };
 
@@ -204,8 +209,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { event: 'reaction_updated', data: result.value };
   }
 
-  private async sendMessage(userId: string, conversationId: string, content: string) {
-    const result = await this.sendMessageUseCase.execute({ senderId: userId, conversationId, content });
+  private async sendMessage(
+    userId: string,
+    conversationId: string,
+    content: string,
+    replyToId?: string,
+  ) {
+    const result = await this.sendMessageUseCase.execute({
+      senderId: userId,
+      conversationId,
+      content,
+      replyToId,
+    });
     if (result.isLeft()) {
       return null;
     }

@@ -53,12 +53,15 @@ class ChatRepository implements IChatRepository {
   @override
   Future<Either<Failure, void>> sendMessage(
     String chatId,
-    String message,
-  ) async {
+    String message, {
+    String? replyToId,
+  }) async {
     try {
+      final body = <String, dynamic>{'content': message};
+      if (replyToId != null) body['replyToId'] = replyToId;
       await HttpClient.instance.post(
         '/chat/conversations/$chatId/messages',
-        data: {'content': message},
+        data: body,
       );
       return const Right(null);
     } catch (e) {

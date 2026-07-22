@@ -48,12 +48,23 @@ export interface UnifiedConversationResponse {
   } | null;
 }
 
+export type ReplyToSummary = {
+  id: string;
+  senderId: string;
+  content: string | null;
+  type: string;
+  attachmentUrl: string | null;
+  deletedAt: Date | null;
+};
+
 export type DirectMessageWithSender = DirectMessage & {
   sender: Pick<User, 'id' | 'displayName' | 'avatarUrl'>;
+  replyTo?: ReplyToSummary | null;
 };
 
 export type ChatMessageWithSender = ChatMessage & {
   sender: Pick<User, 'id' | 'displayName' | 'avatarUrl'>;
+  replyTo?: ReplyToSummary | null;
 };
 
 export class ConversationMapper {

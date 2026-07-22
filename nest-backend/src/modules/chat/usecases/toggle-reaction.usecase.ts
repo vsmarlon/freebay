@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 
 const VALID_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍'];
 
@@ -13,20 +14,28 @@ export interface ReactionSummary {
 
 @Injectable()
 export class ToggleReactionUseCase {
-  constructor(private readonly conversationRepository: ConversationRepository) {}
+  constructor(
+    private readonly conversationRepository: ConversationRepository,
+    private readonly threadAccess: ChatThreadAccessService,
+  ) {}
 
   async execute(input: {
     userId: string;
     messageId: string;
     emoji: string;
-    messageModel: 'DIRECT' | 'ORDER';
+    conversationId: string;
   }): Promise<Either<AppError, { reactions: ReactionSummary[] }>> {
     if (!VALID_EMOJIS.includes(input.emoji)) {
       return left(new BadRequestError(`Emoji inválido. Permitidos: ${VALID_EMOJIS.join(' ')}`));
     }
 
+    const resolved = await this.threadAccess.resolveThread(input.userId, input.conversationId);
+    if (isLeft(resolved)) return left(resolved.value);
+
+    const messageModel: 'DIRECT' | 'ORDER' = resolved.value.orderId ? 'ORDER' : 'DIRECT';
+
     const existing = await this.conversationRepository.findReactionByUserAndMessage(
-      input.userId, input.messageId, input.messageModel,
+      input.userId, input.messageId, messageModel,
     );
     if (isLeft(existing)) return left(existing.value);
 
@@ -38,12 +47,12 @@ export class ToggleReactionUseCase {
         userId: input.userId,
         messageId: input.messageId,
         emoji: input.emoji,
-        model: input.messageModel,
+        model: messageModel,
       });
       if (isLeft(upsert)) return left(upsert.value);
     }
 
-    const allResult = await this.conversationRepository.getReactionsForMessage(input.messageId, input.messageModel);
+    const allResult = await this.conversationRepository.getReactionsForMessage(input.messageId, messageModel);
     if (isLeft(allResult)) return left(allResult.value);
 
     const grouped = VALID_EMOJIS.reduce<ReactionSummary[]>((acc, emoji) => {

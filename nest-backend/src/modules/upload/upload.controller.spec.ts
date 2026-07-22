@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, CanActivate, ExecutionContext } from '@nestjs/common';
-import { UploadController } from './upload.controller';
+import { UploadController, isValidContext } from './upload.controller';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
 class MockJwtGuard implements CanActivate {
@@ -40,5 +40,30 @@ describe('UploadController', () => {
   it('throws BadRequestException for invalid context', () => {
     const file = { filename: 'abc.jpg' } as Express.Multer.File;
     expect(() => sut.upload(file, 'invalid')).toThrow(BadRequestException);
+  });
+
+  it('throws BadRequestException for path-traversal context', () => {
+    const file = { filename: 'abc.jpg' } as Express.Multer.File;
+    expect(() => sut.upload(file, '../../etc')).toThrow(BadRequestException);
+  });
+
+  describe('isValidContext', () => {
+    it.each(['chat', 'background', 'post', 'avatar'])('accepts %s', (context) => {
+      expect(isValidContext(context)).toBe(true);
+    });
+
+    it.each([
+      '../../etc',
+      '..',
+      'chat/../../etc',
+      '/absolute',
+      'misc',
+      '',
+      undefined,
+      null,
+      123,
+    ])('rejects %p', (context) => {
+      expect(isValidContext(context)).toBe(false);
+    });
   });
 });

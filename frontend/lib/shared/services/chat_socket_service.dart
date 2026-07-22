@@ -8,8 +8,21 @@ import 'package:freebay/shared/services/storage_service.dart';
 class _OutboxEntry {
   final String conversationId;
   final String content;
+  final String? replyToId;
 
-  const _OutboxEntry({required this.conversationId, required this.content});
+  const _OutboxEntry({
+    required this.conversationId,
+    required this.content,
+    this.replyToId,
+  });
+
+  Map<String, dynamic> toPayload() {
+    return <String, dynamic>{
+      'conversationId': conversationId,
+      'content': content,
+      if (replyToId != null) 'replyToId': replyToId,
+    };
+  }
 }
 
 /// Manages the Socket.IO connection for real-time chat.
@@ -138,10 +151,7 @@ class ChatSocketService {
     _outboxQueue.clear();
 
     for (final entry in pending) {
-      _socket!.emit('send_message', {
-        'conversationId': entry.conversationId,
-        'content': entry.content,
-      });
+      _socket!.emit('send_message', entry.toPayload());
     }
   }
 
@@ -167,16 +177,16 @@ class ChatSocketService {
   }
 
   /// Sends a message immediately when connected; queues it otherwise.
-  void sendMessage(String conversationId, String content) {
+  void sendMessage(String conversationId, String content, {String? replyToId}) {
+    final entry = _OutboxEntry(
+      conversationId: conversationId,
+      content: content,
+      replyToId: replyToId,
+    );
     if (_socket?.connected == true) {
-      _socket!.emit('send_message', {
-        'conversationId': conversationId,
-        'content': content,
-      });
+      _socket!.emit('send_message', entry.toPayload());
     } else {
-      _outboxQueue.add(
-        _OutboxEntry(conversationId: conversationId, content: content),
-      );
+      _outboxQueue.add(entry);
     }
   }
 

@@ -19,6 +19,7 @@ import 'package:freebay/features/chat/presentation/widgets/chat_header.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/attachment_bottom_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:freebay/features/chat/presentation/widgets/reply_composer_banner.dart';
 import 'package:freebay/features/chat/presentation/widgets/reaction_picker_overlay.dart';
 import 'package:freebay/features/chat/presentation/widgets/who_reacted_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/typing_indicator_bubble.dart';
@@ -55,6 +56,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
   bool _isLoading = true;
   bool _isSending = false;
   ConversationPreference? _preference;
+  MessageEntity? _replyTarget;
+  String? _highlightedMessageId;
+  final Map<String, GlobalKey> _messageKeys = {};
   Color _accentColor = AppColors.primaryContainer;
   StreamSubscription<Map<String, dynamic>>? _socketSubscription;
   StreamSubscription<Map<String, dynamic>>? _typingSubscription;
@@ -184,18 +188,21 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     if (content.isEmpty || _isSending) return;
 
     setState(() => _isSending = true);
+    final replyToId = _replyTarget?.id;
 
     try {
       final socketService = ref.read(chatSocketServiceProvider);
       if (socketService.isConnected) {
-        socketService.sendMessage(widget.chatId, content);
+        socketService.sendMessage(widget.chatId, content, replyToId: replyToId);
         _messageController.clear();
+        setState(() => _replyTarget = null);
       } else {
         final result = await ref
             .read(chatRepositoryProvider)
-            .sendMessage(widget.chatId, content);
+            .sendMessage(widget.chatId, content, replyToId: replyToId);
         if (result.isLeft) throw Exception('send failed');
         _messageController.clear();
+        setState(() => _replyTarget = null);
         await _loadMessages();
       }
     } catch (e) {
@@ -640,29 +647,56 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                                         currentUserId
                                   : false;
                               final isConsecutive = isMe == prevIsMe;
-                              return MessageBubble(
-                                message: msgEntity,
-                                isMe: isMe,
-                                isDark: isDark,
-                                isConsecutive: isConsecutive,
-                                accentColor: accentColor,
-                                onLongPressMessage: () => showReactionPicker(
-                                  context,
-                                  (emoji) =>
+                              final messageKey = _messageKeys.putIfAbsent(
+                                msgEntity.id,
+                                GlobalKey.new,
+                              );
+                              return Container(
+                                key: messageKey,
+                                color: _highlightedMessageId == msgEntity.id
+                                    ? accentColor.withValues(alpha: 0.18)
+                                    : null,
+                                child: MessageBubble(
+                                  message: msgEntity,
+                                  isMe: isMe,
+                                  isDark: isDark,
+                                  isConsecutive: isConsecutive,
+                                  accentColor: accentColor,
+                                  currentUserId: currentUserId,
+                                  otherUserName: widget.orderName,
+                                  onReplyTap: msgEntity.replyToId != null
+                                      ? () => _scrollToMessage(
+                                          msgEntity.replyToId!,
+                                        )
+                                      : null,
+                                  onLongPressMessage: () => showReactionPicker(
+                                    context,
+                                    (emoji) =>
+                                        _reactToMessage(msgEntity.id, emoji),
+                                  ),
+                                  onSwipeToReply: () =>
+                                      _handleSwipeToReply(msgEntity),
+                                  onReactionTap: (emoji) =>
                                       _reactToMessage(msgEntity.id, emoji),
+                                  onReactionLongPress: (emoji, details) =>
+                                      _showWhoReactedSheet(msgEntity, emoji),
                                 ),
-                                onSwipeToReply: () =>
-                                    _handleSwipeToReply(msgEntity),
-                                onReactionTap: (emoji) =>
-                                    _reactToMessage(msgEntity.id, emoji),
-                                onReactionLongPress: (emoji, details) =>
-                                    _showWhoReactedSheet(msgEntity, emoji),
                               );
                             },
                           ),
                         ),
                 ),
                 if (_otherUserTyping) const TypingIndicatorBubble(),
+                if (_replyTarget != null)
+                  ReplyComposerBanner(
+                    replyTo: _replyTarget!,
+                    senderLabel: _senderLabel(
+                      _replyTarget!.senderId,
+                      currentUserId,
+                    ),
+                    accentColor: accentColor,
+                    onCancel: () => setState(() => _replyTarget = null),
+                  ),
                 _buildInputBar(isDark, accentColor),
               ],
             ),
@@ -844,12 +878,55 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
   }
 
   void _handleSwipeToReply(MessageEntity message) {
-    final content = message.content ?? '';
-    if (content.isNotEmpty) {
-      _messageController.text = '> $content\n';
-      _messageController.selection = TextSelection.fromPosition(
-        TextPosition(offset: _messageController.text.length),
+    setState(() => _replyTarget = message);
+  }
+
+  String _senderLabel(String senderId, String? currentUserId) {
+    return senderId == currentUserId ? 'Você' : widget.orderName;
+  }
+
+  void _scrollToMessage(String messageId) {
+    final index = _messages.indexWhere((m) => m['id'] == messageId);
+    if (index < 0) return;
+
+    final key = _messageKeys[messageId];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.linear,
+        alignment: 0.3,
       );
+      _flashMessage(messageId);
+      return;
     }
+
+    if (!_scrollController.hasClients) return;
+    final ratio = _messages.isEmpty ? 0.0 : index / _messages.length;
+    _scrollController.jumpTo(
+      (_scrollController.position.maxScrollExtent * ratio).clamp(
+        _scrollController.position.minScrollExtent,
+        _scrollController.position.maxScrollExtent,
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rebuiltKey = _messageKeys[messageId];
+      if (rebuiltKey?.currentContext == null) return;
+      Scrollable.ensureVisible(
+        rebuiltKey!.currentContext!,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.linear,
+        alignment: 0.3,
+      );
+      _flashMessage(messageId);
+    });
+  }
+
+  void _flashMessage(String messageId) {
+    setState(() => _highlightedMessageId = messageId);
+    Timer(const Duration(milliseconds: 900), () {
+      if (!mounted) return;
+      setState(() => _highlightedMessageId = null);
+    });
   }
 }

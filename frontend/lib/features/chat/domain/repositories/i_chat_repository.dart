@@ -9,7 +9,11 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 abstract class IChatRepository {
   Future<Either<Failure, List<ChatEntity>>> getChats({String? query});
   Future<Either<Failure, List<ChatEntity>>> getArchivedChats();
-  Future<Either<Failure, void>> sendMessage(String chatId, String message);
+  Future<Either<Failure, void>> sendMessage(
+    String chatId,
+    String message, {
+    String? replyToId,
+  });
   Future<Either<Failure, MessageEntity>> sendRichMessage({
     required String conversationId,
     String? content,
