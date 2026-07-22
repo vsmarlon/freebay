@@ -24,7 +24,7 @@ import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { validateImageFile } from '@/shared/utils/image-upload.utils';
+import { validateImageFile, MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
 
 @ApiTags('Products')
 @Controller('products')
@@ -44,6 +44,8 @@ export class ProductsController {
       { name: 'category', required: false, description: 'Category UUID filter' },
       { name: 'minPrice', required: false, description: 'Minimum price in cents' },
       { name: 'maxPrice', required: false, description: 'Maximum price in cents' },
+      { name: 'condition', required: false, description: 'NEW or USED' },
+      { name: 'sort', required: false, description: 'recent, price_asc, price_desc or popular' },
     ],
   })
   async findAll(@Query() query: ProductQueryDTO) {
@@ -65,7 +67,7 @@ export class ProductsController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
-      limits: { fileSize: 1000000 },
+      limits: { fileSize: MAX_IMAGE_SIZE },
     }),
   )
   @HttpCode(HttpStatus.CREATED)

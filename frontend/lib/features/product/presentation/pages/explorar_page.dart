@@ -9,6 +9,7 @@ import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
+import 'package:freebay/features/product/presentation/widgets/product_filter_bar.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
@@ -120,19 +121,40 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage> {
     AsyncValue<List<CategoryEntity>> categoriesAsync,
   ) {
     final searchQuery = ref.watch(searchQueryProvider);
+    final sort = ref.watch(productSortProvider);
+    final condition = ref.watch(productConditionProvider);
+    final priceRange = ref.watch(productPriceRangeProvider);
 
-    final productsAsync = ref.watch(
-      productsFeedProvider(
-        GetProductsParams(
-          search: searchQuery.isEmpty ? null : searchQuery,
-          category: selectedCategory,
-        ),
-      ),
+    final params = GetProductsParams(
+      search: searchQuery.isEmpty ? null : searchQuery,
+      category: selectedCategory,
+      sort: sort,
+      condition: condition,
+      minPrice: priceRange == null ? null : (priceRange.start * 100).round(),
+      maxPrice: priceRange == null ? null : (priceRange.end * 100).round(),
     );
+    final feedState = ref.watch(productsFeedProvider(params));
+
+    final hasActiveFilters =
+        searchQuery.isNotEmpty ||
+        selectedCategory != null ||
+        condition != null ||
+        priceRange != null;
 
     return Column(
       children: [
-        if (_showFilters)
+        if (_showFilters) ...[
+          ProductFilterBar(
+            sort: sort,
+            condition: condition,
+            priceRange: priceRange,
+            onSortChanged: (value) =>
+                ref.read(productSortProvider.notifier).state = value,
+            onConditionChanged: (value) =>
+                ref.read(productConditionProvider.notifier).state = value,
+            onPriceRangeChanged: (value) =>
+                ref.read(productPriceRangeProvider.notifier).state = value,
+          ),
           categoriesAsync.when(
             data: (categories) {
               if (categories.isEmpty) {
@@ -168,140 +190,143 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage> {
               child: Text('Erro ao carregar categorias: $err'),
             ),
           ),
-        Expanded(
-          child: productsAsync.when(
-            data: (products) {
-              if (products.isEmpty) {
-                return LayoutBuilder(
-                  builder: (context, constraints) => SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          EmptyState(
-                            icon: Icons.search_off,
-                            title: 'NENHUM PRODUTO',
-                            subtitle: 'Nenhum produto encontrado.',
-                          ),
-                          if (searchQuery.isNotEmpty ||
-                              selectedCategory != null) ...[
-                            Spacing.vSm,
-                            InkWell(
-                              onTap: () {
-                                _searchController.clear();
-                                ref.read(searchQueryProvider.notifier).state =
-                                    '';
-                                ref
-                                        .read(selectedCategoryProvider.notifier)
-                                        .state =
-                                    null;
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                                color: context.surfaceColor,
-                                child: Text(
-                                  'Limpar filtros',
-                                  style: TextStyle(
-                                    fontFamily: AppTypography.fontFamily,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.textPrimary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
+        ],
+        Expanded(child: _buildResults(params, feedState, hasActiveFilters)),
+      ],
+    );
+  }
 
-              return RefreshIndicator(
-                onRefresh: () => ref.refresh(
-                  productsFeedProvider(
-                    GetProductsParams(
-                      search: searchQuery.isEmpty ? null : searchQuery,
-                      category: selectedCategory,
-                    ),
-                  ).future,
-                ),
-                color: AppColors.primaryContainer,
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.7,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return RepaintBoundary(
-                      child: AppCard(
-                        imageUrl: product.imageUrl,
-                        title: product.title,
-                        priceInCents: product.price,
-                        variant: AppCardVariant.compact,
-                        onTap: () => context.push('/products/${product.id}'),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-            loading: () => GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: 6,
-              itemBuilder: (context, index) => const AppCard.skeleton(),
+  Widget _buildResults(
+    GetProductsParams params,
+    ProductsFeedState feedState,
+    bool hasActiveFilters,
+  ) {
+    if (feedState.isLoading) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) => const AppCard.skeleton(),
+      );
+    }
+
+    if (feedState.error != null && feedState.products.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+            Spacing.vMd,
+            Text(
+              'Erro ao carregar\nerro: ${feedState.error}',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: context.textPrimary),
             ),
-            error: (err, stack) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: AppColors.error,
-                    size: 48,
-                  ),
-                  Spacing.vMd,
-                  Text(
-                    'Erro ao carregar\nerro: $err',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: context.textPrimary),
-                  ),
-                  Spacing.vMd,
-                  AppButton(
-                    label: 'Tentar novamente',
-                    onPressed: () => ref.invalidate(
-                      productsFeedProvider(
-                        GetProductsParams(
-                          search: searchQuery.isEmpty ? null : searchQuery,
-                          category: selectedCategory,
+            Spacing.vMd,
+            AppButton(
+              label: 'Tentar novamente',
+              onPressed: () =>
+                  ref.read(productsFeedProvider(params).notifier).load(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (feedState.products.isEmpty) {
+      return LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                EmptyState(
+                  icon: Icons.search_off,
+                  title: 'NENHUM PRODUTO',
+                  subtitle: 'Nenhum produto encontrado.',
+                ),
+                if (hasActiveFilters) ...[
+                  Spacing.vSm,
+                  InkWell(
+                    onTap: _clearFilters,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      color: context.surfaceColor,
+                      child: Text(
+                        'Limpar filtros',
+                        style: TextStyle(
+                          fontFamily: AppTypography.fontFamily,
+                          fontWeight: FontWeight.w700,
+                          color: context.textPrimary,
                         ),
                       ),
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
-      ],
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(productsFeedProvider(params).notifier).load(),
+      color: AppColors.primaryContainer,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollEndNotification &&
+              notification.metrics.extentAfter < 400) {
+            ref.read(productsFeedProvider(params).notifier).loadMore();
+          }
+          return false;
+        },
+        child: GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount:
+              feedState.products.length + (feedState.isLoadingMore ? 2 : 0),
+          itemBuilder: (context, index) {
+            if (index >= feedState.products.length) {
+              return const AppCard.skeleton();
+            }
+            final product = feedState.products[index];
+            return RepaintBoundary(
+              child: AppCard(
+                imageUrl: product.imageUrl,
+                title: product.title,
+                priceInCents: product.price,
+                variant: AppCardVariant.compact,
+                onTap: () => context.push('/products/${product.id}'),
+              ),
+            );
+          },
+        ),
+      ),
     );
+  }
+
+  void _clearFilters() {
+    _searchController.clear();
+    ref.read(searchQueryProvider.notifier).state = '';
+    ref.read(selectedCategoryProvider.notifier).state = null;
+    ref.read(productConditionProvider.notifier).state = null;
+    ref.read(productPriceRangeProvider.notifier).state = null;
+    ref.read(productSortProvider.notifier).state = 'recent';
   }
 }

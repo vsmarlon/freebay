@@ -17,6 +17,12 @@ export class GetProfileUseCase {
     if (!userResult.value) {
       return left(new NotFoundError('User'));
     }
-    return right(toUserResponse(userResult.value));
+
+    const countsResult = await this.userRepository.getProfileCounts(input.userId);
+    if (isLeft(countsResult)) {
+      return left(countsResult.value);
+    }
+
+    return right(toUserResponse(userResult.value, countsResult.value, input.includePrivate));
   }
 }

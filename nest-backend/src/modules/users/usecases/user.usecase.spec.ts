@@ -13,9 +13,11 @@ jest.mock('@/shared/infra/prisma/prisma.service');
 
 const mockUserRepository = {
   findById: jest.fn(),
+  findByUsername: jest.fn(),
   update: jest.fn(),
   searchUsers: jest.fn(),
   getSuggestions: jest.fn(),
+  getProfileCounts: jest.fn(),
 };
 
 const mockFollowRepository = {
@@ -107,6 +109,10 @@ describe('Users UseCases', () => {
     getSuggestionsUseCase = module.get<GetSuggestionsUseCase>(GetSuggestionsUseCase);
 
     jest.clearAllMocks();
+    mockUserRepository.getProfileCounts.mockResolvedValue(
+      right({ postsCount: 0, productsCount: 0, hasActiveStory: false }),
+    );
+    mockUserRepository.findByUsername.mockResolvedValue(right(null));
   });
 
   describe('GetProfileUseCase', () => {

@@ -1,14 +1,17 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/data/entities/product_page_result.dart';
 
 abstract class IProductRepository {
-  Future<Either<Failure, List<ProductEntity>>> getProducts({
+  Future<Either<Failure, ProductPageResult>> getProducts({
     String? search,
     String? category,
     int? minPrice,
     int? maxPrice,
     String? cursor,
+    String? condition,
+    String? sort,
   });
   Future<Either<Failure, ProductEntity>> getProductById(String id);
   Future<Either<Failure, ProductEntity>> createProduct(

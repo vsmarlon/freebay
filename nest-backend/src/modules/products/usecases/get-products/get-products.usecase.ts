@@ -18,6 +18,8 @@ export class GetProductsUseCase {
       categoryId: query.category,
       minPrice: query.minPrice,
       maxPrice: query.maxPrice,
+      condition: query.condition,
+      sort: query.sort,
     });
 
     if (result.isLeft()) return left(result.value);

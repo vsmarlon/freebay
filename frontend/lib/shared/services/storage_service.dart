@@ -1,9 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StorageService {
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(),
-  );
+  static const _storage = FlutterSecureStorage(aOptions: AndroidOptions());
 
   static const _tokenKey = 'auth_token';
   static const _refreshTokenKey = 'refresh_token';
@@ -62,5 +60,6 @@ class StorageService {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _refreshTokenKey);
     await _storage.delete(key: _isGuestKey);
+    await _storage.delete(key: _rememberMeKey);
   }
 }

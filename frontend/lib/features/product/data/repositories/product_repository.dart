@@ -6,6 +6,7 @@ import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
+import 'package:freebay/features/product/data/entities/product_page_result.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
 /// Box name for the product catalog cache.
@@ -84,21 +85,25 @@ class ProductRepository implements IProductRepository {
   }
 
   @override
-  Future<Either<Failure, List<ProductEntity>>> getProducts({
+  Future<Either<Failure, ProductPageResult>> getProducts({
     String? search,
     String? category,
     int? minPrice,
     int? maxPrice,
     String? cursor,
+    String? condition,
+    String? sort,
   }) async {
     // Build a deterministic cache key from the query parameters.
     final cacheKey =
-        'products|s:$search|cat:$category|min:$minPrice|max:$maxPrice|cur:$cursor';
+        'products|s:$search|cat:$category|min:$minPrice|max:$maxPrice|cond:$condition|sort:$sort|cur:$cursor';
 
     try {
       final queryParams = <String, dynamic>{
         if (search != null && search.isNotEmpty) 'search': search,
         if (category != null && category.isNotEmpty) 'category': category,
+        if (condition != null && condition.isNotEmpty) 'condition': condition,
+        if (sort != null && sort.isNotEmpty) 'sort': sort,
         'minPrice': ?minPrice,
         'maxPrice': ?maxPrice,
         'cursor': ?cursor,
@@ -109,14 +114,10 @@ class ProductRepository implements IProductRepository {
         queryParameters: queryParams,
       );
 
-      if (kDebugMode) {
-        debugPrint('[PRODUCT] getProducts status: ${response.statusCode}');
-        debugPrint('[PRODUCT] getProducts data: ${response.data}');
-      }
-
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] as Map<String, dynamic>?;
         final productsData = (data?['products'] as List?) ?? [];
+        final nextCursor = data?['nextCursor'] as String?;
 
         final products = productsData.map((json) {
           final map = Map<String, dynamic>.from(json as Map);
@@ -126,36 +127,30 @@ class ProductRepository implements IProductRepository {
         // Persist fresh results for offline fallback.
         await _writeCache(cacheKey, products);
 
-        return Right(products);
+        return Right(
+          ProductPageResult(
+            products: products,
+            hasMore: nextCursor != null,
+            nextCursor: nextCursor,
+          ),
+        );
       } else {
         return const Left(ServerFailure('Erro ao carregar os anúncios.'));
       }
     } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('[PRODUCT] getProducts DioException: ${e.type}');
-      }
-
       // Network failure — serve stale cache if available.
       final cached = await _readCache(cacheKey);
       if (cached != null) {
-        if (kDebugMode) {
-          debugPrint(
-            '[PRODUCT] getProducts serving ${cached.length} cached products',
-          );
-        }
-        return Right(cached);
+        return Right(ProductPageResult(products: cached, hasMore: false));
       }
 
       return Left(mapDioExceptionToFailure(e));
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[PRODUCT] getProducts error: $e');
-        debugPrint('[PRODUCT] getProducts stack: $stack');
-      }
-
+    } catch (_) {
       // Generic failure — serve stale cache if available.
       final cached = await _readCache(cacheKey);
-      if (cached != null) return Right(cached);
+      if (cached != null) {
+        return Right(ProductPageResult(products: cached, hasMore: false));
+      }
 
       return const Left(UnknownFailure());
     }

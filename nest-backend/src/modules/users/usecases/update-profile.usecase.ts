@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError, NotFoundError } from '@/shared/core/errors';
+import { AppError, NotFoundError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { UserResponse, toUserResponse } from '../mappers/user.mapper';
 import { UpdateProfileInput } from '../dtos/user.dto';
@@ -10,7 +10,19 @@ export class UpdateProfileUseCase {
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: UpdateProfileInput): Promise<Either<AppError, UserResponse>> {
-    const userResult = await this.userRepository.update(input.userId, input);
+    const { userId, ...data } = input;
+    const updateData = { ...data } as Record<string, unknown>;
+    if (updateData.cpf) updateData.cpf = (updateData.cpf as string).replace(/\D/g, '');
+
+    if (input.username) {
+      const existingResult = await this.userRepository.findByUsername(input.username);
+      if (isLeft(existingResult)) return left(existingResult.value);
+      if (existingResult.value && existingResult.value.id !== userId) {
+        return left(new UsernameAlreadyExistsError());
+      }
+    }
+
+    const userResult = await this.userRepository.update(userId, updateData);
     if (isLeft(userResult)) {
       return left(userResult.value);
     }

@@ -153,6 +153,7 @@ export class SuggestionsQueryDTO {
 
 export interface GetProfileInput {
   userId: string;
+  includePrivate?: boolean;
 }
 
 export interface GetUserStatsInput {

@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { left, right } from '@/shared/core/either';
 import { AppError, DatabaseError } from '@/shared/core/errors';
 import { ProductRepository } from '../../domain/repositories/product.repository';
-import { ProductDetailPayload, ProductListPayload, FindManyParams, PRODUCT_DETAIL_INCLUDE, PRODUCT_LIST_INCLUDE } from '../../types/product.types';
+import { ProductDetailPayload, ProductListPayload, FindManyParams, ProductSort, PRODUCT_DETAIL_INCLUDE, PRODUCT_LIST_INCLUDE } from '../../types/product.types';
 
 @Injectable()
 export class ProductDatabaseRepository implements ProductRepository {
@@ -37,7 +37,7 @@ export class ProductDatabaseRepository implements ProductRepository {
 
   async findMany(params: FindManyParams) {
     try {
-      const { cursor, limit = 20, search, categoryId, minPrice, maxPrice } = params;
+      const { cursor, limit = 20, search, categoryId, minPrice, maxPrice, condition, sort = 'recent' } = params;
       const where: Prisma.ProductWhereInput = { status: 'ACTIVE' };
       if (search) {
         where.OR = [
@@ -45,7 +45,11 @@ export class ProductDatabaseRepository implements ProductRepository {
           { description: { contains: search, mode: 'insensitive' } },
         ];
       }
-      if (categoryId) where.categoryId = categoryId;
+      if (categoryId) {
+        const categoryIds = await this.collectCategoryTree(categoryId);
+        where.categoryId = categoryIds.length > 1 ? { in: categoryIds } : categoryId;
+      }
+      if (condition) where.condition = condition;
       if (minPrice || maxPrice) {
         const priceFilter: Prisma.IntFilter = {};
         if (minPrice) priceFilter.gte = minPrice;
@@ -55,7 +59,7 @@ export class ProductDatabaseRepository implements ProductRepository {
 
       const products = await this.prisma.product.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: this.buildOrderBy(sort),
         take: limit,
         ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
         include: PRODUCT_LIST_INCLUDE,
@@ -64,6 +68,35 @@ export class ProductDatabaseRepository implements ProductRepository {
     } catch (e) {
       return left(new AppError('DATABASE_ERROR', (e as Error).message));
     }
+  }
+
+  private buildOrderBy(sort: ProductSort): Prisma.ProductOrderByWithRelationInput[] {
+    switch (sort) {
+      case 'price_asc':
+        return [{ price: 'asc' }, { id: 'asc' }];
+      case 'price_desc':
+        return [{ price: 'desc' }, { id: 'asc' }];
+      case 'popular':
+        return [{ soldCount: 'desc' }, { id: 'asc' }];
+      default:
+        return [{ createdAt: 'desc' }, { id: 'asc' }];
+    }
+  }
+
+  private async collectCategoryTree(rootId: string): Promise<string[]> {
+    const collected = new Set<string>([rootId]);
+    let frontier = [rootId];
+
+    while (frontier.length) {
+      const children = await this.prisma.category.findMany({
+        where: { parentId: { in: frontier } },
+        select: { id: true },
+      });
+      frontier = children.map((c) => c.id).filter((id) => !collected.has(id));
+      frontier.forEach((id) => collected.add(id));
+    }
+
+    return [...collected];
   }
 
   async create(data: Prisma.ProductCreateInput) {

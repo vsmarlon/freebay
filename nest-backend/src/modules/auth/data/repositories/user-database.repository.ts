@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, User, PrismaClient } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UserRepository } from '../../domain/repositories/user.repository';
+import { UserRepository, UserProfileCounts } from '../../domain/repositories/user.repository';
 import { UserSearchResult, UserSuggestionResult } from '../../types/user-search.types';
 
 @Injectable()
@@ -211,6 +211,23 @@ export class UserDatabaseRepository implements UserRepository {
       ]);
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar sugestões'));
+    }
+  }
+
+  async getProfileCounts(userId: string): RepositoryResponse<UserProfileCounts> {
+    try {
+      const [postsCount, productsCount, activeStory] = await Promise.all([
+        this.prisma.post.count({ where: { userId } }),
+        this.prisma.product.count({ where: { sellerId: userId, status: { not: 'DELETED' } } }),
+        this.prisma.story.findFirst({
+          where: { userId, expiresAt: { gt: new Date() } },
+          select: { id: true },
+        }),
+      ]);
+
+      return right({ postsCount, productsCount, hasActiveStory: activeStory !== null });
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar dados do perfil'));
     }
   }
 

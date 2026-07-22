@@ -18,11 +18,23 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { FollowRepository } from './domain/repositories/follow.repository';
 import { BlockRepository } from './domain/repositories/block.repository';
-import { GetUserStatsUseCase, RegisterPhoneUseCase, VerifyPhoneUseCase } from './usecases';
+import {
+  GetUserStatsUseCase,
+  RegisterPhoneUseCase,
+  VerifyPhoneUseCase,
+  GetProfileUseCase,
+  UpdateProfileUseCase,
+  UpdateFcmTokenUseCase,
+  FollowUserUseCase,
+  UnfollowUserUseCase,
+  BlockUserUseCase,
+  UnblockUserUseCase,
+  SearchUsersUseCase,
+  GetSuggestionsUseCase,
+} from './usecases';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import {
@@ -52,13 +64,21 @@ import { validateImageFile } from '@/shared/utils/image-upload.utils';
 @Controller('users')
 export class UsersController {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly userRepository: UserRepository,
     private readonly followRepository: FollowRepository,
     private readonly blockRepository: BlockRepository,
     private readonly getUserStatsUseCase: GetUserStatsUseCase,
     private readonly registerPhoneUseCase: RegisterPhoneUseCase,
     private readonly verifyPhoneUseCase: VerifyPhoneUseCase,
+    private readonly getProfileUseCase: GetProfileUseCase,
+    private readonly updateProfileUseCase: UpdateProfileUseCase,
+    private readonly updateFcmTokenUseCase: UpdateFcmTokenUseCase,
+    private readonly followUserUseCase: FollowUserUseCase,
+    private readonly unfollowUserUseCase: UnfollowUserUseCase,
+    private readonly blockUserUseCase: BlockUserUseCase,
+    private readonly unblockUserUseCase: UnblockUserUseCase,
+    private readonly searchUsersUseCase: SearchUsersUseCase,
+    private readonly getSuggestionsUseCase: GetSuggestionsUseCase,
   ) {}
 
   @Get('me')
@@ -71,30 +91,14 @@ export class UsersController {
     errors: [{ status: 404, description: 'User not found' }],
   })
   async getMe(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
-    const userResult = await this.userRepository.findById(userId);
-    if (isLeft(userResult)) {
-      return left(userResult.value);
+    const result = await this.getProfileUseCase.execute({
+      userId: user.userId,
+      includePrivate: true,
+    });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-    if (!userResult.value) {
-      return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
-    }
-    const userRecord = userResult.value;
-
-    const [postsCount, productsCount, activeStory] = await Promise.all([
-      this.prisma.post.count({ where: { userId } }),
-      this.prisma.product.count({ where: { sellerId: userId, status: { not: 'DELETED' } } }),
-      this.prisma.story.findFirst({
-        where: { userId, expiresAt: { gt: new Date() } },
-        select: { id: true },
-      }),
-    ]);
-
-    return toUserResponse(userRecord, {
-      postsCount,
-      productsCount,
-      hasActiveStory: activeStory !== null,
-    }, true);
+    return result.value;
   }
 
   @Get('me/stats')
@@ -120,21 +124,11 @@ export class UsersController {
     errors: [{ status: 404, description: 'User not found' }],
   })
   async updateProfile(@CurrentUser() user: AuthUser, @Body() body: UpdateProfileDTO) {
-    const userId = user.userId;
-    const data = { ...body } as Record<string, unknown>;
-    if (data.cpf) data.cpf = (data.cpf as string).replace(/\D/g, '');
-    if (body.username) {
-      const existingResult = await this.userRepository.findByUsername(body.username);
-      if (isLeft(existingResult)) return left(existingResult.value);
-      if (existingResult.value && existingResult.value.id !== userId) {
-        return left(new AppError('USERNAME_ALREADY_EXISTS', 'Este nome de usuário já está em uso', 409));
-      }
+    const result = await this.updateProfileUseCase.execute({ userId: user.userId, ...body });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
     }
-    const updateResult = await this.userRepository.update(userId, data);
-    if (isLeft(updateResult)) {
-      return left(updateResult.value);
-    }
-    return toUserResponse(updateResult.value, undefined, true);
+    return result.value;
   }
 
   @Post('me/avatar')
@@ -260,24 +254,10 @@ export class UsersController {
     auth: true,
   })
   async updateFcmToken(@CurrentUser() user: AuthUser, @Body() body: UpdateFcmTokenDTO) {
-    const userId = user.userId;
-    const updateData: Record<string, unknown> = {};
-    if (body.fcmToken !== undefined) {
-      updateData.fcmToken = body.fcmToken;
+    const result = await this.updateFcmTokenUseCase.execute({ userId: user.userId, ...body });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-    if (body.notificationPrefs !== undefined) {
-      updateData.notificationPrefs = body.notificationPrefs as object;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return { success: true };
-    }
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: updateData,
-    });
-
     return { success: true };
   }
 
@@ -328,30 +308,19 @@ export class UsersController {
   async searchUsers(@CurrentUser() user: AuthUser, @Query() query: UserSearchQueryDTO) {
     const parsedLimit = query.limit ?? 20;
     const parsedOffset = query.offset ?? 0;
-    const searchResult = await this.userRepository.searchUsers(
-      query.q || '',
-      parsedLimit,
-      parsedOffset,
-      user?.userId,
-    );
+    const searchResult = await this.searchUsersUseCase.execute({
+      query: query.q || '',
+      limit: parsedLimit,
+      offset: parsedOffset,
+      viewerId: user?.userId,
+    });
     if (isLeft(searchResult)) {
-      return left(searchResult.value);
+      return left(new AppError(searchResult.value.code, searchResult.value.message));
     }
     const users = searchResult.value;
 
     return {
-      users: users.map((u) => ({
-        id: u.id,
-        displayName: u.displayName,
-        username: u.username,
-        avatarUrl: u.avatarUrl,
-        bio: u.bio,
-        isVerified: u.isVerified,
-        reputationScore: u.reputationScore,
-        totalReviews: u.totalReviews,
-        followersCount: u.followersCount,
-        followingCount: u.followingCount,
-      })),
+      users,
       hasMore: users.length === parsedLimit,
       nextOffset: users.length === parsedLimit ? parsedOffset + parsedLimit : null,
     };
@@ -368,29 +337,15 @@ export class UsersController {
     ],
   })
   async getSuggestions(@CurrentUser() user: AuthUser, @Query() query: SuggestionsQueryDTO) {
-    const userId = user.userId;
-    const parsedLimit = query.limit ?? 10;
-    const suggestionsResult = await this.userRepository.getSuggestions(userId, parsedLimit);
+    const suggestionsResult = await this.getSuggestionsUseCase.execute({
+      userId: user.userId,
+      limit: query.limit ?? 10,
+    });
     if (isLeft(suggestionsResult)) {
-      return left(suggestionsResult.value);
+      return left(new AppError(suggestionsResult.value.code, suggestionsResult.value.message));
     }
-    const suggestions = suggestionsResult.value;
 
-    return {
-      users: suggestions.map((u) => ({
-        id: u.id,
-        displayName: u.displayName,
-        username: u.username,
-        avatarUrl: u.avatarUrl,
-        bio: u.bio,
-        isVerified: u.isVerified,
-        reputationScore: u.reputationScore,
-        totalReviews: u.totalReviews,
-        followersCount: u.followersCount,
-        followingCount: u.followingCount,
-        mutualCount: u.mutualCount,
-      })),
-    };
+    return { users: suggestionsResult.value };
   }
 
   @Get(':id')
@@ -401,29 +356,11 @@ export class UsersController {
     errors: [{ status: 404, description: 'User not found' }],
   })
   async getUser(@Param('id', ParseUUIDPipe) id: string) {
-    const userResult = await this.userRepository.findById(id);
-    if (isLeft(userResult)) {
-      return left(userResult.value);
+    const result = await this.getProfileUseCase.execute({ userId: id });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message));
     }
-    if (!userResult.value) {
-      return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
-    }
-    const userRecord = userResult.value;
-
-    const [postsCount, productsCount, activeStory] = await Promise.all([
-      this.prisma.post.count({ where: { userId: id } }),
-      this.prisma.product.count({ where: { sellerId: id, status: { not: 'DELETED' } } }),
-      this.prisma.story.findFirst({
-        where: { userId: id, expiresAt: { gt: new Date() } },
-        select: { id: true },
-      }),
-    ]);
-
-    return toUserResponse(userRecord, {
-      postsCount,
-      productsCount,
-      hasActiveStory: activeStory !== null,
-    });
+    return result.value;
   }
 
   @Post(':id/follow')
@@ -441,32 +378,11 @@ export class UsersController {
     ],
   })
   async followUser(@Param('id', ParseUUIDPipe) followingId: string, @CurrentUser() user: AuthUser) {
-    const followerId = user.userId;
-
-    if (followerId === followingId) {
-      return left(new AppError('INVALID_OPERATION', 'Você não pode seguir a si mesmo'));
+    const result = await this.followUserUseCase.execute({ followerId: user.userId, followingId });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
     }
-
-    const targetResult = await this.userRepository.findById(followingId);
-    if (isLeft(targetResult)) {
-      return left(targetResult.value);
-    }
-    if (!targetResult.value) {
-      return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
-    }
-
-    const followResult = await this.followRepository.follow(followerId, followingId);
-    if (followResult.isLeft()) return left(new AppError(followResult.value.code, followResult.value.message));
-
-    const [followersCountResult, followingCountResult] = await Promise.all([
-      this.followRepository.getFollowersCount(followingId),
-      this.followRepository.getFollowingCount(followingId),
-    ]);
-
-    if (followersCountResult.isLeft()) return left(new AppError(followersCountResult.value.code, followersCountResult.value.message));
-    if (followingCountResult.isLeft()) return left(new AppError(followingCountResult.value.code, followingCountResult.value.message));
-
-    return { following: true, followersCount: followersCountResult.value, followingCount: followingCountResult.value };
+    return result.value;
   }
 
   @Delete(':id/follow')
@@ -480,20 +396,11 @@ export class UsersController {
     errors: [{ status: 404, description: 'Not following' }],
   })
   async unfollowUser(@Param('id', ParseUUIDPipe) followingId: string, @CurrentUser() user: AuthUser) {
-    const followerId = user.userId;
-
-    const unfollowResult = await this.followRepository.unfollow(followerId, followingId);
-    if (unfollowResult.isLeft()) return left(new AppError(unfollowResult.value.code, unfollowResult.value.message));
-
-    const [followersCountResult, followingCountResult] = await Promise.all([
-      this.followRepository.getFollowersCount(followingId),
-      this.followRepository.getFollowingCount(followingId),
-    ]);
-
-    if (followersCountResult.isLeft()) return left(new AppError(followersCountResult.value.code, followersCountResult.value.message));
-    if (followingCountResult.isLeft()) return left(new AppError(followingCountResult.value.code, followingCountResult.value.message));
-
-    return { following: false, followersCount: followersCountResult.value, followingCount: followingCountResult.value };
+    const result = await this.unfollowUserUseCase.execute({ followerId: user.userId, followingId });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return result.value;
   }
 
   @Get('me/followers')
@@ -669,23 +576,11 @@ export class UsersController {
     ],
   })
   async blockUser(@Param('id', ParseUUIDPipe) blockedId: string, @CurrentUser() user: AuthUser) {
-    const blockerId = user.userId;
-
-    if (blockerId === blockedId) {
-      return left(new AppError('INVALID_OPERATION', 'Você não pode bloquear a si mesmo'));
+    const result = await this.blockUserUseCase.execute({ blockerId: user.userId, blockedId });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
     }
-
-    const targetResult = await this.userRepository.findById(blockedId);
-    if (isLeft(targetResult)) {
-      return left(targetResult.value);
-    }
-    if (!targetResult.value) {
-      return left(new AppError('NOT_FOUND', 'Usuário não encontrado'));
-    }
-
-    const blockResult = await this.blockRepository.block(blockerId, blockedId);
-    if (blockResult.isLeft()) return left(new AppError(blockResult.value.code, blockResult.value.message));
-    return { blocked: true };
+    return result.value;
   }
 
   @Delete(':id/block')
@@ -699,11 +594,11 @@ export class UsersController {
     errors: [{ status: 404, description: 'Not blocked' }],
   })
   async unblockUser(@Param('id', ParseUUIDPipe) blockedId: string, @CurrentUser() user: AuthUser) {
-    const blockerId = user.userId;
-
-    const unblockResult = await this.blockRepository.unblock(blockerId, blockedId);
-    if (unblockResult.isLeft()) return left(new AppError(unblockResult.value.code, unblockResult.value.message));
-    return { blocked: false };
+    const result = await this.unblockUserUseCase.execute({ blockerId: user.userId, blockedId });
+    if (isLeft(result)) {
+      return left(new AppError(result.value.code, result.value.message));
+    }
+    return result.value;
   }
 
   @Get(':id/is-blocked')

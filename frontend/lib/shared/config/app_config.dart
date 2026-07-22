@@ -13,6 +13,13 @@ class AppConfig {
       return _apiBaseUrlOverride;
     }
 
+    if (kReleaseMode) {
+      throw StateError(
+        'API_BASE_URL não definida. Compile com '
+        '--dart-define=API_BASE_URL=https://api.exemplo.com',
+      );
+    }
+
     if (kIsWeb) {
       return 'http://localhost:3000';
     }
@@ -31,4 +38,6 @@ class AppConfig {
   }
 
   static bool get isUsingApiOverride => _apiBaseUrlOverride.isNotEmpty;
+
+  static bool get isSecureTransport => apiBaseUrl.startsWith('https://');
 }

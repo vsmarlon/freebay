@@ -14,6 +14,10 @@ export const PRODUCT_DETAIL_INCLUDE = {
 export type ProductListPayload = Prisma.ProductGetPayload<{ include: typeof PRODUCT_LIST_INCLUDE }>;
 export type ProductDetailPayload = Prisma.ProductGetPayload<{ include: typeof PRODUCT_DETAIL_INCLUDE }>;
 
+export const PRODUCT_SORTS = ['recent', 'price_asc', 'price_desc', 'popular'] as const;
+
+export type ProductSort = (typeof PRODUCT_SORTS)[number];
+
 export interface FindManyParams {
   cursor?: string;
   limit?: number;
@@ -21,4 +25,6 @@ export interface FindManyParams {
   categoryId?: string;
   minPrice?: number;
   maxPrice?: number;
+  condition?: 'NEW' | 'USED';
+  sort?: ProductSort;
 }

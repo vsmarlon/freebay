@@ -14,6 +14,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+import { PRODUCT_SORTS, ProductSort } from '../types/product.types';
 
 export class CreateProductDTO {
   @ApiProperty({ example: 'iPhone 12', minLength: 3, maxLength: 100 })
@@ -97,6 +98,16 @@ export class ProductQueryDTO {
   @IsInt()
   @Min(0)
   readonly maxPrice?: number;
+
+  @ApiPropertyOptional({ enum: ['NEW', 'USED'] })
+  @IsOptional()
+  @IsIn(['NEW', 'USED'])
+  readonly condition?: 'NEW' | 'USED';
+
+  @ApiPropertyOptional({ enum: PRODUCT_SORTS, default: 'recent' })
+  @IsOptional()
+  @IsIn(PRODUCT_SORTS)
+  readonly sort?: ProductSort;
 }
 
 export class UpdateProductDTO {

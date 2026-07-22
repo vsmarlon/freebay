@@ -65,14 +65,11 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
-    final productsAsync = ref.watch(
-      productsFeedProvider(
-        GetProductsParams(
-          search: searchQuery.isEmpty ? null : searchQuery,
-          category: selectedCategory,
-        ),
-      ),
+    final params = GetProductsParams(
+      search: searchQuery.isEmpty ? null : searchQuery,
+      category: selectedCategory,
     );
+    final feedState = ref.watch(productsFeedProvider(params));
 
     final headerHeight = MediaQuery.of(context).padding.top + 66;
 
@@ -139,91 +136,11 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                         ),
                       ),
                     Expanded(
-                      child: productsAsync.when(
-                        data: (products) {
-                          if (products.isEmpty) {
-                            return EmptyState(
-                              icon: Icons.search_off,
-                              title: 'NENHUM PRODUTO',
-                              subtitle:
-                                  searchQuery.isNotEmpty ||
-                                      selectedCategory != null
-                                  ? 'Tente limpar os filtros'
-                                  : 'Nenhum produto encontrado.',
-                            );
-                          }
-                          return AppRefreshIndicator(
-                            onRefresh: () => ref.refresh(
-                              productsFeedProvider(
-                                GetProductsParams(
-                                  search: searchQuery.isEmpty
-                                      ? null
-                                      : searchQuery,
-                                  category: selectedCategory,
-                                ),
-                              ).future,
-                            ),
-                            child: GridView.builder(
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    childAspectRatio: 0.7,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                  ),
-                              itemCount: products.length,
-                              itemBuilder: (context, index) {
-                                final product = products[index];
-                                return AppCard(
-                                  imageUrl: product.imageUrl,
-                                  title: product.title,
-                                  priceInCents: product.price,
-                                  variant: AppCardVariant.compact,
-                                  onTap: () =>
-                                      context.push('/products/${product.id}'),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        loading: () => GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.7,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                              ),
-                          itemCount: 6,
-                          itemBuilder: (context, index) =>
-                              const AppCard.skeleton(),
-                        ),
-                        error: (err, stack) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            AppDialog.showError(
-                              context: context,
-                              title: 'Erro ao carregar',
-                              subtitle: err.toString(),
-                              onOk: () => ref.invalidate(
-                                productsFeedProvider(
-                                  GetProductsParams(
-                                    search: searchQuery.isEmpty
-                                        ? null
-                                        : searchQuery,
-                                    category: selectedCategory,
-                                  ),
-                                ),
-                              ),
-                            );
-                          });
-                          return EmptyState(
-                            icon: Icons.search_off,
-                            title: 'ERRO',
-                            subtitle: 'Tente novamente mais tarde',
-                          );
-                        },
+                      child: _buildProducts(
+                        params,
+                        feedState,
+                        searchQuery,
+                        selectedCategory,
                       ),
                     ),
                   ],
@@ -257,6 +174,91 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProducts(
+    GetProductsParams params,
+    ProductsFeedState feedState,
+    String searchQuery,
+    String? selectedCategory,
+  ) {
+    if (feedState.isLoading) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) => const AppCard.skeleton(),
+      );
+    }
+
+    if (feedState.error != null && feedState.products.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        AppDialog.showError(
+          context: context,
+          title: 'Erro ao carregar',
+          subtitle: feedState.error!,
+          onOk: () => ref.read(productsFeedProvider(params).notifier).load(),
+        );
+      });
+      return EmptyState(
+        icon: Icons.search_off,
+        title: 'ERRO',
+        subtitle: 'Tente novamente mais tarde',
+      );
+    }
+
+    if (feedState.products.isEmpty) {
+      return EmptyState(
+        icon: Icons.search_off,
+        title: 'NENHUM PRODUTO',
+        subtitle: searchQuery.isNotEmpty || selectedCategory != null
+            ? 'Tente limpar os filtros'
+            : 'Nenhum produto encontrado.',
+      );
+    }
+
+    return AppRefreshIndicator(
+      onRefresh: () => ref.read(productsFeedProvider(params).notifier).load(),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollEndNotification &&
+              notification.metrics.extentAfter < 400) {
+            ref.read(productsFeedProvider(params).notifier).loadMore();
+          }
+          return false;
+        },
+        child: GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount:
+              feedState.products.length + (feedState.isLoadingMore ? 2 : 0),
+          itemBuilder: (context, index) {
+            if (index >= feedState.products.length) {
+              return const AppCard.skeleton();
+            }
+            final product = feedState.products[index];
+            return AppCard(
+              imageUrl: product.imageUrl,
+              title: product.title,
+              priceInCents: product.price,
+              variant: AppCardVariant.compact,
+              onTap: () => context.push('/products/${product.id}'),
+            );
+          },
+        ),
       ),
     );
   }
