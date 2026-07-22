@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_card.dart';
+import 'package:freebay/features/product/presentation/widgets/product_results_grid.dart';
 import 'package:freebay/core/components/app_dialog.dart';
 import 'package:freebay/core/components/app_refresh_indicator.dart';
 import 'package:freebay/core/components/app_text_field.dart';
@@ -185,17 +185,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
     String? selectedCategory,
   ) {
     if (feedState.isLoading) {
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: 6,
-        itemBuilder: (context, index) => const AppCard.skeleton(),
-      );
+      return const ProductResultsGrid.skeleton();
     }
 
     if (feedState.error != null && feedState.products.isEmpty) {
@@ -227,38 +217,11 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
 
     return AppRefreshIndicator(
       onRefresh: () => ref.read(productsFeedProvider(params).notifier).load(),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification is ScrollEndNotification &&
-              notification.metrics.extentAfter < 400) {
-            ref.read(productsFeedProvider(params).notifier).loadMore();
-          }
-          return false;
-        },
-        child: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.7,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount:
-              feedState.products.length + (feedState.isLoadingMore ? 2 : 0),
-          itemBuilder: (context, index) {
-            if (index >= feedState.products.length) {
-              return const AppCard.skeleton();
-            }
-            final product = feedState.products[index];
-            return AppCard(
-              imageUrl: product.imageUrl,
-              title: product.title,
-              priceInCents: product.price,
-              variant: AppCardVariant.compact,
-              onTap: () => context.push('/products/${product.id}'),
-            );
-          },
-        ),
+      child: ProductResultsGrid(
+        products: feedState.products,
+        isLoadingMore: feedState.isLoadingMore,
+        onLoadMore: () =>
+            ref.read(productsFeedProvider(params).notifier).loadMore(),
       ),
     );
   }

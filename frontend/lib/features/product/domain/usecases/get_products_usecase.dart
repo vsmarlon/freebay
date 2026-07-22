@@ -3,6 +3,7 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
 import 'package:freebay/features/product/data/entities/product_page_result.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 class GetProductsParams extends Equatable {
   final String? search;
@@ -10,8 +11,8 @@ class GetProductsParams extends Equatable {
   final int? minPrice;
   final int? maxPrice;
   final String? cursor;
-  final String? condition;
-  final String? sort;
+  final ProductCondition? condition;
+  final ProductSort sort;
 
   const GetProductsParams({
     this.search,
@@ -20,7 +21,7 @@ class GetProductsParams extends Equatable {
     this.maxPrice,
     this.cursor,
     this.condition,
-    this.sort,
+    this.sort = ProductSort.recent,
   });
 
   GetProductsParams withCursor(String? nextCursor) {
@@ -63,8 +64,8 @@ class GetProductsUsecase
       minPrice: params.minPrice,
       maxPrice: params.maxPrice,
       cursor: params.cursor,
-      condition: params.condition,
-      sort: params.sort,
+      condition: params.condition?.wireValue,
+      sort: params.sort.wireValue,
     );
   }
 }

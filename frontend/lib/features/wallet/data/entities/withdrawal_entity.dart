@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:freebay/features/wallet/domain/wallet_constants.dart';
 
 part 'withdrawal_entity.g.dart';
 
@@ -6,7 +7,8 @@ part 'withdrawal_entity.g.dart';
 class WithdrawalEntity {
   final String id;
   final int amount;
-  final String status;
+  @JsonKey(unknownEnumValue: WithdrawalStatus.pending)
+  final WithdrawalStatus status;
   final DateTime createdAt;
 
   const WithdrawalEntity({
@@ -20,19 +22,4 @@ class WithdrawalEntity {
       _$WithdrawalEntityFromJson(json);
 
   Map<String, dynamic> toJson() => _$WithdrawalEntityToJson(this);
-
-  String get statusLabel {
-    switch (status) {
-      case 'PENDING':
-        return 'Pendente';
-      case 'PROCESSING':
-        return 'Processando';
-      case 'COMPLETED':
-        return 'Concluído';
-      case 'FAILED':
-        return 'Falhou';
-      default:
-        return status;
-    }
-  }
 }

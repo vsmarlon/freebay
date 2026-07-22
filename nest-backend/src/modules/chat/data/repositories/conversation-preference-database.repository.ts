@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { ConversationPreference } from '@prisma/client';
+import { ChatThreadType, ConversationPreference } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { ConversationPreferenceRepository, UpsertPreferenceInput } from '../../domain/repositories/conversation-preference.repository';
@@ -27,7 +27,7 @@ export class PrismaConversationPreferenceRepository implements ConversationPrefe
     }
   }
 
-  async findByUserAndThread(userId: string, threadId: string, type: 'DIRECT' | 'ORDER'): RepositoryResponse<ConversationPreference | null> {
+  async findByUserAndThread(userId: string, threadId: string, type: ChatThreadType): RepositoryResponse<ConversationPreference | null> {
     try {
       const where = type === 'DIRECT'
         ? { userId_directConversationId: { userId, directConversationId: threadId } }

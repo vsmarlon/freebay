@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:freebay/features/wallet/domain/wallet_constants.dart';
 
 part 'wallet_transaction_entity.g.dart';
 
@@ -8,7 +9,8 @@ class WalletTransactionEntity {
   final String orderId;
   final int amount;
   final String status;
-  final String type;
+  @JsonKey(unknownEnumValue: WalletTransactionType.purchase)
+  final WalletTransactionType type;
   final String? productTitle;
   final DateTime createdAt;
 
@@ -27,13 +29,12 @@ class WalletTransactionEntity {
 
   Map<String, dynamic> toJson() => _$WalletTransactionEntityToJson(this);
 
-  bool get isCredit => type == 'SALE';
+  bool get isCredit => type.isCredit;
 
   String get label {
+    final prefix = isCredit ? 'Venda' : 'Compra';
     final title = productTitle;
-    if (title != null && title.isNotEmpty) {
-      return isCredit ? 'Venda · $title' : 'Compra · $title';
-    }
-    return isCredit ? 'Venda' : 'Compra';
+    if (title != null && title.isNotEmpty) return '$prefix · $title';
+    return prefix;
   }
 }

@@ -17,6 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
 
 const VALID_CONTEXTS = ['chat', 'background', 'post', 'avatar'] as const;
 const MIMETYPE_EXTENSIONS: Record<string, string> = {
@@ -25,7 +26,6 @@ const MIMETYPE_EXTENSIONS: Record<string, string> = {
   'image/gif': '.gif',
   'image/webp': '.webp',
 };
-const MAX_SIZE = 10 * 1024 * 1024;
 
 export function isValidContext(context: unknown): context is (typeof VALID_CONTEXTS)[number] {
   return typeof context === 'string' && (VALID_CONTEXTS as readonly string[]).includes(context);
@@ -60,7 +60,7 @@ export class UploadController {
           cb(null, `${uuidv4()}${MIMETYPE_EXTENSIONS[file.mimetype]}`);
         },
       }),
-      limits: { fileSize: MAX_SIZE },
+      limits: { fileSize: MAX_IMAGE_SIZE },
       fileFilter: (_req, file, cb) => {
         cb(null, file.mimetype in MIMETYPE_EXTENSIONS);
       },

@@ -4,6 +4,7 @@ import { AppError } from '@/shared/core/errors';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { ChatThreadType } from '@prisma/client';
 import { GetMessagesOutput, GetMessagesResult } from '../dtos/chat.dto';
 import {
   ChatMessageWithSender,
@@ -51,7 +52,7 @@ export class GetMessagesUseCase {
 
     return right({
       messages,
-      threadType: isOrderThread ? 'ORDER' : 'DIRECT',
+      threadType: isOrderThread ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
       otherUserId,
       preference: preference
         ? {

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Condition, Prisma } from '@prisma/client';
 
 export const PRODUCT_LIST_INCLUDE = {
   seller: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
@@ -25,6 +25,6 @@ export interface FindManyParams {
   categoryId?: string;
   minPrice?: number;
   maxPrice?: number;
-  condition?: 'NEW' | 'USED';
+  condition?: Condition;
   sort?: ProductSort;
 }

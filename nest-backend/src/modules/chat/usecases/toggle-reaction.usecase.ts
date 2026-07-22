@@ -3,6 +3,7 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { ChatThreadType } from '@prisma/client';
 
 const VALID_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍'];
 
@@ -32,7 +33,9 @@ export class ToggleReactionUseCase {
     const resolved = await this.threadAccess.resolveThread(input.userId, input.conversationId);
     if (isLeft(resolved)) return left(resolved.value);
 
-    const messageModel: 'DIRECT' | 'ORDER' = resolved.value.orderId ? 'ORDER' : 'DIRECT';
+    const messageModel = resolved.value.orderId
+      ? ChatThreadType.ORDER
+      : ChatThreadType.DIRECT;
 
     const existing = await this.conversationRepository.findReactionByUserAndMessage(
       input.userId, input.messageId, messageModel,

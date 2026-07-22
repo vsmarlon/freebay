@@ -6,6 +6,7 @@ import 'package:freebay/features/product/domain/repositories/i_product_repositor
 import 'package:freebay/features/product/domain/repositories/i_category_repository.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/domain/usecases/create_product_usecase.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 
@@ -137,9 +138,13 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 final selectedCategoryProvider = StateProvider<String?>((ref) => null);
 
 // Sort + condition + price filters for the Explorar tab
-final productSortProvider = StateProvider<String>((ref) => 'recent');
+final productSortProvider = StateProvider<ProductSort>(
+  (ref) => ProductSort.recent,
+);
 
-final productConditionProvider = StateProvider<String?>((ref) => null);
+final productConditionProvider = StateProvider<ProductCondition?>(
+  (ref) => null,
+);
 
 final productPriceRangeProvider = StateProvider<RangeValues?>((ref) => null);
 

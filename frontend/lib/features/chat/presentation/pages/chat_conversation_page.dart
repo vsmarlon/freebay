@@ -30,6 +30,13 @@ import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/features/chat/presentation/pages/location_picker_page.dart';
 
+/// How long a message stays tinted after jumping to it from a reply preview.
+const _replyHighlightDuration = Duration(milliseconds: 900);
+const _replyHighlightAlpha = 0.18;
+
+/// Keeps the jumped-to message a third of the way down the viewport.
+const _replyScrollAlignment = 0.3;
+
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
   final String orderName;
@@ -668,7 +675,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                               return Container(
                                 key: messageKey,
                                 color: _highlightedMessageId == msgEntity.id
-                                    ? accentColor.withValues(alpha: 0.18)
+                                    ? accentColor.withValues(
+                                        alpha: _replyHighlightAlpha,
+                                      )
                                     : null,
                                 child: MessageBubble(
                                   message: msgEntity,
@@ -704,10 +713,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                 if (_replyTarget != null)
                   ReplyComposerBanner(
                     replyTo: _replyTarget!,
-                    senderLabel: _senderLabel(
-                      _replyTarget!.senderId,
-                      currentUserId,
-                    ),
+                    currentUserId: currentUserId,
+                    otherUserName: widget.orderName,
                     accentColor: accentColor,
                     onCancel: () => setState(() => _replyTarget = null),
                   ),
@@ -895,10 +902,6 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     setState(() => _replyTarget = message);
   }
 
-  String _senderLabel(String senderId, String? currentUserId) {
-    return senderId == currentUserId ? 'Você' : widget.orderName;
-  }
-
   void _scrollToMessage(String messageId) {
     final index = _messages.indexWhere((m) => m['id'] == messageId);
     if (index < 0) return;
@@ -909,7 +912,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         key!.currentContext!,
         duration: const Duration(milliseconds: 150),
         curve: Curves.linear,
-        alignment: 0.3,
+        alignment: _replyScrollAlignment,
       );
       _flashMessage(messageId);
       return;
@@ -930,7 +933,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         rebuiltKey!.currentContext!,
         duration: const Duration(milliseconds: 150),
         curve: Curves.linear,
-        alignment: 0.3,
+        alignment: _replyScrollAlignment,
       );
       _flashMessage(messageId);
     });
@@ -938,7 +941,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
 
   void _flashMessage(String messageId) {
     setState(() => _highlightedMessageId = messageId);
-    Timer(const Duration(milliseconds: 900), () {
+    Timer(_replyHighlightDuration, () {
       if (!mounted) return;
       setState(() => _highlightedMessageId = null);
     });

@@ -30,6 +30,27 @@ abstract class MessageEntity with _$MessageEntity {
     required DateTime createdAt,
   }) = _MessageEntity;
 
+  const MessageEntity._();
+
   factory MessageEntity.fromJson(Map<String, dynamic> json) =>
       _$MessageEntityFromJson(json);
+
+  /// One-line label used wherever a message is shown as a reply preview.
+  String get previewText {
+    final body = content ?? '';
+    if (body.isNotEmpty) return body;
+    switch (type.toUpperCase()) {
+      case 'IMAGE':
+      case 'GIF':
+        return 'Imagem';
+      case 'VIDEO':
+        return 'Vídeo';
+      case 'LOCATION':
+        return 'Localização';
+      case 'PRODUCT_CARD':
+        return 'Produto';
+      default:
+        return 'Mensagem';
+    }
+  }
 }

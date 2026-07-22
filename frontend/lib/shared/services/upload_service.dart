@@ -34,7 +34,7 @@ class UploadService {
       return const Left(ServerFailure('Falha ao enviar arquivo'));
     } on DioException catch (e) {
       if (e.response?.statusCode == 413) {
-        return const Left(ServerFailure('Arquivo muito grande. Máximo: 10 MB'));
+        return const Left(ServerFailure('Arquivo muito grande. Máximo: 5 MB'));
       }
       return const Left(ServerFailure('Erro de conexão ao enviar arquivo'));
     } catch (_) {

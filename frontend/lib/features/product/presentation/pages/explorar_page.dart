@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_card.dart';
+import 'package:freebay/features/product/presentation/widgets/product_results_grid.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -13,6 +14,8 @@ import 'package:freebay/features/product/presentation/widgets/product_filter_bar
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
@@ -130,8 +133,12 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage> {
       category: selectedCategory,
       sort: sort,
       condition: condition,
-      minPrice: priceRange == null ? null : (priceRange.start * 100).round(),
-      maxPrice: priceRange == null ? null : (priceRange.end * 100).round(),
+      minPrice: priceRange == null
+          ? null
+          : CurrencyUtils.reaisToCents(priceRange.start),
+      maxPrice: priceRange == null
+          ? null
+          : CurrencyUtils.reaisToCents(priceRange.end),
     );
     final feedState = ref.watch(productsFeedProvider(params));
 
@@ -202,17 +209,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage> {
     bool hasActiveFilters,
   ) {
     if (feedState.isLoading) {
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-        ),
-        itemCount: 6,
-        itemBuilder: (context, index) => const AppCard.skeleton(),
-      );
+      return const ProductResultsGrid.skeleton();
     }
 
     if (feedState.error != null && feedState.products.isEmpty) {
@@ -283,40 +280,11 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage> {
     return RefreshIndicator(
       onRefresh: () => ref.read(productsFeedProvider(params).notifier).load(),
       color: AppColors.primaryContainer,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification is ScrollEndNotification &&
-              notification.metrics.extentAfter < 400) {
-            ref.read(productsFeedProvider(params).notifier).loadMore();
-          }
-          return false;
-        },
-        child: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.7,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount:
-              feedState.products.length + (feedState.isLoadingMore ? 2 : 0),
-          itemBuilder: (context, index) {
-            if (index >= feedState.products.length) {
-              return const AppCard.skeleton();
-            }
-            final product = feedState.products[index];
-            return RepaintBoundary(
-              child: AppCard(
-                imageUrl: product.imageUrl,
-                title: product.title,
-                priceInCents: product.price,
-                variant: AppCardVariant.compact,
-                onTap: () => context.push('/products/${product.id}'),
-              ),
-            );
-          },
-        ),
+      child: ProductResultsGrid(
+        products: feedState.products,
+        isLoadingMore: feedState.isLoadingMore,
+        onLoadMore: () =>
+            ref.read(productsFeedProvider(params).notifier).loadMore(),
       ),
     );
   }
@@ -327,6 +295,6 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage> {
     ref.read(selectedCategoryProvider.notifier).state = null;
     ref.read(productConditionProvider.notifier).state = null;
     ref.read(productPriceRangeProvider.notifier).state = null;
-    ref.read(productSortProvider.notifier).state = 'recent';
+    ref.read(productSortProvider.notifier).state = ProductSort.recent;
   }
 }

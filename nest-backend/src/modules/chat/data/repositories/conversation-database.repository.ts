@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ConversationPreference, MessageReaction } from '@prisma/client';
+import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
@@ -231,7 +231,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     } catch { return left(new AppError('DB_ERROR', 'Erro ao apagar mensagem')); }
   }
 
-  async findReactionByUserAndMessage(userId: string, messageId: string, model: 'DIRECT' | 'ORDER'): RepositoryResponse<MessageReaction | null> {
+  async findReactionByUserAndMessage(userId: string, messageId: string, model: ChatThreadType): RepositoryResponse<MessageReaction | null> {
     try {
       const where = model === 'DIRECT'
         ? { userId, directMessageId: messageId }
@@ -241,7 +241,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar reação')); }
   }
 
-  async upsertReaction(data: { userId: string; messageId: string; emoji: string; model: 'DIRECT' | 'ORDER' }): RepositoryResponse<void> {
+  async upsertReaction(data: { userId: string; messageId: string; emoji: string; model: ChatThreadType }): RepositoryResponse<void> {
     try {
       const existing = await this.findReactionByUserAndMessage(data.userId, data.messageId, data.model);
       if (existing.isRight() && existing.value) {
@@ -270,7 +270,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     } catch { return left(new AppError('DB_ERROR', 'Erro ao remover reação')); }
   }
 
-  async getReactionsForMessage(messageId: string, model: 'DIRECT' | 'ORDER'): RepositoryResponse<{ emoji: string; userId: string }[]> {
+  async getReactionsForMessage(messageId: string, model: ChatThreadType): RepositoryResponse<{ emoji: string; userId: string }[]> {
     try {
       const where = model === 'DIRECT'
         ? { directMessageId: messageId }

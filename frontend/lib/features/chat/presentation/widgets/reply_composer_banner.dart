@@ -4,30 +4,23 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/presentation/widgets/reply_preview_banner.dart';
 
 class ReplyComposerBanner extends StatelessWidget {
   final MessageEntity replyTo;
-  final String senderLabel;
+  final String? currentUserId;
+  final String? otherUserName;
   final Color accentColor;
   final VoidCallback onCancel;
 
   const ReplyComposerBanner({
     super.key,
     required this.replyTo,
-    required this.senderLabel,
     required this.accentColor,
     required this.onCancel,
+    this.currentUserId,
+    this.otherUserName,
   });
-
-  String get _previewText {
-    final content = replyTo.content ?? '';
-    if (content.isNotEmpty) return content;
-    final type = replyTo.type.toUpperCase();
-    if (type == 'IMAGE' || type == 'GIF') return 'Imagem';
-    if (type == 'LOCATION') return 'Localização';
-    if (type == 'PRODUCT_CARD') return 'Produto';
-    return 'Mensagem';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +42,11 @@ class ReplyComposerBanner extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  senderLabel,
+                  replySenderLabel(
+                    replyTo,
+                    currentUserId: currentUserId,
+                    otherUserName: otherUserName,
+                  ),
                   style: TextStyle(
                     fontFamily: AppTypography.headlineFontFamily,
                     fontSize: 11,
@@ -61,7 +58,7 @@ class ReplyComposerBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _previewText,
+                  replyTo.previewText,
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 12,

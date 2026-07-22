@@ -245,8 +245,8 @@ return $default(_that.id,_that.conversationId,_that.senderId,_that.content,_that
 /// @nodoc
 @JsonSerializable()
 
-class _MessageEntity implements MessageEntity {
-  const _MessageEntity({required this.id, required this.conversationId, required this.senderId, this.content, this.type = 'TEXT', this.attachmentUrl, @JsonKey(fromJson: _ogFromJson, toJson: _ogToJson) this.metadata, this.replyToId, this.replyTo, final  List<MessageReactionEntity> reactions = const [], this.deletedAt, this.readAt, this.deliveredAt, required this.createdAt}): _reactions = reactions;
+class _MessageEntity extends MessageEntity {
+  const _MessageEntity({required this.id, required this.conversationId, required this.senderId, this.content, this.type = 'TEXT', this.attachmentUrl, @JsonKey(fromJson: _ogFromJson, toJson: _ogToJson) this.metadata, this.replyToId, this.replyTo, final  List<MessageReactionEntity> reactions = const [], this.deletedAt, this.readAt, this.deliveredAt, required this.createdAt}): _reactions = reactions,super._();
   factory _MessageEntity.fromJson(Map<String, dynamic> json) => _$MessageEntityFromJson(json);
 
 @override final  String id;

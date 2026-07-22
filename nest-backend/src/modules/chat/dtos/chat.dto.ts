@@ -1,8 +1,7 @@
 import { IsString, IsUUID, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
-
-export type ChatThreadTypeParam = 'ORDER' | 'DIRECT';
+import { ChatThreadType } from '@prisma/client';
 
 export class StartConversationDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -199,7 +198,7 @@ export interface ConversationPreferenceSummary {
 
 export interface GetMessagesResult {
   messages: GetMessagesOutput[];
-  threadType: ChatThreadTypeParam;
+  threadType: ChatThreadType;
   otherUserId: string;
   preference: ConversationPreferenceSummary | null;
 }

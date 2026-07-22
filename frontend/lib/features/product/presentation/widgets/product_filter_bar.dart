@@ -1,27 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/components/brutalist_filter_chip.dart';
+import 'package:freebay/core/components/eyebrow_label.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
-const _maxPriceReais = 5000.0;
-
-const _sortLabels = {
-  'recent': 'Recentes',
-  'price_asc': 'Menor preço',
-  'price_desc': 'Maior preço',
-  'popular': 'Populares',
-};
-
-const _conditionLabels = {'NEW': 'Novo', 'USED': 'Usado'};
+const _priceDivisions = 50;
 
 class ProductFilterBar extends StatelessWidget {
-  final String sort;
-  final String? condition;
+  final ProductSort sort;
+  final ProductCondition? condition;
   final RangeValues? priceRange;
-  final ValueChanged<String> onSortChanged;
-  final ValueChanged<String?> onConditionChanged;
+  final ValueChanged<ProductSort> onSortChanged;
+  final ValueChanged<ProductCondition?> onConditionChanged;
   final ValueChanged<RangeValues?> onPriceRangeChanged;
 
   const ProductFilterBar({
@@ -36,7 +30,8 @@ class ProductFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final range = priceRange ?? const RangeValues(0, _maxPriceReais);
+    final range =
+        priceRange ?? const RangeValues(0, ProductFilterLimits.maxPriceReais);
 
     return Container(
       width: double.infinity,
@@ -47,17 +42,17 @@ class ProductFilterBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _label(context, 'ORDENAR POR'),
+          const EyebrowLabel('Ordenar por'),
           const SizedBox(height: 8),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                for (final entry in _sortLabels.entries) ...[
+                for (final option in ProductSort.values) ...[
                   BrutalistFilterChip(
-                    label: entry.value,
-                    selected: sort == entry.key,
-                    onTap: () => onSortChanged(entry.key),
+                    label: option.label,
+                    selected: sort == option,
+                    onTap: () => onSortChanged(option),
                   ),
                   Spacing.hSm,
                 ],
@@ -65,7 +60,7 @@ class ProductFilterBar extends StatelessWidget {
             ),
           ),
           Spacing.vMd,
-          _label(context, 'CONDIÇÃO'),
+          const EyebrowLabel('Condição'),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -75,11 +70,11 @@ class ProductFilterBar extends StatelessWidget {
                 onTap: () => onConditionChanged(null),
               ),
               Spacing.hSm,
-              for (final entry in _conditionLabels.entries) ...[
+              for (final option in ProductCondition.values) ...[
                 BrutalistFilterChip(
-                  label: entry.value,
-                  selected: condition == entry.key,
-                  onTap: () => onConditionChanged(entry.key),
+                  label: option.label,
+                  selected: condition == option,
+                  onTap: () => onConditionChanged(option),
                 ),
                 Spacing.hSm,
               ],
@@ -89,9 +84,11 @@ class ProductFilterBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _label(context, 'PREÇO'),
+              const EyebrowLabel('Preço'),
               Text(
-                'R\$ ${range.start.round()} — R\$ ${range.end.round()}${range.end >= _maxPriceReais ? '+' : ''}',
+                '${CurrencyUtils.formatReais(range.start)} — '
+                '${CurrencyUtils.formatReais(range.end)}'
+                '${range.end >= ProductFilterLimits.maxPriceReais ? '+' : ''}',
                 style: TextStyle(
                   fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 13,
@@ -104,34 +101,22 @@ class ProductFilterBar extends StatelessWidget {
           RangeSlider(
             values: range,
             min: 0,
-            max: _maxPriceReais,
-            divisions: 50,
+            max: ProductFilterLimits.maxPriceReais,
+            divisions: _priceDivisions,
             activeColor: AppColors.primaryContainer,
             inactiveColor: AppColors.mediumGray,
             labels: RangeLabels(
-              'R\$ ${range.start.round()}',
-              'R\$ ${range.end.round()}',
+              CurrencyUtils.formatReais(range.start),
+              CurrencyUtils.formatReais(range.end),
             ),
             onChanged: (value) {
               final isFullRange =
-                  value.start == 0 && value.end >= _maxPriceReais;
+                  value.start == 0 &&
+                  value.end >= ProductFilterLimits.maxPriceReais;
               onPriceRangeChanged(isFullRange ? null : value);
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _label(BuildContext context, String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontFamily: AppTypography.fontFamily,
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        color: context.textSecondary,
-        letterSpacing: 0.8,
       ),
     );
   }

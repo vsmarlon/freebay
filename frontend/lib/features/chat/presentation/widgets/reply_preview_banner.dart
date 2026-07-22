@@ -4,6 +4,16 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 
+/// Resolves whose message is being replied to, for any reply preview surface.
+String replySenderLabel(
+  MessageEntity message, {
+  String? currentUserId,
+  String? otherUserName,
+}) {
+  if (currentUserId != null && message.senderId == currentUserId) return 'Você';
+  return otherUserName ?? '';
+}
+
 class ReplyPreviewBanner extends StatelessWidget {
   final MessageEntity? replyTo;
   final String? currentUserId;
@@ -19,25 +29,19 @@ class ReplyPreviewBanner extends StatelessWidget {
   });
 
   String get _senderLabel {
-    if (replyTo == null) return '';
-    if (currentUserId != null && replyTo!.senderId == currentUserId) {
-      return 'Você';
-    }
-    return otherUserName ?? '';
+    final message = replyTo;
+    if (message == null) return '';
+    return replySenderLabel(
+      message,
+      currentUserId: currentUserId,
+      otherUserName: otherUserName,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDeleted = replyTo == null;
-    final displayText = isDeleted
-        ? 'Mensagem apagada'
-        : (replyTo!.content ?? '').isNotEmpty
-        ? replyTo!.content!
-        : (replyTo!.type == 'IMAGE' || replyTo!.type == 'GIF')
-        ? 'Imagem'
-        : (replyTo!.type == 'LOCATION')
-        ? 'Localização'
-        : 'Mensagem';
+    final displayText = isDeleted ? 'Mensagem apagada' : replyTo!.previewText;
 
     final banner = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

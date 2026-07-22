@@ -6,6 +6,7 @@ import {
   IsInt,
   IsPositive,
   IsIn,
+  IsEnum,
   IsArray,
   ArrayMaxSize,
   Min,
@@ -14,6 +15,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+import { Condition } from '@prisma/client';
 import { PRODUCT_SORTS, ProductSort } from '../types/product.types';
 
 export class CreateProductDTO {
@@ -37,9 +39,9 @@ export class CreateProductDTO {
   @IsPositive()
   readonly price: number;
 
-  @ApiProperty({ enum: ['NEW', 'USED'], example: 'USED' })
-  @IsIn(['NEW', 'USED'])
-  readonly condition: 'NEW' | 'USED';
+  @ApiProperty({ enum: Condition, example: Condition.USED })
+  @IsEnum(Condition)
+  readonly condition: Condition;
 
   @ApiProperty({ example: 'category-uuid' })
   @IsString()
@@ -99,10 +101,10 @@ export class ProductQueryDTO {
   @Min(0)
   readonly maxPrice?: number;
 
-  @ApiPropertyOptional({ enum: ['NEW', 'USED'] })
+  @ApiPropertyOptional({ enum: Condition })
   @IsOptional()
-  @IsIn(['NEW', 'USED'])
-  readonly condition?: 'NEW' | 'USED';
+  @IsEnum(Condition)
+  readonly condition?: Condition;
 
   @ApiPropertyOptional({ enum: PRODUCT_SORTS, default: 'recent' })
   @IsOptional()
@@ -134,10 +136,10 @@ export class UpdateProductDTO {
   @IsPositive()
   readonly price?: number;
 
-  @ApiPropertyOptional({ enum: ['NEW', 'USED'], example: 'USED' })
+  @ApiPropertyOptional({ enum: Condition, example: Condition.USED })
   @IsOptional()
-  @IsIn(['NEW', 'USED'])
-  readonly condition?: 'NEW' | 'USED';
+  @IsEnum(Condition)
+  readonly condition?: Condition;
 
   @ApiPropertyOptional({ enum: ['ACTIVE', 'PAUSED'], example: 'ACTIVE' })
   @IsOptional()
@@ -162,7 +164,7 @@ export interface CreateProductInput {
   title: string;
   description: string;
   price: number;
-  condition: 'NEW' | 'USED';
+  condition: Condition;
   categoryId: string;
   images: string[];
   quantity?: number;
@@ -173,7 +175,7 @@ export interface CreateProductOutput {
   title: string;
   description: string;
   price: number;
-  condition: 'NEW' | 'USED';
+  condition: Condition;
   categoryId: string;
   sellerId: string;
   status: string;
@@ -193,7 +195,7 @@ export interface UpdateProductInput {
   title?: string;
   description?: string;
   price?: number;
-  condition?: 'NEW' | 'USED';
+  condition?: Condition;
   status?: 'ACTIVE' | 'PAUSED';
   categoryId?: string;
   quantity?: number;
@@ -204,7 +206,7 @@ export interface UpdateProductOutput {
   title: string;
   description: string;
   price: number;
-  condition: 'NEW' | 'USED';
+  condition: Condition;
   categoryId: string;
   sellerId: string;
   status: string;

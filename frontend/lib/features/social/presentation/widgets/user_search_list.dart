@@ -9,6 +9,9 @@ import 'package:freebay/features/profile/presentation/providers/follow_status_pr
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/infinite_scroll_listener.dart';
+
+const _loadMoreThreshold = 200.0;
 
 class UserSearchList extends StatelessWidget {
   final List<UserSearchEntity> users;
@@ -50,15 +53,9 @@ class UserSearchList extends StatelessWidget {
       );
     }
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (notification is ScrollEndNotification &&
-            notification.metrics.extentAfter < 200 &&
-            onLoadMore != null) {
-          onLoadMore!();
-        }
-        return false;
-      },
+    return InfiniteScrollListener(
+      threshold: _loadMoreThreshold,
+      onLoadMore: () => onLoadMore?.call(),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         shrinkWrap: shrinkWrap,

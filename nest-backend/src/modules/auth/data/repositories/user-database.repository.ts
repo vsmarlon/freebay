@@ -3,7 +3,15 @@ import { Prisma, User, PrismaClient } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { UserRepository, UserProfileCounts } from '../../domain/repositories/user.repository';
-import { UserSearchResult, UserSuggestionResult } from '../../types/user-search.types';
+import {
+  UserSearchResult,
+  UserSuggestionResult,
+  toUserSearchResult,
+  toUserSuggestionResult,
+} from '../../types/user-search.types';
+
+/// Over-fetch mutual-follow candidates so the in-memory ranking has room to sort.
+const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
 
 @Injectable()
 export class UserDatabaseRepository implements UserRepository {
@@ -96,18 +104,9 @@ export class UserDatabaseRepository implements UserRepository {
       `);
 
       return right(
-        rows.map((r) => ({
-          id: r.id,
-          displayName: r.displayName,
-          username: r.username,
-          avatarUrl: r.avatarUrl,
-          bio: r.bio,
-          isVerified: r.isVerified,
-          reputationScore: r.reputationScore,
-          totalReviews: r.totalReviews,
-          followersCount: Number(r.followersCount),
-          followingCount: Number(r.followingCount),
-        })),
+        rows.map((r) =>
+          toUserSearchResult(r, Number(r.followersCount), Number(r.followingCount)),
+        ),
       );
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao pesquisar usuários'));
@@ -147,7 +146,7 @@ export class UserDatabaseRepository implements UserRepository {
               NOT: { followers: { some: { followerId: userId } } },
               ...notBlocked,
             },
-            take: limit * 3,
+            take: limit * SUGGESTION_CANDIDATE_MULTIPLIER,
             select: {
               ...baseSelect,
               followers: {
@@ -159,19 +158,14 @@ export class UserDatabaseRepository implements UserRepository {
         : [];
 
       const ranked = suggestions
-        .map((u) => ({
-          id: u.id,
-          displayName: u.displayName,
-          username: u.username,
-          avatarUrl: u.avatarUrl,
-          bio: u.bio,
-          isVerified: u.isVerified,
-          reputationScore: u.reputationScore,
-          totalReviews: u.totalReviews,
-          followersCount: u._count.followers,
-          followingCount: u._count.following,
-          mutualCount: u.followers.length,
-        }))
+        .map((u) =>
+          toUserSuggestionResult(
+            u,
+            u._count.followers,
+            u._count.following,
+            u.followers.length,
+          ),
+        )
         .sort((a, b) =>
           b.mutualCount !== a.mutualCount
             ? b.mutualCount - a.mutualCount
@@ -195,19 +189,9 @@ export class UserDatabaseRepository implements UserRepository {
 
       return right([
         ...ranked,
-        ...popular.map((u) => ({
-          id: u.id,
-          displayName: u.displayName,
-          username: u.username,
-          avatarUrl: u.avatarUrl,
-          bio: u.bio,
-          isVerified: u.isVerified,
-          reputationScore: u.reputationScore,
-          totalReviews: u.totalReviews,
-          followersCount: u._count.followers,
-          followingCount: u._count.following,
-          mutualCount: 0,
-        })),
+        ...popular.map((u) =>
+          toUserSuggestionResult(u, u._count.followers, u._count.following, 0),
+        ),
       ]);
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar sugestões'));

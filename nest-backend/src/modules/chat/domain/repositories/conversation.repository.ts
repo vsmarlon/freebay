@@ -1,5 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { DirectConversation, User, Prisma, DirectMessage, ChatMessage, ConversationPreference, MessageReaction } from '@prisma/client';
+import { DirectConversation, User, Prisma, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction } from '@prisma/client';
 import {
   DirectConversationWithDetails,
   OrderWithChat,
@@ -27,8 +27,8 @@ export abstract class ConversationRepository {
   abstract findOrdersByUser(userId: string): RepositoryResponse<OrderWithChat[]>;
   abstract countUnreadChatMessages(orderIds: string[], userId: string): RepositoryResponse<Record<string, number>>;
   abstract findPreferencesByUser(userId: string): RepositoryResponse<ConversationPreference[]>;
-  abstract findReactionByUserAndMessage(userId: string, messageId: string, model: 'DIRECT' | 'ORDER'): RepositoryResponse<MessageReaction | null>;
-  abstract upsertReaction(data: { userId: string; messageId: string; emoji: string; model: 'DIRECT' | 'ORDER' }): RepositoryResponse<void>;
+  abstract findReactionByUserAndMessage(userId: string, messageId: string, model: ChatThreadType): RepositoryResponse<MessageReaction | null>;
+  abstract upsertReaction(data: { userId: string; messageId: string; emoji: string; model: ChatThreadType }): RepositoryResponse<void>;
   abstract deleteReaction(reactionId: string): RepositoryResponse<void>;
-  abstract getReactionsForMessage(messageId: string, model: 'DIRECT' | 'ORDER'): RepositoryResponse<{ emoji: string; userId: string }[]>;
+  abstract getReactionsForMessage(messageId: string, model: ChatThreadType): RepositoryResponse<{ emoji: string; userId: string }[]>;
 }

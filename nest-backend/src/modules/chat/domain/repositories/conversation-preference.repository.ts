@@ -1,5 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { ChatTheme, ConversationPreference } from '@prisma/client';
+import { ChatTheme, ChatThreadType, ConversationPreference } from '@prisma/client';
 
 export interface UpsertPreferenceInput {
   userId: string;
@@ -13,7 +13,7 @@ export interface UpsertPreferenceInput {
 
 export abstract class ConversationPreferenceRepository {
   abstract findByAnyId(userId: string, threadId: string): RepositoryResponse<ConversationPreference | null>;
-  abstract findByUserAndThread(userId: string, threadId: string, type: 'DIRECT' | 'ORDER'): RepositoryResponse<ConversationPreference | null>;
+  abstract findByUserAndThread(userId: string, threadId: string, type: ChatThreadType): RepositoryResponse<ConversationPreference | null>;
   abstract upsert(input: UpsertPreferenceInput): RepositoryResponse<ConversationPreference>;
   abstract findArchived(userId: string): RepositoryResponse<ConversationPreference[]>;
   abstract findDeleted(userId: string): RepositoryResponse<ConversationPreference[]>;

@@ -22,19 +22,14 @@ import 'package:freebay/features/wallet/presentation/controllers/wallet_controll
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/brutalist_filter_chip.dart';
+import 'package:freebay/core/components/eyebrow_label.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/core/utils/date_utils.dart';
+import 'package:freebay/features/wallet/domain/wallet_constants.dart';
 
-const _minWithdrawalCents = 2000;
-
-String _formatCents(int cents) {
-  return (cents / 100).toStringAsFixed(2).replaceAll('.', ',');
-}
-
-String _formatDate(DateTime date) {
-  final local = date.toLocal();
-  final day = local.day.toString().padLeft(2, '0');
-  final month = local.month.toString().padLeft(2, '0');
-  return '$day/$month/${local.year}';
-}
+const _signBadgeAlpha = 0.12;
+const _signBadgeSize = 36.0;
 
 class WalletPage extends ConsumerStatefulWidget {
   const WalletPage({super.key});
@@ -141,7 +136,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
                                 _buildInfoLine(
                                   label: 'Saques',
                                   value:
-                                      'Saque via PIX a partir de R\$ ${_formatCents(_minWithdrawalCents)}.',
+                                      'Saque via PIX a partir de ${CurrencyUtils.formatCents(WalletConstants.minWithdrawalCents)}.',
                                 ),
                               ],
                             ),
@@ -162,8 +157,11 @@ class _WalletPageState extends ConsumerState<WalletPage>
                                   'Realize uma compra ou venda para visualizar suas transações aqui.',
                             )
                           else
-                            _TransactionList(
-                              transactions: historyState.transactions,
+                            _ZebraList(
+                              itemCount: historyState.transactions.length,
+                              itemBuilder: (context, i) => _TransactionRow(
+                                transaction: historyState.transactions[i],
+                              ),
                             ),
                           if (historyState.withdrawals.isNotEmpty) ...[
                             Spacing.vLg,
@@ -250,17 +248,19 @@ class _WalletPageState extends ConsumerState<WalletPage>
   }
 }
 
-class _TransactionList extends StatelessWidget {
-  final List<WalletTransactionEntity> transactions;
+/// Tonal blocking for alternating rows — the design system forbids divider lines.
+class _ZebraList extends StatelessWidget {
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
 
-  const _TransactionList({required this.transactions});
+  const _ZebraList({required this.itemCount, required this.itemBuilder});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     return Column(
       children: [
-        for (var i = 0; i < transactions.length; i++)
+        for (var i = 0; i < itemCount; i++)
           Container(
             color: i.isEven
                 ? (isDark
@@ -268,7 +268,7 @@ class _TransactionList extends StatelessWidget {
                       : AppColors.surfaceContainerLow)
                 : Colors.transparent,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            child: _TransactionRow(transaction: transactions[i]),
+            child: itemBuilder(context, i),
           ),
       ],
     );
@@ -288,9 +288,9 @@ class _TransactionRow extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 36,
-          height: 36,
-          color: signColor.withValues(alpha: 0.12),
+          width: _signBadgeSize,
+          height: _signBadgeSize,
+          color: signColor.withValues(alpha: _signBadgeAlpha),
           child: Icon(
             isCredit ? Icons.arrow_downward : Icons.arrow_upward,
             size: 18,
@@ -314,7 +314,9 @@ class _TransactionRow extends StatelessWidget {
                 ),
               ),
               Text(
-                _formatDate(transaction.createdAt),
+                DateUtilsCustom.formatShortDate(
+                  transaction.createdAt.toLocal(),
+                ),
                 style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.mediumGray,
@@ -324,7 +326,7 @@ class _TransactionRow extends StatelessWidget {
           ),
         ),
         Text(
-          '${isCredit ? '+' : '-'} R\$ ${_formatCents(transaction.amount.abs())}',
+          '${isCredit ? '+' : '-'} ${CurrencyUtils.formatCents(transaction.amount.abs())}',
           style: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
             fontSize: 14,
@@ -344,55 +346,44 @@ class _WithdrawalList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
-    return Column(
-      children: [
-        for (var i = 0; i < withdrawals.length; i++)
-          Container(
-            color: i.isEven
-                ? (isDark
-                      ? AppColors.surfaceContainerDark
-                      : AppColors.surfaceContainerLow)
-                : Colors.transparent,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            child: Row(
+    return _ZebraList(
+      itemCount: withdrawals.length,
+      itemBuilder: (context, i) => Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Saque PIX',
-                        style: TextStyle(
-                          fontFamily: AppTypography.fontFamily,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        '${_formatDate(withdrawals[i].createdAt)} · ${withdrawals[i].statusLabel}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mediumGray,
-                        ),
-                      ),
-                    ],
+                Text(
+                  'Saque PIX',
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: context.textPrimary,
                   ),
                 ),
                 Text(
-                  'R\$ ${_formatCents(withdrawals[i].amount)}',
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: context.textPrimary,
+                  '${DateUtilsCustom.formatShortDate(withdrawals[i].createdAt.toLocal())} · ${withdrawals[i].status.label}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.mediumGray,
                   ),
                 ),
               ],
             ),
           ),
-      ],
+          Text(
+            CurrencyUtils.formatCents(withdrawals[i].amount),
+            style: TextStyle(
+              fontFamily: AppTypography.headlineFontFamily,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: context.textPrimary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -409,11 +400,12 @@ class _WithdrawAction extends ConsumerStatefulWidget {
 class _WithdrawActionState extends ConsumerState<_WithdrawAction> {
   final _amountController = TextEditingController();
   final _pixKeyController = TextEditingController();
-  String _pixKeyType = 'CPF';
+  PixKeyType _pixKeyType = PixKeyType.cpf;
   bool _isSending = false;
   String? _idempotencyKey;
 
-  bool get _canWithdraw => widget.availableBalance >= _minWithdrawalCents;
+  bool get _canWithdraw =>
+      widget.availableBalance >= WalletConstants.minWithdrawalCents;
 
   @override
   void dispose() {
@@ -427,13 +419,6 @@ class _WithdrawActionState extends ConsumerState<_WithdrawAction> {
     return '${DateTime.now().microsecondsSinceEpoch}-$random';
   }
 
-  int? _parseAmountCents(String raw) {
-    final normalized = raw.trim().replaceAll('.', '').replaceAll(',', '.');
-    final reais = double.tryParse(normalized);
-    if (reais == null) return null;
-    return (reais * 100).round();
-  }
-
   void _showWithdrawSheet() {
     _idempotencyKey = _newIdempotencyKey();
     showBrutalistSheet(
@@ -445,7 +430,7 @@ class _WithdrawActionState extends ConsumerState<_WithdrawAction> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Disponível: R\$ ${_formatCents(widget.availableBalance)}',
+              'Disponível: ${CurrencyUtils.formatCents(widget.availableBalance)}',
               style: const TextStyle(fontSize: 13, color: AppColors.mediumGray),
             ),
             Spacing.vMd,
@@ -485,17 +470,18 @@ class _WithdrawActionState extends ConsumerState<_WithdrawAction> {
     BuildContext sheetContext,
     StateSetter setSheetState,
   ) async {
-    final amountCents = _parseAmountCents(_amountController.text);
+    final amountCents = CurrencyUtils.parseReaisToCents(_amountController.text);
     final pixKey = _pixKeyController.text.trim();
 
     if (amountCents == null || pixKey.isEmpty) {
       AppSnackbar.error(context, 'Preencha todos os campos');
       return;
     }
-    if (amountCents < _minWithdrawalCents) {
+    if (amountCents < WalletConstants.minWithdrawalCents) {
       AppSnackbar.error(
         context,
-        'Valor mínimo de saque: R\$ ${_formatCents(_minWithdrawalCents)}',
+        'Valor mínimo de saque: '
+        '${CurrencyUtils.formatCents(WalletConstants.minWithdrawalCents)}',
       );
       return;
     }
@@ -510,7 +496,7 @@ class _WithdrawActionState extends ConsumerState<_WithdrawAction> {
         .withdraw(
           amountCents: amountCents,
           pixKey: pixKey,
-          pixKeyType: _pixKeyType,
+          pixKeyType: _pixKeyType.wireValue,
           idempotencyKey: _idempotencyKey ?? _newIdempotencyKey(),
         );
     if (!mounted) return;
@@ -540,64 +526,25 @@ class _WithdrawActionState extends ConsumerState<_WithdrawAction> {
 }
 
 class _PixKeyTypeSelector extends StatelessWidget {
-  static const _types = {
-    'CPF': 'CPF',
-    'EMAIL': 'E-mail',
-    'PHONE': 'Telefone',
-    'RANDOM': 'Aleatória',
-  };
-
-  final String selected;
-  final ValueChanged<String> onChanged;
+  final PixKeyType selected;
+  final ValueChanged<PixKeyType> onChanged;
 
   const _PixKeyTypeSelector({required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'TIPO DE CHAVE PIX',
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: context.textSecondary,
-            letterSpacing: 0.8,
-          ),
-        ),
+        const EyebrowLabel('Tipo de chave PIX'),
         const SizedBox(height: 8),
         Row(
-          children: _types.entries.map((entry) {
-            final isSelected = entry.key == selected;
+          children: PixKeyType.values.map((type) {
             return Expanded(
-              child: Material(
-                color: isSelected
-                    ? AppColors.primaryContainer
-                    : (isDark
-                          ? AppColors.surfaceContainerDark
-                          : AppColors.surfaceContainerLow),
-                child: InkWell(
-                  onTap: () => onChanged(entry.key),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Center(
-                      child: Text(
-                        entry.value,
-                        style: TextStyle(
-                          fontFamily: AppTypography.fontFamily,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected
-                              ? AppColors.onPrimary
-                              : context.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              child: BrutalistFilterChip(
+                label: type.label,
+                selected: type == selected,
+                onTap: () => onChanged(type),
               ),
             );
           }).toList(),
