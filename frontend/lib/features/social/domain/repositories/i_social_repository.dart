@@ -42,8 +42,8 @@ abstract class ISocialRepository {
   });
   Future<Either<Failure, void>> likeComment(String commentId);
   Future<Either<Failure, void>> unlikeComment(String commentId);
-  Future<Either<Failure, int>> repost(String postId);
-  Future<Either<Failure, int>> unrepost(String postId);
+  Future<Either<Failure, void>> repost(String postId);
+  Future<Either<Failure, void>> unrepost(String postId);
   Future<Either<Failure, void>> sharePost(String postId, String? content);
 
   Future<Either<Failure, StoriesResponse>> getStories();

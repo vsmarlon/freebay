@@ -1,7 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+export 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
+
+part 'feed_provider.g.dart';
 
 enum FeedType { explore, following }
 
@@ -20,52 +26,34 @@ extension FeedContentFilterApi on FeedContentFilter {
   }
 }
 
-final feedTypeProvider = StateProvider<FeedType>((ref) => FeedType.explore);
+// Class named FeedTypeSetting (not FeedType) because the FeedType enum lives in
+// this library; the generated provider keeps its old name via @Riverpod(name:).
+@Riverpod(keepAlive: true, name: 'feedTypeProvider')
+class FeedTypeSetting extends _$FeedTypeSetting {
+  @override
+  FeedType build() => FeedType.explore;
 
-final feedContentFilterProvider = StateProvider<FeedContentFilter>(
-  (ref) => FeedContentFilter.all,
-);
-
-class FeedState {
-  final List<PostEntity> posts;
-  final bool isLoading;
-  final bool hasMore;
-  final String? cursor;
-  final int offset;
-  final String? error;
-
-  const FeedState({
-    this.posts = const [],
-    this.isLoading = false,
-    this.hasMore = true,
-    this.cursor,
-    this.offset = 0,
-    this.error,
-  });
-
-  FeedState copyWith({
-    List<PostEntity>? posts,
-    bool? isLoading,
-    bool? hasMore,
-    String? cursor,
-    int? offset,
-    String? error,
-  }) {
-    return FeedState(
-      posts: posts ?? this.posts,
-      isLoading: isLoading ?? this.isLoading,
-      hasMore: hasMore ?? this.hasMore,
-      cursor: cursor ?? this.cursor,
-      offset: offset ?? this.offset,
-      error: error,
-    );
-  }
+  void set(FeedType value) => state = value;
 }
 
-class FeedNotifier extends StateNotifier<FeedState> {
-  final ISocialRepository _repository;
+@Riverpod(keepAlive: true, name: 'feedContentFilterProvider')
+class FeedContentFilterSetting extends _$FeedContentFilterSetting {
+  @override
+  FeedContentFilter build() => FeedContentFilter.all;
 
-  FeedNotifier(this._repository) : super(const FeedState());
+  void set(FeedContentFilter value) => state = value;
+}
+
+@Riverpod(keepAlive: true)
+class Feed extends _$Feed {
+  late final ISocialRepository _repository;
+  int _currentRequestId = 0;
+
+  @override
+  FeedState build() {
+    _repository = ref.watch(socialRepositoryProvider);
+    return const FeedState();
+  }
 
   Future<void> loadFeed({
     bool refresh = false,
@@ -87,12 +75,16 @@ class FeedNotifier extends StateNotifier<FeedState> {
       offset: refresh ? 0 : state.offset,
     );
 
+    final requestId = ++_currentRequestId;
+
     final result = await _repository.getFeed(
       cursor: cursor,
       offset: offset,
       type: feedType,
       contentFilter: contentFilter,
     );
+
+    if (requestId != _currentRequestId) return;
 
     result.fold(
       (failure) =>
@@ -152,11 +144,6 @@ class FeedNotifier extends StateNotifier<FeedState> {
     state = state.copyWith(posts: [post, ...state.posts]);
   }
 }
-
-final feedProvider = StateNotifierProvider<FeedNotifier, FeedState>((ref) {
-  final repository = ref.watch(socialRepositoryProvider);
-  return FeedNotifier(repository);
-});
 
 final storiesProvider = FutureProvider<StoriesResponse>((ref) async {
   final repository = ref.watch(socialRepositoryProvider);

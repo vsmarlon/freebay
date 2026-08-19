@@ -36,6 +36,6 @@ Map<String, dynamic> _$CommentEntityToJson(_CommentEntity instance) =>
       'likesCount': instance.likesCount,
       'isLiked': instance.isLiked,
       'createdAt': instance.createdAt.toIso8601String(),
-      'user': instance.user,
-      'replies': instance.replies,
+      'user': instance.user?.toJson(),
+      'replies': instance.replies.map((e) => e.toJson()).toList(),
     };

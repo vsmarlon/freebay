@@ -187,6 +187,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         controller: _displayNameController,
                         label: 'Nome',
                         hint: 'Seu nome',
+                        maxLength: 50,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Nome é obrigatório';

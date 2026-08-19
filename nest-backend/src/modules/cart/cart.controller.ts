@@ -7,7 +7,6 @@ import { AuthUser } from '@/shared/core/types';
 import { CartService } from './cart.service';
 import { AddToCartDTO, UpdateCartItemDTO, CartResponse, CheckoutCartResponse } from './dtos/cart.dto';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { isLeft } from '@/shared/core/either';
 
 @ApiTags('Cart')
 @Controller('cart')
@@ -23,23 +22,19 @@ export class CartController {
     responseType: CartResponse,
   })
   async getCart(@CurrentUser() user: AuthUser) {
-    const result = await this.cartService.getCart(user.userId);
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.cartService.getCart(user.userId);
   }
 
   @Post('checkout')
   @ApiBearerAuth()
   @ApiDoc({
     summary: 'Checkout cart',
-    description: 'Creates orders for all items in cart with PIX payment',
+    description: 'Creates orders for all items in cart with Stripe payment sessions',
     auth: true,
     responseType: CheckoutCartResponse,
   })
   async checkout(@CurrentUser() user: AuthUser) {
-    const result = await this.cartService.checkout({ userId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.cartService.checkout({ userId: user.userId });
   }
 
   @Post(':productId')
@@ -59,13 +54,11 @@ export class CartController {
     @CurrentUser() user: AuthUser,
     @Body() body: AddToCartDTO,
   ) {
-    const result = await this.cartService.addToCart({
+    return this.cartService.addToCart({
       userId: user.userId,
       productId,
       quantity: body.quantity ?? 1,
     });
-    if (isLeft(result)) throw result.value;
-    return result.value;
   }
 
   @Patch(':productId')
@@ -82,13 +75,11 @@ export class CartController {
     @CurrentUser() user: AuthUser,
     @Body() body: UpdateCartItemDTO,
   ) {
-    const result = await this.cartService.updateCartItem({
+    return this.cartService.updateCartItem({
       userId: user.userId,
       productId,
       quantity: body.quantity,
     });
-    if (isLeft(result)) throw result.value;
-    return result.value;
   }
 
   @Delete(':productId')
@@ -100,9 +91,7 @@ export class CartController {
     errors: [{ status: 404, description: 'Item not found in cart' }],
   })
   async removeFromCart(@Param('productId') productId: string, @CurrentUser() user: AuthUser) {
-    const result = await this.cartService.removeFromCart({ userId: user.userId, productId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.cartService.removeFromCart({ userId: user.userId, productId });
   }
 
   @Delete()
@@ -112,8 +101,6 @@ export class CartController {
     auth: true,
   })
   async clearCart(@CurrentUser() user: AuthUser) {
-    const result = await this.cartService.clearCart(user.userId);
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.cartService.clearCart(user.userId);
   }
 }

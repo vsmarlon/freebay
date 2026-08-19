@@ -1,12 +1,10 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
+import { Controller, Get, Param, Post } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { Authenticated } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { FavoritesService } from './favorites.service';
 import { FavoritesResponse, CheckFavoriteResponse, ToggleFavoriteResponse } from './dtos/favorite.dto';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
 @ApiTags('Favorites')
 @Controller('favorites')
@@ -14,11 +12,8 @@ export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Get user favorites',
-    auth: true,
     responseType: FavoritesResponse,
   })
   async getFavorites(@CurrentUser() user: AuthUser) {
@@ -26,11 +21,8 @@ export class FavoritesController {
   }
 
   @Get('check/:productId')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Check if product is favorited',
-    auth: true,
     params: [{ name: 'productId', description: 'Product UUID' }],
     responseType: CheckFavoriteResponse,
   })
@@ -39,12 +31,9 @@ export class FavoritesController {
   }
 
   @Post(':productId')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Toggle favorite',
     description: 'Add or remove a product from favorites',
-    auth: true,
     params: [{ name: 'productId', description: 'Product UUID' }],
     responseType: ToggleFavoriteResponse,
     errors: [

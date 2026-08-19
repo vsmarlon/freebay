@@ -1,89 +1,42 @@
 import 'package:freebay/shared/either/either.dart';
-import 'package:dio/dio.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
-import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/shared/services/http_client.dart';
 
-class CartService {
-  Future<Either<Failure, CartEntity>> getCart() async {
-    try {
-      final response = await HttpClient.instance.get('/cart');
-      final data = response.data['data'] as Map<String, dynamic>;
-      return Right(CartEntity.fromJson(data));
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
+class CartService extends BaseHttpRepository {
+  CartService({super.client});
+
+  Future<Either<Failure, CartEntity>> getCart() => safeGet<CartEntity>(
+    '/cart',
+    extractKey: 'data',
+    fromJson: CartEntity.fromJson,
+  );
 
   Future<Either<Failure, void>> addToCart(
     String productId, {
     int quantity = 1,
-  }) async {
-    try {
-      await HttpClient.instance.post(
-        '/cart/$productId',
-        data: {'quantity': quantity},
-      );
-      return const Right(null);
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
+  }) => safeVoid(
+    () => client.post('/cart/$productId', data: {'quantity': quantity}),
+  );
 
   Future<Either<Failure, void>> updateQuantity(
     String productId,
     int quantity,
-  ) async {
-    try {
-      await HttpClient.instance.patch(
-        '/cart/$productId',
-        data: {'quantity': quantity},
+  ) => safeVoid(
+    () => client.patch('/cart/$productId', data: {'quantity': quantity}),
+  );
+
+  Future<Either<Failure, void>> removeFromCart(String productId) =>
+      safeVoid(() => client.delete('/cart/$productId'));
+
+  Future<Either<Failure, void>> clearCart() =>
+      safeVoid(() => client.delete('/cart'));
+
+  Future<Either<Failure, CartCheckoutEntity>> checkoutCart() =>
+      safePost<CartCheckoutEntity>(
+        '/cart/checkout',
+        extractKey: 'data',
+        fromJson: CartCheckoutEntity.fromJson,
       );
-      return const Right(null);
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
-
-  Future<Either<Failure, void>> removeFromCart(String productId) async {
-    try {
-      await HttpClient.instance.delete('/cart/$productId');
-      return const Right(null);
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
-
-  Future<Either<Failure, void>> clearCart() async {
-    try {
-      await HttpClient.instance.delete('/cart');
-      return const Right(null);
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
-
-  Future<Either<Failure, CartCheckoutEntity>> checkoutCart() async {
-    try {
-      final response = await HttpClient.instance.post('/cart/checkout');
-
-      final data = response.data['data'] as Map<String, dynamic>;
-      return Right(CartCheckoutEntity.fromJson(data));
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
 }

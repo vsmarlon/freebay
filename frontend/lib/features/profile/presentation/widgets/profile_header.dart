@@ -27,7 +27,7 @@ class ProfileHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = context.isDark;
-    final currentUser = ref.watch(authControllerProvider).valueOrNull;
+    final currentUser = ref.watch(authControllerProvider).value;
     final isOwnProfile = currentUser != null && currentUser.id == user.id;
 
     return Column(
@@ -259,7 +259,7 @@ class _AvatarWithStoryRing extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hasStory = user.hasActiveStory;
-    final currentUser = ref.watch(authControllerProvider).valueOrNull;
+    final currentUser = ref.watch(authControllerProvider).value;
     final isOwnProfile = currentUser != null && currentUser.id == user.id;
 
     Widget avatar = GestureDetector(

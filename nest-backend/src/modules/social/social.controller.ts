@@ -6,15 +6,14 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
-  HttpCode,
   HttpStatus,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { toDataUri } from '@/shared/utils/file.utils';
 import { SocialService } from './social.service';
 import {
   CreatePostDTO,
@@ -24,37 +23,24 @@ import {
   SearchPostsQueryDTO,
 } from './dtos/social.dto';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
+import { Authenticated } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { isLeft, left } from '@/shared/core/either';
+import { BadRequestError } from '@/shared/core/errors';
 
 @ApiTags('Social')
 @Controller('social')
 export class SocialController {
-  constructor(
-    private readonly socialService: SocialService,
-  ) {}
+  constructor(private readonly socialService: SocialService) {}
 
   @Get('feed')
   @ApiDoc({
     summary: 'Get social feed',
     description: 'Returns paginated feed of posts from followed users or explore',
-    queries: [
-      { name: 'limit', required: false, description: 'Results per page (default 20)' },
-      { name: 'type', required: false, description: 'Feed type: "following" or "explore" (default)' },
-      { name: 'cursor', required: false, description: 'Keyset pagination cursor (type=following only)' },
-      { name: 'offset', required: false, description: 'Page offset (type=explore only)' },
-      { name: 'contentFilter', required: false, description: '"all" | "social" | "selling"' },
-    ],
   })
-  async getFeed(
-    @CurrentUser() user: AuthUser,
-    @Query() query: GetFeedQueryDTO,
-  ) {
+  async getFeed(@CurrentUser() user: AuthUser, @Query() query: GetFeedQueryDTO) {
     const result = await this.socialService.getFeed({
       userId: user?.userId || '',
       limit: query.limit ?? 20,
@@ -63,9 +49,7 @@ export class SocialController {
       offset: query.offset,
       contentFilter: query.contentFilter,
     });
-    if (result.isLeft()) {
-      return { posts: [], hasMore: false, nextCursor: null, nextOffset: null };
-    }
+    if (result.isLeft()) return { posts: [], hasMore: false, nextCursor: null, nextOffset: null };
     return result.value;
   }
 
@@ -75,30 +59,25 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
     errors: [{ status: 404, description: 'Post not found' }],
   })
-  async getPost(@Param('id') id: string, @CurrentUser() _user?: AuthUser) {
+  async getPost(@Param('id') id: string) {
     const result = await this.socialService.getPost(id);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) return result;
     return { post: result.value };
   }
 
   @Post('posts')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Create a post',
     description: 'Creates a new social post with optional image upload',
     bodyType: CreatePostDTO,
     responseStatus: 201,
-    auth: true,
+    httpCode: HttpStatus.CREATED,
   })
   async createPost(
     @CurrentUser() user: AuthUser,
@@ -107,18 +86,10 @@ export class SocialController {
   ) {
     if (file) {
       const mimeError = validateImageFile(file);
-      if (mimeError) {
-        return left(new AppError('BAD_REQUEST', mimeError));
-      }
+      if (mimeError) return left(new BadRequestError(mimeError));
     }
-    const userId = user.userId;
-    const imageUrl = file ? this.socialService.toDataUri(file) : body.imageUrl;
-    const result = await this.socialService.createPost({ userId, ...body, imageUrl });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    const imageUrl = file ? toDataUri(file) : body.imageUrl;
+    return this.socialService.createPost({ userId: user.userId, ...body, imageUrl });
   }
 
   @Get('posts/user/:userId')
@@ -126,41 +97,22 @@ export class SocialController {
     summary: 'Get user posts',
     description: 'Returns posts and reposts for a specific user',
     params: [{ name: 'userId', description: 'User UUID' }],
-    queries: [
-      { name: 'cursor', required: false, description: 'Pagination cursor' },
-      { name: 'limit', required: false, description: 'Results per page (default 20)' },
-    ],
   })
-  async getUserPosts(
-    @Param('userId') userId: string,
-    @Query() query: GetUserPostsQueryDTO,
-  ) {
-    const limitNum = query.limit ?? 20;
+  async getUserPosts(@Param('userId') userId: string, @Query() query: GetUserPostsQueryDTO) {
     const result = await this.socialService.getUserPosts({
       userId,
-      limit: limitNum,
+      limit: query.limit ?? 20,
       cursor: query.cursor,
     });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) throw result.value;
     return { posts: result.value };
   }
 
   @Get('posts/search')
   @ApiDoc({
     summary: 'Search posts',
-    queries: [
-      { name: 'q', required: false, description: 'Search query' },
-      { name: 'filter', required: false, description: 'Filter: "all", "following", or "followers"' },
-      { name: 'cursor', required: false, description: 'Pagination cursor' },
-      { name: 'limit', required: false, description: 'Results per page (default 20)' },
-    ],
   })
-  async searchPosts(
-    @CurrentUser() user: AuthUser,
-    @Query() query: SearchPostsQueryDTO,
-  ) {
+  async searchPosts(@CurrentUser() user: AuthUser, @Query() query: SearchPostsQueryDTO) {
     const result = await this.socialService.searchPosts({
       query: query.q || '',
       filter: query.filter || 'all',
@@ -168,123 +120,79 @@ export class SocialController {
       limit: query.limit ?? 20,
       cursor: query.cursor,
     });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) throw result.value;
     return { posts: result.value };
   }
 
   @Post('posts/:id/like')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Like a post',
-    auth: true,
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async likePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.likePost({ userId: user.userId, postId: id });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.likePost({ userId: user.userId, postId: id });
   }
 
   @Delete('posts/:id/like')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Unlike a post',
-    auth: true,
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async unlikePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.unlikePost({ userId: user.userId, postId: id });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.unlikePost({ userId: user.userId, postId: id });
   }
 
   @Get('posts/liked')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Get liked posts',
-    auth: true,
   })
   async getLikedPosts(@CurrentUser() user: AuthUser) {
     const result = await this.socialService.getLikedPosts(user.userId);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) throw result.value;
     return { posts: result.value };
   }
 
   @Post('posts/:id/share')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Share/repost a post',
-    auth: true,
     responseStatus: 201,
     params: [{ name: 'id', description: 'Post UUID' }],
-    errors: [{ status: 404, description: 'Post not found' }],
+    httpCode: HttpStatus.CREATED,
   })
   async sharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.sharePost({ userId: user.userId, postId: id });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.sharePost({ userId: user.userId, postId: id });
   }
 
   @Delete('posts/:id/share')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Remove share/repost',
-    auth: true,
     params: [{ name: 'id', description: 'Post UUID' }],
-    errors: [{ status: 404, description: 'Post not found' }],
+    httpCode: HttpStatus.OK,
   })
   async unsharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.unsharePost({ userId: user.userId, postId: id });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.unsharePost({ userId: user.userId, postId: id });
   }
 
   @Post('posts/:id/comments')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Create comment on post',
-    auth: true,
     responseStatus: 201,
     params: [{ name: 'id', description: 'Post UUID' }],
     bodyType: CreateCommentDTO,
+    httpCode: HttpStatus.CREATED,
   })
   async createComment(
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,
     @Body() body: CreateCommentDTO,
   ) {
-    const result = await this.socialService.createComment({
+    return this.socialService.createComment({
       userId: user.userId,
       postId: id,
       content: body.content,
       parentId: body.parentId,
       mentionIds: body.mentionIds,
     });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
   }
 
   @Get('posts/:id/comments')
@@ -294,77 +202,45 @@ export class SocialController {
   })
   async getComments(@Param('id') id: string) {
     const result = await this.socialService.getComments({ postId: id, limit: 20 });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) throw result.value;
     return { comments: result.value };
   }
 
   @Post('comments/:commentId/like')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Like a comment',
-    auth: true,
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
   async likeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.likeComment({ userId: user.userId, commentId });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.likeComment({ userId: user.userId, commentId });
   }
 
   @Delete('comments/:commentId/like')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Unlike a comment',
-    auth: true,
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
   async unlikeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.unlikeComment({ userId: user.userId, commentId });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.unlikeComment({ userId: user.userId, commentId });
   }
 
   @Post('posts/:id/save')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Save a post',
-    auth: true,
     responseStatus: 201,
     params: [{ name: 'id', description: 'Post UUID' }],
-    errors: [{ status: 404, description: 'Post not found' }],
+    httpCode: HttpStatus.CREATED,
   })
   async savePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.savePost({ userId: user.userId, postId: id });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.savePost({ userId: user.userId, postId: id });
   }
 
   @Delete('posts/:id/save')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Unsave a post',
-    auth: true,
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async unsavePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.socialService.unsavePost({ userId: user.userId, postId: id });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.socialService.unsavePost({ userId: user.userId, postId: id });
   }
-
 }

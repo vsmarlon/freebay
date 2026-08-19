@@ -10,7 +10,7 @@ class FavoritesRepository implements IFavoritesRepository {
   FavoritesRepository(this._service);
 
   @override
-  Future<Either<Failure, bool>> toggleFavorite(String productId) {
+  Future<Either<Failure, void>> toggleFavorite(String productId) {
     return _service.toggleFavorite(productId);
   }
 

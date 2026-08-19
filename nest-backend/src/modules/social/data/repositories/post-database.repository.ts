@@ -3,8 +3,8 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PostRepository, FeedQuery, FeedResult, UserPostsQuery, SearchPostsQuery } from '../../domain/repositories/post.repository';
-import { PostPayload, POST_INCLUDE } from '../../types/social.types';
+import { PostRepository } from '../../domain/repositories/post.repository';
+import { PostPayload, POST_INCLUDE, FeedQuery, FeedResult, UserPostsQuery, SearchPostsQuery } from '../../types/social.types';
 
 @Injectable()
 export class PrismaPostRepository implements PostRepository {

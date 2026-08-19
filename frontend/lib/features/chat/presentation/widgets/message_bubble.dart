@@ -4,6 +4,8 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/presentation/widgets/product_card_bubble.dart';
+import 'package:freebay/features/chat/presentation/widgets/offer_message_bubble.dart';
 import 'reply_preview_banner.dart';
 import 'reaction_bar.dart';
 import 'image_message_bubble.dart';
@@ -15,6 +17,7 @@ class MessageBubble extends StatelessWidget {
   final bool isMe;
   final bool isDark;
   final bool isConsecutive;
+  final bool showTimestamp;
   final Color accentColor;
   final ValueChanged<String>? onReactionTap;
   final void Function(String emoji, LongPressStartDetails details)?
@@ -24,6 +27,7 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onReplyTap;
   final String? currentUserId;
   final String? otherUserName;
+  final VoidCallback? onViewOnceReveal;
 
   const MessageBubble({
     super.key,
@@ -31,6 +35,7 @@ class MessageBubble extends StatelessWidget {
     required this.isMe,
     required this.isDark,
     this.isConsecutive = false,
+    this.showTimestamp = true,
     this.accentColor = AppColors.primaryContainer,
     this.onReactionTap,
     this.onReactionLongPress,
@@ -39,6 +44,7 @@ class MessageBubble extends StatelessWidget {
     this.onReplyTap,
     this.currentUserId,
     this.otherUserName,
+    this.onViewOnceReveal,
   });
 
   bool get _isRead => message.readAt != null;
@@ -46,6 +52,8 @@ class MessageBubble extends StatelessWidget {
   bool get _isDeleted => message.deletedAt != null;
   bool get _hasReply => message.replyTo != null;
   bool get _hasReactions => message.reactions.isNotEmpty;
+  bool get _isViewOnceRevealed => message.viewOnce && message.readAt != null;
+  bool get _isViewOnceLocked => message.viewOnce && message.readAt == null;
 
   @override
   Widget build(BuildContext context) {
@@ -107,33 +115,34 @@ class MessageBubble extends StatelessWidget {
             ),
           ),
           // Time + read status row
-          Padding(
-            padding: EdgeInsets.only(
-              top: 2,
-              left: isMe ? 0 : 4,
-              right: isMe ? 4 : 0,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: isMe
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
-              children: [
-                Text(
-                  timeStr,
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 11,
-                    color: context.textSecondary,
+          if (showTimestamp)
+            Padding(
+              padding: EdgeInsets.only(
+                top: 2,
+                left: isMe ? 0 : 4,
+                right: isMe ? 4 : 0,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: isMe
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
+                children: [
+                  Text(
+                    timeStr,
+                    style: TextStyle(
+                      fontFamily: AppTypography.fontFamily,
+                      fontSize: 11,
+                      color: context.textSecondary,
+                    ),
                   ),
-                ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  _ReadStatusIcon(isRead: _isRead, isDelivered: _isDelivered),
+                  if (isMe) ...[
+                    const SizedBox(width: 4),
+                    _ReadStatusIcon(isRead: _isRead, isDelivered: _isDelivered),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
           // Reaction bar below bubble
           if (_hasReactions)
             ReactionBar(
@@ -159,6 +168,46 @@ class MessageBubble extends StatelessWidget {
       );
     }
 
+    // View-once locked bubble
+    if (_isViewOnceLocked) {
+      return GestureDetector(
+        onTap: onViewOnceReveal,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.visibility_off_outlined,
+                size: 24,
+                color: isMe
+                    ? AppColors.onPrimary.withValues(alpha: 0.7)
+                    : context.textSecondary,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Mensagem de\nvisualização única',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isMe
+                      ? AppColors.onPrimary.withValues(alpha: 0.7)
+                      : context.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // View-once already revealed
+    if (_isViewOnceRevealed) {
+      return _buildRevealedContent(context);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -179,6 +228,47 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  Widget _buildRevealedContent(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Reply preview
+        if (_hasReply) ...[
+          ReplyPreviewBanner(
+            replyTo: message.replyTo,
+            currentUserId: currentUserId,
+            otherUserName: otherUserName,
+            onTap: onReplyTap,
+          ),
+          const SizedBox(height: 6),
+        ],
+        _buildTypedContent(context),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.visibility_outlined,
+              size: 12,
+              color: context.textSecondary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Mensagem já visualizada',
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+                color: context.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildTypedContent(BuildContext context) {
     final type = message.type.toUpperCase();
 
@@ -187,12 +277,11 @@ class MessageBubble extends StatelessWidget {
       case 'GIF':
         return ImageMessageBubble(imageUrl: message.attachmentUrl, isMe: isMe);
       case 'LOCATION':
-        return LocationMessageBubble(
-          metadata: message.metadata?.toJson(),
-          isMe: isMe,
-        );
+        return LocationMessageBubble(metadata: message.metadata, isMe: isMe);
       case 'PRODUCT_CARD':
-        return _ProductCardContent(message: message);
+        return ProductCardBubble(message: message, isMe: isMe);
+      case 'OFFER':
+        return OfferMessageBubble(message: message, isMe: isMe);
       case 'TEXT':
       default:
         return Column(
@@ -218,69 +307,6 @@ class MessageBubble extends StatelessWidget {
           ],
         );
     }
-  }
-}
-
-class _ProductCardContent extends StatelessWidget {
-  final MessageEntity message;
-
-  const _ProductCardContent({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final meta = message.metadata?.toJson();
-    final title = meta?['title'] as String? ?? '';
-    final price = meta?['price'];
-    final priceStr = price != null
-        ? 'R\$ ${price is num ? (price / 100).toStringAsFixed(2) : price.toString()}'
-        : '';
-
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 220),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: context.isDark
-            ? AppColors.surfaceContainerDark
-            : AppColors.surfaceContainerLow,
-        border: Border.all(color: AppColors.outlineVariant, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (title.isNotEmpty)
-            Text(
-              title,
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: context.textPrimary,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          if (priceStr.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHighest,
-              ),
-              child: Text(
-                priceStr,
-                style: TextStyle(
-                  fontFamily: AppTypography.headlineFontFamily,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryContainer,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 }
 

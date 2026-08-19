@@ -9,10 +9,24 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 abstract class IChatRepository {
   Future<Either<Failure, List<ChatEntity>>> getChats({String? query});
   Future<Either<Failure, List<ChatEntity>>> getArchivedChats();
+  Future<
+    Either<
+      Failure,
+      ({
+        List<MessageEntity> messages,
+        String threadType,
+        String? otherUserId,
+        ConversationPreference? preference,
+      })
+    >
+  >
+  getConversation(String conversationId);
+
   Future<Either<Failure, void>> sendMessage(
     String chatId,
     String message, {
     String? replyToId,
+    bool viewOnce = false,
   });
   Future<Either<Failure, MessageEntity>> sendRichMessage({
     required String conversationId,
@@ -21,6 +35,7 @@ abstract class IChatRepository {
     String? attachmentUrl,
     String? replyToId,
     Map<String, dynamic>? metadata,
+    bool viewOnce = false,
   });
   Future<Either<Failure, void>> deleteMessage(
     String conversationId,
@@ -48,4 +63,13 @@ abstract class IChatRepository {
     ChatThreadType type,
     String base64DataUri,
   );
+
+  /// Fetch paginated media messages of [type] from a conversation.
+  Future<Either<Failure, ({List<MessageEntity> messages, String? nextCursor})>>
+  getConversationMedia(
+    String conversationId, {
+    String type = 'IMAGE',
+    int limit = 50,
+    String? cursor,
+  });
 }

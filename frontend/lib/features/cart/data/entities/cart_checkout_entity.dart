@@ -11,8 +11,7 @@ abstract class CartCheckoutItemEntity with _$CartCheckoutItemEntity {
     required String productTitle,
     @Default(1) int quantity,
     @Default(0) int amount,
-    @Default('') String pixQrCode,
-    @Default('') String pixImage,
+    @Default('') String checkoutUrl,
     required DateTime expiresAt,
   }) = _CartCheckoutItemEntity;
 
@@ -23,7 +22,7 @@ abstract class CartCheckoutItemEntity with _$CartCheckoutItemEntity {
 @freezed
 abstract class CartCheckoutEntity with _$CartCheckoutEntity {
   const factory CartCheckoutEntity({
-    required List<CartCheckoutItemEntity> items,
+    @Default([]) List<CartCheckoutItemEntity> items,
     @Default(0) int totalOrders,
     @Default(0) int totalAmount,
   }) = _CartCheckoutEntity;

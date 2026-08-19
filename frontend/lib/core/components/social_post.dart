@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/components/post_actions.dart';
@@ -69,6 +70,18 @@ class _SocialPostState extends State<SocialPost> {
   bool _isLikeLoading = false;
   bool _isImagePressed = false;
   bool _isCardPressed = false;
+  bool _showHeartBurst = false;
+
+  void _triggerDoubleTapLike() {
+    HapticFeedback.mediumImpact();
+    if (!widget.isLiked) {
+      _handleLike();
+    }
+    setState(() => _showHeartBurst = true);
+    Future.delayed(const Duration(milliseconds: 650), () {
+      if (mounted) setState(() => _showHeartBurst = false);
+    });
+  }
 
   void _handleLike() async {
     if (_isLikeLoading) return;
@@ -176,6 +189,7 @@ class _SocialPostState extends State<SocialPost> {
             children: [
               GestureDetector(
                 onTap: _openFullScreenImage,
+                onDoubleTap: _triggerDoubleTapLike,
                 onLongPressStart: (_) => setState(() => _isImagePressed = true),
                 onLongPressEnd: (_) => setState(() => _isImagePressed = false),
                 child: AnimatedContainer(
@@ -188,12 +202,15 @@ class _SocialPostState extends State<SocialPost> {
                       : Matrix4.identity(),
                   child: Container(
                     color: context.surfaceMidColor,
-                    child: Image.network(
-                      widget.imageUrl!,
+                    child: CachedNetworkImage(
+                      imageUrl: widget.imageUrl!,
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      memCacheWidth: 1080,
+                      placeholder: (context, url) =>
+                          Container(color: context.surfaceMidColor),
+                      errorWidget: (context, error, stackTrace) => Container(
                         color: context.surfaceMidColor,
                         child: Icon(
                           Icons.image,
@@ -205,6 +222,34 @@ class _SocialPostState extends State<SocialPost> {
                   ),
                 ),
               ),
+              if (_showHeartBurst)
+                Center(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.3, end: 1.2),
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.elasticOut,
+                    builder: (context, scale, child) {
+                      return Transform.scale(
+                        scale: scale,
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.black45,
+                            border: Border.all(
+                              color: const Color(0xFF8A1083),
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.favorite,
+                            color: Color(0xFF8A1083),
+                            size: 64,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               if (hasPrice)
                 Positioned(
                   bottom: 12,
@@ -265,10 +310,17 @@ class _SocialPostState extends State<SocialPost> {
               child:
                   widget.userAvatarUrl != null &&
                       widget.userAvatarUrl!.isNotEmpty
-                  ? Image.network(
-                      widget.userAvatarUrl!,
+                  ? CachedNetworkImage(
+                      imageUrl: widget.userAvatarUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const Icon(
+                      memCacheWidth: 120,
+                      memCacheHeight: 120,
+                      placeholder: (_, _) => const Icon(
+                        Icons.person,
+                        color: AppColors.onPrimary,
+                        size: 20,
+                      ),
+                      errorWidget: (_, _, _) => const Icon(
                         Icons.person,
                         color: AppColors.onPrimary,
                         size: 20,

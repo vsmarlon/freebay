@@ -1,4 +1,4 @@
-import 'package:freebay/shared/errors/failures.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';

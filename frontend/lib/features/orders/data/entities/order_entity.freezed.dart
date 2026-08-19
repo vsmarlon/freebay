@@ -287,7 +287,7 @@ as bool,
 /// @nodoc
 mixin _$OrderEntity {
 
- String get id; String get buyerId; String get sellerId; String get productId; int get amount; int get platformFee; int get sellerAmount;@JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson) OrderStatus get status;@JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson) EscrowStatus get escrowStatus; DateTime get createdAt; DateTime? get deliveryConfirmedAt; ProductEntity? get product; OrderUserInfo? get buyer; OrderUserInfo? get seller;
+ String get id; String get buyerId; String get sellerId; String get productId; int get amount; int get platformFee; int get sellerAmount;@JsonKey(fromJson: _orderStatusFromJson) OrderStatus get status;@JsonKey(fromJson: _escrowStatusFromJson) EscrowStatus get escrowStatus; DateTime get createdAt; DateTime? get deliveryConfirmedAt; ProductEntity? get product; OrderUserInfo? get buyer; OrderUserInfo? get seller;
 /// Create a copy of OrderEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -320,7 +320,7 @@ abstract mixin class $OrderEntityCopyWith<$Res>  {
   factory $OrderEntityCopyWith(OrderEntity value, $Res Function(OrderEntity) _then) = _$OrderEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String buyerId, String sellerId, String productId, int amount, int platformFee, int sellerAmount,@JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson) OrderStatus status,@JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson) EscrowStatus escrowStatus, DateTime createdAt, DateTime? deliveryConfirmedAt, ProductEntity? product, OrderUserInfo? buyer, OrderUserInfo? seller
+ String id, String buyerId, String sellerId, String productId, int amount, int platformFee, int sellerAmount,@JsonKey(fromJson: _orderStatusFromJson) OrderStatus status,@JsonKey(fromJson: _escrowStatusFromJson) EscrowStatus escrowStatus, DateTime createdAt, DateTime? deliveryConfirmedAt, ProductEntity? product, OrderUserInfo? buyer, OrderUserInfo? seller
 });
 
 
@@ -474,7 +474,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String buyerId,  String sellerId,  String productId,  int amount,  int platformFee,  int sellerAmount, @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson)  OrderStatus status, @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson)  EscrowStatus escrowStatus,  DateTime createdAt,  DateTime? deliveryConfirmedAt,  ProductEntity? product,  OrderUserInfo? buyer,  OrderUserInfo? seller)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String buyerId,  String sellerId,  String productId,  int amount,  int platformFee,  int sellerAmount, @JsonKey(fromJson: _orderStatusFromJson)  OrderStatus status, @JsonKey(fromJson: _escrowStatusFromJson)  EscrowStatus escrowStatus,  DateTime createdAt,  DateTime? deliveryConfirmedAt,  ProductEntity? product,  OrderUserInfo? buyer,  OrderUserInfo? seller)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OrderEntity() when $default != null:
 return $default(_that.id,_that.buyerId,_that.sellerId,_that.productId,_that.amount,_that.platformFee,_that.sellerAmount,_that.status,_that.escrowStatus,_that.createdAt,_that.deliveryConfirmedAt,_that.product,_that.buyer,_that.seller);case _:
@@ -495,7 +495,7 @@ return $default(_that.id,_that.buyerId,_that.sellerId,_that.productId,_that.amou
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String buyerId,  String sellerId,  String productId,  int amount,  int platformFee,  int sellerAmount, @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson)  OrderStatus status, @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson)  EscrowStatus escrowStatus,  DateTime createdAt,  DateTime? deliveryConfirmedAt,  ProductEntity? product,  OrderUserInfo? buyer,  OrderUserInfo? seller)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String buyerId,  String sellerId,  String productId,  int amount,  int platformFee,  int sellerAmount, @JsonKey(fromJson: _orderStatusFromJson)  OrderStatus status, @JsonKey(fromJson: _escrowStatusFromJson)  EscrowStatus escrowStatus,  DateTime createdAt,  DateTime? deliveryConfirmedAt,  ProductEntity? product,  OrderUserInfo? buyer,  OrderUserInfo? seller)  $default,) {final _that = this;
 switch (_that) {
 case _OrderEntity():
 return $default(_that.id,_that.buyerId,_that.sellerId,_that.productId,_that.amount,_that.platformFee,_that.sellerAmount,_that.status,_that.escrowStatus,_that.createdAt,_that.deliveryConfirmedAt,_that.product,_that.buyer,_that.seller);case _:
@@ -515,7 +515,7 @@ return $default(_that.id,_that.buyerId,_that.sellerId,_that.productId,_that.amou
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String buyerId,  String sellerId,  String productId,  int amount,  int platformFee,  int sellerAmount, @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson)  OrderStatus status, @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson)  EscrowStatus escrowStatus,  DateTime createdAt,  DateTime? deliveryConfirmedAt,  ProductEntity? product,  OrderUserInfo? buyer,  OrderUserInfo? seller)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String buyerId,  String sellerId,  String productId,  int amount,  int platformFee,  int sellerAmount, @JsonKey(fromJson: _orderStatusFromJson)  OrderStatus status, @JsonKey(fromJson: _escrowStatusFromJson)  EscrowStatus escrowStatus,  DateTime createdAt,  DateTime? deliveryConfirmedAt,  ProductEntity? product,  OrderUserInfo? buyer,  OrderUserInfo? seller)?  $default,) {final _that = this;
 switch (_that) {
 case _OrderEntity() when $default != null:
 return $default(_that.id,_that.buyerId,_that.sellerId,_that.productId,_that.amount,_that.platformFee,_that.sellerAmount,_that.status,_that.escrowStatus,_that.createdAt,_that.deliveryConfirmedAt,_that.product,_that.buyer,_that.seller);case _:
@@ -530,7 +530,7 @@ return $default(_that.id,_that.buyerId,_that.sellerId,_that.productId,_that.amou
 @JsonSerializable()
 
 class _OrderEntity extends OrderEntity {
-  const _OrderEntity({required this.id, required this.buyerId, required this.sellerId, required this.productId, this.amount = 0, this.platformFee = 0, this.sellerAmount = 0, @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson) required this.status, @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson) required this.escrowStatus, required this.createdAt, this.deliveryConfirmedAt, this.product, this.buyer, this.seller}): super._();
+  const _OrderEntity({required this.id, required this.buyerId, required this.sellerId, required this.productId, this.amount = 0, this.platformFee = 0, this.sellerAmount = 0, @JsonKey(fromJson: _orderStatusFromJson) required this.status, @JsonKey(fromJson: _escrowStatusFromJson) required this.escrowStatus, required this.createdAt, this.deliveryConfirmedAt, this.product, this.buyer, this.seller}): super._();
   factory _OrderEntity.fromJson(Map<String, dynamic> json) => _$OrderEntityFromJson(json);
 
 @override final  String id;
@@ -540,8 +540,8 @@ class _OrderEntity extends OrderEntity {
 @override@JsonKey() final  int amount;
 @override@JsonKey() final  int platformFee;
 @override@JsonKey() final  int sellerAmount;
-@override@JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson) final  OrderStatus status;
-@override@JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson) final  EscrowStatus escrowStatus;
+@override@JsonKey(fromJson: _orderStatusFromJson) final  OrderStatus status;
+@override@JsonKey(fromJson: _escrowStatusFromJson) final  EscrowStatus escrowStatus;
 @override final  DateTime createdAt;
 @override final  DateTime? deliveryConfirmedAt;
 @override final  ProductEntity? product;
@@ -581,7 +581,7 @@ abstract mixin class _$OrderEntityCopyWith<$Res> implements $OrderEntityCopyWith
   factory _$OrderEntityCopyWith(_OrderEntity value, $Res Function(_OrderEntity) _then) = __$OrderEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String buyerId, String sellerId, String productId, int amount, int platformFee, int sellerAmount,@JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson) OrderStatus status,@JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson) EscrowStatus escrowStatus, DateTime createdAt, DateTime? deliveryConfirmedAt, ProductEntity? product, OrderUserInfo? buyer, OrderUserInfo? seller
+ String id, String buyerId, String sellerId, String productId, int amount, int platformFee, int sellerAmount,@JsonKey(fromJson: _orderStatusFromJson) OrderStatus status,@JsonKey(fromJson: _escrowStatusFromJson) EscrowStatus escrowStatus, DateTime createdAt, DateTime? deliveryConfirmedAt, ProductEntity? product, OrderUserInfo? buyer, OrderUserInfo? seller
 });
 
 

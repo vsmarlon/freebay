@@ -3,17 +3,22 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/events/chat_event.dart';
+import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
 
 /// A pending message that was queued while the socket was offline.
 class _OutboxEntry {
   final String conversationId;
   final String content;
   final String? replyToId;
+  final bool viewOnce;
 
   const _OutboxEntry({
     required this.conversationId,
     required this.content,
     this.replyToId,
+    this.viewOnce = false,
   });
 
   Map<String, dynamic> toPayload() {
@@ -21,6 +26,7 @@ class _OutboxEntry {
       'conversationId': conversationId,
       'content': content,
       if (replyToId != null) 'replyToId': replyToId,
+      if (viewOnce) 'viewOnce': true,
     };
   }
 }
@@ -39,6 +45,7 @@ class ChatSocketService {
   final _typingController = StreamController<Map<String, dynamic>>.broadcast();
   final _presenceController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _eventsController = StreamController<ChatEvent>.broadcast();
 
   Timer? _reconnectTimer;
 
@@ -50,6 +57,7 @@ class ChatSocketService {
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
   Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
   Stream<Map<String, dynamic>> get presenceStream => _presenceController.stream;
+  Stream<ChatEvent> get events => _eventsController.stream;
 
   String get _wsUrl {
     final apiUrl = AppConfig.apiBaseUrl;
@@ -96,26 +104,64 @@ class ChatSocketService {
       ..on('new_message', (data) {
         if (data is Map<String, dynamic>) {
           _messageController.add(data);
+          _eventsController.add(NewMessageEvent(MessageEntity.fromJson(data)));
+        }
+      })
+      ..on('reaction_updated', (data) {
+        if (data is Map<String, dynamic>) {
+          final messageId = data['messageId'] as String? ?? '';
+          final reactions =
+              (data['reactions'] as List?)
+                  ?.map(
+                    (e) => MessageReactionEntity.fromJson(
+                      e as Map<String, dynamic>,
+                    ),
+                  )
+                  .toList() ??
+              [];
+          _eventsController.add(ReactionUpdatedEvent(messageId, reactions));
+        }
+      })
+      ..on('message_deleted', (data) {
+        if (data is Map<String, dynamic>) {
+          final messageId = data['messageId'] as String? ?? '';
+          _eventsController.add(MessageDeletedEvent(messageId));
         }
       })
       ..on('user_typing', (data) {
         if (data is Map<String, dynamic>) {
           _typingController.add({...data, 'typing': true});
+          final userId = data['userId'] as String?;
+          if (userId != null) {
+            _eventsController.add(UserTypingEvent(userId));
+          }
         }
       })
       ..on('user_stopped_typing', (data) {
         if (data is Map<String, dynamic>) {
           _typingController.add({...data, 'typing': false});
+          final userId = data['userId'] as String?;
+          if (userId != null) {
+            _eventsController.add(UserStoppedTypingEvent(userId));
+          }
         }
       })
       ..on('user_online', (data) {
         if (data is Map<String, dynamic>) {
           _presenceController.add({...data, 'online': true});
+          final userId = data['userId'] as String?;
+          if (userId != null) {
+            _eventsController.add(UserOnlineEvent(userId));
+          }
         }
       })
       ..on('user_offline', (data) {
         if (data is Map<String, dynamic>) {
           _presenceController.add({...data, 'online': false});
+          final userId = data['userId'] as String?;
+          if (userId != null) {
+            _eventsController.add(UserOfflineEvent(userId));
+          }
         }
       });
 
@@ -177,11 +223,17 @@ class ChatSocketService {
   }
 
   /// Sends a message immediately when connected; queues it otherwise.
-  void sendMessage(String conversationId, String content, {String? replyToId}) {
+  void sendMessage(
+    String conversationId,
+    String content, {
+    String? replyToId,
+    bool viewOnce = false,
+  }) {
     final entry = _OutboxEntry(
       conversationId: conversationId,
       content: content,
       replyToId: replyToId,
+      viewOnce: viewOnce,
     );
     if (_socket?.connected == true) {
       _socket!.emit('send_message', entry.toPayload());
@@ -208,5 +260,6 @@ class ChatSocketService {
     _messageController.close();
     _typingController.close();
     _presenceController.close();
+    _eventsController.close();
   }
 }

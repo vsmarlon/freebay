@@ -1,32 +1,18 @@
 import 'package:freebay/shared/either/either.dart';
-import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/domain/repositories/i_category_repository.dart';
 
-class CategoryRepository implements ICategoryRepository {
-  @override
-  Future<Either<Failure, List<CategoryEntity>>> getCategories() async {
-    try {
-      final response = await HttpClient.instance.get('/categories');
+class CategoryRepository extends BaseHttpRepository
+    implements ICategoryRepository {
+  CategoryRepository({super.client});
 
-      if (response.statusCode == 200 && response.data != null) {
-        final payload = response.data as Map<String, dynamic>;
-        final categoriesData =
-            payload['categories'] as List<dynamic>? ??
-            ((payload['data'] as Map<String, dynamic>?)?['categories']
-                    as List<dynamic>? ??
-                <dynamic>[]);
-        final categories = categoriesData
-            .map(
-              (json) => CategoryEntity.fromJson(json as Map<String, dynamic>),
-            )
-            .toList();
-        return Right(categories);
-      }
-      return const Left(ServerFailure('Erro ao carregar categorias'));
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
+  @override
+  Future<Either<Failure, List<CategoryEntity>>> getCategories() =>
+      safeGetList<CategoryEntity>(
+        '/categories',
+        listKey: 'data.categories',
+        fromJson: CategoryEntity.fromJson,
+      );
 }

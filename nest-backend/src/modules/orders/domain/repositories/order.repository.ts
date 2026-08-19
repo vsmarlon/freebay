@@ -1,38 +1,13 @@
 import { RepositoryResponse } from '@/shared/core/either';
 import { Prisma } from '@prisma/client';
-import { OrderFullPayload, OrderProductPayload } from '../../types/order.types';
-
-export interface CreateOrderTxData {
-  buyerId: string;
-  sellerId: string;
-  productId: string;
-  amount: number;
-  platformFee: number;
-  sellerAmount: number;
-}
-
-export interface ConfirmDeliveryData {
-  orderId: string;
-  sellerId: string;
-  sellerAmount: number;
-}
-
-export interface CancelOrderTxData {
-  orderId: string;
-  productId: string;
-  buyerId: string;
-  amount: number;
-  status: string;
-  quantity: number;
-  sellerId: string;
-  sellerAmount: number;
-}
-
-export interface ProductForOrder {
-  id: string;
-  sellerId: string;
-  price: number;
-}
+import {
+  OrderFullPayload,
+  OrderProductPayload,
+  CreateOrderTxData,
+  ConfirmDeliveryData,
+  CancelOrderTxData,
+  ProductForOrder,
+} from '../../types/order.types';
 
 export abstract class OrderRepository {
   abstract findById(id: string): RepositoryResponse<OrderFullPayload | null>;

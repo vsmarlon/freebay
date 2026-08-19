@@ -98,12 +98,11 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(authControllerProvider).valueOrNull;
+    final currentUser = ref.watch(authControllerProvider).value;
     final isOwnCard = currentUser != null && currentUser.id == widget.user.id;
     final followStatus = ref.watch(followStatusProvider(widget.user.id));
     final isFollowing =
-        _isFollowingOverride ??
-        (followStatus.valueOrNull?.isFollowing ?? false);
+        _isFollowingOverride ?? (followStatus.value?.isFollowing ?? false);
 
     return InkWell(
       onTap: () => context.push('/user/${widget.user.id}'),
@@ -193,27 +192,29 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
             ),
             if (!isOwnCard) ...[
               Spacing.hSm,
-              AppButton(
-                label: isFollowing ? 'Seguindo' : 'Seguir',
-                variant: isFollowing
-                    ? AppButtonVariant.ghost
-                    : AppButtonVariant.primary,
-                size: AppButtonSize.compact,
-                isLoading: _isLoading || followStatus.isLoading,
-                onPressed: () async {
-                  setState(() => _isLoading = true);
-                  if (isFollowing) {
-                    await widget.onUnfollow?.call(widget.user.id);
-                  } else {
-                    await widget.onFollow?.call(widget.user.id);
-                  }
-                  ref.invalidate(followStatusProvider(widget.user.id));
-                  setState(() {
-                    _isFollowingOverride = !isFollowing;
-                    _isLoading = false;
-                  });
-                },
-              ),
+              followStatus.isLoading && _isFollowingOverride == null
+                  ? const ShimmerBlock(width: 80, height: 32)
+                  : AppButton(
+                      label: isFollowing ? 'Seguindo' : 'Seguir',
+                      variant: isFollowing
+                          ? AppButtonVariant.ghost
+                          : AppButtonVariant.primary,
+                      size: AppButtonSize.compact,
+                      isLoading: _isLoading,
+                      onPressed: () async {
+                        setState(() => _isLoading = true);
+                        if (isFollowing) {
+                          await widget.onUnfollow?.call(widget.user.id);
+                        } else {
+                          await widget.onFollow?.call(widget.user.id);
+                        }
+                        ref.invalidate(followStatusProvider(widget.user.id));
+                        setState(() {
+                          _isFollowingOverride = !isFollowing;
+                          _isLoading = false;
+                        });
+                      },
+                    ),
             ],
           ],
         ),

@@ -59,6 +59,14 @@ class UnknownFailure extends Failure {
   ]);
 }
 
+/// Biometric prompt was cancelled by the user or the device.
+/// Credentials are NOT cleared — the user can retry.
+class BiometryCancelledFailure extends Failure {
+  const BiometryCancelledFailure([
+    super.message = 'Autenticação biométrica cancelada.',
+  ]);
+}
+
 /// Converts DioException to user-friendly Failure
 Failure mapDioExceptionToFailure(DioException e) {
   switch (e.type) {

@@ -7,6 +7,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class ArchivedChatsPage extends ConsumerWidget {
@@ -22,23 +23,9 @@ class ArchivedChatsPage extends ConsumerWidget {
         children: [
           PageHeader(
             text: 'ARQUIVADAS',
-            leading: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => context.pop(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: context.borderColor, width: 2),
-                  ),
-                  child: Icon(
-                    Icons.arrow_back,
-                    color: context.textPrimary,
-                    size: 20,
-                  ),
-                ),
-              ),
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              onTap: () => context.pop(),
             ),
           ),
           Expanded(

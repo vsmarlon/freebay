@@ -29,10 +29,10 @@ Map<String, dynamic> _$ChatEntityToJson(_ChatEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
       'threadType': _threadTypeToJson(instance.threadType),
-      'otherUser': instance.otherUser,
-      'lastMessage': instance.lastMessageInfo,
+      'otherUser': instance.otherUser.toJson(),
+      'lastMessage': instance.lastMessageInfo?.toJson(),
       'createdAt': instance.createdAt.toIso8601String(),
-      'preference': instance.preference,
-      'orderInfo': instance.orderInfo,
+      'preference': instance.preference?.toJson(),
+      'orderInfo': instance.orderInfo?.toJson(),
       'unreadCount': instance.unreadCount,
     };

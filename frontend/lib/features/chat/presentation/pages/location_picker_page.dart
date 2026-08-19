@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 
@@ -21,8 +23,11 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
   bool _isLoading = true;
   String? _errorMsg;
 
-  static const _initialCenter = LatLng(-15.7801, -47.9292); // Brasilia fallback
-  static const _initialZoom = 15.0;
+  static const _initialCenter = LatLng(
+    -23.5505,
+    -46.6333,
+  ); // São Paulo fallback
+  static const _initialZoom = 16.0;
 
   @override
   void initState() {
@@ -36,7 +41,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
       if (!status.isGranted && !status.isLimited) {
         if (mounted) {
           setState(() {
-            _errorMsg = 'Permissão de localização negada';
+            _errorMsg =
+                'Permissão de localização negada. Toque no mapa para selecionar o ponto.';
             _selectedPoint = _initialCenter;
             _isLoading = false;
           });
@@ -44,14 +50,34 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
+      } catch (_) {
+        position = await Geolocator.getLastKnownPosition();
+      }
+
       if (!mounted) return;
-      final point = LatLng(position.latitude, position.longitude);
-      setState(() {
-        _selectedPoint = point;
-        _isLoading = false;
-      });
-      _mapController.move(point, _initialZoom);
+
+      if (position != null) {
+        final point = LatLng(position.latitude, position.longitude);
+        setState(() {
+          _selectedPoint = point;
+          _isLoading = false;
+          _errorMsg = null;
+        });
+        _mapController.move(point, _initialZoom);
+      } else {
+        setState(() {
+          _selectedPoint = _initialCenter;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -66,13 +92,45 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
     setState(() => _selectedPoint = latLng);
   }
 
-  void _sendLocation() {
+  Future<void> _sendLocation() async {
     if (_selectedPoint == null) return;
-    Navigator.pop(context, {
-      'lat': _selectedPoint!.latitude,
-      'lng': _selectedPoint!.longitude,
-      'address': null,
-    });
+
+    setState(() => _isLoading = true);
+    String? address;
+    try {
+      final response = await Dio().get(
+        'https://photon.komoot.io/reverse',
+        queryParameters: {
+          'lat': _selectedPoint!.latitude,
+          'lon': _selectedPoint!.longitude,
+          'lang': 'pt',
+        },
+      );
+      if (response.statusCode == 200) {
+        final features = response.data['features'] as List?;
+        final props =
+            features?.firstOrNull?['properties'] as Map<String, dynamic>?;
+        if (props != null) {
+          address = [
+            'name',
+            'street',
+            'city',
+            'town',
+            'state',
+          ].map((k) => props[k] as String?).nonNulls.toSet().join(', ');
+        }
+      }
+    } catch (e) {
+      debugPrint('Reverse geocoding failed: $e');
+    }
+
+    if (mounted) {
+      Navigator.pop(context, {
+        'lat': _selectedPoint!.latitude,
+        'lng': _selectedPoint!.longitude,
+        'address': address,
+      });
+    }
   }
 
   @override
@@ -85,19 +143,19 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         children: [
           PageHeader(
             text: 'LOCALIZAÇÃO',
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: context.textPrimary),
-              onPressed: () => Navigator.pop(context),
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
+              onTap: () => Navigator.pop(context),
             ),
           ),
           if (_errorMsg != null)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: AppColors.warning.withValues(alpha: 0.15),
+              color: AppColors.warning.withAlpha(40),
               child: Text(
                 _errorMsg!,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.warning,
                   fontWeight: FontWeight.w600,
@@ -106,7 +164,11 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
             ),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryContainer,
+                    ),
+                  )
                 : Stack(
                     children: [
                       FlutterMap(
@@ -138,6 +200,15 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                               ],
                             ),
                         ],
+                      ),
+                      Positioned(
+                        right: 16,
+                        bottom: 16,
+                        child: BrutalistIconButton(
+                          icon: Icons.my_location,
+                          size: 48,
+                          onTap: _determinePosition,
+                        ),
                       ),
                     ],
                   ),

@@ -42,7 +42,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   Widget build(BuildContext context) {
     super.build(context);
     final authState = ref.watch(authControllerProvider);
-    final isGuest = authState.valueOrNull?.isGuest ?? false;
+    final isGuest = authState.value?.isGuest ?? false;
 
     if (isGuest) {
       return const GuestProfileView();
@@ -80,33 +80,38 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 return AppRefreshIndicator(
                   onRefresh: () async =>
                       ref.refresh(profileFutureProvider('me').future),
-                  child: SingleChildScrollView(
+                  child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        statsAsync.when(
-                          data: (stats) => ProfileHeader(
-                            user: u,
-                            followersCount: stats.followersCount,
-                            followingCount: stats.followingCount,
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverToBoxAdapter(
+                          child: statsAsync.when(
+                            data: (stats) => ProfileHeader(
+                              user: u,
+                              followersCount: stats.followersCount,
+                              followingCount: stats.followingCount,
+                            ),
+                            loading: () => ProfileHeader(user: u),
+                            error: (_, _) => ProfileHeader(user: u),
                           ),
-                          loading: () => ProfileHeader(user: u),
-                          error: (_, _) => ProfileHeader(user: u),
                         ),
-                        Spacing.vMd,
-                        Container(
-                          width: double.infinity,
-                          height: 1,
-                          color: context.isDark
-                              ? AppColors.outlineVariant.withAlpha(40)
-                              : AppColors.surfaceContainerHigh,
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverToBoxAdapter(
+                          child: Container(
+                            width: double.infinity,
+                            height: 1,
+                            color: context.isDark
+                                ? AppColors.outlineVariant.withAlpha(40)
+                                : AppColors.surfaceContainerHigh,
+                          ),
                         ),
-                        const SuggestionsSection(),
-                        ProfileTabs(user: u),
-                      ],
-                    ),
+                      ),
+                      const SuggestionsSection(),
+                      SliverToBoxAdapter(child: ProfileTabs(user: u)),
+                    ],
                   ),
                 );
               },

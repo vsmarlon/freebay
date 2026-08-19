@@ -1,7 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:freebay_design_system/tokens/app_typography.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/full_screen_image_viewer.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -12,7 +13,10 @@ import 'package:freebay/features/favorites/presentation/providers/favorites_prov
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/product_detail_bottom_sheet.dart';
+import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
+import 'package:freebay/core/components/user_avatar.dart';
+import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class ProductDetailPage extends ConsumerWidget {
   final String productId;
@@ -27,8 +31,33 @@ class ProductDetailPage extends ConsumerWidget {
       backgroundColor: context.bgColor,
       body: productAsync.when(
         data: (product) => _buildContent(context, ref, product),
-        loading: () => _buildLoadingSkeleton(context),
-        error: (err, stack) => _buildError(context, ref, err, stack),
+        loading: () => const SkeletonPage(
+          child: Column(
+            children: [
+              SizedBox(height: 16),
+              ShimmerBlock(height: 200),
+              SizedBox(height: 16),
+              ShimmerBlock(height: 40),
+            ],
+          ),
+        ),
+        error: (err, _) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Erro ao carregar produto',
+                style: TextStyle(color: context.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              AppButton(
+                label: 'TENTAR NOVAMENTE',
+                size: AppButtonSize.compact,
+                onPressed: () => ref.invalidate(productByIdProvider(productId)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -38,159 +67,81 @@ class ProductDetailPage extends ConsumerWidget {
     WidgetRef ref,
     ProductEntity product,
   ) {
-    final isDark = context.isDark;
     final priceFormatted = CurrencyUtils.formatCents(product.price);
-    final conditionLabel = product.condition == 'NEW' ? 'NOVO' : 'USADO';
-    final favoriteAsync = ref.watch(isFavoritedProvider(product.id));
-    final favoritesState = ref.watch(favoritesProvider);
     final isFavorited =
-        favoritesState.isFavorited(product.id) ||
-        (favoriteAsync.value ?? false);
+        ref.watch(isFavoritedProvider(product.id)).value ??
+        ref.watch(favoritesProvider).isFavorited(product.id);
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
+      backgroundColor: context.bgColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 300,
+            expandedHeight: 280,
             pinned: true,
-            backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
+            backgroundColor: context.surfaceColor,
             flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
+              background:
                   product.imageUrl != null && product.imageUrl!.isNotEmpty
-                      ? GestureDetector(
-                          onTap: () =>
-                              showFullScreenImage(context, product.imageUrl!),
-                          child: Image.network(
-                            product.imageUrl!,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primaryPurpleLight,
-                                AppColors.accentGreenLight,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                          ),
+                  ? GestureDetector(
+                      onTap: () =>
+                          showFullScreenImage(context, product.imageUrl!),
+                      child: CachedNetworkImage(
+                        imageUrl: product.imageUrl!,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 1080,
+                        placeholder: (context, url) =>
+                            Container(color: context.surfaceMidColor),
+                        errorWidget: (context, url, error) => Container(
+                          color: context.surfaceMidColor,
                           child: const Center(
                             child: Icon(
                               Icons.image,
                               size: 64,
-                              color: Colors.white54,
+                              color: AppColors.mediumGray,
                             ),
                           ),
                         ),
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.black.withValues(alpha: 0.54),
-                        borderRadius: BorderRadius.zero,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.photo_library,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            product.imageUrl != null &&
-                                    product.imageUrl!.isNotEmpty
-                                ? '1'
-                                : '0',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ],
+                    )
+                  : Container(
+                      color: context.surfaceMidColor,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image,
+                          size: 64,
+                          color: AppColors.mediumGray,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
             ),
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
               onTap: () => Navigator.pop(context),
-              iconColor: isDark ? Colors.white : Colors.black,
-              borderColor: isDark ? Colors.white : Colors.black,
+              iconColor: context.textPrimary,
+              borderColor: context.borderColor,
             ),
             actions: [
               IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.black38 : Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.share,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
+                icon: Icon(
+                  isFavorited ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorited ? AppColors.error : context.textPrimary,
                 ),
                 onPressed: () async {
-                  final url = 'https://freebay.app/products/${product.id}';
-                  await SharePlus.instance.share(
-                    ShareParams(
-                      text:
-                          'Confira este produto no FreeBay: ${product.title}\n$url',
-                      subject: product.title,
-                    ),
-                  );
+                  await ref
+                      .read(favoritesProvider.notifier)
+                      .toggleFavorite(product.id);
+                  ref.invalidate(isFavoritedProvider(product.id));
                 },
               ),
               IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.black38 : Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isFavorited ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorited
-                        ? AppColors.error
-                        : (isDark ? Colors.white : Colors.black),
+                icon: Icon(Icons.share, color: context.textPrimary),
+                onPressed: () => SharePlus.instance.share(
+                  ShareParams(
+                    text:
+                        'Confira: ${product.title}\nhttps://freebay.app/products/${product.id}',
                   ),
                 ),
-                onPressed: () async {
-                  final ok = await ref
-                      .read(favoritesProvider.notifier)
-                      .toggleFavorite(product.id);
-                  if (!context.mounted) {
-                    return;
-                  }
-                  if (!ok) {
-                    AppSnackbar.error(
-                      context,
-                      'Não foi possível atualizar favoritos',
-                    );
-                    return;
-                  }
-                  final nowFavorited = ref
-                      .read(favoritesProvider)
-                      .isFavorited(product.id);
-                  AppSnackbar.success(
-                    context,
-                    nowFavorited
-                        ? 'Produto adicionado aos favoritos'
-                        : 'Produto removido dos favoritos',
-                  );
-                },
               ),
             ],
           ),
@@ -204,157 +155,175 @@ class ProductDetailPage extends ConsumerWidget {
                     product.title,
                     style: TextStyle(
                       fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'SpaceGrotesk',
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      fontWeight: FontWeight.w900,
+                      color: context.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vSm,
                   Row(
                     children: [
+                      Text(
+                        priceFormatted,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primaryContainer,
+                        ),
+                      ),
+                      const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.accentGreen.withAlpha(25),
-                          borderRadius: BorderRadius.zero,
+                          color: product.condition.toUpperCase() == 'NEW'
+                              ? const Color(0xFF8A1083).withAlpha(30)
+                              : context.surfaceMidColor,
+                          border: Border.all(
+                            color: product.condition.toUpperCase() == 'NEW'
+                                ? const Color(0xFF8A1083)
+                                : context.borderColor,
+                            width: 1.5,
+                          ),
                         ),
                         child: Text(
-                          conditionLabel,
-                          style: const TextStyle(
-                            color: AppColors.accentGreen,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                          product.condition.toUpperCase() == 'NEW'
+                              ? 'NOVO'
+                              : 'USADO',
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: product.condition.toUpperCase() == 'NEW'
+                                ? const Color(0xFF8A1083)
+                                : context.textPrimary,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    priceFormatted,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'SpaceGrotesk',
-                      color: isDark
-                          ? AppColors.accentGreenLight
-                          : AppColors.accentGreen,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Pagamento via PIX com custódia até a confirmação do pedido.',
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.mediumGray
-                          : AppColors.mediumGray,
-                      fontSize: 12,
-                    ),
-                  ),
-                  _buildStockIndicator(product, isDark),
                   Spacing.vMd,
-                  const SizedBox(height: 24),
-                  Text(
-                    'Descrição',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'SpaceGrotesk',
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                  // Escrow Trust Banner
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentAmber.withAlpha(20),
+                      border: Border.all(
+                        color: AppColors.accentAmber,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.shield_outlined,
+                          color: AppColors.accentAmber,
+                          size: 20,
+                        ),
+                        Spacing.hSm,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'CUSTÓDIA FREEBAY GARANTIDA',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.accentAmber,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Seu pagamento só é liberado para o vendedor após você receber o produto e confirmar a entrega.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: context.textPrimary,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  Spacing.vMd,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor,
+                      border: Border.all(
+                        color: context.borderColor,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        UserAvatar(
+                          imageUrl: product.seller?.avatarUrl,
+                          size: AppAvatarSize.medium,
+                        ),
+                        Spacing.hSm,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.seller?.displayName ?? 'Vendedor',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                '@${product.seller?.username ?? 'usuario'}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (product.seller != null)
+                          TextButton.icon(
+                            onPressed: () => context.push(
+                              '/chat/new?userId=${product.seller!.id}',
+                            ),
+                            icon: const Icon(
+                              Icons.chat_bubble_outline,
+                              size: 16,
+                            ),
+                            label: const Text('Conversar'),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Spacing.vMd,
                   Text(
-                    product.description,
+                    'DESCRIÇÃO',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: context.textSecondary,
+                    ),
+                  ),
+                  Spacing.vSm,
+                  Text(
+                    product.description.isEmpty
+                        ? 'Sem descrição.'
+                        : product.description,
                     style: TextStyle(
                       fontSize: 14,
-                      fontFamily: 'Inter',
-                      color: isDark
-                          ? AppColors.white.withAlpha(204)
-                          : AppColors.darkGray.withAlpha(204),
-                      height: 1.5,
+                      color: context.textPrimary,
+                      height: 1.4,
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    height: 1,
-                    color: isDark
-                        ? AppColors.mediumGray.withAlpha(50)
-                        : AppColors.lightGray,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: AppColors.primaryPurple.withAlpha(25),
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.primaryPurple,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  product.sellerName ?? 'Vendedor',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Inter',
-                                    color: isDark
-                                        ? AppColors.white
-                                        : AppColors.darkGray,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Ver perfil do vendedor',
-                              style: TextStyle(
-                                color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.mediumGray,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () => context.push('/user/${product.sellerId}'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppColors.surfaceDark
-                                : AppColors.lightGray,
-                            borderRadius: BorderRadius.zero,
-                            border: Border.all(
-                              color: AppColors.primaryPurple,
-                              width: 1,
-                            ),
-                          ),
-                          child: const Text(
-                            'Ver perfil',
-                            style: TextStyle(
-                              color: AppColors.primaryPurple,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Inter',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 100),
                 ],
@@ -364,218 +333,6 @@ class ProductDetailPage extends ConsumerWidget {
         ],
       ),
       bottomSheet: ProductDetailBottomSheet(product: product),
-    );
-  }
-
-  Widget _buildStockIndicator(ProductEntity product, bool isDark) {
-    final available = product.quantity - product.soldCount;
-
-    if (product.status == 'SOLD') {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.error.withAlpha(25),
-          borderRadius: BorderRadius.zero,
-        ),
-        child: const Text(
-          'Vendido',
-          style: TextStyle(
-            color: AppColors.error,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
-    }
-
-    if (available <= 0) {
-      return Text(
-        'Esgotado',
-        style: TextStyle(
-          color: AppColors.warning,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      );
-    }
-
-    if (product.quantity > 1) {
-      if (available > 3) {
-        return Text(
-          'Estoque: $available disponíveis',
-          style: TextStyle(
-            color: AppColors.success,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        );
-      }
-      return Text(
-        'Apenas $available unidades!',
-        style: TextStyle(
-          color: AppColors.warning,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      );
-    }
-
-    return Text(
-      'Última unidade',
-      style: TextStyle(
-        color: AppColors.warning,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-
-  Widget _buildLoadingSkeleton(BuildContext context) {
-    final isDark = context.isDark;
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          expandedHeight: 300,
-          pinned: true,
-          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
-          flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-              color: isDark
-                  ? AppColors.mediumGray.withAlpha(50)
-                  : AppColors.lightGray,
-            ),
-          ),
-          leading: BrutalistIconButton(
-            icon: Icons.arrow_back,
-            onTap: () => Navigator.pop(context),
-            iconColor: isDark ? Colors.white : Colors.black,
-            borderColor: isDark ? Colors.white : Colors.black,
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 24,
-                  width: 200,
-                  color: isDark
-                      ? AppColors.mediumGray.withAlpha(50)
-                      : AppColors.lightGray,
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  height: 32,
-                  width: 120,
-                  color: isDark
-                      ? AppColors.mediumGray.withAlpha(50)
-                      : AppColors.lightGray,
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  height: 100,
-                  color: isDark
-                      ? AppColors.mediumGray.withAlpha(50)
-                      : AppColors.lightGray,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildError(
-    BuildContext context,
-    WidgetRef ref,
-    Object err,
-    StackTrace? stack,
-  ) {
-    final isDark = context.isDark;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: isDark ? AppColors.error : AppColors.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Erro ao carregar produto',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'SpaceGrotesk',
-                color: isDark ? AppColors.white : AppColors.darkGray,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              err.toString(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                InkWell(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : AppColors.white,
-                      borderRadius: BorderRadius.zero,
-                      border: Border.all(color: AppColors.mediumGray, width: 1),
-                    ),
-                    child: Text(
-                      'Voltar',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                InkWell(
-                  onTap: () => ref.invalidate(productByIdProvider(productId)),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primaryPurple,
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    child: const Text(
-                      'Tentar novamente',
-                      style: TextStyle(
-                        color: AppColors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -30,8 +30,8 @@ _OrderEntity _$OrderEntityFromJson(Map<String, dynamic> json) => _OrderEntity(
   amount: (json['amount'] as num?)?.toInt() ?? 0,
   platformFee: (json['platformFee'] as num?)?.toInt() ?? 0,
   sellerAmount: (json['sellerAmount'] as num?)?.toInt() ?? 0,
-  status: OrderStatus.fromString(json['status'] as String),
-  escrowStatus: EscrowStatus.fromString(json['escrowStatus'] as String),
+  status: _orderStatusFromJson(json['status'] as String),
+  escrowStatus: _escrowStatusFromJson(json['escrowStatus'] as String),
   createdAt: DateTime.parse(json['createdAt'] as String),
   deliveryConfirmedAt: json['deliveryConfirmedAt'] == null
       ? null
@@ -56,14 +56,30 @@ Map<String, dynamic> _$OrderEntityToJson(_OrderEntity instance) =>
       'amount': instance.amount,
       'platformFee': instance.platformFee,
       'sellerAmount': instance.sellerAmount,
-      'status': _orderStatusToJson(instance.status),
-      'escrowStatus': _escrowStatusToJson(instance.escrowStatus),
+      'status': _$OrderStatusEnumMap[instance.status]!,
+      'escrowStatus': _$EscrowStatusEnumMap[instance.escrowStatus]!,
       'createdAt': instance.createdAt.toIso8601String(),
       'deliveryConfirmedAt': instance.deliveryConfirmedAt?.toIso8601String(),
-      'product': instance.product,
-      'buyer': instance.buyer,
-      'seller': instance.seller,
+      'product': instance.product?.toJson(),
+      'buyer': instance.buyer?.toJson(),
+      'seller': instance.seller?.toJson(),
     };
+
+const _$OrderStatusEnumMap = {
+  OrderStatus.pending: 'pending',
+  OrderStatus.confirmed: 'confirmed',
+  OrderStatus.shipped: 'shipped',
+  OrderStatus.delivered: 'delivered',
+  OrderStatus.completed: 'completed',
+  OrderStatus.cancelled: 'cancelled',
+  OrderStatus.disputed: 'disputed',
+};
+
+const _$EscrowStatusEnumMap = {
+  EscrowStatus.held: 'held',
+  EscrowStatus.released: 'released',
+  EscrowStatus.refunded: 'refunded',
+};
 
 _CanReviewResponse _$CanReviewResponseFromJson(Map<String, dynamic> json) =>
     _CanReviewResponse(

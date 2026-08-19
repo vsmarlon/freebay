@@ -3,26 +3,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/features/chat/data/entities/og_metadata_entity.dart';
 
 class LinkPreviewCard extends StatelessWidget {
-  final OgMetadataEntity? metadata;
+  final Map<String, dynamic>? metadata;
 
   const LinkPreviewCard({super.key, this.metadata});
 
   @override
   Widget build(BuildContext context) {
-    if (metadata == null) return const SizedBox.shrink();
+    final meta = metadata;
+    if (meta == null) return const SizedBox.shrink();
 
-    final hasImage =
-        metadata!.imageUrl != null && metadata!.imageUrl!.isNotEmpty;
-    final hasTitle = metadata!.title != null && metadata!.title!.isNotEmpty;
-    final hasDescription =
-        metadata!.description != null && metadata!.description!.isNotEmpty;
-    final hasSite =
-        metadata!.siteName != null && metadata!.siteName!.isNotEmpty;
+    final imageUrl = meta['imageUrl'] as String?;
+    final title = meta['title'] as String?;
+    final description = meta['description'] as String?;
+    final siteName = meta['siteName'] as String?;
 
-    if (!hasImage && !hasTitle && !hasDescription) {
+    if (imageUrl == null && title == null && description == null) {
       return const SizedBox.shrink();
     }
 
@@ -39,9 +36,9 @@ class LinkPreviewCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (hasImage)
+          if (imageUrl != null && imageUrl.isNotEmpty)
             CachedNetworkImage(
-              imageUrl: metadata!.imageUrl!,
+              imageUrl: imageUrl,
               width: 260,
               height: 120,
               fit: BoxFit.cover,
@@ -62,9 +59,9 @@ class LinkPreviewCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (hasSite)
+                if (siteName != null && siteName.isNotEmpty)
                   Text(
-                    metadata!.siteName!,
+                    siteName,
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 10,
@@ -73,10 +70,10 @@ class LinkPreviewCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                if (hasTitle) ...[
+                if (title != null && title.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    metadata!.title!,
+                    title,
                     style: TextStyle(
                       fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 13,
@@ -87,10 +84,10 @@ class LinkPreviewCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-                if (hasDescription) ...[
+                if (description != null && description.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    metadata!.description!,
+                    description,
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 11,

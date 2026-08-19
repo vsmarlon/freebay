@@ -1,13 +1,108 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class FaqPage extends StatelessWidget {
   const FaqPage({super.key});
+
+  static const List<Map<String, dynamic>> _sections = [
+    {
+      'title': 'CONTA E PERFIL',
+      'items': [
+        {
+          'q': 'Como criar uma conta?',
+          'a':
+              'Baixe o FreeBay e clique em "Criar conta". Informe seu e-mail, nome de exibição e crie uma senha de no mínimo 8 caracteres. Após confirmar o e-mail, sua conta estará pronta para uso.',
+        },
+        {
+          'q': 'Como editar meu perfil?',
+          'a':
+              'Acesse seu perfil pelo menu inferior e clique no botão "Editar perfil". Você pode alterar seu nome de exibição, bio, foto e banner. As alterações são salvas automaticamente.',
+        },
+        {
+          'q': 'Esqueci minha senha. O que fazer?',
+          'a':
+              'Na tela de login, clique em "Esqueci minha senha". Insira o e-mail cadastrado e enviaremos um link para redefinição. O link expira em 15 minutos por segurança.',
+        },
+        {
+          'q': 'Como excluir minha conta?',
+          'a':
+              'Vá em Configurações > Excluir conta. Sua conta será desativada por 30 dias antes da exclusão permanente. Durante esse período, você pode reativá-la fazendo login.',
+        },
+      ],
+    },
+    {
+      'title': 'COMPRAS E PAGAMENTOS',
+      'items': [
+        {
+          'q': 'Quais são os métodos de pagamento aceitos?',
+          'a':
+              'Aceitamos cartão de crédito (Visa, Mastercard, Elo, Hipercard) e PIX via Stripe. Pagamentos via PIX são aprovados instantaneamente.',
+        },
+        {
+          'q': 'O que é o sistema de custódia (escrow)?',
+          'a':
+              'Quando você compra um produto, o valor fica retido com segurança pelo FreeBay. O vendedor só recebe o dinheiro após você confirmar que recebeu o produto em perfeitas condições.',
+        },
+        {
+          'q': 'Como funciona o cancelamento de uma compra?',
+          'a':
+              'Você pode cancelar uma compra antes do vendedor confirmar o envio. Após o envio, é necessário abrir uma disputa para solicitar o reembolso.',
+        },
+        {
+          'q': 'Em quanto tempo recebo meu reembolso?',
+          'a':
+              'Para pagamentos via PIX, o reembolso é instantâneo na sua carteira FreeBay. Para cartão de crédito, o estorno pode levar de 5 a 10 dias úteis dependendo da operadora.',
+        },
+      ],
+    },
+    {
+      'title': 'VENDAS E CARTEIRA',
+      'items': [
+        {
+          'q': 'Como anunciar um produto?',
+          'a':
+              'Toque no botão central "+" no menu inferior, tire ou selecione fotos do produto, preencha o título, descrição, categoria, condição e preço. Revise e publique!',
+        },
+        {
+          'q': 'Existe alguma taxa para vender?',
+          'a':
+              'O FreeBay cobra uma taxa de 0% na fase de lançamento! Você recebe 100% do valor da sua venda diretamente na sua carteira após a confirmação de entrega pelo comprador.',
+        },
+        {
+          'q': 'Como sacar meu dinheiro da carteira?',
+          'a':
+              'Acesse a aba Carteira, clique em "Solicitar saque via PIX", insira o valor desejado e sua chave PIX. O saque mínimo é de R\$ 10,00 e o processamento é rápido.',
+        },
+        {
+          'q': 'O que acontece se o comprador não confirmar a entrega?',
+          'a':
+              'Se o comprador não confirmar em até 7 dias após o envio comprovado, a entrega é confirmada automaticamente pelo sistema e o saldo é liberado na sua carteira.',
+        },
+      ],
+    },
+    {
+      'title': 'SEGURANÇA E DISPUTAS',
+      'items': [
+        {
+          'q': 'O que fazer se o produto não chegar ou vier com defeito?',
+          'a':
+              'Abra uma disputa na página do pedido em até 7 dias após o prazo estimado de entrega. Nossa equipe de moderação avaliará as evidências e mediará uma solução justa.',
+        },
+        {
+          'q': 'Como denunciar um usuário ou produto?',
+          'a':
+              'Toque nos três pontos no canto superior direito do perfil ou anúncio e selecione "Denunciar". Escolha o motivo e adicione detalhes para que nossa equipe investigue.',
+        },
+        {
+          'q': 'Meus dados estão seguros no FreeBay?',
+          'a':
+              'Sim! Todos os dados de pagamento são processados com criptografia de ponta a ponta pela Stripe (certificação PCI-DSS Nível 1). Nunca armazenamos dados de cartão.',
+        },
+      ],
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -34,197 +129,34 @@ class FaqPage extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView(
+            child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              children: const [
-                _FaqSection(
-                  title: 'CONTA E PERFIL',
-                  items: [
-                    _FaqItem(
-                      question: 'Como criar uma conta?',
-                      answer:
-                          'Baixe o FreeBay e clique em "Criar conta". '
-                          'Informe seu e-mail, nome de exibição e crie uma senha '
-                          'de no mínimo 8 caracteres. Após confirmar o e-mail, '
-                          'sua conta estará pronta para uso.',
+              itemCount: _sections.length,
+              itemBuilder: (context, sIndex) {
+                final sec = _sections[sIndex];
+                final items = sec['items'] as List<Map<String, String>>;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16, bottom: 8),
+                      child: Text(
+                        sec['title'] as String,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: context.textSecondary,
+                          letterSpacing: 1,
+                        ),
+                      ),
                     ),
-                    _FaqItem(
-                      question: 'Como editar meu perfil?',
-                      answer:
-                          'Acesse seu perfil pelo menu inferior e clique no '
-                          'botão "Editar perfil". Você pode alterar seu nome de '
-                          'exibição, bio, foto e banner. As alterações são '
-                          'salvas automaticamente.',
-                    ),
-                    _FaqItem(
-                      question: 'Esqueci minha senha. O que fazer?',
-                      answer:
-                          'Na tela de login, clique em "Esqueci minha senha". '
-                          'Insira o e-mail cadastrado e enviaremos um link para '
-                          'redefinição. O link expira em 15 minutos por segurança.',
-                    ),
-                    _FaqItem(
-                      question: 'Como excluir minha conta?',
-                      answer:
-                          'Vá em Configurações > Excluir conta. Sua conta será '
-                          'desativada por 30 dias antes da exclusão permanente. '
-                          'Durante este período, você pode reativá-la fazendo login.',
+                    ...items.map(
+                      (item) =>
+                          _FaqTile(question: item['q']!, answer: item['a']!),
                     ),
                   ],
-                ),
-                _FaqSection(
-                  title: 'FEED E POSTS',
-                  items: [
-                    _FaqItem(
-                      question: 'Como criar um post?',
-                      answer:
-                          'No feed, clique no campo "Criar post social ou '
-                          'anúncio de venda". Escolha entre post social '
-                          '(fotos, textos) ou anúncio de produto. Adicione '
-                          'suas imagens e escreva uma descrição.',
-                    ),
-                    _FaqItem(
-                      question:
-                          'Qual a diferença entre post social e anúncio?',
-                      answer:
-                          'Posts sociais são para compartilhar momentos, '
-                          'fotos e interagir com a comunidade. Anúncios de '
-                          'venda são listagens de produtos com preço, '
-                          'categoria e opção de compra via escrow.',
-                    ),
-                    _FaqItem(
-                      question: 'O que são stories?',
-                      answer:
-                          'Stories são posts temporários que desaparecem '
-                          'após 24 horas. Para criar, clique no seu avatar '
-                          'no feed ou no perfil. Você pode adicionar fotos '
-                          'e textos criativos.',
-                    ),
-                    _FaqItem(
-                      question: 'Como interagir com posts?',
-                      answer:
-                          'Você pode curtir, comentar e compartilhar posts. '
-                          'Toque no coração para curtir, no balão para '
-                          'comentar, ou no ícone de compartilhar para '
-                          'enviar o post para outro usuário.',
-                    ),
-                  ],
-                ),
-                _FaqSection(
-                  title: 'COMPRAS E VENDAS',
-                  items: [
-                    _FaqItem(
-                      question: 'Como comprar um produto?',
-                      answer:
-                          'Navegue pelos anúncios no feed ou na aba '
-                          '"Explorar". Ao encontrar um produto, toque nele '
-                          'para ver detalhes e clique em "Comprar". O '
-                          'pagamento é processado via escrow, garantindo '
-                          'segurança para ambas as partes.',
-                    ),
-                    _FaqItem(
-                      question: 'Como anunciar um produto para venda?',
-                      answer:
-                          'No feed, clique em "Criar anúncio de venda" ou '
-                          'vá em seu perfil e clique no botão de criar. '
-                          'Adicione fotos do produto, defina o preço (em '
-                          'reais), escolha a categoria e descreva o item.',
-                    ),
-                    _FaqItem(
-                      question: 'O que é pagamento por escrow?',
-                      answer:
-                          'Escrow é um sistema de pagamento seguro: quando '
-                          'você compra, o valor fica retido conosco até '
-                          'confirmar que recebeu o produto. Após a '
-                          'confirmação, liberamos o pagamento ao vendedor.',
-                    ),
-                    _FaqItem(
-                      question: 'Como funcionam as ofertas?',
-                      answer:
-                          'Você pode enviar uma oferta para o vendedor com '
-                          'um valor diferente do anunciado. O vendedor pode '
-                          'aceitar, recusar ou contra-propor. A negociação '
-                          'é feita diretamente no chat do anúncio.',
-                    ),
-                  ],
-                ),
-                _FaqSection(
-                  title: 'PAGAMENTOS E CARTEIRA',
-                  items: [
-                    _FaqItem(
-                      question: 'Como adicionar saldo na carteira?',
-                      answer:
-                          'Acesse sua Carteira pelo menu inferior e clique '
-                          'em "Adicionar fundos". Escolha o valor e o '
-                          'método de pagamento (PIX, cartão). O saldo cai '
-                          'na hora e fica disponível para compras.',
-                    ),
-                    _FaqItem(
-                      question: 'Como solicitar um saque?',
-                      answer:
-                          'Na Carteira, clique em "Sacar". Escolha o valor '
-                          'desejado (mínimo de R\$ 10,00) e a conta de '
-                          'destino. O prazo de processamento é de até 2 '
-                          'dias úteis para conta bancária.',
-                    ),
-                    _FaqItem(
-                      question:
-                          'Diferença entre saldo pendente e disponível?',
-                      answer:
-                          'Saldo disponível é o valor que você pode usar '
-                          'ou sacar imediatamente. Saldo pendente são '
-                          'valores de vendas em escrow que ainda não foram '
-                          'liberados — ficam disponíveis após a confirmação '
-                          'do comprador.',
-                    ),
-                    _FaqItem(
-                      question: 'Quais as taxas do FreeBay?',
-                      answer:
-                          'O FreeBay cobra uma taxa de 5% sobre o valor '
-                          'de cada venda concluída. Depósitos e saques são '
-                          'gratuitos. Não há taxa de anúncio ou '
-                          'mensalidade.',
-                    ),
-                  ],
-                ),
-                _FaqSection(
-                  title: 'SEGURANÇA E PRIVACIDADE',
-                  items: [
-                    _FaqItem(
-                      question: 'Como bloquear um usuário?',
-                      answer:
-                          'No perfil do usuário, clique no menu de opções '
-                          '(três pontos) e selecione "Bloquear". Usuários '
-                          'bloqueados não podem ver seu perfil, enviar '
-                          'mensagens ou interagir com seus posts.',
-                    ),
-                    _FaqItem(
-                      question: 'Como denunciar um conteúdo?',
-                      answer:
-                          'Em qualquer post, perfil ou mensagem, clique '
-                          'no menu de opções e selecione "Denunciar". '
-                          'Escolha o motivo e nossa equipe analisará o '
-                          'caso em até 24 horas.',
-                    ),
-                    _FaqItem(
-                      question: 'Quem pode ver meus stories?',
-                      answer:
-                          'Por padrão, todos os seguidores podem ver seus '
-                          'stories. Você pode alterar a privacidade em '
-                          'Configurações > Privacidade, escolhendo entre '
-                          '"Todos", "Apenas seguidores" ou "Personalizado".',
-                    ),
-                    _FaqItem(
-                      question: 'Como proteger meus dados?',
-                      answer:
-                          'Recomendamos ativar a autenticação em duas '
-                          'etapas em Configurações > Segurança. Nunca '
-                          'compartilhe sua senha e desconfie de mensagens '
-                          'solicitando dados pessoais.',
-                    ),
-                  ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         ],
@@ -233,132 +165,70 @@ class FaqPage extends StatelessWidget {
   }
 }
 
-class _FaqSection extends StatelessWidget {
-  final String title;
-  final List<_FaqItem> items;
-
-  const _FaqSection({required this.title, required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Spacing.vLg,
-        Text(
-          title,
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.5,
-            color: context.textPrimary,
-          ),
-        ),
-        Spacing.vSm,
-        ...items,
-      ],
-    );
-  }
-}
-
-class _FaqItem extends StatefulWidget {
+class _FaqTile extends StatefulWidget {
   final String question;
   final String answer;
 
-  const _FaqItem({required this.question, required this.answer});
+  const _FaqTile({required this.question, required this.answer});
 
   @override
-  State<_FaqItem> createState() => _FaqItemState();
+  State<_FaqTile> createState() => _FaqTileState();
 }
 
-class _FaqItemState extends State<_FaqItem> {
-  bool _isExpanded = false;
-
-  void _toggle() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-    });
-  }
+class _FaqTileState extends State<_FaqTile> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: _toggle,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.white,
-              border: Border.all(color: AppColors.onSurface, width: 2),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.question,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.white : AppColors.onSurface,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        border: Border.all(color: context.borderColor, width: 1.5),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.question,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: context.textPrimary,
+                      ),
                     ),
                   ),
-                ),
-                Spacing.hSm,
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 150),
-                  child: Icon(
-                    _isExpanded ? Icons.remove : Icons.add,
-                    key: ValueKey(_isExpanded),
-                    size: 20,
-                    color: _isExpanded
-                        ? AppColors.primaryContainer
-                        : (isDark
-                            ? AppColors.white
-                            : AppColors.onSurface),
+                  Icon(
+                    _expanded ? Icons.remove : Icons.add,
+                    size: 18,
+                    color: context.textPrimary,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.linear,
-          alignment: Alignment.topCenter,
-          child: _isExpanded
-              ? Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.backgroundDark
-                        : AppColors.surfaceContainerLow,
-                    border: Border(
-                      left: BorderSide(color: AppColors.onSurface, width: 2),
-                      right: BorderSide(color: AppColors.onSurface, width: 2),
-                      bottom: BorderSide(color: AppColors.onSurface, width: 2),
-                    ),
-                  ),
-                  child: Text(
-                    widget.answer,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 14,
-                      height: 1.6,
-                      color: isDark ? AppColors.mediumGray : AppColors.onSurface,
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
-        Spacing.vSm,
-      ],
+          if (_expanded)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              color: context.surfaceColor,
+              child: Text(
+                widget.answer,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: context.textSecondary,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -43,3 +43,39 @@ export interface UserPostEntry {
   isReposted: boolean;
   sharesCount: number;
 }
+
+export interface FeedQuery {
+  userId?: string;
+  limit?: number;
+  type?: 'explore' | 'following';
+  cursor?: string;
+  offset?: number;
+  contentFilter?: 'all' | 'social' | 'selling';
+}
+
+export interface FeedResult {
+  posts: PostPayload[];
+  hasMore: boolean;
+  nextCursor?: string | null;
+  nextOffset?: number | null;
+}
+
+export interface UserPostsQuery {
+  userId: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface SearchPostsQuery {
+  query: string;
+  filter?: string;
+  userId?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface ShareWithPost {
+  post: PostPayload;
+  user: { id: string; displayName: string; avatarUrl: string | null };
+  createdAt: Date;
+}

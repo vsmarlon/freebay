@@ -213,14 +213,14 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 @JsonSerializable()
 
 class _PostProductInfo implements PostProductInfo {
-  const _PostProductInfo({required this.id, required this.title, required this.description, required this.price, required this.condition});
+  const _PostProductInfo({required this.id, required this.title, required this.description, this.price = 0, this.condition = 'NEW'});
   factory _PostProductInfo.fromJson(Map<String, dynamic> json) => _$PostProductInfoFromJson(json);
 
 @override final  String id;
 @override final  String title;
 @override final  String description;
-@override final  int price;
-@override final  String condition;
+@override@JsonKey() final  int price;
+@override@JsonKey() final  String condition;
 
 /// Create a copy of PostProductInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -531,8 +531,8 @@ return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_t
 /// @nodoc
 @JsonSerializable()
 
-class _PostEntity extends PostEntity {
-  const _PostEntity({required this.id, required this.userId, this.content, this.imageUrl, this.type = 'REGULAR', this.likesCount = 0, this.commentsCount = 0, this.sharesCount = 0, this.isLiked = false, this.isSaved = false, this.hasReposted = false, this.repostedAt, this.repostedBy, required this.createdAt, required this.user, this.product}): super._();
+class _PostEntity implements PostEntity {
+  const _PostEntity({required this.id, required this.userId, this.content, this.imageUrl, this.type = 'REGULAR', this.likesCount = 0, this.commentsCount = 0, this.sharesCount = 0, this.isLiked = false, this.isSaved = false, this.hasReposted = false, this.repostedAt, this.repostedBy, required this.createdAt, required this.user, this.product});
   factory _PostEntity.fromJson(Map<String, dynamic> json) => _$PostEntityFromJson(json);
 
 @override final  String id;

@@ -222,13 +222,13 @@ return $default(_that.id,_that.productId,_that.quantity,_that.subtotal,_that.pro
 @JsonSerializable()
 
 class _CartItemEntity implements CartItemEntity {
-  const _CartItemEntity({required this.id, required this.productId, required this.quantity, required this.subtotal, required this.product});
+  const _CartItemEntity({required this.id, required this.productId, this.quantity = 1, this.subtotal = 0, required this.product});
   factory _CartItemEntity.fromJson(Map<String, dynamic> json) => _$CartItemEntityFromJson(json);
 
 @override final  String id;
 @override final  String productId;
-@override final  int quantity;
-@override final  int subtotal;
+@override@JsonKey() final  int quantity;
+@override@JsonKey() final  int subtotal;
 @override final  ProductEntity product;
 
 /// Create a copy of CartItemEntity

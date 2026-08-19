@@ -35,10 +35,9 @@ extension DarkModeExtension on BuildContext {
 
 const String _themeModeKey = 'theme_mode';
 
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
-  return ThemeModeNotifier();
-});
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
+  ThemeModeNotifier.new,
+);
 
 final isDarkModeProvider = Provider<bool>((ref) {
   final themeMode = ref.watch(themeModeProvider);
@@ -49,9 +48,11 @@ final isDarkModeProvider = Provider<bool>((ref) {
   return themeMode == ThemeMode.dark;
 });
 
-class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.system) {
-    _loadTheme();
+class ThemeModeNotifier extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() {
+    Future.microtask(_loadTheme);
+    return ThemeMode.system;
   }
 
   Future<void> _loadTheme() async {

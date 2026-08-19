@@ -14,17 +14,6 @@ enum OrderStatus {
   cancelled,
   disputed;
 
-  static OrderStatus fromString(String value) => switch (value.toUpperCase()) {
-    'PENDING' => OrderStatus.pending,
-    'CONFIRMED' => OrderStatus.confirmed,
-    'SHIPPED' => OrderStatus.shipped,
-    'DELIVERED' => OrderStatus.delivered,
-    'COMPLETED' => OrderStatus.completed,
-    'CANCELLED' => OrderStatus.cancelled,
-    'DISPUTED' => OrderStatus.disputed,
-    _ => OrderStatus.pending,
-  };
-
   String get label => switch (this) {
     OrderStatus.pending => 'Pendente',
     OrderStatus.confirmed => 'Confirmado',
@@ -38,17 +27,15 @@ enum OrderStatus {
   String toApiString() => name.toUpperCase();
 }
 
+OrderStatus _orderStatusFromJson(String value) => OrderStatus.values.firstWhere(
+  (e) => e.name == value.toLowerCase(),
+  orElse: () => OrderStatus.pending,
+);
+
 enum EscrowStatus {
   held,
   released,
   refunded;
-
-  static EscrowStatus fromString(String value) => switch (value.toUpperCase()) {
-    'HELD' => EscrowStatus.held,
-    'RELEASED' => EscrowStatus.released,
-    'REFUNDED' => EscrowStatus.refunded,
-    _ => EscrowStatus.held,
-  };
 
   String get label => switch (this) {
     EscrowStatus.held => 'Em custódia',
@@ -59,8 +46,11 @@ enum EscrowStatus {
   String toApiString() => name.toUpperCase();
 }
 
-String _orderStatusToJson(OrderStatus s) => s.toApiString();
-String _escrowStatusToJson(EscrowStatus s) => s.toApiString();
+EscrowStatus _escrowStatusFromJson(String value) =>
+    EscrowStatus.values.firstWhere(
+      (e) => e.name == value.toLowerCase(),
+      orElse: () => EscrowStatus.held,
+    );
 
 @freezed
 abstract class OrderUserInfo with _$OrderUserInfo {
@@ -91,9 +81,8 @@ abstract class OrderEntity with _$OrderEntity {
     @Default(0) int amount,
     @Default(0) int platformFee,
     @Default(0) int sellerAmount,
-    @JsonKey(fromJson: OrderStatus.fromString, toJson: _orderStatusToJson)
-    required OrderStatus status,
-    @JsonKey(fromJson: EscrowStatus.fromString, toJson: _escrowStatusToJson)
+    @JsonKey(fromJson: _orderStatusFromJson) required OrderStatus status,
+    @JsonKey(fromJson: _escrowStatusFromJson)
     required EscrowStatus escrowStatus,
     required DateTime createdAt,
     DateTime? deliveryConfirmedAt,

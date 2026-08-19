@@ -327,7 +327,7 @@ Prisma schema (`nest-backend/prisma/schema.prisma`) is the source of truth. Afte
 1. `npm run prisma:migrate` — creates and applies migration
 2. `npm run prisma:generate` — regenerates the Prisma client
 
-Payment providers: **AbacatePay** (PIX) and **PagBank** (payouts to sellers). The `PaymentProvider` Prisma enum still uses legacy labels `PAGARME`/`WOOVI` for historical reasons — the adapters behind them target AbacatePay/PagBank. Escrow flow: `EscrowStatus` `HELD → RELEASED | REFUNDED`. Order lifecycle: `PENDING → CONFIRMED → SHIPPED → DELIVERED → DISPUTED → COMPLETED | CANCELLED`.
+Payment provider: **Stripe** (Checkout Sessions — PIX auto-offered for Brazilian customers, credit card otherwise). Webhook events: `checkout.session.completed` / `checkout.session.expired`. The `PaymentProvider` Prisma enum uses `STRIPE`. Escrow flow: `EscrowStatus` `HELD → RELEASED | REFUNDED`. Order lifecycle: `PENDING → CONFIRMED → SHIPPED → DELIVERED → DISPUTED → COMPLETED | CANCELLED`. Migration plan: see `docs/plans/2026-08-04-stripe-migration.md`. Mobile single-product checkout uses Stripe **PaymentSheet** (PaymentIntent, `POST /payments/payment-intent/:orderId`); web and cart keep Checkout Sessions (branched on `kIsWeb` in `payment_page.dart`). Webhook events: `checkout.session.completed` / `checkout.session.expired` / `payment_intent.succeeded` / `payment_intent.canceled` / `payment_intent.payment_failed`. See `nest-backend/src/modules/payments/docs/adr/0001-payment-sheet-migration.md`.
 
 Chat is real-time via a Nest WebSocket gateway (`modules/chat/chat.gateway.ts`), alongside REST endpoints in `chat.controller.ts` for history/management.
 

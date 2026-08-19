@@ -70,25 +70,27 @@ final archivedChatsProvider = FutureProvider.autoDispose<List<ChatEntity>>((
   );
 });
 
-class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
-  ChatListController(this._ref) : super(const AsyncValue.loading()) {
-    _init();
-  }
-
-  final Ref _ref;
+class ChatListController extends Notifier<AsyncValue<List<ChatEntity>>> {
   StreamSubscription<Map<String, dynamic>>? _subscription;
 
-  void _init() {
-    _ref.listen(chatsProvider, (_, next) {
+  @override
+  AsyncValue<List<ChatEntity>> build() {
+    ref.listen(chatsProvider, (_, next) {
       state = next;
     }, fireImmediately: true);
 
-    final socketService = _ref.read(chatSocketServiceProvider);
+    final socketService = ref.read(chatSocketServiceProvider);
+    _subscription?.cancel();
     _subscription = socketService.messageStream.listen(_onSocketMessage);
+    ref.onDispose(() {
+      _subscription?.cancel();
+    });
+
+    return ref.watch(chatsProvider);
   }
 
   void _onSocketMessage(Map<String, dynamic> msg) {
-    final currentList = state.valueOrNull;
+    final currentList = state.value;
     if (currentList == null) return;
 
     final conversationId = msg['conversationId'] as String?;
@@ -101,8 +103,8 @@ class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
         : DateTime.now();
     final senderId = msg['senderId'] as String? ?? '';
 
-    final authState = _ref.read(authControllerProvider);
-    final currentUserId = authState.valueOrNull?.id;
+    final authState = ref.read(authControllerProvider);
+    final currentUserId = authState.value?.id;
     final isFromMe = senderId == currentUserId;
 
     final updatedList = currentList.map((chat) {
@@ -123,17 +125,9 @@ class ChatListController extends StateNotifier<AsyncValue<List<ChatEntity>>> {
     });
     state = AsyncValue.data(updatedList);
   }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
-  }
 }
 
 final liveChatListProvider =
-    StateNotifierProvider<ChatListController, AsyncValue<List<ChatEntity>>>((
-      ref,
-    ) {
-      return ChatListController(ref);
-    });
+    NotifierProvider<ChatListController, AsyncValue<List<ChatEntity>>>(
+      ChatListController.new,
+    );

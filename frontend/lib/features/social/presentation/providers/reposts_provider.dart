@@ -1,34 +1,21 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class RepostsState {
-  final Map<String, bool> repostedOverrides;
-  final Map<String, int> countOverrides;
+export 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 
-  const RepostsState({
-    this.repostedOverrides = const {},
-    this.countOverrides = const {},
-  });
+part 'reposts_provider.g.dart';
 
-  RepostsState copyWith({
-    Map<String, bool>? repostedOverrides,
-    Map<String, int>? countOverrides,
-  }) {
-    return RepostsState(
-      repostedOverrides: repostedOverrides ?? this.repostedOverrides,
-      countOverrides: countOverrides ?? this.countOverrides,
-    );
+@Riverpod(keepAlive: true)
+class Reposts extends _$Reposts {
+  late final ISocialRepository _repository;
+
+  @override
+  RepostsState build() {
+    _repository = ref.watch(socialRepositoryProvider);
+    return const RepostsState();
   }
-
-  bool? getRepostedOverride(String postId) => repostedOverrides[postId];
-  int? getCountOverride(String postId) => countOverrides[postId];
-}
-
-class RepostsNotifier extends StateNotifier<RepostsState> {
-  final ISocialRepository _repository;
-
-  RepostsNotifier(this._repository) : super(const RepostsState());
 
   Future<bool> toggleRepost(
     String postId, {
@@ -62,10 +49,6 @@ class RepostsNotifier extends StateNotifier<RepostsState> {
         );
         return false;
       }
-      final newSharesCount = result.fold((_) => newCount, (count) => count);
-      state = state.copyWith(
-        countOverrides: {...state.countOverrides, postId: newSharesCount},
-      );
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -79,10 +62,3 @@ class RepostsNotifier extends StateNotifier<RepostsState> {
     }
   }
 }
-
-final repostsProvider = StateNotifierProvider<RepostsNotifier, RepostsState>((
-  ref,
-) {
-  final repository = ref.read(socialRepositoryProvider);
-  return RepostsNotifier(repository);
-});

@@ -1,7 +1,4 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_refresh_indicator.dart';
@@ -9,27 +6,18 @@ import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/components/empty_state.dart';
+import 'package:freebay/core/components/guest_gate_view.dart';
 import 'package:freebay/core/components/wallet_card.dart';
-import 'package:freebay/core/components/section_title.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/features/wallet/data/entities/wallet_transaction_entity.dart';
-import 'package:freebay/features/wallet/data/entities/withdrawal_entity.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
-import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/brutalist_filter_chip.dart';
-import 'package:freebay/core/components/eyebrow_label.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
-import 'package:freebay/core/utils/date_utils.dart';
 import 'package:freebay/features/wallet/domain/wallet_constants.dart';
-
-const _signBadgeAlpha = 0.12;
-const _signBadgeSize = 36.0;
 
 class WalletPage extends ConsumerStatefulWidget {
   const WalletPage({super.key});
@@ -48,8 +36,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      final authState = ref.read(authControllerProvider);
-      final user = authState.valueOrNull;
+      final user = ref.read(authControllerProvider).value;
       if (user != null && !user.isGuest) {
         ref.read(walletProvider.notifier).loadWallet();
         ref.read(walletHistoryProvider.notifier).load();
@@ -60,15 +47,31 @@ class _WalletPageState extends ConsumerState<WalletPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isDark = context.isDark;
-    final authState = ref.watch(authControllerProvider);
+    final user = ref.watch(authControllerProvider).value;
+    final isGuest = user == null || user.isGuest;
     final walletState = ref.watch(walletProvider);
     final historyState = ref.watch(walletHistoryProvider);
-    final user = authState.valueOrNull;
-    final isGuest = user == null || user.isGuest;
 
-    final availableBalance = walletState.valueOrNull?.availableBalance ?? 0;
-    final pendingBalance = walletState.valueOrNull?.pendingBalance ?? 0;
+    if (isGuest) {
+      return Scaffold(
+        body: GuestGateView(
+          icon: Icons.account_balance_wallet_outlined,
+          title: 'CARTEIRA & CUSTÓDIA',
+          description:
+              'Gerencie seu saldo, realize saques instantâneos via PIX e negocie com garantia de custódia protegida.',
+          benefits: const [
+            '0% de taxa sobre compras e vendas',
+            'Saques rápidos via PIX',
+            'Custódia segura até a entrega do produto',
+          ],
+          onLoginPressed: () => context.push('/login'),
+          onRegisterPressed: () => context.push('/register'),
+        ),
+      );
+    }
+
+    final availableBalance = walletState.value?.availableBalance ?? 0;
+    final pendingBalance = walletState.value?.pendingBalance ?? 0;
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -78,19 +81,23 @@ class _WalletPageState extends ConsumerState<WalletPage>
             text: 'CARTEIRA',
             actions: [
               IconButton(
-                icon: Icon(
-                  Icons.help_outline,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                ),
+                icon: Icon(Icons.help_outline, color: context.textPrimary),
                 onPressed: () => context.push('/faq'),
               ),
             ],
           ),
           Expanded(
-            child: walletState.isLoading && !isGuest
-                ? const WalletSkeleton()
-                : walletState.hasError && !isGuest
-                ? _buildBalanceError(isDark)
+            child: walletState.isLoading
+                ? const SkeletonPage(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 16),
+                        ShimmerBlock(height: 120),
+                        SizedBox(height: 12),
+                        ShimmerBlock(height: 60),
+                      ],
+                    ),
+                  )
                 : AppRefreshIndicator(
                     onRefresh: () async {
                       ref.read(walletProvider.notifier).loadWallet();
@@ -107,68 +114,128 @@ class _WalletPageState extends ConsumerState<WalletPage>
                             pendingBalanceInCents: pendingBalance,
                           ),
                           Spacing.vMd,
-                          _WithdrawAction(availableBalance: availableBalance),
-                          Spacing.vLg,
-                          SectionTitle.compact(
-                            text: 'Visão da carteira',
-                            isDark: isDark,
+                          AppButton(
+                            label: 'SOLICITAR SAQUE VIA PIX',
+                            onPressed:
+                                availableBalance >=
+                                    WalletConstants.minWithdrawalCents
+                                ? () => _showWithdrawSheet(
+                                    context,
+                                    availableBalance,
+                                  )
+                                : null,
                           ),
-                          Container(
-                            width: double.infinity,
-                            color: isDark
-                                ? AppColors.surfaceContainerDark
-                                : AppColors.surfaceContainerLow,
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildInfoLine(
-                                  label: 'Disponível',
-                                  value: 'Saldo já liberado para saque.',
-                                ),
-                                Spacing.vMd,
-                                _buildInfoLine(
-                                  label: 'Em custódia',
-                                  value:
-                                      'Valor aguardando confirmação do pedido.',
-                                ),
-                                Spacing.vMd,
-                                _buildInfoLine(
-                                  label: 'Saques',
-                                  value:
-                                      'Saque via PIX a partir de ${CurrencyUtils.formatCents(WalletConstants.minWithdrawalCents)}.',
-                                ),
-                              ],
+                          Spacing.vLg,
+                          Text(
+                            'TRANSAÇÕES RECENTES',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: context.textSecondary,
                             ),
                           ),
-                          Spacing.vLg,
-                          _buildSectionLabel('Histórico', isDark),
-                          const SizedBox(height: 12),
-                          if (historyState.isLoading)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                              child: ShimmerBlock(height: 60),
-                            )
-                          else if (historyState.transactions.isEmpty)
+                          Spacing.vSm,
+                          if (historyState.transactions.isEmpty)
                             const EmptyState(
                               icon: Icons.receipt_long_outlined,
                               title: 'SEM TRANSAÇÕES',
-                              subtitle:
-                                  'Realize uma compra ou venda para visualizar suas transações aqui.',
+                              subtitle: 'Suas transações aparecerão aqui.',
                             )
                           else
-                            _ZebraList(
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
                               itemCount: historyState.transactions.length,
-                              itemBuilder: (context, i) => _TransactionRow(
-                                transaction: historyState.transactions[i],
+                              separatorBuilder: (context, index) => Container(
+                                height: 1,
+                                color: context.borderColor.withAlpha(30),
                               ),
+                              itemBuilder: (context, i) {
+                                final tx = historyState.transactions[i];
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: Icon(
+                                    tx.isCredit
+                                        ? Icons.arrow_downward
+                                        : Icons.arrow_upward,
+                                    color: tx.isCredit
+                                        ? AppColors.success
+                                        : AppColors.error,
+                                  ),
+                                  title: Text(
+                                    tx.label,
+                                    style: TextStyle(
+                                      color: context.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${tx.createdAt.day}/${tx.createdAt.month}/${tx.createdAt.year}',
+                                    style: TextStyle(
+                                      color: context.textSecondary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: Text(
+                                    '${tx.isCredit ? '+' : '-'}${CurrencyUtils.formatCents(tx.amount)}',
+                                    style: TextStyle(
+                                      color: tx.isCredit
+                                          ? AppColors.success
+                                          : AppColors.error,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           if (historyState.withdrawals.isNotEmpty) ...[
                             Spacing.vLg,
-                            _buildSectionLabel('Saques', isDark),
-                            const SizedBox(height: 12),
-                            _WithdrawalList(
-                              withdrawals: historyState.withdrawals,
+                            Text(
+                              'SAQUES',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: context.textSecondary,
+                              ),
+                            ),
+                            Spacing.vSm,
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: historyState.withdrawals.length,
+                              separatorBuilder: (context, index) => Container(
+                                height: 1,
+                                color: context.borderColor.withAlpha(30),
+                              ),
+                              itemBuilder: (context, i) {
+                                final w = historyState.withdrawals[i];
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    CurrencyUtils.formatCents(w.amount),
+                                    style: TextStyle(
+                                      color: context.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${w.createdAt.day}/${w.createdAt.month}/${w.createdAt.year}',
+                                    style: TextStyle(
+                                      color: context.textSecondary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: Text(
+                                    w.status.name.toUpperCase(),
+                                    style: TextStyle(
+                                      color: context.textSecondary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ],
@@ -181,375 +248,67 @@ class _WalletPageState extends ConsumerState<WalletPage>
     );
   }
 
-  Widget _buildBalanceError(bool isDark) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.account_balance_wallet_outlined,
-              size: 48,
-              color: AppColors.error,
-            ),
-            Spacing.vMd,
-            Text(
-              'Não foi possível carregar o saldo.',
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.white : AppColors.darkGray,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  void _showWithdrawSheet(BuildContext context, int availableBalance) {
+    final amountController = TextEditingController();
+    final pixController = TextEditingController();
+    String pixType = 'CPF';
 
-  Widget _buildSectionLabel(String text, bool isDark) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontFamily: AppTypography.headlineFontFamily,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        color: isDark ? AppColors.white : AppColors.darkGray,
-      ),
-    );
-  }
-
-  Widget _buildInfoLine({required String label, required String value}) {
-    final isDark = context.isDark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            color: AppColors.mediumGray,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Tonal blocking for alternating rows — the design system forbids divider lines.
-class _ZebraList extends StatelessWidget {
-  final int itemCount;
-  final IndexedWidgetBuilder itemBuilder;
-
-  const _ZebraList({required this.itemCount, required this.itemBuilder});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.isDark;
-    return Column(
-      children: [
-        for (var i = 0; i < itemCount; i++)
-          Container(
-            color: i.isEven
-                ? (isDark
-                      ? AppColors.surfaceContainerDark
-                      : AppColors.surfaceContainerLow)
-                : Colors.transparent,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            child: itemBuilder(context, i),
-          ),
-      ],
-    );
-  }
-}
-
-class _TransactionRow extends StatelessWidget {
-  final WalletTransactionEntity transaction;
-
-  const _TransactionRow({required this.transaction});
-
-  @override
-  Widget build(BuildContext context) {
-    final isCredit = transaction.isCredit;
-    final signColor = isCredit ? AppColors.success : AppColors.error;
-
-    return Row(
-      children: [
-        Container(
-          width: _signBadgeSize,
-          height: _signBadgeSize,
-          color: signColor.withValues(alpha: _signBadgeAlpha),
-          child: Icon(
-            isCredit ? Icons.arrow_downward : Icons.arrow_upward,
-            size: 18,
-            color: signColor,
-          ),
-        ),
-        Spacing.hMd,
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                transaction.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: context.textPrimary,
-                ),
-              ),
-              Text(
-                DateUtilsCustom.formatShortDate(
-                  transaction.createdAt.toLocal(),
-                ),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.mediumGray,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Text(
-          '${isCredit ? '+' : '-'} ${CurrencyUtils.formatCents(transaction.amount.abs())}',
-          style: TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: signColor,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WithdrawalList extends StatelessWidget {
-  final List<WithdrawalEntity> withdrawals;
-
-  const _WithdrawalList({required this.withdrawals});
-
-  @override
-  Widget build(BuildContext context) {
-    return _ZebraList(
-      itemCount: withdrawals.length,
-      itemBuilder: (context, i) => Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Saque PIX',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: context.textPrimary,
-                  ),
-                ),
-                Text(
-                  '${DateUtilsCustom.formatShortDate(withdrawals[i].createdAt.toLocal())} · ${withdrawals[i].status.label}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.mediumGray,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            CurrencyUtils.formatCents(withdrawals[i].amount),
-            style: TextStyle(
-              fontFamily: AppTypography.headlineFontFamily,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: context.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WithdrawAction extends ConsumerStatefulWidget {
-  final int availableBalance;
-
-  const _WithdrawAction({required this.availableBalance});
-
-  @override
-  ConsumerState<_WithdrawAction> createState() => _WithdrawActionState();
-}
-
-class _WithdrawActionState extends ConsumerState<_WithdrawAction> {
-  final _amountController = TextEditingController();
-  final _pixKeyController = TextEditingController();
-  PixKeyType _pixKeyType = PixKeyType.cpf;
-  bool _isSending = false;
-  String? _idempotencyKey;
-
-  bool get _canWithdraw =>
-      widget.availableBalance >= WalletConstants.minWithdrawalCents;
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    _pixKeyController.dispose();
-    super.dispose();
-  }
-
-  String _newIdempotencyKey() {
-    final random = Random().nextInt(0x7fffffff);
-    return '${DateTime.now().microsecondsSinceEpoch}-$random';
-  }
-
-  void _showWithdrawSheet() {
-    _idempotencyKey = _newIdempotencyKey();
     showBrutalistSheet(
       context: context,
       title: 'SOLICITAR SAQUE',
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (builderContext, setSheetState) => Column(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Disponível: ${CurrencyUtils.formatCents(widget.availableBalance)}',
-              style: const TextStyle(fontSize: 13, color: AppColors.mediumGray),
-            ),
-            Spacing.vMd,
             AppTextField(
+              controller: amountController,
               label: 'Valor (R\$)',
-              hint: '0,00',
-              controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
-              ],
             ),
             Spacing.vSm,
-            _PixKeyTypeSelector(
-              selected: _pixKeyType,
-              onChanged: (value) => setSheetState(() => _pixKeyType = value),
-            ),
-            Spacing.vSm,
-            AppTextField(label: 'Chave PIX', controller: _pixKeyController),
-            Spacing.vLg,
+            AppTextField(controller: pixController, label: 'Chave PIX'),
+            Spacing.vMd,
             AppButton(
               label: 'CONFIRMAR SAQUE',
-              width: double.infinity,
-              isLoading: _isSending,
-              onPressed: () => _submit(sheetContext, setSheetState),
+              onPressed: () async {
+                final text = amountController.text.replaceAll(',', '.');
+                final val = double.tryParse(text);
+                if (val == null || val <= 0) {
+                  AppSnackbar.error(context, 'Valor inválido.');
+                  return;
+                }
+                final cents = (val * 100).toInt();
+                if (cents > availableBalance) {
+                  AppSnackbar.error(context, 'Saldo insuficiente.');
+                  return;
+                }
+                Navigator.pop(ctx);
+                final res = await ref
+                    .read(walletRepositoryProvider)
+                    .withdraw(
+                      amountCents: cents,
+                      pixKey: pixController.text.trim(),
+                      pixKeyType: pixType,
+                      idempotencyKey: DateTime.now().millisecondsSinceEpoch
+                          .toString(),
+                    );
+                if (mounted) {
+                  res.fold((f) => AppSnackbar.error(context, f.message), (_) {
+                    AppSnackbar.success(
+                      context,
+                      'Saque solicitado com sucesso!',
+                    );
+                    ref.read(walletHistoryProvider.notifier).load();
+                  });
+                }
+              },
             ),
-            Spacing.vMd,
           ],
         ),
       ),
-    );
-  }
-
-  Future<void> _submit(
-    BuildContext sheetContext,
-    StateSetter setSheetState,
-  ) async {
-    final amountCents = CurrencyUtils.parseReaisToCents(_amountController.text);
-    final pixKey = _pixKeyController.text.trim();
-
-    if (amountCents == null || pixKey.isEmpty) {
-      AppSnackbar.error(context, 'Preencha todos os campos');
-      return;
-    }
-    if (amountCents < WalletConstants.minWithdrawalCents) {
-      AppSnackbar.error(
-        context,
-        'Valor mínimo de saque: '
-        '${CurrencyUtils.formatCents(WalletConstants.minWithdrawalCents)}',
-      );
-      return;
-    }
-    if (amountCents > widget.availableBalance) {
-      AppSnackbar.error(context, 'Saldo insuficiente');
-      return;
-    }
-
-    setSheetState(() => _isSending = true);
-    final result = await ref
-        .read(walletRepositoryProvider)
-        .withdraw(
-          amountCents: amountCents,
-          pixKey: pixKey,
-          pixKeyType: _pixKeyType.wireValue,
-          idempotencyKey: _idempotencyKey ?? _newIdempotencyKey(),
-        );
-    if (!mounted) return;
-    setSheetState(() => _isSending = false);
-
-    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
-      if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-      AppSnackbar.success(context, 'Saque solicitado com sucesso!');
-      _amountController.clear();
-      _pixKeyController.clear();
-      _idempotencyKey = null;
-      ref.read(walletProvider.notifier).loadWallet();
-      ref.read(walletHistoryProvider.notifier).load();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AppButton(
-      label: 'SACAR',
-      icon: Icons.account_balance_outlined,
-      variant: AppButtonVariant.secondary,
-      width: double.infinity,
-      onPressed: _canWithdraw ? _showWithdrawSheet : null,
-    );
-  }
-}
-
-class _PixKeyTypeSelector extends StatelessWidget {
-  final PixKeyType selected;
-  final ValueChanged<PixKeyType> onChanged;
-
-  const _PixKeyTypeSelector({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const EyebrowLabel('Tipo de chave PIX'),
-        const SizedBox(height: 8),
-        Row(
-          children: PixKeyType.values.map((type) {
-            return Expanded(
-              child: BrutalistFilterChip(
-                label: type.label,
-                selected: type == selected,
-                onTap: () => onChanged(type),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
     );
   }
 }

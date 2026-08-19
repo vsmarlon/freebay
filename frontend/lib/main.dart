@@ -1,14 +1,18 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/components/app_error_widget.dart';
+import 'shared/config/app_config.dart';
 import 'shared/services/http_client.dart';
 import 'shared/services/notification_service.dart';
+import 'shared/services/storage_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/data/entities/user_entity.dart';
 
@@ -18,6 +22,11 @@ void main() {
 
 Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await StorageService.init();
+  if (!kIsWeb && AppConfig.stripePublishableKey.isNotEmpty) {
+    Stripe.publishableKey = AppConfig.stripePublishableKey;
+    await Stripe.instance.applySettings();
+  }
   await Hive.initFlutter();
   try {
     await Firebase.initializeApp();
@@ -57,15 +66,16 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
               Brightness.dark
         : themeMode == ThemeMode.dark;
 
-    return DarkModeInherited(
-      isDarkMode: isDark,
-      child: MaterialApp.router(
-        title: 'FreeBay',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: themeMode,
-        routerConfig: appRouter,
+    return MaterialApp.router(
+      title: 'FreeBay',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
+      routerConfig: appRouter,
+      builder: (context, child) => DarkModeInherited(
+        isDarkMode: isDark,
+        child: child ?? const SizedBox.shrink(),
       ),
     );
   }

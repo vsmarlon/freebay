@@ -1,13 +1,14 @@
 import 'dart:io';
-
-import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
-import 'package:freebay/shared/services/http_client.dart';
-import 'package:freebay/shared/services/image_upload_service.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/repositories/base_http_repository.dart';
+import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 
-class ReviewService {
+class ReviewService extends BaseHttpRepository {
+  ReviewService({super.client});
+
   Future<Either<Failure, String>> uploadReviewImage({
     required String orderId,
     required String filePath,
@@ -18,32 +19,17 @@ class ReviewService {
         filePath,
         filename: filename,
       );
-
       final formData = FormData.fromMap({'file': multipartFile});
-
-      final response = await HttpClient.instance.post(
+      return safePost<String>(
         '/reviews/orders/$orderId/images',
         data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-          receiveTimeout: const Duration(seconds: 30),
-          sendTimeout: const Duration(seconds: 60),
-        ),
+        options: Options(contentType: 'multipart/form-data'),
+        customMapper: (d) =>
+            (d is Map ? (d['url'] ?? d['data']?['url']) : null) as String? ??
+            '',
       );
-
-      if (response.statusCode == 201 && response.data != null) {
-        final url =
-            response.data['data']?['url'] as String? ??
-            response.data['url'] as String?;
-        if (url != null) {
-          return Right(url);
-        }
-        return Left(ServerFailure('Erro ao obter URL da imagem.'));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
+    } catch (_) {
+      return const Left(ServerFailure('Erro ao processar imagem.'));
     }
   }
 
@@ -55,38 +41,25 @@ class ReviewService {
     String? comment,
     List<String> imagePaths = const [],
   }) async {
-    try {
-      final List<String> imageUrls = [];
-      for (final path in imagePaths) {
-        final result = await uploadReviewImage(
-          orderId: orderId,
-          filePath: path,
-        );
-        if (result.isLeft) {
-          return Left((result as Left<Failure, String>).value);
-        }
-        imageUrls.add(result.getOrElse(() => ''));
-      }
-
-      final response = await HttpClient.instance.post(
-        '/reviews/orders/$orderId',
-        data: {
-          'reviewedId': reviewedId,
-          'type': type,
-          'score': score,
-          if (comment != null && comment.isNotEmpty) 'comment': comment,
-          if (imageUrls.isNotEmpty) 'imageIds': imageUrls,
-        },
-      );
-
-      if (response.statusCode == 201 && response.data != null) {
-        return Right(ReviewEntity.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
+    final List<String> imageUrls = [];
+    for (final path in imagePaths) {
+      final result = await uploadReviewImage(orderId: orderId, filePath: path);
+      if (result.isLeft) return Left(result.leftOrNull!);
+      imageUrls.add(result.rightOrNull ?? '');
     }
+
+    return safePost<ReviewEntity>(
+      '/reviews/orders/$orderId',
+      data: {
+        'reviewedId': reviewedId,
+        'type': type,
+        'score': score,
+        if (comment != null && comment.isNotEmpty) 'comment': comment,
+        if (imageUrls.isNotEmpty) 'imageIds': imageUrls,
+      },
+      extractKey: 'data',
+      fromJson: ReviewEntity.fromJson,
+    );
   }
 
   Future<Either<Failure, ReviewListResponse>> getUserReviews(
@@ -94,41 +67,16 @@ class ReviewService {
     String? type,
     int limit = 10,
     int offset = 0,
-  }) async {
-    try {
-      final queryParams = <String, dynamic>{'limit': limit, 'offset': offset};
-      if (type != null) {
-        queryParams['type'] = type;
-      }
+  }) => safeGet<ReviewListResponse>(
+    '/reviews/users/$userId',
+    queryParameters: {'limit': limit, 'offset': offset, 'type': ?type},
+    extractKey: 'data',
+    fromJson: ReviewListResponse.fromJson,
+  );
 
-      final response = await HttpClient.instance.get(
-        '/reviews/users/$userId',
-        queryParameters: queryParams,
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(ReviewListResponse.fromJson(response.data['data']));
-      } else {
-        return const Left(ServerFailure('Erro na requisição'));
-      }
-    } catch (e) {
-      return const Left(ServerFailure('Erro de conexão'));
-    }
-  }
-
-  Future<Either<Failure, bool>> canReviewOrder(String orderId) async {
-    try {
-      final response = await HttpClient.instance.get(
-        '/reviews/orders/$orderId/can-review',
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(response.data['data']['canReview'] as bool);
-      } else {
-        return const Right(false);
-      }
-    } catch (e) {
-      return const Right(false);
-    }
-  }
+  Future<Either<Failure, bool>> canReviewOrder(String orderId) => safeGet<bool>(
+    '/reviews/orders/$orderId/can-review',
+    extractKey: 'data.canReview',
+    customMapper: (d) => d == true,
+  );
 }

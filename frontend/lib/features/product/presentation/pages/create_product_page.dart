@@ -1,32 +1,25 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/category_selector_field.dart';
 import 'package:freebay/features/product/presentation/widgets/product_preview_card.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/features/social/presentation/widgets/local_image_inspector.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = context.isDark;
     final titleController = useTextEditingController();
     final descriptionController = useTextEditingController();
     final priceController = useTextEditingController();
@@ -34,103 +27,77 @@ class CreateProductPage extends HookConsumerWidget {
     final isLoading = useState<bool>(false);
     final selectedCategoryId = useState<String?>(null);
     final selectedImagePath = useState<String?>(null);
+
     useListenable(titleController);
     useListenable(descriptionController);
     useListenable(priceController);
+
     final categoriesAsync = ref.watch(flatCategoriesProvider);
-    final authState = ref.watch(authControllerProvider);
+    final currentUser = ref.watch(authControllerProvider).value;
 
-    final breadcrumbs = context.breadcrumbs;
-    final currentUser = authState.valueOrNull;
-
-    final pricePreview = _displayPrice(priceController.text);
-    final selectedCategory = categoriesAsync.valueOrNull
+    final selectedCategory = categoriesAsync.value
         ?.where((category) => category.id == selectedCategoryId.value)
         .firstOrNull;
 
-    Future<void> pickImage(bool fromCamera) async {
+    Future<void> pickImage(ImageSource source) async {
       final picker = ImagePicker();
       final image = await picker.pickImage(
-        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+        source: source,
         maxWidth: 1600,
         maxHeight: 1600,
         imageQuality: 82,
       );
-      if (image != null) {
-        selectedImagePath.value = image.path;
+      if (image != null) selectedImagePath.value = image.path;
+    }
+
+    Future<void> submit() async {
+      final title = titleController.text.trim();
+      final description = descriptionController.text.trim();
+      final priceDigits = priceController.text.replaceAll(RegExp(r'\D'), '');
+      final price = int.tryParse(priceDigits) ?? 0;
+
+      if (title.length < 3) {
+        AppSnackbar.error(context, 'Informe um título válido.');
+        return;
       }
-    }
+      if (description.length < 10) {
+        AppSnackbar.error(context, 'Adicione uma descrição mais completa.');
+        return;
+      }
+      if (price <= 0) {
+        AppSnackbar.error(context, 'Informe um preço válido.');
+        return;
+      }
+      if (selectedCategoryId.value == null) {
+        AppSnackbar.error(context, 'Selecione uma categoria.');
+        return;
+      }
+      if (selectedImagePath.value == null) {
+        AppSnackbar.error(context, 'Adicione uma imagem do produto.');
+        return;
+      }
 
-    void openImagePreview() {
-      if (selectedImagePath.value == null) return;
-      Navigator.of(context).push(
-        PageRouteBuilder(
-          opaque: false,
-          barrierColor: Colors.black,
-          transitionDuration: const Duration(milliseconds: 200),
-          pageBuilder: (_, _, _) => LocalImageFullScreen(
-            path: selectedImagePath.value!,
-            onEdit: () {
-              Navigator.of(context).pop();
-              showBrutalistSheet(
-                context: context,
-                title: 'OPÇÕES DE IMAGEM',
-                builder: (ctx) => ImageOptionsSheet(
-                  hasImage: selectedImagePath.value != null,
-                  onPickGallery: () {
-                    Navigator.pop(ctx);
-                    pickImage(false);
-                  },
-                  onPickCamera: () {
-                    Navigator.pop(ctx);
-                    pickImage(true);
-                  },
-                  onView: () {
-                    Navigator.pop(ctx);
-                    openImagePreview();
-                  },
-                  onRemove: () {
-                    Navigator.pop(ctx);
-                    selectedImagePath.value = null;
-                  },
-                ),
-              );
-            },
-          ),
-          transitionsBuilder: (_, animation, _, child) =>
-              FadeTransition(opacity: animation, child: child),
-        ),
-      );
-    }
+      isLoading.value = true;
+      final usecase = ref.read(createProductUsecaseProvider);
+      final result = await usecase({
+        'title': title,
+        'description': description,
+        'price': price,
+        'condition': isNewProduct.value ? 'NEW' : 'USED',
+        'categoryId': selectedCategoryId.value,
+        'imagePath': selectedImagePath.value!,
+      });
 
-    void showImageOptions() {
-      showBrutalistSheet(
-        context: context,
-        title: 'OPÇÕES DE IMAGEM',
-        builder: (ctx) => ImageOptionsSheet(
-          hasImage: selectedImagePath.value != null,
-          onPickGallery: () {
-            Navigator.pop(ctx);
-            pickImage(false);
-          },
-          onPickCamera: () {
-            Navigator.pop(ctx);
-            pickImage(true);
-          },
-          onView: selectedImagePath.value != null
-              ? () {
-                  Navigator.pop(ctx);
-                  openImagePreview();
-                }
-              : null,
-          onRemove: selectedImagePath.value != null
-              ? () {
-                  Navigator.pop(ctx);
-                  selectedImagePath.value = null;
-                }
-              : null,
-        ),
-      );
+      if (!context.mounted) return;
+      isLoading.value = false;
+
+      result.fold((failure) => AppSnackbar.error(context, failure.message), (
+        _,
+      ) {
+        ref.invalidate(productsFeedProvider);
+        context.pop();
+        AppSnackbar.success(context, 'Anúncio criado!');
+      });
     }
 
     return Scaffold(
@@ -154,57 +121,26 @@ class CreateProductPage extends HookConsumerWidget {
                 ),
               ),
             ),
-            breadcrumbs: breadcrumbs,
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    color: isDark
-                        ? AppColors.surfaceContainerDark
-                        : AppColors.surfaceContainer,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ANÚNCIO × PUBLICAÇÃO SOCIAL',
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.onSurface,
-                          ),
-                        ),
-                        Spacing.vSm,
-                        Text(
-                          'Anúncios ficam separados do feed social. '
-                          'Defina preço, categoria e condição — sua reputação e avaliações aparecem no seu perfil.',
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.inverseOnSurface
-                                : AppColors.onSurface,
-                            height: 1.4,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Spacing.vLg,
                   ProductPreviewCard(
                     title: titleController.text.trim(),
                     description: descriptionController.text.trim(),
-                    pricePreview: pricePreview,
+                    pricePreview: CurrencyUtils.formatCents(
+                      int.tryParse(
+                            priceController.text.replaceAll(RegExp(r'\D'), ''),
+                          ) ??
+                          0,
+                    ),
                     categoryName: selectedCategory?.name,
                     imagePath: selectedImagePath.value,
                     isNew: isNewProduct.value,
-                    userName: currentUser?.displayName ?? 'Você',
+                    userName: currentUser?.displayNameOrDefault ?? 'Você',
                     userAvatarUrl: currentUser?.avatarUrl,
                   ),
                   Spacing.vLg,
@@ -223,22 +159,11 @@ class CreateProductPage extends HookConsumerWidget {
                   Spacing.vMd,
                   AppTextField(
                     controller: priceController,
-                    label: 'Preço',
+                    label: 'Preço (R\$)',
                     hint: '0,00',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    onChanged: (value) {
-                      final normalized = _formatCurrencyInput(value);
-                      if (normalized != value) {
-                        priceController.value = TextEditingValue(
-                          text: normalized,
-                          selection: TextSelection.collapsed(
-                            offset: normalized.length,
-                          ),
-                        );
-                      }
-                    },
                   ),
                   Spacing.vLg,
                   CategorySelectorField(
@@ -249,50 +174,53 @@ class CreateProductPage extends HookConsumerWidget {
                     onRetry: () => ref.invalidate(categoriesProvider),
                   ),
                   Spacing.vMd,
-                  InkWell(
-                    onTap: showImageOptions,
-                    child: Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      color: isDark ? AppColors.surfaceDark : AppColors.white,
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.image_outlined,
-                            color: AppColors.primaryContainer,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              selectedImagePath.value == null
-                                  ? 'Selecionar imagem do produto'
-                                  : 'Imagem selecionada (Toque para ver/editar)',
-                              style: TextStyle(
-                                color: isDark
-                                    ? AppColors.white
-                                    : AppColors.darkGray,
-                                fontFamily: AppTypography.fontFamily,
-                              ),
+                  Container(
+                    color: context.surfaceColor,
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectedImagePath.value == null
+                                ? 'Nenhuma foto selecionada'
+                                : 'Foto selecionada',
+                            style: TextStyle(
+                              color: context.textPrimary,
+                              fontSize: 13,
                             ),
                           ),
-                          if (selectedImagePath.value != null) ...[
-                            Icon(
-                              Icons.check_circle,
-                              color: AppColors.primaryContainer,
-                              size: 20,
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => pickImage(ImageSource.gallery),
+                          icon: const Icon(Icons.photo_library, size: 16),
+                          label: const Text('Galeria'),
+                          style: OutlinedButton.styleFrom(
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
                             ),
-                          ],
-                        ],
-                      ),
+                          ),
+                        ),
+                        Spacing.hSm,
+                        OutlinedButton.icon(
+                          onPressed: () => pickImage(ImageSource.camera),
+                          icon: const Icon(Icons.camera_alt, size: 16),
+                          label: const Text('Câmera'),
+                          style: OutlinedButton.styleFrom(
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Spacing.vLg,
                   Text(
-                    'Condição',
+                    'CONDIÇÃO',
                     style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppColors.mediumGray : AppColors.darkGray,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: context.textSecondary,
                     ),
                   ),
                   Spacing.vSm,
@@ -300,7 +228,7 @@ class CreateProductPage extends HookConsumerWidget {
                     children: [
                       Expanded(
                         child: AppButton(
-                          label: 'Novo',
+                          label: 'NOVO',
                           variant: isNewProduct.value
                               ? AppButtonVariant.primary
                               : AppButtonVariant.ghost,
@@ -310,7 +238,7 @@ class CreateProductPage extends HookConsumerWidget {
                       Spacing.hSm,
                       Expanded(
                         child: AppButton(
-                          label: 'Usado',
+                          label: 'USADO',
                           variant: !isNewProduct.value
                               ? AppButtonVariant.primary
                               : AppButtonVariant.ghost,
@@ -319,106 +247,11 @@ class CreateProductPage extends HookConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40),
+                  Spacing.vXl,
                   AppButton(
-                    label: 'Publicar anúncio',
+                    label: 'PUBLICAR ANÚNCIO',
                     isLoading: isLoading.value,
-                    onPressed: () async {
-                      final title = titleController.text.trim();
-                      final description = descriptionController.text.trim();
-                      final price = _parsePriceToCents(priceController.text);
-
-                      if (title.length < 3) {
-                        AppSnackbar.error(context, 'Informe um título válido.');
-                        return;
-                      }
-
-                      if (description.length < 10) {
-                        AppSnackbar.error(
-                          context,
-                          'Adicione uma descrição mais completa.',
-                        );
-                        return;
-                      }
-
-                      if (price <= 0) {
-                        AppSnackbar.error(context, 'Informe um preço válido.');
-                        return;
-                      }
-
-                      if (selectedCategoryId.value == null) {
-                        AppSnackbar.error(context, 'Selecione uma categoria.');
-                        return;
-                      }
-
-                      if (selectedImagePath.value == null) {
-                        AppSnackbar.error(
-                          context,
-                          'Adicione uma imagem do produto.',
-                        );
-                        return;
-                      }
-
-                      if (kDebugMode) {
-                        debugPrint('[PRODUCT UI] publishing product...');
-                        debugPrint('[PRODUCT UI] title=$title');
-                        debugPrint(
-                          '[PRODUCT UI] descriptionLength=${description.length}',
-                        );
-                        debugPrint('[PRODUCT UI] priceCents=$price');
-                        debugPrint(
-                          '[PRODUCT UI] condition=${isNewProduct.value ? 'NEW' : 'USED'}',
-                        );
-                        debugPrint(
-                          '[PRODUCT UI] categoryId=${selectedCategoryId.value}',
-                        );
-                        debugPrint(
-                          '[PRODUCT UI] imagePath=${selectedImagePath.value}',
-                        );
-                      }
-
-                      isLoading.value = true;
-                      try {
-                        final usecase = ref.read(createProductUsecaseProvider);
-                        final result = await usecase({
-                          'title': title,
-                          'description': description,
-                          'price': price,
-                          'condition': isNewProduct.value ? 'NEW' : 'USED',
-                          'categoryId': selectedCategoryId.value,
-                          'imagePath': selectedImagePath.value!,
-                        });
-
-                        result.fold(
-                          (failure) {
-                            if (context.mounted) {
-                              AppSnackbar.error(context, failure.message);
-                            }
-                          },
-                          (_) {
-                            ref.invalidate(productsFeedProvider);
-                            if (context.mounted) {
-                              context.pop();
-                              AppSnackbar.success(context, 'Anúncio criado!');
-                            }
-                          },
-                        );
-                      } catch (_) {
-                        if (kDebugMode) {
-                          debugPrint(
-                            '[PRODUCT UI] unexpected publish exception',
-                          );
-                        }
-                        if (context.mounted) {
-                          AppSnackbar.error(
-                            context,
-                            'Não foi possível publicar o anúncio.',
-                          );
-                        }
-                      } finally {
-                        isLoading.value = false;
-                      }
-                    },
+                    onPressed: submit,
                   ),
                 ],
               ),
@@ -427,36 +260,5 @@ class CreateProductPage extends HookConsumerWidget {
         ],
       ),
     );
-  }
-
-  String _formatCurrencyInput(String value) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) {
-      return '';
-    }
-    if (digits.length == 1) {
-      return '0,0$digits';
-    }
-    if (digits.length == 2) {
-      return '0,$digits';
-    }
-
-    final rawIntegerPart = digits.substring(0, digits.length - 2);
-    final integerPart = rawIntegerPart.replaceFirst(RegExp(r'^0+'), '').isEmpty
-        ? '0'
-        : rawIntegerPart.replaceFirst(RegExp(r'^0+'), '');
-    final decimalPart = digits.substring(digits.length - 2);
-    return '$integerPart,$decimalPart';
-  }
-
-  int _parsePriceToCents(String value) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    return int.tryParse(digits) ?? 0;
-  }
-
-  String _displayPrice(String value) {
-    final cents = _parsePriceToCents(value);
-    final reais = cents / 100;
-    return 'R\$ ${reais.toStringAsFixed(2).replaceAll('.', ',')}';
   }
 }

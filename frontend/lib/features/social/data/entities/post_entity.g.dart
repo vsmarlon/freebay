@@ -11,8 +11,8 @@ _PostProductInfo _$PostProductInfoFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String,
-      price: (json['price'] as num).toInt(),
-      condition: json['condition'] as String,
+      price: (json['price'] as num?)?.toInt() ?? 0,
+      condition: json['condition'] as String? ?? 'NEW',
     );
 
 Map<String, dynamic> _$PostProductInfoToJson(_PostProductInfo instance) =>
@@ -63,8 +63,8 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
       'isSaved': instance.isSaved,
       'hasReposted': instance.hasReposted,
       'repostedAt': instance.repostedAt?.toIso8601String(),
-      'repostedBy': instance.repostedBy,
+      'repostedBy': instance.repostedBy?.toJson(),
       'createdAt': instance.createdAt.toIso8601String(),
-      'user': instance.user,
-      'product': instance.product,
+      'user': instance.user.toJson(),
+      'product': instance.product?.toJson(),
     };

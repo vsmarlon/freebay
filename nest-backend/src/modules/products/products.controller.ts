@@ -7,20 +7,17 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-  UploadedFile,
   UseInterceptors,
+  UploadedFile,
+  HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ProductsService } from './products.service';
 import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO } from './dtos/product.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
+import { Authenticated } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
@@ -63,21 +60,18 @@ export class ProductsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: MAX_IMAGE_SIZE },
     }),
   )
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Create a product',
     description: 'Creates a new product listing with image',
     bodyType: CreateProductDTO,
-    auth: true,
     responseStatus: 201,
+    httpCode: HttpStatus.CREATED,
   })
   async create(
     @CurrentUser() user: AuthUser,
@@ -98,11 +92,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Delete a product',
-    auth: true,
     params: [{ name: 'id', description: 'Product UUID' }],
     errors: [{ status: 404, description: 'Product not found' }],
   })
@@ -111,12 +102,9 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Update a product',
     bodyType: UpdateProductDTO,
-    auth: true,
     params: [{ name: 'id', description: 'Product UUID' }],
     errors: [{ status: 404, description: 'Product not found' }],
   })
@@ -129,12 +117,9 @@ export class ProductsController {
   }
 
   @Get('mine/all')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Get my products',
     description: 'Returns all products for the current authenticated user',
-    auth: true,
   })
   async findMyProducts(@CurrentUser() user: AuthUser) {
     return this.productsService.findMyProducts(user.userId);

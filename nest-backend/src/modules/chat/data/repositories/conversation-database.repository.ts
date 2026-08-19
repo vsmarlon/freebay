@@ -7,7 +7,7 @@ import { ConversationRepository } from '../../domain/repositories/conversation.r
 import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 import {
   DirectConversationWithDetails,
-  OrderWithChat,
+  OrderWithChatRecord,
   DirectMessageWithSender,
   ChatMessageWithSender,
   ReplyToSummary,
@@ -186,7 +186,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     } catch { return left(new AppError('DB_ERROR', 'Erro ao marcar mensagens')); }
   }
 
-  async findOrdersByUser(userId: string): RepositoryResponse<OrderWithChat[]> {
+  async findOrdersByUser(userId: string): RepositoryResponse<OrderWithChatRecord[]> {
     try {
       const orders = await this.prisma.order.findMany({
         where: {
@@ -198,11 +198,16 @@ export class ConversationDatabaseRepository implements ConversationRepository {
         include: {
           buyer: { select: USER_SELECT_BASIC },
           seller: { select: USER_SELECT_BASIC },
-          product: { select: { id: true, title: true, images: { take: 1, orderBy: { order: 'asc' } } } },
+          product: { select: { id: true, title: true } },
+          chatMessages: {
+            take: 1,
+            select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
+            orderBy: { createdAt: 'desc' },
+          },
         },
         orderBy: { updatedAt: 'desc' },
       });
-      return right(orders as unknown as OrderWithChat[]);
+      return right(orders);
     } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar pedidos')); }
   }
 

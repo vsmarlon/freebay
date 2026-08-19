@@ -1,11 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { PostPayload } from '../../types/social.types';
-
-export interface ShareWithPost {
-  post: PostPayload;
-  user: { id: string; displayName: string; avatarUrl: string | null };
-  createdAt: Date;
-}
+import { ShareWithPost } from '../../types/social.types';
 
 export abstract class ShareRepository {
   abstract findByUserAndPost(userId: string, postId: string): RepositoryResponse<{ id: string } | null>;

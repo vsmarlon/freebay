@@ -8,6 +8,16 @@ class AppConfig {
     defaultValue: '',
   );
 
+  static const String stripePublishableKey = String.fromEnvironment(
+    'STRIPE_PUBLISHABLE_KEY',
+    defaultValue: '',
+  );
+
+  static const String sentryDsn = String.fromEnvironment(
+    'SENTRY_DSN',
+    defaultValue: '',
+  );
+
   static String get apiBaseUrl {
     if (_apiBaseUrlOverride.isNotEmpty) {
       return _apiBaseUrlOverride;

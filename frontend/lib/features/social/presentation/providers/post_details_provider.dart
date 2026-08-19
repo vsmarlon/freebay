@@ -3,6 +3,9 @@ import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/domain/usecases/get_post_details_usecase.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'post_details_provider.g.dart';
 
 final httpClientProvider = Provider((ref) => HttpClient());
 
@@ -45,14 +48,17 @@ class PostDetailsState {
   }
 }
 
-class PostDetailsNotifier extends StateNotifier<PostDetailsState> {
-  final GetPostDetailsUseCase _getPostDetails;
-  final GetPostCommentsUseCase _getPostComments;
-  final String postId;
+@riverpod
+class PostDetails extends _$PostDetails {
+  late final GetPostDetailsUseCase _getPostDetails;
+  late final GetPostCommentsUseCase _getPostComments;
 
-  PostDetailsNotifier(this._getPostDetails, this._getPostComments, this.postId)
-    : super(PostDetailsState()) {
-    _loadData();
+  @override
+  PostDetailsState build(String postId) {
+    _getPostDetails = ref.watch(getPostDetailsUseCaseProvider);
+    _getPostComments = ref.watch(getPostCommentsUseCaseProvider);
+    Future.microtask(_loadData);
+    return PostDetailsState();
   }
 
   Future<void> _loadData() async {
@@ -96,12 +102,3 @@ class PostDetailsNotifier extends StateNotifier<PostDetailsState> {
     );
   }
 }
-
-final postDetailsProvider = StateNotifierProvider.autoDispose
-    .family<PostDetailsNotifier, PostDetailsState, String>((ref, postId) {
-      return PostDetailsNotifier(
-        ref.watch(getPostDetailsUseCaseProvider),
-        ref.watch(getPostCommentsUseCaseProvider),
-        postId,
-      );
-    });

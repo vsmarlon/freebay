@@ -49,19 +49,23 @@ class LoggingInterceptor extends Interceptor {
     handler.next(err);
   }
 
-  dynamic _sanitizeData(dynamic data) {
+  dynamic _sanitizeData(dynamic data, [int depth = 0]) {
+    if (depth > 4) return '[NESTED]';
     if (data is Map) {
-      return data.map((key, value) => MapEntry(key, _sanitizeData(value)));
+      return data.map(
+        (key, value) => MapEntry(key, _sanitizeData(value, depth + 1)),
+      );
     } else if (data is List) {
-      return data.map((item) => _sanitizeData(item)).toList();
+      if (data.length > 20) {
+        return '[List of ${data.length} items]';
+      }
+      return data.map((item) => _sanitizeData(item, depth + 1)).toList();
     } else if (data is String) {
-      if (data.startsWith('data:image/') ||
-          (data.length > 100 &&
-              !data.contains(' ') &&
-              (data.contains('base64') ||
-                  RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(data)))) {
-        final prefix = data.substring(0, data.length > 60 ? 60 : data.length);
-        return '$prefix... [TRUNCATED, length: ${data.length}]';
+      if (data.startsWith('data:image/')) {
+        return '[IMAGE_DATA_URI, length: ${data.length}]';
+      }
+      if (data.length > 500) {
+        return '${data.substring(0, 100)}... [TRUNCATED, length: ${data.length}]';
       }
     }
     return data;
@@ -70,8 +74,7 @@ class LoggingInterceptor extends Interceptor {
   String _prettyJson(dynamic json) {
     try {
       final sanitized = _sanitizeData(json);
-      final encoder = JsonEncoder.withIndent('  ');
-      return encoder.convert(sanitized);
+      return jsonEncode(sanitized);
     } catch (_) {
       return json.toString();
     }

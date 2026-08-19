@@ -1,9 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError, DatabaseError } from '@/shared/core/errors';
-import { OrderRepository, CreateOrderTxData, ConfirmDeliveryData, CancelOrderTxData, ProductForOrder } from '../../domain/repositories/order.repository';
-import { OrderFullPayload, OrderProductPayload, ORDER_INCLUDE_FULL, ORDER_INCLUDE_PRODUCT } from '../../types/order.types';
+import { DatabaseError, NotFoundError, BadRequestError } from '@/shared/core/errors';
+import { OrderRepository } from '../../domain/repositories/order.repository';
+import {
+  OrderFullPayload,
+  OrderProductPayload,
+  CreateOrderTxData,
+  ConfirmDeliveryData,
+  CancelOrderTxData,
+  ProductForOrder,
+  ORDER_INCLUDE_FULL,
+  ORDER_INCLUDE_PRODUCT,
+} from '../../types/order.types';
 import { Product, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -18,7 +27,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       return right(order as OrderFullPayload | null);
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar pedido'));
+      return left(new DatabaseError('Erro ao buscar pedido'));
     }
   }
 
@@ -30,7 +39,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       return right(product);
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar produto'));
+      return left(new DatabaseError('Erro ao buscar produto'));
     }
   }
 
@@ -43,7 +52,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       return right(orders as OrderProductPayload[]);
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar pedidos'));
+      return left(new DatabaseError('Erro ao buscar pedidos'));
     }
   }
 
@@ -56,7 +65,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       return right(orders as OrderProductPayload[]);
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar pedidos'));
+      return left(new DatabaseError('Erro ao buscar pedidos'));
     }
   }
 
@@ -64,7 +73,7 @@ export class PrismaOrderRepository implements OrderRepository {
     try {
       return right(await this.prisma.order.count({ where: { sellerId } }));
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao contar pedidos'));
+      return left(new DatabaseError('Erro ao contar pedidos'));
     }
   }
 
@@ -72,7 +81,7 @@ export class PrismaOrderRepository implements OrderRepository {
     try {
       return right(await this.prisma.order.count({ where: { buyerId } }));
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao contar pedidos'));
+      return left(new DatabaseError('Erro ao contar pedidos'));
     }
   }
 
@@ -80,23 +89,33 @@ export class PrismaOrderRepository implements OrderRepository {
     try {
       return right(await this.prisma.order.update({ where: { id }, data }));
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao atualizar pedido'));
+      return left(new DatabaseError('Erro ao atualizar pedido'));
     }
   }
 
   async createOrderWithReservation(data: CreateOrderTxData): RepositoryResponse<{ id: string }> {
-    try {
-      const product = await this.prisma.product.findUnique({ where: { id: data.productId } });
-      if (!product) return left(new AppError('NOT_FOUND', 'Produto não encontrado', 404));
+    // Sentinel strings for expected business-rule failures inside the Prisma transaction.
+    // Using string sentinels (not AppError instances) avoids instanceof checks on caught errors.
+    const PRODUCT_NOT_FOUND = 'PRODUCT_NOT_FOUND';
+    const OUT_OF_STOCK = 'OUT_OF_STOCK';
+    const PRODUCT_UNAVAILABLE = 'PRODUCT_UNAVAILABLE';
 
+    try {
       const order = await this.prisma.$transaction(async (tx) => {
-        if (product.quantity > 1) {
-          const products = await tx.$queryRaw<Product[]>`
-            SELECT * FROM "Product" WHERE id = ${data.productId} FOR UPDATE
-          `;
-          const current = products[0];
-          if (!current || current.quantity <= current.soldCount) {
-            throw new AppError('BAD_REQUEST', 'Produto sem estoque');
+        const products = await tx.$queryRaw<Product[]>`
+          SELECT * FROM "Product" WHERE id = ${data.productId} FOR UPDATE
+        `;
+        const current = products[0];
+        if (!current) {
+          throw new Error(PRODUCT_NOT_FOUND);
+        }
+        if (current.status !== 'ACTIVE') {
+          throw new Error(PRODUCT_UNAVAILABLE);
+        }
+
+        if (current.quantity > 1) {
+          if (current.quantity <= current.soldCount) {
+            throw new Error(OUT_OF_STOCK);
           }
           const newSoldCount = current.soldCount + 1;
           await tx.product.update({
@@ -112,7 +131,7 @@ export class PrismaOrderRepository implements OrderRepository {
             data: { status: 'PAUSED' },
           });
           if (reserveResult.count === 0) {
-            throw new AppError('BAD_REQUEST', 'Produto não está mais disponível');
+            throw new Error(PRODUCT_UNAVAILABLE);
           }
         }
 
@@ -143,8 +162,12 @@ export class PrismaOrderRepository implements OrderRepository {
 
       return right(order);
     } catch (e) {
-      if (e instanceof AppError) return left(e);
-      return left(new AppError('DB_ERROR', 'Erro ao criar pedido'));
+      if (e instanceof Error) {
+        if (e.message === 'PRODUCT_NOT_FOUND') return left(new NotFoundError('Produto'));
+        if (e.message === 'OUT_OF_STOCK') return left(new BadRequestError('Produto sem estoque'));
+        if (e.message === 'PRODUCT_UNAVAILABLE') return left(new BadRequestError('Produto não está mais disponível'));
+      }
+      return left(new DatabaseError('Erro ao criar pedido'));
     }
   }
 
@@ -179,7 +202,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       return right(void 0);
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao confirmar entrega'));
+      return left(new DatabaseError('Erro ao confirmar entrega'));
     }
   }
 
@@ -201,7 +224,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       return right(void 0);
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao ativar escrow'));
+      return left(new DatabaseError('Erro ao ativar escrow'));
     }
   }
 
@@ -251,7 +274,7 @@ export class PrismaOrderRepository implements OrderRepository {
       });
       return right(void 0);
     } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao cancelar pedido'));
+      return left(new DatabaseError('Erro ao cancelar pedido'));
     }
   }
 

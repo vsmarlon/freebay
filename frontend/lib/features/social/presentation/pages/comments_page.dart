@@ -1,19 +1,15 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/features/social/presentation/widgets/comment_skeleton_row.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 
@@ -53,8 +49,6 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     super.dispose();
   }
 
-  static const _maxIndentDepth = 4;
-
   void _syncTree({bool bumpVersion = true}) {
     final root = TreeNode<CommentEntity>.root();
     for (final comment in _comments) {
@@ -74,11 +68,8 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     for (final reply in replies) {
       final node = TreeNode<CommentEntity>(key: reply.id, data: reply);
       parent.add(node);
-      if (reply.replies.isEmpty) continue;
-      if (depth >= _maxIndentDepth) {
-        _addReplies(parent, reply.replies, depth + 1);
-      } else {
-        _addReplies(node, reply.replies, depth + 1);
+      if (reply.replies.isNotEmpty) {
+        _addReplies(depth >= 4 ? parent : node, reply.replies, depth + 1);
       }
     }
   }
@@ -90,48 +81,33 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
       _error = null;
     });
 
-    try {
-      final repo = ref.read(socialRepositoryProvider);
-      final result = await repo.getComments(widget.postId);
+    final repo = ref.read(socialRepositoryProvider);
+    final result = await repo.getComments(widget.postId);
 
-      result.fold(
-        (failure) => setState(() {
-          _error = failure.message;
-          _isLoading = false;
-        }),
-        (comments) => setState(() {
-          _comments = refresh ? comments : [..._comments, ...comments];
-          _isLoading = false;
-          _syncTree();
-        }),
-      );
-    } catch (_) {
-      setState(() {
-        _error = 'Erro ao carregar comentários';
+    if (!mounted) return;
+    result.fold(
+      (failure) => setState(() {
+        _error = failure.message;
         _isLoading = false;
-      });
-    }
+      }),
+      (comments) => setState(() {
+        _comments = refresh ? comments : [..._comments, ...comments];
+        _isLoading = false;
+        _syncTree();
+      }),
+    );
   }
 
-  /// Silently re-fetches comments after sending without showing a loading
-  /// indicator or bumping the tree version (preserves scroll & expansion).
   Future<void> _refreshAfterSend() async {
-    try {
-      final repo = ref.read(socialRepositoryProvider);
-      final result = await repo.getComments(widget.postId);
-      result.fold(
-        (_) {}, // silently ignore — existing comments remain visible
-        (comments) {
-          if (!mounted) return;
-          setState(() {
-            _comments = comments;
-            _syncTree(bumpVersion: false);
-          });
-        },
-      );
-    } catch (_) {
-      // silently ignore — the comment was already sent successfully
-    }
+    final repo = ref.read(socialRepositoryProvider);
+    final result = await repo.getComments(widget.postId);
+    result.fold((_) {}, (comments) {
+      if (!mounted) return;
+      setState(() {
+        _comments = comments;
+        _syncTree(bumpVersion: false);
+      });
+    });
   }
 
   void _activateReply(String nodeKey, {String? displayName}) {
@@ -159,37 +135,32 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     if (trimmed.isEmpty) return;
 
     setState(() => _isSending = true);
+    final repo = ref.read(socialRepositoryProvider);
+    final result = await repo.commentPost(
+      widget.postId,
+      trimmed,
+      parentId: parentId,
+    );
 
-    try {
-      final repo = ref.read(socialRepositoryProvider);
-      final result = await repo.commentPost(
-        widget.postId,
-        trimmed,
-        parentId: parentId,
-      );
+    if (!mounted) return;
+    setState(() => _isSending = false);
 
-      result.fold(
-        (failure) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(failure.message)));
-        },
-        (_) {
-          if (parentId != null) {
-            _cancelReply();
-          } else {
-            _newCommentController.clear();
-          }
-          ref
-              .read(feedProvider.notifier)
-              .updatePostCommentCount(widget.postId, 1);
-          _refreshAfterSend();
-        },
-      );
-    } finally {
-      if (mounted) setState(() => _isSending = false);
-    }
+    result.fold(
+      (failure) => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(failure.message))),
+      (_) {
+        if (parentId != null) {
+          _cancelReply();
+        } else {
+          _newCommentController.clear();
+        }
+        ref
+            .read(feedProvider.notifier)
+            .updatePostCommentCount(widget.postId, 1);
+        _refreshAfterSend();
+      },
+    );
   }
 
   @override
@@ -216,75 +187,47 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
               ),
             ),
           ),
-          BrutalistBreadcrumb(items: context.breadcrumbs),
-          _buildNewCommentInput(),
-          Spacing.vXs,
-          Expanded(child: _buildBody(context)),
+          _buildInputBar(),
+          Expanded(child: _buildTreeBody(context)),
         ],
       ),
     );
   }
 
-  Widget _buildNewCommentInput() {
-    final isDark = context.isDark;
+  Widget _buildInputBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       color: context.surfaceMidColor,
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            color: context.isDark
-                ? AppColors.backgroundDark
-                : AppColors.lightGray,
-            child: const Icon(
-              Icons.person,
-              size: 16,
-              color: AppColors.mediumGray,
-            ),
-          ),
-          Spacing.hSm,
           Expanded(
             child: TextField(
               controller: _newCommentController,
               decoration: InputDecoration(
                 hintText: 'Adicionar comentário...',
-                hintStyle: const TextStyle(
-                  color: AppColors.mediumGray,
+                hintStyle: TextStyle(
+                  color: context.textSecondary,
                   fontSize: 14,
                 ),
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
-                  borderSide: BorderSide.none,
-                ),
+                border: InputBorder.none,
                 filled: true,
-                fillColor: isDark
-                    ? AppColors.backgroundDark
-                    : AppColors.lightGray,
+                fillColor: context.surfaceColor,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
                 ),
                 isDense: true,
               ),
-              style: TextStyle(
-                color: isDark ? AppColors.white : AppColors.darkGray,
-                fontSize: 14,
-              ),
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              onSubmitted: _sendComment,
+              style: TextStyle(color: context.textPrimary, fontSize: 14),
+              onSubmitted: (t) => _sendComment(t),
             ),
           ),
           Spacing.hSm,
           BrutalistIconButton(
             icon: Icons.send,
             onTap: () => _sendComment(_newCommentController.text),
-            size: 32,
-            iconSize: 16,
             iconColor: AppColors.onPrimary,
-            gradient: AppColors.brutalistGradient,
+            backgroundColor: AppColors.primaryContainer,
             isLoading: _isSending,
           ),
         ],
@@ -292,54 +235,53 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
     );
   }
 
-  Widget _buildBody(BuildContext context) {
-    final isDark = context.isDark;
+  Widget _buildTreeBody(BuildContext context) {
     if (_isLoading && _comments.isEmpty) {
-      return SkeletonPage(
+      return const SkeletonPage(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
-            const ShimmerBlock(height: 48),
-            const SizedBox(height: 16),
-            const CommentSkeletonRow(),
-            const SizedBox(height: 12),
-            const CommentSkeletonRow(),
-            const SizedBox(height: 12),
-            const CommentSkeletonRow(),
-            const SizedBox(height: 12),
-            const CommentSkeletonRow(),
-            const SizedBox(height: 12),
-            const CommentSkeletonRow(),
+            SizedBox(height: 16),
+            ShimmerBlock(height: 60),
+            SizedBox(height: 12),
+            ShimmerBlock(height: 60),
+            SizedBox(height: 12),
+            ShimmerBlock(height: 60),
           ],
         ),
       );
     }
-    if (_error != null && _comments.isEmpty) return _buildError(context);
-    if (_comments.isEmpty) return _buildEmpty(context);
+    if (_error != null && _comments.isEmpty) {
+      return Center(
+        child: Text(_error!, style: TextStyle(color: context.textPrimary)),
+      );
+    }
+    if (_comments.isEmpty) {
+      return const EmptyState(
+        icon: Icons.chat_bubble_outline,
+        title: 'NENHUM COMENTÁRIO',
+        subtitle: 'Seja o primeiro a comentar.',
+      );
+    }
 
     return RefreshIndicator(
-      color: AppColors.primaryContainer,
       onRefresh: () => _loadComments(refresh: true),
       child: TreeView.simple<CommentEntity>(
         key: ValueKey(_treeVersion),
         tree: _rootNode,
         showRootNode: false,
-        builder: (context, node) {
-          if (node.data == null) return const SizedBox.shrink();
-          return _buildNode(isDark, node);
-        },
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        expansionBehavior: ExpansionBehavior.snapToTop,
+        builder: (context, node) => node.data == null
+            ? const SizedBox.shrink()
+            : _buildCommentNode(node),
+        padding: const EdgeInsets.only(top: 8, bottom: 96),
         indentation: const Indentation(
-          width: 28,
+          width: 24,
           style: IndentStyle.squareJoint,
         ),
       ),
     );
   }
 
-  Widget _buildNode(bool isDark, ITreeNode<CommentEntity> node) {
+  Widget _buildCommentNode(ITreeNode<CommentEntity> node) {
     final comment = node.data!;
     final isReplying = _activeReplyId == node.key;
 
@@ -352,12 +294,12 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 30,
-                height: 30,
-                color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+                width: 28,
+                height: 28,
+                color: context.surfaceColor,
                 child: const Icon(
                   Icons.person,
-                  size: 15,
+                  size: 14,
                   color: AppColors.mediumGray,
                 ),
               ),
@@ -366,38 +308,34 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          comment.user?.displayName ?? 'Usuário',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.darkGray,
-                          ),
-                        ),
-                        Spacing.hXs,
-                        Text(
-                          _formatTimeAgo(comment.createdAt),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.mediumGray,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      comment.user?.displayName ?? 'Usuário',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: context.textPrimary,
+                      ),
                     ),
-                    Spacing.vXs,
+                    const SizedBox(height: 2),
                     Text(
                       comment.content,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                        height: 1.3,
+                        color: context.textPrimary,
                       ),
                     ),
-                    Spacing.vXs,
+                    if (comment.replies.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '${comment.replies.length} ${comment.replies.length == 1 ? "resposta" : "respostas"}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: context.textSecondary,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 4),
                     GestureDetector(
                       onTap: () => isReplying
                           ? _cancelReply()
@@ -409,7 +347,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                         isReplying ? 'Cancelar' : 'Responder',
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: isReplying
                               ? AppColors.error
                               : AppColors.primaryContainer,
@@ -424,7 +362,7 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
           if (isReplying) ...[
             Spacing.vSm,
             Padding(
-              padding: const EdgeInsets.only(left: 38),
+              padding: const EdgeInsets.only(left: 36),
               child: Row(
                 children: [
                   Expanded(
@@ -434,45 +372,29 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
                       decoration: InputDecoration(
                         hintText:
                             'Responder a ${comment.user?.displayName ?? 'usuário'}...',
-                        hintStyle: const TextStyle(
-                          color: AppColors.mediumGray,
-                          fontSize: 13,
+                        hintStyle: TextStyle(
+                          color: context.textSecondary,
+                          fontSize: 12,
                         ),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.zero,
-                          borderSide: BorderSide.none,
-                        ),
+                        border: InputBorder.none,
                         filled: true,
-                        fillColor: isDark
-                            ? AppColors.backgroundDark
-                            : AppColors.lightGray,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
+                        fillColor: context.surfaceColor,
                         isDense: true,
                       ),
                       style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                        fontSize: 13,
+                        color: context.textPrimary,
+                        fontSize: 12,
                       ),
-                      maxLines: null,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (v) => _sendComment(v, parentId: comment.id),
+                      onSubmitted: (t) => _sendComment(t, parentId: comment.id),
                     ),
                   ),
                   Spacing.hXs,
-                  BrutalistIconButton(
-                    icon: Icons.send,
-                    onTap: () => _sendComment(
+                  IconButton(
+                    icon: const Icon(Icons.send, size: 16),
+                    onPressed: () => _sendComment(
                       _replyController.text,
                       parentId: comment.id,
                     ),
-                    size: 28,
-                    iconSize: 14,
-                    iconColor: AppColors.onPrimary,
-                    gradient: AppColors.brutalistGradient,
-                    isLoading: _isSending,
                   ),
                 ],
               ),
@@ -481,46 +403,5 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
         ],
       ),
     );
-  }
-
-  Widget _buildError(BuildContext context) {
-    final isDark = context.isDark;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-          Spacing.vMd,
-          Text(
-            _error ?? 'Erro ao carregar comentários',
-            style: TextStyle(
-              color: isDark ? AppColors.white : AppColors.darkGray,
-            ),
-          ),
-          Spacing.vMd,
-          AppButton(
-            label: 'Tentar novamente',
-            onPressed: () => _loadComments(refresh: true),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmpty(BuildContext context) {
-    return const EmptyState(
-      icon: Icons.chat_bubble_outline,
-      title: 'NENHUM COMENTÁRIO',
-      subtitle: 'Seja o primeiro a comentar!',
-    );
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final diff = now.difference(dateTime);
-    if (diff.inDays > 0) return '${diff.inDays}d';
-    if (diff.inHours > 0) return '${diff.inHours}h';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m';
-    return 'agora';
   }
 }

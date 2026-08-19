@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
@@ -35,13 +31,21 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
     });
   }
 
+  Future<void> _submitCheckout() async {
+    setState(() => _isSubmitting = true);
+    final result = await ref.read(checkoutCartUsecaseProvider)();
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    result.fold(
+      (failure) => AppSnackbar.error(context, failure.message),
+      (checkout) => setState(() => _checkout = checkout),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     final state = ref.watch(cartProvider);
     final cart = state.cart;
-    final authState = ref.watch(authControllerProvider);
-    final user = authState.valueOrNull;
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -71,394 +75,153 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
                     child: Column(
                       children: [
                         SizedBox(height: 16),
-                        _CheckoutSkeletonItem(),
-                        SizedBox(height: 24),
-                        _CheckoutSkeletonItem(),
-                        SizedBox(height: 24),
                         ShimmerBlock(height: 80),
-                        SizedBox(height: 16),
-                        ShimmerBlock(height: 60),
-                        SizedBox(height: 16),
-                        ShimmerBlock(height: 40),
-                        SizedBox(height: 16),
-                        ShimmerBlock(height: 48),
+                        SizedBox(height: 12),
+                        ShimmerBlock(height: 80),
+                        SizedBox(height: 12),
+                        ShimmerBlock(height: 80),
                       ],
                     ),
                   )
                 : _checkout != null
-                    ? _buildCheckoutResult(context, isDark, _checkout!)
-                    : cart.items.isEmpty
-                        ? const EmptyState(
-                            icon: Icons.shopping_cart_outlined,
-                            title: 'CARRINHO VAZIO',
-                            subtitle:
-                                'Adicione produtos ao carrinho para continuar.',
-                          )
-                        : Column(
+                ? _buildResult(_checkout!)
+                : cart.items.isEmpty
+                ? const EmptyState(
+                    icon: Icons.shopping_cart_outlined,
+                    title: 'CARRINHO VAZIO',
+                    subtitle: 'Adicione produtos ao carrinho para continuar.',
+                  )
+                : Column(
+                    children: [
+                      Expanded(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: cart.items.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, i) {
+                            final item = cart.items[i];
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              color: context.surfaceColor,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item.product.title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: context.textPrimary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${item.quantity}x',
+                                    style: TextStyle(
+                                      color: context.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    CurrencyUtils.formatCents(item.subtotal),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      color: context.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        color: context.surfaceColor,
+                        child: SafeArea(
+                          child: Row(
                             children: [
                               Expanded(
-                                child: ListView(
-                                  padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    ...cart.items.map((item) {
-                                      final subtotal =
-                                          CurrencyUtils.formatCents(
-                                              item.subtotal);
-                                      return Container(
-                                        margin: const EdgeInsets.only(
-                                            bottom: Spacing.sm),
-                                        padding: const EdgeInsets.all(12),
-                                        color: isDark
-                                            ? AppColors.surfaceDark
-                                            : AppColors.white,
-                                        child: Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                item.product.title,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontFamily:
-                                                      AppTypography.fontFamily,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: isDark
-                                                      ? AppColors.white
-                                                      : AppColors.darkGray,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              '${item.quantity}x',
-                                              style: TextStyle(
-                                                fontFamily:
-                                                    AppTypography.fontFamily,
-                                                color: isDark
-                                                    ? AppColors.mediumGray
-                                                    : AppColors.mediumGray,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              'R\$ $subtotal',
-                                              style: TextStyle(
-                                                fontFamily: AppTypography
-                                                    .headlineFontFamily,
-                                                fontWeight: FontWeight.w700,
-                                                color: isDark
-                                                    ? AppColors.white
-                                                    : AppColors.darkGray,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }),
-                                    Spacing.vMd,
-                                    if (!(user?.hasCpf ?? false))
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        color: isDark
-                                            ? AppColors.surfaceContainerDark
-                                            : AppColors.surfaceContainerHighest,
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.warning_amber,
-                                                color: AppColors.warning,
-                                                size: 20),
-                                            Spacing.hSm,
-                                            Expanded(
-                                              child: Text(
-                                                'Adicione seu CPF no perfil antes de comprar.',
-                                                style: TextStyle(
-                                                  fontFamily:
-                                                      AppTypography.fontFamily,
-                                                  fontSize: 13,
-                                                  color: isDark
-                                                      ? AppColors.white
-                                                      : AppColors.darkGray,
-                                                ),
-                                              ),
-                                            ),
-                                            Spacing.hSm,
-                                            InkWell(
-                                              onTap: () =>
-                                                  context.push('/profile/edit'),
-                                              child: const Text(
-                                                'Adicionar',
-                                                style: TextStyle(
-                                                  fontFamily:
-                                                      AppTypography.fontFamily,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppColors
-                                                      .primaryContainer,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                    Text(
+                                      'Total (${cart.totalItems} itens)',
+                                      style: TextStyle(
+                                        color: context.textSecondary,
                                       ),
+                                    ),
+                                    Text(
+                                      CurrencyUtils.formatCents(
+                                        cart.totalPrice,
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        color: context.textPrimary,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : AppColors.white,
-                                child: SafeArea(
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'Total (${cart.totalItems} itens)',
-                                              style: TextStyle(
-                                                fontFamily:
-                                                    AppTypography.fontFamily,
-                                                color: isDark
-                                                    ? AppColors.mediumGray
-                                                    : AppColors.mediumGray,
-                                              ),
-                                            ),
-                                            Text(
-                                              CurrencyUtils.formatCents(
-                                                  cart.totalPrice),
-                                              style: TextStyle(
-                                                fontFamily: AppTypography
-                                                    .headlineFontFamily,
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.w700,
-                                                color: isDark
-                                                    ? AppColors.white
-                                                    : AppColors.darkGray,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: AppButton(
-                                          label: 'Gerar PIXs',
-                                          onPressed: _isSubmitting
-                                              ? null
-                                              : () => _submitCheckout(context),
-                                          isLoading: _isSubmitting,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              AppButton(
+                                label: 'GERAR CHECKOUT',
+                                isLoading: _isSubmitting,
+                                onPressed: _submitCheckout,
                               ),
                             ],
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCheckoutResult(
-    BuildContext context,
-    bool isDark,
-    CartCheckoutEntity checkout,
-  ) {
+  Widget _buildResult(CartCheckoutEntity checkout) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Container(
           padding: const EdgeInsets.all(16),
-          color: isDark
-              ? AppColors.surfaceContainerDark
-              : AppColors.surfaceContainer,
+          color: context.surfaceColor,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'CHECKOUT GERADO',
                 style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color:
-                      isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  color: context.textSecondary,
                 ),
               ),
-              const SizedBox(height: 12),
+              Spacing.vSm,
               Text(
                 '${checkout.totalOrders} pedidos criados',
                 style: TextStyle(
-                  fontFamily: AppTypography.headlineFontFamily,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.onSurface,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: context.textPrimary,
                 ),
               ),
-            ],
-          ),
-        ),
-        Spacing.vMd,
-        ...checkout.items.map(
-          (item) => Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            color: isDark ? AppColors.surfaceDark : AppColors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.productTitle,
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.white : AppColors.onSurface,
-                  ),
-                ),
-                Spacing.vSm,
-                Text(
-                  'Quantidade: ${item.quantity}',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    color: isDark
-                        ? AppColors.mediumGray
-                        : AppColors.onSurfaceVariant,
-                  ),
-                ),
-                Spacing.vSm,
-                Text(
-                  CurrencyUtils.formatCents(item.amount),
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppColors.white : AppColors.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  color: isDark
-                      ? AppColors.surfaceContainerLowDark
-                      : AppColors.surfaceContainerLowest,
-                  child: SelectableText(
-                    item.pixQrCode,
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 13,
-                      height: 1.5,
-                      color: isDark ? AppColors.white : AppColors.onSurface,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          await Clipboard.setData(
-                            ClipboardData(text: item.pixQrCode),
-                          );
-                          if (!context.mounted) {
-                            return;
-                          }
-                          AppSnackbar.success(context, 'Codigo PIX copiado');
-                        },
-                        child: Container(
-                          height: 44,
-                          color: isDark
-                              ? AppColors.surfaceContainerDark
-                              : AppColors.surfaceContainerHighest,
-                          child: Center(
-                            child: Text(
-                              'Copiar',
-                              style: TextStyle(
-                                fontFamily: AppTypography.fontFamily,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? AppColors.white
-                                    : AppColors.onSurface,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AppButton(
-                        label: 'Ver pedido',
-                        onPressed: () =>
-                            context.push('/orders/${item.orderId}'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _submitCheckout(BuildContext context) async {
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    final result = await ref.read(checkoutCartUsecaseProvider)();
-
-    result.fold(
-      (failure) {
-        if (!context.mounted) {
-          return;
-        }
-        AppSnackbar.error(context, failure.message);
-      },
-      (checkout) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _checkout = checkout;
-        });
-        ref.read(cartProvider.notifier).loadCart();
-      },
-    );
-
-    if (mounted) {
-      setState(() {
-        _isSubmitting = false;
-      });
-    }
-  }
-}
-
-class _CheckoutSkeletonItem extends StatelessWidget {
-  const _CheckoutSkeletonItem();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        ShimmerBlock(width: 60, height: 60),
-        SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ShimmerBlock(height: 16, width: double.infinity),
-              SizedBox(height: 6),
-              ShimmerBlock(height: 14, width: 80),
+              Spacing.vSm,
+              Text(
+                'Total: ${CurrencyUtils.formatCents(checkout.totalAmount)}',
+                style: TextStyle(fontSize: 16, color: context.textSecondary),
+              ),
+              Spacing.vMd,
+              AppButton(
+                label: 'VER MEUS PEDIDOS',
+                onPressed: () => context.go('/orders'),
+              ),
             ],
           ),
         ),

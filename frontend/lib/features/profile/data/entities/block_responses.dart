@@ -1,46 +1,82 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class BlockListUser {
+  final String id;
+  final String displayName;
+  final String? avatarUrl;
+  final bool isVerified;
+  final double reputationScore;
 
-part 'block_responses.freezed.dart';
-part 'block_responses.g.dart';
+  const BlockListUser({
+    required this.id,
+    required this.displayName,
+    this.avatarUrl,
+    required this.isVerified,
+    required this.reputationScore,
+  });
 
-@freezed
-abstract class BlockListUser with _$BlockListUser {
-  const factory BlockListUser({
-    required String id,
-    required String displayName,
-    String? avatarUrl,
-    required bool isVerified,
-    required double reputationScore,
-  }) = _BlockListUser;
+  factory BlockListUser.fromJson(Map<String, dynamic> json) => BlockListUser(
+    id: json['id'] as String,
+    displayName: json['displayName'] as String,
+    avatarUrl: json['avatarUrl'] as String?,
+    isVerified: json['isVerified'] as bool? ?? false,
+    reputationScore: (json['reputationScore'] as num?)?.toDouble() ?? 0.0,
+  );
 
-  factory BlockListUser.fromJson(Map<String, dynamic> json) =>
-      _$BlockListUserFromJson(json);
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'displayName': displayName,
+    'avatarUrl': avatarUrl,
+    'isVerified': isVerified,
+    'reputationScore': reputationScore,
+  };
 }
 
-@freezed
-abstract class BlockListResponse with _$BlockListResponse {
-  const factory BlockListResponse({
-    @Default([]) List<BlockListUser> users,
-    required int limit,
-    required int offset,
-  }) = _BlockListResponse;
+class BlockListResponse {
+  final List<BlockListUser> users;
+  final int limit;
+  final int offset;
+
+  const BlockListResponse({
+    this.users = const [],
+    required this.limit,
+    required this.offset,
+  });
 
   factory BlockListResponse.fromJson(Map<String, dynamic> json) =>
-      _$BlockListResponseFromJson(json);
+      BlockListResponse(
+        users:
+            (json['users'] as List<dynamic>?)
+                ?.map((e) => BlockListUser.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        limit: json['limit'] as int? ?? 0,
+        offset: json['offset'] as int? ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+    'users': users.map((e) => e.toJson()).toList(),
+    'limit': limit,
+    'offset': offset,
+  };
 }
 
-@freezed
-abstract class UnblockResponse with _$UnblockResponse {
-  const factory UnblockResponse({required bool blocked}) = _UnblockResponse;
+class UnblockResponse {
+  final bool blocked;
+
+  const UnblockResponse({required this.blocked});
 
   factory UnblockResponse.fromJson(Map<String, dynamic> json) =>
-      _$UnblockResponseFromJson(json);
+      UnblockResponse(blocked: json['blocked'] as bool? ?? false);
+
+  Map<String, dynamic> toJson() => {'blocked': blocked};
 }
 
-@freezed
-abstract class BlockResponse with _$BlockResponse {
-  const factory BlockResponse({required bool blocked}) = _BlockResponse;
+class BlockResponse {
+  final bool blocked;
+
+  const BlockResponse({required this.blocked});
 
   factory BlockResponse.fromJson(Map<String, dynamic> json) =>
-      _$BlockResponseFromJson(json);
+      BlockResponse(blocked: json['blocked'] as bool? ?? false);
+
+  Map<String, dynamic> toJson() => {'blocked': blocked};
 }

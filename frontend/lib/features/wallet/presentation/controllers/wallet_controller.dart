@@ -8,6 +8,9 @@ import 'package:freebay/features/wallet/domain/repositories/i_wallet_repository.
 import 'package:freebay/features/wallet/domain/usecases/get_wallet_usecase.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'wallet_controller.g.dart';
 
 final walletServiceProvider = Provider<WalletService>((ref) {
   return WalletService();
@@ -21,19 +24,17 @@ final getWalletUsecaseProvider = Provider(
   (ref) => GetWalletUsecase(ref.watch(walletRepositoryProvider)),
 );
 
-final walletProvider =
-    StateNotifierProvider<WalletController, AsyncValue<WalletEntity?>>((ref) {
-      return WalletController(ref.watch(getWalletUsecaseProvider));
-    });
-
-class WalletController extends StateNotifier<AsyncValue<WalletEntity?>> {
-  final GetWalletUsecase _getWalletUsecase;
-
-  WalletController(this._getWalletUsecase) : super(const AsyncValue.loading());
+@Riverpod(keepAlive: true)
+class Wallet extends _$Wallet {
+  @override
+  AsyncValue<WalletEntity?> build() {
+    ref.watch(getWalletUsecaseProvider);
+    return const AsyncValue.loading();
+  }
 
   Future<void> loadWallet() async {
     state = const AsyncValue.loading();
-    final result = await _getWalletUsecase();
+    final result = await ref.read(getWalletUsecaseProvider)();
 
     result.fold(
       (failure) =>
@@ -71,17 +72,21 @@ class WalletHistoryState {
   }
 }
 
-class WalletHistoryNotifier extends StateNotifier<WalletHistoryState> {
-  final IWalletRepository _repository;
-
-  WalletHistoryNotifier(this._repository) : super(const WalletHistoryState());
+@Riverpod(keepAlive: true)
+class WalletHistory extends _$WalletHistory {
+  @override
+  WalletHistoryState build() {
+    ref.watch(walletRepositoryProvider);
+    return const WalletHistoryState();
+  }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
 
+    final repository = ref.read(walletRepositoryProvider);
     final results = await Future.wait([
-      _repository.getTransactions(),
-      _repository.getWithdrawals(),
+      repository.getTransactions(),
+      repository.getWithdrawals(),
     ]);
 
     final transactionsResult =
@@ -103,8 +108,3 @@ class WalletHistoryNotifier extends StateNotifier<WalletHistoryState> {
     );
   }
 }
-
-final walletHistoryProvider =
-    StateNotifierProvider<WalletHistoryNotifier, WalletHistoryState>((ref) {
-      return WalletHistoryNotifier(ref.watch(walletRepositoryProvider));
-    });

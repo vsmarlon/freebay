@@ -1,5 +1,5 @@
 import { CreateOrderUseCase } from './create-order.usecase';
-import { PrismaOrderRepository } from '../repositories/order.repository';
+import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
 import { isLeft, isRight } from '@/shared/core/either';

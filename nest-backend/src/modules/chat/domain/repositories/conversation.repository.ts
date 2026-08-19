@@ -2,7 +2,7 @@ import { RepositoryResponse } from '@/shared/core/either';
 import { DirectConversation, User, Prisma, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType } from '@prisma/client';
 import {
   DirectConversationWithDetails,
-  OrderWithChat,
+  OrderWithChatRecord,
   DirectMessageWithSender,
   ChatMessageWithSender,
 } from '../../mappers/conversation.mapper';
@@ -24,7 +24,7 @@ export abstract class ConversationRepository {
   abstract createChatMessage(data: Prisma.ChatMessageCreateInput, includeSender?: boolean): RepositoryResponse<ChatMessage | ChatMessageWithSender>;
   abstract findChatMessagesByOrder(orderId: string): RepositoryResponse<ChatMessageWithSender[]>;
   abstract markChatMessagesRead(orderId: string, userId: string): RepositoryResponse<void>;
-  abstract findOrdersByUser(userId: string): RepositoryResponse<OrderWithChat[]>;
+  abstract findOrdersByUser(userId: string): RepositoryResponse<OrderWithChatRecord[]>;
   abstract countUnreadChatMessages(orderIds: string[], userId: string): RepositoryResponse<Record<string, number>>;
   abstract findPreferencesByUser(userId: string): RepositoryResponse<ConversationPreference[]>;
   abstract findReactionByUserAndMessage(userId: string, messageId: string, model: ChatThreadType): RepositoryResponse<MessageReaction | null>;

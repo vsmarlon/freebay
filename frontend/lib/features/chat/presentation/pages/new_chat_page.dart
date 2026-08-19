@@ -66,20 +66,22 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
   Future<void> _loadFollowing() async {
     setState(() => _isLoadingFollowing = true);
     try {
-      final authState = ref.read(authControllerProvider);
-      final userId = authState.valueOrNull?.id;
+      final userId = ref.read(authControllerProvider).value?.id;
       if (userId == null) {
         setState(() => _isLoadingFollowing = false);
         return;
       }
-
-      final response =
-          await HttpClient.instance.get('/users/$userId/following');
+      final response = await HttpClient.instance.get(
+        '/users/$userId/following',
+      );
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] as Map<String, dynamic>;
-        final users = (data['users'] as List?)
-                ?.map((json) =>
-                    UserSearchEntity.fromJson(json as Map<String, dynamic>))
+        final users =
+            (data['users'] as List?)
+                ?.map(
+                  (json) =>
+                      UserSearchEntity.fromJson(json as Map<String, dynamic>),
+                )
                 .toList() ??
             [];
         setState(() {
@@ -89,7 +91,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
       } else {
         setState(() => _isLoadingFollowing = false);
       }
-    } catch (e) {
+    } catch (_) {
       setState(() => _isLoadingFollowing = false);
     }
   }
@@ -100,9 +102,12 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
       final response = await HttpClient.instance.get('/users/suggestions');
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'] as Map<String, dynamic>;
-        final users = (data['users'] as List?)
-                ?.map((json) =>
-                    UserSearchEntity.fromJson(json as Map<String, dynamic>))
+        final users =
+            (data['users'] as List?)
+                ?.map(
+                  (json) =>
+                      UserSearchEntity.fromJson(json as Map<String, dynamic>),
+                )
                 .toList() ??
             [];
         setState(() {
@@ -112,7 +117,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
       } else {
         setState(() => _isLoadingSuggestions = false);
       }
-    } catch (e) {
+    } catch (_) {
       setState(() => _isLoadingSuggestions = false);
     }
   }
@@ -125,7 +130,10 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
   }
 
   Future<void> _startConversation(
-      String userId, String userName, String? avatarUrl) async {
+    String userId,
+    String userName,
+    String? avatarUrl,
+  ) async {
     try {
       final response = await HttpClient.instance.post(
         '/chat/conversations',
@@ -134,7 +142,6 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = response.data['data'] as Map<String, dynamic>;
         final conversationId = data['conversationId'] as String;
-
         if (mounted) {
           context.push(
             '/chat/$conversationId',
@@ -146,7 +153,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
           );
         }
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro ao iniciar conversa')),
@@ -206,8 +213,9 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
                             )
                           : null,
                       filled: true,
-                      fillColor:
-                          isDark ? AppColors.surfaceDark : AppColors.white,
+                      fillColor: isDark
+                          ? AppColors.surfaceDark
+                          : AppColors.white,
                       border: const OutlineInputBorder(
                         borderRadius: BorderRadius.zero,
                         borderSide: BorderSide.none,
@@ -237,24 +245,15 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
         subtitle: 'Tente buscar por outro nome.',
       );
     }
-
     final filtered = _filterBlocked(state.users);
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: filtered.length + (state.isLoading ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == filtered.length) {
-          return const ShimmerBlock(height: 72);
-        }
-
+        if (index == filtered.length) return const ShimmerBlock(height: 72);
         final user = filtered[index];
-        return _UserListTile(
-          user: user,
-          isDark: isDark,
-          onTap: () =>
-              _startConversation(user.id, user.displayName, user.avatarUrl),
-        );
+        return _buildUserTile(user, isDark);
       },
     );
   }
@@ -267,7 +266,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
       padding: const EdgeInsets.all(16),
       children: [
         if (_isLoadingFollowing || filteredFollowing.isNotEmpty) ...[
-          _SectionHeader(title: 'Quem você segue', isDark: isDark),
+          _buildSectionTitle('Quem você segue', isDark),
           if (_isLoadingFollowing)
             const ShimmerBlock(width: 20, height: 20)
           else if (filteredFollowing.isEmpty)
@@ -277,16 +276,11 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
               subtitle: 'Você ainda não segue ninguém.',
             )
           else
-            ...filteredFollowing.map((user) => _UserListTile(
-                  user: user,
-                  isDark: isDark,
-                  onTap: () => _startConversation(
-                      user.id, user.displayName, user.avatarUrl),
-                )),
+            ...filteredFollowing.map((u) => _buildUserTile(u, isDark)),
           Spacing.vLg,
         ],
         if (_isLoadingSuggestions || filteredSuggestions.isNotEmpty) ...[
-          _SectionHeader(title: 'Sugestões', isDark: isDark),
+          _buildSectionTitle('Sugestões', isDark),
           if (_isLoadingSuggestions)
             const ShimmerBlock(width: 20, height: 20)
           else if (filteredSuggestions.isEmpty)
@@ -296,26 +290,13 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
               subtitle: 'No momento não há sugestões de usuários.',
             )
           else
-            ...filteredSuggestions.map((user) => _UserListTile(
-                  user: user,
-                  isDark: isDark,
-                  onTap: () => _startConversation(
-                      user.id, user.displayName, user.avatarUrl),
-                )),
+            ...filteredSuggestions.map((u) => _buildUserTile(u, isDark)),
         ],
       ],
     );
   }
-}
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final bool isDark;
-
-  const _SectionHeader({required this.title, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -328,21 +309,8 @@ class _SectionHeader extends StatelessWidget {
       ),
     );
   }
-}
 
-class _UserListTile extends StatelessWidget {
-  final UserSearchEntity user;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _UserListTile({
-    required this.user,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildUserTile(UserSearchEntity user, bool isDark) {
     return ListTile(
       leading: Container(
         width: 48,
@@ -357,7 +325,13 @@ class _UserListTile extends StatelessWidget {
           color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
         ),
         child: user.avatarUrl == null
-            ? Center(child: Text(user.displayName[0].toUpperCase()))
+            ? Center(
+                child: Text(
+                  user.displayName.isNotEmpty
+                      ? user.displayName[0].toUpperCase()
+                      : 'U',
+                ),
+              )
             : null,
       ),
       title: Row(
@@ -384,12 +358,10 @@ class _UserListTile extends StatelessWidget {
       ),
       subtitle: Text(
         '${user.followersCount} seguidores',
-        style: TextStyle(
-          color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-          fontSize: 12,
-        ),
+        style: const TextStyle(color: AppColors.mediumGray, fontSize: 12),
       ),
-      onTap: onTap,
+      onTap: () =>
+          _startConversation(user.id, user.displayName, user.avatarUrl),
     );
   }
 }

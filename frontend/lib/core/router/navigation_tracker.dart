@@ -52,21 +52,80 @@ const _labels = <String, String>{
 bool _matches(String pattern, String location) {
   final p = pattern.split('/').where((s) => s.isNotEmpty).toList();
   final l = location.split('/').where((s) => s.isNotEmpty).toList();
+
+  // Must have same number of segments
   if (p.length != l.length) return false;
+
   for (var i = 0; i < p.length; i++) {
-    if (!p[i].startsWith(':') && p[i] != l[i]) return false;
+    // Skip parameter segments (start with ':')
+    if (p[i].startsWith(':')) continue;
+
+    // Exact match required for static segments
+    if (p[i] != l[i]) return false;
+  }
+  return true;
+}
+
+/// More lenient match that allows partial prefix matching for breadcrumbs.
+/// Returns true if the pattern matches the beginning of the location.
+bool _matchesPrefix(String pattern, String location) {
+  final p = pattern.split('/').where((s) => s.isNotEmpty).toList();
+  final l = location.split('/').where((s) => s.isNotEmpty).toList();
+
+  // Pattern must be shorter or equal to location
+  if (p.length > l.length) return false;
+
+  for (var i = 0; i < p.length; i++) {
+    // Skip parameter segments
+    if (p[i].startsWith(':')) continue;
+
+    // Exact match required for static segments
+    if (p[i] != l[i]) return false;
   }
   return true;
 }
 
 MapEntry<String, String>? _lookup(String location) {
+  // First try exact match
   if (_labels.containsKey(location)) {
     return MapEntry(location, _labels[location]!);
   }
+
+  // Then try pattern matching
   for (final e in _labels.entries) {
     if (_matches(e.key, location)) return e;
   }
+
   return null;
+}
+
+/// Look up a breadcrumb label for a path segment, handling nested routes.
+MapEntry<String, String>? _lookupBreadcrumb(String location) {
+  // First try exact match
+  if (_labels.containsKey(location)) {
+    return MapEntry(location, _labels[location]!);
+  }
+
+  // Try pattern matching (exact segment count)
+  for (final e in _labels.entries) {
+    if (_matches(e.key, location)) return e;
+  }
+
+  // Try prefix matching for nested routes (e.g., /post/:id for /post/:id/comments)
+  MapEntry<String, String>? bestMatch;
+  int bestLength = 0;
+
+  for (final e in _labels.entries) {
+    if (_matchesPrefix(e.key, location)) {
+      final segments = e.key.split('/').where((s) => s.isNotEmpty).length;
+      if (segments > bestLength) {
+        bestLength = segments;
+        bestMatch = e;
+      }
+    }
+  }
+
+  return bestMatch;
 }
 
 String _concretize(String pattern, String location) {
@@ -94,11 +153,18 @@ extension BreadcrumbX on BuildContext {
     final items = <BreadcrumbItem>[];
     final ctx = this;
 
-    for (var i = 1; i < segs.length; i++) {
+    // Build breadcrumb items from path segments
+    for (var i = 1; i <= segs.length; i++) {
       final prefix = '/${segs.sublist(0, i).join('/')}';
-      final entry = _lookup(prefix);
+      final entry = _lookupBreadcrumb(prefix);
+
       if (entry != null) {
+        // Concretize the path (replace :id with actual value)
         final path = _concretize(entry.key, location);
+
+        // Skip duplicate entries (e.g., /post/:id appearing twice)
+        if (items.isNotEmpty && items.last.label == entry.value) continue;
+
         items.add(
           BreadcrumbItem(
             label: entry.value,
@@ -110,10 +176,15 @@ extension BreadcrumbX on BuildContext {
 
     if (items.isEmpty) return [];
 
+    // Add current page as last item (non-clickable)
     final current = _lookup(location);
-    items.add(
-      BreadcrumbItem(label: current?.value ?? _fallbackLabel(location)),
-    );
+    final currentLabel = current?.value ?? _fallbackLabel(location);
+
+    // Avoid duplicate last item
+    if (items.last.label != currentLabel) {
+      items.add(BreadcrumbItem(label: currentLabel));
+    }
+
     return items;
   }
 }

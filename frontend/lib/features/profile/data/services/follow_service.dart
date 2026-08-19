@@ -9,8 +9,14 @@ class FollowService {
     try {
       final response = await HttpClient.instance.post('/users/$userId/follow');
 
-      if (response.statusCode == 201 && response.data != null) {
-        return Right(FollowResponse.fromJson(response.data['data']));
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300 &&
+          response.data != null) {
+        final data = response.data is Map && response.data.containsKey('data')
+            ? response.data['data']
+            : response.data;
+        return Right(FollowResponse.fromJson(Map<String, dynamic>.from(data)));
       } else {
         return const Left(ServerFailure('Erro na requisição'));
       }
@@ -25,8 +31,14 @@ class FollowService {
         '/users/$userId/follow',
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        return Right(FollowResponse.fromJson(response.data['data']));
+      if (response.statusCode != null &&
+          response.statusCode! >= 200 &&
+          response.statusCode! < 300 &&
+          response.data != null) {
+        final data = response.data is Map && response.data.containsKey('data')
+            ? response.data['data']
+            : response.data;
+        return Right(FollowResponse.fromJson(Map<String, dynamic>.from(data)));
       } else {
         return const Left(ServerFailure('Erro na requisição'));
       }

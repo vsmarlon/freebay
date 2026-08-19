@@ -17,7 +17,7 @@ import { SharePostUseCase } from './usecases/share-post.usecase';
 import { UnsharePostUseCase } from './usecases/unshare-post.usecase';
 import { SavePostUseCase } from './usecases/save-post.usecase';
 import { UnsavePostUseCase } from './usecases/unsave-post.usecase';
-import { FeedQuery, UserPostsQuery, SearchPostsQuery } from './domain/repositories/post.repository';
+import { FeedQuery, UserPostsQuery, SearchPostsQuery } from './types/social.types';
 import { CreatePostInput, CreatePostOutput, CreateCommentInput, CreateCommentOutput } from './dtos/social.dto';
 
 @Injectable()
@@ -103,9 +103,5 @@ export class SocialService {
 
   async unlikeComment(input: { userId: string; commentId: string }) {
     return this.unlikeCommentUseCase.execute(input);
-  }
-
-  toDataUri(file: { mimetype: string; buffer: Buffer }): string {
-    return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
   }
 }

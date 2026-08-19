@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 
 class PurchasesPage extends ConsumerStatefulWidget {
   const PurchasesPage({super.key});
@@ -52,7 +50,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
     final state = ref.watch(purchasesListProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.bgColor,
       body: Column(
         children: [
           PageHeader(
@@ -72,303 +70,132 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                 ),
               ),
             ),
-            breadcrumbs: context.breadcrumbs,
           ),
-          Expanded(child: _buildBody(state)),
+          Expanded(
+            child: state.isLoading && state.orders.isEmpty
+                ? const SkeletonPage(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 16),
+                        ShimmerBlock(height: 90),
+                        SizedBox(height: 12),
+                        ShimmerBlock(height: 90),
+                        SizedBox(height: 12),
+                        ShimmerBlock(height: 90),
+                      ],
+                    ),
+                  )
+                : state.error != null && state.orders.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          state.error!,
+                          style: TextStyle(color: context.textPrimary),
+                        ),
+                        const SizedBox(height: 12),
+                        AppButton(
+                          label: 'TENTAR NOVAMENTE',
+                          size: AppButtonSize.compact,
+                          onPressed: () => ref
+                              .read(purchasesListProvider.notifier)
+                              .refresh(),
+                        ),
+                      ],
+                    ),
+                  )
+                : state.orders.isEmpty
+                ? const EmptyState(
+                    icon: Icons.shopping_bag_outlined,
+                    title: 'NENHUMA COMPRA AINDA',
+                    subtitle: 'Suas compras aparecerão aqui.',
+                  )
+                : RefreshIndicator(
+                    onRefresh: () =>
+                        ref.read(purchasesListProvider.notifier).refresh(),
+                    child: ListView.separated(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: state.orders.length + (state.hasMore ? 1 : 0),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        if (index == state.orders.length) {
+                          return const ShimmerBlock(height: 80);
+                        }
+                        final order = state.orders[index];
+                        return _buildOrderCard(context, order);
+                      },
+                    ),
+                  ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBody(PurchasesListState state) {
-    if (state.isLoading && state.orders.isEmpty) {
-      return SkeletonList(
-        itemCount: 5,
-        itemBuilder: (_, i) => const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            children: [
-              ShimmerBlock(width: 80, height: 80),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShimmerBlock(height: 16, width: 140),
-                    SizedBox(height: 4),
-                    ShimmerBlock(height: 12, width: 80),
-                    SizedBox(height: 4),
-                    ShimmerBlock(height: 12, width: 100),
-                  ],
-                ),
-              ),
-              SizedBox(width: 8),
-              ShimmerBlock(height: 20, width: 60),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (state.error != null && state.orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outlined, color: AppColors.error, size: 48),
-            Spacing.vMd,
-            Text(
-              state.error!,
-              style: const TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 14,
-                color: AppColors.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            Spacing.vLg,
-            _buildRetryButton(),
-          ],
-        ),
-      );
-    }
-
-    if (state.orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildOrderCard(BuildContext context, OrderEntity order) {
+    final product = order.product;
+    return InkWell(
+      onTap: () => context.push('/orders/${order.id}'),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        color: context.surfaceColor,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 80,
-              height: 80,
-              color: AppColors.surfaceContainerHighest,
-              child: const Center(
-                child: Icon(
-                  Icons.shopping_bag_outlined,
-                  color: AppColors.onSurfaceVariant,
-                  size: 40,
-                ),
+              width: 72,
+              height: 72,
+              color: context.surfaceMidColor,
+              child: product?.imageUrl != null
+                  ? CachedNetworkImage(
+                      imageUrl: product!.imageUrl!,
+                      fit: BoxFit.cover,
+                    )
+                  : Icon(Icons.image_outlined, color: context.textSecondary),
+            ),
+            Spacing.hMd,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product?.title ?? 'Produto',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: context.textPrimary,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    order.formattedAmount,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: context.textPrimary,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Status: ${order.status.name.toUpperCase()}',
+                    style: TextStyle(
+                      color: context.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Spacing.vLg,
-            const Text(
-              'Nenhuma compra ainda',
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.onSurface,
-              ),
-            ),
-            Spacing.vSm,
-            const Text(
-              'Suas compras aparecerão aqui',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 14,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
+            Icon(Icons.chevron_right, color: context.textSecondary),
           ],
         ),
-      );
-    }
-
-    return RefreshIndicator(
-      color: AppColors.primaryContainer,
-      onRefresh: () => ref.read(purchasesListProvider.notifier).refresh(),
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(0),
-        itemCount: state.orders.length + (state.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == state.orders.length) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: ShimmerBlock(height: 80),
-            );
-          }
-
-          final order = state.orders[index];
-          return _buildOrderCard(order, index);
-        },
       ),
     );
-  }
-
-  Widget _buildRetryButton() {
-    return AppButton(
-      label: 'Tentar novamente',
-      onPressed: () {
-        ref.read(purchasesListProvider.notifier).refresh();
-      },
-    );
-  }
-
-  Widget _buildOrderCard(OrderEntity order, int index) {
-    final backgroundColor = index.isEven
-        ? AppColors.surfaceContainerLowest
-        : AppColors.surfaceContainerLow;
-
-    return Material(
-      color: backgroundColor,
-      child: InkWell(
-        onTap: () => context.push('/orders/${order.id}'),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                color: AppColors.surfaceContainerHighest,
-                child: order.product?.imageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: order.product!.imageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            const ShimmerBlock(width: 80, height: 80),
-                        errorWidget: (context, url, error) => const Icon(
-                          Icons.image_outlined,
-                          color: AppColors.onSurfaceVariant,
-                          size: 24,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.image_outlined,
-                        color: AppColors.onSurfaceVariant,
-                        size: 24,
-                      ),
-              ),
-              Spacing.hMd,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '#${order.shortId}',
-                          style: const TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontSize: 12,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                        _buildStatusBadge(order.status),
-                      ],
-                    ),
-                    Spacing.vXs,
-                    Text(
-                      order.product?.title ?? 'Produto',
-                      style: const TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Spacing.vSm,
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatDate(order.createdAt),
-                          style: const TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontSize: 12,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          color: AppColors.surfaceContainerHighest,
-                          child: Text(
-                            order.formattedAmount,
-                            style: const TextStyle(
-                              fontFamily: AppTypography.headlineFontFamily,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Spacing.hSm,
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(OrderStatus status) {
-    Color bgColor;
-    Color textColor;
-
-    switch (status) {
-      case OrderStatus.completed:
-        bgColor = AppColors.success.withValues(alpha: 0.1);
-        textColor = AppColors.success;
-        break;
-      case OrderStatus.pending:
-        bgColor = AppColors.warning.withValues(alpha: 0.1);
-        textColor = AppColors.warning;
-        break;
-      case OrderStatus.cancelled:
-        bgColor = AppColors.error.withValues(alpha: 0.1);
-        textColor = AppColors.error;
-        break;
-      case OrderStatus.shipped:
-      case OrderStatus.delivered:
-        bgColor = AppColors.info.withValues(alpha: 0.1);
-        textColor = AppColors.info;
-        break;
-      case OrderStatus.disputed:
-        bgColor = AppColors.warning.withValues(alpha: 0.1);
-        textColor = AppColors.warning;
-        break;
-      case OrderStatus.confirmed:
-        bgColor = AppColors.primaryContainer.withValues(alpha: 0.1);
-        textColor = AppColors.primaryContainer;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      color: bgColor,
-      child: Text(
-        status.label,
-        style: TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year;
-    return '$day/$month/$year';
   }
 }

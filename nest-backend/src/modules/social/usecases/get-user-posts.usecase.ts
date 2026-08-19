@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PostRepository, UserPostsQuery } from '../domain/repositories/post.repository';
+import { PostRepository } from '../domain/repositories/post.repository';
 import { ShareRepository } from '../domain/repositories/share.repository';
-import { UserPostEntry } from '../types/social.types';
+import { UserPostEntry, UserPostsQuery } from '../types/social.types';
 
 @Injectable()
 export class GetUserPostsUseCase {

@@ -23,6 +23,14 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
   final _commentController = TextEditingController();
   bool _isLoading = false;
 
+  late int _commentCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _commentCount = widget.post.commentsCount;
+  }
+
   @override
   void dispose() {
     _commentController.dispose();
@@ -53,6 +61,9 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
           },
           (_) {
             _commentController.clear();
+            setState(() {
+              _commentCount++;
+            });
             ref
                 .read(feedProvider.notifier)
                 .updatePostCommentCount(widget.post.id, 1);
@@ -138,11 +149,11 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                 ],
               ),
             ),
-            if (widget.post.commentsCount > 0)
+            if (_commentCount > 0)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  '${widget.post.commentsCount} comentários',
+                  '$_commentCount comentários',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppColors.white : AppColors.darkGray,

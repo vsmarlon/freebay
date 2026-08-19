@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,15 +14,6 @@ import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
-
-final myProductsProvider = FutureProvider<List<ProductEntity>>((ref) async {
-  final repository = ref.watch(productRepositoryProvider);
-  final result = await repository.getMyProducts();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (products) => products,
-  );
-});
 
 class MyProductsPage extends ConsumerWidget {
   const MyProductsPage({super.key});
@@ -177,7 +169,22 @@ class MyProductsPage extends ConsumerWidget {
                       : AppColors.lightGray,
                 ),
                 child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                    ? Image.network(product.imageUrl!, fit: BoxFit.cover)
+                    ? CachedNetworkImage(
+                        imageUrl: product.imageUrl!,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 400,
+                        memCacheHeight: 400,
+                        placeholder: (context, url) => Container(
+                          color: isDark
+                              ? AppColors.backgroundDark
+                              : AppColors.lightGray,
+                        ),
+                        errorWidget: (context, url, error) => const Icon(
+                          Icons.shopping_bag,
+                          color: AppColors.mediumGray,
+                          size: 40,
+                        ),
+                      )
                     : const Icon(
                         Icons.shopping_bag,
                         color: AppColors.mediumGray,

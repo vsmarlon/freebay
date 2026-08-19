@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_card.dart';
+import 'package:freebay/core/components/empty_state.dart';
+import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
-import 'package:freebay/core/components/page_header.dart';
 
 class FavoritesPage extends ConsumerStatefulWidget {
   const FavoritesPage({super.key});
@@ -65,47 +65,14 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                             mainAxisSpacing: 12,
                           ),
                       itemCount: 6,
-                      itemBuilder: (_, _) => const AppCard.skeleton(),
+                      itemBuilder: (context, index) => const AppCard.skeleton(),
                     )
                   : state.products.isEmpty
-                  ? ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.22,
-                        ),
-                        Icon(
-                          Icons.favorite_border,
-                          size: 80,
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.mediumGray,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Você ainda não tem favoritos',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.darkGray,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
+                  ? const EmptyState(
+                      icon: Icons.favorite_border,
+                      title: 'SEM FAVORITOS',
+                      subtitle:
                           'Toque no coração dos produtos para salvar aqui.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            color: isDark
-                                ? AppColors.mediumGray
-                                : AppColors.mediumGray,
-                          ),
-                        ),
-                      ],
                     )
                   : GridView.builder(
                       padding: const EdgeInsets.all(16),

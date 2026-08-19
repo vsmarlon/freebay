@@ -15,20 +15,24 @@ class StoriesRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final storiesAsync = ref.watch(storiesProvider);
-    return storiesAsync.when(
-      data: (response) => _buildRow(context, ref, response.stories),
-      loading: () => const SizedBox(height: 84),
-      error: (_, _) => const SizedBox(height: 84),
+    final stories = storiesAsync.value?.stories ?? [];
+
+    return _buildRow(
+      context,
+      ref,
+      stories,
+      isLoading: storiesAsync.isLoading && stories.isEmpty,
     );
   }
 
   Widget _buildRow(
     BuildContext context,
     WidgetRef ref,
-    List<StoryEntity> stories,
-  ) {
+    List<StoryEntity> stories, {
+    bool isLoading = false,
+  }) {
     return SizedBox(
-      height: 84,
+      height: 88,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -42,8 +46,7 @@ class StoriesRow extends ConsumerWidget {
             story: story,
             onTap: () {
               HapticFeedback.lightImpact();
-              final current =
-                  ref.read(storiesProvider).valueOrNull?.stories ?? [];
+              final current = ref.read(storiesProvider).value?.stories ?? [];
               if (current.isNotEmpty) {
                 final storyIndex = current.indexWhere((s) => s.id == story.id);
                 context.push('/story?index=$storyIndex');
@@ -77,6 +80,7 @@ class _AddStoryItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: context.surfaceColor,
                 border: Border.all(color: AppColors.primaryContainer, width: 2),
+                borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
                 Icons.add,
@@ -131,6 +135,7 @@ class _StoryItem extends StatelessWidget {
                       : AppColors.primaryContainer,
                   width: 2,
                 ),
+                borderRadius: BorderRadius.zero,
                 image: story.imageUrl.isNotEmpty
                     ? DecorationImage(
                         image: NetworkImage(story.imageUrl),

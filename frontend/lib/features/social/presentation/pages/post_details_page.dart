@@ -241,7 +241,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               createdAt: post.createdAt,
               onUserTap: () => context.push('/user/${post.user.id}'),
               onLike: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
+                final user = ref.read(authControllerProvider).value;
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
                     AppSnackbar.warning(context, 'Faça login para curtir');
@@ -269,7 +269,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                 return success;
               },
               onSave: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
+                final user = ref.read(authControllerProvider).value;
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
                     AppSnackbar.warning(context, 'Faça login para salvar');
@@ -281,7 +281,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                     .toggleSave(post.id, initialIsSaved: post.isSaved);
               },
               onRepost: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
+                final user = ref.read(authControllerProvider).value;
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
                     AppSnackbar.warning(context, 'Faça login para repostar');
@@ -309,7 +309,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               },
               onComment: () => FocusScope.of(context).unfocus(),
               onShare: () async {
-                final user = ref.read(authControllerProvider).valueOrNull;
+                final user = ref.read(authControllerProvider).value;
                 if (user == null || user.isGuest) {
                   if (context.mounted) {
                     AppSnackbar.warning(
@@ -413,7 +413,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           likesCount: commentLikesCount,
           onReply: () => _setReplyTo(comment),
           onLike: () async {
-            final user = ref.read(authControllerProvider).valueOrNull;
+            final user = ref.read(authControllerProvider).value;
             if (user == null || user.isGuest) {
               if (context.mounted) {
                 AppSnackbar.warning(context, 'Faça login para curtir');

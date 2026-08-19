@@ -1,63 +1,59 @@
-import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/domain/repositories/i_notification_repository.dart';
 
-class NotificationRepository implements INotificationRepository {
+class NotificationRepository extends BaseHttpRepository
+    implements INotificationRepository {
+  NotificationRepository({super.client});
+
   @override
   Future<List<NotificationEntity>> getNotifications({
     int limit = 20,
     int offset = 0,
   }) async {
-    final response = await HttpClient.instance.get(
+    final result = await safeGetList<NotificationEntity>(
       '/notifications',
       queryParameters: {'limit': limit, 'offset': offset},
+      listKey: 'data.notifications',
+      fromJson: NotificationEntity.fromJson,
     );
-
-    final payload = response.data;
-    final notifications =
-        payload['notifications'] as List<dynamic>? ??
-        (payload['data'] is List<dynamic>
-            ? payload['data'] as List<dynamic>
-            : <dynamic>[]);
-
-    return notifications
-        .map(
-          (json) => NotificationEntity.fromJson(json as Map<String, dynamic>),
-        )
-        .toList();
+    return result.rightOrNull ?? <NotificationEntity>[];
   }
 
   @override
   Future<int> getUnreadCount() async {
-    final response = await HttpClient.instance.get(
+    final result = await safeGet<int>(
       '/notifications/unread-count',
+      extractKey: 'data.count',
+      customMapper: (d) => (d as int?) ?? 0,
     );
-    return response.data['data']['count'] as int;
+    return result.rightOrNull ?? 0;
   }
 
   @override
   Future<void> markAsRead(String notificationId) async {
-    await HttpClient.instance.post('/notifications/$notificationId/read');
+    await safeVoid(() => client.post('/notifications/$notificationId/read'));
   }
 
   @override
   Future<void> markAllAsRead() async {
-    await HttpClient.instance.post('/notifications/read-all');
+    await safeVoid(() => client.post('/notifications/read-all'));
   }
 
   @override
   Future<void> updateFcmToken(String token) async {
-    await HttpClient.instance.patch(
-      '/users/me/fcm-token',
-      data: {'fcmToken': token},
+    await safeVoid(
+      () => client.patch('/users/me/fcm-token', data: {'fcmToken': token}),
     );
   }
 
   @override
   Future<void> updateNotificationPrefs(Map<String, bool> prefs) async {
-    await HttpClient.instance.patch(
-      '/users/me/fcm-token',
-      data: {'notificationPrefs': prefs},
+    await safeVoid(
+      () => client.patch(
+        '/users/me/fcm-token',
+        data: {'notificationPrefs': prefs},
+      ),
     );
   }
 }

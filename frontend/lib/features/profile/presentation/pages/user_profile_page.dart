@@ -99,7 +99,7 @@ class UserProfilePage extends ConsumerWidget {
     UserEntity user,
   ) {
     final authState = ref.watch(authControllerProvider);
-    final currentUser = authState.valueOrNull;
+    final currentUser = authState.value;
     final isOwnProfile =
         currentUser != null &&
         !currentUser.isGuest &&
@@ -140,12 +140,37 @@ class UserProfilePage extends ConsumerWidget {
                           : AppButtonVariant.primary,
                       onPressed: () async {
                         final service = ref.read(followServiceProvider);
-                        final result = (status?.isFollowing ?? false)
-                            ? await service.unfollow(user.id)
-                            : await service.follow(user.id);
+                        final cache = ref.read(followStatusCacheProvider);
 
-                        if (result.isRight) {
-                          ref.invalidate(followStatusProvider(user.id));
+                        // Optimistically update UI
+                        final isCurrentlyFollowing =
+                            status?.isFollowing ?? false;
+
+                        if (isCurrentlyFollowing) {
+                          // Unfollow
+                          final result = await service.unfollow(user.id);
+                          if (result.isRight) {
+                            cache.invalidate(user.id);
+                            ref.invalidate(followStatusProvider(user.id));
+                          }
+                        } else {
+                          // Follow
+                          final result = await service.follow(user.id);
+                          if (result.isRight) {
+                            cache.invalidate(user.id);
+                            ref.invalidate(followStatusProvider(user.id));
+                          } else {
+                            // Handle "Already following" case gracefully
+                            result.fold((failure) {
+                              // If already following, just refresh the status
+                              if (failure.message.contains(
+                                'Already following',
+                              )) {
+                                cache.invalidate(user.id);
+                                ref.invalidate(followStatusProvider(user.id));
+                              }
+                            }, (_) {});
+                          }
                         }
                       },
                     ),

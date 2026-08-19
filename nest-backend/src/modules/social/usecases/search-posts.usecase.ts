@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { left, right, isLeft } from '@/shared/core/either';
-import { PostRepository, SearchPostsQuery } from '../domain/repositories/post.repository';
+import { PostRepository } from '../domain/repositories/post.repository';
 import { ShareRepository } from '../domain/repositories/share.repository';
+import { SearchPostsQuery } from '../types/social.types';
 
 @Injectable()
 export class SearchPostsUseCase {

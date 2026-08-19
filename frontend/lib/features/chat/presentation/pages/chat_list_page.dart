@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_refresh_indicator.dart';
 import 'package:freebay/core/components/empty_state.dart';
+import 'package:freebay/core/components/guest_gate_view.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -180,8 +181,26 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     super.build(context);
     final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
-    final user = authState.valueOrNull;
+    final user = authState.value;
     final isGuest = user == null || user.isGuest;
+
+    if (isGuest) {
+      return Scaffold(
+        body: GuestGateView(
+          icon: Icons.chat_bubble_outline,
+          title: 'MENSAGENS PRIVADAS',
+          description:
+              'Negocie produtos, tire dúvidas e converse em tempo real com compradores e vendedores com segurança.',
+          benefits: const [
+            'Chat em tempo real criptografado',
+            'Envio e negociação de propostas diretas',
+            'Notificações instantâneas de novas mensagens',
+          ],
+          onLoginPressed: () => context.push('/login'),
+          onRegisterPressed: () => context.push('/register'),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -189,69 +208,60 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         children: [
           PageHeader(text: 'MENSAGENS'),
           Expanded(
-            child: isGuest
-                ? Column(
-                    children: [
-                      _buildSearchBar(isDark),
-                      _buildEmptyState(isDark, true),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _buildSearchBar(isDark),
-                      ref
-                          .watch(liveChatListProvider)
-                          .when(
-                            data: (chats) {
-                              final filteredChats = _filterAndSortChats(chats);
-                              if (filteredChats.isEmpty) {
-                                return _buildEmptyState(isDark, chats.isEmpty);
-                              }
-                              return Expanded(
-                                child: AppRefreshIndicator(
-                                  onRefresh: () async {
-                                    ref.invalidate(chatsProvider);
-                                    ref.invalidate(liveChatListProvider);
-                                  },
-                                  child: ListView.builder(
-                                    itemCount: filteredChats.length,
-                                    itemBuilder: (context, index) {
-                                      final chat = filteredChats[index];
-                                      return ChatListTile(
-                                        chat: chat,
-                                        isDark: isDark,
-                                        canSwipe: _canModifyOrderChat(chat),
-                                        onTap: () {
-                                          context.push(
-                                            '/chat/${chat.id}',
-                                            extra: {
-                                              'orderName': chat.otherName,
-                                              'orderAvatarUrl':
-                                                  chat.otherAvatarUrl,
-                                              'chatType': chat.threadType.name,
-                                            },
-                                          );
-                                        },
-                                        onLongPress: () =>
-                                            _showContextMenu(chat),
-                                        onArchive: () => _archiveChat(chat),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
+            child: Column(
+              children: [
+                _buildSearchBar(isDark),
+                ref
+                    .watch(liveChatListProvider)
+                    .when(
+                      data: (chats) {
+                        final filteredChats = _filterAndSortChats(chats);
+                        if (filteredChats.isEmpty) {
+                          return _buildEmptyState(isDark, chats.isEmpty);
+                        }
+                        return Expanded(
+                          child: AppRefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(chatsProvider);
+                              ref.invalidate(liveChatListProvider);
                             },
-                            loading: () => Expanded(
-                              child: ListView.builder(
-                                itemCount: 5,
-                                itemBuilder: (context, index) =>
-                                    ChatListLoadingTile(isDark: isDark),
-                              ),
+                            child: ListView.builder(
+                              itemCount: filteredChats.length,
+                              itemBuilder: (context, index) {
+                                final chat = filteredChats[index];
+                                return ChatListTile(
+                                  chat: chat,
+                                  isDark: isDark,
+                                  canSwipe: _canModifyOrderChat(chat),
+                                  onTap: () {
+                                    context.push(
+                                      '/chat/${chat.id}',
+                                      extra: {
+                                        'orderName': chat.otherName,
+                                        'orderAvatarUrl': chat.otherAvatarUrl,
+                                        'chatType': chat.threadType.name,
+                                      },
+                                    );
+                                  },
+                                  onLongPress: () => _showContextMenu(chat),
+                                  onArchive: () => _archiveChat(chat),
+                                );
+                              },
                             ),
-                            error: (error, stack) => _buildErrorState(isDark),
                           ),
-                    ],
-                  ),
+                        );
+                      },
+                      loading: () => Expanded(
+                        child: ListView.builder(
+                          itemCount: 5,
+                          itemBuilder: (context, index) =>
+                              ChatListLoadingTile(isDark: isDark),
+                        ),
+                      ),
+                      error: (error, stack) => _buildErrorState(isDark),
+                    ),
+              ],
+            ),
           ),
         ],
       ),

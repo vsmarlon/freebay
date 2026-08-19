@@ -5,8 +5,8 @@ import 'package:freebay/core/components/infinite_scroll_listener.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
 const _crossAxisCount = 2;
-const _childAspectRatio = 0.7;
-const _gridSpacing = 12.0;
+const _childAspectRatio = 0.68;
+const _gridSpacing = 14.0;
 const _skeletonCount = 6;
 const _loadingMoreSkeletonCount = 2;
 
@@ -17,7 +17,6 @@ const _gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
   mainAxisSpacing: _gridSpacing,
 );
 
-/// Two-column product grid with trailing skeletons while the next page loads.
 class ProductResultsGrid extends StatelessWidget {
   final List<ProductEntity> products;
   final bool isLoadingMore;
@@ -30,7 +29,6 @@ class ProductResultsGrid extends StatelessWidget {
     required this.onLoadMore,
   });
 
-  /// Placeholder grid shown while the first page is loading.
   const ProductResultsGrid.skeleton({super.key})
     : products = const [],
       isLoadingMore = false,
@@ -56,6 +54,9 @@ class ProductResultsGrid extends StatelessWidget {
       child: GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: _gridDelegate,
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         itemCount:
             products.length + (isLoadingMore ? _loadingMoreSkeletonCount : 0),
         itemBuilder: (context, index) {
@@ -66,6 +67,7 @@ class ProductResultsGrid extends StatelessWidget {
               imageUrl: product.imageUrl,
               title: product.title,
               priceInCents: product.price,
+              condition: product.condition,
               variant: AppCardVariant.compact,
               onTap: () => context.push('/products/${product.id}'),
             ),

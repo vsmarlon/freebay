@@ -44,6 +44,8 @@ class UserAvatar extends StatelessWidget {
               ? CachedNetworkImage(
                   imageUrl: imageUrl!,
                   fit: BoxFit.cover,
+                  memCacheWidth: (size.value * 2.5).toInt(),
+                  memCacheHeight: (size.value * 2.5).toInt(),
                   placeholder: (context, url) => _buildPlaceholder(),
                   errorWidget: (context, url, error) => _buildPlaceholder(),
                 )
@@ -58,10 +60,7 @@ class UserAvatar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.onPrimary,
                 borderRadius: BorderRadius.zero,
-                border: Border.all(
-                  color: AppColors.primaryContainer,
-                  width: 2,
-                ),
+                border: Border.all(color: AppColors.primaryContainer, width: 2),
               ),
               child: Icon(
                 Icons.verified,

@@ -118,7 +118,7 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
                 ],
               ),
             ),
-            const SuggestionsSection(),
+            const SuggestionsSection(asSliver: false),
           ],
         ),
       );

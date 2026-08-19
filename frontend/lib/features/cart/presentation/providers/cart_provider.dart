@@ -46,11 +46,7 @@ class CartState {
     this.error,
   });
 
-  CartState copyWith({
-    bool? isLoading,
-    CartEntity? cart,
-    String? error,
-  }) {
+  CartState copyWith({bool? isLoading, CartEntity? cart, String? error}) {
     return CartState(
       isLoading: isLoading ?? this.isLoading,
       cart: cart ?? this.cart,
@@ -59,38 +55,22 @@ class CartState {
   }
 }
 
-class CartNotifier extends StateNotifier<CartState> {
-  final GetCartUsecase _getCartUsecase;
-  final AddToCartUsecase _addToCartUsecase;
-  final UpdateCartQuantityUsecase _updateCartQuantityUsecase;
-  final RemoveFromCartUsecase _removeFromCartUsecase;
-  final ClearCartUsecase _clearCartUsecase;
-
-  CartNotifier(
-    this._getCartUsecase,
-    this._addToCartUsecase,
-    this._updateCartQuantityUsecase,
-    this._removeFromCartUsecase,
-    this._clearCartUsecase,
-  ) : super(const CartState());
+class CartNotifier extends Notifier<CartState> {
+  @override
+  CartState build() => const CartState();
 
   Future<void> loadCart() async {
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _getCartUsecase();
+    final result = await ref.read(getCartUsecaseProvider)();
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
-      (cart) => state = state.copyWith(
-        isLoading: false,
-        cart: cart,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
+      (cart) => state = state.copyWith(isLoading: false, cart: cart),
     );
   }
 
   Future<bool> addToCart(String productId, {int quantity = 1}) async {
-    final result = await _addToCartUsecase(
+    final result = await ref.read(addToCartUsecaseProvider)(
       AddToCartParams(productId: productId, quantity: quantity),
     );
     return result.fold(
@@ -106,7 +86,7 @@ class CartNotifier extends StateNotifier<CartState> {
   }
 
   Future<bool> updateQuantity(String productId, int quantity) async {
-    final result = await _updateCartQuantityUsecase(
+    final result = await ref.read(updateCartQuantityUsecaseProvider)(
       UpdateCartQuantityParams(productId: productId, quantity: quantity),
     );
     return result.fold(
@@ -122,7 +102,7 @@ class CartNotifier extends StateNotifier<CartState> {
   }
 
   Future<bool> removeFromCart(String productId) async {
-    final result = await _removeFromCartUsecase(productId);
+    final result = await ref.read(removeFromCartUsecaseProvider)(productId);
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -136,7 +116,7 @@ class CartNotifier extends StateNotifier<CartState> {
   }
 
   Future<bool> clearCart() async {
-    final result = await _clearCartUsecase();
+    final result = await ref.read(clearCartUsecaseProvider)();
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -150,15 +130,9 @@ class CartNotifier extends StateNotifier<CartState> {
   }
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) {
-  return CartNotifier(
-    ref.watch(getCartUsecaseProvider),
-    ref.watch(addToCartUsecaseProvider),
-    ref.watch(updateCartQuantityUsecaseProvider),
-    ref.watch(removeFromCartUsecaseProvider),
-    ref.watch(clearCartUsecaseProvider),
-  );
-});
+final cartProvider = NotifierProvider<CartNotifier, CartState>(
+  CartNotifier.new,
+);
 
 final cartItemCountProvider = Provider<int>((ref) {
   return ref.watch(cartProvider).cart.totalItems;

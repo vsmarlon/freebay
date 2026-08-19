@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderRepository } from '../domain/repositories/order.repository';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { CreateOrderUseCase } from './create-order.usecase';
@@ -14,7 +12,6 @@ import { NotificationsModule } from '@/modules/notifications/notifications.modul
 @Module({
   imports: [NotificationsModule],
   providers: [
-    { provide: PrismaClient, useExisting: PrismaService },
     PrismaOrderRepository,
     { provide: OrderRepository, useExisting: PrismaOrderRepository },
     CreateOrderUseCase,

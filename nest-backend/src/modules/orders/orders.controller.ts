@@ -18,8 +18,8 @@ import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { left, isLeft } from '@/shared/core/either';
+import { NotFoundError } from '@/shared/core/errors';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -39,21 +39,17 @@ export class OrdersController {
   })
   async create(@CurrentUser() user: AuthUser, @Body() body: CreateOrderDTO) {
     const productResult = await this.ordersService.findProductForOrder(body.productId);
-    if (isLeft(productResult)) throw productResult.value;
-
+    if (isLeft(productResult)) return productResult;
     const product = productResult.value;
-    if (!product) throw new AppError('NOT_FOUND', 'Produto não encontrado', 404);
+    if (!product) return left(new NotFoundError('Produto'));
 
-    const result = await this.ordersService.create({
+    return this.ordersService.create({
       buyerId: user.userId,
       sellerId: product.sellerId,
       productId: product.id,
       amount: product.price,
       platformFeePercent: 10,
     });
-
-    if (isLeft(result)) throw result.value;
-    return result.value;
   }
 
   @Get(':id')
@@ -64,8 +60,8 @@ export class OrdersController {
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const result = await this.ordersService.findOne(id);
-    if (isLeft(result)) throw result.value;
-    if (!result.value) throw new AppError('NOT_FOUND', 'Pedido não encontrado', 404);
+    if (isLeft(result)) return result;
+    if (!result.value) return left(new NotFoundError('Pedido'));
     return { order: result.value };
   }
 
@@ -78,9 +74,7 @@ export class OrdersController {
     errors: [{ status: 404, description: 'Order not found' }],
   })
   async markAsShipped(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.markAsShipped({ orderId: id, sellerId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.ordersService.markAsShipped({ orderId: id, sellerId: user.userId });
   }
 
   @Post(':id/deliver')
@@ -92,9 +86,7 @@ export class OrdersController {
     errors: [{ status: 404, description: 'Order not found' }],
   })
   async markAsDelivered(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.markAsDelivered({ orderId: id, buyerId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.ordersService.markAsDelivered({ orderId: id, buyerId: user.userId });
   }
 
   @Post(':id/confirm')
@@ -106,9 +98,7 @@ export class OrdersController {
     errors: [{ status: 404, description: 'Order not found' }],
   })
   async confirmDelivery(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.confirmDelivery({ orderId: id, buyerId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.ordersService.confirmDelivery({ orderId: id, buyerId: user.userId });
   }
 
   @Post(':id/confirm-delivery')
@@ -132,9 +122,7 @@ export class OrdersController {
     errors: [{ status: 404, description: 'Order not found' }],
   })
   async cancel(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.cancel({ orderId: id, userId: user.userId });
-    if (isLeft(result)) throw result.value;
-    return result.value;
+    return this.ordersService.cancel({ orderId: id, userId: user.userId });
   }
 
   @Get()
@@ -147,10 +135,10 @@ export class OrdersController {
     ],
   })
   async findAll(@CurrentUser() user: AuthUser, @Query('role') role?: string) {
-    const result = role === 'seller'
-      ? await this.ordersService.findBySellerId(user.userId)
-      : await this.ordersService.findByBuyerId(user.userId);
-    if (isLeft(result)) throw result.value;
+    const result = await (role === 'seller'
+      ? this.ordersService.findBySellerId(user.userId)
+      : this.ordersService.findByBuyerId(user.userId));
+    if (isLeft(result)) return result;
     return { orders: result.value };
   }
 
@@ -162,7 +150,7 @@ export class OrdersController {
   })
   async getMyPurchases(@CurrentUser() user: AuthUser) {
     const result = await this.ordersService.findByBuyerId(user.userId);
-    if (isLeft(result)) throw result.value;
+    if (isLeft(result)) return result;
     return { orders: result.value };
   }
 
@@ -174,7 +162,7 @@ export class OrdersController {
   })
   async getMySales(@CurrentUser() user: AuthUser) {
     const result = await this.ordersService.findBySellerId(user.userId);
-    if (isLeft(result)) throw result.value;
+    if (isLeft(result)) return result;
     return { orders: result.value };
   }
 }

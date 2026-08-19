@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_dialog.dart';
-import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/components/menu_list_tile.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/stat_column.dart';
@@ -13,7 +12,6 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/bug_report/presentation/widgets/bug_report_sheet.dart';
-import 'package:freebay/features/profile/presentation/widgets/profile_menu_list.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 
 class FeedDrawer extends ConsumerWidget {
@@ -52,85 +50,163 @@ class FeedDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
-    final user = authState.valueOrNull;
+    final user = authState.value;
     final bio = user?.bio;
+    final isDark = context.isDark;
 
     return Drawer(
-      child: RepaintBoundary(
+      elevation: 0,
+      width: MediaQuery.of(context).size.width * 0.78,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : AppColors.surface,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            right: BorderSide(
+              color: AppColors.primaryContainer.withAlpha(120),
+              width: 2.0,
+            ),
+          ),
+        ),
         child: SafeArea(
           child: Column(
             children: [
-              Flexible(
+              Expanded(
                 child: ListView(
+                  physics: const BouncingScrollPhysics(),
                   padding: EdgeInsets.zero,
                   children: [
-                    _Header(
-                      name: user?.displayName ?? 'Usuário',
-                      avatarUrl: user?.avatarUrl,
-                      isVerified: user?.isVerified ?? false,
-                      onTap: () => _goProfile(context),
+                    RepaintBoundary(
+                      child: _Header(
+                        name: user?.displayName ?? 'Usuário',
+                        avatarUrl: user?.avatarUrl,
+                        isVerified: user?.isVerified ?? false,
+                        onTap: () => _goProfile(context),
+                      ),
                     ),
-                    _StatsStrip(
-                      followers: user?.followersCount ?? 0,
-                      following: user?.followingCount ?? 0,
-                      sales: user?.salesCount ?? 0,
-                      reputation: user?.reputationScore ?? 0,
-                      onFollowers: () {
-                        _closeDrawer(context);
-                        context.push('/profile/followers');
-                      },
-                      onFollowing: () {
-                        _closeDrawer(context);
-                        context.push('/profile/following');
-                      },
+                    RepaintBoundary(
+                      child: _StatsStrip(
+                        followers: user?.followersCount ?? 0,
+                        following: user?.followingCount ?? 0,
+                        sales: user?.salesCount ?? 0,
+                        reputation: user?.reputationScore ?? 0,
+                        onFollowers: () {
+                          _closeDrawer(context);
+                          context.push('/profile/followers');
+                        },
+                        onFollowing: () {
+                          _closeDrawer(context);
+                          context.push('/profile/following');
+                        },
+                      ),
                     ),
                     if (bio != null && bio.isNotEmpty) _BioBlock(bio: bio),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: ProfileMenuList(showLogout: false),
-                    ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                      child: BrutalistBox(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            MenuListTile(
-                              icon: Icons.settings_outlined,
-                              label: 'Configurações',
-                              onTap: () {
-                                _closeDrawer(context);
-                                showProfileSettingsSheet(context);
-                              },
-                            ),
-                            MenuListTile(
-                              icon: Icons.help_outline,
-                              label: 'Ajuda e suporte',
-                              onTap: () {
-                                _closeDrawer(context);
-                                context.push('/faq');
-                              },
-                            ),
-                          ],
-                        ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          MenuListTile(
+                            icon: Icons.grid_view,
+                            label: 'Meus posts',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/profile/posts');
+                            },
+                          ),
+                          MenuListTile(
+                            icon: Icons.shopping_bag_outlined,
+                            label: 'Meus anúncios',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/profile/products');
+                            },
+                          ),
+                          MenuListTile(
+                            icon: Icons.bookmark_outline,
+                            label: 'Salvos',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/profile/saved');
+                            },
+                          ),
+                          MenuListTile(
+                            icon: Icons.shopping_cart_outlined,
+                            label: 'Carrinho',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/cart');
+                            },
+                          ),
+                          MenuListTile(
+                            icon: Icons.receipt_long_outlined,
+                            label: 'Meus pedidos',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/orders');
+                            },
+                          ),
+                          MenuListTile(
+                            icon: Icons.account_balance_wallet_outlined,
+                            label: 'Carteira e custódia',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/wallet');
+                            },
+                          ),
+                          MenuListTile(
+                            icon: Icons.notifications_outlined,
+                            label: 'Notificações',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/notifications');
+                            },
+                          ),
+                          Container(
+                            height: 1,
+                            color: context.borderColor.withAlpha(40),
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          MenuListTile(
+                            icon: Icons.settings_outlined,
+                            label: 'Configurações',
+                            onTap: () {
+                              _closeDrawer(context);
+                              showProfileSettingsSheet(context);
+                            },
+                          ),
+                          MenuListTile(
+                            icon: Icons.help_outline,
+                            label: 'Ajuda e suporte',
+                            onTap: () {
+                              _closeDrawer(context);
+                              context.push('/faq');
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              _Footer(
-                isDark: ref.watch(isDarkModeProvider),
-                onToggleTheme: () =>
-                    ref.read(themeModeProvider.notifier).toggleTheme(),
-                onSettings: () {
-                  _closeDrawer(context);
-                  showProfileSettingsSheet(context);
-                },
-                onLogout: () => _confirmLogout(context, ref),
-                onReportBug: () {
-                  _closeDrawer(context);
-                  showBugReportSheet(context);
-                },
+              RepaintBoundary(
+                child: _Footer(
+                  isDark: ref.watch(isDarkModeProvider),
+                  onToggleTheme: () =>
+                      ref.read(themeModeProvider.notifier).toggleTheme(),
+                  onSettings: () {
+                    _closeDrawer(context);
+                    showProfileSettingsSheet(context);
+                  },
+                  onLogout: () => _confirmLogout(context, ref),
+                  onReportBug: () {
+                    _closeDrawer(context);
+                    showBugReportSheet(context);
+                  },
+                ),
               ),
             ],
           ),
@@ -140,8 +216,6 @@ class FeedDrawer extends ConsumerWidget {
   }
 }
 
-/// Tappable header → opens the user's profile. Big Space Grotesk name paired
-/// with a small all-caps label (editorial pairing).
 class _Header extends StatelessWidget {
   final String name;
   final String? avatarUrl;
@@ -161,8 +235,16 @@ class _Header extends StatelessWidget {
       color: context.surfaceMidColor,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.fromLTRB(16, 20, 12, 20),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: context.borderColor.withAlpha(50),
+                width: 1.5,
+              ),
+            ),
+          ),
           child: Row(
             children: [
               UserAvatar(
@@ -182,8 +264,9 @@ class _Header extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        fontStyle: FontStyle.italic,
                         color: context.textPrimary,
                       ),
                     ),
@@ -191,9 +274,9 @@ class _Header extends StatelessWidget {
                     Text(
                       'VER MEU PERFIL',
                       style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
+                        fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 1,
                         color: AppColors.primaryContainer,
                       ),
@@ -210,7 +293,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Tonal-blocked stats row. Followers/Following are tappable.
 class _StatsStrip extends StatelessWidget {
   final int followers;
   final int following;
@@ -232,7 +314,7 @@ class _StatsStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: context.surfaceMidColor,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       child: Column(
         children: [
           Row(
@@ -289,7 +371,7 @@ class _BioBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -298,19 +380,22 @@ class _BioBlock extends StatelessWidget {
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1,
-              color: context.textSecondary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+              color: AppColors.primaryContainer,
             ),
           ),
-          Spacing.vSm,
+          const SizedBox(height: 4),
           Text(
             bio,
             style: TextStyle(
-              fontSize: 15,
-              height: 1.5,
+              fontFamily: AppTypography.fontFamily,
+              fontSize: 13,
               color: context.textPrimary,
+              height: 1.4,
             ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -318,8 +403,6 @@ class _BioBlock extends StatelessWidget {
   }
 }
 
-/// Pinned footer: dark-mode toggle on the left, settings + logout on the right.
-/// Sits on a distinct surface tone (tonal blocking) — no divider line.
 class _Footer extends StatelessWidget {
   final bool isDark;
   final VoidCallback onToggleTheme;
@@ -337,76 +420,41 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: context.surfaceMidColor,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          children: [
-            _FooterAction(
-              icon: isDark
-                  ? Icons.dark_mode_outlined
-                  : Icons.light_mode_outlined,
-              label: isDark ? 'ESCURO' : 'CLARO',
-              onTap: onToggleTheme,
-            ),
-            const Spacer(),
-            _FooterAction(icon: Icons.bug_report_outlined, onTap: onReportBug),
-            Spacing.hSm,
-            _FooterAction(icon: Icons.settings_outlined, onTap: onSettings),
-            Spacing.hSm,
-            _FooterAction(
-              icon: Icons.logout,
-              label: 'SAIR',
-              color: AppColors.error,
-              onTap: onLogout,
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: context.surfaceMidColor,
+        border: Border(
+          top: BorderSide(color: context.borderColor.withAlpha(50), width: 1.5),
         ),
       ),
-    );
-  }
-}
-
-class _FooterAction extends StatelessWidget {
-  final IconData icon;
-  final String? label;
-  final VoidCallback onTap;
-  final Color? color;
-
-  const _FooterAction({
-    required this.icon,
-    this.label,
-    required this.onTap,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tint = color ?? context.textPrimary;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: tint, size: 20),
-            if (label != null) ...[
-              Spacing.hSm,
-              Text(
-                label!,
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                  color: tint,
-                ),
-              ),
-            ],
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              color: context.textPrimary,
+            ),
+            tooltip: isDark ? 'Modo claro' : 'Modo escuro',
+            onPressed: onToggleTheme,
+          ),
+          IconButton(
+            icon: Icon(Icons.bug_report_outlined, color: context.textSecondary),
+            tooltip: 'Reportar problema',
+            onPressed: onReportBug,
+          ),
+          IconButton(
+            icon: Icon(Icons.settings_outlined, color: context.textSecondary),
+            tooltip: 'Configurações',
+            onPressed: onSettings,
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: AppColors.error),
+            tooltip: 'Sair',
+            onPressed: onLogout,
+          ),
+        ],
       ),
     );
   }

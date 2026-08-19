@@ -12,6 +12,7 @@ class ChatHeader extends StatelessWidget {
   final Color accentColor;
   final VoidCallback onBack;
   final VoidCallback onConfig;
+  final VoidCallback? onInfo;
   final bool isOnline;
   final DateTime? lastSeenAt;
 
@@ -23,6 +24,7 @@ class ChatHeader extends StatelessWidget {
     required this.accentColor,
     required this.onBack,
     required this.onConfig,
+    this.onInfo,
     this.isOnline = false,
     this.lastSeenAt,
   });
@@ -96,6 +98,8 @@ class ChatHeader extends StatelessWidget {
               ],
             ),
           ),
+          BrutalistIconButton(icon: Icons.info_outline, onTap: onInfo ?? () {}),
+          const SizedBox(width: 4),
           BrutalistIconButton(icon: Icons.more_vert, onTap: onConfig),
         ],
       ),

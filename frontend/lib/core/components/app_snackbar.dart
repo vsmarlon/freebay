@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/providers/last_error_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 
 enum AppSnackbarType { success, error, warning, info }
 
@@ -47,9 +48,7 @@ class AppSnackbar {
         ),
         backgroundColor: AppColors.darkGray,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         duration: duration,
         margin: const EdgeInsets.all(16),
       ),
@@ -64,6 +63,15 @@ class AppSnackbar {
     _recordError(context, message);
   }
 
+  static void handleFailure(BuildContext context, dynamic failure) {
+    final message = failure is Failure
+        ? failure.message
+        : failure is String
+        ? failure
+        : failure?.toString() ?? 'Ocorreu um erro inesperado';
+    error(context, message);
+  }
+
   static void _recordError(BuildContext context, String message) {
     String? route;
     try {
@@ -72,7 +80,7 @@ class AppSnackbar {
     try {
       ProviderScope.containerOf(context, listen: false)
           .read(lastErrorProvider.notifier)
-          .state = LastErrorInfo(message, route);
+          .setError(LastErrorInfo(message, route));
     } catch (_) {}
   }
 

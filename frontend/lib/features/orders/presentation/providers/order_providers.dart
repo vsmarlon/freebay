@@ -10,6 +10,12 @@ import 'package:freebay/features/orders/domain/usecases/create_order_usecase.dar
 import 'package:freebay/features/orders/domain/usecases/get_my_purchases_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/get_my_sales_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/get_order_usecase.dart';
+import 'package:freebay/features/orders/presentation/providers/order_providers_state.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+export 'package:freebay/features/orders/presentation/providers/order_providers_state.dart';
+
+part 'order_providers.g.dart';
 
 final orderServiceProvider = Provider((ref) => OrderService());
 
@@ -39,66 +45,28 @@ final canReviewOrderUsecaseProvider = Provider(
   (ref) => CanReviewOrderUsecase(ref.watch(orderRepositoryProvider)),
 );
 
-class OrderDetailState {
-  final bool isLoading;
-  final OrderEntity? order;
-  final CanReviewResponse? canReviewResponse;
-  final String? error;
-  final bool isPerformingAction;
-
-  const OrderDetailState({
-    this.isLoading = false,
-    this.order,
-    this.canReviewResponse,
-    this.error,
-    this.isPerformingAction = false,
-  });
-
-  OrderDetailState copyWith({
-    bool? isLoading,
-    OrderEntity? order,
-    CanReviewResponse? canReviewResponse,
-    String? error,
-    bool? isPerformingAction,
-  }) {
-    return OrderDetailState(
-      isLoading: isLoading ?? this.isLoading,
-      order: order ?? this.order,
-      canReviewResponse: canReviewResponse ?? this.canReviewResponse,
-      error: error,
-      isPerformingAction: isPerformingAction ?? this.isPerformingAction,
-    );
+@Riverpod(keepAlive: false)
+class OrderDetail extends _$OrderDetail {
+  @override
+  OrderDetailState build(String orderId) {
+    ref.watch(getOrderUsecaseProvider);
+    ref.watch(canReviewOrderUsecaseProvider);
+    ref.watch(confirmDeliveryUsecaseProvider);
+    ref.watch(cancelOrderUsecaseProvider);
+    return const OrderDetailState();
   }
-
-  bool get canReview => canReviewResponse?.canReview ?? false;
-}
-
-class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
-  final GetOrderUsecase _getOrderUsecase;
-  final CanReviewOrderUsecase _canReviewOrderUsecase;
-  final ConfirmDeliveryUsecase _confirmDeliveryUsecase;
-  final CancelOrderUsecase _cancelOrderUsecase;
-  final String orderId;
-
-  OrderDetailNotifier(
-    this._getOrderUsecase,
-    this._canReviewOrderUsecase,
-    this._confirmDeliveryUsecase,
-    this._cancelOrderUsecase,
-    this.orderId,
-  ) : super(const OrderDetailState());
 
   Future<void> loadOrder() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    final orderResult = await _getOrderUsecase(orderId);
-    final canReviewResult = await _canReviewOrderUsecase(orderId);
+    final orderResult = await ref.read(getOrderUsecaseProvider)(orderId);
+    final canReviewResult = await ref.read(canReviewOrderUsecaseProvider)(
+      orderId,
+    );
 
     orderResult.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (order) {
         canReviewResult.fold(
           (_) => state = state.copyWith(
@@ -119,7 +87,7 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
   Future<bool> confirmDelivery() async {
     state = state.copyWith(isPerformingAction: true, error: null);
 
-    final result = await _confirmDeliveryUsecase(orderId);
+    final result = await ref.read(confirmDeliveryUsecaseProvider)(orderId);
     return result.fold(
       (failure) {
         state = state.copyWith(
@@ -129,11 +97,7 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
         return false;
       },
       (updatedOrder) async {
-        state = state.copyWith(
-          isPerformingAction: false,
-          order: updatedOrder,
-        );
-        // Reload to refresh canReviewResponse after status change
+        state = state.copyWith(isPerformingAction: false, order: updatedOrder);
         await loadOrder();
         return true;
       },
@@ -143,7 +107,7 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
   Future<bool> cancelOrder() async {
     state = state.copyWith(isPerformingAction: true, error: null);
 
-    final result = await _cancelOrderUsecase(orderId);
+    final result = await ref.read(cancelOrderUsecaseProvider)(orderId);
     return result.fold(
       (failure) {
         state = state.copyWith(
@@ -153,10 +117,7 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
         return false;
       },
       (updatedOrder) {
-        state = state.copyWith(
-          isPerformingAction: false,
-          order: updatedOrder,
-        );
+        state = state.copyWith(isPerformingAction: false, order: updatedOrder);
         return true;
       },
     );
@@ -167,54 +128,13 @@ class OrderDetailNotifier extends StateNotifier<OrderDetailState> {
   }
 }
 
-final orderDetailProvider = StateNotifierProvider.autoDispose
-    .family<OrderDetailNotifier, OrderDetailState, String>((ref, orderId) {
-  return OrderDetailNotifier(
-    ref.watch(getOrderUsecaseProvider),
-    ref.watch(canReviewOrderUsecaseProvider),
-    ref.watch(confirmDeliveryUsecaseProvider),
-    ref.watch(cancelOrderUsecaseProvider),
-    orderId,
-  );
-});
-
-class PurchasesListState {
-  final bool isLoading;
-  final List<OrderEntity> orders;
-  final int total;
-  final String? error;
-  final bool hasMore;
-
-  const PurchasesListState({
-    this.isLoading = false,
-    this.orders = const [],
-    this.total = 0,
-    this.error,
-    this.hasMore = true,
-  });
-
-  PurchasesListState copyWith({
-    bool? isLoading,
-    List<OrderEntity>? orders,
-    int? total,
-    String? error,
-    bool? hasMore,
-  }) {
-    return PurchasesListState(
-      isLoading: isLoading ?? this.isLoading,
-      orders: orders ?? this.orders,
-      total: total ?? this.total,
-      error: error,
-      hasMore: hasMore ?? this.hasMore,
-    );
+@Riverpod(keepAlive: true)
+class PurchasesList extends _$PurchasesList {
+  @override
+  PurchasesListState build() {
+    ref.watch(getMyPurchasesUsecaseProvider);
+    return const PurchasesListState();
   }
-}
-
-class PurchasesListNotifier extends StateNotifier<PurchasesListState> {
-  final GetMyPurchasesUsecase _getMyPurchasesUsecase;
-
-  PurchasesListNotifier(this._getMyPurchasesUsecase)
-      : super(const PurchasesListState());
 
   Future<void> loadPurchases({bool refresh = false}) async {
     if (state.isLoading) return;
@@ -226,17 +146,17 @@ class PurchasesListNotifier extends StateNotifier<PurchasesListState> {
       orders: refresh ? [] : state.orders,
     );
 
-    final result =
-        await _getMyPurchasesUsecase(GetMyPurchasesParams(offset: offset));
+    final result = await ref.read(getMyPurchasesUsecaseProvider)(
+      GetMyPurchasesParams(offset: offset),
+    );
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (response) => state = state.copyWith(
         isLoading: false,
-        orders:
-            refresh ? response.orders : [...state.orders, ...response.orders],
+        orders: refresh
+            ? response.orders
+            : [...state.orders, ...response.orders],
         total: response.total,
         hasMore: response.hasMore,
       ),
@@ -246,47 +166,13 @@ class PurchasesListNotifier extends StateNotifier<PurchasesListState> {
   Future<void> refresh() => loadPurchases(refresh: true);
 }
 
-final purchasesListProvider =
-    StateNotifierProvider<PurchasesListNotifier, PurchasesListState>((ref) {
-  return PurchasesListNotifier(ref.watch(getMyPurchasesUsecaseProvider));
-});
-
-class SalesListState {
-  final bool isLoading;
-  final List<OrderEntity> orders;
-  final int total;
-  final String? error;
-  final bool hasMore;
-
-  const SalesListState({
-    this.isLoading = false,
-    this.orders = const [],
-    this.total = 0,
-    this.error,
-    this.hasMore = true,
-  });
-
-  SalesListState copyWith({
-    bool? isLoading,
-    List<OrderEntity>? orders,
-    int? total,
-    String? error,
-    bool? hasMore,
-  }) {
-    return SalesListState(
-      isLoading: isLoading ?? this.isLoading,
-      orders: orders ?? this.orders,
-      total: total ?? this.total,
-      error: error,
-      hasMore: hasMore ?? this.hasMore,
-    );
+@Riverpod(keepAlive: true)
+class SalesList extends _$SalesList {
+  @override
+  SalesListState build() {
+    ref.watch(getMySalesUsecaseProvider);
+    return const SalesListState();
   }
-}
-
-class SalesListNotifier extends StateNotifier<SalesListState> {
-  final GetMySalesUsecase _getMySalesUsecase;
-
-  SalesListNotifier(this._getMySalesUsecase) : super(const SalesListState());
 
   Future<void> loadSales({bool refresh = false}) async {
     if (state.isLoading) return;
@@ -298,16 +184,17 @@ class SalesListNotifier extends StateNotifier<SalesListState> {
       orders: refresh ? [] : state.orders,
     );
 
-    final result = await _getMySalesUsecase(GetMySalesParams(offset: offset));
+    final result = await ref.read(getMySalesUsecaseProvider)(
+      GetMySalesParams(offset: offset),
+    );
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (response) => state = state.copyWith(
         isLoading: false,
-        orders:
-            refresh ? response.orders : [...state.orders, ...response.orders],
+        orders: refresh
+            ? response.orders
+            : [...state.orders, ...response.orders],
         total: response.total,
         hasMore: response.hasMore,
       ),
@@ -316,8 +203,3 @@ class SalesListNotifier extends StateNotifier<SalesListState> {
 
   Future<void> refresh() => loadSales(refresh: true);
 }
-
-final salesListProvider =
-    StateNotifierProvider<SalesListNotifier, SalesListState>((ref) {
-  return SalesListNotifier(ref.watch(getMySalesUsecaseProvider));
-});

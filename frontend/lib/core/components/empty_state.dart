@@ -18,11 +18,7 @@ class EmptyState extends StatelessWidget {
     this.action,
   });
 
-  factory EmptyState.noPosts({
-    Key? key,
-    String? subtitle,
-    Widget? action,
-  }) {
+  factory EmptyState.noPosts({Key? key, String? subtitle, Widget? action}) {
     return EmptyState(
       key: key,
       icon: Icons.explore_outlined,
@@ -32,11 +28,7 @@ class EmptyState extends StatelessWidget {
     );
   }
 
-  factory EmptyState.noResults({
-    Key? key,
-    String? subtitle,
-    Widget? action,
-  }) {
+  factory EmptyState.noResults({Key? key, String? subtitle, Widget? action}) {
     return EmptyState(
       key: key,
       icon: Icons.search_off,
@@ -46,11 +38,7 @@ class EmptyState extends StatelessWidget {
     );
   }
 
-  factory EmptyState.error({
-    Key? key,
-    String? message,
-    VoidCallback? onRetry,
-  }) {
+  factory EmptyState.error({Key? key, String? message, VoidCallback? onRetry}) {
     return EmptyState(
       key: key,
       icon: Icons.error_outline,
@@ -86,20 +74,14 @@ class EmptyState extends StatelessWidget {
               height: 80,
               decoration: BoxDecoration(
                 color: context.surfaceMidColor,
-                border: Border.all(
-                  color: AppColors.outline,
-                  width: 2,
-                ),
+                border: Border.all(color: AppColors.outline, width: 2),
               ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: AppColors.outline,
-              ),
+              child: Icon(icon, size: 40, color: AppColors.outline),
             ),
             Spacing.vLg,
             Text(
               title,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 20,
@@ -120,10 +102,7 @@ class EmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
-            if (action != null) ...[
-              Spacing.vLg,
-              action!,
-            ],
+            if (action != null) ...[Spacing.vLg, action!],
           ],
         ),
       ),

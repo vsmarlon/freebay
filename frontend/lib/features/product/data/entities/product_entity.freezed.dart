@@ -232,15 +232,15 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 @JsonSerializable()
 
 class _ProductEntity extends ProductEntity {
-  const _ProductEntity({required this.id, required this.title, required this.description, required this.price, required this.condition, required this.status, required this.sellerId, this.postId, this.seller, final  List<ProductImageEntity>? images, this.quantity = 1, this.soldCount = 0}): _images = images,super._();
+  const _ProductEntity({required this.id, required this.title, this.description = '', this.price = 0, this.condition = 'NEW', this.status = 'ACTIVE', required this.sellerId, this.postId, this.seller, final  List<ProductImageEntity>? images, this.quantity = 1, this.soldCount = 0}): _images = images,super._();
   factory _ProductEntity.fromJson(Map<String, dynamic> json) => _$ProductEntityFromJson(json);
 
 @override final  String id;
 @override final  String title;
-@override final  String description;
-@override final  int price;
-@override final  String condition;
-@override final  String status;
+@override@JsonKey() final  String description;
+@override@JsonKey() final  int price;
+@override@JsonKey() final  String condition;
+@override@JsonKey() final  String status;
 @override final  String sellerId;
 @override final  String? postId;
 @override final  UserEntity? seller;

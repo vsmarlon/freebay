@@ -1,24 +1,40 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 
-part 'user_post_entry.freezed.dart';
-part 'user_post_entry.g.dart';
+class UserPostEntry {
+  final PostEntity post;
+  final DateTime? repostedAt;
+  final UserEntity? repostedBy;
+  final bool isReposted;
+  final int? sharesCount;
 
-@freezed
-abstract class UserPostEntry with _$UserPostEntry {
-  const UserPostEntry._();
+  const UserPostEntry({
+    required this.post,
+    this.repostedAt,
+    this.repostedBy,
+    this.isReposted = false,
+    this.sharesCount,
+  });
 
-  const factory UserPostEntry({
-    required PostEntity post,
-    DateTime? repostedAt,
-    UserEntity? repostedBy,
-    @Default(false) bool isReposted,
-    int? sharesCount,
-  }) = _UserPostEntry;
+  factory UserPostEntry.fromJson(Map<String, dynamic> json) => UserPostEntry(
+    post: PostEntity.fromJson(json['post'] as Map<String, dynamic>),
+    repostedAt: json['repostedAt'] != null
+        ? DateTime.parse(json['repostedAt'] as String)
+        : null,
+    repostedBy: json['repostedBy'] != null
+        ? UserEntity.fromJson(json['repostedBy'] as Map<String, dynamic>)
+        : null,
+    isReposted: json['isReposted'] as bool? ?? false,
+    sharesCount: json['sharesCount'] as int?,
+  );
 
-  factory UserPostEntry.fromJson(Map<String, dynamic> json) =>
-      _$UserPostEntryFromJson(json);
+  Map<String, dynamic> toJson() => {
+    'post': post.toJson(),
+    'repostedAt': repostedAt?.toIso8601String(),
+    'repostedBy': repostedBy?.toJson(),
+    'isReposted': isReposted,
+    'sharesCount': sharesCount,
+  };
 
   PostEntity toPostEntity() {
     return post.copyWith(

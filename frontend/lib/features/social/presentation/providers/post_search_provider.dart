@@ -1,7 +1,9 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'post_search_provider.g.dart';
 
 class PostSearchState {
   final List<PostEntity> posts;
@@ -43,10 +45,15 @@ class PostSearchState {
   }
 }
 
-class PostSearchNotifier extends StateNotifier<PostSearchState> {
-  final ISocialRepository _repository;
+@Riverpod(keepAlive: true)
+class PostSearch extends _$PostSearch {
+  late final ISocialRepository _repository;
 
-  PostSearchNotifier(this._repository) : super(const PostSearchState());
+  @override
+  PostSearchState build() {
+    _repository = ref.watch(socialRepositoryProvider);
+    return const PostSearchState();
+  }
 
   Future<void> search({
     String? query,
@@ -89,9 +96,3 @@ class PostSearchNotifier extends StateNotifier<PostSearchState> {
     state = const PostSearchState();
   }
 }
-
-final postSearchProvider =
-    StateNotifierProvider<PostSearchNotifier, PostSearchState>((ref) {
-      final repository = ref.watch(socialRepositoryProvider);
-      return PostSearchNotifier(repository);
-    });

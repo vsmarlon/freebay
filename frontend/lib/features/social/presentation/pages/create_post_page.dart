@@ -1,23 +1,19 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/user_avatar.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/features/social/presentation/widgets/local_image_inspector.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -30,7 +26,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   final _contentController = TextEditingController();
   final _mentionController = TextEditingController();
   final _imagePicker = ImagePicker();
-
   String? _selectedImagePath;
   bool _isLoading = false;
 
@@ -41,69 +36,16 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     super.dispose();
   }
 
-  Future<void> _pickImage({bool fromCamera = false}) async {
+  Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _imagePicker.pickImage(
-      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      source: source,
       maxWidth: 1080,
       maxHeight: 1080,
       imageQuality: 80,
     );
-
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImagePath = pickedFile.path;
-      });
+    if (pickedFile != null && mounted) {
+      setState(() => _selectedImagePath = pickedFile.path);
     }
-  }
-
-  void _showImageOptions() {
-    showBrutalistSheet(
-      context: context,
-      title: 'OPÇÕES DE IMAGEM',
-      builder: (ctx) => ImageOptionsSheet(
-        hasImage: _selectedImagePath != null,
-        onPickGallery: () {
-          Navigator.pop(ctx);
-          _pickImage();
-        },
-        onPickCamera: () {
-          Navigator.pop(ctx);
-          _pickImage(fromCamera: true);
-        },
-        onView: _selectedImagePath != null
-            ? () {
-                Navigator.pop(ctx);
-                _openImagePreview();
-              }
-            : null,
-        onRemove: _selectedImagePath != null
-            ? () {
-                Navigator.pop(ctx);
-                setState(() => _selectedImagePath = null);
-              }
-            : null,
-      ),
-    );
-  }
-
-  void _openImagePreview() {
-    if (_selectedImagePath == null) return;
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.black,
-        transitionDuration: const Duration(milliseconds: 200),
-        pageBuilder: (_, _, _) => LocalImageFullScreen(
-          path: _selectedImagePath!,
-          onEdit: () {
-            Navigator.of(context).pop();
-            _showImageOptions();
-          },
-        ),
-        transitionsBuilder: (_, animation, _, child) =>
-            FadeTransition(opacity: animation, child: child),
-      ),
-    );
   }
 
   Future<void> _createPost() async {
@@ -123,7 +65,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     }
 
     setState(() => _isLoading = true);
-
     final repository = ref.read(socialRepositoryProvider);
     final result = await repository.createPost(
       content: content,
@@ -134,20 +75,19 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     setState(() => _isLoading = false);
     if (!mounted) return;
 
-    result.fold(
-      (failure) {
-        AppSnackbar.error(context, failure.message);
-      },
-      (post) {
-        ref.read(feedProvider.notifier).addPost(post);
-        context.pop();
-      },
-    );
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      post,
+    ) {
+      ref.read(feedProvider.notifier).addPost(post);
+      context.pop();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    final user = ref.watch(authControllerProvider).value;
+
     return Scaffold(
       backgroundColor: context.bgColor,
       body: Column(
@@ -173,7 +113,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: AppButton(
-                  label: 'Publicar',
+                  label: 'PUBLICAR',
+                  size: AppButtonSize.compact,
                   onPressed: _isLoading ? null : _createPost,
                   isLoading: _isLoading,
                 ),
@@ -186,72 +127,43 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  context.breadcrumbs.isNotEmpty
-                      ? BrutalistBreadcrumb(items: context.breadcrumbs)
-                      : const SizedBox.shrink(),
-                  Spacing.vMd,
-                  _buildSeparationCard(context, isDark),
-                  Spacing.vMd,
                   Row(
                     children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        color: isDark
-                            ? AppColors.surfaceContainerDark
-                            : AppColors.lightGray,
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.mediumGray,
-                        ),
+                      UserAvatar(
+                        imageUrl: user?.avatarUrl,
+                        size: AppAvatarSize.medium,
                       ),
                       Spacing.hSm,
-                      Flexible(
-                        child: Text(
-                          'Publicação social',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.onSurface,
-                          ),
+                      Text(
+                        user?.displayNameOrDefault ?? 'Meu perfil',
+                        style: TextStyle(
+                          fontFamily: AppTypography.headlineFontFamily,
+                          fontWeight: FontWeight.w700,
+                          color: context.textPrimary,
                         ),
                       ),
                     ],
                   ),
                   Spacing.vMd,
                   Container(
-                    color: isDark
-                        ? AppColors.surfaceContainerDark
-                        : AppColors.surfaceContainerLowest,
+                    color: context.surfaceColor,
                     padding: const EdgeInsets.all(16),
                     child: TextField(
                       controller: _contentController,
                       maxLines: null,
                       minLines: 5,
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.onSurface,
-                      ),
+                      style: TextStyle(color: context.textPrimary),
                       decoration: InputDecoration(
                         hintText:
                             'Compartilhe uma atualização, ideia ou bastidor…',
-                        hintStyle: TextStyle(
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.outline,
-                        ),
+                        hintStyle: TextStyle(color: context.textSecondary),
                         border: InputBorder.none,
                       ),
                     ),
                   ),
                   Spacing.vSm,
-                  // Mention field
                   Container(
-                    color: isDark
-                        ? AppColors.surfaceContainerDark
-                        : AppColors.surfaceContainerLowest,
+                    color: context.surfaceColor,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 10,
@@ -261,26 +173,20 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         Icon(
                           Icons.alternate_email,
                           size: 18,
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.outline,
+                          color: context.textSecondary,
                         ),
                         Spacing.hSm,
                         Expanded(
                           child: TextField(
                             controller: _mentionController,
                             style: TextStyle(
-                              color: isDark
-                                  ? AppColors.white
-                                  : AppColors.onSurface,
+                              color: context.textPrimary,
                               fontSize: 14,
                             ),
                             decoration: InputDecoration(
                               hintText: 'Mencionar usuário (opcional)',
                               hintStyle: TextStyle(
-                                color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.outline,
+                                color: context.textSecondary,
                                 fontSize: 14,
                               ),
                               border: InputBorder.none,
@@ -296,199 +202,60 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                     Spacing.vMd,
                     Stack(
                       children: [
-                        GestureDetector(
-                          onTap: _openImagePreview,
-                          child: Stack(
-                            children: [
-                              Image.file(
-                                File(_selectedImagePath!),
-                                width: double.infinity,
-                                height: 200,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned.fill(
-                                child: Container(
-                                  color: Colors.black.withValues(alpha: 0.0),
-                                  alignment: Alignment.bottomLeft,
-                                  padding: const EdgeInsets.all(8),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.zoom_in,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'AMPLIAR',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        Image.file(
+                          File(_selectedImagePath!),
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
                         ),
                         Positioned(
                           top: 8,
                           right: 8,
-                          child: Row(
-                            children: [
-                              GestureDetector(
-                                onTap: _showImageOptions,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  color: AppColors.onSurface.withValues(
-                                    alpha: 0.7,
-                                  ),
-                                  child: const Icon(
-                                    Icons.edit,
-                                    color: AppColors.onPrimary,
-                                    size: 16,
-                                  ),
-                                ),
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _selectedImagePath = null),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              color: Colors.black.withAlpha(180),
+                              child: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 18,
                               ),
-                              const SizedBox(width: 6),
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => _selectedImagePath = null),
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  color: AppColors.error.withValues(
-                                    alpha: 0.85,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: AppColors.onPrimary,
-                                    size: 16,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ],
                   Spacing.vMd,
-                  GestureDetector(
-                    onTap: _showImageOptions,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 16,
-                      ),
-                      color: isDark
-                          ? AppColors.surfaceContainerDark
-                          : AppColors.surfaceContainer,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.image_outlined,
-                            color: AppColors.primaryContainer,
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _pickImage(ImageSource.gallery),
+                        icon: const Icon(
+                          Icons.photo_library_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Galeria'),
+                        style: OutlinedButton.styleFrom(
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
                           ),
-                          Spacing.hSm,
-                          Text(
-                            _selectedImagePath == null
-                                ? 'Adicionar imagem ao post'
-                                : 'Editar imagem',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.white
-                                  : AppColors.onSurface,
-                            ),
+                        ),
+                      ),
+                      Spacing.hSm,
+                      OutlinedButton.icon(
+                        onPressed: () => _pickImage(ImageSource.camera),
+                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                        label: const Text('Câmera'),
+                        style: OutlinedButton.styleFrom(
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSeparationCard(BuildContext context, bool isDark) {
-    return Container(
-      color: isDark
-          ? AppColors.surfaceContainerDark
-          : AppColors.surfaceContainer,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'PUBLICAÇÃO SOCIAL × ANÚNCIO',
-            style: TextStyle(
-              fontFamily: AppTypography.headlineFontFamily,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: isDark ? AppColors.white : AppColors.onSurface,
-            ),
-          ),
-          Spacing.vSm,
-          Text(
-            'Esta tela é para posts do feed — textos, fotos e atualizações. '
-            'Para vender um item com preço, categoria e ficha técnica, crie um anúncio separado.',
-            style: TextStyle(
-              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-              height: 1.4,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => context.push('/products/create'),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.onSurface, width: 2),
-                color: isDark
-                    ? AppColors.surfaceDark
-                    : AppColors.surfaceContainerLowest,
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.sell_outlined,
-                    color: AppColors.primaryContainer,
-                    size: 18,
-                  ),
-                  Spacing.hSm,
-                  const Expanded(
-                    child: Text(
-                      'Criar anúncio de venda',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward,
-                    color: AppColors.primaryContainer,
-                    size: 18,
+                    ],
                   ),
                 ],
               ),

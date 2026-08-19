@@ -83,17 +83,50 @@ export class ProductDatabaseRepository implements ProductRepository {
     }
   }
 
-  private async collectCategoryTree(rootId: string): Promise<string[]> {
-    const collected = new Set<string>([rootId]);
-    let frontier = [rootId];
+  private static categoryCache: { tree: Map<string, string[]>; expiry: number } | null = null;
 
-    while (frontier.length) {
-      const children = await this.prisma.category.findMany({
-        where: { parentId: { in: frontier } },
-        select: { id: true },
-      });
-      frontier = children.map((c) => c.id).filter((id) => !collected.has(id));
-      frontier.forEach((id) => collected.add(id));
+  private async collectCategoryTree(rootId: string): Promise<string[]> {
+    const now = Date.now();
+    if (
+      !ProductDatabaseRepository.categoryCache ||
+      ProductDatabaseRepository.categoryCache.expiry < now
+    ) {
+      try {
+        const allCategories = await this.prisma.category.findMany({
+          select: { id: true, parentId: true },
+        });
+        const parentToChildren = new Map<string, string[]>();
+        for (const cat of allCategories) {
+          if (cat.parentId) {
+            const list = parentToChildren.get(cat.parentId) ?? [];
+            list.push(cat.id);
+            parentToChildren.set(cat.parentId, list);
+          }
+        }
+        ProductDatabaseRepository.categoryCache = {
+          tree: parentToChildren,
+          expiry: now + 5 * 60 * 1000, // 5 min TTL
+        };
+      } catch {
+        return [rootId];
+      }
+    }
+
+    const parentToChildren = ProductDatabaseRepository.categoryCache.tree;
+    const collected = new Set<string>([rootId]);
+    const queue = [rootId];
+
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      const children = parentToChildren.get(curr);
+      if (children) {
+        for (const childId of children) {
+          if (!collected.has(childId)) {
+            collected.add(childId);
+            queue.push(childId);
+          }
+        }
+      }
     }
 
     return [...collected];

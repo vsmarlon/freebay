@@ -13,15 +13,14 @@ export class PrismaStoryRepository extends BasePrismaRepository implements Story
 
   async findActiveWithViews(): RepositoryResponse<StoryWithViews[]> {
     return this.safeRun(async () => {
-      const stories = await this.prisma.story.findMany({
-        where: { expiresAt: { gt: new Date() } },
-        include: {
-          user: { select: { id: true, displayName: true, avatarUrl: true } },
-          _count: { select: { views: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-      return stories as unknown as StoryWithViews[];
+       return await this.prisma.story.findMany({
+         where: { expiresAt: { gt: new Date() } },
+         include: {
+           user: { select: { id: true, displayName: true, avatarUrl: true } },
+           _count: { select: { views: true } },
+         },
+         orderBy: { createdAt: 'desc' },
+       });
     }, 'Erro ao buscar stories');
   }
 

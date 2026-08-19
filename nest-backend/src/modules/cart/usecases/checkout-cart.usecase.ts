@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
 import { CartRepository } from '../domain/repositories/cart.repository';
-import { CreatePixPaymentUseCase } from '@/modules/payments/usecases/create-pix-payment.usecase';
+import { CreatePaymentSessionUseCase } from '@/modules/payments/usecases/create-payment-session.usecase';
 
 import { CheckoutCartInput, CheckoutCartItemOutput, CheckoutCartOutput } from '../dtos/cart.dto';
 
@@ -10,7 +10,7 @@ import { CheckoutCartInput, CheckoutCartItemOutput, CheckoutCartOutput } from '.
 export class CheckoutCartUseCase {
   constructor(
     private readonly cartRepository: CartRepository,
-    private readonly createPixPaymentUseCase: CreatePixPaymentUseCase,
+    private readonly createPaymentSessionUseCase: CreatePaymentSessionUseCase,
   ) {}
 
   async execute(input: CheckoutCartInput): Promise<Either<AppError, CheckoutCartOutput>> {
@@ -59,15 +59,15 @@ export class CheckoutCartUseCase {
       });
       if (isLeft(orderResult)) return left(orderResult.value);
 
-      const pixResult = await this.createPixPaymentUseCase.execute({
+      const sessionResult = await this.createPaymentSessionUseCase.execute({
         orderId: orderResult.value.id,
         userId: input.userId,
         idempotencyKey: `cart-${input.userId}-${orderResult.value.id}`,
       });
 
-      if (isLeft(pixResult)) {
+      if (isLeft(sessionResult)) {
         await this.cartRepository.rollbackOrderReservation(orderResult.value.id, item.productId);
-        return left(pixResult.value);
+        return left(sessionResult.value);
       }
 
       checkoutItems.push({
@@ -76,9 +76,9 @@ export class CheckoutCartUseCase {
         productTitle: item.product.title,
         quantity: item.quantity,
         amount,
-        pixQrCode: pixResult.value.pixQrCode,
-        pixImage: pixResult.value.pixImage,
-        expiresAt: pixResult.value.expiresAt,
+        stripeSessionId: sessionResult.value.stripeSessionId,
+        checkoutUrl: sessionResult.value.checkoutUrl,
+        expiresAt: sessionResult.value.expiresAt,
       });
     }
 

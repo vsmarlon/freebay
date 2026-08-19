@@ -1,24 +1,99 @@
-import { DirectConversation, DirectMessage, ChatMessage, ConversationPreference, User } from '@prisma/client';
+import { Prisma, ConversationPreference } from '@prisma/client';
+import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 
-export type DirectConversationWithDetails = DirectConversation & {
-  user1: Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
-  user2: Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
-  messages: Pick<DirectMessage, 'id' | 'content' | 'senderId' | 'createdAt' | 'readAt'>[];
-  _count?: { messages: number };
-};
+// ─── Prisma Typed Includes & Payloads ──────────────────────────────────────────
 
-export type OrderWithChat = {
+export const directConversationWithDetailsValidator = Prisma.validator<Prisma.DirectConversationDefaultArgs>()({
+  include: {
+    user1: { select: USER_SELECT_BASIC },
+    user2: { select: USER_SELECT_BASIC },
+    messages: {
+      take: 1,
+      select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
+      orderBy: { createdAt: 'desc' },
+    },
+    _count: {
+      select: {
+        messages: true,
+      },
+    },
+  },
+});
+
+export type DirectConversationWithDetails = Prisma.DirectConversationGetPayload<typeof directConversationWithDetailsValidator>;
+
+export const orderWithChatValidator = Prisma.validator<Prisma.OrderDefaultArgs>()({
+  include: {
+    buyer: { select: USER_SELECT_BASIC },
+    seller: { select: USER_SELECT_BASIC },
+    product: { select: { id: true, title: true } },
+    chatMessages: {
+      take: 1,
+      select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
+      orderBy: { createdAt: 'desc' },
+    },
+  },
+});
+
+export type OrderWithChatRecord = Prisma.OrderGetPayload<typeof orderWithChatValidator>;
+export type OrderWithChat = OrderWithChatRecord & { unreadCount: number };
+
+export const directMessageWithSenderValidator = Prisma.validator<Prisma.DirectMessageDefaultArgs>()({
+  include: {
+    sender: { select: USER_SELECT_MINIMAL },
+    replyTo: {
+      select: {
+        id: true,
+        senderId: true,
+        content: true,
+        type: true,
+        attachmentUrl: true,
+        deletedAt: true,
+        createdAt: true,
+        viewOnce: true,
+        readAt: true,
+      },
+    },
+  },
+});
+
+export type DirectMessageWithSender = Prisma.DirectMessageGetPayload<typeof directMessageWithSenderValidator>;
+
+export const chatMessageWithSenderValidator = Prisma.validator<Prisma.ChatMessageDefaultArgs>()({
+  include: {
+    sender: { select: USER_SELECT_MINIMAL },
+    replyTo: {
+      select: {
+        id: true,
+        senderId: true,
+        content: true,
+        type: true,
+        attachmentUrl: true,
+        deletedAt: true,
+        createdAt: true,
+        viewOnce: true,
+        readAt: true,
+      },
+    },
+  },
+});
+
+export type ChatMessageWithSender = Prisma.ChatMessageGetPayload<typeof chatMessageWithSenderValidator>;
+
+export type ReplyToSummary = {
   id: string;
-  buyerId: string;
-  sellerId: string;
-  status: string;
+  senderId: string;
+  content: string | null;
+  type: string;
+  attachmentUrl: string | null;
+  deletedAt: Date | null;
+  conversationId: string;
   createdAt: Date;
-  buyer: Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
-  seller: Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
-  product: { id: string; title: string };
-  chatMessages: Pick<ChatMessage, 'id' | 'content' | 'senderId' | 'createdAt' | 'readAt'>[];
-  unreadCount: number;
+  viewOnce: boolean;
+  readAt: Date | null;
 };
+
+// ─── API DTO Response Interfaces ───────────────────────────────────────────────
 
 export interface UnifiedConversationResponse {
   id: string;
@@ -49,28 +124,19 @@ export interface UnifiedConversationResponse {
   } | null;
 }
 
-export type ReplyToSummary = {
+export interface MessageResponseDto {
   id: string;
+  conversationId: string;
   senderId: string;
   content: string | null;
-  type: string;
-  attachmentUrl: string | null;
-  deletedAt: Date | null;
-  conversationId: string;
-  createdAt: Date;
+  sender: { id: string; displayName: string; avatarUrl: string | null };
+  readAt: string | null;
+  deliveredAt: string | null;
+  createdAt: string;
   viewOnce: boolean;
-  readAt: Date | null;
-};
+}
 
-export type DirectMessageWithSender = DirectMessage & {
-  sender: Pick<User, 'id' | 'displayName' | 'avatarUrl'>;
-  replyTo?: ReplyToSummary | null;
-};
-
-export type ChatMessageWithSender = ChatMessage & {
-  sender: Pick<User, 'id' | 'displayName' | 'avatarUrl'>;
-  replyTo?: ReplyToSummary | null;
-};
+// ─── Conversation Mapper ───────────────────────────────────────────────────────
 
 export class ConversationMapper {
   static toUnifiedDirect(
@@ -150,17 +216,10 @@ export class ConversationMapper {
     };
   }
 
-  static toMessageResponse(msg: DirectMessageWithSender | ChatMessageWithSender, conversationId: string): {
-    id: string;
-    conversationId: string;
-    senderId: string;
-    content: string | null;
-    sender: { id: string; displayName: string; avatarUrl: string | null };
-    readAt: string | null;
-    deliveredAt: string | null;
-    createdAt: string;
-    viewOnce: boolean;
-  } {
+  static toMessageResponse(
+    msg: DirectMessageWithSender | ChatMessageWithSender,
+    conversationId: string,
+  ): MessageResponseDto {
     const isViewOnceHidden = msg.viewOnce && 'readAt' in msg && msg.readAt !== null;
 
     return {

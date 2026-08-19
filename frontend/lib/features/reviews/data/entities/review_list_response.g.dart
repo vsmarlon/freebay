@@ -18,7 +18,7 @@ _ReviewListResponse _$ReviewListResponseFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$ReviewListResponseToJson(_ReviewListResponse instance) =>
     <String, dynamic>{
-      'reviews': instance.reviews,
+      'reviews': instance.reviews.map((e) => e.toJson()).toList(),
       'total': instance.total,
       'limit': instance.limit,
       'offset': instance.offset,

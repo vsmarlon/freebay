@@ -10,8 +10,8 @@ abstract class PostProductInfo with _$PostProductInfo {
     required String id,
     required String title,
     required String description,
-    required int price,
-    required String condition,
+    @Default(0) int price,
+    @Default('NEW') String condition,
   }) = _PostProductInfo;
 
   factory PostProductInfo.fromJson(Map<String, dynamic> json) =>
@@ -20,8 +20,6 @@ abstract class PostProductInfo with _$PostProductInfo {
 
 @freezed
 abstract class PostEntity with _$PostEntity {
-  const PostEntity._();
-
   const factory PostEntity({
     required String id,
     required String userId,

@@ -7,23 +7,10 @@ import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/phone_verification_sheet.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
-
-final biometryServiceProvider = Provider<BiometryService>((ref) {
-  return BiometryService();
-});
-
-final biometryAvailableProvider = FutureProvider<bool>((ref) async {
-  return ref.watch(biometryServiceProvider).isAvailable();
-});
-
-final biometryEnabledProvider = FutureProvider<bool>((ref) async {
-  return ref.watch(biometryServiceProvider).isEnabled();
-});
 
 void showProfileSettingsSheet(BuildContext context) {
   showBrutalistSheet(
@@ -33,11 +20,11 @@ void showProfileSettingsSheet(BuildContext context) {
       return Consumer(
         builder: (consumerContext, consumerRef, _) {
           final currentThemeMode = consumerRef.watch(themeModeProvider);
-          final user = consumerRef.watch(authControllerProvider).valueOrNull;
+          final user = consumerRef.watch(authControllerProvider).value;
           final isAvailable =
-              consumerRef.watch(biometryAvailableProvider).valueOrNull ?? false;
+              consumerRef.watch(biometryAvailableProvider).value ?? false;
           final isEnabled =
-              consumerRef.watch(biometryEnabledProvider).valueOrNull ?? false;
+              consumerRef.watch(biometryEnabledProvider).value ?? false;
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -112,18 +99,47 @@ void showProfileSettingsSheet(BuildContext context) {
                     ? _BrutalistSwitch(
                         value: isEnabled,
                         onChanged: (value) async {
+                          final biometryService = consumerRef.read(
+                            biometryServiceProvider,
+                          );
+
                           if (value) {
-                            final authenticated = await consumerRef
-                                .read(biometryServiceProvider)
-                                .authenticate();
-                            if (!authenticated) {
+                            // ── ENABLING ──
+                            // Settings toggle does NOT have the user's password.
+                            // It can only enable if credentials are already stored
+                            // (from a previous login-time opt-in via
+                            // EnableBiometrySheet).
+                            final hasCreds = await biometryService
+                                .hasCredentials();
+                            if (!hasCreds) {
+                              if (consumerContext.mounted) {
+                                Navigator.pop(consumerContext);
+                                AppSnackbar.info(
+                                  consumerContext,
+                                  'Faça login uma vez para ativar a biometria.',
+                                );
+                              }
                               return;
                             }
+
+                            // Credentials exist — authenticate to confirm
+                            final authenticated = await biometryService
+                                .authenticate(
+                                  reason:
+                                      'Confirme para ativar login biométrico',
+                                );
+                            if (!authenticated) return;
+
+                            await biometryService.setEnabled(true);
+                            consumerRef.invalidate(biometryEnabledProvider);
+                          } else {
+                            // ── DISABLING ──
+                            await biometryService.clearCredentials();
+                            await consumerRef
+                                .read(authRepositoryProvider)
+                                .revokeBiometricToken();
+                            consumerRef.invalidate(biometryEnabledProvider);
                           }
-                          await consumerRef
-                              .read(biometryServiceProvider)
-                              .setEnabled(value);
-                          consumerRef.invalidate(biometryEnabledProvider);
                         },
                       )
                     : const SizedBox.shrink(),
@@ -248,6 +264,26 @@ void showProfileSettingsSheet(BuildContext context) {
                       );
                     },
                   );
+                },
+              ),
+              Spacing.vSm,
+              ListTile(
+                leading: const Icon(Icons.logout, color: AppColors.error),
+                title: const Text(
+                  'Sair da conta',
+                  style: TextStyle(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(consumerContext);
+                  await consumerRef
+                      .read(authControllerProvider.notifier)
+                      .logout();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
                 },
               ),
               Spacing.vMd,

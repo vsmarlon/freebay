@@ -39,6 +39,6 @@ Map<String, dynamic> _$StoryEntityToJson(_StoryEntity instance) =>
       'imageUrl': instance.imageUrl,
       'expiresAt': instance.expiresAt.toIso8601String(),
       'createdAt': instance.createdAt.toIso8601String(),
-      'user': instance.user,
+      'user': instance.user.toJson(),
       'isViewed': instance.isViewed,
     };

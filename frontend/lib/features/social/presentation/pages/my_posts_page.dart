@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -186,10 +187,14 @@ class MyPostsPage extends ConsumerWidget {
               ),
             ),
             child: imageUrl != null && imageUrl.isNotEmpty
-                ? Image.network(
-                    imageUrl,
+                ? CachedNetworkImage(
+                    imageUrl: imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
+                    memCacheWidth: 300,
+                    memCacheHeight: 300,
+                    placeholder: (_, _) =>
+                        Container(color: context.surfaceMidColor),
+                    errorWidget: (_, _, _) =>
                         const Icon(Icons.image, color: AppColors.mediumGray),
                   )
                 : content.isNotEmpty

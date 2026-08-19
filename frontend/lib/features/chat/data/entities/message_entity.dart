@@ -1,14 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'og_metadata_entity.dart';
 import 'message_reaction_entity.dart';
 
 part 'message_entity.freezed.dart';
 part 'message_entity.g.dart';
-
-OgMetadataEntity? _ogFromJson(Map<String, dynamic>? json) =>
-    json == null ? null : OgMetadataEntity.fromJson(json);
-
-Map<String, dynamic>? _ogToJson(OgMetadataEntity? e) => e?.toJson();
 
 @freezed
 abstract class MessageEntity with _$MessageEntity {
@@ -19,14 +13,14 @@ abstract class MessageEntity with _$MessageEntity {
     String? content,
     @Default('TEXT') String type,
     String? attachmentUrl,
-    @JsonKey(fromJson: _ogFromJson, toJson: _ogToJson)
-    OgMetadataEntity? metadata,
+    Map<String, dynamic>? metadata,
     String? replyToId,
     MessageEntity? replyTo,
     @Default([]) List<MessageReactionEntity> reactions,
     DateTime? deletedAt,
     DateTime? readAt,
     DateTime? deliveredAt,
+    @Default(false) bool viewOnce,
     required DateTime createdAt,
   }) = _MessageEntity;
 
@@ -35,7 +29,6 @@ abstract class MessageEntity with _$MessageEntity {
   factory MessageEntity.fromJson(Map<String, dynamic> json) =>
       _$MessageEntityFromJson(json);
 
-  /// One-line label used wherever a message is shown as a reply preview.
   String get previewText {
     final body = content ?? '';
     if (body.isNotEmpty) return body;

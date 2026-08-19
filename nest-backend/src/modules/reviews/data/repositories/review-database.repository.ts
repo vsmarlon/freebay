@@ -41,31 +41,28 @@ export class PrismaReviewRepository extends BasePrismaRepository implements Revi
         }),
         this.prisma.review.count({ where }),
       ]);
-      return { reviews: reviews as unknown as ReviewWithReviewer[], total, offset, limit };
+      return { reviews, total, offset, limit };
     }, 'Erro ao listar avaliações');
   }
 
   async findByOrderAndType(orderId: string, type: ReviewType): RepositoryResponse<ReviewWithReviewer | null> {
     return this.safeRun(async () => {
-      const review = await this.prisma.review.findFirst({ where: { orderId, type }, include: REVIEW_INCLUDE });
-      return review as unknown as ReviewWithReviewer | null;
+      return await this.prisma.review.findFirst({ where: { orderId, type }, include: REVIEW_INCLUDE });
     }, 'Erro ao buscar avaliação');
   }
 
   async findExistingReview(reviewerId: string, orderId: string, type: ReviewType): RepositoryResponse<ReviewWithReviewer | null> {
     return this.safeRun(async () => {
-      const review = await this.prisma.review.findUnique({
+      return await this.prisma.review.findUnique({
         where: { reviewerId_orderId_type: { reviewerId, orderId, type } },
         include: REVIEW_INCLUDE,
       });
-      return review as unknown as ReviewWithReviewer | null;
     }, 'Erro ao buscar avaliação existente');
   }
 
   async create(data: Prisma.ReviewCreateInput): RepositoryResponse<ReviewWithReviewer> {
     return this.safeRun(async () => {
-      const review = await this.prisma.review.create({ data, include: REVIEW_INCLUDE });
-      return review as unknown as ReviewWithReviewer;
+      return await this.prisma.review.create({ data, include: REVIEW_INCLUDE });
     }, 'Erro ao criar avaliação');
   }
 

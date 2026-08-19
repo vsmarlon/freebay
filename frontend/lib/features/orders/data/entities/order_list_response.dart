@@ -1,22 +1,36 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 
-part 'order_list_response.freezed.dart';
-part 'order_list_response.g.dart';
+class OrderListResponse {
+  final List<OrderEntity> orders;
+  final int total;
+  final int limit;
+  final int offset;
 
-@freezed
-abstract class OrderListResponse with _$OrderListResponse {
-  const OrderListResponse._();
-
-  const factory OrderListResponse({
-    @Default([]) List<OrderEntity> orders,
-    @Default(0) int total,
-    @Default(10) int limit,
-    @Default(0) int offset,
-  }) = _OrderListResponse;
+  const OrderListResponse({
+    this.orders = const [],
+    this.total = 0,
+    this.limit = 10,
+    this.offset = 0,
+  });
 
   factory OrderListResponse.fromJson(Map<String, dynamic> json) =>
-      _$OrderListResponseFromJson(json);
+      OrderListResponse(
+        orders:
+            (json['orders'] as List<dynamic>?)
+                ?.map((e) => OrderEntity.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            const [],
+        total: json['total'] as int? ?? 0,
+        limit: json['limit'] as int? ?? 10,
+        offset: json['offset'] as int? ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+    'orders': orders.map((e) => e.toJson()).toList(),
+    'total': total,
+    'limit': limit,
+    'offset': offset,
+  };
 
   bool get hasMore => offset + orders.length < total;
 }

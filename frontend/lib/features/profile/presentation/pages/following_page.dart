@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:freebay/features/profile/data/entities/follower_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/empty_state.dart';
+import 'package:freebay/core/components/user_list_tile.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:freebay/features/profile/data/entities/follower_entity.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 
 final followingProvider = FutureProvider.family<List<FollowerEntity>, String>((
   ref,
@@ -17,10 +18,7 @@ final followingProvider = FutureProvider.family<List<FollowerEntity>, String>((
 ) async {
   final repository = ref.watch(profileRepositoryProvider);
   final result = await repository.getFollowing(userId);
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (following) => following,
-  );
+  return result.fold((f) => throw Exception(f.message), (list) => list);
 });
 
 class FollowingPage extends ConsumerWidget {
@@ -30,7 +28,6 @@ class FollowingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = context.isDark;
     final followingAsync = ref.watch(followingProvider(userId));
 
     return Scaffold(
@@ -58,85 +55,68 @@ class FollowingPage extends ConsumerWidget {
           ),
           Expanded(
             child: followingAsync.when(
-              data: (following) {
-                return following.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.people_outline,
-                              size: 64,
-                              color: isDark
-                                  ? AppColors.mediumGray
-                                  : AppColors.mediumGray,
+              data: (following) => following.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.people_outline,
+                      title: 'NENHUMA CONEXÃO',
+                      subtitle: 'Não está seguindo ninguém ainda.',
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async =>
+                          ref.invalidate(followingProvider(userId)),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: following.length,
+                        itemBuilder: (context, index) {
+                          final f = following[index];
+                          return UserListTile(
+                            user: UserListTileItem(
+                              id: f.id,
+                              displayName: f.displayName,
+                              username: f.displayName,
+                              avatarUrl: f.avatarUrl,
+                              bio: f.bio,
                             ),
-                            Spacing.vMd,
-                            Text(
-                              'Não segue ninguém ainda',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.mediumGray,
-                              ),
+                            trailing: AppButton(
+                              label: 'DEIXAR DE SEGUIR',
+                              size: AppButtonSize.compact,
+                              onPressed: () async {
+                                await ref
+                                    .read(socialRepositoryProvider)
+                                    .unfollowUser(f.id);
+                                ref.invalidate(followingProvider(userId));
+                              },
                             ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          ref.invalidate(followingProvider(userId));
+                          );
                         },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: following.length,
-                          itemBuilder: (context, index) {
-                            final user = following[index];
-                            return _buildFollowingTile(context, user, isDark);
-                          },
-                        ),
-                      );
-              },
-              loading: () => SkeletonList(
-                itemCount: 6,
-                itemBuilder: (_, i) => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  child: Row(
-                    children: [
-                      ShimmerBlock(width: 48, height: 48),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ShimmerBlock(height: 16, width: 140),
-                            SizedBox(height: 4),
-                            ShimmerBlock(height: 12, width: 200),
-                          ],
-                        ),
                       ),
-                      SizedBox(width: 12),
-                      ShimmerBlock(width: 80, height: 32),
-                    ],
-                  ),
+                    ),
+              loading: () => const SkeletonPage(
+                child: Column(
+                  children: [
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 60),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 60),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 60),
+                  ],
                 ),
               ),
               error: (err, _) => Center(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: AppColors.error,
-                    ),
-                    Spacing.vMd,
                     Text(
-                      'Erro ao carregar seguindo',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      'Erro ao carregar',
+                      style: TextStyle(color: context.textPrimary),
+                    ),
+                    const SizedBox(height: 8),
+                    AppButton(
+                      label: 'TENTAR NOVAMENTE',
+                      size: AppButtonSize.compact,
+                      onPressed: () =>
+                          ref.invalidate(followingProvider(userId)),
                     ),
                   ],
                 ),
@@ -144,48 +124,6 @@ class FollowingPage extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFollowingTile(
-    BuildContext context,
-    FollowerEntity user,
-    bool isDark,
-  ) {
-    return ListTile(
-      leading: GestureDetector(
-        onTap: () => context.push('/user/${user.id}'),
-        child: UserAvatar(
-          imageUrl: user.avatarUrl,
-          size: AppAvatarSize.medium,
-          isVerified: user.isVerified,
-        ),
-      ),
-      title: Text(
-        user.displayName,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: isDark ? AppColors.white : AppColors.darkGray,
-        ),
-      ),
-      subtitle: user.bio != null && user.bio!.isNotEmpty
-          ? Text(
-              user.bio!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-              ),
-            )
-          : null,
-      trailing: OutlinedButton(
-        onPressed: () {},
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryContainer,
-          side: const BorderSide(color: AppColors.primaryContainer),
-        ),
-        child: const Text('Seguindo'),
       ),
     );
   }

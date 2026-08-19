@@ -40,3 +40,26 @@ class Right<L, R> extends Either<L, R> {
   const Right(this.value);
   final R value;
 }
+
+extension EitherExtensions<L, R> on Either<L, R> {
+  /// Unwraps right value, or triggers a failure callback on left.
+  R? unwrapOrHandle(void Function(L error) onError) {
+    if (isLeft) {
+      onError((this as Left<L, R>).value);
+      return null;
+    }
+    return (this as Right<L, R>).value;
+  }
+
+  /// Runs [onSuccess] if Right, and [onError] if Left.
+  void when({
+    void Function(L failure)? onError,
+    void Function(R data)? onSuccess,
+  }) {
+    if (isLeft) {
+      onError?.call((this as Left<L, R>).value);
+    } else {
+      onSuccess?.call((this as Right<L, R>).value);
+    }
+  }
+}

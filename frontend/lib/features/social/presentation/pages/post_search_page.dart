@@ -200,7 +200,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                     );
                 return true;
               },
-              onComment: () => context.push('/post/${post.id}/comments'),
+              onComment: () => context.push('/post/${post.id}'),
             );
           },
         ),

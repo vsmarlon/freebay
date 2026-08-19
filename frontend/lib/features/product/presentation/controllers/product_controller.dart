@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' show RangeValues;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freebay/features/product/data/repositories/product_repository.dart';
 import 'package:freebay/features/product/data/repositories/category_repository.dart';
 import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
@@ -9,6 +10,8 @@ import 'package:freebay/features/product/domain/usecases/create_product_usecase.
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
+
+part 'product_controller.g.dart';
 
 final productRepositoryProvider = Provider<IProductRepository>((ref) {
   return ProductRepository();
@@ -24,6 +27,16 @@ final getProductsUsecaseProvider = Provider(
 final createProductUsecaseProvider = Provider(
   (ref) => CreateProductUsecase(ref.watch(productRepositoryProvider)),
 );
+
+// My products provider
+final myProductsProvider = FutureProvider<List<ProductEntity>>((ref) async {
+  final repository = ref.watch(productRepositoryProvider);
+  final result = await repository.getMyProducts();
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (products) => products,
+  );
+});
 
 // Single product provider
 final productByIdProvider = FutureProvider.autoDispose
@@ -73,18 +86,18 @@ class ProductsFeedState {
   }
 }
 
-class ProductsFeedNotifier extends StateNotifier<ProductsFeedState> {
-  final GetProductsUsecase _usecase;
-  final GetProductsParams _params;
-
-  ProductsFeedNotifier(this._usecase, this._params)
-    : super(const ProductsFeedState(isLoading: true)) {
-    load();
+@riverpod
+class ProductsFeed extends _$ProductsFeed {
+  @override
+  ProductsFeedState build(GetProductsParams params) {
+    Future.microtask(load);
+    return const ProductsFeedState(isLoading: true);
   }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null, nextCursor: null);
-    final result = await _usecase(_params.withCursor(null));
+    final usecase = ref.read(getProductsUsecaseProvider);
+    final result = await usecase(params.withCursor(null));
 
     result.fold(
       (failure) =>
@@ -102,7 +115,8 @@ class ProductsFeedNotifier extends StateNotifier<ProductsFeedState> {
     if (state.nextCursor == null) return;
 
     state = state.copyWith(isLoadingMore: true, nextCursor: state.nextCursor);
-    final result = await _usecase(_params.withCursor(state.nextCursor));
+    final usecase = ref.read(getProductsUsecaseProvider);
+    final result = await usecase(params.withCursor(state.nextCursor));
 
     result.fold(
       (failure) => state = state.copyWith(
@@ -119,34 +133,71 @@ class ProductsFeedNotifier extends StateNotifier<ProductsFeedState> {
   }
 }
 
-final productsFeedProvider =
-    StateNotifierProvider.family<
-      ProductsFeedNotifier,
-      ProductsFeedState,
-      GetProductsParams
-    >((ref, params) {
-      return ProductsFeedNotifier(
-        ref.watch(getProductsUsecaseProvider),
-        params,
-      );
-    });
+class SearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  @override
+  set state(String value) => super.state = value;
+}
 
 // Search state provider
-final searchQueryProvider = StateProvider<String>((ref) => '');
+final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
+  SearchQueryNotifier.new,
+);
+
+class SelectedCategoryNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  @override
+  set state(String? value) => super.state = value;
+}
 
 // Selected category provider
-final selectedCategoryProvider = StateProvider<String?>((ref) => null);
+final selectedCategoryProvider =
+    NotifierProvider<SelectedCategoryNotifier, String?>(
+      SelectedCategoryNotifier.new,
+    );
+
+class ProductSortNotifier extends Notifier<ProductSort> {
+  @override
+  ProductSort build() => ProductSort.recent;
+
+  @override
+  set state(ProductSort value) => super.state = value;
+}
 
 // Sort + condition + price filters for the Explorar tab
-final productSortProvider = StateProvider<ProductSort>(
-  (ref) => ProductSort.recent,
+final productSortProvider = NotifierProvider<ProductSortNotifier, ProductSort>(
+  ProductSortNotifier.new,
 );
 
-final productConditionProvider = StateProvider<ProductCondition?>(
-  (ref) => null,
-);
+class ProductConditionNotifier extends Notifier<ProductCondition?> {
+  @override
+  ProductCondition? build() => null;
 
-final productPriceRangeProvider = StateProvider<RangeValues?>((ref) => null);
+  @override
+  set state(ProductCondition? value) => super.state = value;
+}
+
+final productConditionProvider =
+    NotifierProvider<ProductConditionNotifier, ProductCondition?>(
+      ProductConditionNotifier.new,
+    );
+
+class ProductPriceRangeNotifier extends Notifier<RangeValues?> {
+  @override
+  RangeValues? build() => null;
+
+  @override
+  set state(RangeValues? value) => super.state = value;
+}
+
+final productPriceRangeProvider =
+    NotifierProvider<ProductPriceRangeNotifier, RangeValues?>(
+      ProductPriceRangeNotifier.new,
+    );
 
 // Categories from backend
 final categoriesProvider = FutureProvider<List<CategoryEntity>>((ref) async {

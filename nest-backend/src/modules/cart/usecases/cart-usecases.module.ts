@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { CartRepository } from '../domain/repositories/cart.repository';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 import { GetCartUseCase } from './get-cart.usecase';
@@ -14,7 +12,6 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
 @Module({
   imports: [PaymentsModule],
   providers: [
-    { provide: PrismaClient, useExisting: PrismaService },
     { provide: CartRepository, useClass: CartDatabaseRepository },
     GetCartUseCase,
     AddToCartUseCase,

@@ -3,6 +3,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const String _biometryEnabledKey = 'biometry_enabled';
+const String _biometryPromptedKey = 'biometry_prompted';
 
 class BiometryService {
   final LocalAuthentication _localAuth = LocalAuthentication();
@@ -11,6 +12,7 @@ class BiometryService {
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
+  /// Check if biometrics are available on the device.
   Future<bool> isAvailable() async {
     try {
       final canCheckBiometrics = await _localAuth.canCheckBiometrics;
@@ -21,6 +23,7 @@ class BiometryService {
     }
   }
 
+  /// Return the preferred biometric type, if any.
   Future<BiometryType?> getBiometryType() async {
     try {
       final availableBiometrics = await _localAuth.getAvailableBiometrics();
@@ -37,6 +40,8 @@ class BiometryService {
     }
   }
 
+  /// Prompt the user for biometric authentication.
+  /// Returns true if the user authenticated successfully.
   Future<bool> authenticate({
     String reason = 'Autentique para continuar',
   }) async {
@@ -53,11 +58,13 @@ class BiometryService {
     }
   }
 
+  // ── Biometric-enabled preference ──────────────────────────────────────
+
   Future<bool> isEnabled() async {
     try {
       final value = await _secureStorage.read(key: _biometryEnabledKey);
       return value == 'true';
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
@@ -68,9 +75,43 @@ class BiometryService {
         key: _biometryEnabledKey,
         value: enabled.toString(),
       );
-    } catch (e) {
+    } catch (_) {
       // Silently fail
     }
+  }
+
+  Future<bool> hasPrompted() async {
+    try {
+      final value = await _secureStorage.read(key: _biometryPromptedKey);
+      return value == 'true';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> setHasPrompted(bool prompted) async {
+    try {
+      await _secureStorage.write(
+        key: _biometryPromptedKey,
+        value: prompted.toString(),
+      );
+    } catch (_) {
+      // Silently fail
+    }
+  }
+
+  // ── Biometric token storage (migrated to StorageService) ─────────────
+  // The token is actually stored via StorageService, but we keep a helper
+  // here to check if it exists alongside the enabled flag.
+
+  Future<bool> hasCredentials() async {
+    final token = await _secureStorage.read(key: 'biometric_token');
+    return token != null && token.isNotEmpty;
+  }
+
+  Future<void> clearCredentials() async {
+    await setEnabled(false);
+    await _secureStorage.delete(key: 'biometric_token');
   }
 }
 

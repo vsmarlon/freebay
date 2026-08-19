@@ -49,20 +49,13 @@ class FavoritesState {
   bool isFavorited(String productId) => favoritedProductIds.contains(productId);
 }
 
-class FavoritesNotifier extends StateNotifier<FavoritesState> {
-  final GetFavoritesUsecase _getFavoritesUsecase;
-  final IsFavoritedUsecase _isFavoritedUsecase;
-  final ToggleFavoriteUsecase _toggleFavoriteUsecase;
-
-  FavoritesNotifier(
-    this._getFavoritesUsecase,
-    this._isFavoritedUsecase,
-    this._toggleFavoriteUsecase,
-  ) : super(const FavoritesState());
+class FavoritesNotifier extends Notifier<FavoritesState> {
+  @override
+  FavoritesState build() => const FavoritesState();
 
   Future<void> loadFavorites() async {
     state = state.copyWith(isLoading: true);
-    final result = await _getFavoritesUsecase();
+    final result = await ref.read(getFavoritesUsecaseProvider)();
     result.fold((_) => state = state.copyWith(isLoading: false), (products) {
       final ids = products.map((p) => p.id).toSet();
       state = state.copyWith(
@@ -74,7 +67,7 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   }
 
   Future<bool> initializeFavoriteStatus(String productId) async {
-    final result = await _isFavoritedUsecase(productId);
+    final result = await ref.read(isFavoritedUsecaseProvider)(productId);
     return result.fold((_) => false, (isFavorited) {
       final ids = Set<String>.from(state.favoritedProductIds);
       if (isFavorited) {
@@ -98,7 +91,7 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
     }
     state = state.copyWith(favoritedProductIds: ids);
 
-    final result = await _toggleFavoriteUsecase(productId);
+    final result = await ref.read(toggleFavoriteUsecaseProvider)(productId);
     return result.fold(
       (_) {
         final rollback = Set<String>.from(state.favoritedProductIds);
@@ -110,18 +103,8 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
         state = state.copyWith(favoritedProductIds: rollback);
         return false;
       },
-      (favorited) {
-        final next = Set<String>.from(state.favoritedProductIds);
-        if (favorited) {
-          next.add(productId);
-        } else {
-          next.remove(productId);
-          state = state.copyWith(
-            products: state.products.where((p) => p.id != productId).toList(),
-          );
-        }
-        state = state.copyWith(favoritedProductIds: next);
-        return true;
+      (_) {
+        return !current;
       },
     );
   }
@@ -131,14 +114,9 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   }
 }
 
-final favoritesProvider =
-    StateNotifierProvider<FavoritesNotifier, FavoritesState>((ref) {
-      return FavoritesNotifier(
-        ref.watch(getFavoritesUsecaseProvider),
-        ref.watch(isFavoritedUsecaseProvider),
-        ref.watch(toggleFavoriteUsecaseProvider),
-      );
-    });
+final favoritesProvider = NotifierProvider<FavoritesNotifier, FavoritesState>(
+  FavoritesNotifier.new,
+);
 
 final isFavoritedProvider = FutureProvider.autoDispose.family<bool, String>((
   ref,

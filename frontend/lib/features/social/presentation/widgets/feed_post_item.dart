@@ -65,8 +65,8 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
           onTap: () => context.push('/post/${post.id}'),
           onUserTap: () => context.push('/user/${post.user.id}'),
           onSave: () async {
-            final user = ref.read(authControllerProvider).valueOrNull;
-            if (user == null || user.isGuest) {
+            final user = ref.read(authControllerProvider).value;
+            if (user == null) {
               if (context.mounted) {
                 AppSnackbar.warning(context, 'Faça login para salvar');
               }
@@ -77,8 +77,8 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
                 .toggleSave(post.id, initialIsSaved: post.isSaved);
           },
           onLike: () async {
-            final user = ref.read(authControllerProvider).valueOrNull;
-            if (user == null || user.isGuest) {
+            final user = ref.read(authControllerProvider).value;
+            if (user == null) {
               if (context.mounted) {
                 AppSnackbar.warning(context, 'Faça login para curtir');
               }
@@ -104,8 +104,8 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
             return success;
           },
           onRepost: () async {
-            final user = ref.read(authControllerProvider).valueOrNull;
-            if (user == null || user.isGuest) {
+            final user = ref.read(authControllerProvider).value;
+            if (user == null) {
               if (context.mounted) {
                 AppSnackbar.warning(context, 'Faça login para repostar');
               }
@@ -130,7 +130,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
             }
             return success;
           },
-          onComment: () => context.push('/post/${post.id}/comments'),
+          onComment: () => context.push('/post/${post.id}'),
           onShare: () {},
         ),
       ),

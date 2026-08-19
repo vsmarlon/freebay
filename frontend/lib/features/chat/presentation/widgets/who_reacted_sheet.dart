@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
 class WhoReactedSheet extends StatefulWidget {
   final List<MessageReactionEntity> reactions;
@@ -19,11 +20,32 @@ class WhoReactedSheet extends StatefulWidget {
 
 class _WhoReactedSheetState extends State<WhoReactedSheet> {
   late String _selected;
+  final Map<String, String> _userNames = {};
 
   @override
   void initState() {
     super.initState();
     _selected = widget.initialEmoji;
+    _fetchNames();
+  }
+
+  Future<void> _fetchNames() async {
+    final allUserIds = widget.reactions.expand((r) => r.userIds).toSet();
+    for (final uid in allUserIds) {
+      if (!_userNames.containsKey(uid)) {
+        try {
+          final res = await HttpClient.instance.get('/users/$uid');
+          if (res.statusCode == 200) {
+            final data = res.data['data'] as Map<String, dynamic>;
+            if (mounted) {
+              setState(() {
+                _userNames[uid] = data['displayName'] ?? uid;
+              });
+            }
+          }
+        } catch (_) {}
+      }
+    }
   }
 
   @override
@@ -64,7 +86,7 @@ class _WhoReactedSheetState extends State<WhoReactedSheet> {
                 .toList(),
           ),
           const SizedBox(height: 12),
-          // User list — shows userIds for now; fetch display names from cache if available
+          // User list
           ...current.userIds.map(
             (uid) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -82,7 +104,7 @@ class _WhoReactedSheetState extends State<WhoReactedSheet> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    uid,
+                    _userNames[uid] ?? 'Carregando...',
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 13,

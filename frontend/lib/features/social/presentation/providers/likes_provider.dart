@@ -1,39 +1,22 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class LikesState {
-  /// Map of post IDs to their liked status override (null means use entity value)
-  final Map<String, bool> likedOverrides;
+export 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 
-  /// Map of post IDs to their like count override (null means use entity value)
-  final Map<String, int> countOverrides;
+part 'likes_provider.g.dart';
 
-  const LikesState({
-    this.likedOverrides = const {},
-    this.countOverrides = const {},
-  });
+@Riverpod(keepAlive: true)
+class Likes extends _$Likes {
+  late final ISocialRepository _repository;
 
-  LikesState copyWith({
-    Map<String, bool>? likedOverrides,
-    Map<String, int>? countOverrides,
-  }) {
-    return LikesState(
-      likedOverrides: likedOverrides ?? this.likedOverrides,
-      countOverrides: countOverrides ?? this.countOverrides,
-    );
+  @override
+  LikesState build() {
+    _repository = ref.watch(socialRepositoryProvider);
+    return const LikesState();
   }
 
-  bool? getLikedOverride(String postId) => likedOverrides[postId];
-  int? getCountOverride(String postId) => countOverrides[postId];
-}
-
-class LikesNotifier extends StateNotifier<LikesState> {
-  final ISocialRepository _repository;
-
-  LikesNotifier(this._repository) : super(const LikesState());
-
-  /// Toggles like status. If no override exists, it uses initial values from the entity.
   Future<bool> toggleLike(
     String postId, {
     required bool initialIsLiked,
@@ -45,7 +28,6 @@ class LikesNotifier extends StateNotifier<LikesState> {
     final newIsLiked = !currentLiked;
     final newCount = newIsLiked ? currentCount + 1 : currentCount - 1;
 
-    // Apply optimistic update
     state = state.copyWith(
       likedOverrides: {...state.likedOverrides, postId: newIsLiked},
       countOverrides: {...state.countOverrides, postId: newCount},
@@ -57,7 +39,6 @@ class LikesNotifier extends StateNotifier<LikesState> {
           : await _repository.unlikePost(postId);
 
       if (result.isLeft) {
-        // Rollback on failure
         state = state.copyWith(
           likedOverrides: {...state.likedOverrides, postId: currentLiked},
           countOverrides: {...state.countOverrides, postId: currentCount},
@@ -66,7 +47,6 @@ class LikesNotifier extends StateNotifier<LikesState> {
       }
       return true;
     } catch (e) {
-      // Rollback on exception
       state = state.copyWith(
         likedOverrides: {...state.likedOverrides, postId: currentLiked},
         countOverrides: {...state.countOverrides, postId: currentCount},
@@ -75,8 +55,3 @@ class LikesNotifier extends StateNotifier<LikesState> {
     }
   }
 }
-
-final likesProvider = StateNotifierProvider<LikesNotifier, LikesState>((ref) {
-  final repository = ref.read(socialRepositoryProvider);
-  return LikesNotifier(repository);
-});

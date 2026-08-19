@@ -31,8 +31,8 @@ export interface CheckoutCartItemOutput {
   productTitle: string;
   quantity: number;
   amount: number;
-  pixQrCode: string;
-  pixImage: string;
+  stripeSessionId: string;
+  checkoutUrl: string;
   expiresAt: Date;
 }
 
@@ -58,11 +58,11 @@ export class CheckoutCartItemResponse {
   @ApiProperty({ example: 15000 })
   readonly amount!: number;
 
-  @ApiProperty({ example: '00020126580014BR.GOV.BCB.PIX...' })
-  readonly pixQrCode!: string;
+  @ApiProperty({ example: 'cs_test_abc123' })
+  readonly stripeSessionId!: string;
 
-  @ApiProperty({ example: 'data:image/png;base64,...' })
-  readonly pixImage!: string;
+  @ApiProperty({ example: 'https://checkout.stripe.com/pay/cs_test_abc123' })
+  readonly checkoutUrl!: string;
 
   @ApiProperty({ example: '2026-06-17T13:00:00.000Z' })
   readonly expiresAt!: Date;

@@ -25,5 +25,5 @@ Map<String, dynamic> _$CategoryEntityToJson(_CategoryEntity instance) =>
       'name': instance.name,
       'slug': instance.slug,
       'parentId': instance.parentId,
-      'children': instance.children,
+      'children': instance.children.map((e) => e.toJson()).toList(),
     };

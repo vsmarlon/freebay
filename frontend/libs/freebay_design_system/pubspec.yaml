@@ -1,0 +1,18 @@
+name: freebay_design_system
+description: "The Digital Brutalist Design System for FreeBay"
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

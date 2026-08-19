@@ -2,6 +2,7 @@ class AppRoutes {
   static const String splash = '/splash';
   static const String login = '/login';
   static const String register = '/register';
+  static const String completeProfile = '/complete-profile';
   static const String recoverPassword = '/recover-password';
   static const String resetPassword = '/reset-password';
   static const String onboarding = '/onboarding';
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String chatNew = '/chat/new';
   static const String chatArchived = '/chat/archived';
   static const String chatConversation = '/chat/:chatId';
+  static const String chatDetails = '/chat/:chatId/details';
   static const String profileBlocked = '/profile/blocked';
   static const String faq = '/faq';
   static const String notifications = '/notifications';

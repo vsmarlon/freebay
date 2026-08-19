@@ -29,6 +29,7 @@ Future<void> showAttachmentSheet({
   required ValueChanged<AttachmentResult> onMediaReady,
   VoidCallback? onLocationTap,
   VoidCallback? onProductTap,
+  VoidCallback? onOfferTap,
   required ValueChanged<String> onError,
 }) {
   return showBrutalistSheet(
@@ -38,6 +39,7 @@ Future<void> showAttachmentSheet({
       onMediaReady: onMediaReady,
       onLocationTap: onLocationTap,
       onProductTap: onProductTap,
+      onOfferTap: onOfferTap,
       onError: onError,
     ),
   );
@@ -47,12 +49,14 @@ class _AttachmentSheetBody extends StatefulWidget {
   final ValueChanged<AttachmentResult> onMediaReady;
   final VoidCallback? onLocationTap;
   final VoidCallback? onProductTap;
+  final VoidCallback? onOfferTap;
   final ValueChanged<String> onError;
 
   const _AttachmentSheetBody({
     required this.onMediaReady,
     this.onLocationTap,
     this.onProductTap,
+    this.onOfferTap,
     required this.onError,
   });
 
@@ -137,6 +141,15 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
             onTap: () {
               Navigator.of(context).pop();
               widget.onProductTap?.call();
+            },
+          ),
+          Spacing.vMd,
+          _buildTile(
+            icon: Icons.local_offer_outlined,
+            label: 'FAZER PROPOSTA',
+            onTap: () {
+              Navigator.of(context).pop();
+              widget.onOfferTap?.call();
             },
           ),
         ],

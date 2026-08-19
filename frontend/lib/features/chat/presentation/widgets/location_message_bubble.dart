@@ -22,6 +22,11 @@ class LocationMessageBubble extends StatelessWidget {
     return LatLng((lat as num).toDouble(), (lng as num).toDouble());
   }
 
+  String? get _address {
+    if (metadata == null) return null;
+    return metadata!['address'];
+  }
+
   @override
   Widget build(BuildContext context) {
     final coords = _coordinates;
@@ -47,38 +52,70 @@ class LocationMessageBubble extends StatelessWidget {
       );
     }
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 240, maxHeight: 180),
-      child: ClipRect(
-        child: FlutterMap(
-          options: MapOptions(
-            initialCenter: coords,
-            initialZoom: 15,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.none,
-            ),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.freebay.app',
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: coords,
-                  width: 32,
-                  height: 32,
-                  child: Icon(
-                    Icons.location_pin,
-                    color: AppColors.primaryContainer,
-                    size: 32,
+    final address = _address;
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 240),
+      decoration: BoxDecoration(
+        color: context.isDark
+            ? AppColors.surfaceContainerDark
+            : AppColors.surfaceContainerLow,
+        border: Border.all(color: context.borderColor, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 140,
+            child: ClipRect(
+              child: FlutterMap(
+                options: MapOptions(
+                  initialCenter: coords,
+                  initialZoom: 15,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.none,
                   ),
                 ),
-              ],
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.freebay.app',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: coords,
+                        width: 32,
+                        height: 32,
+                        child: Icon(
+                          Icons.location_pin,
+                          color: AppColors.primaryContainer,
+                          size: 32,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+          if (address != null && address.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                address,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: context.textPrimary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
       ),
     );
   }

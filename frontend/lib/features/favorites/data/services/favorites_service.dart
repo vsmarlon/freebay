@@ -1,54 +1,24 @@
 import 'package:freebay/shared/either/either.dart';
-import 'package:dio/dio.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/repositories/base_http_repository.dart';
 
-class FavoritesService {
-  Future<Either<Failure, bool>> toggleFavorite(String productId) async {
-    try {
-      final response = await HttpClient.instance.post('/favorites/$productId');
-      final data = response.data['data'] as Map<String, dynamic>?;
-      final favorited = data?['favorited'] as bool? ?? false;
-      return Right(favorited);
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
+class FavoritesService extends BaseHttpRepository {
+  FavoritesService({super.client});
 
-  Future<Either<Failure, bool>> isFavorited(String productId) async {
-    try {
-      final response = await HttpClient.instance.get(
-        '/favorites/check/$productId',
+  Future<Either<Failure, void>> toggleFavorite(String productId) =>
+      safeVoid(() => client.post('/favorites/$productId'));
+
+  Future<Either<Failure, bool>> isFavorited(String productId) => safeGet<bool>(
+    '/favorites/check/$productId',
+    extractKey: 'data.isFavorited',
+    customMapper: (d) => d == true,
+  );
+
+  Future<Either<Failure, List<ProductEntity>>> getFavorites() =>
+      safeGetList<ProductEntity>(
+        '/favorites',
+        listKey: 'data.products',
+        fromJson: ProductEntity.fromJson,
       );
-      final data = response.data['data'] as Map<String, dynamic>?;
-      final isFavorited = data?['isFavorited'] as bool? ?? false;
-      return Right(isFavorited);
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
-
-  Future<Either<Failure, List<ProductEntity>>> getFavorites() async {
-    try {
-      final response = await HttpClient.instance.get('/favorites');
-      final data = response.data['data'] as Map<String, dynamic>?;
-      final productsData = (data?['products'] as List?) ?? [];
-
-      final products = productsData.map((item) {
-        final map = Map<String, dynamic>.from(item as Map);
-        return ProductEntity.fromJson(map);
-      }).toList();
-
-      return Right(products);
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
 }

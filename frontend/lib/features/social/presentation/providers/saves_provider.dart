@@ -1,30 +1,26 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class SavesState {
-  /// Map of post IDs to their saved status override (null means use entity value)
-  final Map<String, bool> savedOverrides;
+export 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 
-  const SavesState({this.savedOverrides = const {}});
+part 'saves_provider.g.dart';
 
-  SavesState copyWith({Map<String, bool>? savedOverrides}) =>
-      SavesState(savedOverrides: savedOverrides ?? this.savedOverrides);
+@Riverpod(keepAlive: true)
+class Saves extends _$Saves {
+  late final ISocialRepository _repository;
 
-  bool? getSavedOverride(String postId) => savedOverrides[postId];
-}
+  @override
+  SavesState build() {
+    _repository = ref.watch(socialRepositoryProvider);
+    return const SavesState();
+  }
 
-class SavesNotifier extends StateNotifier<SavesState> {
-  final ISocialRepository _repository;
-
-  SavesNotifier(this._repository) : super(const SavesState());
-
-  /// Toggles saved status. If no override exists, it uses the initial value from the entity.
   Future<bool> toggleSave(String postId, {required bool initialIsSaved}) async {
     final currentSaved = state.savedOverrides[postId] ?? initialIsSaved;
     final newIsSaved = !currentSaved;
 
-    // Apply optimistic update
     state = state.copyWith(
       savedOverrides: {...state.savedOverrides, postId: newIsSaved},
     );
@@ -34,7 +30,6 @@ class SavesNotifier extends StateNotifier<SavesState> {
         : await _repository.savePost(postId);
 
     return result.fold((_) {
-      // Rollback on failure
       state = state.copyWith(
         savedOverrides: {...state.savedOverrides, postId: currentSaved},
       );
@@ -42,8 +37,3 @@ class SavesNotifier extends StateNotifier<SavesState> {
     }, (_) => true);
   }
 }
-
-final savesProvider = StateNotifierProvider<SavesNotifier, SavesState>((ref) {
-  final repository = ref.read(socialRepositoryProvider);
-  return SavesNotifier(repository);
-});
