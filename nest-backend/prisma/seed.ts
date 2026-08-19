@@ -1,13 +1,19 @@
+import 'dotenv/config';
 import { PrismaClient, Condition, ProductStatus, PostType, UserRole } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import * as bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('🌱 Starting FreeBay database seeding...');
+  console.log('[Seed] Starting FreeBay database seeding...');
 
   // 1. Categories Hierarchy
-  console.log('📦 Seeding categories...');
+  console.log('[Seed] Seeding categories...');
   const categoriesData = [
     {
       name: 'Eletrônicos',

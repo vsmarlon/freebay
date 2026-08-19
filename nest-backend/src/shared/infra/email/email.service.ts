@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import * as nodemailer from 'nodemailer';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError } from '@/shared/core/errors';
 
 @Injectable()
 export class EmailService {
@@ -9,14 +11,16 @@ export class EmailService {
   private resend: Resend | null = null;
   private transporter: nodemailer.Transporter | null = null;
   private readonly fromEmail: string;
+  private readonly isProduction: boolean;
 
   constructor(private config: ConfigService) {
     const resendApiKey = this.config.get<string>('RESEND_API_KEY');
     this.fromEmail = this.config.get<string>('EMAIL_FROM') || this.config.get<string>('SMTP_FROM') || 'FreeBay <onboarding@resend.dev>';
+    this.isProduction = this.config.get<string>('NODE_ENV') === 'production';
 
     if (resendApiKey) {
       this.resend = new Resend(resendApiKey);
-      this.logger.log('📧 Resend email provider initialized');
+      this.logger.log('Resend email provider initialized');
     }
 
     const smtpHost = this.config.get<string>('SMTP_HOST');
@@ -30,25 +34,25 @@ export class EmailService {
           pass: this.config.get('SMTP_PASS'),
         },
       });
-      this.logger.log(`📧 SMTP email provider initialized (${smtpHost})`);
+      this.logger.log(`SMTP email provider initialized (${smtpHost})`);
     }
 
-    if (!this.resend && !this.transporter) {
-      this.logger.warn('⚠️ No email provider configured (RESEND_API_KEY or SMTP_HOST missing). Emails will be logged to console in dev mode.');
+    if (!this.resend && !this.transporter && !this.isProduction) {
+      this.logger.warn('No email provider configured (RESEND_API_KEY or SMTP_HOST missing).');
     }
   }
 
-  async sendPasswordReset(to: string, token: string): Promise<void> {
+  async sendPasswordReset(to: string, token: string): Promise<Either<AppError, void>> {
     const appUrl = this.config.get('APP_URL', 'http://localhost:3000');
     const resetLink = `${appUrl}/reset-password?token=${token}`;
-    const subject = 'Redefinição de Senha — FreeBay';
+    const subject = 'Redefinicao de Senha — FreeBay';
 
-    const textContent = `Redefinição de Senha — FreeBay\n\n` +
-      `Recebemos uma solicitação para redefinir a senha da sua conta no FreeBay.\n\n` +
-      `Clique no link abaixo para criar uma nova senha:\n${resetLink}\n\n` +
-      `Código do Token: ${token}\n\n` +
+    const textContent = `Redefinicao de Senha — FreeBay\n\n` +
+      `Recebemos uma solicitacao para redefinir a senha da sua conta no FreeBay.\n\n` +
+      `Link para criar uma nova senha: ${resetLink}\n\n` +
+      `Codigo do Token: ${token}\n\n` +
       `Este link expira em 15 minutos.\n` +
-      `Se você não solicitou esta alteração, ignore este e-mail.`;
+      `Se voce nao solicitou esta alteracao, ignore este e-mail.`;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -72,22 +76,17 @@ export class EmailService {
           <div class="logo">FREEBAY</div>
           <div class="title">REDEFINIR SUA SENHA</div>
           <div class="text">
-            Recebemos uma solicitação para redefinir a senha da sua conta FreeBay. Clique no botão abaixo para prosseguir:
+            Recebemos uma solicitacao para redefinir a senha da sua conta FreeBay. Clique no botao abaixo para prosseguir:
           </div>
           <div class="button-container">
             <a href="${resetLink}" class="button" target="_blank">REDEFINIR SENHA</a>
-          </div>
-          <div class="text" style="font-size: 12px;">
-            Ou cole o link direto no seu navegador:
-            <br>
-            <span style="color: #8A1083; word-break: break-all;">${resetLink}</span>
           </div>
           <div class="token-box">
             Token: ${token}
           </div>
           <div class="footer">
-            Este link é válido por <strong>15 minutos</strong>.<br>
-            Se você não solicitou esta redefinição, nenhuma ação é necessária e sua senha permanece segura.
+            Este link e valido por <strong>15 minutos</strong>.<br>
+            Se voce nao solicitou esta redefinicao, nenhuma acao e necessaria.
           </div>
         </div>
       </body>
@@ -106,14 +105,14 @@ export class EmailService {
         });
 
         if (error) {
-          this.logger.error(`❌ Resend email failed to ${to}: ${error.message}`);
+          this.logger.error(`Resend email delivery failed to ${to}: ${error.message}`);
         } else {
-          this.logger.log(`✅ Password reset email sent via Resend to ${to} (ID: ${data?.id})`);
-          return;
+          this.logger.log(`Password reset email sent via Resend to ${to} (ID: ${data?.id})`);
+          return right(undefined);
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown Resend error';
-        this.logger.error(`❌ Resend exception: ${msg}`);
+        this.logger.error(`Resend exception: ${msg}`);
       }
     }
 
@@ -127,20 +126,19 @@ export class EmailService {
           text: textContent,
           html: htmlContent,
         });
-        this.logger.log(`✅ Password reset email sent via SMTP to ${to} (MessageId: ${info.messageId})`);
-        return;
+        this.logger.log(`Password reset email sent via SMTP to ${to} (MessageId: ${info.messageId})`);
+        return right(undefined);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown SMTP error';
-        this.logger.error(`❌ SMTP exception: ${msg}`);
+        this.logger.error(`SMTP exception: ${msg}`);
       }
     }
 
-    // 3. Dev / local fallback
-    this.logger.log(`\n================== 📧 DEV EMAIL PREVIEW ==================`);
-    this.logger.log(`To: ${to}`);
-    this.logger.log(`Subject: ${subject}`);
-    this.logger.log(`Reset Link: ${resetLink}`);
-    this.logger.log(`Token: ${token}`);
-    this.logger.log(`==========================================================\n`);
+    if (this.isProduction) {
+      return left(new AppError('EMAIL_DELIVERY_FAILED', 'Falha ao enviar e-mail de recuperação'));
+    }
+
+    this.logger.warn(`Email provider not available in dev. Password recovery email to ${to} was not dispatched.`);
+    return right(undefined);
   }
 }
