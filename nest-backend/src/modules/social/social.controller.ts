@@ -14,7 +14,6 @@ import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { toDataUri } from '@/shared/utils/file.utils';
-import { SocialService } from './social.service';
 import {
   CreatePostDTO,
   CreateCommentDTO,
@@ -27,13 +26,48 @@ import { Authenticated } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { isLeft, left } from '@/shared/core/either';
+import { left } from '@/shared/core/either';
 import { BadRequestError } from '@/shared/core/errors';
+
+// Direct UseCases
+import { CreatePostUseCase } from './usecases/create-post.usecase';
+import { CommentUseCase } from './usecases/comment.usecase';
+import { LikePostUseCase } from './usecases/like-post.usecase';
+import { UnlikePostUseCase } from './usecases/unlike-post.usecase';
+import { GetPostUseCase } from './usecases/get-post.usecase';
+import { GetFeedUseCase } from './usecases/get-feed.usecase';
+import { GetUserPostsUseCase } from './usecases/get-user-posts.usecase';
+import { SearchPostsUseCase } from './usecases/search-posts.usecase';
+import { GetCommentsUseCase } from './usecases/get-comments.usecase';
+import { GetLikedPostsUseCase } from './usecases/get-liked-posts.usecase';
+import { SharePostUseCase } from './usecases/share-post.usecase';
+import { UnsharePostUseCase } from './usecases/unshare-post.usecase';
+import { SavePostUseCase } from './usecases/save-post.usecase';
+import { UnsavePostUseCase } from './usecases/unsave-post.usecase';
+import { LikeCommentUseCase } from './usecases/like-comment.usecase';
+import { UnlikeCommentUseCase } from './usecases/unlike-comment.usecase';
 
 @ApiTags('Social')
 @Controller('social')
 export class SocialController {
-  constructor(private readonly socialService: SocialService) {}
+  constructor(
+    private readonly createPostUseCase: CreatePostUseCase,
+    private readonly commentUseCase: CommentUseCase,
+    private readonly likePostUseCase: LikePostUseCase,
+    private readonly unlikePostUseCase: UnlikePostUseCase,
+    private readonly getPostUseCase: GetPostUseCase,
+    private readonly getFeedUseCase: GetFeedUseCase,
+    private readonly getUserPostsUseCase: GetUserPostsUseCase,
+    private readonly searchPostsUseCase: SearchPostsUseCase,
+    private readonly getCommentsUseCase: GetCommentsUseCase,
+    private readonly getLikedPostsUseCase: GetLikedPostsUseCase,
+    private readonly sharePostUseCase: SharePostUseCase,
+    private readonly unsharePostUseCase: UnsharePostUseCase,
+    private readonly savePostUseCase: SavePostUseCase,
+    private readonly unsavePostUseCase: UnsavePostUseCase,
+    private readonly likeCommentUseCase: LikeCommentUseCase,
+    private readonly unlikeCommentUseCase: UnlikeCommentUseCase,
+  ) {}
 
   @Get('feed')
   @ApiDoc({
@@ -41,7 +75,7 @@ export class SocialController {
     description: 'Returns paginated feed of posts from followed users or explore',
   })
   async getFeed(@CurrentUser() user: AuthUser, @Query() query: GetFeedQueryDTO) {
-    const result = await this.socialService.getFeed({
+    return this.getFeedUseCase.execute({
       userId: user?.userId || '',
       limit: query.limit ?? 20,
       type: query.type ?? 'explore',
@@ -49,8 +83,6 @@ export class SocialController {
       offset: query.offset,
       contentFilter: query.contentFilter,
     });
-    if (result.isLeft()) return { posts: [], hasMore: false, nextCursor: null, nextOffset: null };
-    return result.value;
   }
 
   @Get('posts/:id')
@@ -60,9 +92,7 @@ export class SocialController {
     errors: [{ status: 404, description: 'Post not found' }],
   })
   async getPost(@Param('id') id: string) {
-    const result = await this.socialService.getPost(id);
-    if (isLeft(result)) return result;
-    return { post: result.value };
+    return this.getPostUseCase.execute(id);
   }
 
   @Post('posts')
@@ -89,7 +119,7 @@ export class SocialController {
       if (mimeError) return left(new BadRequestError(mimeError));
     }
     const imageUrl = file ? toDataUri(file) : body.imageUrl;
-    return this.socialService.createPost({ userId: user.userId, ...body, imageUrl });
+    return this.createPostUseCase.execute({ userId: user.userId, ...body, imageUrl });
   }
 
   @Get('posts/user/:userId')
@@ -99,13 +129,11 @@ export class SocialController {
     params: [{ name: 'userId', description: 'User UUID' }],
   })
   async getUserPosts(@Param('userId') userId: string, @Query() query: GetUserPostsQueryDTO) {
-    const result = await this.socialService.getUserPosts({
+    return this.getUserPostsUseCase.execute({
       userId,
       limit: query.limit ?? 20,
       cursor: query.cursor,
     });
-    if (isLeft(result)) throw result.value;
-    return { posts: result.value };
   }
 
   @Get('posts/search')
@@ -113,15 +141,13 @@ export class SocialController {
     summary: 'Search posts',
   })
   async searchPosts(@CurrentUser() user: AuthUser, @Query() query: SearchPostsQueryDTO) {
-    const result = await this.socialService.searchPosts({
+    return this.searchPostsUseCase.execute({
       query: query.q || '',
       filter: query.filter || 'all',
       userId: user?.userId || '',
       limit: query.limit ?? 20,
       cursor: query.cursor,
     });
-    if (isLeft(result)) throw result.value;
-    return { posts: result.value };
   }
 
   @Post('posts/:id/like')
@@ -130,7 +156,7 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async likePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.likePost({ userId: user.userId, postId: id });
+    return this.likePostUseCase.execute({ userId: user.userId, postId: id });
   }
 
   @Delete('posts/:id/like')
@@ -139,7 +165,7 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async unlikePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.unlikePost({ userId: user.userId, postId: id });
+    return this.unlikePostUseCase.execute({ userId: user.userId, postId: id });
   }
 
   @Get('posts/liked')
@@ -147,9 +173,7 @@ export class SocialController {
     summary: 'Get liked posts',
   })
   async getLikedPosts(@CurrentUser() user: AuthUser) {
-    const result = await this.socialService.getLikedPosts(user.userId);
-    if (isLeft(result)) throw result.value;
-    return { posts: result.value };
+    return this.getLikedPostsUseCase.execute(user.userId);
   }
 
   @Post('posts/:id/share')
@@ -160,7 +184,7 @@ export class SocialController {
     httpCode: HttpStatus.CREATED,
   })
   async sharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.sharePost({ userId: user.userId, postId: id });
+    return this.sharePostUseCase.execute({ userId: user.userId, postId: id });
   }
 
   @Delete('posts/:id/share')
@@ -170,7 +194,7 @@ export class SocialController {
     httpCode: HttpStatus.OK,
   })
   async unsharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.unsharePost({ userId: user.userId, postId: id });
+    return this.unsharePostUseCase.execute({ userId: user.userId, postId: id });
   }
 
   @Post('posts/:id/comments')
@@ -186,7 +210,7 @@ export class SocialController {
     @CurrentUser() user: AuthUser,
     @Body() body: CreateCommentDTO,
   ) {
-    return this.socialService.createComment({
+    return this.commentUseCase.execute({
       userId: user.userId,
       postId: id,
       content: body.content,
@@ -201,9 +225,7 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async getComments(@Param('id') id: string) {
-    const result = await this.socialService.getComments({ postId: id, limit: 20 });
-    if (isLeft(result)) throw result.value;
-    return { comments: result.value };
+    return this.getCommentsUseCase.execute({ postId: id, limit: 20 });
   }
 
   @Post('comments/:commentId/like')
@@ -212,7 +234,7 @@ export class SocialController {
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
   async likeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.likeComment({ userId: user.userId, commentId });
+    return this.likeCommentUseCase.execute({ userId: user.userId, commentId });
   }
 
   @Delete('comments/:commentId/like')
@@ -221,7 +243,7 @@ export class SocialController {
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
   async unlikeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.unlikeComment({ userId: user.userId, commentId });
+    return this.unlikeCommentUseCase.execute({ userId: user.userId, commentId });
   }
 
   @Post('posts/:id/save')
@@ -232,7 +254,7 @@ export class SocialController {
     httpCode: HttpStatus.CREATED,
   })
   async savePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.savePost({ userId: user.userId, postId: id });
+    return this.savePostUseCase.execute({ userId: user.userId, postId: id });
   }
 
   @Delete('posts/:id/save')
@@ -241,6 +263,6 @@ export class SocialController {
     params: [{ name: 'id', description: 'Post UUID' }],
   })
   async unsavePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.socialService.unsavePost({ userId: user.userId, postId: id });
+    return this.unsavePostUseCase.execute({ userId: user.userId, postId: id });
   }
 }

@@ -17,6 +17,7 @@ import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.u
 import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
 import { CreatePaymentSessionOutput, CreatePaymentIntentOutput } from './dtos/payment.dto';
+import { right } from '@/shared/core/either';
 
 interface WebhookRequest {
   stripeEvent?: Stripe.Event;
@@ -58,14 +59,7 @@ export class PaymentsController {
     @CurrentUser() user: AuthUser,
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
-    this.logger.log(`Creating payment session for order ${orderId} by user ${user.userId}`);
-    const result = await this.createPaymentSessionUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
-    if (result.isLeft()) {
-      this.logger.error(`Payment session creation failed for order ${orderId}: ${result.value.message}`);
-    } else {
-      this.logger.log(`Payment session created: ${result.value.stripeSessionId} for order ${orderId}`);
-    }
-    return result;
+    return this.createPaymentSessionUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
   }
 
   @Post('payment-intent/:orderId')
@@ -85,14 +79,7 @@ export class PaymentsController {
     @CurrentUser() user: AuthUser,
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
-    this.logger.log(`Creating PaymentIntent for order ${orderId} by user ${user.userId}`);
-    const result = await this.createPaymentIntentUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
-    if (result.isLeft()) {
-      this.logger.error(`PaymentIntent creation failed for order ${orderId}: ${result.value.message}`);
-    } else {
-      this.logger.log(`PaymentIntent created for order ${orderId}`);
-    }
-    return result;
+    return this.createPaymentIntentUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
   }
 
   @Post('webhook')
@@ -101,24 +88,16 @@ export class PaymentsController {
     const event = request.stripeEvent;
     if (!event) {
       this.logger.error('Webhook guard did not attach stripeEvent to request');
-      return { processed: false };
+      return right({ processed: false });
     }
 
     if (!WHITELIST_EVENTS.includes(event.type)) {
-      this.logger.log(`Ignoring unhandled webhook event: ${event.type}`);
-      return { processed: false };
+      return right({ processed: false });
     }
 
     const object = event.data.object as { metadata?: { orderId?: string } };
     const orderId = object.metadata?.orderId;
-    this.logger.log(`Received Stripe webhook: ${event.type} for order ${orderId}`);
 
-    const result = await this.processWebhookUseCase.execute({ event: event.type, data: { orderId } });
-    if (result.isLeft()) {
-      this.logger.error(`Webhook processing failed for ${event.type}: ${result.value.message}`);
-    } else {
-      this.logger.log(`Webhook processed: ${event.type}, processed=${result.value.processed}`);
-    }
-    return result;
+    return this.processWebhookUseCase.execute({ event: event.type, data: { orderId } });
   }
 }

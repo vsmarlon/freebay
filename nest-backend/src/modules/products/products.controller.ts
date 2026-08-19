@@ -10,25 +10,37 @@ import {
   UseInterceptors,
   UploadedFile,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { ProductsService } from './products.service';
 import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO } from './dtos/product.dto';
 import { Authenticated } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { validateImageFile, MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
+import { toDataUri } from '@/shared/utils/file.utils';
+import { left } from '@/shared/core/either';
+import { BadRequestError } from '@/shared/core/errors';
+import { CreateProductUseCase } from './usecases/create-product/create-product.usecase';
+import { UpdateProductUseCase } from './usecases/update-product/update-product.usecase';
+import { DeleteProductUseCase } from './usecases/delete-product/delete-product.usecase';
+import { GetProductsUseCase } from './usecases/get-products/get-products.usecase';
+import { GetProductByIdUseCase } from './usecases/get-products/get-product-by-id.usecase';
+import { GetMyProductsUseCase } from './usecases/get-products/get-my-products.usecase';
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  private readonly logger = new Logger(ProductsController.name);
-
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly createProductUseCase: CreateProductUseCase,
+    private readonly updateProductUseCase: UpdateProductUseCase,
+    private readonly deleteProductUseCase: DeleteProductUseCase,
+    private readonly getProductsUseCase: GetProductsUseCase,
+    private readonly getProductByIdUseCase: GetProductByIdUseCase,
+    private readonly getMyProductsUseCase: GetMyProductsUseCase,
+  ) {}
 
   @Get()
   @ApiDoc({
@@ -46,7 +58,7 @@ export class ProductsController {
     ],
   })
   async findAll(@Query() query: ProductQueryDTO) {
-    return this.productsService.findAll(query);
+    return this.getProductsUseCase.execute(query);
   }
 
   @Get(':id')
@@ -56,7 +68,7 @@ export class ProductsController {
     errors: [{ status: 404, description: 'Product not found' }],
   })
   async findOne(@Param('id') id: string) {
-    return this.productsService.findOne(id);
+    return this.getProductByIdUseCase.execute(id);
   }
 
   @Post()
@@ -79,16 +91,20 @@ export class ProductsController {
     @Body() body: CreateProductDTO,
   ) {
     if (!file) {
-      this.logger.warn('Create product called without image file');
-      return { success: false, error: { code: 'BAD_REQUEST', message: 'Imagem do produto é obrigatória' } };
+      return left(new BadRequestError('Imagem do produto é obrigatória'));
     }
 
     const mimeError = validateImageFile(file);
     if (mimeError) {
-      return { success: false, error: { code: 'BAD_REQUEST', message: mimeError } };
+      return left(new BadRequestError(mimeError));
     }
 
-    return this.productsService.create(user, file, body);
+    const dataUri = toDataUri(file);
+    return this.createProductUseCase.execute({
+      sellerId: user.userId,
+      ...body,
+      images: [dataUri],
+    });
   }
 
   @Delete(':id')
@@ -98,7 +114,7 @@ export class ProductsController {
     errors: [{ status: 404, description: 'Product not found' }],
   })
   async delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.productsService.delete(id, user.userId);
+    return this.deleteProductUseCase.execute({ productId: id, userId: user.userId });
   }
 
   @Patch(':id')
@@ -113,7 +129,7 @@ export class ProductsController {
     @CurrentUser() user: AuthUser,
     @Body() body: UpdateProductDTO,
   ) {
-    return this.productsService.update(id, user.userId, body);
+    return this.updateProductUseCase.execute({ productId: id, userId: user.userId, ...body });
   }
 
   @Get('mine/all')
@@ -122,6 +138,6 @@ export class ProductsController {
     description: 'Returns all products for the current authenticated user',
   })
   async findMyProducts(@CurrentUser() user: AuthUser) {
-    return this.productsService.findMyProducts(user.userId);
+    return this.getMyProductsUseCase.execute(user.userId);
   }
 }

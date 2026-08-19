@@ -192,10 +192,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   keyboardType: TextInputType.number,
                   validator: (v) {
                     final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
-                    if (d.length == 11 && ValueUtils.validateCPF(d))
+                    if (d.length == 11 && ValueUtils.validateCPF(d)) {
                       return null;
-                    if (d.length == 14 && ValueUtils.validateCNPJ(d))
+                    }
+                    if (d.length == 14 && ValueUtils.validateCNPJ(d)) {
                       return null;
+                    }
                     return 'CPF ou CNPJ inválido';
                   },
                 ),
@@ -222,11 +224,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         product.id,
       );
       if (orderResult.isLeft) {
-        if (mounted)
+        if (mounted) {
           AppSnackbar.error(
             context,
             orderResult.leftOrNull?.message ?? 'Erro ao criar pedido.',
           );
+        }
         setState(() => _isSubmitting = false);
         return;
       }

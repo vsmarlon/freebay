@@ -396,8 +396,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                         onToggleSelection: (id) => setState(() {
                           if (_selectedMessageIds.contains(id)) {
                             _selectedMessageIds.remove(id);
-                            if (_selectedMessageIds.isEmpty)
+                            if (_selectedMessageIds.isEmpty) {
                               _isSelecting = false;
+                            }
                           } else {
                             _selectedMessageIds.add(id);
                           }

@@ -201,10 +201,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                               hint: 'Seu apelido na plataforma',
                               prefixIcon: Icons.person_outline,
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty)
+                                if (v == null || v.trim().isEmpty) {
                                   return 'Informe seu nome';
-                                if (v.trim().length < 2)
+                                }
+                                if (v.trim().length < 2) {
                                   return 'Nome muito curto';
+                                }
                                 return null;
                               },
                             ),
@@ -221,10 +223,12 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                               hint: 'seu_username',
                               prefixIcon: Icons.alternate_email,
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty)
+                                if (v == null || v.trim().isEmpty) {
                                   return 'Escolha um username';
-                                if (v.trim().length < 3)
+                                }
+                                if (v.trim().length < 3) {
                                   return 'Mínimo 3 caracteres';
+                                }
                                 if (!RegExp(
                                   r'^[a-z0-9_]+$',
                                 ).hasMatch(v.trim())) {

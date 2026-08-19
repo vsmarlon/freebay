@@ -54,7 +54,9 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
       debugLabel: 'AUTH login',
       onSuccess: (response) {
         final data = response.data?['data'];
-        if (data == null) return const Left(InvalidCredentialsFailure());
+        if (data == null) {
+          return const Left(InvalidCredentialsFailure());
+        }
         StorageService.saveToken(data['token']);
         StorageService.saveRefreshToken(data['refreshToken']);
         if (data['biometricToken'] != null) {
@@ -93,8 +95,9 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
       debugLabel: 'AUTH register',
       onSuccess: (response) {
         final data = response.data?['data'];
-        if (data == null)
+        if (data == null) {
           return const Left(ServerFailure('Falha ao registrar usuário.'));
+        }
         StorageService.saveToken(data['token']);
         if (data['refreshToken'] != null) {
           StorageService.saveRefreshToken(data['refreshToken']);
@@ -156,12 +159,11 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
       debugLabel: 'AUTH biometric',
       onSuccess: (response) {
         final data = response.data?['data'];
-        if (data == null) return const Left(InvalidCredentialsFailure());
+        if (data == null) {
+          return const Left(InvalidCredentialsFailure());
+        }
         StorageService.saveToken(data['token']);
         StorageService.saveRefreshToken(data['refreshToken']);
-        if (data['biometricToken'] != null) {
-          StorageService.saveBiometricToken(data['biometricToken']);
-        }
         return Right(UserEntity.fromJson(data['user']));
       },
     );
@@ -178,8 +180,9 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
       debugLabel: 'AUTH google',
       onSuccess: (response) {
         final data = response.data?['data'];
-        if (data == null)
+        if (data == null) {
           return const Left(ServerFailure('Falha ao autenticar com Google.'));
+        }
         StorageService.saveToken(data['token']);
         StorageService.saveRefreshToken(data['refreshToken']);
         if (data['biometricToken'] != null) {
@@ -203,16 +206,17 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
         '/auth/complete-profile',
         data: {
           'username': username,
-          'displayName': ?displayName,
-          'city': ?city,
-          'state': ?state,
+          'displayName': displayName,
+          'city': city,
+          'state': state,
         },
       ),
       debugLabel: 'AUTH complete-profile',
       onSuccess: (response) {
         final data = response.data?['data'];
-        if (data == null)
+        if (data == null) {
           return const Left(ServerFailure('Falha ao completar perfil.'));
+        }
         return Right(UserEntity.fromJson(data['user']));
       },
     );

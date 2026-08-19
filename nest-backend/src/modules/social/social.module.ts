@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { SocialController } from './social.controller';
-import { SocialService } from './social.service';
 
 // Repositories
 import { CommentRepository } from './domain/repositories/comment.repository';
@@ -35,7 +34,6 @@ import { UnlikeCommentUseCase } from './usecases/unlike-comment.usecase';
 @Module({
   controllers: [SocialController],
   providers: [
-    SocialService,
     // Repositories
     { provide: CommentRepository, useClass: PrismaCommentRepository },
     { provide: LikeRepository, useClass: PrismaLikeRepository },
@@ -61,12 +59,27 @@ import { UnlikeCommentUseCase } from './usecases/unlike-comment.usecase';
     UnlikeCommentUseCase,
   ],
   exports: [
-    SocialService,
     CommentRepository,
     LikeRepository,
     PostRepository,
     SavedPostRepository,
     ShareRepository,
+    CreatePostUseCase,
+    CommentUseCase,
+    LikePostUseCase,
+    UnlikePostUseCase,
+    GetPostUseCase,
+    GetFeedUseCase,
+    GetUserPostsUseCase,
+    SearchPostsUseCase,
+    GetCommentsUseCase,
+    GetLikedPostsUseCase,
+    SharePostUseCase,
+    UnsharePostUseCase,
+    SavePostUseCase,
+    UnsavePostUseCase,
+    LikeCommentUseCase,
+    UnlikeCommentUseCase,
   ],
 })
 export class SocialModule {}
