@@ -1,46 +1,59 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export interface CreatePixPaymentInput {
-  orderId: string;
-  userId: string;
-  customerName?: string;
-  customerTaxId?: string;
-  customerEmail?: string;
-  idempotencyKey?: string;
+export interface CreatePaymentSessionInput {
+  readonly orderId: string;
+  readonly userId: string;
+  readonly customerName?: string;
+  readonly customerTaxId?: string;
+  readonly customerEmail?: string;
+  readonly idempotencyKey?: string;
 }
 
 export interface ProcessWebhookInput {
-  event: string;
-  data: WebhookDataPayload;
+  readonly event: string;
+  readonly data: WebhookDataPayload;
 }
 
 export interface WebhookDataPayload {
-  correlationID?: string;
-  [key: string]: string | number | boolean | null | object | undefined;
+  readonly orderId?: string;
 }
 
 export interface ProcessWebhookOutput {
-  processed: boolean;
+  readonly processed: boolean;
 }
 
 export interface CreateWithdrawalInput {
-  withdrawalId: string;
+  readonly withdrawalId: string;
 }
 
 export interface CreateWithdrawalOutput {
-  transferred: boolean;
+  readonly transferred: boolean;
 }
 
-export class CreatePixPaymentOutput {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly orderId: string;
+export class CreatePaymentSessionOutput {
+  @ApiProperty({ example: 'cs_test_abc123' })
+  readonly stripeSessionId: string;
 
-  @ApiProperty({ example: '00020126580014BR.GOV.BCB.PIX...' })
-  readonly pixQrCode: string;
-
-  @ApiProperty({ example: 'data:image/png;base64,...' })
-  readonly pixImage: string;
+  @ApiProperty({ example: 'https://checkout.stripe.com/pay/cs_test_abc123' })
+  readonly checkoutUrl: string;
 
   @ApiProperty({ example: '2026-06-17T13:00:00.000Z' })
   readonly expiresAt: Date;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  readonly orderId: string;
+}
+
+export interface CreatePaymentIntentInput {
+  readonly orderId: string;
+  readonly userId: string;
+  readonly idempotencyKey?: string;
+}
+
+export class CreatePaymentIntentOutput {
+  @ApiProperty({ example: 'pi_3..._secret_...' })
+  readonly paymentIntentClientSecret: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  readonly orderId: string;
 }

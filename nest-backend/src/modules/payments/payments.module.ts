@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
 import { PaymentsController } from './payments.controller';
-import { CreatePixPaymentUseCase } from './usecases/create-pix-payment.usecase';
+import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.usecase';
+import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
-import { AbacatePayProvider } from './providers/abacatepay.provider';
+import { StripeProvider } from './providers/stripe-provider';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaOrderRepository } from '../orders/repositories/order.repository';
+import { PrismaOrderRepository } from '../orders/data/repositories/order-database.repository';
 import { OrderRepository } from '../orders/domain/repositories/order.repository';
 import { ProductDatabaseRepository } from '../products/data/repositories/product-database.repository';
 import { ProductRepository } from '../products/domain/repositories/product.repository';
@@ -17,30 +17,42 @@ import { WalletRepository } from '../wallet/domain/repositories/wallet.repositor
 import { UserDatabaseRepository } from '../auth/data/repositories/user-database.repository';
 import { UserRepository } from '../auth/domain/repositories/user.repository';
 import { WebhookGuard } from '@/shared/guards/webhook.guard';
+import { WebhookDedupeInterceptor } from '@/shared/interceptors/webhook-dedupe.interceptor';
 import { RedisService } from '@/shared/infra/redis/redis.service';
+import { PaymentProvider } from './domain/providers/payment-provider.interface';
 
 @Module({
   imports: [ConfigModule],
   controllers: [PaymentsController],
   providers: [
-    CreatePixPaymentUseCase,
-    ProcessWebhookUseCase,
-    AbacatePayProvider,
     PrismaService,
-    { provide: PrismaClient, useExisting: PrismaService },
+    // Use cases
+    CreatePaymentSessionUseCase,
+    CreatePaymentIntentUseCase,
+    ProcessWebhookUseCase,
+    // Payment provider
+    StripeProvider,
+    { provide: PaymentProvider, useExisting: StripeProvider },
+    // Order repository (abstract ↔ concrete binding)
     PrismaOrderRepository,
     { provide: OrderRepository, useExisting: PrismaOrderRepository },
+    // Product repository
     ProductDatabaseRepository,
     { provide: ProductRepository, useExisting: ProductDatabaseRepository },
+    // Transaction repository
     TransactionDatabaseRepository,
     { provide: TransactionRepository, useExisting: TransactionDatabaseRepository },
+    // Wallet repository
     WalletDatabaseRepository,
     { provide: WalletRepository, useExisting: WalletDatabaseRepository },
+    // User repository
     UserDatabaseRepository,
     { provide: UserRepository, useExisting: UserDatabaseRepository },
+    // Infrastructure
     WebhookGuard,
+    WebhookDedupeInterceptor,
     RedisService,
   ],
-  exports: [AbacatePayProvider, CreatePixPaymentUseCase],
+  exports: [StripeProvider, CreatePaymentSessionUseCase],
 })
 export class PaymentsModule {}

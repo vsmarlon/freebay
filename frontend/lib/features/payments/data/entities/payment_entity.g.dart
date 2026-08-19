@@ -1,23 +1,23 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'pix_payment_entity.dart';
+part of 'payment_entity.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-_PixPaymentEntity _$PixPaymentEntityFromJson(Map<String, dynamic> json) =>
-    _PixPaymentEntity(
+_PaymentEntity _$PaymentEntityFromJson(Map<String, dynamic> json) =>
+    _PaymentEntity(
       orderId: json['orderId'] as String,
-      pixQrCode: json['pixQrCode'] as String? ?? '',
-      pixImage: json['pixImage'] as String? ?? '',
+      stripeSessionId: json['stripeSessionId'] as String,
+      checkoutUrl: json['checkoutUrl'] as String,
       expiresAt: DateTime.parse(json['expiresAt'] as String),
     );
 
-Map<String, dynamic> _$PixPaymentEntityToJson(_PixPaymentEntity instance) =>
+Map<String, dynamic> _$PaymentEntityToJson(_PaymentEntity instance) =>
     <String, dynamic>{
       'orderId': instance.orderId,
-      'pixQrCode': instance.pixQrCode,
-      'pixImage': instance.pixImage,
+      'stripeSessionId': instance.stripeSessionId,
+      'checkoutUrl': instance.checkoutUrl,
       'expiresAt': instance.expiresAt.toIso8601String(),
     };

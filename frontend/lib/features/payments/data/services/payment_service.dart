@@ -1,38 +1,46 @@
-import 'package:freebay/shared/either/either.dart';
 import 'package:dio/dio.dart';
-import 'package:freebay/features/payments/data/entities/pix_payment_entity.dart';
+import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/features/payments/data/entities/payment_entity.dart';
+import 'package:freebay/features/payments/data/entities/payment_intent_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/repositories/base_http_repository.dart';
 
-class PaymentService {
-  Future<Either<Failure, PixPaymentEntity>> createPixPayment({
+class PaymentService extends BaseHttpRepository {
+  PaymentService({super.client});
+
+  Future<Either<Failure, PaymentEntity>> createPaymentSession({
     required String orderId,
     required String customerName,
     required String customerTaxId,
     required String customerEmail,
     String? idempotencyKey,
-  }) async {
-    try {
-      final response = await HttpClient.instance.post(
-        '/payments/pix/$orderId',
-        data: {
-          'customerName': customerName,
-          'customerTaxId': customerTaxId,
-          'customerEmail': customerEmail,
-        },
-        options: Options(
-          headers: idempotencyKey == null
-              ? null
-              : {'idempotency-key': idempotencyKey},
-        ),
-      );
+  }) => safePost<PaymentEntity>(
+    '/payments/checkout/$orderId',
+    data: {
+      'customerName': customerName,
+      'customerTaxId': customerTaxId,
+      'customerEmail': customerEmail,
+    },
+    options: Options(
+      headers: idempotencyKey != null
+          ? {'idempotency-key': idempotencyKey}
+          : null,
+    ),
+    extractKey: 'data',
+    fromJson: PaymentEntity.fromJson,
+  );
 
-      final payload = response.data['data'] as Map<String, dynamic>;
-      return Right(PixPaymentEntity.fromJson(payload));
-    } on DioException catch (e) {
-      return Left(mapDioExceptionToFailure(e));
-    } catch (_) {
-      return const Left(UnknownFailure());
-    }
-  }
+  Future<Either<Failure, PaymentIntentEntity>> createPaymentIntent({
+    required String orderId,
+    String? idempotencyKey,
+  }) => safePost<PaymentIntentEntity>(
+    '/payments/payment-intent/$orderId',
+    options: Options(
+      headers: idempotencyKey != null
+          ? {'idempotency-key': idempotencyKey}
+          : null,
+    ),
+    extractKey: 'data',
+    fromJson: PaymentIntentEntity.fromJson,
+  );
 }

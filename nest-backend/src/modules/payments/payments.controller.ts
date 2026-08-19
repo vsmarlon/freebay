@@ -1,25 +1,34 @@
 import {
   Controller,
   Post,
-  Body,
   Param,
-  UseGuards,
-  HttpCode,
   HttpStatus,
   Headers,
   Logger,
+  Req,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import Stripe from 'stripe';
+import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { Public } from '@/shared/decorators/public.decorator';
+import { Authenticated, StripeWebhook } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { WebhookGuard } from '@/shared/guards/webhook.guard';
-import { CreatePixPaymentUseCase } from './usecases/create-pix-payment.usecase';
+import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.usecase';
+import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
-import { ProcessWebhookInput, CreatePixPaymentOutput } from './dtos/payment.dto';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { CreatePaymentSessionOutput, CreatePaymentIntentOutput } from './dtos/payment.dto';
+
+interface WebhookRequest {
+  stripeEvent?: Stripe.Event;
+}
+
+const WHITELIST_EVENTS = [
+  'checkout.session.completed',
+  'checkout.session.expired',
+  'payment_intent.succeeded',
+  'payment_intent.canceled',
+  'payment_intent.payment_failed',
+];
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -27,62 +36,89 @@ export class PaymentsController {
   private readonly logger = new Logger(PaymentsController.name);
 
   constructor(
-    private readonly createPixPaymentUseCase: CreatePixPaymentUseCase,
+    private readonly createPaymentSessionUseCase: CreatePaymentSessionUseCase,
+    private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
     private readonly processWebhookUseCase: ProcessWebhookUseCase,
   ) {}
 
-  @Post('pix/:orderId')
-  @UseGuards(JwtAuthGuard)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Create PIX payment',
-    description: 'Creates a PIX QR code for an order (rate limited: 5/min)',
-    auth: true,
+  @Post('checkout/:orderId')
+  @Authenticated({
+    summary: 'Create Stripe Checkout payment session',
+    description: 'Creates a Stripe Checkout Session for an order (rate limited: 5/min)',
     responseStatus: 201,
-    responseType: CreatePixPaymentOutput,
+    responseType: CreatePaymentSessionOutput,
     params: [{ name: 'orderId', description: 'Order UUID' }],
-    errors: [
-      { status: 429, description: 'Too many requests' },
-    ],
+    errors: [{ status: 429, description: 'Too many requests' }],
+    throttle: { limit: 5, ttl: 60000 },
+    httpCode: HttpStatus.CREATED,
+    guards: [JwtAuthGuard],
   })
-  async createPixPayment(
+  async createPaymentSession(
     @Param('orderId') orderId: string,
     @CurrentUser() user: AuthUser,
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
-    const result = await this.createPixPaymentUseCase.execute({
-      orderId,
-      userId: user.userId,
-      idempotencyKey,
-    });
+    this.logger.log(`Creating payment session for order ${orderId} by user ${user.userId}`);
+    const result = await this.createPaymentSessionUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
+    if (result.isLeft()) {
+      this.logger.error(`Payment session creation failed for order ${orderId}: ${result.value.message}`);
+    } else {
+      this.logger.log(`Payment session created: ${result.value.stripeSessionId} for order ${orderId}`);
+    }
+    return result;
+  }
 
-    if (result.isLeft()) return result;
-
-    return result.value;
+  @Post('payment-intent/:orderId')
+  @Authenticated({
+    summary: 'Create Stripe PaymentIntent for PaymentSheet',
+    description: 'Creates a Stripe PaymentIntent for an order (mobile PaymentSheet; rate limited: 5/min)',
+    responseStatus: 201,
+    responseType: CreatePaymentIntentOutput,
+    params: [{ name: 'orderId', description: 'Order UUID' }],
+    errors: [{ status: 429, description: 'Too many requests' }],
+    throttle: { limit: 5, ttl: 60000 },
+    httpCode: HttpStatus.CREATED,
+    guards: [JwtAuthGuard],
+  })
+  async createPaymentIntent(
+    @Param('orderId') orderId: string,
+    @CurrentUser() user: AuthUser,
+    @Headers('idempotency-key') idempotencyKey?: string,
+  ) {
+    this.logger.log(`Creating PaymentIntent for order ${orderId} by user ${user.userId}`);
+    const result = await this.createPaymentIntentUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
+    if (result.isLeft()) {
+      this.logger.error(`PaymentIntent creation failed for order ${orderId}: ${result.value.message}`);
+    } else {
+      this.logger.log(`PaymentIntent created for order ${orderId}`);
+    }
+    return result;
   }
 
   @Post('webhook')
-  @Public()
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
-  @UseGuards(WebhookGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiDoc({
-    summary: 'Payment webhook',
-    description: 'Receives payment status updates from the PIX provider',
-  })
-  async handleWebhook(
-    @Body() body: ProcessWebhookInput,
-    @Headers('x-webhook-event') event?: string,
-  ) {
-    const result = await this.processWebhookUseCase.execute({
-      event: event || body.event || 'charge.completed',
-      data: body.data,
-    });
+  @StripeWebhook
+  async handleWebhook(@Req() request: WebhookRequest) {
+    const event = request.stripeEvent;
+    if (!event) {
+      this.logger.error('Webhook guard did not attach stripeEvent to request');
+      return { processed: false };
+    }
 
-    if (result.isLeft()) return result;
+    if (!WHITELIST_EVENTS.includes(event.type)) {
+      this.logger.log(`Ignoring unhandled webhook event: ${event.type}`);
+      return { processed: false };
+    }
 
-    return result.value;
+    const object = event.data.object as { metadata?: { orderId?: string } };
+    const orderId = object.metadata?.orderId;
+    this.logger.log(`Received Stripe webhook: ${event.type} for order ${orderId}`);
+
+    const result = await this.processWebhookUseCase.execute({ event: event.type, data: { orderId } });
+    if (result.isLeft()) {
+      this.logger.error(`Webhook processing failed for ${event.type}: ${result.value.message}`);
+    } else {
+      this.logger.log(`Webhook processed: ${event.type}, processed=${result.value.processed}`);
+    }
+    return result;
   }
 }

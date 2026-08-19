@@ -1,15 +1,12 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { Transaction, Order, Prisma } from '@prisma/client';
-
-export type TransactionWithOrder = Transaction & {
-  order: Order & {
-    buyer: { id: string; displayName: string };
-    seller: { id: string; displayName: string };
-  };
-};
+import { Transaction, Prisma } from '@prisma/client';
+import { TransactionWithOrder, UpsertTransactionData } from '../../types/payment.types';
 
 export abstract class TransactionRepository {
-  abstract markAsPaid(id: string, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
-  abstract markAsFailed(id: string, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
+  abstract markAsPaid(id: string, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }>;
+  abstract markAsFailed(id: string, tx?: Prisma.TransactionClient): RepositoryResponse<{ count: number }>;
   abstract findByIdempotencyKey(key: string): RepositoryResponse<TransactionWithOrder | null>;
+  abstract findByOrderId(orderId: string): RepositoryResponse<TransactionWithOrder | null>;
+  abstract findByDerivedKey(key: string): RepositoryResponse<Transaction | null>;
+  abstract upsertTransaction(data: UpsertTransactionData): RepositoryResponse<void>;
 }
