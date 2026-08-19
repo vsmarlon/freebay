@@ -68,29 +68,44 @@ export class GetMessagesUseCase {
     msg: DirectMessageWithSender | ChatMessageWithSender,
     conversationId: string,
   ): GetMessagesOutput {
+    const isViewOnceHidden = msg.viewOnce && msg.readAt !== null;
+
+    function replyContent(
+      reply: NonNullable<DirectMessageWithSender['replyTo'] | ChatMessageWithSender['replyTo']>,
+    ): string | null {
+      if (reply.deletedAt) return null;
+      if (reply.viewOnce && reply.readAt !== null) return null;
+      return reply.content;
+    }
+
     return {
       id: msg.id,
       conversationId,
       senderId: msg.senderId,
-      content: msg.content ?? null,
+      content: isViewOnceHidden ? null : (msg.content ?? null),
       type: msg.type,
-      attachmentUrl: msg.attachmentUrl ?? null,
-      metadata: (msg.metadata as Record<string, unknown>) ?? null,
+      attachmentUrl: isViewOnceHidden ? null : (msg.attachmentUrl ?? null),
+      metadata: isViewOnceHidden ? null : ((msg.metadata as Record<string, unknown>) ?? null),
       replyToId: msg.replyToId ?? null,
       replyTo: msg.replyTo
         ? {
             id: msg.replyTo.id,
             senderId: msg.replyTo.senderId,
-            content: msg.replyTo.deletedAt ? null : msg.replyTo.content,
+            content: replyContent(msg.replyTo),
             type: msg.replyTo.type,
-            attachmentUrl: msg.replyTo.deletedAt ? null : msg.replyTo.attachmentUrl,
+            attachmentUrl: msg.replyTo.viewOnce && msg.replyTo.readAt !== null ? null : (msg.replyTo.attachmentUrl ?? null),
             deletedAt: msg.replyTo.deletedAt,
+            conversationId,
+            createdAt: msg.replyTo.createdAt,
+            viewOnce: msg.replyTo.viewOnce,
+            readAt: msg.replyTo.readAt,
           }
         : null,
       deletedAt: msg.deletedAt ?? null,
       readAt: msg.readAt,
       deliveredAt: msg.deliveredAt,
       createdAt: msg.createdAt,
+      viewOnce: msg.viewOnce,
     };
   }
 }

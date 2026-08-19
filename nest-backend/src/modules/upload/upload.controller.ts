@@ -17,15 +17,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
+import {
+  MAX_MEDIA_SIZE,
+  MIMETYPE_EXTENSIONS,
+  validateMediaFile,
+} from '@/shared/utils/image-upload.utils';
 
 const VALID_CONTEXTS = ['chat', 'background', 'post', 'avatar'] as const;
-const MIMETYPE_EXTENSIONS: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/gif': '.gif',
-  'image/webp': '.webp',
-};
 
 export function isValidContext(context: unknown): context is (typeof VALID_CONTEXTS)[number] {
   return typeof context === 'string' && (VALID_CONTEXTS as readonly string[]).includes(context);
@@ -37,7 +35,7 @@ export function isValidContext(context: unknown): context is (typeof VALID_CONTE
 export class UploadController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiDoc({ summary: 'Upload a file to disk', auth: true, responseStatus: 201 })
+  @ApiDoc({ summary: 'Upload a file to disk (image, audio, video)', auth: true, responseStatus: 201 })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -57,10 +55,11 @@ export class UploadController {
           cb(null, dir);
         },
         filename: (_req, file, cb) => {
-          cb(null, `${uuidv4()}${MIMETYPE_EXTENSIONS[file.mimetype]}`);
+          const ext = MIMETYPE_EXTENSIONS[file.mimetype] || '.bin';
+          cb(null, `${uuidv4()}${ext}`);
         },
       }),
-      limits: { fileSize: MAX_IMAGE_SIZE },
+      limits: { fileSize: MAX_MEDIA_SIZE },
       fileFilter: (_req, file, cb) => {
         cb(null, file.mimetype in MIMETYPE_EXTENSIONS);
       },
@@ -72,7 +71,7 @@ export class UploadController {
   ): { url: string } {
     if (!file) {
       throw new BadRequestException(
-        'Arquivo ausente ou tipo não permitido (aceitos: jpeg, png, gif, webp)',
+        'Arquivo ausente ou formato não suportado (aceitos: JPEG, PNG, GIF, WebP, MP3, M4A, AAC, OGG, WAV, MP4)',
       );
     }
     if (!isValidContext(context)) {
@@ -80,6 +79,12 @@ export class UploadController {
         `Context inválido. Use: ${VALID_CONTEXTS.join(', ')}`,
       );
     }
+
+    const validationError = validateMediaFile(file);
+    if (validationError) {
+      throw new BadRequestException(validationError);
+    }
+
     return { url: `/uploads/${context}/${file.filename}` };
   }
 }

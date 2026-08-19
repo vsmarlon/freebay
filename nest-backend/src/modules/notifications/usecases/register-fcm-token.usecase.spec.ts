@@ -1,23 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterFcmTokenUseCase } from './register-fcm-token.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-
-jest.mock('@/shared/infra/prisma/prisma.service');
-
-const mockPrisma = {
-  user: {
-    update: jest.fn(),
-  },
-};
+import { NotificationRepository } from '../domain/repositories/notification.repository';
+import { right } from '@/shared/core/either';
 
 describe('RegisterFcmTokenUseCase', () => {
   let sut: RegisterFcmTokenUseCase;
+  let mockNotificationRepository: { updateUserFcmToken: jest.Mock };
 
   beforeEach(async () => {
+    mockNotificationRepository = {
+      updateUserFcmToken: jest.fn().mockResolvedValue(right(undefined)),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RegisterFcmTokenUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationRepository, useValue: mockNotificationRepository },
       ],
     }).compile();
 
@@ -26,17 +24,15 @@ describe('RegisterFcmTokenUseCase', () => {
   });
 
   it('should register FCM token successfully', async () => {
-    mockPrisma.user.update.mockResolvedValue({});
-
     const result = await sut.execute('user-123', 'fcm-token-123');
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       expect(result.value).toBeUndefined();
     }
-    expect(mockPrisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'user-123' },
-      data: { fcmToken: 'fcm-token-123' },
-    });
+    expect(mockNotificationRepository.updateUserFcmToken).toHaveBeenCalledWith(
+      'user-123',
+      'fcm-token-123',
+    );
   });
 });

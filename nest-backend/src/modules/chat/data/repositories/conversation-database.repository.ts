@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction } from '@prisma/client';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType } from '@prisma/client';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { ConversationRepository } from '../../domain/repositories/conversation.repository';
@@ -10,6 +10,7 @@ import {
   OrderWithChat,
   DirectMessageWithSender,
   ChatMessageWithSender,
+  ReplyToSummary,
 } from '../../mappers/conversation.mapper';
 
 const REPLY_TO_SELECT = {
@@ -19,11 +20,14 @@ const REPLY_TO_SELECT = {
   type: true,
   attachmentUrl: true,
   deletedAt: true,
+  createdAt: true,
+  viewOnce: true,
+  readAt: true,
 } as const;
 
 @Injectable()
 export class ConversationDatabaseRepository implements ConversationRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findUserById(id: string): RepositoryResponse<User | null> {
     try {
@@ -60,8 +64,19 @@ export class ConversationDatabaseRepository implements ConversationRepository {
           user1: { select: USER_SELECT_BASIC },
           user2: { select: USER_SELECT_BASIC },
           messages: {
+            take: 1,
             select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
             orderBy: { createdAt: 'desc' },
+          },
+          _count: {
+            select: {
+              messages: {
+                where: {
+                  senderId: { not: userId },
+                  readAt: null,
+                },
+              },
+            },
           },
         },
         orderBy: { lastMessageAt: 'desc' },
@@ -278,5 +293,71 @@ export class ConversationDatabaseRepository implements ConversationRepository {
       const reactions = await this.prisma.messageReaction.findMany({ where, select: { emoji: true, userId: true } });
       return right(reactions);
     } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar reações')); }
+  }
+
+  async findDirectMessagesByType(
+    conversationId: string,
+    type: MessageType,
+    limit: number,
+    cursor?: string,
+  ): RepositoryResponse<DirectMessageWithSender[]> {
+    try {
+      const result = await this.prisma.directMessage.findMany({
+        where: { conversationId, type },
+        orderBy: { createdAt: 'desc' },
+        take: limit + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        include: {
+          sender: { select: USER_SELECT_MINIMAL },
+          replyTo: { select: REPLY_TO_SELECT },
+        },
+      });
+      return right(result as DirectMessageWithSender[]);
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens'));
+    }
+  }
+
+  async findChatMessagesByType(
+    orderId: string,
+    type: MessageType,
+    limit: number,
+    cursor?: string,
+  ): RepositoryResponse<ChatMessageWithSender[]> {
+    try {
+      const result = await this.prisma.chatMessage.findMany({
+        where: { orderId, type },
+        orderBy: { createdAt: 'desc' },
+        take: limit + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        include: {
+          sender: { select: USER_SELECT_MINIMAL },
+          replyTo: { select: REPLY_TO_SELECT },
+        },
+      });
+      return right(result as ChatMessageWithSender[]);
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens'));
+    }
+  }
+
+  async findReplyToSummary(id: string): RepositoryResponse<ReplyToSummary | null> {
+    try {
+      const directMsg = await this.prisma.directMessage.findUnique({
+        where: { id },
+        select: { ...REPLY_TO_SELECT, conversationId: true },
+      });
+      if (directMsg) return right(directMsg as ReplyToSummary);
+
+      const chatMsg = await this.prisma.chatMessage.findUnique({
+        where: { id },
+        select: { ...REPLY_TO_SELECT, orderId: true },
+      });
+      if (chatMsg) return right({ ...chatMsg, conversationId: chatMsg.orderId } as ReplyToSummary);
+
+      return right(null);
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar mensagem referenciada'));
+    }
   }
 }

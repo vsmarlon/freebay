@@ -15,6 +15,8 @@ async function bootstrap() {
       origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
       credentials: true,
     },
+    // Stripe signature verification needs the exact raw payload, not the JSON-parsed body
+    rawBody: true,
   });
 
   app.use(helmet());
@@ -26,6 +28,8 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useGlobalInterceptors(new TransformInterceptor());
   app.useGlobalInterceptors(new EitherInterceptor());
+
+  app.enableShutdownHooks();
 
   setupSwagger(app);
 

@@ -18,7 +18,11 @@ export class LoggingInterceptor implements NestInterceptor {
     'refreshToken',
     'authorization',
     'code',
+    'clientSecret',
+    'paymentIntentClientSecret',
   ]);
+
+  private readonly isDebug = process.env.NODE_ENV !== 'production' && process.env.LOG_DEBUG === 'true';
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<JsonValue | void> {
     const request = context.switchToHttp().getRequest();
@@ -26,11 +30,13 @@ export class LoggingInterceptor implements NestInterceptor {
     const now = Date.now();
 
     this.logger.log(`[REQUEST] ${method} ${url}`);
-    if (headers?.authorization) {
-      this.logger.debug('[AUTH_HEADER] [REDACTED]');
-    }
-    if (body && Object.keys(body).length > 0) {
-      this.logger.debug(`[BODY] ${JSON.stringify(this.redact(body))}`);
+    if (this.isDebug) {
+      if (headers?.authorization) {
+        this.logger.debug('[AUTH_HEADER] [REDACTED]');
+      }
+      if (body && Object.keys(body).length > 0) {
+        this.logger.debug(`[BODY] ${JSON.stringify(this.redact(body))}`);
+      }
     }
 
     return next.handle().pipe(
@@ -38,7 +44,7 @@ export class LoggingInterceptor implements NestInterceptor {
         next: (data) => {
           const responseTime = Date.now() - now;
           this.logger.log(`[RESPONSE] ${method} ${url} - ${responseTime}ms`);
-          if (data && typeof data === 'object' && 'data' in data) {
+          if (this.isDebug && data && typeof data === 'object' && 'data' in data) {
             const responseData = (data as { data: JsonValue }).data;
             if (responseData !== undefined && responseData !== null) {
               const dataStr = JSON.stringify(this.redact(responseData));
@@ -58,19 +64,28 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 
-  private redact(value: JsonValue): JsonValue {
+  private redact(value: JsonValue, depth = 0): JsonValue {
+    if (depth > 5) return '[NESTED]';
     if (Array.isArray(value)) {
-      return value.map((item) => this.redact(item));
+      if (value.length > 20) {
+        return `[Array(${value.length})]`;
+      }
+      return value.map((item) => this.redact(item, depth + 1));
     }
 
     if (!value || typeof value !== 'object') {
+      if (typeof value === 'string' && value.startsWith('data:image/')) {
+        return '[IMAGE_DATA_URI]';
+      }
       return value;
     }
 
     return Object.fromEntries(
       Object.entries(value).map(([key, nestedValue]) => [
         key,
-        this.sensitiveKeys.has(key) ? '[REDACTED]' : this.redact(nestedValue as JsonValue),
+        this.sensitiveKeys.has(key) || key.toLowerCase().includes('secret')
+          ? '[REDACTED]'
+          : this.redact(nestedValue as JsonValue, depth + 1),
       ]),
     );
   }

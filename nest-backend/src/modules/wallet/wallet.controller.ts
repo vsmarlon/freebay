@@ -8,8 +8,7 @@ import { WalletRepository } from './domain/repositories/wallet.repository';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { left, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { isLeft } from '@/shared/core/either';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
 @ApiTags('Wallet')
@@ -52,10 +51,7 @@ export class WalletController {
   async withdraw(@CurrentUser() user: AuthUser, @Body() body: WithdrawDTO) {
     const userId = user.userId;
     const result = await this.withdrawUseCase.execute({ userId, ...body });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) return result;
     return result.value;
   }
 
@@ -72,10 +68,7 @@ export class WalletController {
   async registerBankAccount(@CurrentUser() user: AuthUser, @Body() body: BankAccountDTO) {
     const userId = user.userId;
     const result = await this.registerBankAccountUseCase.execute({ userId, ...body });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) return result;
     return result.value;
   }
 
@@ -89,9 +82,7 @@ export class WalletController {
   async getTransactions(@CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const result = await this.walletRepository.getTransactions(userId);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) return result;
     return { transactions: result.value };
   }
 
@@ -105,17 +96,13 @@ export class WalletController {
   async getWithdrawals(@CurrentUser() user: AuthUser) {
     const userId = user.userId;
     const walletResult = await this.walletRepository.findByUserId(userId);
-    if (walletResult.isLeft()) {
-      return left(new AppError(walletResult.value.code, walletResult.value.message));
-    }
+    if (isLeft(walletResult)) return walletResult;
     if (!walletResult.value) {
       return { withdrawals: [] };
     }
 
     const withdrawalsResult = await this.walletRepository.getWithdrawals(walletResult.value.id);
-    if (withdrawalsResult.isLeft()) {
-      return left(new AppError(withdrawalsResult.value.code, withdrawalsResult.value.message));
-    }
+    if (isLeft(withdrawalsResult)) return withdrawalsResult;
     return { withdrawals: withdrawalsResult.value };
   }
 }

@@ -1,33 +1,6 @@
 import { Prisma, ReviewType } from '@prisma/client';
 import { RepositoryResponse } from '@/shared/core/either';
-
-const reviewWithReviewer = Prisma.validator<Prisma.ReviewDefaultArgs>()({
-  include: {
-    reviewer: {
-      select: { id: true, displayName: true, avatarUrl: true, isVerified: true },
-    },
-    images: { orderBy: { order: 'asc' as const } },
-  },
-});
-
-export type ReviewWithReviewer = Prisma.ReviewGetPayload<typeof reviewWithReviewer>;
-
-const reviewWithDetails = Prisma.validator<Prisma.ReviewDefaultArgs>()({
-  include: {
-    reviewer: {
-      select: { id: true, displayName: true, avatarUrl: true, isVerified: true },
-    },
-    reviewed: {
-      select: { id: true, displayName: true, avatarUrl: true, isVerified: true },
-    },
-    images: { orderBy: { order: 'asc' as const } },
-  },
-});
-
-export type ReviewWithDetails = Prisma.ReviewGetPayload<typeof reviewWithDetails>;
-
-export const REVIEW_INCLUDE = reviewWithReviewer.include;
-export const REVIEW_DETAILED_INCLUDE = reviewWithDetails.include;
+import { ReviewWithReviewer, ReviewWithDetails } from '../../types/review.types';
 
 export abstract class ReviewRepository {
   abstract findById(id: string): RepositoryResponse<ReviewWithDetails | null>;

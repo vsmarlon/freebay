@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from '@/shared/core/types';
+import { AuthUser, JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 
 @Injectable()
@@ -12,11 +12,11 @@ export class JwtTokenValidatorService {
     private readonly redisService: RedisService,
   ) {}
 
-  async verifyAndValidate(
+  async verifyAndValidate<T extends object = AuthUser>(
     token: string,
-    allowedTypes: Array<'access' | 'refresh'> = ['access'],
-  ): Promise<JwtPayload> {
-    const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+    allowedTypes: Array<JwtTokenType> = [JwtTokenType.ACCESS],
+  ): Promise<T> {
+    const payload = await this.jwtService.verifyAsync<T & JwtPayload>(token, {
       secret: this.config.getOrThrow('JWT_SECRET'),
     });
 

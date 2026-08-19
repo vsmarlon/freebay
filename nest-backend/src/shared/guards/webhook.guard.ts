@@ -4,43 +4,34 @@ import {
   ExecutionContext,
   UnauthorizedException,
   Logger,
+  RawBodyRequest,
 } from '@nestjs/common';
+import Stripe from 'stripe';
+import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 import { Request } from 'express';
-import { RedisService } from '@/shared/infra/redis/redis.service';
-import { AbacatePayProvider } from '@/modules/payments/providers/abacatepay.provider';
+
+type WebhookRequest = RawBodyRequest<Request> & {
+  stripeEvent?: Stripe.Event;
+};
 
 @Injectable()
 export class WebhookGuard implements CanActivate {
   private readonly logger = new Logger(WebhookGuard.name);
 
-  constructor(
-    private readonly redis: RedisService,
-    private readonly abacatePay: AbacatePayProvider,
-  ) {}
+  constructor(private readonly stripeProvider: StripeProvider) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
-    const signature = request.headers['x-webhook-signature'] as string;
-    const webhookId = request.headers['x-webhook-id'] as string;
+    const request = context.switchToHttp().getRequest<WebhookRequest>();
+    const signature = request.headers['stripe-signature'] as string;
+    const rawBody = request.rawBody?.toString() ?? '';
 
-    // Replay protection
-    if (webhookId) {
-      const key = `webhook:${webhookId}`;
-      if (await this.redis.exists(key)) {
-        throw new UnauthorizedException('Webhook already processed');
-      }
-    }
-
-    // Signature verification
-    if (!this.abacatePay.verifyWebhook(signature, request.body)) {
-      this.logger.warn('Invalid webhook signature');
+    const event = this.stripeProvider.constructWebhookEvent(rawBody, signature);
+    if (!event) {
+      this.logger.warn('Invalid Stripe webhook signature');
       throw new UnauthorizedException('Invalid signature');
     }
 
-    // Mark as processed
-    if (webhookId) {
-      await this.redis.add(`webhook:${webhookId}`, '1', 86400);
-    }
+    request.stripeEvent = event;
 
     return true;
   }

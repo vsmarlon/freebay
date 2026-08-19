@@ -4,6 +4,7 @@ export type DirectConversationWithDetails = DirectConversation & {
   user1: Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
   user2: Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
   messages: Pick<DirectMessage, 'id' | 'content' | 'senderId' | 'createdAt' | 'readAt'>[];
+  _count?: { messages: number };
 };
 
 export type OrderWithChat = {
@@ -55,6 +56,10 @@ export type ReplyToSummary = {
   type: string;
   attachmentUrl: string | null;
   deletedAt: Date | null;
+  conversationId: string;
+  createdAt: Date;
+  viewOnce: boolean;
+  readAt: Date | null;
 };
 
 export type DirectMessageWithSender = DirectMessage & {
@@ -75,9 +80,11 @@ export class ConversationMapper {
   ): UnifiedConversationResponse {
     const otherUser = conv.user1Id === userId ? conv.user2 : conv.user1;
     const lastMsg = conv.messages?.[0] ?? null;
-    const unreadCount = (conv.messages ?? []).filter(m =>
-      m.senderId !== userId && !m.readAt
-    ).length;
+    const unreadCount =
+      conv._count?.messages ??
+      (conv.messages ?? []).filter(
+        (m) => m.senderId !== userId && !m.readAt,
+      ).length;
 
     return {
       id: conv.id,
@@ -152,12 +159,15 @@ export class ConversationMapper {
     readAt: string | null;
     deliveredAt: string | null;
     createdAt: string;
+    viewOnce: boolean;
   } {
+    const isViewOnceHidden = msg.viewOnce && 'readAt' in msg && msg.readAt !== null;
+
     return {
       id: msg.id,
       conversationId,
       senderId: msg.senderId,
-      content: 'content' in msg ? (msg.content ?? null) : null,
+      content: isViewOnceHidden ? null : ('content' in msg ? (msg.content ?? null) : null),
       sender: {
         id: msg.sender.id,
         displayName: msg.sender.displayName,
@@ -166,6 +176,7 @@ export class ConversationMapper {
       readAt: 'readAt' in msg && msg.readAt ? msg.readAt.toISOString() : null,
       deliveredAt: 'deliveredAt' in msg && msg.deliveredAt ? msg.deliveredAt.toISOString() : null,
       createdAt: msg.createdAt.toISOString(),
+      viewOnce: msg.viewOnce,
     };
   }
 }

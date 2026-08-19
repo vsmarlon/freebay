@@ -1,15 +1,6 @@
 import { RepositoryResponse } from '@/shared/core/either';
 import { Wallet, Withdrawal, Prisma } from '@prisma/client';
-
-export type TransactionEntry = {
-  id: string;
-  orderId: string;
-  amount: number;
-  status: string;
-  createdAt: Date;
-  type: 'PURCHASE' | 'SALE';
-  productTitle: string | null;
-};
+import { TransactionEntry } from '../../types/wallet.types';
 
 export abstract class WalletRepository {
   abstract findByUserId(userId: string): RepositoryResponse<Wallet | null>;

@@ -21,12 +21,14 @@ import { ApiErrorResponse } from './api-response.class';
 export interface ApiParamOptions {
   name: string;
   description?: string;
+  type?: string | Type<unknown>;
 }
 
 export interface ApiQueryOptions {
   name: string;
   description?: string;
   required?: boolean;
+  type?: string | Type<unknown>;
 }
 
 export interface ApiErrorOption {
@@ -65,8 +67,8 @@ export function ApiDoc(options: ApiDocOptions): MethodDecorator {
   }
 
   if (options.auth) {
-    decorators.push(ApiBearerAuth());
-    decorators.push(ApiUnauthorizedResponse({ description: 'Unauthorized', type: ApiErrorResponse }));
+    decorators.push(ApiBearerAuth('bearer'));
+    decorators.push(ApiUnauthorizedResponse({ description: 'Sessão inválida ou expirada', type: ApiErrorResponse }));
   }
 
   if (options.params) {
@@ -81,30 +83,29 @@ export function ApiDoc(options: ApiDocOptions): MethodDecorator {
     }
   }
 
-  decorators.push(ApiBadRequestResponse({ description: 'Validation error', type: ApiErrorResponse }));
-
   if (options.errors) {
     for (const err of options.errors) {
       switch (err.status) {
-        case 401:
+        case 400:
+          decorators.push(ApiBadRequestResponse({ description: err.description ?? 'Requisição inválida', type: ApiErrorResponse }));
           break;
         case 403:
-          decorators.push(ApiForbiddenResponse({ description: err.description ?? 'Forbidden', type: ApiErrorResponse }));
+          decorators.push(ApiForbiddenResponse({ description: err.description ?? 'Acesso proibido', type: ApiErrorResponse }));
           break;
         case 404:
-          decorators.push(ApiNotFoundResponse({ description: err.description ?? 'Not found', type: ApiErrorResponse }));
+          decorators.push(ApiNotFoundResponse({ description: err.description ?? 'Recurso não encontrado', type: ApiErrorResponse }));
           break;
         case 409:
-          decorators.push(ApiConflictResponse({ description: err.description ?? 'Conflict', type: ApiErrorResponse }));
+          decorators.push(ApiConflictResponse({ description: err.description ?? 'Conflito de estado', type: ApiErrorResponse }));
           break;
         case 410:
-          decorators.push(ApiGoneResponse({ description: err.description ?? 'Gone', type: ApiErrorResponse }));
+          decorators.push(ApiGoneResponse({ description: err.description ?? 'Recurso expirado', type: ApiErrorResponse }));
           break;
         case 422:
-          decorators.push(ApiUnprocessableEntityResponse({ description: err.description ?? 'Unprocessable entity', type: ApiErrorResponse }));
+          decorators.push(ApiUnprocessableEntityResponse({ description: err.description ?? 'Erro de validação de negócio', type: ApiErrorResponse }));
           break;
         case 429:
-          decorators.push(ApiTooManyRequestsResponse({ description: err.description ?? 'Too many requests', type: ApiErrorResponse }));
+          decorators.push(ApiTooManyRequestsResponse({ description: err.description ?? 'Muitas requisições', type: ApiErrorResponse }));
           break;
       }
     }

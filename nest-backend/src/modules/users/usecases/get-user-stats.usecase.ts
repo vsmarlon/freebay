@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
+import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { UserStatsResponse } from '../mappers/user.mapper';
 import { GetUserStatsInput } from '../dtos/user.dto';

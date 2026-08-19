@@ -9,6 +9,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 
 @WebSocketGateway({
@@ -35,7 +36,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         return;
       }
 
-      const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
+      const payload = await this.tokenValidator.verifyAndValidate(token, [JwtTokenType.ACCESS]);
       const userId = payload.userId;
 
       if (!this.userSockets.has(userId)) {

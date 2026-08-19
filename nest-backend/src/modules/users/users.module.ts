@@ -19,7 +19,7 @@ import { FollowRepository } from './domain/repositories/follow.repository';
 import { PrismaFollowRepository } from './data/repositories/follow-database.repository';
 import { BlockRepository } from './domain/repositories/block.repository';
 import { PrismaBlockRepository } from './data/repositories/block-database.repository';
-import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
+import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { PhoneVerificationRepository } from './domain/repositories/phone-verification.repository';
 import { PhoneVerificationDatabaseRepository } from './data/repositories/phone-verification-database.repository';
 import { SmsService } from './services/sms.service';

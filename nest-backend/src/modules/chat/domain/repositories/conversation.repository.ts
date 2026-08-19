@@ -1,5 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { DirectConversation, User, Prisma, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction } from '@prisma/client';
+import { DirectConversation, User, Prisma, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType } from '@prisma/client';
 import {
   DirectConversationWithDetails,
   OrderWithChat,
@@ -31,4 +31,19 @@ export abstract class ConversationRepository {
   abstract upsertReaction(data: { userId: string; messageId: string; emoji: string; model: ChatThreadType }): RepositoryResponse<void>;
   abstract deleteReaction(reactionId: string): RepositoryResponse<void>;
   abstract getReactionsForMessage(messageId: string, model: ChatThreadType): RepositoryResponse<{ emoji: string; userId: string }[]>;
+  abstract findReplyToSummary(id: string): RepositoryResponse<import('../../mappers/conversation.mapper').ReplyToSummary | null>;
+
+  abstract findDirectMessagesByType(
+    conversationId: string,
+    type: MessageType,
+    limit: number,
+    cursor?: string,
+  ): RepositoryResponse<DirectMessageWithSender[]>;
+
+  abstract findChatMessagesByType(
+    orderId: string,
+    type: MessageType,
+    limit: number,
+    cursor?: string,
+  ): RepositoryResponse<ChatMessageWithSender[]>;
 }

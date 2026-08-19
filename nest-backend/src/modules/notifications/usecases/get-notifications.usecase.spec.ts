@@ -1,14 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetNotificationsUseCase } from './get-notifications.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-
-jest.mock('@/shared/infra/prisma/prisma.service');
-
-const mockPrisma = {
-  notification: {
-    findMany: jest.fn(),
-  },
-};
+import { NotificationRepository } from '../domain/repositories/notification.repository';
+import { right } from '@/shared/core/either';
 
 const mockNotifications = [
   {
@@ -31,12 +24,15 @@ const mockNotifications = [
 
 describe('GetNotificationsUseCase', () => {
   let sut: GetNotificationsUseCase;
+  let mockNotificationRepository: { findByUserId: jest.Mock };
 
   beforeEach(async () => {
+    mockNotificationRepository = { findByUserId: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetNotificationsUseCase,
-        { provide: PrismaService, useValue: mockPrisma },
+        { provide: NotificationRepository, useValue: mockNotificationRepository },
       ],
     }).compile();
 
@@ -45,7 +41,7 @@ describe('GetNotificationsUseCase', () => {
   });
 
   it('should return notifications for user', async () => {
-    mockPrisma.notification.findMany.mockResolvedValue(mockNotifications);
+    mockNotificationRepository.findByUserId.mockResolvedValue(right(mockNotifications));
 
     const result = await sut.execute('user-123');
 
@@ -56,13 +52,11 @@ describe('GetNotificationsUseCase', () => {
   });
 
   it('should respect limit parameter', async () => {
-    mockPrisma.notification.findMany.mockResolvedValue([mockNotifications[0]]);
+    mockNotificationRepository.findByUserId.mockResolvedValue(right([mockNotifications[0]]));
 
     const result = await sut.execute('user-123', 1);
 
     expect(result.isRight()).toBe(true);
-    expect(mockPrisma.notification.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 1 }),
-    );
+    expect(mockNotificationRepository.findByUserId).toHaveBeenCalledWith('user-123', 1);
   });
 });

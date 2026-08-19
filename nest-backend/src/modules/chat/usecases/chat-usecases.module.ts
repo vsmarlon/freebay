@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
@@ -21,10 +19,10 @@ import { SetConversationBackgroundUseCase } from './set-conversation-background.
 import { OgScraperService } from '../services/og-scraper.service';
 import { DeleteMessageUseCase } from './delete-message.usecase';
 import { ToggleReactionUseCase } from './toggle-reaction.usecase';
+import { GetConversationMediaUseCase } from './get-conversation-media.usecase';
 
 @Module({
   providers: [
-    { provide: PrismaClient, useExisting: PrismaService },
     { provide: ConversationRepository, useClass: ConversationDatabaseRepository },
     PrismaConversationPreferenceRepository,
     { provide: ConversationPreferenceRepository, useExisting: PrismaConversationPreferenceRepository },
@@ -44,6 +42,7 @@ import { ToggleReactionUseCase } from './toggle-reaction.usecase';
     OgScraperService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
+    GetConversationMediaUseCase,
   ],
   exports: [
     ConversationRepository,
@@ -62,6 +61,7 @@ import { ToggleReactionUseCase } from './toggle-reaction.usecase';
     OgScraperService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
+    GetConversationMediaUseCase,
   ],
 })
 export class ChatUseCasesModule {}

@@ -13,22 +13,21 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { toDataUri } from '@/shared/utils/file.utils';
 import { StoriesService } from './stories.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
+import { isLeft, left } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
 
 @ApiTags('Stories')
 @Controller('stories')
 export class StoriesController {
-  constructor(
-    private readonly storiesService: StoriesService,
-  ) {}
+  constructor(private readonly storiesService: StoriesService) {}
 
   @Get()
   @ApiDoc({
@@ -37,9 +36,7 @@ export class StoriesController {
   })
   async getStories(@CurrentUser() user: AuthUser) {
     const result = await this.storiesService.getStories(user?.userId);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) throw result.value;
     return { stories: result.value.stories, userHasStory: result.value.userHasStory };
   }
 
@@ -50,9 +47,7 @@ export class StoriesController {
   })
   async getUserStories(@Param('userId') userId: string) {
     const result = await this.storiesService.getUserStories(userId);
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
+    if (isLeft(result)) throw result.value;
     return { stories: result.value };
   }
 
@@ -76,25 +71,14 @@ export class StoriesController {
     @CurrentUser() user: AuthUser,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (!file) {
-      return left(new AppError('BAD_REQUEST', 'Imagem é obrigatória'));
-    }
-
+    if (!file) return left(new AppError('BAD_REQUEST', 'Imagem é obrigatória'));
     const mimeError = validateImageFile(file);
-    if (mimeError) {
-      return left(new AppError('BAD_REQUEST', mimeError));
-    }
+    if (mimeError) return left(new AppError('BAD_REQUEST', mimeError));
 
-    const userId = user.userId;
-    const result = await this.storiesService.createStory({
-      userId,
-      imageBase64: this.storiesService.toDataUri(file),
+    return this.storiesService.createStory({
+      userId: user.userId,
+      imageBase64: toDataUri(file),
     });
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
   }
 
   @Delete(':id')
@@ -106,11 +90,7 @@ export class StoriesController {
     params: [{ name: 'id', description: 'Story UUID' }],
   })
   async deleteStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.storiesService.deleteStory({ storyId: id, userId: user.userId });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.storiesService.deleteStory({ storyId: id, userId: user.userId });
   }
 
   @Post(':id/view')
@@ -122,10 +102,6 @@ export class StoriesController {
     params: [{ name: 'id', description: 'Story UUID' }],
   })
   async viewStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.storiesService.viewStory({ storyId: id, viewerId: user?.userId || '' });
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message));
-    }
-    return result.value;
+    return this.storiesService.viewStory({ storyId: id, viewerId: user?.userId || '' });
   }
 }

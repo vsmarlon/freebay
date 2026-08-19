@@ -3,12 +3,11 @@ import { GetProfileUseCase, GetUserStatsUseCase, UpdateProfileUseCase, FollowUse
 import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { BlockRepository } from '../domain/repositories/block.repository';
-import { PrismaOrderRepository } from '@/modules/orders/repositories/order.repository';
+import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { right, left } from '@/shared/core/either';
-jest.mock('@/modules/orders/repositories/order.repository');
 jest.mock('@/shared/infra/prisma/prisma.service');
 
 const mockUserRepository = {

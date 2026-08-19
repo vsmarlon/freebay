@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { WalletController } from './wallet.controller';
 import { GetWalletUseCase } from './usecases/get-wallet.usecase';
 import { WithdrawUseCase } from './usecases/withdraw.usecase';
@@ -16,7 +15,6 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
     RegisterBankAccountUseCase,
     WalletDatabaseRepository,
     { provide: WalletRepository, useExisting: WalletDatabaseRepository },
-    { provide: PrismaClient, useExisting: PrismaService },
     PrismaService,
   ],
 })

@@ -25,12 +25,16 @@ import { StoriesModule } from './modules/stories/stories.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { BugReportModule } from './modules/bug-reports/bug-report.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'development'}`,
+        '.env',
+      ],
     }),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
@@ -80,6 +84,7 @@ import { UploadModule } from './modules/upload/upload.module';
     TasksModule,
     BugReportModule,
     UploadModule,
+    HealthModule,
   ],
   providers: [
     {

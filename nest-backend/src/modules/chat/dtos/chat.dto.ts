@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsOptional } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { ChatThreadType } from '@prisma/client';
@@ -16,10 +16,10 @@ export class SendMessageDTO {
   @SanitizeText()
   readonly content?: string;
 
-  @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
+  @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'AUDIO', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
   @IsString()
   @IsOptional()
-  readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD';
+  readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'LOCATION' | 'PRODUCT_CARD';
 
   @ApiProperty({ example: '/uploads/chat/abc.jpg', required: false })
   @IsString()
@@ -33,6 +33,11 @@ export class SendMessageDTO {
   @ApiProperty({ required: false })
   @IsOptional()
   readonly metadata?: Record<string, unknown>;
+
+  @ApiProperty({ required: false, description: 'Message self-destructs after being seen' })
+  @IsBoolean()
+  @IsOptional()
+  readonly viewOnce?: boolean;
 }
 
 export class ConversationResponse {
@@ -105,10 +110,11 @@ export interface SendMessageInput {
   senderId: string;
   conversationId: string;
   content?: string;
-  type?: 'TEXT' | 'IMAGE' | 'GIF' | 'LOCATION' | 'PRODUCT_CARD';
+  type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'LOCATION' | 'PRODUCT_CARD';
   attachmentUrl?: string;
   replyToId?: string;
   metadata?: Record<string, unknown>;
+  viewOnce?: boolean;
 }
 
 export interface SendMessageOutput {
@@ -120,6 +126,7 @@ export interface SendMessageOutput {
   attachmentUrl: string | null;
   metadata: Record<string, unknown> | null;
   replyToId: string | null;
+  viewOnce: boolean;
   createdAt: Date;
 }
 
@@ -156,6 +163,10 @@ export interface ReplyToOutput {
   type: string;
   attachmentUrl: string | null;
   deletedAt: Date | null;
+  conversationId: string;
+  createdAt: Date;
+  viewOnce: boolean;
+  readAt: Date | null;
 }
 
 export interface GetMessagesOutput {
@@ -172,6 +183,20 @@ export interface GetMessagesOutput {
   readAt: Date | null;
   deliveredAt: Date | null;
   createdAt: Date;
+  viewOnce: boolean;
+}
+
+export interface GetFilteredMessagesInput {
+  conversationId: string;
+  userId: string;
+  type?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface GetFilteredMessagesResult {
+  messages: GetMessagesOutput[];
+  nextCursor: string | null;
 }
 
 export interface StartConversationInput {

@@ -55,8 +55,7 @@ enum PaymentMethod {
 }
 
 enum PaymentProvider {
-  PAGARME
-  WOOVI
+  STRIPE
 }
 
 enum TransactionStatus {
@@ -123,10 +122,11 @@ enum ReportTargetType {
 model User {
   id              String    @id @default(uuid())
   displayName     String
-  username        String    @unique
+  username        String?   @unique
   email           String    @unique
   emailVerified   Boolean   @default(false)
-  passwordHash    String
+  passwordHash    String?
+  googleId        String?   @unique
   cpfHash         String?   @unique
   cpf             String?
   phone           String?
@@ -270,6 +270,8 @@ model Product {
   @@index([sellerId, createdAt])
   @@index([status])
   @@index([categoryId])
+  @@index([status, createdAt])
+  @@index([categoryId, status])
 }
 
 model ProductImage {
@@ -305,6 +307,8 @@ model Post {
   reportedPostReports Report[]      @relation("ReportedPostReports")
 
   @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([type, createdAt])
 }
 
 model PostMention {
@@ -408,6 +412,7 @@ model Follow {
   following User @relation("Following", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
+  @@index([followingId])
 }
 
 model Order {
@@ -437,6 +442,8 @@ model Order {
 
   @@index([buyerId])
   @@index([sellerId])
+  @@index([buyerId, createdAt])
+  @@index([sellerId, createdAt])
   @@index([status])
   @@index([productId, status])
 }
@@ -451,9 +458,9 @@ model Transaction {
   paymentMethod  PaymentMethod
   provider       PaymentProvider
   status         TransactionStatus @default(PENDING)
-  idempotencyKey String            @unique
-  pixQrCode      String?
-  pixExpiresAt   DateTime?
+   idempotencyKey String            @unique
+   checkoutUrl    String?
+   checkoutExpiresAt DateTime?
   paidAt         DateTime?
   releasedAt     DateTime?
   createdAt      DateTime          @default(now())
@@ -524,6 +531,7 @@ model Review {
 
   @@unique([reviewerId, orderId, type])
   @@index([reviewedId])
+  @@index([reviewedId, createdAt])
 }
 
 model ReviewImage {
@@ -548,6 +556,7 @@ model ChatMessage {
   deliveredAt   DateTime?
   readAt        DateTime?
   replyToId     String?
+  viewOnce      Boolean     @default(false)
   deletedAt     DateTime?
   createdAt     DateTime    @default(now())
 
@@ -602,6 +611,7 @@ model Story {
   views StoryView[]
 
   @@index([userId, expiresAt])
+  @@index([expiresAt])
 }
 
 model StoryView {
@@ -634,6 +644,7 @@ enum MessageType {
   IMAGE
   VIDEO
   GIF
+  AUDIO
   PRODUCT_CARD
   LOCATION
 }
@@ -671,6 +682,9 @@ model DirectConversation {
   reportedDirectConvReports Report[]                 @relation("ReportedDirectConvReports")
 
   @@unique([user1Id, user2Id])
+  @@index([user2Id])
+  @@index([user1Id, lastMessageAt])
+  @@index([user2Id, lastMessageAt])
 }
 
 model DirectMessage {
@@ -684,6 +698,7 @@ model DirectMessage {
   deliveredAt    DateTime?
   readAt         DateTime?
   replyToId      String?
+  viewOnce       Boolean     @default(false)
   deletedAt      DateTime?
   createdAt      DateTime    @default(now())
 

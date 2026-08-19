@@ -10,8 +10,8 @@ export class UserResponse {
   @ApiProperty({ example: 'John Doe' })
   displayName: string;
 
-  @ApiProperty({ example: 'john_doe' })
-  username: string;
+  @ApiPropertyOptional({ example: 'john_doe', nullable: true })
+  username: string | null;
 
   @ApiPropertyOptional({ example: null, nullable: true })
   avatarUrl: string | null;
@@ -96,8 +96,8 @@ export class SearchUserResponse {
   @ApiProperty({ example: 'John Doe' })
   displayName: string;
 
-  @ApiProperty({ example: 'john_doe' })
-  username: string;
+  @ApiPropertyOptional({ example: 'john_doe', nullable: true })
+  username: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   avatarUrl: string | null;
@@ -128,8 +128,8 @@ export class SuggestionResponse {
   @ApiProperty({ example: 'Jane Doe' })
   displayName: string;
 
-  @ApiProperty({ example: 'jane_doe' })
-  username: string;
+  @ApiPropertyOptional({ example: 'jane_doe', nullable: true })
+  username: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   avatarUrl: string | null;

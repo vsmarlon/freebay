@@ -1,15 +1,6 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { ChatTheme, ChatThreadType, ConversationPreference } from '@prisma/client';
-
-export interface UpsertPreferenceInput {
-  userId: string;
-  orderId?: string;
-  directConversationId?: string;
-  isArchived?: boolean;
-  isDeleted?: boolean;
-  theme?: ChatTheme;
-  backgroundUrl?: string | null;
-}
+import { ChatThreadType, ConversationPreference } from '@prisma/client';
+import { UpsertPreferenceInput } from '../../types/chat.types';
 
 export abstract class ConversationPreferenceRepository {
   abstract findByAnyId(userId: string, threadId: string): RepositoryResponse<ConversationPreference | null>;

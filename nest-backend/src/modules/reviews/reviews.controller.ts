@@ -2,29 +2,23 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Body,
   Param,
-  Query,
-  UseGuards,
-  HttpCode,
+  UseInterceptors,
+  UploadedFile,
   HttpStatus,
   ParseUUIDPipe,
-  UploadedFile,
-  UseInterceptors,
-  Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewInput } from './dtos/create-review.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
+import { Authenticated } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
 import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
 import { IsOptional, IsInt, Min, Max, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -55,64 +49,45 @@ class GetUserReviewsQueryDTO {
 @ApiTags('Reviews')
 @Controller('reviews')
 export class ReviewsController {
-  private readonly logger = new Logger(ReviewsController.name);
-
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post('orders/:orderId')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Create review for an order',
     bodyType: CreateReviewInput,
     responseStatus: 201,
-    auth: true,
     params: [{ name: 'orderId', description: 'Order UUID' }],
     errors: [{ status: 400, description: 'Invalid input' }],
+    httpCode: HttpStatus.CREATED,
   })
   async create(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @CurrentUser() user: AuthUser,
     @Body() body: CreateReviewInput,
   ) {
-    const result = await this.reviewsService.createReview(user, orderId, body);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
-    }
-
-    return result.value;
+    return this.reviewsService.createReview(user, orderId, body);
   }
 
   @Post('orders/:orderId/images')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Upload review image',
-    auth: true,
     params: [{ name: 'orderId', description: 'Order UUID' }],
     responseStatus: 201,
+    errors: [{ status: 404, description: 'Image not found' }],
+    httpCode: HttpStatus.CREATED,
   })
   async uploadImage(
     @Param('orderId', ParseUUIDPipe) orderId: string,
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() _user: AuthUser,
     @UploadedFile() file: Express.Multer.File | undefined,
   ) {
-    const result = await this.reviewsService.uploadImage(orderId, file);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
-    }
-
-    return result.value;
+    return this.reviewsService.uploadImage(orderId, file);
   }
 
   @Get('users/:userId')
@@ -129,33 +104,18 @@ export class ReviewsController {
     @Param('userId', ParseUUIDPipe) userId: string,
     @Query() query: GetUserReviewsQueryDTO,
   ) {
-    const result = await this.reviewsService.getUserReviews(userId, query);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
-    }
-
-    return result.value;
+    return this.reviewsService.getUserReviews(userId, query);
   }
 
   @Get('orders/:orderId/can-review')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Authenticated({
     summary: 'Check if user can review an order',
-    auth: true,
     params: [{ name: 'orderId', description: 'Order UUID' }],
   })
   async canReviewOrder(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @CurrentUser() user: AuthUser,
   ) {
-    const result = await this.reviewsService.canReviewOrder(user.userId, orderId);
-
-    if (result.isLeft()) {
-      return left(new AppError(result.value.code, result.value.message, result.value.statusCode));
-    }
-
-    return result.value;
+    return this.reviewsService.canReviewOrder(user.userId, orderId);
   }
 }

@@ -44,6 +44,10 @@ export class SendMessageUseCase {
     if (blockCheck) return left(blockCheck);
 
     const messageType = (input.type ?? 'TEXT') as MessageType;
+
+    const productCardError = this.assertProductCardMetadata(messageType, input);
+    if (productCardError) return left(productCardError);
+
     const metadata = await this.buildMetadata(messageType, input);
 
     const messageResult = await this.conversationRepository.createDirectMessage({
@@ -54,6 +58,7 @@ export class SendMessageUseCase {
       attachmentUrl: input.attachmentUrl ?? null,
       metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
       replyTo: input.replyToId ? { connect: { id: input.replyToId } } : undefined,
+      viewOnce: input.viewOnce ?? false,
     }, true);
     if (isLeft(messageResult)) return left(messageResult.value);
 
@@ -72,6 +77,7 @@ export class SendMessageUseCase {
       attachmentUrl: msg.attachmentUrl ?? null,
       metadata: (msg.metadata as Record<string, unknown>) ?? null,
       replyToId: msg.replyToId ?? null,
+      viewOnce: msg.viewOnce,
       createdAt: msg.createdAt,
     });
   }
@@ -85,6 +91,10 @@ export class SendMessageUseCase {
     if (blockCheck) return left(blockCheck);
 
     const messageType = (input.type ?? 'TEXT') as MessageType;
+
+    const productCardError = this.assertProductCardMetadata(messageType, input);
+    if (productCardError) return left(productCardError);
+
     const metadata = await this.buildMetadata(messageType, input);
 
     const messageResult = await this.conversationRepository.createChatMessage({
@@ -95,6 +105,7 @@ export class SendMessageUseCase {
       attachmentUrl: input.attachmentUrl ?? null,
       metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
       replyTo: input.replyToId ? { connect: { id: input.replyToId } } : undefined,
+      viewOnce: input.viewOnce ?? false,
     }, true);
     if (isLeft(messageResult)) return left(messageResult.value);
 
@@ -108,6 +119,7 @@ export class SendMessageUseCase {
       attachmentUrl: msg.attachmentUrl ?? null,
       metadata: (msg.metadata as Record<string, unknown>) ?? null,
       replyToId: msg.replyToId ?? null,
+      viewOnce: msg.viewOnce,
       createdAt: msg.createdAt,
     });
   }
@@ -121,6 +133,15 @@ export class SendMessageUseCase {
     if (isBlockedByOtherResult.isLeft()) return isBlockedByOtherResult.value;
     if (isBlockedResult.value) return new ForbiddenError('Você bloqueou este usuário');
     if (isBlockedByOtherResult.value) return new ForbiddenError('Você foi bloqueado por este usuário');
+    return null;
+  }
+
+  private assertProductCardMetadata(messageType: MessageType, input: SendMessageInput): AppError | null {
+    if (messageType !== 'PRODUCT_CARD') return null;
+    const productId = input.metadata?.productId;
+    if (!productId || typeof productId !== 'string' || productId.trim().length === 0) {
+      return new BadRequestError('Product ID is required for product cards');
+    }
     return null;
   }
 

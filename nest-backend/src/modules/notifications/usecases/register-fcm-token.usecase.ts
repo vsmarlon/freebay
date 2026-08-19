@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { Either, right } from '@/shared/core/either';
+import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationRepository } from '../domain/repositories/notification.repository';
 
 @Injectable()
 export class RegisterFcmTokenUseCase {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly notificationRepository: NotificationRepository) {}
 
   async execute(userId: string, fcmToken: string): Promise<Either<AppError, void>> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { fcmToken },
-    });
-
+    const result = await this.notificationRepository.updateUserFcmToken(userId, fcmToken);
+    if (isLeft(result)) return left(result.value);
     return right(undefined);
   }
 }

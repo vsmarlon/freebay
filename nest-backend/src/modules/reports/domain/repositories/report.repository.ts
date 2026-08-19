@@ -1,20 +1,6 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { Report, Prisma, User, Post, DirectConversation, Order, ReportTargetType, ReportReason } from '@prisma/client';
-import { DirectMessageWithConversation, ChatMessageWithOrder } from '../../types/report.types';
-
-export interface CreateReportData {
-  reporterId: string;
-  reportedUserId?: string;
-  reportedPostId?: string;
-  targetType: ReportTargetType;
-  reportedDirectConversationId?: string;
-  reportedOrderChatId?: string;
-  reportedDirectMessageId?: string;
-  reportedChatMessageId?: string;
-  reason: ReportReason;
-  description?: string | null;
-  hideFromUser?: boolean;
-}
+import { Report, Prisma, User, Post, DirectConversation, Order } from '@prisma/client';
+import { DirectMessageWithConversation, ChatMessageWithOrder, CreateReportData } from '../../types/report.types';
 
 export abstract class ReportRepository {
   abstract findUserById(id: string): RepositoryResponse<User | null>;

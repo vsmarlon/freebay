@@ -9,6 +9,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 import { ConversationRepository } from './domain/repositories/conversation.repository';
 import { SendMessageUseCase } from './usecases/send-message.usecase';
@@ -55,7 +56,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const payload = await this.tokenValidator.verifyAndValidate(token, ['access']);
+      const payload = await this.tokenValidator.verifyAndValidate(token, [JwtTokenType.ACCESS]);
       this.connectedUsers.set(client.id, { userId: payload.userId, email: payload.email });
       this.userSockets.set(payload.userId, client.id);
       this.logger.log(`Client connected: ${client.id}, userId: ${payload.userId}`);
@@ -233,10 +234,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const otherUserId = conversation.user1Id === userId ? conversation.user2Id : conversation.user1Id;
     const resultValue = result.value;
 
+    let replyTo = null;
+    if (resultValue.replyToId) {
+      const replyResult = await this.conversationRepository.findReplyToSummary(resultValue.replyToId);
+      if (!replyResult.isLeft()) {
+        replyTo = replyResult.value;
+      }
+    }
+
     const senderName = await this.getSenderName(userId);
     await this.notificationService.notifyNewMessage(otherUserId, senderName, conversationId);
 
-    return resultValue;
+    return { ...resultValue, replyTo };
   }
 
   private async getSenderName(userId: string): Promise<string> {

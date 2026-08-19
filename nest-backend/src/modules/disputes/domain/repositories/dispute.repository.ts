@@ -1,15 +1,7 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { Dispute, Order, Prisma } from '@prisma/client';
+import { Dispute, Prisma } from '@prisma/client';
 import { GetDisputeOutput, GetUserDisputesOutput } from '../../dtos/dispute.dto';
-
-export type DisputeWithOrder = Dispute & { order: Order };
-
-export interface CreateDisputeInput {
-  orderId: string;
-  openedById: string;
-  reason: string;
-  expiresAt: Date;
-}
+import { DisputeWithOrder, CreateDisputeInput } from '../../types/dispute.types';
 
 export abstract class DisputeRepository {
   abstract create(data: CreateDisputeInput): RepositoryResponse<Dispute>;

@@ -1,5 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
-import { UserBrief } from './follow.repository';
+import { UserBrief } from '../../types/user.types';
 
 export abstract class BlockRepository {
   abstract block(blockerId: string, blockedId: string): RepositoryResponse<void>;

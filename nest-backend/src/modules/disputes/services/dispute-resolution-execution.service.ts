@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { DisputeWithOrder } from '../domain/repositories/dispute.repository';
+import { DisputeWithOrder } from '../types/dispute.types';
 
 @Injectable()
 export class DisputeResolutionExecutionService {

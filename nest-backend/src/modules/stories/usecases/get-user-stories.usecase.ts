@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { StoryRepository, StoryBrief } from '../domain/repositories/story.repository';
+import { StoryRepository } from '../domain/repositories/story.repository';
+import { StoryBrief } from '../types/story.types';
 
 @Injectable()
 export class GetUserStoriesUseCase {

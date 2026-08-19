@@ -1,12 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
-
-export type UserBrief = {
-  id: string;
-  displayName: string;
-  avatarUrl: string | null;
-  isVerified: boolean;
-  reputationScore: number;
-};
+import { UserBrief } from '../../types/user.types';
 
 export abstract class FollowRepository {
   abstract follow(followerId: string, followingId: string): RepositoryResponse<void>;
