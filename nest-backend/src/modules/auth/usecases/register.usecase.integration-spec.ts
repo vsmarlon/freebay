@@ -5,13 +5,15 @@ import { UserFactory } from '../../../../test/factories';
 import { isLeft, isRight } from '@/shared/core/either';
 import { RegisterDTO } from '../dtos/auth.dto';
 
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+
 describe('RegisterUseCase Integration', () => {
   let sut: RegisterUseCase;
   let userRepository: UserDatabaseRepository;
   let userFactory: UserFactory;
 
   beforeEach(() => {
-    userRepository = new UserDatabaseRepository(prisma);
+    userRepository = new UserDatabaseRepository(prisma as unknown as PrismaService);
     userFactory = new UserFactory(prisma);
     sut = new RegisterUseCase(userRepository);
   });
@@ -59,7 +61,7 @@ describe('RegisterUseCase Integration', () => {
         });
 
         expect(dbUser?.passwordHash).not.toBe(input.password);
-        expect(dbUser?.passwordHash.length).toBeGreaterThan(20);
+        expect(dbUser?.passwordHash?.length).toBeGreaterThan(20);
       }
     });
 
@@ -93,7 +95,7 @@ describe('RegisterUseCase Integration', () => {
         email: 'brandnew@example.com',
         password: 'password123',
         displayName: 'Yet Another User',
-        username: existingUser.username,
+        username: existingUser.username!,
       };
 
       const result = await sut.execute(input);

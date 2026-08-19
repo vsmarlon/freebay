@@ -1,10 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/components/brutalist_background.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -13,357 +13,214 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _anim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..forward();
 
-  Timer? _animationTimer;
+  late final Animation<double> _logoOpacity = Tween<double>(begin: 0, end: 1)
+      .animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.0, 0.25, curve: Curves.easeOut),
+        ),
+      );
+  late final Animation<double> _logoScale = Tween<double>(begin: 0.9, end: 1.0)
+      .animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.0, 0.25, curve: Curves.easeOutBack),
+        ),
+      );
 
-  @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.linear,
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.linear));
-    _startAnimations();
-  }
+  late final Animation<double> _taglineOpacity = Tween<double>(begin: 0, end: 1)
+      .animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.166, 0.375, curve: Curves.easeOut),
+        ),
+      );
+  late final Animation<Offset> _taglineSlide =
+      Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.166, 0.375, curve: Curves.easeOut),
+        ),
+      );
 
-  Future<void> _startAnimations() async {
-    _animationTimer = Timer(const Duration(milliseconds: 50), () {
-      _fadeController.forward();
-      _slideController.forward();
-    });
-  }
+  late final Animation<double> _statsOpacity = Tween<double>(begin: 0, end: 1)
+      .animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.416, 0.625, curve: Curves.easeOut),
+        ),
+      );
+  late final Animation<Offset> _statsSlide =
+      Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.416, 0.625, curve: Curves.easeOut),
+        ),
+      );
+
+  late final Animation<double> _btnOpacity = Tween<double>(begin: 0, end: 1)
+      .animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.666, 0.916, curve: Curves.easeOut),
+        ),
+      );
+  late final Animation<Offset> _btnSlide =
+      Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _anim,
+          curve: const Interval(0.666, 0.916, curve: Curves.easeOut),
+        ),
+      );
 
   @override
   void dispose() {
-    _animationTimer?.cancel();
-    _fadeController.dispose();
-    _slideController.dispose();
+    _anim.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.brutalistGradient),
-        child: Stack(
-          children: [
-            _BrutalistGrid(),
-            _GridLines(),
-            SafeArea(
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(child: _buildMainContent()),
-                  _buildFooter(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: const SizedBox(width: 80),
-          ),
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: Text(
-              'SYSTEM STATUS: ACTIVE',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.15,
-                color: AppColors.onPrimary.withAlpha(102),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMainContent() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SlideTransition(
-            position: _slideAnimation,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'THE MARKETPLACE REBUILT',
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                      color: AppColors.onPrimary.withAlpha(179),
-                    ),
-                  ),
-                  Spacing.vMd,
-                  ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: [
-                        AppColors.onPrimary,
-                        AppColors.onPrimary.withAlpha(230),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ).createShader(bounds),
-                    child: Text(
-                      'freebay',
-                      style: TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 72,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -2,
-                        height: 0.9,
-                        foreground: Paint()
-                          ..style = PaintingStyle.stroke
-                          ..strokeWidth = 2
-                          ..color = AppColors.onPrimary.withAlpha(204),
+      backgroundColor: const Color(0xFF07000C),
+      body: BrutalistBackground(
+        forceDark: true,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FadeTransition(
+                        opacity: _logoOpacity,
+                        child: Text(
+                          'THE MARKETPLACE REBUILT',
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 2.0,
+                            color: const Color(0xFFB0B0B0),
+                          ),
+                        ),
                       ),
-                    ),
+                      Spacing.vMd,
+                      FadeTransition(
+                        opacity: _logoOpacity,
+                        child: ScaleTransition(
+                          scale: _logoScale,
+                          child: Text(
+                            'freebay',
+                            style: TextStyle(
+                              fontFamily: AppTypography.headlineFontFamily,
+                              fontSize: 80,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -3,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: AppColors.primary.withAlpha(160),
+                                  offset: const Offset(0, 4),
+                                  blurRadius: 24,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Spacing.vSm,
+                      SlideTransition(
+                        position: _taglineSlide,
+                        child: FadeTransition(
+                          opacity: _taglineOpacity,
+                          child: Text(
+                            'TRADE YOUR WORLD',
+                            style: TextStyle(
+                              fontFamily: AppTypography.fontFamily,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 2.5,
+                              color: AppColors.accentAmber,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Spacing.vXxl,
+                      SlideTransition(
+                        position: _btnSlide,
+                        child: FadeTransition(
+                          opacity: _btnOpacity,
+                          child: _GetStartedButton(
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              context.go('/onboarding');
+                            },
+                          ),
+                        ),
+                      ),
+                      Spacing.vXxl,
+                      SlideTransition(
+                        position: _statsSlide,
+                        child: FadeTransition(
+                          opacity: _statsOpacity,
+                          child: const Row(
+                            children: [
+                              Expanded(
+                                child: _StatBlock(
+                                  value: '0%',
+                                  label: 'Trading Fees',
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: _StatBlock(
+                                  value: 'Instant',
+                                  label: 'Verification',
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: _StatBlock(
+                                  value: 'Global',
+                                  label: 'Reach Access',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Spacing.vSm,
-                  Text(
-                    'TRADE YOUR WORLD',
-                    style: TextStyle(
-                      fontFamily: AppTypography.headlineFontFamily,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
-                      color: AppColors.onPrimary.withAlpha(179),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Spacing.vXxl,
-          SlideTransition(
-            position: _slideAnimation,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: _BrutalistButton(
-                label: 'GET STARTED',
-                icon: Icons.arrow_forward,
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  context.go('/login');
-                },
-              ),
-            ),
-          ),
-          Spacing.vXxl,
-          SlideTransition(
-            position: _slideAnimation,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: _buildStats(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStats() {
-    return Row(
-      children: [
-        const Expanded(
-          child: _StatBlock(value: '0%', label: 'Trading Fees'),
-        ),
-        Container(
-          width: 1,
-          height: 40,
-          color: AppColors.onPrimary.withAlpha(26),
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-        const Expanded(
-          child: _StatBlock(value: 'Instant', label: 'Verification'),
-        ),
-        Container(
-          width: 1,
-          height: 40,
-          color: AppColors.onPrimary.withAlpha(26),
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-        const Expanded(
-          child: _StatBlock(value: 'Global', label: 'Reach Access'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer.withAlpha(51),
-                border: Border.all(
-                  color: AppColors.onPrimary.withAlpha(51),
-                  width: 1,
                 ),
               ),
-              child: const Icon(
-                Icons.token,
-                size: 14,
-                color: AppColors.onPrimary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'v1.0.0',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.1,
-                color: AppColors.onPrimary.withAlpha(77),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _BrutalistGrid extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Opacity(
-        opacity: 0.03,
-        child: CustomPaint(painter: _GridPainter()),
-      ),
-    );
-  }
-}
-
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.onPrimary
-      ..strokeWidth = 1;
-
-    const gridSize = 40.0;
-
-    for (double x = 0; x < size.width; x += gridSize) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    for (double y = 0; y < size.height; y += gridSize) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _GridLines extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          left: MediaQuery.of(context).size.width * 0.25,
-          top: 0,
-          bottom: 0,
-          child: Container(width: 1, color: AppColors.onPrimary.withAlpha(13)),
-        ),
-        Positioned(
-          left: MediaQuery.of(context).size.width * 0.5,
-          top: 0,
-          bottom: 0,
-          child: Container(width: 1, color: AppColors.onPrimary.withAlpha(13)),
-        ),
-        Positioned(
-          left: MediaQuery.of(context).size.width * 0.75,
-          top: 0,
-          bottom: 0,
-          child: Container(width: 1, color: AppColors.onPrimary.withAlpha(13)),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).size.height * 0.33,
-          left: 0,
-          right: 0,
-          child: Container(height: 1, color: AppColors.onPrimary.withAlpha(13)),
-        ),
-        Positioned(
-          top: MediaQuery.of(context).size.height * 0.66,
-          left: 0,
-          right: 0,
-          child: Container(height: 1, color: AppColors.onPrimary.withAlpha(13)),
-        ),
-      ],
-    );
-  }
-}
-
-class _BrutalistButton extends StatefulWidget {
-  final String label;
-  final IconData icon;
+class _GetStartedButton extends StatefulWidget {
   final VoidCallback onTap;
-
-  const _BrutalistButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
+  const _GetStartedButton({required this.onTap});
 
   @override
-  State<_BrutalistButton> createState() => _BrutalistButtonState();
+  State<_GetStartedButton> createState() => _GetStartedButtonState();
 }
 
-class _BrutalistButtonState extends State<_BrutalistButton> {
+class _GetStartedButtonState extends State<_GetStartedButton> {
   bool _isPressed = false;
 
   @override
@@ -376,43 +233,42 @@ class _BrutalistButtonState extends State<_BrutalistButton> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.linear,
+        duration: const Duration(milliseconds: 100),
         transform: Matrix4.translationValues(
-          _isPressed ? 2 : 0,
-          _isPressed ? 2 : 0,
+          _isPressed ? 3 : 0,
+          _isPressed ? 3 : 0,
           0,
         ),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-          decoration: BoxDecoration(
-            color: _isPressed ? AppColors.onSurface : AppColors.onPrimary,
-            border: Border.all(
-              color: _isPressed ? AppColors.onPrimary : AppColors.onSurface,
-              width: 2,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.zero,
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: _isPressed
+              ? []
+              : const [
+                  BoxShadow(
+                    color: Color(0xFF8A1083),
+                    offset: Offset(4, 4),
+                    blurRadius: 0,
+                  ),
+                ],
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'GET STARTED',
+              style: TextStyle(
+                fontFamily: AppTypography.headlineFontFamily,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+                color: Colors.black,
+              ),
             ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontFamily: AppTypography.headlineFontFamily,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.1,
-                  color: _isPressed ? AppColors.onPrimary : AppColors.onSurface,
-                ),
-              ),
-              Icon(
-                widget.icon,
-                size: 20,
-                color: _isPressed ? AppColors.onPrimary : AppColors.onSurface,
-              ),
-            ],
-          ),
+            Icon(Icons.arrow_forward, size: 22, color: Colors.black),
+          ],
         ),
       ),
     );
@@ -434,9 +290,9 @@ class _StatBlock extends StatelessWidget {
           value,
           style: const TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: AppColors.onPrimary,
+            color: Colors.white,
             height: 1,
           ),
         ),
@@ -446,9 +302,9 @@ class _StatBlock extends StatelessWidget {
           style: TextStyle(
             fontFamily: AppTypography.fontFamily,
             fontSize: 10,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.1,
-            color: AppColors.onPrimary.withAlpha(128),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+            color: const Color(0xFFA0A0A0),
           ),
         ),
       ],

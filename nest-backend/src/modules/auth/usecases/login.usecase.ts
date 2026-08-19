@@ -19,6 +19,10 @@ export class LoginUseCase {
       return left(new InvalidCredentialsError());
     }
 
+    if (!user.passwordHash) {
+      return left(new InvalidCredentialsError());
+    }
+
     const passwordMatch = await bcrypt.compare(input.password, user.passwordHash);
     if (!passwordMatch) {
       return left(new InvalidCredentialsError());

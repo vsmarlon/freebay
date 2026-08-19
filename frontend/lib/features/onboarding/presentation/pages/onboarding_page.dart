@@ -1,42 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/brutalist_background.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
 class _OnboardingSlide {
   final IconData icon;
+  final String stepTag;
   final String title;
+  final String subtitle;
   final String body;
+  final List<String> highlights;
 
   const _OnboardingSlide({
     required this.icon,
+    required this.stepTag,
     required this.title,
+    required this.subtitle,
     required this.body,
+    required this.highlights,
   });
 }
 
 const _slides = [
   _OnboardingSlide(
     icon: Icons.storefront_outlined,
+    stepTag: 'FASE 01 // SOCIAL COMMERCE',
     title: 'COMPRE E VENDA',
-    body: 'Publique anúncios e encontre produtos perto de você em segundos.',
-  ),
-  _OnboardingSlide(
-    icon: Icons.forum_outlined,
-    title: 'CONVERSE DIRETO',
-    body: 'Negocie com compradores e vendedores pelo chat integrado.',
-  ),
-  _OnboardingSlide(
-    icon: Icons.shield_outlined,
-    title: 'PAGAMENTO PROTEGIDO',
+    subtitle: 'FEED HÍBRIDO & ANÚNCIOS',
     body:
-        'O valor fica retido até a entrega ser confirmada. Sem dor de cabeça.',
+        'Descubra produtos incríveis direto do feed social, acompanhe seus criadores favoritos e anuncie em segundos.',
+    highlights: [
+      '0% TAXA DE ANÚNCIO',
+      'FEED PERSONALIZADO',
+      'ALCANCE LOCAL & GLOBAL',
+    ],
+  ),
+  _OnboardingSlide(
+    icon: Icons.chat_bubble_outline_rounded,
+    stepTag: 'FASE 02 // NEGOCIAÇÃO DIRETA',
+    title: 'CONVERSA & ESCROW',
+    subtitle: '100% DE PROTEÇÃO',
+    body:
+        'Negocie propostas em tempo real via chat direto com envio de fotos e segurança integral garantida por custódia.',
+    highlights: [
+      'CHAT CRIPTOGRAFADO',
+      'PAGAMENTO RETIDO',
+      'MEDIAÇÃO DE CONFLITOS',
+    ],
+  ),
+  _OnboardingSlide(
+    icon: Icons.account_balance_wallet_outlined,
+    stepTag: 'FASE 03 // CARTEIRA & REPUTAÇÃO',
+    title: 'SAQUES INSTANTÂNEOS',
+    subtitle: 'SEU DINHEIRO EM CONTROLE',
+    body:
+        'Receba pelas suas vendas com total transparência, saque quando quiser e construa sua reputação com reviews verificadas.',
+    highlights: [
+      'SAQUE VIA PIX / STRIPE',
+      'AVALIAÇÕES REAIS',
+      'EXTRATO EM TEMPO REAL',
+    ],
   ),
 ];
 
@@ -50,6 +82,15 @@ class OnboardingPage extends ConsumerStatefulWidget {
 class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pageController = PageController();
   int _index = 0;
+  double _currentPage = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      setState(() => _currentPage = _pageController.page ?? 0);
+    });
+  }
 
   @override
   void dispose() {
@@ -58,10 +99,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Future<void> _finish() async {
+    HapticFeedback.mediumImpact();
     await StorageService.setHasSeenOnboarding();
     ref.read(hasSeenOnboardingProvider.notifier).state = true;
+    routerRefreshNotifier.value++;
     if (!mounted) return;
-    context.go('/feed');
+    final user = ref.read(authControllerProvider).value;
+    if (context.mounted) context.go(user != null ? '/feed' : '/login');
   }
 
   @override
@@ -69,69 +113,93 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final isLast = _index == _slides.length - 1;
 
     return Scaffold(
-      backgroundColor: context.surfaceMidColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextButton(
-                  onPressed: _finish,
-                  child: Text(
-                    'PULAR',
-                    style: AppTypography.labelLarge.copyWith(
-                      color: context.textPrimary,
+      body: BrutalistBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Image.asset(
+                      'assets/freebay-textonly.png',
+                      height: 28,
+                      fit: BoxFit.contain,
+                      color: context.isDark
+                          ? AppColors.white
+                          : AppColors.primaryContainer,
+                    ),
+                    GestureDetector(
+                      onTap: _finish,
+                      child: Text(
+                        'PULAR',
+                        style: TextStyle(
+                          fontFamily: AppTypography.fontFamily,
+                          color: AppColors.accentAmber,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _slides.length,
+                  onPageChanged: (i) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _index = i);
+                  },
+                  itemBuilder: (context, i) => _SlideView(
+                    slide: _slides[i],
+                    pageOffset: i - _currentPage,
+                  ),
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                height: 3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.zero,
+                  child: LinearProgressIndicator(
+                    value: (_index + 1) / _slides.length,
+                    backgroundColor: Colors.white.withAlpha(30),
+                    valueColor: const AlwaysStoppedAnimation(
+                      AppColors.accentAmber,
                     ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: _slides.length,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (context, i) => _SlideView(slide: _slides[i]),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _slides.length,
-                (i) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: 24,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: i == _index
-                        ? AppColors.primaryContainer
-                        : AppColors.outlineVariant,
-                    border: Border.all(color: context.borderColor, width: 2),
-                  ),
+              Spacing.vSm,
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                child: AppButton(
+                  label: isLast ? 'COMEÇAR AGORA' : 'PRÓXIMO',
+                  icon: isLast
+                      ? Icons.rocket_launch_outlined
+                      : Icons.arrow_forward,
+                  size: AppButtonSize.large,
+                  onPressed: () {
+                    if (isLast) {
+                      _finish();
+                    } else {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.linear,
+                      );
+                    }
+                  },
                 ),
               ),
-            ),
-            Spacing.vMd,
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: AppButton(
-                label: isLast ? 'COMEÇAR' : 'PRÓXIMO',
-                onPressed: () {
-                  if (isLast) {
-                    _finish();
-                  } else {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 150),
-                      curve: Curves.linear,
-                    );
-                  }
-                },
-              ),
-            ),
-            Spacing.vLg,
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -140,41 +208,113 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
 class _SlideView extends StatelessWidget {
   final _OnboardingSlide slide;
+  final double pageOffset;
 
-  const _SlideView({required this.slide});
+  const _SlideView({required this.slide, required this.pageOffset});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 160,
-            height: 160,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHighest,
-              border: Border.all(color: context.borderColor, width: 3),
-            ),
-            child: Icon(
-              slide.icon,
-              size: 72,
-              color: AppColors.primaryContainer,
+          Transform.translate(
+            offset: Offset(pageOffset * -60, 0),
+            child: Center(
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  gradient: AppColors.brutalistGradient,
+                  borderRadius: BorderRadius.zero,
+                  border: Border.all(
+                    color: Colors.white.withAlpha(40),
+                    width: 2,
+                  ),
+                ),
+                child: Icon(slide.icon, size: 56, color: AppColors.white),
+              ),
             ),
           ),
           Spacing.vXl,
-          Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: AppTypography.h2.copyWith(color: context.textPrimary),
+          Transform.translate(
+            offset: Offset(pageOffset * -40, 0),
+            child: Column(
+              children: [
+                Text(
+                  slide.stepTag,
+                  style: AppTypography.brutalistTag.copyWith(
+                    color: AppColors.primaryContainer,
+                    fontSize: 11,
+                    letterSpacing: 1.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Spacing.vXs,
+                Text(
+                  slide.title,
+                  style: AppTypography.h1.copyWith(
+                    color: context.textPrimary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  slide.subtitle,
+                  style: TextStyle(
+                    fontFamily: AppTypography.headlineFontFamily,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: context.textSecondary,
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-          Spacing.vSm,
-          Text(
-            slide.body,
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyLarge.copyWith(
-              color: context.textSecondary,
+          Spacing.vMd,
+          Transform.translate(
+            offset: Offset(pageOffset * -20, 0),
+            child: Text(
+              slide.body,
+              style: AppTypography.bodyMedium.copyWith(
+                color: context.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          Spacing.vLg,
+          Transform.translate(
+            offset: Offset(pageOffset * -10, 0),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: slide.highlights.map((tag) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.surfaceColor,
+                    borderRadius: BorderRadius.zero,
+                    border: Border.all(color: context.borderColor, width: 1.0),
+                  ),
+                  child: Text(
+                    tag,
+                    style: AppTypography.brutalistTag.copyWith(
+                      color: context.textPrimary,
+                      fontSize: 10,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],

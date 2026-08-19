@@ -2,17 +2,16 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Query,
-  HttpCode,
   HttpStatus,
-  UseGuards,
+  Request,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { RegisterDTO, LoginDTO, LogoutDTO, UsernameAvailabilityQueryDTO } from './dtos/auth.dto';
+import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, GoogleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -23,14 +22,14 @@ import {
   GuestSessionResponse,
   TokenRefreshResponse,
   MessageResponse,
+  BiometricSessionResponse,
 } from './dtos/auth-response.class';
-import { Public } from '@/shared/decorators/public.decorator';
+import { PublicEndpoint, Authenticated } from '@/shared/decorators/endpoints.decorator';
 import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { AuthUser } from '@/shared/core/types';
+import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
 import { AllowTokenTypes } from './guards/token-types.decorator';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -42,133 +41,171 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  @Throttle({ short: { limit: 5, ttl: 60000 }, medium: { limit: 20, ttl: 60000 } })
-  @ApiDoc({
+  @PublicEndpoint({
     summary: 'Register new user',
     description: 'Creates account and returns JWT access + refresh tokens',
     bodyType: RegisterDTO,
     responseType: AuthSessionResponse,
     responseStatus: 201,
     errors: [{ status: 409, description: 'Email already exists' }],
+    throttle: { short: { limit: 5, ttl: 60000 }, medium: { limit: 20, ttl: 60000 } },
+    httpCode: HttpStatus.CREATED,
   })
-  @Public()
   async register(@Body() body: RegisterDTO) {
     return this.authService.register(body);
   }
 
   @Get('username-available')
-  @Throttle({ short: { limit: 10, ttl: 10000 }, medium: { limit: 60, ttl: 60000 } })
-  @ApiDoc({
+  @PublicEndpoint({
     summary: 'Check username availability',
     description: 'Returns whether a username is valid and not already taken',
+    throttle: { short: { limit: 10, ttl: 10000 }, medium: { limit: 60, ttl: 60000 } },
   })
-  @Public()
   async usernameAvailable(@Query() query: UsernameAvailabilityQueryDTO) {
     return this.authService.checkUsernameAvailability(query);
   }
 
   @Post('login')
-  @HttpCode(HttpStatus.OK)
-  @Throttle({ short: { limit: 10, ttl: 60000 }, medium: { limit: 30, ttl: 60000 } })
-  @ApiDoc({
+  @PublicEndpoint({
     summary: 'Login',
     description: 'Authenticate with email and password',
     bodyType: LoginDTO,
     responseType: AuthSessionResponse,
     errors: [{ status: 401, description: 'Invalid credentials' }],
+    throttle: { short: { limit: 10, ttl: 60000 }, medium: { limit: 30, ttl: 60000 } },
+    httpCode: HttpStatus.OK,
   })
-  @Public()
   async login(@Body() body: LoginDTO) {
     return this.authService.login(body);
   }
 
+  @Post('google')
+  @PublicEndpoint({
+    summary: 'Google OAuth login',
+    description: 'Authenticate with a Google ID token. Links to existing account if email matches, or creates a new account.',
+    bodyType: GoogleAuthDTO,
+    responseType: AuthSessionResponse,
+    errors: [{ status: 401, description: 'Invalid Google token' }],
+    throttle: { short: { limit: 10, ttl: 60000 }, medium: { limit: 30, ttl: 60000 } },
+    httpCode: HttpStatus.OK,
+  })
+  async googleAuth(@Body() body: GoogleAuthDTO) {
+    return this.authService.googleAuth(body.idToken);
+  }
+
+  @Post('complete-profile')
+  @Authenticated({
+    summary: 'Complete user profile',
+    description: 'Sets username, display name and other details after Google OAuth registration',
+    bodyType: CompleteProfileDTO,
+    responseType: AuthSessionResponse,
+    guards: [JwtAuthGuard],
+  })
+  async completeProfile(@CurrentUser() user: AuthUser, @Body() body: CompleteProfileDTO) {
+    return this.authService.completeProfile(user.userId, body);
+  }
+
   @Post('guest')
-  @HttpCode(HttpStatus.OK)
-  @Throttle({ short: { limit: 5, ttl: 60000 }, medium: { limit: 20, ttl: 60000 } })
-  @ApiDoc({
+  @PublicEndpoint({
     summary: 'Create guest session',
     description: 'Creates temporary guest user and returns JWT token',
     responseType: GuestSessionResponse,
+    throttle: { short: { limit: 5, ttl: 60000 }, medium: { limit: 20, ttl: 60000 } },
+    httpCode: HttpStatus.OK,
   })
-  @Public()
   async guest() {
     return this.authService.guest();
   }
 
   @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @AllowTokenTypes(JwtTokenType.REFRESH)
+  @Authenticated({
     summary: 'Refresh token',
     description: 'Exchanges a valid refresh token for a new access + refresh token pair',
-    auth: true,
     responseType: TokenRefreshResponse,
+    guards: [JwtAuthGuard],
   })
-  @AllowTokenTypes('refresh')
   async refresh(@CurrentUser() user: AuthUser) {
     return this.authService.refresh(user);
   }
 
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @Delete('logout')
+  @AllowTokenTypes(JwtTokenType.REFRESH)
+  @Authenticated({
     summary: 'Logout',
     description: 'Blacklists current JWT tokens',
-    auth: true,
     responseType: MessageResponse,
+    guards: [JwtAuthGuard],
   })
-  async logout(@CurrentUser() user: AuthUser, @Body() body?: LogoutDTO) {
-    let refreshPayload: { jti: string; exp: number } | undefined;
-    if (body?.refreshToken) {
+  async logout(@Request() req: any, @Body('refreshToken') refreshToken?: string) {
+    let refreshTokenPayload: any = undefined;
+    if (refreshToken) {
       try {
-        const payload = await this.jwtService.verifyAsync<AuthUser>(body.refreshToken, {
-          secret: this.configService.getOrThrow<string>('JWT_SECRET'),
-        });
-        if (payload.type === 'refresh' && payload.userId === user.userId) {
-          refreshPayload = { jti: payload.jti!, exp: payload.exp! };
+        const payload = this.jwtService.decode(refreshToken) as any;
+        if (payload.type === JwtTokenType.REFRESH && payload.userId === req.user.userId) {
+          refreshTokenPayload = payload;
         }
       } catch { void 0; }
     }
-    return this.authService.logout({ jti: user.jti, exp: user.exp }, refreshPayload);
+    return this.authService.logout({ jti: req.user.jti, exp: req.user.exp }, refreshTokenPayload);
   }
 
   @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiDoc({
+  @PublicEndpoint({
     summary: 'Request password recovery',
     description: 'Sends password recovery code to the given email',
     bodyType: RequestPasswordRecoveryDTO,
+    httpCode: HttpStatus.OK,
   })
-  @Public()
   async forgotPassword(@Body() body: RequestPasswordRecoveryDTO) {
     return this.authService.forgotPassword(body);
   }
 
   @Post('verify-reset-code')
-  @HttpCode(HttpStatus.OK)
-  @ApiDoc({
+  @PublicEndpoint({
     summary: 'Verify password recovery code',
     description: 'Checks if the 6-digit recovery code is valid',
     bodyType: VerifyPasswordRecoveryCodeDTO,
+    httpCode: HttpStatus.OK,
   })
-  @Public()
   async verifyResetCode(@Body() body: VerifyPasswordRecoveryCodeDTO) {
     return this.authService.verifyResetCode(body);
   }
 
   @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  @ApiDoc({
+  @PublicEndpoint({
     summary: 'Reset password',
     description: 'Resets password using verified recovery code',
     bodyType: ResetPasswordDTO,
+    httpCode: HttpStatus.OK,
   })
-  @Public()
   async resetPassword(@Body() body: ResetPasswordDTO) {
     return this.authService.resetPassword(body);
+  }
+
+  @Post('biometric-login')
+  @PublicEndpoint({
+    summary: 'Biometric login',
+    description: 'Authenticate using a backend-issued biometric token. Returns a fresh token set including a rotated biometric token — store the new biometricToken in the device keychain.',
+    bodyType: BiometricLoginDTO,
+    responseType: BiometricSessionResponse,
+    errors: [{ status: 401, description: 'Invalid or revoked biometric token' }],
+    throttle: { short: { limit: 5, ttl: 60000 }, medium: { limit: 15, ttl: 60000 } },
+    httpCode: HttpStatus.OK,
+  })
+  async biometricLogin(@Body() body: BiometricLoginDTO) {
+    return this.authService.biometricLogin(body.biometricToken);
+  }
+
+  @Delete('biometric-token')
+  @AllowTokenTypes(JwtTokenType.BIOMETRIC)
+  @Authenticated({
+    summary: 'Revoke biometric token',
+    description: 'Blacklists the current biometric token so it can no longer be used. Call this when the user disables biometric login.',
+    responseType: MessageResponse,
+    guards: [JwtAuthGuard],
+  })
+  async revokeBiometricToken(@CurrentUser() user: AuthUser) {
+    return this.authService.revokeBiometricToken(user.jti, user.exp);
   }
 }

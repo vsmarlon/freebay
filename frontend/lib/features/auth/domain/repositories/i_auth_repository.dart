@@ -15,7 +15,6 @@ abstract class IAuthRepository {
     String username,
   );
   Future<Either<Failure, bool>> checkUsernameAvailable(String username);
-  Future<Either<Failure, UserEntity>> loginAsGuest();
   Future<Either<Failure, void>> logout();
   Future<Either<Failure, bool>> isLoggedIn();
   Future<Either<Failure, UserEntity>> getCurrentUser();
@@ -29,4 +28,13 @@ abstract class IAuthRepository {
     String code,
     String newPassword,
   );
+  Future<Either<Failure, UserEntity>> biometricLogin(String biometricToken);
+  Future<Either<Failure, UserEntity>> googleAuth(String idToken);
+  Future<Either<Failure, UserEntity>> completeProfile({
+    required String username,
+    String? displayName,
+    String? city,
+    String? state,
+  });
+  Future<Either<Failure, void>> revokeBiometricToken();
 }

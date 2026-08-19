@@ -2,6 +2,7 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ALLOWED_TOKEN_TYPES_KEY } from './token-types.decorator';
+import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 
 describe('JwtAuthGuard', () => {
@@ -53,14 +54,14 @@ describe('JwtAuthGuard', () => {
     tokenValidator.verifyAndValidate.mockResolvedValue({
       userId: 'user-1',
       role: 'USER',
-      type: 'access',
+      type: JwtTokenType.ACCESS,
       jti: 'jti-1',
       iat: 200,
       exp: 500,
     });
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.user).toEqual(expect.objectContaining({ userId: 'user-1', type: 'access' }));
+    expect(request.user).toEqual(expect.objectContaining({ userId: 'user-1', type: JwtTokenType.ACCESS }));
   });
 
   it('rejects blacklisted tokens', async () => {
@@ -81,21 +82,21 @@ describe('JwtAuthGuard', () => {
     const { context, request } = createContext('Bearer token');
     reflector.getAllAndOverride.mockImplementation((key: string) => {
       if (key === ALLOWED_TOKEN_TYPES_KEY) {
-        return ['refresh'];
+        return [JwtTokenType.REFRESH];
       }
       return false;
     });
     tokenValidator.verifyAndValidate.mockResolvedValue({
       userId: 'user-1',
       role: 'USER',
-      type: 'refresh',
+      type: JwtTokenType.REFRESH,
       jti: 'jti-1',
       iat: 200,
       exp: 500,
     });
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.user).toEqual(expect.objectContaining({ type: 'refresh' }));
+    expect(request.user).toEqual(expect.objectContaining({ type: JwtTokenType.REFRESH }));
   });
 
   it('rejects tokens issued before user invalidation cutoff', async () => {

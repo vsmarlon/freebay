@@ -3,13 +3,13 @@ import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
-class GuestLoginUsecase implements NoParamsUsecase<UserEntity> {
+class GoogleAuthUsecase implements Usecase<UserEntity, String> {
   final IAuthRepository _repository;
 
-  GuestLoginUsecase(this._repository);
+  GoogleAuthUsecase(this._repository);
 
   @override
-  UsecaseResponse<Failure, UserEntity> call() async {
-    return await _repository.loginAsGuest();
+  UsecaseResponse<Failure, UserEntity> call(String idToken) async {
+    return await _repository.googleAuth(idToken);
   }
 }

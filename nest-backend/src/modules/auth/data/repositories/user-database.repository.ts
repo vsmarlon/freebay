@@ -1,21 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, User, PrismaClient } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UserRepository, UserProfileCounts } from '../../domain/repositories/user.repository';
+import { UserRepository } from '../../domain/repositories/user.repository';
 import {
+  UserProfileCounts,
   UserSearchResult,
   UserSuggestionResult,
   toUserSearchResult,
   toUserSuggestionResult,
-} from '../../types/user-search.types';
+} from '../../types/user.types';
 
 /// Over-fetch mutual-follow candidates so the in-memory ranking has room to sort.
 const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
 
 @Injectable()
 export class UserDatabaseRepository implements UserRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): RepositoryResponse<User | null> {
     try {
@@ -28,6 +30,14 @@ export class UserDatabaseRepository implements UserRepository {
   async findByEmail(email: string): RepositoryResponse<User | null> {
     try {
       return right(await this.prisma.user.findUnique({ where: { email } }));
+    } catch {
+      return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
+    }
+  }
+
+  async findByGoogleId(googleId: string): RepositoryResponse<User | null> {
+    try {
+      return right(await this.prisma.user.findUnique({ where: { googleId } }));
     } catch {
       return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
     }

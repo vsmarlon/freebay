@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/brutalist_background.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -90,87 +91,99 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'RECUPERAR SENHA',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
+      body: BrutalistBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'RECUPERAR SENHA',
+              leading: GestureDetector(
+                onTap: () => context.pop(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.zero,
+                    border: Border.all(color: context.borderColor, width: 1),
+                  ),
+                  child: const Icon(Icons.arrow_back, size: 20),
                 ),
-                child: const Icon(Icons.arrow_back, size: 20),
               ),
             ),
-          ),
-          Expanded(
-            child: CenteredFormWrapper(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppTextField(
-                      controller: _emailController,
-                      label: 'E-mail',
-                      hint: 'seu@email.com',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.email_outlined,
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Informe seu e-mail' : null,
-                    ),
-                    Spacing.vMd,
-                    if (_requested) ...[
+            Expanded(
+              child: CenteredFormWrapper(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                       AppTextField(
-                        controller: _codeController,
-                        label: 'Código',
-                        hint: '123456',
-                        keyboardType: TextInputType.number,
-                        prefixIcon: Icons.verified_outlined,
-                        validator: (v) => v == null || v.length != 6
-                            ? 'Informe o código de 6 dígitos'
+                        controller: _emailController,
+                        label: 'E-mail',
+                        hint: 'seu@email.com',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.email_outlined,
+                        validator: (v) => v == null || v.isEmpty
+                            ? 'Informe seu e-mail'
                             : null,
                       ),
                       Spacing.vMd,
-                      AppTextField(
-                        controller: _passwordController,
-                        label: 'Nova senha',
-                        hint: 'Mínimo 8 caracteres',
-                        obscureText: true,
-                        showPasswordToggle: true,
-                        prefixIcon: Icons.lock_outline,
-                        validator: (v) => v == null || v.length < 8
-                            ? 'Senha muito curta'
-                            : null,
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                        child: _requested
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  AppTextField(
+                                    controller: _codeController,
+                                    label: 'Código',
+                                    hint: '123456',
+                                    keyboardType: TextInputType.number,
+                                    prefixIcon: Icons.verified_outlined,
+                                    validator: (v) => v == null || v.length != 6
+                                        ? 'Informe o código de 6 dígitos'
+                                        : null,
+                                  ),
+                                  Spacing.vMd,
+                                  AppTextField(
+                                    controller: _passwordController,
+                                    label: 'Nova senha',
+                                    hint: 'Mínimo 8 caracteres',
+                                    obscureText: true,
+                                    showPasswordToggle: true,
+                                    prefixIcon: Icons.lock_outline,
+                                    validator: (v) => v == null || v.length < 8
+                                        ? 'Senha muito curta'
+                                        : null,
+                                  ),
+                                  Spacing.vMd,
+                                ],
+                              )
+                            : const SizedBox.shrink(),
                       ),
-                      Spacing.vMd,
-                    ],
-                    if (_message != null) ...[
-                      Text(
-                        _message!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark ? AppColors.white : AppColors.darkGray,
+                      if (_message != null) ...[
+                        Text(
+                          _message!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.darkGray,
+                          ),
                         ),
+                        Spacing.vMd,
+                      ],
+                      AppButton(
+                        label: _requested ? 'Redefinir senha' : 'Enviar código',
+                        onPressed: _requested ? _resetPassword : _requestCode,
                       ),
-                      Spacing.vMd,
                     ],
-                    AppButton(
-                      label: _requested ? 'Redefinir senha' : 'Enviar código',
-                      onPressed: _requested ? _resetPassword : _requestCode,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/centered_form_wrapper.dart';
@@ -59,7 +60,12 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
           setState(() => _errorMessage = failure.message);
         }
       },
-      (_) {
+      (_) async {
+        // Password changed — stored biometric credentials are now stale
+        final biometryService = BiometryService();
+        await biometryService.clearCredentials();
+        await biometryService.setEnabled(false);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Senha redefinida com sucesso!')),

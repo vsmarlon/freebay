@@ -46,7 +46,7 @@ describe('LoginUseCase', () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'user-123',
       email: 'john@example.com',
-      passwordHash: await bcrypt.hash('correctPassword', 12),
+      passwordHash: '$2a$12$somehashedpasswordstring',
     }));
 
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);
@@ -61,12 +61,11 @@ describe('LoginUseCase', () => {
   });
 
   it('should return user data on successful login', async () => {
-    const hashedPassword = await bcrypt.hash('correctPassword', 12);
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'user-123',
       email: 'john@example.com',
       displayName: 'John Doe',
-      passwordHash: hashedPassword,
+      passwordHash: '$2a$12$somehashedpasswordstring',
     }));
 
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);

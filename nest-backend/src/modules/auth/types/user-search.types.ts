@@ -1,7 +1,7 @@
 export type UserSearchResult = {
   id: string;
   displayName: string;
-  username: string;
+  username: string | null;
   avatarUrl: string | null;
   bio: string | null;
   isVerified: boolean;

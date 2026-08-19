@@ -12,6 +12,10 @@ import { RequestPasswordRecoveryUseCase } from './usecases/request-password-reco
 import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
 import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
 import { CheckUsernameAvailabilityUseCase } from './usecases/check-username-availability.usecase';
+import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
+import { GoogleAuthUseCase } from './usecases/google-auth.usecase';
+import { CompleteProfileUseCase } from './usecases/complete-profile.usecase';
+import { CompleteProfileDTO } from './dtos/auth.dto';
 import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
@@ -20,6 +24,7 @@ import {
 } from './dtos/password-recovery.dto';
 import { AppError } from '@/shared/core/errors';
 import { RedisService } from '@/shared/infra/redis/redis.service';
+import { JwtPayload, JwtTokenType } from '@/shared/core/types';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +38,9 @@ export class AuthService {
     private readonly verifyPasswordRecoveryCodeUseCase: VerifyPasswordRecoveryCodeUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly checkUsernameAvailabilityUseCase: CheckUsernameAvailabilityUseCase,
+    private readonly biometricLoginUseCase: BiometricLoginUseCase,
+    private readonly googleAuthUseCase: GoogleAuthUseCase,
+    private readonly completeProfileUseCase: CompleteProfileUseCase,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
@@ -44,17 +52,8 @@ export class AuthService {
       if (result.isLeft()) throw result.value;
 
       const { user } = result.value;
-      const accessJti = randomUUID();
-      const refreshJti = randomUUID();
-      const token = this.jwtService.sign(
-        { userId: user.id, role: user.role, type: 'access', jti: accessJti },
-        { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
-      );
-      const refreshToken = this.jwtService.sign(
-        { userId: user.id, role: user.role, type: 'refresh', jti: refreshJti },
-        { expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') },
-      );
-      return { user, token, refreshToken };
+      const tokens = this._generateSessionTokens(user.id, user.role);
+      return { user, ...tokens };
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
@@ -68,17 +67,8 @@ export class AuthService {
       if (result.isLeft()) throw result.value;
 
       const { user } = result.value;
-      const accessJti = randomUUID();
-      const refreshJti = randomUUID();
-      const token = this.jwtService.sign(
-        { userId: user.id, role: user.role, type: 'access', jti: accessJti },
-        { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
-      );
-      const refreshToken = this.jwtService.sign(
-        { userId: user.id, role: user.role, type: 'refresh', jti: refreshJti },
-        { expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') },
-      );
-      return { user, token, refreshToken };
+      const tokens = this._generateSessionTokens(user.id, user.role);
+      return { user, ...tokens };
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
@@ -92,7 +82,7 @@ export class AuthService {
       if (result.isLeft()) throw result.value;
 
       const token = this.jwtService.sign(
-        { isGuest: true, role: 'GUEST', type: 'access', jti: randomUUID() },
+        { isGuest: true, role: 'GUEST', type: JwtTokenType.ACCESS, jti: randomUUID() } as JwtPayload,
         { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
       );
 
@@ -106,18 +96,18 @@ export class AuthService {
 
   async refresh(user: { userId?: string; jti?: string; exp?: number; role?: string; type?: string }) {
     try {
-      if (user.type !== 'refresh') {
+      if (user.type !== JwtTokenType.REFRESH) {
         throw new AppError('INVALID_TOKEN', 'Token inválido: esperado token de refresh');
       }
 
       await this.blacklistToken(user.jti, user.exp);
 
       const token = this.jwtService.sign(
-        { userId: user.userId, role: user.role, type: 'access', jti: randomUUID() },
+        { userId: user.userId, role: user.role, type: JwtTokenType.ACCESS, jti: randomUUID() } as JwtPayload,
         { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
       );
       const refreshToken = this.jwtService.sign(
-        { userId: user.userId, role: user.role, type: 'refresh', jti: randomUUID() },
+        { userId: user.userId, role: user.role, type: JwtTokenType.REFRESH, jti: randomUUID() } as JwtPayload,
         { expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') },
       );
 
@@ -193,11 +183,100 @@ export class AuthService {
     }
   }
 
+  async biometricLogin(biometricToken: string) {
+    try {
+      // Decode the incoming token to extract JTI for rotation (blacklist old token)
+      let oldJti: string | undefined;
+      let oldExp: number | undefined;
+      try {
+        const decoded = this.jwtService.decode<JwtPayload>(biometricToken);
+        if (decoded?.type === JwtTokenType.BIOMETRIC) {
+          oldJti = decoded.jti;
+          oldExp = decoded.exp;
+        }
+      } catch { void 0; }
+
+      const result = await this.biometricLoginUseCase.execute(biometricToken);
+      if (result.isLeft()) throw result.value;
+
+      const { user } = result.value;
+      const tokens = this._generateSessionTokens(user.id, user.role);
+
+      // Rotate: blacklist the old biometric token now that a new one is issued
+      await this.blacklistToken(oldJti, oldExp);
+
+      return { user, ...tokens };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      this.logger.error(err);
+      throw new AppError('INTERNAL_ERROR', 'Erro interno ao fazer login biométrico');
+    }
+  }
+
+  async revokeBiometricToken(jti?: string, exp?: number) {
+    try {
+      await this.blacklistToken(jti, exp);
+      return { message: 'Token biométrico revogado' };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      this.logger.error(err);
+      throw new AppError('INTERNAL_ERROR', 'Erro interno ao revogar token biométrico');
+    }
+  }
+
+  async googleAuth(idToken: string) {
+    try {
+      const result = await this.googleAuthUseCase.execute(idToken);
+      if (result.isLeft()) throw result.value;
+
+      const { user } = result.value;
+      const tokens = this._generateSessionTokens(user.id, user.role);
+      return { user, ...tokens };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      this.logger.error(err);
+      throw new AppError('INTERNAL_ERROR', 'Erro interno ao autenticar com Google');
+    }
+  }
+
+  async completeProfile(userId: string, input: CompleteProfileDTO) {
+    try {
+      const result = await this.completeProfileUseCase.execute(userId, input);
+      if (result.isLeft()) throw result.value;
+      return result.value;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      this.logger.error(err);
+      throw new AppError('INTERNAL_ERROR', 'Erro interno ao completar perfil');
+    }
+  }
+
   private async blacklistToken(jti?: string, exp?: number) {
     if (!jti || !exp) return;
     const ttl = exp - Math.floor(Date.now() / 1000);
     if (ttl > 0) {
       await this.redisService.add(`blacklist:${jti}`, '1', ttl);
     }
+  }
+
+  private _generateSessionTokens(userId: string, role: string) {
+    const accessJti = randomUUID();
+    const refreshJti = randomUUID();
+    const biometricJti = randomUUID();
+
+    const token = this.jwtService.sign(
+      { userId, role, type: JwtTokenType.ACCESS, jti: accessJti } as JwtPayload,
+      { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
+    );
+    const refreshToken = this.jwtService.sign(
+      { userId, role, type: JwtTokenType.REFRESH, jti: refreshJti } as JwtPayload,
+      { expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') },
+    );
+    const biometricToken = this.jwtService.sign(
+      { userId, role, type: JwtTokenType.BIOMETRIC, jti: biometricJti } as JwtPayload,
+      { expiresIn: this.config.get('JWT_BIOMETRIC_EXPIRES_IN', '30d') },
+    );
+
+    return { token, refreshToken, biometricToken };
   }
 }

@@ -7,6 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '@/shared/decorators/public.decorator';
 import { ALLOWED_TOKEN_TYPES_KEY } from './token-types.decorator';
+import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 
 @Injectable()
@@ -28,10 +29,10 @@ export class JwtAuthGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
-    const allowedTokenTypes = this.reflector.getAllAndOverride<Array<'access' | 'refresh'>>(
+    const allowedTokenTypes = this.reflector.getAllAndOverride<Array<JwtTokenType>>(
       ALLOWED_TOKEN_TYPES_KEY,
       [context.getHandler(), context.getClass()],
-    ) ?? ['access'];
+    ) ?? [JwtTokenType.ACCESS];
 
     if (!token) {
       throw new UnauthorizedException('Token não fornecido');

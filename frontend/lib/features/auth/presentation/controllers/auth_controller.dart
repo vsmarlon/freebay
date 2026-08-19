@@ -1,16 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:freebay/features/auth/domain/usecases/login_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/register_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/get_current_user_usecase.dart';
-import 'package:freebay/features/auth/domain/usecases/guest_login_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/request_password_recovery_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/verify_password_recovery_code_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/reset_password_usecase.dart';
+import 'package:freebay/features/auth/domain/usecases/biometric_login_usecase.dart';
+import 'package:freebay/features/auth/domain/usecases/google_auth_usecase.dart';
+import 'package:freebay/features/auth/domain/usecases/complete_profile_usecase.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
@@ -34,9 +38,6 @@ final logoutUsecaseProvider = Provider(
 final getCurrentUserUsecaseProvider = Provider(
   (ref) => GetCurrentUserUsecase(ref.watch(authRepositoryProvider)),
 );
-final guestLoginUsecaseProvider = Provider(
-  (ref) => GuestLoginUsecase(ref.watch(authRepositoryProvider)),
-);
 final requestPasswordRecoveryUsecaseProvider = Provider(
   (ref) => RequestPasswordRecoveryUsecase(ref.watch(authRepositoryProvider)),
 );
@@ -47,69 +48,119 @@ final resetPasswordUsecaseProvider = Provider(
   (ref) => ResetPasswordUsecase(ref.watch(authRepositoryProvider)),
 );
 
+// ── Biometry providers ──────────────────────────────────────────────────
+
+final biometryServiceProvider = Provider<BiometryService>((ref) {
+  return BiometryService();
+});
+
+final biometryAvailableProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(biometryServiceProvider).isAvailable();
+});
+
+final biometryEnabledProvider = FutureProvider<bool>((ref) async {
+  return ref.watch(biometryServiceProvider).isEnabled();
+});
+
+final biometricLoginUsecaseProvider = Provider(
+  (ref) => BiometricLoginUsecase(
+    ref.watch(authRepositoryProvider),
+    ref.watch(biometryServiceProvider),
+  ),
+);
+final googleAuthUsecaseProvider = Provider(
+  (ref) => GoogleAuthUsecase(ref.watch(authRepositoryProvider)),
+);
+final completeProfileUsecaseProvider = Provider(
+  (ref) => CompleteProfileUsecase(ref.watch(authRepositoryProvider)),
+);
+
+class IsInitialAuthLoadingNotifier extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  @override
+  set state(bool value) => super.state = value;
+  void set(bool value) => state = value;
+}
+
+// Whether the initial cold-boot auth check is running
+final isInitialAuthLoadingProvider =
+    NotifierProvider<IsInitialAuthLoadingNotifier, bool>(
+      IsInitialAuthLoadingNotifier.new,
+    );
+
+class HasSeenOnboardingNotifier extends Notifier<bool> {
+  @override
+  bool build() => StorageService.hasSeenOnboardingSync();
+
+  @override
+  set state(bool value) => super.state = value;
+  void set(bool value) => state = value;
+}
+
 // Whether the post-login onboarding carousel has been seen, seeded once
 // during auth init alongside the session itself so the router's redirect
 // can read it synchronously instead of awaiting secure storage on every nav.
-final hasSeenOnboardingProvider = StateProvider<bool>((ref) => false);
+final hasSeenOnboardingProvider =
+    NotifierProvider<HasSeenOnboardingNotifier, bool>(
+      HasSeenOnboardingNotifier.new,
+    );
 
 final authControllerProvider =
-    StateNotifierProvider<AuthController, AsyncValue<UserEntity?>>((ref) {
-      return AuthController(
-        ref,
-        ref.watch(loginUsecaseProvider),
-        ref.watch(registerUsecaseProvider),
-        ref.watch(logoutUsecaseProvider),
-        ref.watch(getCurrentUserUsecaseProvider),
-        ref.watch(guestLoginUsecaseProvider),
-        ref.watch(requestPasswordRecoveryUsecaseProvider),
-        ref.watch(verifyPasswordRecoveryCodeUsecaseProvider),
-        ref.watch(resetPasswordUsecaseProvider),
-      );
-    });
+    NotifierProvider<AuthController, AsyncValue<UserEntity?>>(
+      AuthController.new,
+    );
 
 // Controller
-class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
-  final Ref _ref;
-  final LoginUsecase _loginUsecase;
-  final RegisterUsecase _registerUsecase;
-  final LogoutUsecase _logoutUsecase;
-  final GetCurrentUserUsecase _getCurrentUserUsecase;
-  final GuestLoginUsecase _guestLoginUsecase;
-  final RequestPasswordRecoveryUsecase _requestPasswordRecoveryUsecase;
-  final VerifyPasswordRecoveryCodeUsecase _verifyPasswordRecoveryCodeUsecase;
-  final ResetPasswordUsecase _resetPasswordUsecase;
-
-  AuthController(
-    this._ref,
-    this._loginUsecase,
-    this._registerUsecase,
-    this._logoutUsecase,
-    this._getCurrentUserUsecase,
-    this._guestLoginUsecase,
-    this._requestPasswordRecoveryUsecase,
-    this._verifyPasswordRecoveryCodeUsecase,
-    this._resetPasswordUsecase,
-  ) : super(const AsyncValue.loading()) {
-    _initAuth();
+class AuthController extends Notifier<AsyncValue<UserEntity?>> {
+  @override
+  AsyncValue<UserEntity?> build() {
+    Future.microtask(_initAuth);
+    return const AsyncValue.loading();
   }
 
   Future<void> _initAuth() async {
     state = const AsyncValue.loading();
+    ref.read(isInitialAuthLoadingProvider.notifier).set(true);
 
-    final hasSeenOnboarding = await StorageService.getHasSeenOnboarding();
-    _ref.read(hasSeenOnboardingProvider.notifier).state = hasSeenOnboarding;
+    final hasSeenOnboarding = StorageService.hasSeenOnboardingSync();
+    ref.read(hasSeenOnboardingProvider.notifier).set(hasSeenOnboarding);
 
-    final token = await StorageService.getToken();
-    if (token == null) {
+    final rememberMe = await StorageService.getRememberMe();
+    if (!rememberMe) {
+      await StorageService.clearTokens();
       state = const AsyncValue.data(null);
+      ref.read(isInitialAuthLoadingProvider.notifier).set(false);
       return;
     }
 
-    final result = await _getCurrentUserUsecase();
+    final token = await StorageService.getToken();
+    if (token == null) {
+      await _tryBiometricLogin();
+      ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+      return;
+    }
 
+    final result = await ref.read(getCurrentUserUsecaseProvider)();
     result.fold(
       (failure) async {
         await StorageService.clearTokens();
+        state = const AsyncValue.data(null);
+      },
+      (user) {
+        state = AsyncValue.data(user);
+      },
+    );
+    ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+  }
+
+  /// Attempt biometric login. On success, state becomes the user.
+  /// On any failure/cancellation, state becomes null (login page shown).
+  Future<void> _tryBiometricLogin() async {
+    final result = await ref.read(biometricLoginUsecaseProvider)();
+    result.fold(
+      (failure) {
         state = const AsyncValue.data(null);
       },
       (user) {
@@ -124,7 +175,7 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     bool rememberMe = false,
   }) async {
     state = const AsyncValue.loading();
-    final result = await _loginUsecase(
+    final result = await ref.read(loginUsecaseProvider)(
       LoginParams(email: email, password: password, rememberMe: rememberMe),
     );
 
@@ -142,7 +193,7 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     String username,
   ) async {
     state = const AsyncValue.loading();
-    final result = await _registerUsecase(
+    final result = await ref.read(registerUsecaseProvider)(
       RegisterParams(
         email: email,
         password: password,
@@ -158,32 +209,21 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     );
   }
 
-  Future<void> loginAsGuest() async {
-    state = const AsyncValue.loading();
-    final result = await _guestLoginUsecase();
-
-    result.fold(
-      (failure) =>
-          state = AsyncValue.error(failure.message, StackTrace.current),
-      (user) => state = AsyncValue.data(user),
-    );
-  }
-
   void _invalidateUserProviders() {
-    _ref.invalidate(walletProvider);
-    _ref.invalidate(cartProvider);
-    _ref.invalidate(disputeListProvider);
-    _ref.invalidate(purchasesListProvider);
-    _ref.invalidate(salesListProvider);
-    _ref.invalidate(notificationsProvider);
-    _ref.invalidate(unreadCountProvider);
-    _ref.invalidate(chatsProvider);
-    _ref.invalidate(liveChatListProvider);
+    ref.invalidate(walletProvider);
+    ref.invalidate(cartProvider);
+    ref.invalidate(disputeListProvider);
+    ref.invalidate(purchasesListProvider);
+    ref.invalidate(salesListProvider);
+    ref.invalidate(notificationsProvider);
+    ref.invalidate(unreadCountProvider);
+    ref.invalidate(chatsProvider);
+    ref.invalidate(liveChatListProvider);
   }
 
   Future<void> logout() async {
     state = const AsyncValue.loading();
-    final result = await _logoutUsecase();
+    final result = await ref.read(logoutUsecaseProvider)();
 
     result.fold(
       (failure) =>
@@ -196,13 +236,13 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
   }
 
   Future<void> requestPasswordRecovery(String email) async {
-    await _requestPasswordRecoveryUsecase(
+    await ref.read(requestPasswordRecoveryUsecaseProvider)(
       RequestPasswordRecoveryParams(email: email),
     );
   }
 
   Future<bool> verifyPasswordRecoveryCode(String email, String code) async {
-    final result = await _verifyPasswordRecoveryCodeUsecase(
+    final result = await ref.read(verifyPasswordRecoveryCodeUsecaseProvider)(
       VerifyPasswordRecoveryCodeParams(email: email, code: code),
     );
     return result.fold((_) => false, (value) => value);
@@ -213,14 +253,14 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
     String code,
     String newPassword,
   ) async {
-    await _resetPasswordUsecase(
+    await ref.read(resetPasswordUsecaseProvider)(
       ResetPasswordParams(email: email, code: code, newPassword: newPassword),
     );
   }
 
   Future<void> tryRefreshSession() async {
     state = const AsyncValue.loading();
-    final result = await _getCurrentUserUsecase();
+    final result = await ref.read(getCurrentUserUsecaseProvider)();
     result.fold(
       (_) => state = const AsyncValue.data(null),
       (user) => state = AsyncValue.data(user),
@@ -235,5 +275,57 @@ class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
 
   void setUser(UserEntity? user) {
     state = AsyncValue.data(user);
+  }
+
+  bool needsProfileCompletion(UserEntity? user) {
+    return user != null && user.username == null;
+  }
+
+  Future<void> googleLogin() async {
+    state = const AsyncValue.loading();
+    try {
+      await GoogleSignIn.instance.initialize();
+      final googleUser = await GoogleSignIn.instance.authenticate();
+      final idToken = googleUser.authentication.idToken;
+      if (idToken == null) {
+        state = AsyncValue.error(
+          'Token Google não retornado pelo provedor.',
+          StackTrace.current,
+        );
+        return;
+      }
+      final result = await ref.read(googleAuthUsecaseProvider)(idToken);
+      result.fold(
+        (failure) =>
+            state = AsyncValue.error(failure.message, StackTrace.current),
+        (user) => state = AsyncValue.data(user),
+      );
+    } catch (e) {
+      state = AsyncValue.error(
+        'Erro ao autenticar com Google: $e',
+        StackTrace.current,
+      );
+    }
+  }
+
+  Future<void> completeProfile({
+    required String username,
+    String? displayName,
+    String? city,
+    String? state,
+  }) async {
+    final result = await ref.read(completeProfileUsecaseProvider)(
+      CompleteProfileParams(
+        username: username,
+        displayName: displayName,
+        city: city,
+        state: state,
+      ),
+    );
+    result.fold(
+      (failure) =>
+          this.state = AsyncValue.error(failure.message, StackTrace.current),
+      (user) => this.state = AsyncValue.data(user),
+    );
   }
 }

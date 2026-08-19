@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, PasswordRecoveryCode, PrismaClient } from '@prisma/client';
+import { Prisma, PasswordRecoveryCode } from '@prisma/client';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PasswordRecoveryRepository } from '../../domain/repositories/password-recovery.repository';
 
 @Injectable()
 export class PasswordRecoveryDatabaseRepository implements PasswordRecoveryRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(data: Prisma.PasswordRecoveryCodeCreateInput): RepositoryResponse<PasswordRecoveryCode> {
     try {
