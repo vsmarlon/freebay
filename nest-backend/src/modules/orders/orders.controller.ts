@@ -1,50 +1,51 @@
 import {
   Controller,
-  Get,
-  Post,
   Body,
   Param,
   Query,
-  UseGuards,
-  HttpCode,
   HttpStatus,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { OrdersService } from './orders.service';
+import { ApiTags } from '@nestjs/swagger';
+import { GetAuth, PostAuth, PatchAuth, CurrentUser, CurrentUserId } from '@/shared/decorators';
+import { OrderRepository } from './domain/repositories/order.repository';
+import { CreateOrderUseCase } from './usecases/create-order.usecase';
+import { ConfirmDeliveryUseCase } from './usecases/confirm-delivery.usecase';
+import { MarkAsShippedUseCase } from './usecases/mark-as-shipped.usecase';
+import { MarkAsDeliveredUseCase } from './usecases/mark-as-delivered.usecase';
+import { CancelOrderUseCase } from './usecases/cancel-order.usecase';
 import { CreateOrderDTO } from './dtos/order.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
 import { AuthUser } from '@/shared/core/types';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { left, isLeft } from '@/shared/core/either';
-import { NotFoundError } from '@/shared/core/errors';
+import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
 
 @ApiTags('Orders')
 @Controller('orders')
-@UseGuards(JwtAuthGuard, NonGuestGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly orderRepository: OrderRepository,
+    private readonly createOrderUseCase: CreateOrderUseCase,
+    private readonly confirmDeliveryUseCase: ConfirmDeliveryUseCase,
+    private readonly markAsShippedUseCase: MarkAsShippedUseCase,
+    private readonly markAsDeliveredUseCase: MarkAsDeliveredUseCase,
+    private readonly cancelOrderUseCase: CancelOrderUseCase,
+  ) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth({
     summary: 'Create order',
     bodyType: CreateOrderDTO,
     responseStatus: 201,
-    auth: true,
+    httpCode: HttpStatus.CREATED,
     errors: [{ status: 404, description: 'Product not found' }],
   })
-  async create(@CurrentUser() user: AuthUser, @Body() body: CreateOrderDTO) {
-    const productResult = await this.ordersService.findProductForOrder(body.productId);
+  async create(@CurrentUserId() buyerId: string, @Body() body: CreateOrderDTO) {
+    const productResult = await this.orderRepository.findProductForOrder(body.productId);
     if (isLeft(productResult)) return productResult;
     const product = productResult.value;
     if (!product) return left(new NotFoundError('Produto'));
 
-    return this.ordersService.create({
-      buyerId: user.userId,
+    return this.createOrderUseCase.execute({
+      buyerId,
       sellerId: product.sellerId,
       productId: product.id,
       amount: product.price,
@@ -52,117 +53,98 @@ export class OrdersController {
     });
   }
 
-  @Get(':id')
-  @ApiDoc({
+  @GetAuth('my/purchases', 'Get my purchases')
+  async getMyPurchases(@CurrentUserId() userId: string) {
+    const result = await this.orderRepository.findByBuyerId(userId);
+    if (isLeft(result)) return result;
+    return { orders: result.value };
+  }
+
+  @GetAuth('my/sales', 'Get my sales')
+  async getMySales(@CurrentUserId() userId: string) {
+    const result = await this.orderRepository.findBySellerId(userId);
+    if (isLeft(result)) return result;
+    return { orders: result.value };
+  }
+
+  @GetAuth(':id', {
     summary: 'Get order by ID',
     params: [{ name: 'id', description: 'Order UUID' }],
-    errors: [{ status: 404, description: 'Order not found' }],
+    errors: [
+      { status: 404, description: 'Order not found' },
+      { status: 403, description: 'Access denied' },
+    ],
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const result = await this.ordersService.findOne(id);
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+    const result = await this.orderRepository.findById(id);
     if (isLeft(result)) return result;
     if (!result.value) return left(new NotFoundError('Pedido'));
-    return { order: result.value };
+
+    const order = result.value;
+    if (order.buyerId !== user.userId && order.sellerId !== user.userId && user.role !== 'ADMIN') {
+      return left(new ForbiddenError('Você não tem permissão para visualizar este pedido'));
+    }
+
+    return { order };
   }
 
-  @Post(':id/ship')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth(':id/ship', {
     summary: 'Mark order as shipped',
-    auth: true,
     params: [{ name: 'id', description: 'Order UUID' }],
     errors: [{ status: 404, description: 'Order not found' }],
   })
-  async markAsShipped(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.ordersService.markAsShipped({ orderId: id, sellerId: user.userId });
+  async markAsShipped(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() sellerId: string) {
+    return this.markAsShippedUseCase.execute({ orderId: id, sellerId });
   }
 
-  @Post(':id/deliver')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth(':id/deliver', {
     summary: 'Mark order as delivered',
-    auth: true,
     params: [{ name: 'id', description: 'Order UUID' }],
     errors: [{ status: 404, description: 'Order not found' }],
   })
-  async markAsDelivered(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.ordersService.markAsDelivered({ orderId: id, buyerId: user.userId });
+  async markAsDelivered(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() buyerId: string) {
+    return this.markAsDeliveredUseCase.execute({ orderId: id, buyerId });
   }
 
-  @Post(':id/confirm')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth(':id/confirm', {
     summary: 'Confirm delivery (release escrow to seller)',
-    auth: true,
     params: [{ name: 'id', description: 'Order UUID' }],
     errors: [{ status: 404, description: 'Order not found' }],
   })
-  async confirmDelivery(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.ordersService.confirmDelivery({ orderId: id, buyerId: user.userId });
+  async confirmDelivery(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() buyerId: string) {
+    return this.confirmDeliveryUseCase.execute({ orderId: id, buyerId });
   }
 
-  @Post(':id/confirm-delivery')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth(':id/confirm-delivery', {
     summary: 'Confirm delivery (alias)',
-    auth: true,
     params: [{ name: 'id', description: 'Order UUID' }],
     errors: [{ status: 404, description: 'Order not found' }],
   })
-  async confirmDeliveryAlias(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.confirmDelivery(id, user);
+  async confirmDeliveryAlias(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() buyerId: string) {
+    return this.confirmDelivery(id, buyerId);
   }
 
-  @Post(':id/cancel')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth(':id/cancel', {
     summary: 'Cancel order',
-    auth: true,
     params: [{ name: 'id', description: 'Order UUID' }],
     errors: [{ status: 404, description: 'Order not found' }],
   })
-  async cancel(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    return this.ordersService.cancel({ orderId: id, userId: user.userId });
+  async cancel(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.cancelOrderUseCase.execute({ orderId: id, userId });
   }
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth({
     summary: 'List user orders',
-    auth: true,
     queries: [
       { name: 'role', required: false, description: 'Filter by role: "seller" or "buyer" (default)' },
     ],
   })
-  async findAll(@CurrentUser() user: AuthUser, @Query('role') role?: string) {
+  async findAll(@CurrentUserId() userId: string, @Query('role') role?: string) {
     const result = await (role === 'seller'
-      ? this.ordersService.findBySellerId(user.userId)
-      : this.ordersService.findByBuyerId(user.userId));
-    if (isLeft(result)) return result;
-    return { orders: result.value };
-  }
-
-  @Get('my/purchases')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get my purchases',
-    auth: true,
-  })
-  async getMyPurchases(@CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.findByBuyerId(user.userId);
-    if (isLeft(result)) return result;
-    return { orders: result.value };
-  }
-
-  @Get('my/sales')
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get my sales',
-    auth: true,
-  })
-  async getMySales(@CurrentUser() user: AuthUser) {
-    const result = await this.ordersService.findBySellerId(user.userId);
+      ? this.orderRepository.findBySellerId(userId)
+      : this.orderRepository.findByBuyerId(userId));
     if (isLeft(result)) return result;
     return { orders: result.value };
   }
 }
+

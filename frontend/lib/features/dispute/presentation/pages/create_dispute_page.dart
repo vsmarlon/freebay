@@ -11,6 +11,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class CreateDisputePage extends ConsumerStatefulWidget {
   final String orderId;
@@ -34,24 +35,14 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: context.bgColor,
       body: Column(
         children: [
           PageHeader(
             text: 'ABRIR DISPUTA',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(

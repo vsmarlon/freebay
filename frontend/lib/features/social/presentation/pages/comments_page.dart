@@ -171,20 +171,9 @@ class _CommentsPageState extends ConsumerState<CommentsPage> {
         children: [
           PageHeader(
             text: 'COMENTÁRIOS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           _buildInputBar(),

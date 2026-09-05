@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freebay_design_system/components/brutalist_icon_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
@@ -49,20 +50,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         children: [
           PageHeader(
             text: 'PEDIDO #$shortId',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(child: _buildContent(state, currentUserId)),

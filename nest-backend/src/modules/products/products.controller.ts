@@ -1,24 +1,24 @@
 import {
   Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
   Body,
   Param,
   Query,
   UseInterceptors,
   UploadedFile,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO } from './dtos/product.dto';
-import { Authenticated } from '@/shared/decorators/endpoints.decorator';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import {
+  GetAuth,
+  GetPublic,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+} from '@/shared/decorators';
 import { validateImageFile, MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
 import { toDataUri } from '@/shared/utils/file.utils';
 import { left } from '@/shared/core/either';
@@ -42,8 +42,7 @@ export class ProductsController {
     private readonly getMyProductsUseCase: GetMyProductsUseCase,
   ) {}
 
-  @Get()
-  @ApiDoc({
+  @GetPublic({
     summary: 'List products',
     description: 'Search and filter products with cursor pagination',
     queries: [
@@ -61,32 +60,35 @@ export class ProductsController {
     return this.getProductsUseCase.execute(query);
   }
 
-  @Get(':id')
-  @ApiDoc({
+  @GetAuth('mine/all', 'Get my products')
+  async findMyProducts(@CurrentUserId() userId: string) {
+    return this.getMyProductsUseCase.execute(userId);
+  }
+
+  @GetPublic(':id', {
     summary: 'Get product by ID',
     params: [{ name: 'id', description: 'Product UUID' }],
     errors: [{ status: 404, description: 'Product not found' }],
   })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.getProductByIdUseCase.execute(id);
   }
 
-  @Post()
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-      limits: { fileSize: MAX_IMAGE_SIZE },
-    }),
-  )
-  @Authenticated({
+  @PostAuth({
     summary: 'Create a product',
     description: 'Creates a new product listing with image',
     bodyType: CreateProductDTO,
     responseStatus: 201,
     httpCode: HttpStatus.CREATED,
   })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_IMAGE_SIZE },
+    }),
+  )
   async create(
-    @CurrentUser() user: AuthUser,
+    @CurrentUserId() sellerId: string,
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: CreateProductDTO,
   ) {
@@ -101,43 +103,32 @@ export class ProductsController {
 
     const dataUri = toDataUri(file);
     return this.createProductUseCase.execute({
-      sellerId: user.userId,
+      sellerId,
       ...body,
       images: [dataUri],
     });
   }
 
-  @Delete(':id')
-  @Authenticated({
-    summary: 'Delete a product',
+  @PatchAuth(':id/delete', {
+    summary: 'Soft-delete a product',
     params: [{ name: 'id', description: 'Product UUID' }],
     errors: [{ status: 404, description: 'Product not found' }],
   })
-  async delete(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.deleteProductUseCase.execute({ productId: id, userId: user.userId });
+  async delete(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.deleteProductUseCase.execute({ productId: id, userId });
   }
 
-  @Patch(':id')
-  @Authenticated({
+  @PatchAuth(':id', {
     summary: 'Update a product',
     bodyType: UpdateProductDTO,
     params: [{ name: 'id', description: 'Product UUID' }],
     errors: [{ status: 404, description: 'Product not found' }],
   })
   async update(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
     @Body() body: UpdateProductDTO,
   ) {
-    return this.updateProductUseCase.execute({ productId: id, userId: user.userId, ...body });
-  }
-
-  @Get('mine/all')
-  @Authenticated({
-    summary: 'Get my products',
-    description: 'Returns all products for the current authenticated user',
-  })
-  async findMyProducts(@CurrentUser() user: AuthUser) {
-    return this.getMyProductsUseCase.execute(user.userId);
+    return this.updateProductUseCase.execute({ productId: id, userId, ...body });
   }
 }

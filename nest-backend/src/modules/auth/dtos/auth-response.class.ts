@@ -29,14 +29,6 @@ export class BiometricSessionResponse {
   biometricToken: string;
 }
 
-export class GuestSessionResponse {
-  @ApiProperty({ example: { id: 'guest-uuid', isGuest: true } })
-  user: { id: string; isGuest: boolean };
-
-  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIs...' })
-  token: string;
-}
-
 export class TokenRefreshResponse {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIs...' })
   token: string;

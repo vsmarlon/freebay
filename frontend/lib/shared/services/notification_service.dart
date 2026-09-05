@@ -1,14 +1,40 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
+  if (Platform.isAndroid) {
+    final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+    const androidDetails = AndroidNotificationDetails(
+      'freebay_notifications',
+      'FreeBay Notifications',
+      channelDescription: 'Notifications from FreeBay',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    await flutterLocalNotificationsPlugin.show(
+      message.hashCode,
+      message.notification?.title,
+      message.notification?.body,
+      const NotificationDetails(android: androidDetails),
+      payload: Uri(queryParameters: message.data).toString(),
+    );
+  }
+}
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
 
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  FirebaseMessaging? get _firebaseMessaging =>
+      Firebase.apps.isNotEmpty ? FirebaseMessaging.instance : null;
+
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
@@ -19,15 +45,22 @@ class NotificationService {
 
   Future<void> initialize() async {
     await _initializeLocalNotifications();
-    await _requestPermissions();
-    await _getToken();
-    await _handleForegroundMessages();
-    await _handleBackgroundMessages();
+    if (Firebase.apps.isNotEmpty) {
+      try {
+        await _requestPermissions();
+        await _getToken();
+        await _handleForegroundMessages();
+        await _handleBackgroundMessages();
+      } catch (e) {
+        debugPrint('[NotificationService] FCM init skipped: $e');
+      }
+    }
   }
 
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -54,7 +87,8 @@ class NotificationService {
 
       await _localNotifications
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(androidChannel);
     }
   }
@@ -70,23 +104,28 @@ class NotificationService {
   }
 
   Future<void> _requestPermissions() async {
+    final fm = _firebaseMessaging;
+    if (fm == null) return;
     if (Platform.isIOS) {
-      await _firebaseMessaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      await fm.requestPermission(alert: true, badge: true, sound: true);
     } else if (Platform.isAndroid) {
-      await _firebaseMessaging.requestPermission();
+      await fm.requestPermission();
     }
   }
 
   Future<String?> _getToken() async {
-    final token = await _firebaseMessaging.getToken();
-    if (token != null) {
-      await _saveToken(token);
+    final fm = _firebaseMessaging;
+    if (fm == null) return null;
+    try {
+      final token = await fm.getToken();
+      if (token != null) {
+        await _saveToken(token);
+      }
+      return token;
+    } catch (e) {
+      debugPrint('[NotificationService] Failed to retrieve FCM token: $e');
+      return null;
     }
-    return token;
   }
 
   Future<void> _saveToken(String token) async {
@@ -112,29 +151,7 @@ class NotificationService {
   }
 
   Future<void> _handleBackgroundMessages() async {
-    FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
-  }
-
-  static Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
-    final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
-    if (Platform.isAndroid) {
-      const androidDetails = AndroidNotificationDetails(
-        'freebay_notifications',
-        'FreeBay Notifications',
-        channelDescription: 'Notifications from FreeBay',
-        importance: Importance.high,
-        priority: Priority.high,
-      );
-
-      flutterLocalNotificationsPlugin.show(
-        message.hashCode,
-        message.notification?.title,
-        message.notification?.body,
-        const NotificationDetails(android: androidDetails),
-        payload: Uri(queryParameters: message.data).toString(),
-      );
-    }
+    FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
@@ -167,13 +184,13 @@ class NotificationService {
   }
 
   void onTokenRefresh(Function(String token) callback) {
-    _firebaseMessaging.onTokenRefresh.listen((token) async {
+    _firebaseMessaging?.onTokenRefresh.listen((token) async {
       await _saveToken(token);
       callback(token);
     });
   }
 
   Future<RemoteMessage?> getInitialMessage() async {
-    return _firebaseMessaging.getInitialMessage();
+    return _firebaseMessaging?.getInitialMessage();
   }
 }

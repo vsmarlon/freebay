@@ -1,6 +1,7 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/payments/data/entities/payment_intent_entity.dart';
+import 'package:freebay/features/payments/data/entities/crypto_payment_entity.dart';
 import 'package:freebay/features/payments/data/services/payment_service.dart';
 import 'package:freebay/features/payments/domain/repositories/i_payment_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
@@ -36,5 +37,13 @@ class PaymentRepository implements IPaymentRepository {
       orderId: orderId,
       idempotencyKey: idempotencyKey,
     );
+  }
+
+  @override
+  Future<Either<Failure, CryptoPaymentEntity>> createCryptoPayment({
+    required String orderId,
+    String currency = 'XMR',
+  }) {
+    return _service.createCryptoPayment(orderId: orderId, currency: currency);
   }
 }

@@ -8,8 +8,11 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay/core/components/brutalist_highlighted_text.dart';
+import 'package:freebay/core/components/brutalist_safe_link_dialog.dart';
 
 class SocialPost extends StatefulWidget {
   final String userId;
@@ -273,11 +276,22 @@ class _SocialPostState extends State<SocialPost> {
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(gradient: AppColors.brutalistGradient),
-          child: Text(
-            widget.content ?? '',
+          child: BrutalistHighlightedText(
+            text: widget.content ?? '',
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.onPrimary,
             ),
+            linkColor: AppColors.onPrimary,
+            mentionColor: AppColors.onPrimary,
+            hashtagColor: AppColors.onPrimary,
+            onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
+            onMentionTap: (mention) {
+              final username = mention.replaceFirst('@', '');
+              context.push('/people/search?q=${Uri.encodeComponent(username)}');
+            },
+            onHashtagTap: (tag) {
+              context.push('/posts/search?q=${Uri.encodeComponent(tag)}');
+            },
           ),
         ),
         _buildActionsRow(),
@@ -393,13 +407,21 @@ class _SocialPostState extends State<SocialPost> {
       children: [
         Padding(
           padding: const EdgeInsets.all(12),
-          child: Text(
-            widget.content ?? '',
+          child: BrutalistHighlightedText(
+            text: widget.content ?? '',
             style: AppTypography.bodyMedium.copyWith(
               color: context.textPrimary,
             ),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
+            onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
+            onMentionTap: (mention) {
+              final username = mention.replaceFirst('@', '');
+              context.push('/people/search?q=${Uri.encodeComponent(username)}');
+            },
+            onHashtagTap: (tag) {
+              context.push('/posts/search?q=${Uri.encodeComponent(tag)}');
+            },
           ),
         ),
         _buildActionsRow(),

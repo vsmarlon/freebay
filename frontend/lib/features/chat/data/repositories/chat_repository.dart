@@ -100,7 +100,7 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
 
   @override
   Future<Either<Failure, void>> deleteChat(String id, ChatThreadType type) =>
-      safeVoid(() => client.delete('/chat/conversations/$id'));
+      safeVoid(() => client.patch('/chat/conversations/$id/delete'));
 
   @override
   Future<Either<Failure, ConversationPreference>> setTheme(
@@ -154,8 +154,8 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     String conversationId,
     String messageId,
   ) => safeVoid(
-    () => client.delete(
-      '/chat/conversations/$conversationId/messages/$messageId',
+    () => client.patch(
+      '/chat/conversations/$conversationId/messages/$messageId/delete',
     ),
   );
 
@@ -199,5 +199,26 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
           .toList();
       return (messages: messages, nextCursor: data['nextCursor'] as String?);
     },
+  );
+
+  @override
+  Future<Either<Failure, List<MessageEntity>>> forwardMessages({
+    required List<String> messageIds,
+    required List<String> targetConversationIds,
+    String? sourceConversationId,
+  }) => safePost<List<MessageEntity>>(
+    '/chat/messages/forward',
+    data: {
+      'messageIds': messageIds,
+      'targetConversationIds': targetConversationIds,
+      'sourceConversationId': ?sourceConversationId,
+    },
+    extractKey: 'data.messages',
+    customMapper: (list) =>
+        (list as List?)
+            ?.whereType<Map>()
+            .map((e) => MessageEntity.fromJson(Map<String, dynamic>.from(e)))
+            .toList() ??
+        [],
   );
 }

@@ -27,8 +27,8 @@ class FollowService {
 
   Future<Either<Failure, FollowResponse>> unfollow(String userId) async {
     try {
-      final response = await HttpClient.instance.delete(
-        '/users/$userId/follow',
+      final response = await HttpClient.instance.patch(
+        '/users/$userId/unfollow',
       );
 
       if (response.statusCode != null &&

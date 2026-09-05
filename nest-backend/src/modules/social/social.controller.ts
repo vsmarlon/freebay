@@ -1,14 +1,12 @@
 import {
   Controller,
-  Get,
-  Post,
-  Delete,
   Body,
   Param,
   Query,
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -22,10 +20,13 @@ import {
   SearchPostsQueryDTO,
 } from './dtos/social.dto';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
-import { Authenticated } from '@/shared/decorators/endpoints.decorator';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import {
+  GetAuth,
+  GetPublic,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+} from '@/shared/decorators';
 import { left } from '@/shared/core/either';
 import { BadRequestError } from '@/shared/core/errors';
 
@@ -46,6 +47,8 @@ import { SavePostUseCase } from './usecases/save-post.usecase';
 import { UnsavePostUseCase } from './usecases/unsave-post.usecase';
 import { LikeCommentUseCase } from './usecases/like-comment.usecase';
 import { UnlikeCommentUseCase } from './usecases/unlike-comment.usecase';
+import { DeletePostUseCase } from './usecases/delete-post.usecase';
+import { DeleteCommentUseCase } from './usecases/delete-comment.usecase';
 
 @ApiTags('Social')
 @Controller('social')
@@ -67,16 +70,17 @@ export class SocialController {
     private readonly unsavePostUseCase: UnsavePostUseCase,
     private readonly likeCommentUseCase: LikeCommentUseCase,
     private readonly unlikeCommentUseCase: UnlikeCommentUseCase,
+    private readonly deletePostUseCase: DeletePostUseCase,
+    private readonly deleteCommentUseCase: DeleteCommentUseCase,
   ) {}
 
-  @Get('feed')
-  @ApiDoc({
+  @GetPublic('feed', {
     summary: 'Get social feed',
     description: 'Returns paginated feed of posts from followed users or explore',
   })
-  async getFeed(@CurrentUser() user: AuthUser, @Query() query: GetFeedQueryDTO) {
+  async getFeed(@CurrentUserId() userId: string, @Query() query: GetFeedQueryDTO) {
     return this.getFeedUseCase.execute({
-      userId: user?.userId || '',
+      userId: userId || '',
       limit: query.limit ?? 20,
       type: query.type ?? 'explore',
       cursor: query.cursor,
@@ -85,32 +89,69 @@ export class SocialController {
     });
   }
 
-  @Get('posts/:id')
-  @ApiDoc({
+  @GetPublic('posts/search', {
+    summary: 'Search posts',
+  })
+  async searchPosts(@CurrentUserId() userId: string, @Query() query: SearchPostsQueryDTO) {
+    return this.searchPostsUseCase.execute({
+      query: query.q || '',
+      filter: query.filter || 'all',
+      userId: userId || '',
+      limit: query.limit ?? 20,
+      cursor: query.cursor,
+    });
+  }
+
+  @GetAuth('posts/liked', 'Get liked posts')
+  async getLikedPosts(@CurrentUserId() userId: string) {
+    return this.getLikedPostsUseCase.execute(userId);
+  }
+
+  @GetPublic('posts/user/:userId', {
+    summary: 'Get user posts',
+    description: 'Returns posts and reposts for a specific user',
+    params: [{ name: 'userId', description: 'User UUID' }],
+  })
+  async getUserPosts(@Param('userId', ParseUUIDPipe) userId: string, @Query() query: GetUserPostsQueryDTO) {
+    return this.getUserPostsUseCase.execute({
+      userId,
+      limit: query.limit ?? 20,
+      cursor: query.cursor,
+    });
+  }
+
+  @GetPublic('posts/:id', {
     summary: 'Get post by ID',
     params: [{ name: 'id', description: 'Post UUID' }],
     errors: [{ status: 404, description: 'Post not found' }],
   })
-  async getPost(@Param('id') id: string) {
+  async getPost(@Param('id', ParseUUIDPipe) id: string) {
     return this.getPostUseCase.execute(id);
   }
 
-  @Post('posts')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
-  )
-  @Authenticated({
+  @GetPublic('posts/:id/comments', {
+    summary: 'Get comments for a post',
+    params: [{ name: 'id', description: 'Post UUID' }],
+  })
+  async getComments(@Param('id', ParseUUIDPipe) id: string) {
+    return this.getCommentsUseCase.execute({ postId: id, limit: 20 });
+  }
+
+  @PostAuth('posts', {
     summary: 'Create a post',
     description: 'Creates a new social post with optional image upload',
     bodyType: CreatePostDTO,
     responseStatus: 201,
     httpCode: HttpStatus.CREATED,
   })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   async createPost(
-    @CurrentUser() user: AuthUser,
+    @CurrentUserId() userId: string,
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body() body: CreatePostDTO,
   ) {
@@ -119,86 +160,63 @@ export class SocialController {
       if (mimeError) return left(new BadRequestError(mimeError));
     }
     const imageUrl = file ? toDataUri(file) : body.imageUrl;
-    return this.createPostUseCase.execute({ userId: user.userId, ...body, imageUrl });
+    return this.createPostUseCase.execute({ userId, ...body, imageUrl });
   }
 
-  @Get('posts/user/:userId')
-  @ApiDoc({
-    summary: 'Get user posts',
-    description: 'Returns posts and reposts for a specific user',
-    params: [{ name: 'userId', description: 'User UUID' }],
+  @PatchAuth('posts/:id/delete', {
+    summary: 'Soft-delete a post',
+    params: [{ name: 'id', description: 'Post UUID' }],
+    errors: [{ status: 404, description: 'Post not found' }],
   })
-  async getUserPosts(@Param('userId') userId: string, @Query() query: GetUserPostsQueryDTO) {
-    return this.getUserPostsUseCase.execute({
-      userId,
-      limit: query.limit ?? 20,
-      cursor: query.cursor,
-    });
+  async deletePost(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.deletePostUseCase.execute({ postId: id, userId });
   }
 
-  @Get('posts/search')
-  @ApiDoc({
-    summary: 'Search posts',
+  @PatchAuth('comments/:id/delete', {
+    summary: 'Soft-delete a comment',
+    params: [{ name: 'id', description: 'Comment UUID' }],
+    errors: [{ status: 404, description: 'Comment not found' }],
   })
-  async searchPosts(@CurrentUser() user: AuthUser, @Query() query: SearchPostsQueryDTO) {
-    return this.searchPostsUseCase.execute({
-      query: query.q || '',
-      filter: query.filter || 'all',
-      userId: user?.userId || '',
-      limit: query.limit ?? 20,
-      cursor: query.cursor,
-    });
+  async deleteComment(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.deleteCommentUseCase.execute({ commentId: id, userId });
   }
 
-  @Post('posts/:id/like')
-  @Authenticated({
+  @PostAuth('posts/:id/like', {
     summary: 'Like a post',
     params: [{ name: 'id', description: 'Post UUID' }],
   })
-  async likePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.likePostUseCase.execute({ userId: user.userId, postId: id });
+  async likePost(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.likePostUseCase.execute({ userId, postId: id });
   }
 
-  @Delete('posts/:id/like')
-  @Authenticated({
+  @PatchAuth('posts/:id/unlike', {
     summary: 'Unlike a post',
     params: [{ name: 'id', description: 'Post UUID' }],
   })
-  async unlikePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.unlikePostUseCase.execute({ userId: user.userId, postId: id });
+  async unlikePost(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.unlikePostUseCase.execute({ userId, postId: id });
   }
 
-  @Get('posts/liked')
-  @Authenticated({
-    summary: 'Get liked posts',
-  })
-  async getLikedPosts(@CurrentUser() user: AuthUser) {
-    return this.getLikedPostsUseCase.execute(user.userId);
-  }
-
-  @Post('posts/:id/share')
-  @Authenticated({
+  @PostAuth('posts/:id/share', {
     summary: 'Share/repost a post',
     responseStatus: 201,
     params: [{ name: 'id', description: 'Post UUID' }],
     httpCode: HttpStatus.CREATED,
   })
-  async sharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.sharePostUseCase.execute({ userId: user.userId, postId: id });
+  async sharePost(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.sharePostUseCase.execute({ userId, postId: id });
   }
 
-  @Delete('posts/:id/share')
-  @Authenticated({
+  @PatchAuth('posts/:id/unshare', {
     summary: 'Remove share/repost',
     params: [{ name: 'id', description: 'Post UUID' }],
     httpCode: HttpStatus.OK,
   })
-  async unsharePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.unsharePostUseCase.execute({ userId: user.userId, postId: id });
+  async unsharePost(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.unsharePostUseCase.execute({ userId, postId: id });
   }
 
-  @Post('posts/:id/comments')
-  @Authenticated({
+  @PostAuth('posts/:id/comments', {
     summary: 'Create comment on post',
     responseStatus: 201,
     params: [{ name: 'id', description: 'Post UUID' }],
@@ -206,12 +224,12 @@ export class SocialController {
     httpCode: HttpStatus.CREATED,
   })
   async createComment(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
     @Body() body: CreateCommentDTO,
   ) {
     return this.commentUseCase.execute({
-      userId: user.userId,
+      userId,
       postId: id,
       content: body.content,
       parentId: body.parentId,
@@ -219,50 +237,37 @@ export class SocialController {
     });
   }
 
-  @Get('posts/:id/comments')
-  @ApiDoc({
-    summary: 'Get comments for a post',
-    params: [{ name: 'id', description: 'Post UUID' }],
-  })
-  async getComments(@Param('id') id: string) {
-    return this.getCommentsUseCase.execute({ postId: id, limit: 20 });
-  }
-
-  @Post('comments/:commentId/like')
-  @Authenticated({
+  @PostAuth('comments/:commentId/like', {
     summary: 'Like a comment',
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
-  async likeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    return this.likeCommentUseCase.execute({ userId: user.userId, commentId });
+  async likeComment(@Param('commentId', ParseUUIDPipe) commentId: string, @CurrentUserId() userId: string) {
+    return this.likeCommentUseCase.execute({ userId, commentId });
   }
 
-  @Delete('comments/:commentId/like')
-  @Authenticated({
+  @PatchAuth('comments/:commentId/unlike', {
     summary: 'Unlike a comment',
     params: [{ name: 'commentId', description: 'Comment UUID' }],
   })
-  async unlikeComment(@Param('commentId') commentId: string, @CurrentUser() user: AuthUser) {
-    return this.unlikeCommentUseCase.execute({ userId: user.userId, commentId });
+  async unlikeComment(@Param('commentId', ParseUUIDPipe) commentId: string, @CurrentUserId() userId: string) {
+    return this.unlikeCommentUseCase.execute({ userId, commentId });
   }
 
-  @Post('posts/:id/save')
-  @Authenticated({
+  @PostAuth('posts/:id/save', {
     summary: 'Save a post',
     responseStatus: 201,
     params: [{ name: 'id', description: 'Post UUID' }],
     httpCode: HttpStatus.CREATED,
   })
-  async savePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.savePostUseCase.execute({ userId: user.userId, postId: id });
+  async savePost(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.savePostUseCase.execute({ userId, postId: id });
   }
 
-  @Delete('posts/:id/save')
-  @Authenticated({
+  @PatchAuth('posts/:id/unsave', {
     summary: 'Unsave a post',
     params: [{ name: 'id', description: 'Post UUID' }],
   })
-  async unsavePost(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.unsavePostUseCase.execute({ userId: user.userId, postId: id });
+  async unsavePost(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.unsavePostUseCase.execute({ userId, postId: id });
   }
 }

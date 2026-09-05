@@ -15,6 +15,7 @@ import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class UserProfilePage extends ConsumerWidget {
   final String userId;
@@ -32,20 +33,9 @@ class UserProfilePage extends ConsumerWidget {
         children: [
           PageHeader(
             text: 'PERFIL',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(
@@ -100,10 +90,7 @@ class UserProfilePage extends ConsumerWidget {
   ) {
     final authState = ref.watch(authControllerProvider);
     final currentUser = authState.value;
-    final isOwnProfile =
-        currentUser != null &&
-        !currentUser.isGuest &&
-        currentUser.id == user.id;
+    final isOwnProfile = currentUser != null && currentUser.id == user.id;
     final followStatusAsync = !isOwnProfile
         ? ref.watch(followStatusProvider(user.id))
         : const AsyncValue<FollowStatusResponse?>.data(null);
@@ -125,7 +112,7 @@ class UserProfilePage extends ConsumerWidget {
               error: (_, _) => ProfileHeader(user: user),
             ),
             Spacing.vLg,
-            if (!isOwnProfile && currentUser != null && !currentUser.isGuest)
+            if (!isOwnProfile && currentUser != null)
               followStatusAsync.when(
                 data: (status) => Padding(
                   padding: const EdgeInsets.only(bottom: 16),

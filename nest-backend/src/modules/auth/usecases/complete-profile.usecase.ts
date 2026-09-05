@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, UsernameAlreadyExistsError } from '@/shared/core/errors';
+import { AppError, UsernameAlreadyExistsError, UserNotFoundError } from '@/shared/core/errors';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { CompleteProfileDTO } from '../dtos/auth.dto';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
@@ -16,7 +16,7 @@ export class CompleteProfileUseCase {
     const userResult = await this.userRepository.findById(userId);
     if (userResult.isLeft()) return left(userResult.value);
     if (!userResult.value) {
-      return left(new AppError('USER_NOT_FOUND', 'Usuário não encontrado', 404));
+      return left(new UserNotFoundError());
     }
 
     const user = userResult.value;

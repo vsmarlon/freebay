@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
@@ -19,6 +21,7 @@ import 'package:freebay/features/chat/presentation/widgets/chat_header.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_input_bar.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_message_list.dart';
 import 'package:freebay/features/chat/presentation/widgets/multi_select_toolbar.dart';
+import 'package:freebay/features/chat/presentation/widgets/forward_message_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/product_picker_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/make_offer_dialog.dart';
 import 'package:freebay/features/chat/presentation/widgets/reply_composer_banner.dart';
@@ -298,6 +301,80 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     );
   }
 
+  void _copySelectedMessages() {
+    if (_selectedMessageIds.isEmpty) return;
+
+    final selectedMsgs = _messages
+        .where((m) => _selectedMessageIds.contains(m.id))
+        .toList();
+
+    if (selectedMsgs.isEmpty) return;
+
+    final currentUserId = ref.read(authControllerProvider).value?.id;
+    final timeFormat = DateFormat('HH:mm');
+
+    String textToCopy;
+    if (selectedMsgs.length == 1) {
+      final msg = selectedMsgs.first;
+      if (msg.content != null && msg.content!.isNotEmpty) {
+        textToCopy = msg.content!;
+      } else if (msg.attachmentUrl != null && msg.attachmentUrl!.isNotEmpty) {
+        textToCopy = msg.attachmentUrl!;
+      } else if (msg.type == 'LOCATION' && msg.metadata != null) {
+        final lat = msg.metadata!['latitude'];
+        final lng = msg.metadata!['longitude'];
+        final address = msg.metadata!['address'] ?? '';
+        textToCopy =
+            'Localização: $address (https://maps.google.com/?q=$lat,$lng)';
+      } else {
+        textToCopy = '[Mensagem: ${msg.type}]';
+      }
+    } else {
+      selectedMsgs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      final buffer = StringBuffer();
+      for (final msg in selectedMsgs) {
+        final isMe = msg.senderId == currentUserId;
+        final senderName = isMe ? 'Você' : widget.orderName;
+        final timeStr = timeFormat.format(msg.createdAt);
+        final content = msg.content ?? msg.attachmentUrl ?? '[${msg.type}]';
+        buffer.writeln('[$timeStr] $senderName: $content');
+      }
+      textToCopy = buffer.toString().trim();
+    }
+
+    Clipboard.setData(ClipboardData(text: textToCopy));
+    final count = selectedMsgs.length;
+    AppSnackbar.success(
+      context,
+      count == 1
+          ? 'Mensagem copiada para a área de transferência'
+          : '$count mensagens copiadas para a área de transferência',
+    );
+    setState(() {
+      _isSelecting = false;
+      _selectedMessageIds.clear();
+    });
+  }
+
+  Future<void> _forwardSelectedMessages() async {
+    if (_selectedMessageIds.isEmpty) return;
+
+    final ids = _selectedMessageIds.toList();
+    final result = await showForwardMessageSheet(
+      context: context,
+      messageIds: ids,
+      currentChatId: widget.chatId,
+    );
+
+    if (result == true && mounted) {
+      setState(() {
+        _isSelecting = false;
+        _selectedMessageIds.clear();
+      });
+      _loadData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = ref.watch(authControllerProvider).value?.id;
@@ -316,6 +393,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
               MultiSelectToolbar(
                 selectedCount: _selectedMessageIds.length,
                 onClose: () => setState(() => _isSelecting = false),
+                onCopy: _copySelectedMessages,
+                onForward: _forwardSelectedMessages,
                 onDelete: () async {
                   final repo = ref.read(chatRepositoryProvider);
                   for (final id in _selectedMessageIds) {
@@ -329,7 +408,6 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                     _isSelecting = false;
                   });
                 },
-                onForward: () {},
                 onStar: () {},
                 onShare: () {},
                 onReply: () {},

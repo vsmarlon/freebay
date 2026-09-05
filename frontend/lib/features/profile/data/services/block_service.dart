@@ -42,7 +42,9 @@ class BlockService {
 
   Future<Either<Failure, UnblockResponse>> unblock(String userId) async {
     try {
-      final response = await HttpClient.instance.delete('/users/$userId/block');
+      final response = await HttpClient.instance.patch(
+        '/users/$userId/unblock',
+      );
 
       if (response.statusCode == 200 && response.data != null) {
         return Right(UnblockResponse.fromJson(response.data['data']));

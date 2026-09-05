@@ -12,6 +12,7 @@ import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
 import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
   ref,
@@ -38,9 +39,9 @@ class UserReviewsPage extends ConsumerStatefulWidget {
 class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
   final List<ReviewEntity> _reviews = [];
   bool _isLoading = false;
-  bool _hasMore = true;
+  bool _hasMore = false;
   int _offset = 0;
-  final int _limit = 10;
+  static const int _limit = 20;
 
   @override
   void initState() {
@@ -48,12 +49,16 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
     _loadReviews();
   }
 
-  Future<void> _loadReviews() async {
-    if (_isLoading || !_hasMore) return;
-
+  Future<void> _loadReviews({bool refresh = false}) async {
+    if (_isLoading) return;
+    if (refresh) {
+      _offset = 0;
+      _reviews.clear();
+    }
     setState(() => _isLoading = true);
 
-    final result = await ref.read(getUserReviewsUsecaseProvider)(
+    final usecase = ref.read(getUserReviewsUsecaseProvider);
+    final result = await usecase(
       GetUserReviewsParams(
         userId: widget.userId,
         limit: _limit,
@@ -61,39 +66,19 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
       ),
     );
 
-    result.fold(
-      (failure) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(failure.message),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      },
-      (response) {
-        setState(() {
-          _reviews.addAll(response.reviews);
-          _hasMore = response.hasMore;
-          _offset += response.reviews.length;
-        });
-      },
-    );
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _refresh() async {
-    setState(() {
-      _reviews.clear();
-      _offset = 0;
-      _hasMore = true;
+    result.fold((failure) {}, (response) {
+      setState(() {
+        _reviews.addAll(response.reviews);
+        _hasMore = response.hasMore;
+        _offset += response.reviews.length;
+      });
     });
-    await _loadReviews();
   }
+
+  Future<void> _refresh() => _loadReviews(refresh: true);
 
   @override
   Widget build(BuildContext context) {
@@ -105,20 +90,9 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
           PageHeader(
             text: 'AVALIAÇÕES',
             subtitle: widget.userName,
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           BrutalistBreadcrumb(items: context.breadcrumbs),

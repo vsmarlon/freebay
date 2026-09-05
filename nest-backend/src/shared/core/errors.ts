@@ -137,9 +137,75 @@ export class PhoneCodeAlreadyUsedError extends AppError {
   }
 }
 
+export class InvalidPhoneError extends AppError {
+  constructor(message = 'Telefone inválido. Informe o DDD e o número.') {
+    super('INVALID_PHONE', message, 400);
+  }
+}
+
 export class DatabaseError extends AppError {
-  constructor(message = 'Database error') {
+  constructor(message = 'Erro no banco de dados') {
     super('DB_ERROR', message, 500);
+  }
+}
+
+export class InternalServerError extends AppError {
+  constructor(message = 'Erro interno do servidor') {
+    super('INTERNAL_ERROR', message, 500);
+  }
+}
+
+export class InvalidTokenError extends AppError {
+  constructor(message = 'Token inválido') {
+    super('INVALID_TOKEN', message, 401);
+  }
+}
+
+export class SessionExpiredError extends AppError {
+  constructor(message = 'Sessão expirada. Faça login novamente.') {
+    super('SESSION_EXPIRED', message, 401);
+  }
+}
+
+export class InvalidGoogleTokenError extends AppError {
+  constructor(message = 'Token Google inválido') {
+    super('INVALID_GOOGLE_TOKEN', message, 401);
+  }
+}
+
+export class UserNotFoundError extends AppError {
+  constructor(message = 'Usuário não encontrado') {
+    super('USER_NOT_FOUND', message, 404);
+  }
+}
+
+export class PaymentProviderError extends AppError {
+  constructor(message = 'Erro no provedor de pagamento', statusCode = 500) {
+    super('PAYMENT_PROVIDER_ERROR', message, statusCode);
+  }
+}
+
+export class CryptoRpcError extends AppError {
+  constructor(message = 'Falha na comunicação com a carteira crypto', statusCode = 502) {
+    super('CRYPTO_RPC_ERROR', message, statusCode);
+  }
+}
+
+export class UnsupportedCurrencyError extends AppError {
+  constructor(currency: string) {
+    super('UNSUPPORTED_CURRENCY', `Moeda não suportada: ${currency}`, 400);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message = 'Conflito de dados') {
+    super('CONFLICT', message, 409);
+  }
+}
+
+export class EmailDeliveryFailedError extends AppError {
+  constructor(message = 'Falha ao enviar e-mail') {
+    super('EMAIL_DELIVERY_FAILED', message, 500);
   }
 }
 

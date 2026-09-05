@@ -12,6 +12,7 @@ import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
   final repository = ref.watch(socialRepositoryProvider);
@@ -36,20 +37,9 @@ class LikedPostsPage extends ConsumerWidget {
         children: [
           PageHeader(
             text: 'POSTS CURTIDOS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(

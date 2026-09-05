@@ -6,7 +6,6 @@ import { RedisService } from './infra/redis/redis.service';
 import { EmailService } from './infra/email/email.service';
 import { JwtTokenValidatorService } from './auth/jwt-token-validator.service';
 import { RolesGuard } from './guards/roles.guard';
-import { HealthController } from './http/health.controller';
 
 @Global()
 @Module({
@@ -21,7 +20,6 @@ import { HealthController } from './http/health.controller';
       }),
     }),
   ],
-  controllers: [HealthController],
   providers: [PrismaService, RedisService, EmailService, JwtTokenValidatorService, RolesGuard],
   exports: [PrismaService, RedisService, EmailService, JwtModule, JwtTokenValidatorService, RolesGuard],
 })

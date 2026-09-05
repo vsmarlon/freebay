@@ -7,10 +7,10 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/centered_form_wrapper.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   final String token;
@@ -26,9 +26,9 @@ class ResetPasswordPage extends ConsumerStatefulWidget {
 }
 
 class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
-  final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -40,43 +40,30 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   }
 
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final result = await ref
-        .read(authRepositoryProvider)
+    final success = await ref
+        .read(authControllerProvider.notifier)
         .resetPassword(
-          widget.email,
-          widget.token,
-          _passwordController.text.trim(),
+          email: widget.email,
+          token: widget.token,
+          newPassword: _passwordController.text,
         );
-
-    result.fold(
-      (failure) {
-        if (mounted) {
-          setState(() => _errorMessage = failure.message);
-        }
-      },
-      (_) async {
-        // Password changed — stored biometric credentials are now stale
-        final biometryService = BiometryService();
-        await biometryService.clearCredentials();
-        await biometryService.setEnabled(false);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Senha redefinida com sucesso!')),
-          );
-          context.go('/login');
-        }
-      },
-    );
 
     if (mounted) {
       setState(() => _isLoading = false);
+      if (success) {
+        context.go('/login');
+      } else {
+        setState(() {
+          _errorMessage =
+              'Não foi possível redefinir sua senha. Tente novamente.';
+        });
+      }
     }
   }
 
@@ -88,16 +75,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
         children: [
           PageHeader(
             text: 'REDEFINIR SENHA',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: const Icon(Icons.arrow_back, size: 20),
-              ),
             ),
           ),
           Expanded(

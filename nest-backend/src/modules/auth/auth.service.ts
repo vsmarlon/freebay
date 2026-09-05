@@ -7,7 +7,6 @@ import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
-import { GuestUseCase } from './usecases/guest.usecase';
 import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
 import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
 import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
@@ -22,7 +21,15 @@ import {
   VerifyPasswordRecoveryCodeDTO,
   ResetPasswordDTO,
 } from './dtos/password-recovery.dto';
-import { AppError } from '@/shared/core/errors';
+import {
+  AppError,
+  InternalServerError,
+  InvalidTokenError,
+  UnauthorizedError,
+  UserNotFoundError,
+} from '@/shared/core/errors';
+import { isLeft } from '@/shared/core/either';
+import { UserRepository } from './domain/repositories/user.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { JwtPayload, JwtTokenType } from '@/shared/core/types';
 
@@ -33,7 +40,6 @@ export class AuthService {
   constructor(
     private readonly registerUseCase: RegisterUseCase,
     private readonly loginUseCase: LoginUseCase,
-    private readonly guestUseCase: GuestUseCase,
     private readonly requestPasswordRecoveryUseCase: RequestPasswordRecoveryUseCase,
     private readonly verifyPasswordRecoveryCodeUseCase: VerifyPasswordRecoveryCodeUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
@@ -41,6 +47,7 @@ export class AuthService {
     private readonly biometricLoginUseCase: BiometricLoginUseCase,
     private readonly googleAuthUseCase: GoogleAuthUseCase,
     private readonly completeProfileUseCase: CompleteProfileUseCase,
+    private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
@@ -57,7 +64,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao registrar');
+      throw new InternalServerError('Erro interno ao registrar');
     }
   }
 
@@ -72,42 +79,33 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao logar');
-    }
-  }
-
-  async guest() {
-    try {
-      const result = await this.guestUseCase.execute();
-      if (result.isLeft()) throw result.value;
-
-      const token = this.jwtService.sign(
-        { isGuest: true, role: 'GUEST', type: JwtTokenType.ACCESS, jti: randomUUID() } as JwtPayload,
-        { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
-      );
-
-      return { user: { id: result.value.userId, isGuest: true }, token };
-    } catch (err) {
-      if (err instanceof AppError) throw err;
-      this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao criar sessão convidado');
+      throw new InternalServerError('Erro interno ao logar');
     }
   }
 
   async refresh(user: { userId?: string; jti?: string; exp?: number; role?: string; type?: string }) {
     try {
       if (user.type !== JwtTokenType.REFRESH) {
-        throw new AppError('INVALID_TOKEN', 'Token inválido: esperado token de refresh');
+        throw new InvalidTokenError('Token inválido: esperado token de refresh');
+      }
+
+      if (!user.userId) {
+        throw new UnauthorizedError('Token inválido');
+      }
+
+      const existingUser = await this.userRepository.findById(user.userId);
+      if (isLeft(existingUser) || !existingUser.value) {
+        throw new UserNotFoundError('Usuário não encontrado');
       }
 
       await this.blacklistToken(user.jti, user.exp);
 
       const token = this.jwtService.sign(
-        { userId: user.userId, role: user.role, type: JwtTokenType.ACCESS, jti: randomUUID() } as JwtPayload,
+        { userId: existingUser.value.id, role: existingUser.value.role, type: JwtTokenType.ACCESS, jti: randomUUID() } as JwtPayload,
         { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
       );
       const refreshToken = this.jwtService.sign(
-        { userId: user.userId, role: user.role, type: JwtTokenType.REFRESH, jti: randomUUID() } as JwtPayload,
+        { userId: existingUser.value.id, role: existingUser.value.role, type: JwtTokenType.REFRESH, jti: randomUUID() } as JwtPayload,
         { expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') },
       );
 
@@ -115,7 +113,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao renovar token');
+      throw new InternalServerError('Erro interno ao renovar token');
     }
   }
 
@@ -131,7 +129,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao fazer logout');
+      throw new InternalServerError('Erro interno ao fazer logout');
     }
   }
 
@@ -143,7 +141,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao solicitar recuperação');
+      throw new InternalServerError('Erro interno ao solicitar recuperação');
     }
   }
 
@@ -155,7 +153,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao verificar código');
+      throw new InternalServerError('Erro interno ao verificar código');
     }
   }
 
@@ -167,7 +165,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao redefinir senha');
+      throw new InternalServerError('Erro interno ao redefinir senha');
     }
   }
 
@@ -179,7 +177,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao verificar nome de usuário');
+      throw new InternalServerError('Erro interno ao verificar nome de usuário');
     }
   }
 
@@ -209,7 +207,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao fazer login biométrico');
+      throw new InternalServerError('Erro interno ao fazer login biométrico');
     }
   }
 
@@ -220,7 +218,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao revogar token biométrico');
+      throw new InternalServerError('Erro interno ao revogar token biométrico');
     }
   }
 
@@ -235,7 +233,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao autenticar com Google');
+      throw new InternalServerError('Erro interno ao autenticar com Google');
     }
   }
 
@@ -247,7 +245,7 @@ export class AuthService {
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
-      throw new AppError('INTERNAL_ERROR', 'Erro interno ao completar perfil');
+      throw new InternalServerError('Erro interno ao completar perfil');
     }
   }
 

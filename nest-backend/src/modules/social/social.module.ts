@@ -30,6 +30,8 @@ import { SavePostUseCase } from './usecases/save-post.usecase';
 import { UnsavePostUseCase } from './usecases/unsave-post.usecase';
 import { LikeCommentUseCase } from './usecases/like-comment.usecase';
 import { UnlikeCommentUseCase } from './usecases/unlike-comment.usecase';
+import { DeletePostUseCase } from './usecases/delete-post.usecase';
+import { DeleteCommentUseCase } from './usecases/delete-comment.usecase';
 
 @Module({
   controllers: [SocialController],
@@ -57,6 +59,8 @@ import { UnlikeCommentUseCase } from './usecases/unlike-comment.usecase';
     UnsavePostUseCase,
     LikeCommentUseCase,
     UnlikeCommentUseCase,
+    DeletePostUseCase,
+    DeleteCommentUseCase,
   ],
   exports: [
     CommentRepository,
@@ -80,6 +84,8 @@ import { UnlikeCommentUseCase } from './usecases/unlike-comment.usecase';
     UnsavePostUseCase,
     LikeCommentUseCase,
     UnlikeCommentUseCase,
+    DeletePostUseCase,
+    DeleteCommentUseCase,
   ],
 })
 export class SocialModule {}

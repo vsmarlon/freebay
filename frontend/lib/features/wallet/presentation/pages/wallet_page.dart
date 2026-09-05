@@ -37,7 +37,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
     Future.microtask(() {
       if (!mounted) return;
       final user = ref.read(authControllerProvider).value;
-      if (user != null && !user.isGuest) {
+      if (user != null) {
         ref.read(walletProvider.notifier).loadWallet();
         ref.read(walletHistoryProvider.notifier).load();
       }
@@ -48,11 +48,10 @@ class _WalletPageState extends ConsumerState<WalletPage>
   Widget build(BuildContext context) {
     super.build(context);
     final user = ref.watch(authControllerProvider).value;
-    final isGuest = user == null || user.isGuest;
     final walletState = ref.watch(walletProvider);
     final historyState = ref.watch(walletHistoryProvider);
 
-    if (isGuest) {
+    if (user == null) {
       return Scaffold(
         body: GuestGateView(
           icon: Icons.account_balance_wallet_outlined,

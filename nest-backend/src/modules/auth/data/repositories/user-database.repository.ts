@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { RepositoryResponse } from '@/shared/core/either';
 import { UserRepository } from '../../domain/repositories/user.repository';
 import {
   UserProfileCounts,
@@ -16,59 +16,64 @@ import {
 const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
 
 @Injectable()
-export class UserDatabaseRepository implements UserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class UserDatabaseRepository extends BasePrismaRepository implements UserRepository {
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
 
   async findById(id: string): RepositoryResponse<User | null> {
-    try {
-      return right(await this.prisma.user.findUnique({ where: { id } }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
-    }
+    return this.safeRun(
+      () => this.prisma.user.findUnique({ where: { id } }),
+      'Erro ao buscar usuário por ID',
+    );
   }
 
   async findByEmail(email: string): RepositoryResponse<User | null> {
-    try {
-      return right(await this.prisma.user.findUnique({ where: { email } }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
-    }
+    return this.safeRun(
+      () => this.prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } }),
+      'Erro ao buscar usuário por email',
+    );
   }
 
   async findByGoogleId(googleId: string): RepositoryResponse<User | null> {
-    try {
-      return right(await this.prisma.user.findUnique({ where: { googleId } }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
-    }
+    return this.safeRun(
+      () => this.prisma.user.findUnique({ where: { googleId } }),
+      'Erro ao buscar usuário por Google ID',
+    );
   }
 
   async findByUsername(username: string): RepositoryResponse<User | null> {
-    try {
-      return right(await this.prisma.user.findUnique({ where: { username } }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar usuário'));
-    }
+    const normalized = username.toLowerCase().trim();
+    return this.safeRun(
+      () =>
+        this.prisma.user.findFirst({
+          where: {
+            username: {
+              equals: normalized,
+              mode: 'insensitive',
+            },
+          },
+        }),
+      'Erro ao buscar usuário por username',
+    );
   }
 
   async create(data: Prisma.UserCreateInput): RepositoryResponse<User> {
-    try {
-      return right(await this.prisma.user.create({ data }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao criar usuário'));
-    }
+    return this.safeRun(
+      () => this.prisma.user.create({ data }),
+      'Erro ao criar usuário',
+    );
   }
 
   async update(id: string, data: Prisma.UserUpdateInput): RepositoryResponse<User> {
-    try {
-      return right(await this.prisma.user.update({ where: { id }, data }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao atualizar usuário'));
-    }
+    return this.safeRun(
+      () => this.prisma.user.update({ where: { id }, data }),
+      'Erro ao atualizar usuário',
+    );
   }
 
   async searchUsers(query: string, limit: number, offset: number, viewerId?: string): RepositoryResponse<UserSearchResult[]> {
-    try {
+    return this.safeRun(async () => {
       const q = query.trim();
       const likeAll = `%${q}%`;
       const prefixLike = `${q}%`;
@@ -113,18 +118,14 @@ export class UserDatabaseRepository implements UserRepository {
         LIMIT ${limit} OFFSET ${offset}
       `);
 
-      return right(
-        rows.map((r) =>
-          toUserSearchResult(r, Number(r.followersCount), Number(r.followingCount)),
-        ),
+      return rows.map((r) =>
+        toUserSearchResult(r, Number(r.followersCount), Number(r.followingCount)),
       );
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao pesquisar usuários'));
-    }
+    }, 'Erro ao pesquisar usuários');
   }
 
   async getSuggestions(userId: string, limit: number): RepositoryResponse<UserSuggestionResult[]> {
-    try {
+    return this.safeRun(async () => {
       const following = await this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true },
@@ -183,7 +184,7 @@ export class UserDatabaseRepository implements UserRepository {
         )
         .slice(0, limit);
 
-      if (ranked.length >= limit) return right(ranked);
+      if (ranked.length >= limit) return ranked;
 
       const alreadySuggested = new Set(ranked.map((u) => u.id));
       const popular = await this.prisma.user.findMany({
@@ -197,19 +198,17 @@ export class UserDatabaseRepository implements UserRepository {
         select: baseSelect,
       });
 
-      return right([
+      return [
         ...ranked,
         ...popular.map((u) =>
           toUserSuggestionResult(u, u._count.followers, u._count.following, 0),
         ),
-      ]);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar sugestões'));
-    }
+      ];
+    }, 'Erro ao buscar sugestões');
   }
 
   async getProfileCounts(userId: string): RepositoryResponse<UserProfileCounts> {
-    try {
+    return this.safeRun(async () => {
       const [postsCount, productsCount, activeStory] = await Promise.all([
         this.prisma.post.count({ where: { userId } }),
         this.prisma.product.count({ where: { sellerId: userId, status: { not: 'DELETED' } } }),
@@ -219,21 +218,18 @@ export class UserDatabaseRepository implements UserRepository {
         }),
       ]);
 
-      return right({ postsCount, productsCount, hasActiveStory: activeStory !== null });
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar dados do perfil'));
-    }
+      return { postsCount, productsCount, hasActiveStory: activeStory !== null };
+    }, 'Erro ao buscar dados do perfil');
   }
 
   async findPaymentInfo(userId: string): RepositoryResponse<{ displayName: string; email: string; cpf: string | null } | null> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { displayName: true, email: true, cpf: true },
-      });
-      return right(user);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar informações de pagamento'));
-    }
+    return this.safeRun(
+      () =>
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { displayName: true, email: true, cpf: true },
+        }),
+      'Erro ao buscar informações de pagamento',
+    );
   }
 }

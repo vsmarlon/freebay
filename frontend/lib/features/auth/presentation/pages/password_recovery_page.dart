@@ -6,10 +6,10 @@ import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/brutalist_background.dart';
 import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/centered_form_wrapper.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PasswordRecoveryPage extends ConsumerStatefulWidget {
   const PasswordRecoveryPage({super.key});
@@ -23,90 +23,84 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _requested = false;
-  String? _message;
+
+  bool _isLoading = false;
+  String? _errorMessage;
+  int _step = 1;
 
   @override
   void dispose() {
     _emailController.dispose();
     _codeController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _requestCode() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final result = await ref
-        .read(authRepositoryProvider)
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final success = await ref
+        .read(authControllerProvider.notifier)
         .requestPasswordRecovery(_emailController.text.trim());
-    result.fold(
-      (failure) {
-        setState(() => _message = failure.message);
-      },
-      (_) {
-        setState(() {
-          _requested = true;
-          _message = 'Se o e-mail existir, você receberá um código.';
-        });
-      },
-    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (success) {
+          _step = 2;
+        } else {
+          _errorMessage =
+              'Não foi possível enviar o código. Verifique o e-mail.';
+        }
+      });
+    }
   }
 
   Future<void> _resetPassword() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final verify = await ref
-        .read(authRepositoryProvider)
-        .verifyPasswordRecoveryCode(
-          _emailController.text.trim(),
-          _codeController.text.trim(),
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .resetPassword(
+          email: _emailController.text.trim(),
+          token: _codeController.text.trim(),
+          newPassword: _passwordController.text,
         );
-    verify.fold(
-      (failure) {
-        setState(() => _message = failure.message);
-      },
-      (ok) async {
-        if (!ok) return;
-        final reset = await ref
-            .read(authRepositoryProvider)
-            .resetPassword(
-              _emailController.text.trim(),
-              _codeController.text.trim(),
-              _passwordController.text.trim(),
-            );
-        reset.fold(
-          (failure) {
-            setState(() => _message = failure.message);
-          },
-          (_) {
-            if (mounted) context.pop();
-          },
-        );
-      },
-    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        context.go('/login');
+      } else {
+        setState(() {
+          _errorMessage = 'Código inválido ou expirado. Tente novamente.';
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      body: BrutalistBackground(
+    return BrutalistBackground(
+      child: SafeArea(
         child: Column(
           children: [
             PageHeader(
               text: 'RECUPERAR SENHA',
-              leading: GestureDetector(
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
                 onTap: () => context.pop(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.zero,
-                    border: Border.all(color: context.borderColor, width: 1),
-                  ),
-                  child: const Icon(Icons.arrow_back, size: 20),
-                ),
               ),
             ),
             Expanded(
@@ -130,7 +124,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                       AnimatedSize(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeOutCubic,
-                        child: _requested
+                        child: _step == 2
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
@@ -161,21 +155,18 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                               )
                             : const SizedBox.shrink(),
                       ),
-                      if (_message != null) ...[
+                      if (_errorMessage != null) ...[
                         Text(
-                          _message!,
+                          _errorMessage!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.darkGray,
-                          ),
+                          style: const TextStyle(color: AppColors.error),
                         ),
                         Spacing.vMd,
                       ],
                       AppButton(
-                        label: _requested ? 'Redefinir senha' : 'Enviar código',
-                        onPressed: _requested ? _resetPassword : _requestCode,
+                        label: _step == 2 ? 'Redefinir senha' : 'Enviar código',
+                        isLoading: _isLoading,
+                        onPressed: _step == 2 ? _resetPassword : _requestCode,
                       ),
                     ],
                   ),

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { FavoriteRepository } from '../domain/repositories/favorite.repository';
 
 @Injectable()
@@ -13,11 +13,11 @@ export class ToggleFavoriteUseCase {
       return left(productResult.value);
     }
     if (!productResult.value || productResult.value.status !== 'ACTIVE') {
-      return left(new AppError('NOT_FOUND', 'Produto não encontrado', 404));
+      return left(new NotFoundError('Produto'));
     }
 
     if (productResult.value.sellerId === userId) {
-      return left(new AppError('FORBIDDEN', 'Você não pode favoritar seu próprio produto', 403));
+      return left(new ForbiddenError('Você não pode favoritar seu próprio produto'));
     }
 
     const existingResult = await this.favoriteRepository.findByUserAndProduct(userId, productId);

@@ -6,17 +6,16 @@ import {
   Headers,
   Logger,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import Stripe from 'stripe';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { Authenticated, StripeWebhook } from '@/shared/decorators/endpoints.decorator';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
+import { PostAuth, StripeWebhook, CurrentUserId } from '@/shared/decorators';
 import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.usecase';
 import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
+import { CreateCryptoPaymentUseCase } from './usecases/create-crypto-payment.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
-import { CreatePaymentSessionOutput, CreatePaymentIntentOutput } from './dtos/payment.dto';
+import { CreatePaymentSessionOutput, CreatePaymentIntentOutput, CreateCryptoPaymentOutput } from './dtos/payment.dto';
 import { right } from '@/shared/core/either';
 
 interface WebhookRequest {
@@ -39,11 +38,11 @@ export class PaymentsController {
   constructor(
     private readonly createPaymentSessionUseCase: CreatePaymentSessionUseCase,
     private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
+    private readonly createCryptoPaymentUseCase: CreateCryptoPaymentUseCase,
     private readonly processWebhookUseCase: ProcessWebhookUseCase,
   ) {}
 
-  @Post('checkout/:orderId')
-  @Authenticated({
+  @PostAuth('checkout/:orderId', {
     summary: 'Create Stripe Checkout payment session',
     description: 'Creates a Stripe Checkout Session for an order (rate limited: 5/min)',
     responseStatus: 201,
@@ -52,18 +51,16 @@ export class PaymentsController {
     errors: [{ status: 429, description: 'Too many requests' }],
     throttle: { limit: 5, ttl: 60000 },
     httpCode: HttpStatus.CREATED,
-    guards: [JwtAuthGuard],
   })
   async createPaymentSession(
-    @Param('orderId') orderId: string,
-    @CurrentUser() user: AuthUser,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @CurrentUserId() userId: string,
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
-    return this.createPaymentSessionUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
+    return this.createPaymentSessionUseCase.execute({ orderId, userId, idempotencyKey });
   }
 
-  @Post('payment-intent/:orderId')
-  @Authenticated({
+  @PostAuth('payment-intent/:orderId', {
     summary: 'Create Stripe PaymentIntent for PaymentSheet',
     description: 'Creates a Stripe PaymentIntent for an order (mobile PaymentSheet; rate limited: 5/min)',
     responseStatus: 201,
@@ -72,14 +69,30 @@ export class PaymentsController {
     errors: [{ status: 429, description: 'Too many requests' }],
     throttle: { limit: 5, ttl: 60000 },
     httpCode: HttpStatus.CREATED,
-    guards: [JwtAuthGuard],
   })
   async createPaymentIntent(
-    @Param('orderId') orderId: string,
-    @CurrentUser() user: AuthUser,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @CurrentUserId() userId: string,
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
-    return this.createPaymentIntentUseCase.execute({ orderId, userId: user.userId, idempotencyKey });
+    return this.createPaymentIntentUseCase.execute({ orderId, userId, idempotencyKey });
+  }
+
+  @PostAuth('crypto/:orderId', {
+    summary: 'Create Monero Ephemeral Payment Address',
+    description: 'Generates a disposable untrackable Monero (XMR) subaddress and QR URI for private escrow (rate limited: 5/min)',
+    responseStatus: 201,
+    responseType: CreateCryptoPaymentOutput,
+    params: [{ name: 'orderId', description: 'Order UUID' }],
+    errors: [{ status: 429, description: 'Too many requests' }],
+    throttle: { limit: 5, ttl: 60000 },
+    httpCode: HttpStatus.CREATED,
+  })
+  async createCryptoPayment(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.createCryptoPaymentUseCase.execute({ orderId, userId, currency: 'XMR' });
   }
 
   @Post('webhook')

@@ -11,7 +11,7 @@ export class GetFavoritesUseCase {
   async execute(userId: string): Promise<Either<AppError, FavoriteWithProduct[]>> {
     const result = await this.favoriteRepository.getUserFavorites(userId);
     if (isLeft(result)) {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar favoritos'));
+      return left(result.value);
     }
     return result;
   }

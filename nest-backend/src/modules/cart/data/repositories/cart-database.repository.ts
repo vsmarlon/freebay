@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { CartRepository } from '../../domain/repositories/cart.repository';
 import { CartItemPayload, ProductBrief, CART_ITEM_INCLUDE } from '../../types/cart.types';
 
@@ -148,16 +148,16 @@ export class CartDatabaseRepository extends BasePrismaRepository implements Cart
       return right(order);
     } catch (e) {
       if ((e as Error).message === 'PRODUCT_UNAVAILABLE') {
-        return left(new AppError('BAD_REQUEST', 'Um ou mais produtos não estão mais disponíveis'));
+        return left(new BadRequestError('Um ou mais produtos não estão mais disponíveis'));
       }
-      return left(new AppError('DB_ERROR', 'Erro ao criar pedido'));
+      return left(new DatabaseError('Erro ao criar pedido'));
     }
   }
 
   async rollbackOrderReservation(orderId: string, productId: string): RepositoryResponse<void> {
     return this.safeRun(async () => {
       await this.prisma.$transaction(async (tx) => {
-        await tx.order.delete({ where: { id: orderId } });
+        await tx.order.update({ where: { id: orderId }, data: { status: 'CANCELLED' } });
         const currentProduct = await tx.product.findUnique({
           where: { id: productId },
           select: { quantity: true, soldCount: true, status: true },

@@ -51,3 +51,6 @@ Thumbs.db
 
 # claude
 .claude/settings.local.json
+
+# opencode
+opencode.json

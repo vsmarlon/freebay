@@ -9,7 +9,7 @@ import {
   CryptoRefundResult,
 } from '../types/crypto-payment.types';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, UnsupportedCurrencyError, CryptoRpcError } from '@/shared/core/errors';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -29,7 +29,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
   ): Promise<Either<AppError, EphemeralAddressPayload>> {
     try {
       if (currency !== CryptoCurrency.XMR) {
-        return left(new AppError('UNSUPPORTED_CURRENCY', `MoneroRpcProvider only supports XMR, received: ${currency}`));
+        return left(new UnsupportedCurrencyError(currency));
       }
 
       // Convert cents (BRL/USD) to approximate atomic units (piconero: 1 XMR = 10^12 atomic units)
@@ -59,7 +59,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
       });
     } catch (error) {
       this.logger.error(`Failed to generate Monero ephemeral address: ${(error as Error).message}`);
-      return left(new AppError('CRYPTO_RPC_ERROR', 'Falha ao gerar endereço Monero de pagamento seguro'));
+      return left(new CryptoRpcError('Falha ao gerar endereço Monero de pagamento seguro'));
     }
   }
 
@@ -70,7 +70,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
   ): Promise<Either<AppError, CryptoDepositReceipt | null>> {
     try {
       if (currency !== CryptoCurrency.XMR) {
-        return left(new AppError('UNSUPPORTED_CURRENCY', `MoneroRpcProvider only handles XMR`));
+        return left(new UnsupportedCurrencyError(currency));
       }
 
       // In real daemon, calls get_transfers with subaddress index or payment_id filter
@@ -87,7 +87,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
       });
     } catch (error) {
       this.logger.error(`Error checking Monero deposit status: ${(error as Error).message}`);
-      return left(new AppError('CRYPTO_RPC_ERROR', 'Erro ao verificar confirmações da blockchain Monero'));
+      return left(new CryptoRpcError('Erro ao verificar confirmações da blockchain Monero'));
     }
   }
 
@@ -99,7 +99,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
   ): Promise<Either<AppError, CryptoPayoutResult>> {
     try {
       if (currency !== CryptoCurrency.XMR) {
-        return left(new AppError('UNSUPPORTED_CURRENCY', `Unsupported currency: ${currency}`));
+        return left(new UnsupportedCurrencyError(currency));
       }
 
       const payoutTxHash = crypto.createHash('sha256').update(`payout:${orderId}:${sellerAddress}`).digest('hex');
@@ -115,7 +115,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
       });
     } catch (error) {
       this.logger.error(`Error releasing Monero escrow payout: ${(error as Error).message}`);
-      return left(new AppError('CRYPTO_RPC_ERROR', 'Erro ao processar liberação de escrow Monero'));
+      return left(new CryptoRpcError('Erro ao processar liberação de escrow Monero'));
     }
   }
 
@@ -127,7 +127,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
   ): Promise<Either<AppError, CryptoRefundResult>> {
     try {
       if (currency !== CryptoCurrency.XMR) {
-        return left(new AppError('UNSUPPORTED_CURRENCY', `Unsupported currency: ${currency}`));
+        return left(new UnsupportedCurrencyError(currency));
       }
 
       const refundTxHash = crypto.createHash('sha256').update(`refund:${orderId}:${buyerRefundAddress}`).digest('hex');
@@ -141,7 +141,7 @@ export class MoneroRpcProvider implements CryptoPaymentProvider {
       });
     } catch (error) {
       this.logger.error(`Error refunding Monero payment: ${(error as Error).message}`);
-      return left(new AppError('CRYPTO_RPC_ERROR', 'Erro ao estornar pagamento Monero'));
+      return left(new CryptoRpcError('Erro ao estornar pagamento Monero'));
     }
   }
 }

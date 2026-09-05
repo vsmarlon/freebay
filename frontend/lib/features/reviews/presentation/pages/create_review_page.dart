@@ -13,6 +13,7 @@ import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/features/reviews/domain/usecases/create_review_usecase.dart';
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class CreateReviewPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -37,8 +38,8 @@ class CreateReviewPage extends ConsumerStatefulWidget {
 class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
   int _score = 0;
   final _commentController = TextEditingController();
-  bool _isSubmitting = false;
   List<File> _selectedImages = [];
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -53,6 +54,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
     }
 
     setState(() => _isSubmitting = true);
+
     final usecase = ref.read(createReviewUsecaseProvider);
     final result = await usecase(
       CreateReviewParams(
@@ -84,20 +86,9 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
         children: [
           PageHeader(
             text: 'AVALIAR',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
             breadcrumbs: context.breadcrumbs,
           ),

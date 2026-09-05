@@ -18,7 +18,6 @@ abstract class UserEntity with _$UserEntity {
     String? city,
     String? state,
     @Default(false) bool isVerified,
-    @Default(false) bool isGuest,
     @Default(false) bool hasCpf,
     String? cpf,
     @Default(0) num reputationScore,
@@ -35,6 +34,5 @@ abstract class UserEntity with _$UserEntity {
   factory UserEntity.fromJson(Map<String, dynamic> json) =>
       _$UserEntityFromJson(json);
 
-  String get displayNameOrDefault =>
-      displayName ?? (isGuest ? 'Convidado' : 'Usuário');
+  String get displayNameOrDefault => displayName ?? 'Usuário';
 }

@@ -17,9 +17,12 @@ import { DeleteConversationUseCase } from './delete-conversation.usecase';
 import { SetConversationThemeUseCase } from './set-conversation-theme.usecase';
 import { SetConversationBackgroundUseCase } from './set-conversation-background.usecase';
 import { OgScraperService } from '../services/og-scraper.service';
+import { UrlSafetyService } from '../services/url-safety.service';
 import { DeleteMessageUseCase } from './delete-message.usecase';
 import { ToggleReactionUseCase } from './toggle-reaction.usecase';
 import { GetConversationMediaUseCase } from './get-conversation-media.usecase';
+import { VerifyUrlSafetyUseCase } from './verify-url-safety.usecase';
+import { ForwardMessagesUseCase } from './forward-messages.usecase';
 
 @Module({
   providers: [
@@ -40,9 +43,12 @@ import { GetConversationMediaUseCase } from './get-conversation-media.usecase';
     SetConversationThemeUseCase,
     SetConversationBackgroundUseCase,
     OgScraperService,
+    UrlSafetyService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
     GetConversationMediaUseCase,
+    VerifyUrlSafetyUseCase,
+    ForwardMessagesUseCase,
   ],
   exports: [
     ConversationRepository,
@@ -59,9 +65,13 @@ import { GetConversationMediaUseCase } from './get-conversation-media.usecase';
     SetConversationThemeUseCase,
     SetConversationBackgroundUseCase,
     OgScraperService,
+    UrlSafetyService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
     GetConversationMediaUseCase,
+    VerifyUrlSafetyUseCase,
+    ForwardMessagesUseCase,
   ],
 })
 export class ChatUseCasesModule {}
+

@@ -42,9 +42,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   Widget build(BuildContext context) {
     super.build(context);
     final authState = ref.watch(authControllerProvider);
-    final isGuest = authState.value?.isGuest ?? false;
 
-    if (isGuest) {
+    if (authState.value == null) {
       return const GuestProfileView();
     }
 

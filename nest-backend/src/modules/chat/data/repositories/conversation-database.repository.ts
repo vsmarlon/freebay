@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { RepositoryResponse } from '@/shared/core/either';
 import { ConversationRepository } from '../../domain/repositories/conversation.repository';
 import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 import {
@@ -26,33 +26,38 @@ const REPLY_TO_SELECT = {
 } as const;
 
 @Injectable()
-export class ConversationDatabaseRepository implements ConversationRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class ConversationDatabaseRepository extends BasePrismaRepository implements ConversationRepository {
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
 
   async findUserById(id: string): RepositoryResponse<User | null> {
-    try {
-      return right(await this.prisma.user.findUnique({ where: { id } }));
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar usuário')); }
+    return this.safeRun(
+      () => this.prisma.user.findUnique({ where: { id } }),
+      'Erro ao buscar usuário',
+    );
   }
 
   async findFollow(followerId: string, followingId: string): RepositoryResponse<{ id: string } | null> {
-    try {
-      const follow = await this.prisma.follow.findFirst({
-        where: { followerId, followingId },
-        select: { id: true },
-      });
-      return right(follow);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar relacionamento')); }
+    return this.safeRun(
+      () =>
+        this.prisma.follow.findFirst({
+          where: { followerId, followingId },
+          select: { id: true },
+        }),
+      'Erro ao buscar relacionamento',
+    );
   }
 
   async findDirectConversationById(id: string): RepositoryResponse<DirectConversation | null> {
-    try {
-      return right(await this.prisma.directConversation.findUnique({ where: { id } }));
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar conversa')); }
+    return this.safeRun(
+      () => this.prisma.directConversation.findUnique({ where: { id } }),
+      'Erro ao buscar conversa',
+    );
   }
 
   async findDirectConversationsByUser(userId: string): RepositoryResponse<DirectConversationWithDetails[]> {
-    try {
+    return this.safeRun(async () => {
       const convs = await this.prisma.directConversation.findMany({
         where: {
           OR: [
@@ -81,139 +86,143 @@ export class ConversationDatabaseRepository implements ConversationRepository {
         },
         orderBy: { lastMessageAt: 'desc' },
       });
-      return right(convs as DirectConversationWithDetails[]);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar conversas')); }
+      return convs as DirectConversationWithDetails[];
+    }, 'Erro ao buscar conversas');
   }
 
   async findDirectConversationBetweenUsers(user1Id: string, user2Id: string): RepositoryResponse<DirectConversation | null> {
-    try {
-      return right(await this.prisma.directConversation.findFirst({
-        where: {
-          OR: [
-            { user1Id, user2Id },
-            { user1Id: user2Id, user2Id: user1Id },
-          ],
-        },
-      }));
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar conversa')); }
+    return this.safeRun(
+      () =>
+        this.prisma.directConversation.findFirst({
+          where: {
+            OR: [
+              { user1Id, user2Id },
+              { user1Id: user2Id, user2Id: user1Id },
+            ],
+          },
+        }),
+      'Erro ao buscar conversa',
+    );
   }
 
   async createDirectConversation(data: Prisma.DirectConversationCreateInput): RepositoryResponse<DirectConversation> {
-    try {
-      return right(await this.prisma.directConversation.create({ data }));
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao criar conversa')); }
+    return this.safeRun(
+      () => this.prisma.directConversation.create({ data }),
+      'Erro ao criar conversa',
+    );
   }
 
   async updateDirectConversation(id: string, data: Prisma.DirectConversationUpdateInput): RepositoryResponse<DirectConversation> {
-    try {
-      return right(await this.prisma.directConversation.update({ where: { id }, data }));
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao atualizar conversa')); }
+    return this.safeRun(
+      () => this.prisma.directConversation.update({ where: { id }, data }),
+      'Erro ao atualizar conversa',
+    );
   }
 
   async createDirectMessage(data: Prisma.DirectMessageCreateInput, includeSender?: boolean): RepositoryResponse<DirectMessage | DirectMessageWithSender> {
-    try {
+    return this.safeRun(async () => {
       const query: Prisma.DirectMessageCreateArgs = { data };
       if (includeSender) {
         query.include = { sender: { select: USER_SELECT_MINIMAL } };
       }
-      return right(await this.prisma.directMessage.create(query) as DirectMessage | DirectMessageWithSender);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao criar mensagem')); }
+      return (await this.prisma.directMessage.create(query)) as DirectMessage | DirectMessageWithSender;
+    }, 'Erro ao criar mensagem');
   }
 
   async findMessagesByConversation(conversationId: string): RepositoryResponse<DirectMessageWithSender[]> {
-    try {
-      return right(await this.prisma.directMessage.findMany({
+    return this.safeRun(async () => {
+      const msgs = await this.prisma.directMessage.findMany({
         where: { conversationId },
         orderBy: { createdAt: 'asc' },
         include: {
           sender: { select: USER_SELECT_MINIMAL },
           replyTo: { select: REPLY_TO_SELECT },
         },
-      }) as DirectMessageWithSender[]);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens')); }
+      });
+      return msgs as DirectMessageWithSender[];
+    }, 'Erro ao buscar mensagens');
   }
 
   async createChatMessage(data: Prisma.ChatMessageCreateInput, includeSender?: boolean): RepositoryResponse<ChatMessage | ChatMessageWithSender> {
-    try {
+    return this.safeRun(async () => {
       const query: Prisma.ChatMessageCreateArgs = { data };
       if (includeSender) {
         query.include = { sender: { select: USER_SELECT_MINIMAL } };
       }
-      return right(await this.prisma.chatMessage.create(query) as ChatMessage | ChatMessageWithSender);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao criar mensagem')); }
+      return (await this.prisma.chatMessage.create(query)) as ChatMessage | ChatMessageWithSender;
+    }, 'Erro ao criar mensagem');
   }
 
   async findChatMessagesByOrder(orderId: string): RepositoryResponse<ChatMessageWithSender[]> {
-    try {
-      return right(await this.prisma.chatMessage.findMany({
+    return this.safeRun(async () => {
+      const msgs = await this.prisma.chatMessage.findMany({
         where: { orderId },
         orderBy: { createdAt: 'asc' },
         include: {
           sender: { select: USER_SELECT_MINIMAL },
           replyTo: { select: REPLY_TO_SELECT },
         },
-      }) as ChatMessageWithSender[]);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens')); }
+      });
+      return msgs as ChatMessageWithSender[];
+    }, 'Erro ao buscar mensagens');
   }
 
   async markChatMessagesRead(orderId: string, userId: string): RepositoryResponse<void> {
-    try {
+    return this.safeRun(async () => {
       await this.prisma.chatMessage.updateMany({
         where: { orderId, senderId: { not: userId }, readAt: null },
         data: { readAt: new Date(), deliveredAt: new Date() },
       });
-      return right(void 0);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao marcar mensagens')); }
+    }, 'Erro ao marcar mensagens');
   }
 
   async markMessagesDelivered(conversationId: string, userId: string): RepositoryResponse<void> {
-    try {
+    return this.safeRun(async () => {
       await this.prisma.directMessage.updateMany({
         where: { conversationId, senderId: { not: userId }, deliveredAt: null },
         data: { deliveredAt: new Date() },
       });
-      return right(void 0);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao marcar mensagens')); }
+    }, 'Erro ao marcar mensagens');
   }
 
   async markMessagesRead(conversationId: string, userId: string): RepositoryResponse<void> {
-    try {
+    return this.safeRun(async () => {
       await this.prisma.directMessage.updateMany({
         where: { conversationId, senderId: { not: userId }, readAt: null },
         data: { readAt: new Date(), deliveredAt: new Date() },
       });
-      return right(void 0);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao marcar mensagens')); }
+    }, 'Erro ao marcar mensagens');
   }
 
   async findOrdersByUser(userId: string): RepositoryResponse<OrderWithChatRecord[]> {
-    try {
-      const orders = await this.prisma.order.findMany({
-        where: {
-          OR: [
-            { buyerId: userId },
-            { sellerId: userId },
-          ],
-        },
-        include: {
-          buyer: { select: USER_SELECT_BASIC },
-          seller: { select: USER_SELECT_BASIC },
-          product: { select: { id: true, title: true } },
-          chatMessages: {
-            take: 1,
-            select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
-            orderBy: { createdAt: 'desc' },
+    return this.safeRun(
+      () =>
+        this.prisma.order.findMany({
+          where: {
+            OR: [
+              { buyerId: userId },
+              { sellerId: userId },
+            ],
           },
-        },
-        orderBy: { updatedAt: 'desc' },
-      });
-      return right(orders);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar pedidos')); }
+          include: {
+            buyer: { select: USER_SELECT_BASIC },
+            seller: { select: USER_SELECT_BASIC },
+            product: { select: { id: true, title: true } },
+            chatMessages: {
+              take: 1,
+              select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+          orderBy: { updatedAt: 'desc' },
+        }),
+      'Erro ao buscar pedidos',
+    );
   }
 
   async countUnreadChatMessages(orderIds: string[], userId: string): RepositoryResponse<Record<string, number>> {
-    try {
-      if (orderIds.length === 0) return right({});
+    return this.safeRun(async () => {
+      if (orderIds.length === 0) return {};
       const grouped = await this.prisma.chatMessage.groupBy({
         by: ['orderId'],
         where: {
@@ -225,44 +234,47 @@ export class ConversationDatabaseRepository implements ConversationRepository {
       });
       const map: Record<string, number> = {};
       for (const g of grouped) map[g.orderId] = g._count.id;
-      return right(map);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao contar mensagens')); }
+      return map;
+    }, 'Erro ao contar mensagens');
   }
 
   async findPreferencesByUser(userId: string): RepositoryResponse<ConversationPreference[]> {
-    try {
-      return right(await this.prisma.conversationPreference.findMany({
-        where: { userId, isDeleted: false },
-      }));
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar preferências')); }
+    return this.safeRun(
+      () =>
+        this.prisma.conversationPreference.findMany({
+          where: { userId, isDeleted: false },
+        }),
+      'Erro ao buscar preferências',
+    );
   }
 
   async findDirectMessageById(id: string): RepositoryResponse<DirectMessage | null> {
-    try {
-      const msg = await this.prisma.directMessage.findUnique({ where: { id } });
-      return right(msg);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar mensagem')); }
+    return this.safeRun(
+      () => this.prisma.directMessage.findUnique({ where: { id } }),
+      'Erro ao buscar mensagem',
+    );
   }
 
   async softDeleteDirectMessage(id: string): RepositoryResponse<void> {
-    try {
-      await this.prisma.directMessage.update({ where: { id }, data: { deletedAt: new Date() } });
-      return right(undefined);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao apagar mensagem')); }
+    return this.safeRun(
+      async () => {
+        await this.prisma.directMessage.update({ where: { id }, data: { deletedAt: new Date() } });
+      },
+      'Erro ao apagar mensagem',
+    );
   }
 
   async findReactionByUserAndMessage(userId: string, messageId: string, model: ChatThreadType): RepositoryResponse<MessageReaction | null> {
-    try {
+    return this.safeRun(async () => {
       const where = model === 'DIRECT'
         ? { userId, directMessageId: messageId }
         : { userId, chatMessageId: messageId };
-      const reaction = await this.prisma.messageReaction.findFirst({ where });
-      return right(reaction);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar reação')); }
+      return this.prisma.messageReaction.findFirst({ where });
+    }, 'Erro ao buscar reação');
   }
 
   async upsertReaction(data: { userId: string; messageId: string; emoji: string; model: ChatThreadType }): RepositoryResponse<void> {
-    try {
+    return this.safeRun(async () => {
       const existing = await this.findReactionByUserAndMessage(data.userId, data.messageId, data.model);
       if (existing.isRight() && existing.value) {
         await this.prisma.messageReaction.update({
@@ -279,25 +291,25 @@ export class ConversationDatabaseRepository implements ConversationRepository {
           },
         });
       }
-      return right(undefined);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao registrar reação')); }
+    }, 'Erro ao registrar reação');
   }
 
   async deleteReaction(reactionId: string): RepositoryResponse<void> {
-    try {
-      await this.prisma.messageReaction.delete({ where: { id: reactionId } });
-      return right(undefined);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao remover reação')); }
+    return this.safeRun(
+      async () => {
+        await this.prisma.messageReaction.delete({ where: { id: reactionId } });
+      },
+      'Erro ao remover reação',
+    );
   }
 
   async getReactionsForMessage(messageId: string, model: ChatThreadType): RepositoryResponse<{ emoji: string; userId: string }[]> {
-    try {
+    return this.safeRun(async () => {
       const where = model === 'DIRECT'
         ? { directMessageId: messageId }
         : { chatMessageId: messageId };
-      const reactions = await this.prisma.messageReaction.findMany({ where, select: { emoji: true, userId: true } });
-      return right(reactions);
-    } catch { return left(new AppError('DB_ERROR', 'Erro ao buscar reações')); }
+      return this.prisma.messageReaction.findMany({ where, select: { emoji: true, userId: true } });
+    }, 'Erro ao buscar reações');
   }
 
   async findDirectMessagesByType(
@@ -306,7 +318,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     limit: number,
     cursor?: string,
   ): RepositoryResponse<DirectMessageWithSender[]> {
-    try {
+    return this.safeRun(async () => {
       const result = await this.prisma.directMessage.findMany({
         where: { conversationId, type },
         orderBy: { createdAt: 'desc' },
@@ -317,10 +329,8 @@ export class ConversationDatabaseRepository implements ConversationRepository {
           replyTo: { select: REPLY_TO_SELECT },
         },
       });
-      return right(result as DirectMessageWithSender[]);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens'));
-    }
+      return result as DirectMessageWithSender[];
+    }, 'Erro ao buscar mensagens');
   }
 
   async findChatMessagesByType(
@@ -329,7 +339,7 @@ export class ConversationDatabaseRepository implements ConversationRepository {
     limit: number,
     cursor?: string,
   ): RepositoryResponse<ChatMessageWithSender[]> {
-    try {
+    return this.safeRun(async () => {
       const result = await this.prisma.chatMessage.findMany({
         where: { orderId, type },
         orderBy: { createdAt: 'desc' },
@@ -340,29 +350,25 @@ export class ConversationDatabaseRepository implements ConversationRepository {
           replyTo: { select: REPLY_TO_SELECT },
         },
       });
-      return right(result as ChatMessageWithSender[]);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar mensagens'));
-    }
+      return result as ChatMessageWithSender[];
+    }, 'Erro ao buscar mensagens');
   }
 
   async findReplyToSummary(id: string): RepositoryResponse<ReplyToSummary | null> {
-    try {
+    return this.safeRun(async () => {
       const directMsg = await this.prisma.directMessage.findUnique({
         where: { id },
         select: { ...REPLY_TO_SELECT, conversationId: true },
       });
-      if (directMsg) return right(directMsg as ReplyToSummary);
+      if (directMsg) return directMsg as ReplyToSummary;
 
       const chatMsg = await this.prisma.chatMessage.findUnique({
         where: { id },
         select: { ...REPLY_TO_SELECT, orderId: true },
       });
-      if (chatMsg) return right({ ...chatMsg, conversationId: chatMsg.orderId } as ReplyToSummary);
+      if (chatMsg) return { ...chatMsg, conversationId: chatMsg.orderId } as ReplyToSummary;
 
-      return right(null);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar mensagem referenciada'));
-    }
+      return null;
+    }, 'Erro ao buscar mensagem referenciada');
   }
 }

@@ -5,10 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from '@/shared/decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '@/shared/decorators';
 import { ALLOWED_TOKEN_TYPES_KEY } from './token-types.decorator';
 import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
+
+import { Request } from 'express';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -27,7 +29,7 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
     const allowedTokenTypes = this.reflector.getAllAndOverride<Array<JwtTokenType>>(
       ALLOWED_TOKEN_TYPES_KEY,
@@ -41,7 +43,7 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const payload = await this.tokenValidator.verifyAndValidate(token, allowedTokenTypes);
 
-      request.user = payload;
+      (request as Request & { user: unknown }).user = payload;
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -52,8 +54,7 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    const headers = request.headers as unknown as Record<string, string | undefined>;
-    const authHeader = headers.authorization;
+    const authHeader = request.headers.authorization;
     const [type, value] = authHeader?.split(' ') ?? [];
     return type === 'Bearer' ? value : undefined;
   }

@@ -9,4 +9,5 @@ export abstract class PostRepository {
   abstract create(data: Record<string, unknown>): RepositoryResponse<PostPayload>;
   abstract update(id: string, data: Record<string, unknown>): RepositoryResponse<unknown>;
   abstract createMentions(postId: string, mentionedUserIds: string[]): RepositoryResponse<void>;
+  abstract softDelete(id: string): RepositoryResponse<void>;
 }

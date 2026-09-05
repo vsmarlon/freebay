@@ -37,7 +37,7 @@ export interface ApiErrorOption {
 }
 
 export interface ApiDocOptions {
-  summary: string;
+  summary?: string;
   description?: string;
   bodyType?: Type<unknown>;
   responseType?: Type<unknown>;
@@ -51,7 +51,9 @@ export interface ApiDocOptions {
 export function ApiDoc(options: ApiDocOptions): MethodDecorator {
   const decorators: (ClassDecorator | MethodDecorator | PropertyDecorator)[] = [];
 
-  decorators.push(ApiOperation({ summary: options.summary, description: options.description }));
+  if (options.summary || options.description) {
+    decorators.push(ApiOperation({ summary: options.summary, description: options.description }));
+  }
 
   if (options.bodyType) {
     decorators.push(ApiBody({ type: options.bodyType }));

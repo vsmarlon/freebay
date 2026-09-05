@@ -14,10 +14,8 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
       final refreshToken = await StorageService.getRefreshToken();
       if (refreshToken != null) {
         await safeVoid(
-          () => client.delete(
-            '/auth/logout',
-            data: {'refreshToken': refreshToken},
-          ),
+          () =>
+              client.post('/auth/logout', data: {'refreshToken': refreshToken}),
           debugLabel: 'AUTH logout',
         );
       }
@@ -171,7 +169,7 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
 
   @override
   Future<Either<Failure, void>> revokeBiometricToken() =>
-      safeVoid(() => client.delete('/auth/biometric-token'));
+      safeVoid(() => client.patch('/auth/biometric-token/revoke'));
 
   @override
   Future<Either<Failure, UserEntity>> googleAuth(String idToken) async {

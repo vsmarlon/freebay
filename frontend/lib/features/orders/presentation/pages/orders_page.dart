@@ -14,6 +14,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class OrdersPage extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -57,20 +58,9 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
           children: [
             PageHeader(
               text: 'MEUS PEDIDOS',
-              leading: GestureDetector(
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.pop();
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: context.surfaceColor,
-                    border: Border.all(color: context.borderColor, width: 1),
-                  ),
-                  child: const Icon(Icons.arrow_back, size: 20),
-                ),
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
               ),
             ),
             Container(

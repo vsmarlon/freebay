@@ -51,7 +51,7 @@ final followStatusProvider =
       final authState = ref.watch(authControllerProvider);
       final user = authState.value;
 
-      if (user == null || user.isGuest) {
+      if (user == null) {
         return null;
       }
 

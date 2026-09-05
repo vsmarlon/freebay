@@ -11,6 +11,7 @@ import 'package:freebay/features/cart/presentation/providers/cart_provider.dart'
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class CartCheckoutPage extends ConsumerStatefulWidget {
   const CartCheckoutPage({super.key});
@@ -53,20 +54,9 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
         children: [
           PageHeader(
             text: 'CHECKOUT',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(

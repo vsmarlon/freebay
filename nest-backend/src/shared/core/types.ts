@@ -8,7 +8,6 @@ export interface JwtPayload {
   userId: string;
   email?: string;
   role: string;
-  isGuest?: boolean;
   type?: JwtTokenType;
   jti?: string;
   iat?: number;

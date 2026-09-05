@@ -5,6 +5,7 @@ import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class SavedPostsPage extends StatelessWidget {
   const SavedPostsPage({super.key});
@@ -18,20 +19,9 @@ class SavedPostsPage extends StatelessWidget {
         children: [
           PageHeader(
             text: 'POSTS SALVOS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
             breadcrumbs: context.breadcrumbs,
           ),

@@ -4,7 +4,7 @@ import { OrderRepository } from '../../orders/domain/repositories/order.reposito
 import { UserRepository } from '../../auth/domain/repositories/user.repository';
 import { TransactionRepository } from '../domain/repositories/transaction.repository';
 import { PaymentProvider } from '../domain/providers/payment-provider.interface';
-import { NotFoundError, BadRequestError, AppError } from '@/shared/core/errors';
+import { NotFoundError, BadRequestError, PaymentProviderError } from '@/shared/core/errors';
 import { right, left } from '@/shared/core/either';
 
 describe('CreatePaymentSessionUseCase', () => {
@@ -134,7 +134,7 @@ describe('CreatePaymentSessionUseCase', () => {
   it('should handle payment provider failure', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockPaymentProvider.createPaymentSession = jest.fn().mockResolvedValue(
-      left(new AppError('PAYMENT_PROVIDER_ERROR', 'Provider error', 500)),
+      left(new PaymentProviderError('Provider error', 500)),
     );
 
     const result = await sut.execute({

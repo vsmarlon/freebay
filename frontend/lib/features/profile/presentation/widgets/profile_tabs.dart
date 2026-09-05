@@ -36,8 +36,7 @@ class _PostsTab extends ConsumerWidget {
 
     final authState = ref.watch(authControllerProvider);
     final currentUser = authState.value;
-    final isOwnProfile =
-        currentUser != null && !currentUser.isGuest && currentUser.id == userId;
+    final isOwnProfile = currentUser != null && currentUser.id == userId;
 
     if (state.isLoading && state.posts.isEmpty) {
       return Padding(

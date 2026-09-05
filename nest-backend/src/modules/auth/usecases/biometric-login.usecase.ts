@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, InvalidCredentialsError, NotFoundError } from '@/shared/core/errors';
+import { AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError } from '@/shared/core/errors';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { LoginResponse, toLoginResponse } from '../mappers/auth.mapper';
@@ -45,7 +45,7 @@ export class BiometricLoginUseCase {
     if (payload.userId && payload.iat) {
       const invalidBefore = await this.redisService.get(`user_tokens_invalid_before:${payload.userId}`);
       if (invalidBefore && payload.iat < Number(invalidBefore)) {
-        return left(new AppError('SESSION_EXPIRED', 'Sessão expirada. Faça login novamente.', 401));
+        return left(new SessionExpiredError());
       }
     }
 

@@ -1,6 +1,6 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { GetPublic } from '@/shared/decorators';
 import { CategoryService } from './category.service';
 
 @ApiTags('Categories')
@@ -8,16 +8,12 @@ import { CategoryService } from './category.service';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  @Get()
-  @ApiDoc({
-    summary: 'List all categories',
-  })
+  @GetPublic('List all categories')
   async findAll() {
     return this.categoryService.findAll();
   }
 
-  @Get(':id')
-  @ApiDoc({
+  @GetPublic(':id', {
     summary: 'Get category by ID',
     params: [{ name: 'id', description: 'Category UUID' }],
     errors: [{ status: 404, description: 'Category not found' }],

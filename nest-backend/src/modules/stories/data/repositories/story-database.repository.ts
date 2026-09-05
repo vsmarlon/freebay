@@ -14,7 +14,7 @@ export class PrismaStoryRepository extends BasePrismaRepository implements Story
   async findActiveWithViews(): RepositoryResponse<StoryWithViews[]> {
     return this.safeRun(async () => {
        return await this.prisma.story.findMany({
-         where: { expiresAt: { gt: new Date() } },
+         where: { expiresAt: { gt: new Date() }, deletedAt: null },
          include: {
            user: { select: { id: true, displayName: true, avatarUrl: true } },
            _count: { select: { views: true } },
@@ -27,7 +27,7 @@ export class PrismaStoryRepository extends BasePrismaRepository implements Story
   async findByUserId(userId: string): RepositoryResponse<StoryBrief[]> {
     return this.safeRun(async () => {
       const stories = await this.prisma.story.findMany({
-        where: { userId, expiresAt: { gt: new Date() } },
+        where: { userId, expiresAt: { gt: new Date() }, deletedAt: null },
         select: { id: true, imageUrl: true, createdAt: true, expiresAt: true },
         orderBy: { createdAt: 'desc' },
       });
@@ -36,10 +36,14 @@ export class PrismaStoryRepository extends BasePrismaRepository implements Story
   }
 
   async findById(id: string): RepositoryResponse<{ id: string; userId: string; imageUrl: string } | null> {
-    return this.safeRun(() => this.prisma.story.findUnique({
-      where: { id },
-      select: { id: true, userId: true, imageUrl: true },
-    }), 'Erro ao buscar story');
+    return this.safeRun(async () => {
+      const story = await this.prisma.story.findUnique({
+        where: { id },
+        select: { id: true, userId: true, imageUrl: true, deletedAt: true },
+      });
+      if (!story || story.deletedAt !== null) return null;
+      return { id: story.id, userId: story.userId, imageUrl: story.imageUrl };
+    }, 'Erro ao buscar story');
   }
 
   async create(data: CreateStoryInput): RepositoryResponse<StoryCreatePayload> {
@@ -51,7 +55,10 @@ export class PrismaStoryRepository extends BasePrismaRepository implements Story
 
   async delete(id: string): RepositoryResponse<void> {
     return this.safeRun(async () => {
-      await this.prisma.story.delete({ where: { id } });
+      await this.prisma.story.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
     }, 'Erro ao deletar story');
   }
 

@@ -86,7 +86,7 @@ class GuestGateView extends StatelessWidget {
                         ),
                       ),
                       child: const Text(
-                        'MODO CONVIDADO',
+                        'ACESSO RESTRITO',
                         style: TextStyle(
                           fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 10,

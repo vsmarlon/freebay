@@ -19,8 +19,8 @@ export class CheckUsernameAvailabilityUseCase {
   async execute(
     input: CheckUsernameAvailabilityInput,
   ): Promise<Either<AppError, CheckUsernameAvailabilityOutput>> {
-    const username = input.username.toLowerCase().trim();
-    if (!USERNAME_REGEX.test(username)) {
+    const username = (input?.username || '').toLowerCase().trim();
+    if (!username || !USERNAME_REGEX.test(username)) {
       return right({ available: false });
     }
 

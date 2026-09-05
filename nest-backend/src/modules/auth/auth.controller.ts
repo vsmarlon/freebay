@@ -1,8 +1,5 @@
 import {
   Controller,
-  Post,
-  Get,
-  Delete,
   Body,
   Query,
   HttpStatus,
@@ -19,15 +16,19 @@ import {
 } from './dtos/password-recovery.dto';
 import {
   AuthSessionResponse,
-  GuestSessionResponse,
   TokenRefreshResponse,
   MessageResponse,
   BiometricSessionResponse,
 } from './dtos/auth-response.class';
-import { PublicEndpoint, Authenticated } from '@/shared/decorators/endpoints.decorator';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { AuthUser, JwtTokenType } from '@/shared/core/types';
+import {
+  GetPublic,
+  PostPublic,
+  PostAuth,
+  PatchAuth,
+  CurrentUser,
+  CurrentUserId,
+} from '@/shared/decorators';
+import { AuthUser, JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
 import { AllowTokenTypes } from './guards/token-types.decorator';
 
@@ -40,8 +41,7 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
-  @Post('register')
-  @PublicEndpoint({
+  @PostPublic('register', {
     summary: 'Register new user',
     description: 'Creates account and returns JWT access + refresh tokens',
     bodyType: RegisterDTO,
@@ -55,8 +55,7 @@ export class AuthController {
     return this.authService.register(body);
   }
 
-  @Get('username-available')
-  @PublicEndpoint({
+  @GetPublic('username-available', {
     summary: 'Check username availability',
     description: 'Returns whether a username is valid and not already taken',
     throttle: { short: { limit: 10, ttl: 10000 }, medium: { limit: 60, ttl: 60000 } },
@@ -65,8 +64,7 @@ export class AuthController {
     return this.authService.checkUsernameAvailability(query);
   }
 
-  @Post('login')
-  @PublicEndpoint({
+  @PostPublic('login', {
     summary: 'Login',
     description: 'Authenticate with email and password',
     bodyType: LoginDTO,
@@ -79,8 +77,7 @@ export class AuthController {
     return this.authService.login(body);
   }
 
-  @Post('google')
-  @PublicEndpoint({
+  @PostPublic('google', {
     summary: 'Google OAuth login',
     description: 'Authenticate with a Google ID token. Links to existing account if email matches, or creates a new account.',
     bodyType: GoogleAuthDTO,
@@ -93,56 +90,38 @@ export class AuthController {
     return this.authService.googleAuth(body.idToken);
   }
 
-  @Post('complete-profile')
-  @Authenticated({
+  @PostAuth('complete-profile', {
     summary: 'Complete user profile',
     description: 'Sets username, display name and other details after Google OAuth registration',
     bodyType: CompleteProfileDTO,
     responseType: AuthSessionResponse,
-    guards: [JwtAuthGuard],
   })
-  async completeProfile(@CurrentUser() user: AuthUser, @Body() body: CompleteProfileDTO) {
-    return this.authService.completeProfile(user.userId, body);
+  async completeProfile(@CurrentUserId() userId: string, @Body() body: CompleteProfileDTO) {
+    return this.authService.completeProfile(userId, body);
   }
 
-  @Post('guest')
-  @PublicEndpoint({
-    summary: 'Create guest session',
-    description: 'Creates temporary guest user and returns JWT token',
-    responseType: GuestSessionResponse,
-    throttle: { short: { limit: 5, ttl: 60000 }, medium: { limit: 20, ttl: 60000 } },
-    httpCode: HttpStatus.OK,
-  })
-  async guest() {
-    return this.authService.guest();
-  }
-
-  @Post('refresh')
-  @AllowTokenTypes(JwtTokenType.REFRESH)
-  @Authenticated({
+  @PostAuth('refresh', {
     summary: 'Refresh token',
     description: 'Exchanges a valid refresh token for a new access + refresh token pair',
     responseType: TokenRefreshResponse,
-    guards: [JwtAuthGuard],
   })
+  @AllowTokenTypes(JwtTokenType.REFRESH)
   async refresh(@CurrentUser() user: AuthUser) {
     return this.authService.refresh(user);
   }
 
-  @Delete('logout')
-  @AllowTokenTypes(JwtTokenType.REFRESH)
-  @Authenticated({
+  @PostAuth('logout', {
     summary: 'Logout',
     description: 'Blacklists current JWT tokens',
     responseType: MessageResponse,
-    guards: [JwtAuthGuard],
   })
-  async logout(@Request() req: any, @Body('refreshToken') refreshToken?: string) {
-    let refreshTokenPayload: any = undefined;
+  @AllowTokenTypes(JwtTokenType.ACCESS, JwtTokenType.REFRESH)
+  async logout(@Request() req: { user: AuthUser }, @Body('refreshToken') refreshToken?: string) {
+    let refreshTokenPayload: JwtPayload | undefined;
     if (refreshToken) {
       try {
-        const payload = this.jwtService.decode(refreshToken) as any;
-        if (payload.type === JwtTokenType.REFRESH && payload.userId === req.user.userId) {
+        const payload = this.jwtService.decode(refreshToken) as JwtPayload | null;
+        if (payload?.type === JwtTokenType.REFRESH && payload.userId === req.user.userId) {
           refreshTokenPayload = payload;
         }
       } catch { void 0; }
@@ -150,8 +129,7 @@ export class AuthController {
     return this.authService.logout({ jti: req.user.jti, exp: req.user.exp }, refreshTokenPayload);
   }
 
-  @Post('forgot-password')
-  @PublicEndpoint({
+  @PostPublic('forgot-password', {
     summary: 'Request password recovery',
     description: 'Sends password recovery code to the given email',
     bodyType: RequestPasswordRecoveryDTO,
@@ -161,8 +139,7 @@ export class AuthController {
     return this.authService.forgotPassword(body);
   }
 
-  @Post('verify-reset-code')
-  @PublicEndpoint({
+  @PostPublic('verify-reset-code', {
     summary: 'Verify password recovery code',
     description: 'Checks if the 6-digit recovery code is valid',
     bodyType: VerifyPasswordRecoveryCodeDTO,
@@ -172,8 +149,7 @@ export class AuthController {
     return this.authService.verifyResetCode(body);
   }
 
-  @Post('reset-password')
-  @PublicEndpoint({
+  @PostPublic('reset-password', {
     summary: 'Reset password',
     description: 'Resets password using verified recovery code',
     bodyType: ResetPasswordDTO,
@@ -183,8 +159,7 @@ export class AuthController {
     return this.authService.resetPassword(body);
   }
 
-  @Post('biometric-login')
-  @PublicEndpoint({
+  @PostPublic('biometric-login', {
     summary: 'Biometric login',
     description: 'Authenticate using a backend-issued biometric token. Returns a fresh token set including a rotated biometric token — store the new biometricToken in the device keychain.',
     bodyType: BiometricLoginDTO,
@@ -197,14 +172,12 @@ export class AuthController {
     return this.authService.biometricLogin(body.biometricToken);
   }
 
-  @Delete('biometric-token')
-  @AllowTokenTypes(JwtTokenType.BIOMETRIC)
-  @Authenticated({
+  @PatchAuth('biometric-token/revoke', {
     summary: 'Revoke biometric token',
     description: 'Blacklists the current biometric token so it can no longer be used. Call this when the user disables biometric login.',
     responseType: MessageResponse,
-    guards: [JwtAuthGuard],
   })
+  @AllowTokenTypes(JwtTokenType.BIOMETRIC)
   async revokeBiometricToken(@CurrentUser() user: AuthUser) {
     return this.authService.revokeBiometricToken(user.jti, user.exp);
   }

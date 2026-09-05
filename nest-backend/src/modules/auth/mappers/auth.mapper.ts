@@ -9,11 +9,6 @@ export interface LoginResponse {
   user: UserResponse;
 }
 
-export interface GuestResponse {
-  userId: string;
-  guestToken: string;
-}
-
 export const toAuthResponse = (user: User): AuthResponse => ({
   user: toUserResponse(user, undefined, true),
 });

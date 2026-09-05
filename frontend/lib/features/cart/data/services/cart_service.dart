@@ -28,10 +28,10 @@ class CartService extends BaseHttpRepository {
   );
 
   Future<Either<Failure, void>> removeFromCart(String productId) =>
-      safeVoid(() => client.delete('/cart/$productId'));
+      safeVoid(() => client.patch('/cart/$productId/remove'));
 
   Future<Either<Failure, void>> clearCart() =>
-      safeVoid(() => client.delete('/cart'));
+      safeVoid(() => client.patch('/cart/clear'));
 
   Future<Either<Failure, CartCheckoutEntity>> checkoutCart() =>
       safePost<CartCheckoutEntity>(

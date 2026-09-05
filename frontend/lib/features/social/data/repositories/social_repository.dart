@@ -85,11 +85,11 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
 
   @override
   Future<Either<Failure, void>> unlikePost(String postId) =>
-      safeVoid(() => client.delete('/social/posts/$postId/like'));
+      safeVoid(() => client.patch('/social/posts/$postId/unlike'));
 
   @override
   Future<Either<Failure, void>> deletePost(String postId) =>
-      safeVoid(() => client.delete('/social/posts/$postId'));
+      safeVoid(() => client.patch('/social/posts/$postId/delete'));
 
   @override
   Future<Either<Failure, void>> commentPost(
@@ -125,7 +125,7 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
 
   @override
   Future<Either<Failure, void>> unlikeComment(String commentId) =>
-      safeVoid(() => client.delete('/social/comments/$commentId/like'));
+      safeVoid(() => client.patch('/social/comments/$commentId/unlike'));
 
   @override
   Future<Either<Failure, void>> repost(String postId) =>
@@ -133,7 +133,7 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
 
   @override
   Future<Either<Failure, void>> unrepost(String postId) =>
-      safeVoid(() => client.delete('/social/posts/$postId/share'));
+      safeVoid(() => client.patch('/social/posts/$postId/unshare'));
 
   @override
   Future<Either<Failure, void>> sharePost(String postId, String? content) =>
@@ -189,11 +189,11 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
 
   @override
   Future<Either<Failure, void>> deleteStory(String storyId) =>
-      safeVoid(() => client.delete('/social/stories/$storyId'));
+      safeVoid(() => client.patch('/stories/$storyId/delete'));
 
   @override
   Future<Either<Failure, void>> viewStory(String storyId) =>
-      safeVoid(() => client.post('/social/stories/$storyId/view'));
+      safeVoid(() => client.post('/stories/$storyId/view'));
 
   @override
   Future<Either<Failure, UserSearchPageResult>> searchUsers({
@@ -242,7 +242,7 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
 
   @override
   Future<Either<Failure, void>> unfollowUser(String userId) =>
-      safeVoid(() => client.delete('/users/$userId/follow'));
+      safeVoid(() => client.patch('/users/$userId/unfollow'));
 
   @override
   Future<Either<Failure, List<PostEntity>>> searchPosts({
@@ -300,7 +300,7 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
 
   @override
   Future<Either<Failure, void>> unsavePost(String postId) =>
-      safeVoid(() => client.delete('/social/posts/$postId/save'));
+      safeVoid(() => client.patch('/social/posts/$postId/unsave'));
 
   @override
   Future<Either<Failure, List<StoryEntity>>> getUserStories(String userId) =>

@@ -57,3 +57,35 @@ export class CreatePaymentIntentOutput {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   readonly orderId: string;
 }
+
+export interface CreateCryptoPaymentInput {
+  readonly orderId: string;
+  readonly userId: string;
+  readonly currency?: string;
+}
+
+export class CreateCryptoPaymentOutput {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  readonly orderId: string;
+
+  @ApiProperty({ example: 'XMR' })
+  readonly currency: string;
+
+  @ApiProperty({ example: '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3Gfn...' })
+  readonly address: string;
+
+  @ApiProperty({ example: 'a1b2c3d4e5f60718' })
+  readonly paymentId?: string;
+
+  @ApiProperty({ example: 'monero:888tNkZr...?tx_amount=0.012500&tx_payment_id=a1b2c3d4e5f60718' })
+  readonly uriQrCode: string;
+
+  @ApiProperty({ example: '12500000000' })
+  readonly amountAtomic: string;
+
+  @ApiProperty({ example: '0.012500' })
+  readonly amountHuman: string;
+
+  @ApiProperty({ example: '2026-08-19T04:20:00.000Z' })
+  readonly expiresAt: Date;
+}

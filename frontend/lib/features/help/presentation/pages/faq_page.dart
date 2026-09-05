@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class FaqPage extends StatelessWidget {
   const FaqPage({super.key});
@@ -18,17 +19,17 @@ class FaqPage extends StatelessWidget {
         {
           'q': 'Como editar meu perfil?',
           'a':
-              'Acesse seu perfil pelo menu inferior e clique no botão "Editar perfil". Você pode alterar seu nome de exibição, bio, foto e banner. As alterações são salvas automaticamente.',
+              'Acesse a aba Perfil no menu inferior e clique no botão "Editar Perfil". Você pode alterar seu avatar, bio, localização e chaves Pix.',
         },
         {
-          'q': 'Esqueci minha senha. O que fazer?',
+          'q': 'Esqueci minha senha, o que fazer?',
           'a':
-              'Na tela de login, clique em "Esqueci minha senha". Insira o e-mail cadastrado e enviaremos um link para redefinição. O link expira em 15 minutos por segurança.',
+              'Na tela de login, clique em "Esqueci minha senha". Digite seu e-mail cadastrado e você receberá um código de 6 dígitos para redefinir sua senha.',
         },
         {
-          'q': 'Como excluir minha conta?',
+          'q': 'Como funciona o login biométrico?',
           'a':
-              'Vá em Configurações > Excluir conta. Sua conta será desativada por 30 dias antes da exclusão permanente. Durante esse período, você pode reativá-la fazendo login.',
+              'Após fazer login com e-mail e senha, você pode ativar a autenticação biométrica (Face ID ou impressão digital) para acessos rápidos e seguros nas próximas sessões.',
         },
       ],
     },
@@ -36,24 +37,29 @@ class FaqPage extends StatelessWidget {
       'title': 'COMPRAS E PAGAMENTOS',
       'items': [
         {
-          'q': 'Quais são os métodos de pagamento aceitos?',
+          'q': 'Como comprar um produto?',
           'a':
-              'Aceitamos cartão de crédito (Visa, Mastercard, Elo, Hipercard) e PIX via Stripe. Pagamentos via PIX são aprovados instantaneamente.',
+              'Navegue pelo Feed ou Explore, clique no produto desejado e depois em "Comprar". Você será direcionado para o checkout seguro onde poderá pagar com cartão de crédito via Stripe.',
         },
         {
-          'q': 'O que é o sistema de custódia (escrow)?',
+          'q': 'O que é o sistema de Custódia (Escrow)?',
           'a':
-              'Quando você compra um produto, o valor fica retido com segurança pelo FreeBay. O vendedor só recebe o dinheiro após você confirmar que recebeu o produto em perfeitas condições.',
+              'Para garantir sua segurança, o pagamento fica retido em custódia até você receber o produto e confirmar a entrega. Somente após sua confirmação (ou prazo limite) o dinheiro é liberado ao vendedor.',
         },
         {
-          'q': 'Como funciona o cancelamento de uma compra?',
+          'q': 'Como funciona o Carrinho?',
           'a':
-              'Você pode cancelar uma compra antes do vendedor confirmar o envio. Após o envio, é necessário abrir uma disputa para solicitar o reembolso.',
+              'Você pode adicionar produtos de diferentes vendedores ao carrinho e gerenciar quantidades. O checkout cria os pedidos com custódia individual para cada item.',
         },
         {
-          'q': 'Em quanto tempo recebo meu reembolso?',
+          'q': 'Quais formas de pagamento são aceitas?',
           'a':
-              'Para pagamentos via PIX, o reembolso é instantâneo na sua carteira FreeBay. Para cartão de crédito, o estorno pode levar de 5 a 10 dias úteis dependendo da operadora.',
+              'Aceitamos cartões de crédito (Visa, Mastercard, Elo, Amex) processados com segurança pela Stripe.',
+        },
+        {
+          'q': 'Como parcelar uma compra?',
+          'a':
+              'O parcelamento é disponibilizado na tela de pagamento da Stripe conforme as condições configuradas para o valor do pedido.',
         },
       ],
     },
@@ -63,40 +69,45 @@ class FaqPage extends StatelessWidget {
         {
           'q': 'Como anunciar um produto?',
           'a':
-              'Toque no botão central "+" no menu inferior, tire ou selecione fotos do produto, preencha o título, descrição, categoria, condição e preço. Revise e publique!',
+              'Clique no botão "+" no menu inferior, adicione fotos, título, descrição detalhada, preço em reais e selecione a categoria. Seu anúncio ficará visível imediatamente.',
         },
         {
-          'q': 'Existe alguma taxa para vender?',
+          'q': 'Qual é a taxa cobrada por venda?',
           'a':
-              'O FreeBay cobra uma taxa de 0% na fase de lançamento! Você recebe 100% do valor da sua venda diretamente na sua carteira após a confirmação de entrega pelo comprador.',
+              'Cobramos uma taxa fixa de 10% sobre o valor da venda. Essa taxa só é descontada quando a venda é concluída com sucesso e o comprador confirma a entrega.',
         },
         {
-          'q': 'Como sacar meu dinheiro da carteira?',
+          'q': 'Quando recebo o dinheiro da venda?',
           'a':
-              'Acesse a aba Carteira, clique em "Solicitar saque via PIX", insira o valor desejado e sua chave PIX. O saque mínimo é de R\$ 10,00 e o processamento é rápido.',
+              'O valor fica na sua Carteira como "Saldo em Custódia" até o comprador confirmar o recebimento. Após a confirmação, o saldo se torna "Disponível para Saque".',
         },
         {
-          'q': 'O que acontece se o comprador não confirmar a entrega?',
+          'q': 'Como solicitar um saque Pix?',
           'a':
-              'Se o comprador não confirmar em até 7 dias após o envio comprovado, a entrega é confirmada automaticamente pelo sistema e o saldo é liberado na sua carteira.',
+              'Na sua Carteira, clique em "Solicitar Saque", insira o valor desejado (mínimo de R\$ 5,00) e confirme sua chave Pix cadastrada. O processamento é realizado em instantes.',
         },
       ],
     },
     {
-      'title': 'SEGURANÇA E DISPUTAS',
+      'title': 'DISPUTAS E SEGURANÇA',
       'items': [
         {
-          'q': 'O que fazer se o produto não chegar ou vier com defeito?',
+          'q': 'Não recebi o produto, o que fazer?',
           'a':
-              'Abra uma disputa na página do pedido em até 7 dias após o prazo estimado de entrega. Nossa equipe de moderação avaliará as evidências e mediará uma solução justa.',
+              'Acesse Meus Pedidos > selecione o pedido > clique em "Abrir Disputa". Como o dinheiro está em custódia, nossa equipe de mediação avaliará o caso e realizará o reembolso se procedente.',
         },
         {
-          'q': 'Como denunciar um usuário ou produto?',
+          'q': 'O produto veio com defeito ou diferente do anunciado?',
           'a':
-              'Toque nos três pontos no canto superior direito do perfil ou anúncio e selecione "Denunciar". Escolha o motivo e adicione detalhes para que nossa equipe investigue.',
+              'Abra uma disputa pelo app enviando fotos/vídeos que comprovem o problema. O vendedor terá um prazo para responder e podemos mediar a devolução.',
         },
         {
-          'q': 'Meus dados estão seguros no FreeBay?',
+          'q': 'Como funciona o chat seguro?',
+          'a':
+              'Você pode conversar com compradores e vendedores em tempo real diretamente pelo app. Todo o histórico fica registrado para segurança de ambas as partes.',
+        },
+        {
+          'q': 'Meus dados bancários estão seguros?',
           'a':
               'Sim! Todos os dados de pagamento são processados com criptografia de ponta a ponta pela Stripe (certificação PCI-DSS Nível 1). Nunca armazenamos dados de cartão.',
         },
@@ -112,20 +123,9 @@ class FaqPage extends StatelessWidget {
         children: [
           PageHeader(
             text: 'FAQ / AJUDA',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(

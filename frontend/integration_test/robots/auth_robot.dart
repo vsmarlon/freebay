@@ -55,14 +55,6 @@ class AuthRobot {
     await tester.pumpAndSettle(const Duration(seconds: 3));
   }
 
-  /// Tap "Entrar como convidado"
-  Future<void> tapGuestLogin() async {
-    final guestButton = find.text('Entrar como convidado');
-    expect(guestButton, findsOneWidget);
-    await tester.tap(guestButton);
-    await tester.pumpAndSettle(const Duration(seconds: 3));
-  }
-
   /// Tap "Criar conta" to navigate to register page
   Future<void> tapCreateAccount() async {
     final createButton = find.text('Criar conta');

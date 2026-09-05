@@ -12,10 +12,21 @@ export class PrismaCommentRepository extends BasePrismaRepository implements Com
     super(prisma);
   }
 
+  async findById(id: string): RepositoryResponse<CommentPayload | null> {
+    return this.safeRun(async () => {
+      const comment = await this.prisma.comment.findUnique({
+        where: { id },
+        include: COMMENT_INCLUDE,
+      });
+      if (comment && comment.deletedAt !== null) return null;
+      return comment as CommentPayload | null;
+    }, 'Erro ao buscar comentário');
+  }
+
   async findAllByPostId(postId: string): RepositoryResponse<CommentFlatPayload[]> {
     return this.safeRun(async () => {
       const comments = await this.prisma.comment.findMany({
-        where: { postId },
+        where: { postId, deletedAt: null },
         orderBy: { createdAt: 'asc' },
         include: COMMENT_FLAT_INCLUDE,
       });
@@ -40,5 +51,14 @@ export class PrismaCommentRepository extends BasePrismaRepository implements Com
         skipDuplicates: true,
       });
     }, 'Erro ao criar menções no comentário');
+  }
+
+  async softDelete(id: string): RepositoryResponse<void> {
+    return this.safeRun(async () => {
+      await this.prisma.comment.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    }, 'Erro ao apagar comentário');
   }
 }

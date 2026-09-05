@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateBugReportUseCase } from './create-bug-report.usecase';
 import { BugReportRepository } from '../domain/repositories/bug-report.repository';
-import { AppError } from '@/shared/core/errors';
+import { DatabaseError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
 
 const mockRepo = {
@@ -43,11 +43,11 @@ describe('CreateBugReportUseCase', () => {
   });
 
   it('should return error when repository fails', async () => {
-    mockRepo.create.mockResolvedValue(left(new AppError('DB_ERROR', 'Erro ao registrar relatório de bug')));
+    mockRepo.create.mockResolvedValue(left(new DatabaseError('Erro ao registrar relatório de bug')));
 
     const result = await sut.execute({ userId: 'user-1', description: 'App crashes' });
 
     expect(result.isLeft()).toBe(true);
-    if (result.isLeft()) expect(result.value).toBeInstanceOf(AppError);
+    if (result.isLeft()) expect(result.value).toBeInstanceOf(DatabaseError);
   });
 });

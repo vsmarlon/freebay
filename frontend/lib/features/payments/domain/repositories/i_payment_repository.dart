@@ -1,6 +1,7 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/payments/data/entities/payment_intent_entity.dart';
+import 'package:freebay/features/payments/data/entities/crypto_payment_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
 abstract class IPaymentRepository {
@@ -15,5 +16,10 @@ abstract class IPaymentRepository {
   Future<Either<Failure, PaymentIntentEntity>> createPaymentIntent({
     required String orderId,
     String? idempotencyKey,
+  });
+
+  Future<Either<Failure, CryptoPaymentEntity>> createCryptoPayment({
+    required String orderId,
+    String currency = 'XMR',
   });
 }

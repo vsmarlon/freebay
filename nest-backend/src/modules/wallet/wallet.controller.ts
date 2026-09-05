@@ -1,19 +1,15 @@
-import { Controller, Get, Post, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Body, HttpStatus } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { GetWalletUseCase } from './usecases/get-wallet.usecase';
 import { WithdrawUseCase } from './usecases/withdraw.usecase';
 import { RegisterBankAccountUseCase } from './usecases/register-bank-account.usecase';
 import { WithdrawDTO, BankAccountDTO, WalletResponse } from './dtos/wallet.dto';
 import { WalletRepository } from './domain/repositories/wallet.repository';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
+import { GetAuth, PostAuth, CurrentUserId } from '@/shared/decorators';
 import { isLeft } from '@/shared/core/either';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
 @ApiTags('Wallet')
 @Controller('wallet')
-@UseGuards(JwtAuthGuard)
 export class WalletController {
   constructor(
     private readonly getWalletUseCase: GetWalletUseCase,
@@ -22,79 +18,59 @@ export class WalletController {
     private readonly walletRepository: WalletRepository,
   ) {}
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth({
     summary: 'Get wallet',
     description: 'Returns current wallet balance, pending balance, and available balance',
-    auth: true,
     responseType: WalletResponse,
   })
-  async getWallet(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
+  async getWallet(@CurrentUserId() userId: string) {
     const result = await this.getWalletUseCase.execute(userId);
     if (isLeft(result)) return result;
     return result.value;
   }
 
-  @Post('withdraw')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth('withdraw', {
     summary: 'Request withdrawal',
     description: 'Request a PIX withdrawal from the wallet',
-    auth: true,
     bodyType: WithdrawDTO,
     responseStatus: 201,
+    httpCode: HttpStatus.CREATED,
     errors: [{ status: 400, description: 'Insufficient balance or invalid data' }],
   })
-  async withdraw(@CurrentUser() user: AuthUser, @Body() body: WithdrawDTO) {
-    const userId = user.userId;
+  async withdraw(@CurrentUserId() userId: string, @Body() body: WithdrawDTO) {
     const result = await this.withdrawUseCase.execute({ userId, ...body });
     if (isLeft(result)) return result;
     return result.value;
   }
 
-  @Post('bank-account')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth('bank-account', {
     summary: 'Register bank account',
     description: 'Register a bank account for withdrawals',
-    auth: true,
     bodyType: BankAccountDTO,
     responseStatus: 201,
+    httpCode: HttpStatus.CREATED,
   })
-  async registerBankAccount(@CurrentUser() user: AuthUser, @Body() body: BankAccountDTO) {
-    const userId = user.userId;
+  async registerBankAccount(@CurrentUserId() userId: string, @Body() body: BankAccountDTO) {
     const result = await this.registerBankAccountUseCase.execute({ userId, ...body });
     if (isLeft(result)) return result;
     return result.value;
   }
 
-  @Get('transactions')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth('transactions', {
     summary: 'Get transactions',
     description: 'Returns the transaction history for the wallet',
-    auth: true,
   })
-  async getTransactions(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
+  async getTransactions(@CurrentUserId() userId: string) {
     const result = await this.walletRepository.getTransactions(userId);
     if (isLeft(result)) return result;
     return { transactions: result.value };
   }
 
-  @Get('withdrawals')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth('withdrawals', {
     summary: 'Get withdrawals',
     description: 'Returns the withdrawal history for the wallet',
-    auth: true,
   })
-  async getWithdrawals(@CurrentUser() user: AuthUser) {
-    const userId = user.userId;
+  async getWithdrawals(@CurrentUserId() userId: string) {
     const walletResult = await this.walletRepository.findByUserId(userId);
     if (isLeft(walletResult)) return walletResult;
     if (!walletResult.value) {

@@ -1,7 +1,32 @@
-import { IsString, IsUUID, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsBoolean, IsArray, ArrayNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { ChatThreadType } from '@prisma/client';
+
+export class VerifyUrlDTO {
+  @ApiProperty({ example: 'https://google.com' })
+  @IsString()
+  readonly url: string;
+}
+
+export class ForwardMessagesDTO {
+  @ApiProperty({ type: [String], example: ['550e8400-e29b-41d4-a716-446655440000'] })
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayNotEmpty()
+  readonly messageIds: string[];
+
+  @ApiProperty({ type: [String], example: ['550e8400-e29b-41d4-a716-446655440001'] })
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayNotEmpty()
+  readonly targetConversationIds: string[];
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002', required: false })
+  @IsOptional()
+  @IsString()
+  readonly sourceConversationId?: string;
+}
 
 export class StartConversationDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -227,3 +252,16 @@ export interface GetMessagesResult {
   otherUserId: string;
   preference: ConversationPreferenceSummary | null;
 }
+
+export interface ForwardMessagesInput {
+  userId: string;
+  messageIds: string[];
+  targetConversationIds: string[];
+  sourceConversationId?: string;
+}
+
+export interface ForwardMessagesOutput {
+  forwardedCount: number;
+  messages: SendMessageOutput[];
+}
+

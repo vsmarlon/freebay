@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, InvalidPhoneError } from '@/shared/core/errors';
 import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
 import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
 import { SmsService } from '../services/sms.service';
@@ -23,7 +23,7 @@ export class RegisterPhoneUseCase {
     const phoneDigits = input.phone.replace(/\D/g, '');
 
     if (phoneDigits.length < 10 || phoneDigits.length > 11) {
-      return left(new AppError('INVALID_PHONE', 'Telefone inválido. Informe o DDD e o número.'));
+      return left(new InvalidPhoneError());
     }
 
     const deleteResult = await this.phoneVerificationRepository.deleteManyForUser(input.userId);

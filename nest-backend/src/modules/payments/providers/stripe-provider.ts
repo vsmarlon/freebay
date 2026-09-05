@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, PaymentProviderError } from '@/shared/core/errors';
 import {
   PaymentProvider,
   PaymentIntentParams,
@@ -79,8 +79,7 @@ export class StripeProvider implements OnModuleInit, PaymentProvider {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Stripe payment session creation failed: ${message}`);
       return left(
-        new AppError(
-          'PAYMENT_PROVIDER_ERROR',
+        new PaymentProviderError(
           `Stripe error: ${message}`,
           500,
         ),
@@ -118,8 +117,7 @@ export class StripeProvider implements OnModuleInit, PaymentProvider {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`PaymentIntent creation failed: ${message}`);
       return left(
-        new AppError(
-          'PAYMENT_PROVIDER_ERROR',
+        new PaymentProviderError(
           `Stripe error: ${message}`,
           500,
         ),

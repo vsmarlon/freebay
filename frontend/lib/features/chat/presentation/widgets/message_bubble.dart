@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/components/brutalist_highlighted_text.dart';
+import 'package:freebay/core/components/brutalist_safe_link_dialog.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/product_card_bubble.dart';
 import 'package:freebay/features/chat/presentation/widgets/offer_message_bubble.dart';
@@ -54,6 +57,7 @@ class MessageBubble extends StatelessWidget {
   bool get _hasReactions => message.reactions.isNotEmpty;
   bool get _isViewOnceRevealed => message.viewOnce && message.readAt != null;
   bool get _isViewOnceLocked => message.viewOnce && message.readAt == null;
+  bool get _isForwarded => message.metadata?['isForwarded'] == true;
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +216,37 @@ class MessageBubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Forwarded badge
+        if (_isForwarded) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.forward,
+                  size: 13,
+                  color: isMe
+                      ? AppColors.onPrimary.withValues(alpha: 0.75)
+                      : context.textSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Encaminhada',
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w600,
+                    color: isMe
+                        ? AppColors.onPrimary.withValues(alpha: 0.75)
+                        : context.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         // Reply preview
         if (_hasReply) ...[
           ReplyPreviewBanner(
@@ -233,6 +268,37 @@ class MessageBubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Forwarded badge
+        if (_isForwarded) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.forward,
+                  size: 13,
+                  color: isMe
+                      ? AppColors.onPrimary.withValues(alpha: 0.75)
+                      : context.textSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Encaminhada',
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w600,
+                    color: isMe
+                        ? AppColors.onPrimary.withValues(alpha: 0.75)
+                        : context.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         // Reply preview
         if (_hasReply) ...[
           ReplyPreviewBanner(
@@ -289,8 +355,8 @@ class MessageBubble extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (message.content != null && message.content!.isNotEmpty)
-              Text(
-                message.content!,
+              BrutalistHighlightedText(
+                text: message.content!,
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
@@ -298,6 +364,25 @@ class MessageBubble extends StatelessWidget {
                       ? AppColors.onPrimary
                       : (isDark ? AppColors.white : AppColors.darkGray),
                 ),
+                linkColor: isMe
+                    ? AppColors.onPrimary
+                    : (isDark ? AppColors.primaryContainer : AppColors.primary),
+                mentionColor: isMe
+                    ? AppColors.onPrimary
+                    : (isDark ? AppColors.primaryContainer : AppColors.primary),
+                hashtagColor: isMe
+                    ? AppColors.onPrimary
+                    : (isDark ? AppColors.primaryContainer : AppColors.primary),
+                onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
+                onMentionTap: (mention) {
+                  final username = mention.replaceFirst('@', '');
+                  context.push(
+                    '/people/search?q=${Uri.encodeComponent(username)}',
+                  );
+                },
+                onHashtagTap: (tag) {
+                  context.push('/posts/search?q=${Uri.encodeComponent(tag)}');
+                },
               ),
             // Link preview below text
             if (message.metadata != null) ...[

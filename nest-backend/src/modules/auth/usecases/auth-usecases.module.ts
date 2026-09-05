@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { RegisterUseCase } from './register.usecase';
 import { LoginUseCase } from './login.usecase';
-import { GuestUseCase } from './guest.usecase';
 import { RequestPasswordRecoveryUseCase } from './request-password-recovery.usecase';
 import { VerifyPasswordRecoveryCodeUseCase } from './verify-password-recovery-code.usecase';
 import { ResetPasswordUseCase } from './reset-password.usecase';
@@ -21,7 +20,6 @@ import { ResendService } from '../services/resend.service';
     { provide: PasswordRecoveryRepository, useClass: PasswordRecoveryDatabaseRepository },
     RegisterUseCase,
     LoginUseCase,
-    GuestUseCase,
     RequestPasswordRecoveryUseCase,
     VerifyPasswordRecoveryCodeUseCase,
     ResetPasswordUseCase,
@@ -35,7 +33,6 @@ import { ResendService } from '../services/resend.service';
     UserRepository,
     RegisterUseCase,
     LoginUseCase,
-    GuestUseCase,
     RequestPasswordRecoveryUseCase,
     VerifyPasswordRecoveryCodeUseCase,
     ResetPasswordUseCase,

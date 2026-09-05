@@ -1,7 +1,5 @@
 import {
   Controller,
-  Get,
-  Post,
   Query,
   Body,
   Param,
@@ -15,10 +13,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewInput } from './dtos/create-review.dto';
-import { Authenticated } from '@/shared/decorators/endpoints.decorator';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
+import {
+  GetAuth,
+  GetPublic,
+  PostAuth,
+  CurrentUser,
+  CurrentUserId,
+} from '@/shared/decorators';
 import { AuthUser } from '@/shared/core/types';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { IsOptional, IsInt, Min, Max, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -51,8 +53,7 @@ class GetUserReviewsQueryDTO {
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @Post('orders/:orderId')
-  @Authenticated({
+  @PostAuth('orders/:orderId', {
     summary: 'Create review for an order',
     bodyType: CreateReviewInput,
     responseStatus: 201,
@@ -68,30 +69,27 @@ export class ReviewsController {
     return this.reviewsService.createReview(user, orderId, body);
   }
 
-  @Post('orders/:orderId/images')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
-  )
-  @Authenticated({
+  @PostAuth('orders/:orderId/images', {
     summary: 'Upload review image',
     params: [{ name: 'orderId', description: 'Order UUID' }],
     responseStatus: 201,
     errors: [{ status: 404, description: 'Image not found' }],
     httpCode: HttpStatus.CREATED,
   })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   async uploadImage(
     @Param('orderId', ParseUUIDPipe) orderId: string,
-    @CurrentUser() _user: AuthUser,
     @UploadedFile() file: Express.Multer.File | undefined,
   ) {
     return this.reviewsService.uploadImage(orderId, file);
   }
 
-  @Get('users/:userId')
-  @ApiDoc({
+  @GetPublic('users/:userId', {
     summary: 'Get user reviews',
     params: [{ name: 'userId', description: 'User UUID' }],
     queries: [
@@ -107,15 +105,14 @@ export class ReviewsController {
     return this.reviewsService.getUserReviews(userId, query);
   }
 
-  @Get('orders/:orderId/can-review')
-  @Authenticated({
+  @GetAuth('orders/:orderId/can-review', {
     summary: 'Check if user can review an order',
     params: [{ name: 'orderId', description: 'Order UUID' }],
   })
   async canReviewOrder(
     @Param('orderId', ParseUUIDPipe) orderId: string,
-    @CurrentUser() user: AuthUser,
+    @CurrentUserId() userId: string,
   ) {
-    return this.reviewsService.canReviewOrder(user.userId, orderId);
+    return this.reviewsService.canReviewOrder(userId, orderId);
   }
 }

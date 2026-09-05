@@ -5,6 +5,7 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_background.dart';
+import 'package:freebay/shared/services/storage_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -164,7 +165,9 @@ class _SplashPageState extends State<SplashPage>
                           child: _GetStartedButton(
                             onTap: () {
                               HapticFeedback.mediumImpact();
-                              context.go('/onboarding');
+                              final hasSeen =
+                                  StorageService.hasSeenOnboardingSync();
+                              context.go(hasSeen ? '/login' : '/onboarding');
                             },
                           ),
                         ),

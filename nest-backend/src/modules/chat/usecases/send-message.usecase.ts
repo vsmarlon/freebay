@@ -155,6 +155,6 @@ export class SendMessageUseCase {
     if (!url) return input.metadata ?? null;
 
     const og = await this.ogScraper.scrape(url);
-    return og ? (og as unknown as Record<string, unknown>) : input.metadata ?? null;
+    return og ? { ...og } : input.metadata ?? null;
   }
 }

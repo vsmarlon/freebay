@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
 import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/components/brutalist_box.dart';
@@ -12,6 +11,7 @@ import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class DisputeListPage extends ConsumerStatefulWidget {
   const DisputeListPage({super.key});
@@ -38,20 +38,9 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
         children: [
           PageHeader(
             text: 'MINHAS DISPUTAS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           BrutalistBreadcrumb(items: context.breadcrumbs),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -22,16 +23,31 @@ void main() {
 
 Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('[AppConfig] Info: No .env asset loaded from bundle ($e)');
+  }
   await StorageService.init();
   if (!kIsWeb && AppConfig.stripePublishableKey.isNotEmpty) {
-    Stripe.publishableKey = AppConfig.stripePublishableKey;
-    await Stripe.instance.applySettings();
+    try {
+      Stripe.publishableKey = AppConfig.stripePublishableKey;
+      await Stripe.instance.applySettings();
+    } catch (e) {
+      debugPrint('[Stripe] Initialization error: $e');
+    }
   }
   await Hive.initFlutter();
   try {
     await Firebase.initializeApp();
-  } catch (_) {}
-  await NotificationService().initialize();
+  } catch (e) {
+    debugPrint('[Firebase] Initialization skipped or failed: $e');
+  }
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    debugPrint('[NotificationService] Initialization error: $e');
+  }
   ErrorWidget.builder = (d) => AppErrorWidget(details: d);
   runApp(const ProviderScope(child: FreeBayApp()));
 }

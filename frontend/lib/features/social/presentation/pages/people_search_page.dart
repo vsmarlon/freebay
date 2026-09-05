@@ -11,6 +11,7 @@ import 'package:freebay/features/social/presentation/providers/user_search_provi
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
 import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PeopleSearchPage extends ConsumerStatefulWidget {
   const PeopleSearchPage({super.key});
@@ -57,20 +58,9 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
         children: [
           PageHeader(
             text: 'BUSCAR PESSOAS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Padding(

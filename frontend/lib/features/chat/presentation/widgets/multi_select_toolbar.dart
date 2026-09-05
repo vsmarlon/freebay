@@ -16,6 +16,7 @@ class MultiSelectToolbar extends StatelessWidget {
   final VoidCallback onStar;
   final VoidCallback onShare;
   final VoidCallback onReply;
+  final VoidCallback onCopy;
 
   const MultiSelectToolbar({
     super.key,
@@ -26,6 +27,7 @@ class MultiSelectToolbar extends StatelessWidget {
     required this.onStar,
     required this.onShare,
     required this.onReply,
+    required this.onCopy,
   });
 
   @override
@@ -67,6 +69,11 @@ class MultiSelectToolbar extends StatelessWidget {
             ),
           ),
           // Actions (right-aligned)
+          _ToolbarButton(
+            icon: Icons.content_copy_outlined,
+            onTap: onCopy,
+            tooltip: 'Copiar',
+          ),
           _ToolbarButton(
             icon: Icons.reply,
             onTap: selectedCount == 1 ? onReply : null,

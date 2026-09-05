@@ -10,6 +10,7 @@ import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PurchasesPage extends ConsumerStatefulWidget {
   const PurchasesPage({super.key});
@@ -24,8 +25,17 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
   @override
   void initState() {
     super.initState();
-    ref.read(purchasesListProvider.notifier).loadPurchases(refresh: true);
     _scrollController.addListener(_onScroll);
+    Future.microtask(() {
+      ref.read(purchasesListProvider.notifier).loadPurchases(refresh: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _onScroll() {
@@ -39,13 +49,6 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
   }
 
   @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final state = ref.watch(purchasesListProvider);
 
@@ -55,20 +58,9 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
         children: [
           PageHeader(
             text: 'COMPRAS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(

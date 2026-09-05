@@ -4,7 +4,7 @@ import { UserRepository } from '@/modules/auth/domain/repositories/user.reposito
 import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
 import { SmsService } from '../services/sms.service';
 import { right, left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { DatabaseError } from '@/shared/core/errors';
 
 const mockUserRepository = {
   update: jest.fn(),
@@ -89,7 +89,7 @@ describe('RegisterPhoneUseCase', () => {
   });
 
   it('propagates a repository failure', async () => {
-    mockPhoneVerificationRepository.create.mockResolvedValue(left(new AppError('DB_ERROR', 'fail')));
+    mockPhoneVerificationRepository.create.mockResolvedValue(left(new DatabaseError('fail')));
     const result = await sut.execute({ userId: 'user-1', phone: '11999999999' });
     expect(result.isLeft()).toBe(true);
   });

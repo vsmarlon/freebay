@@ -182,9 +182,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final user = authState.value;
-    final isGuest = user == null || user.isGuest;
 
-    if (isGuest) {
+    if (user == null) {
       return Scaffold(
         body: GuestGateView(
           icon: Icons.chat_bubble_outline,

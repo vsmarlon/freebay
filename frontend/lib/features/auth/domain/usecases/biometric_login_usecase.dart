@@ -61,6 +61,7 @@ class BiometricLoginUsecase implements NoParamsUsecase<UserEntity> {
       // but guard against it to avoid wrongly clearing credentials.
       if (failure is! BiometryCancelledFailure) {
         await _biometryService.clearCredentials();
+        await StorageService.clearBiometricToken();
       }
     }, (_) {});
 

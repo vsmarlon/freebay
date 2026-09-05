@@ -8,6 +8,7 @@ import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
+import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class FavoritesPage extends ConsumerStatefulWidget {
   const FavoritesPage({super.key});
@@ -34,20 +35,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
         children: [
           PageHeader(
             text: 'FAVORITOS',
-            leading: GestureDetector(
+            leading: BrutalistIconButton(
+              icon: Icons.arrow_back,
               onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
-                ),
-                child: Icon(
-                  Icons.arrow_back,
-                  color: context.textPrimary,
-                  size: 20,
-                ),
-              ),
             ),
           ),
           Expanded(

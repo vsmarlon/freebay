@@ -72,4 +72,11 @@ abstract class IChatRepository {
     int limit = 50,
     String? cursor,
   });
+
+  /// Forward one or more messages to target conversations.
+  Future<Either<Failure, List<MessageEntity>>> forwardMessages({
+    required List<String> messageIds,
+    required List<String> targetConversationIds,
+    String? sourceConversationId,
+  });
 }

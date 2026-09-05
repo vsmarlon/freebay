@@ -1,20 +1,15 @@
-import { Controller, Get, Post, Body, Param, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
+import { Controller, Body, Param, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { GetAuth, PostAuth, PatchAuth, CurrentUserId } from '@/shared/decorators';
 import { GetNotificationsUseCase } from './usecases/get-notifications.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { MarkAllAsReadUseCase } from './usecases/mark-all-as-read.usecase';
 import { RegisterFcmTokenUseCase } from './usecases/register-fcm-token.usecase';
 import { RegisterFcmTokenDTO, NotificationResponse } from './dtos/notification.dto';
 import { isLeft } from '@/shared/core/either';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 
 @ApiTags('Notifications')
 @Controller('notifications')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class NotificationsController {
   constructor(
     private readonly getNotificationsUseCase: GetNotificationsUseCase,
@@ -23,51 +18,43 @@ export class NotificationsController {
     private readonly registerFcmTokenUseCase: RegisterFcmTokenUseCase,
   ) {}
 
-  @Get()
-  @ApiDoc({
+  @GetAuth({
     summary: 'Get notifications',
-    auth: true,
     responseType: NotificationResponse,
   })
-  async findAll(@CurrentUser() user: AuthUser) {
-    const result = await this.getNotificationsUseCase.execute(user.userId);
+  async findAll(@CurrentUserId() userId: string) {
+    const result = await this.getNotificationsUseCase.execute(userId);
     if (isLeft(result)) return result;
     return { notifications: result.value };
   }
 
-  @Post(':id/read')
-  @ApiDoc({
+  @PostAuth('read-all', {
+    summary: 'Mark all notifications as read',
+    httpCode: HttpStatus.OK,
+  })
+  async markAllAsRead(@CurrentUserId() userId: string) {
+    const result = await this.markAllAsReadUseCase.execute(userId);
+    if (isLeft(result)) return result;
+    return result.value;
+  }
+
+  @PostAuth('fcm-token', {
+    summary: 'Register FCM token',
+    bodyType: RegisterFcmTokenDTO,
+  })
+  async registerFcmToken(@CurrentUserId() userId: string, @Body() body: RegisterFcmTokenDTO) {
+    const result = await this.registerFcmTokenUseCase.execute(userId, body.fcmToken);
+    if (isLeft(result)) return result;
+    return result.value;
+  }
+
+  @PatchAuth(':id/read', {
     summary: 'Mark notification as read',
-    auth: true,
     params: [{ name: 'id', description: 'Notification UUID' }],
     errors: [{ status: 404, description: 'Notification not found' }],
   })
-  async markAsRead(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.markAsReadUseCase.execute(id, user.userId);
-    if (isLeft(result)) return result;
-    return result.value;
-  }
-
-  @Post('read-all')
-  @HttpCode(HttpStatus.OK)
-  @ApiDoc({
-    summary: 'Mark all notifications as read',
-    auth: true,
-  })
-  async markAllAsRead(@CurrentUser() user: AuthUser) {
-    const result = await this.markAllAsReadUseCase.execute(user.userId);
-    if (isLeft(result)) return result;
-    return result.value;
-  }
-
-  @Post('fcm-token')
-  @ApiDoc({
-    summary: 'Register FCM token',
-    auth: true,
-    bodyType: RegisterFcmTokenDTO,
-  })
-  async registerFcmToken(@CurrentUser() user: AuthUser, @Body() body: RegisterFcmTokenDTO) {
-    const result = await this.registerFcmTokenUseCase.execute(user.userId, body.fcmToken);
+  async markAsRead(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    const result = await this.markAsReadUseCase.execute(id, userId);
     if (isLeft(result)) return result;
     return result.value;
   }

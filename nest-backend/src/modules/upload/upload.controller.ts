@@ -1,12 +1,9 @@
 import {
   Controller,
-  Post,
   Query,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
-  UseGuards,
-  HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -14,9 +11,8 @@ import { diskStorage } from 'multer';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
+import { PostAuth } from '@/shared/decorators';
 import {
   MAX_MEDIA_SIZE,
   MIMETYPE_EXTENSIONS,
@@ -31,11 +27,8 @@ export function isValidContext(context: unknown): context is (typeof VALID_CONTE
 
 @ApiTags('Upload')
 @Controller('uploads')
-@UseGuards(JwtAuthGuard)
 export class UploadController {
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiDoc({ summary: 'Upload a file to disk (image, audio, video)', auth: true, responseStatus: 201 })
+  @PostAuth({ summary: 'Upload a file to disk (image, audio, video)', responseStatus: 201, httpCode: HttpStatus.CREATED })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { left, right } from '@/shared/core/either';
-import { AppError, DatabaseError } from '@/shared/core/errors';
+import { DatabaseError } from '@/shared/core/errors';
 import { ProductRepository } from '../../domain/repositories/product.repository';
 import { ProductDetailPayload, ProductListPayload, FindManyParams, ProductSort, PRODUCT_DETAIL_INCLUDE, PRODUCT_LIST_INCLUDE } from '../../types/product.types';
 
@@ -16,29 +16,32 @@ export class ProductDatabaseRepository implements ProductRepository {
         where: { id },
         include: PRODUCT_DETAIL_INCLUDE,
       });
+      if (product && (product.status === 'DELETED' || product.deletedAt !== null)) {
+        return right(null);
+      }
       return right(product as ProductDetailPayload | null);
     } catch (e) {
-      return left(new AppError('DATABASE_ERROR', (e as Error).message));
+      return left(new DatabaseError((e as Error).message));
     }
   }
 
   async findBySellerId(sellerId: string) {
     try {
       const products = await this.prisma.product.findMany({
-        where: { sellerId, status: 'ACTIVE' },
+        where: { sellerId, status: 'ACTIVE', deletedAt: null },
         orderBy: { createdAt: 'desc' },
         include: PRODUCT_LIST_INCLUDE,
       });
       return right(products as ProductListPayload[]);
     } catch (e) {
-      return left(new AppError('DATABASE_ERROR', (e as Error).message));
+      return left(new DatabaseError((e as Error).message));
     }
   }
 
   async findMany(params: FindManyParams) {
     try {
       const { cursor, limit = 20, search, categoryId, minPrice, maxPrice, condition, sort = 'recent' } = params;
-      const where: Prisma.ProductWhereInput = { status: 'ACTIVE' };
+      const where: Prisma.ProductWhereInput = { status: 'ACTIVE', deletedAt: null };
       if (search) {
         where.OR = [
           { title: { contains: search, mode: 'insensitive' } },
@@ -66,7 +69,7 @@ export class ProductDatabaseRepository implements ProductRepository {
       });
       return right(products as ProductListPayload[]);
     } catch (e) {
-      return left(new AppError('DATABASE_ERROR', (e as Error).message));
+      return left(new DatabaseError((e as Error).message));
     }
   }
 
@@ -137,7 +140,7 @@ export class ProductDatabaseRepository implements ProductRepository {
       const product = await this.prisma.product.create({ data, include: PRODUCT_DETAIL_INCLUDE });
       return right(product as ProductDetailPayload);
     } catch (e) {
-      return left(new AppError('DATABASE_ERROR', (e as Error).message));
+      return left(new DatabaseError((e as Error).message));
     }
   }
 
@@ -150,16 +153,19 @@ export class ProductDatabaseRepository implements ProductRepository {
       });
       return right(product as ProductDetailPayload);
     } catch (e) {
-      return left(new AppError('DATABASE_ERROR', (e as Error).message));
+      return left(new DatabaseError((e as Error).message));
     }
   }
 
   async delete(id: string) {
     try {
-      await this.prisma.product.update({ where: { id }, data: { status: 'DELETED' } });
+      await this.prisma.product.update({
+        where: { id },
+        data: { status: 'DELETED', deletedAt: new Date() },
+      });
       return right(void 0);
     } catch (e) {
-      return left(new AppError('DATABASE_ERROR', (e as Error).message));
+      return left(new DatabaseError((e as Error).message));
     }
   }
 

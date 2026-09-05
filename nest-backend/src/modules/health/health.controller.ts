@@ -1,6 +1,6 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Public } from '@/shared/decorators/public.decorator';
+import { GetPublic } from '@/shared/decorators';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 
@@ -12,9 +12,7 @@ export class HealthController {
     private readonly redis: RedisService,
   ) {}
 
-  @Get()
-  @Public()
-  @HttpCode(HttpStatus.OK)
+  @GetPublic({ summary: 'Health check' })
   async check() {
     return {
       status: 'ok',
@@ -23,9 +21,7 @@ export class HealthController {
     };
   }
 
-  @Get('ready')
-  @Public()
-  @HttpCode(HttpStatus.OK)
+  @GetPublic('ready', { summary: 'Readiness check' })
   async readiness() {
     let dbStatus = 'healthy';
     let redisStatus = 'healthy';

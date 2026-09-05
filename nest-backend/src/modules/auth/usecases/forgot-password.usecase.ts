@@ -22,7 +22,7 @@ export class ForgotPasswordUseCase {
     if (userResult.isLeft()) return left(userResult.value);
     const user = userResult.value;
 
-    if (!user || user.isGuest) {
+    if (!user) {
       return right(undefined);
     }
 

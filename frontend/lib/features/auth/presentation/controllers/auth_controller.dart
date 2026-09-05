@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
@@ -21,6 +22,8 @@ import 'package:freebay/features/dispute/presentation/providers/dispute_provider
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
+import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/shared/config/app_config.dart';
 
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
   return AuthRepository();
@@ -124,35 +127,40 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     state = const AsyncValue.loading();
     ref.read(isInitialAuthLoadingProvider.notifier).set(true);
 
-    final hasSeenOnboarding = StorageService.hasSeenOnboardingSync();
-    ref.read(hasSeenOnboardingProvider.notifier).set(hasSeenOnboarding);
+    try {
+      final hasSeenOnboarding = StorageService.hasSeenOnboardingSync();
+      ref.read(hasSeenOnboardingProvider.notifier).set(hasSeenOnboarding);
 
-    final rememberMe = await StorageService.getRememberMe();
-    if (!rememberMe) {
-      await StorageService.clearTokens();
-      state = const AsyncValue.data(null);
-      ref.read(isInitialAuthLoadingProvider.notifier).set(false);
-      return;
-    }
-
-    final token = await StorageService.getToken();
-    if (token == null) {
-      await _tryBiometricLogin();
-      ref.read(isInitialAuthLoadingProvider.notifier).set(false);
-      return;
-    }
-
-    final result = await ref.read(getCurrentUserUsecaseProvider)();
-    result.fold(
-      (failure) async {
+      final rememberMe = await StorageService.getRememberMe();
+      if (!rememberMe) {
         await StorageService.clearTokens();
         state = const AsyncValue.data(null);
-      },
-      (user) {
-        state = AsyncValue.data(user);
-      },
-    );
-    ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+        return;
+      }
+
+      final token = await StorageService.getToken();
+      if (token == null) {
+        await _tryBiometricLogin();
+        return;
+      }
+
+      final result = await ref.read(getCurrentUserUsecaseProvider)();
+      await result.fold(
+        (failure) async {
+          await StorageService.clearTokens();
+          state = const AsyncValue.data(null);
+        },
+        (user) async {
+          state = AsyncValue.data(user);
+        },
+      );
+    } catch (_) {
+      await StorageService.clearTokens();
+      state = const AsyncValue.data(null);
+    } finally {
+      ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+      routerRefreshNotifier.value++;
+    }
   }
 
   /// Attempt biometric login. On success, state becomes the user.
@@ -169,6 +177,19 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     );
   }
 
+  bool _isGoogleSignInInitialized = false;
+
+  Future<void> _ensureGoogleSignInInitialized() async {
+    if (_isGoogleSignInInitialized) return;
+    final serverClientId = AppConfig.googleServerClientId;
+    if (serverClientId.isNotEmpty) {
+      await GoogleSignIn.instance.initialize(serverClientId: serverClientId);
+    } else {
+      await GoogleSignIn.instance.initialize();
+    }
+    _isGoogleSignInInitialized = true;
+  }
+
   Future<void> login(
     String email,
     String password, {
@@ -182,7 +203,10 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     result.fold(
       (failure) =>
           state = AsyncValue.error(failure.message, StackTrace.current),
-      (user) => state = AsyncValue.data(user),
+      (user) {
+        state = AsyncValue.data(user);
+        routerRefreshNotifier.value++;
+      },
     );
   }
 
@@ -205,7 +229,10 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     result.fold(
       (failure) =>
           state = AsyncValue.error(failure.message, StackTrace.current),
-      (user) => state = AsyncValue.data(user),
+      (user) {
+        state = AsyncValue.data(user);
+        routerRefreshNotifier.value++;
+      },
     );
   }
 
@@ -231,14 +258,16 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
       (_) {
         _invalidateUserProviders();
         state = const AsyncValue.data(null);
+        routerRefreshNotifier.value++;
       },
     );
   }
 
-  Future<void> requestPasswordRecovery(String email) async {
-    await ref.read(requestPasswordRecoveryUsecaseProvider)(
+  Future<bool> requestPasswordRecovery(String email) async {
+    final result = await ref.read(requestPasswordRecoveryUsecaseProvider)(
       RequestPasswordRecoveryParams(email: email),
     );
+    return result.fold((_) => false, (_) => true);
   }
 
   Future<bool> verifyPasswordRecoveryCode(String email, String code) async {
@@ -248,33 +277,36 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     return result.fold((_) => false, (value) => value);
   }
 
-  Future<void> resetPassword(
-    String email,
-    String code,
-    String newPassword,
-  ) async {
-    await ref.read(resetPasswordUsecaseProvider)(
-      ResetPasswordParams(email: email, code: code, newPassword: newPassword),
+  Future<bool> resetPassword({
+    required String email,
+    required String token,
+    required String newPassword,
+  }) async {
+    final result = await ref.read(resetPasswordUsecaseProvider)(
+      ResetPasswordParams(email: email, code: token, newPassword: newPassword),
     );
+    return result.fold((_) => false, (_) => true);
   }
 
   Future<void> tryRefreshSession() async {
     state = const AsyncValue.loading();
     final result = await ref.read(getCurrentUserUsecaseProvider)();
-    result.fold(
-      (_) => state = const AsyncValue.data(null),
-      (user) => state = AsyncValue.data(user),
-    );
+    result.fold((_) => state = const AsyncValue.data(null), (user) {
+      state = AsyncValue.data(user);
+      routerRefreshNotifier.value++;
+    });
   }
 
   Future<void> forceLogout() async {
     await StorageService.clearTokens();
     _invalidateUserProviders();
     state = const AsyncValue.data(null);
+    routerRefreshNotifier.value++;
   }
 
   void setUser(UserEntity? user) {
     state = AsyncValue.data(user);
+    routerRefreshNotifier.value++;
   }
 
   bool needsProfileCompletion(UserEntity? user) {
@@ -284,25 +316,87 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   Future<void> googleLogin() async {
     state = const AsyncValue.loading();
     try {
-      await GoogleSignIn.instance.initialize();
-      final googleUser = await GoogleSignIn.instance.authenticate();
-      final idToken = googleUser.authentication.idToken;
-      if (idToken == null) {
+      final serverClientId = AppConfig.googleServerClientId;
+      if (serverClientId.isEmpty) {
+        debugPrint(
+          '[GoogleSignIn] Erro: GOOGLE_SERVER_CLIENT_ID não configurado no ambiente.',
+        );
         state = AsyncValue.error(
-          'Token Google não retornado pelo provedor.',
+          'Google Sign-In não configurado: GOOGLE_SERVER_CLIENT_ID não fornecido.',
           StackTrace.current,
         );
         return;
       }
+
+      await _ensureGoogleSignInInitialized();
+
+      debugPrint('[GoogleSignIn] Abrindo seletor de contas do Google...');
+      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+          .authenticate();
+      if (googleUser == null) {
+        debugPrint(
+          '[GoogleSignIn] Usuário cancelou ou fechou a janela de autenticação.',
+        );
+        state = const AsyncValue.data(null);
+        return;
+      }
+
+      debugPrint(
+        '[GoogleSignIn] Conta selecionada: ${googleUser.email}. Obtendo credenciais...',
+      );
+      final GoogleSignInAuthentication auth = await googleUser.authentication;
+      final String? idToken = auth.idToken;
+
+      if (idToken == null || idToken.isEmpty) {
+        debugPrint('[GoogleSignIn] ID Token ausente ou nulo.');
+        state = AsyncValue.error(
+          'Token Google não retornado pelo provedor. Verifique se o serverClientId corresponde ao Web Client ID do Google Cloud Console.',
+          StackTrace.current,
+        );
+        return;
+      }
+
+      debugPrint(
+        '[GoogleSignIn] Token obtido. Autenticando com o backend FreeBay...',
+      );
       final result = await ref.read(googleAuthUsecaseProvider)(idToken);
       result.fold(
-        (failure) =>
-            state = AsyncValue.error(failure.message, StackTrace.current),
-        (user) => state = AsyncValue.data(user),
+        (failure) {
+          debugPrint('[GoogleSignIn] Falha no backend: ${failure.message}');
+          state = AsyncValue.error(failure.message, StackTrace.current);
+        },
+        (user) {
+          debugPrint(
+            '[GoogleSignIn] Sucesso! Usuário: ${user.displayName} (@${user.username})',
+          );
+          state = AsyncValue.data(user);
+          routerRefreshNotifier.value++;
+        },
       );
-    } catch (e) {
+    } on GoogleSignInException catch (e) {
+      debugPrint(
+        '[GoogleSignIn] GoogleSignInException: code=${e.code}, description=${e.description}',
+      );
+      if (e.code == GoogleSignInExceptionCode.canceled ||
+          e.code == GoogleSignInExceptionCode.interrupted) {
+        state = const AsyncValue.data(null);
+        return;
+      }
       state = AsyncValue.error(
-        'Erro ao autenticar com Google: $e',
+        'Não foi possível concluir o login com o Google (${e.description ?? e.code.name}). Tente novamente.',
+        StackTrace.current,
+      );
+    } catch (e, stack) {
+      debugPrint('[GoogleSignIn] Erro inesperado: $e\n$stack');
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('cancel') ||
+          errStr.contains('dismiss') ||
+          errStr.contains('interrupted')) {
+        state = const AsyncValue.data(null);
+        return;
+      }
+      state = AsyncValue.error(
+        'Falha ao autenticar com o Google: $e',
         StackTrace.current,
       );
     }
@@ -314,6 +408,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     String? city,
     String? state,
   }) async {
+    this.state = const AsyncValue.loading();
     final result = await ref.read(completeProfileUsecaseProvider)(
       CompleteProfileParams(
         username: username,
@@ -325,7 +420,10 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     result.fold(
       (failure) =>
           this.state = AsyncValue.error(failure.message, StackTrace.current),
-      (user) => this.state = AsyncValue.data(user),
+      (user) {
+        this.state = AsyncValue.data(user);
+        routerRefreshNotifier.value++;
+      },
     );
   }
 }

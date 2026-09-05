@@ -1,11 +1,6 @@
-import { Controller, Get, Post, Body, Param, UseGuards, HttpCode, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { Roles } from '@/shared/decorators/roles.decorator';
-import { RolesGuard } from '@/shared/guards/roles.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
+import { Controller, Body, Param, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { GetAuth, PostAuth, PatchAuth, PatchAdmin, CurrentUserId } from '@/shared/decorators';
 import { OpenDisputeUseCase } from './usecases/open-dispute.usecase';
 import { GetDisputeUseCase } from './usecases/get-dispute.usecase';
 import { SubmitEvidenceUseCase } from './usecases/submit-evidence.usecase';
@@ -13,13 +8,11 @@ import { ResolveDisputeUseCase } from './usecases/resolve-dispute.usecase';
 import { GetUserDisputesUseCase } from './usecases/get-user-disputes.usecase';
 import { WithdrawDisputeUseCase } from './usecases/withdraw-dispute.usecase';
 import { OpenDisputeDTO, ResolveDisputeDTO, OpenDisputeOutput } from './dtos/dispute.dto';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
 import { isLeft } from '@/shared/core/either';
 import { Prisma } from '@prisma/client';
 
 @ApiTags('Disputes')
 @Controller('disputes')
-@UseGuards(JwtAuthGuard, NonGuestGuard)
 export class DisputesController {
   constructor(
     private openDisputeUseCase: OpenDisputeUseCase,
@@ -30,75 +23,56 @@ export class DisputesController {
     private withdrawDisputeUseCase: WithdrawDisputeUseCase,
   ) {}
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth({
     summary: 'Open a dispute',
-    auth: true,
     bodyType: OpenDisputeDTO,
     responseStatus: 201,
     responseType: OpenDisputeOutput,
+    httpCode: HttpStatus.CREATED,
     errors: [{ status: 404, description: 'Order not found' }],
   })
-  async create(@CurrentUser() user: AuthUser, @Body() body: OpenDisputeDTO) {
+  async create(@CurrentUserId() userId: string, @Body() body: OpenDisputeDTO) {
     return this.openDisputeUseCase.execute({
-      userId: user.userId,
+      userId,
       orderId: body.orderId,
       reason: body.reason,
     });
   }
 
-  @Get()
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Get user disputes',
-    auth: true,
-  })
-  async findAll(@CurrentUser() user: AuthUser) {
-    const result = await this.getUserDisputesUseCase.execute(user.userId);
-    if (isLeft(result)) throw result.value;
+  @GetAuth('Get user disputes')
+  async findAll(@CurrentUserId() userId: string) {
+    const result = await this.getUserDisputesUseCase.execute(userId);
+    if (isLeft(result)) return result;
     return { disputes: result.value };
   }
 
-  @Get(':id')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @GetAuth(':id', {
     summary: 'Get dispute by ID',
-    auth: true,
     params: [{ name: 'id', description: 'Dispute UUID' }],
     errors: [{ status: 404, description: 'Dispute not found' }],
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
-    const result = await this.getDisputeUseCase.execute(id, user.userId);
-    if (isLeft(result)) throw result.value;
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    const result = await this.getDisputeUseCase.execute(id, userId);
+    if (isLeft(result)) return result;
     return { dispute: result.value };
   }
 
-  @Post(':id/evidence')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth(':id/evidence', {
     summary: 'Submit evidence',
-    auth: true,
     params: [{ name: 'id', description: 'Dispute UUID' }],
     errors: [{ status: 404, description: 'Dispute not found' }],
+    httpCode: HttpStatus.OK,
   })
-  async submitEvidence(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser, @Body() body: { evidence: Prisma.InputJsonValue }) {
+  async submitEvidence(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string, @Body() body: { evidence: Prisma.InputJsonValue }) {
     return this.submitEvidenceUseCase.execute({
       disputeId: id,
-      userId: user.userId,
+      userId,
       evidence: body.evidence,
     });
   }
 
-  @Post(':id/resolve')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAdmin(':id/resolve', {
     summary: 'Resolve a dispute',
-    auth: true,
     bodyType: ResolveDisputeDTO,
     params: [{ name: 'id', description: 'Dispute UUID' }],
     errors: [{ status: 404, description: 'Dispute not found' }],
@@ -111,19 +85,16 @@ export class DisputesController {
     });
   }
 
-  @Post(':id/withdraw')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PatchAuth(':id/withdraw', {
     summary: 'Withdraw a dispute',
-    auth: true,
     params: [{ name: 'id', description: 'Dispute UUID' }],
     errors: [{ status: 404, description: 'Dispute not found' }],
+    httpCode: HttpStatus.OK,
   })
-  async withdraw(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser) {
+  async withdraw(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
     return this.withdrawDisputeUseCase.execute({
       disputeId: id,
-      userId: user.userId,
+      userId,
     });
   }
 }

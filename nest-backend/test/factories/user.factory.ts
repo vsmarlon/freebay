@@ -25,7 +25,6 @@ export class UserFactory {
         avatarUrl: overrides.avatarUrl || null,
         bio: overrides.bio || null,
         isVerified: overrides.isVerified ?? false,
-        isGuest: overrides.isGuest ?? false,
         role: overrides.role || UserRole.USER,
         reputationScore: overrides.reputationScore ?? 0,
         totalReviews: overrides.totalReviews ?? 0,
@@ -74,18 +73,6 @@ export class UserFactory {
       role: UserRole.ADMIN,
       emailVerified: true,
       isVerified: true,
-      ...overrides,
-    });
-  }
-
-  /**
-   * Create a guest user
-   */
-  async createGuest(overrides: Partial<User> = {}): Promise<User> {
-    return this.create({
-      isGuest: true,
-      emailVerified: false,
-      email: generateTestEmail('guest'),
       ...overrides,
     });
   }

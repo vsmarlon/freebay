@@ -118,6 +118,13 @@ class HttpClient {
           handler.next(options);
         },
         onError: (error, handler) async {
+          if (error.response?.statusCode == 404 &&
+              error.requestOptions.path.contains('/users/me')) {
+            await StorageService.clearTokens();
+            onAuthLost?.call();
+            return handler.next(error);
+          }
+
           if (error.response?.statusCode == 401 &&
               !error.requestOptions.path.contains('/auth/refresh') &&
               !error.requestOptions.path.contains('/auth/login')) {

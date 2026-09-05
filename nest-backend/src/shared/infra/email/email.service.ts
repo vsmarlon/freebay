@@ -135,7 +135,7 @@ export class EmailService {
     }
 
     if (this.isProduction) {
-      return left(new AppError('EMAIL_DELIVERY_FAILED', 'Falha ao enviar e-mail de recuperação'));
+      return left(new EmailDeliveryFailedError('Falha ao enviar e-mail de recuperação'));
     }
 
     this.logger.warn(`Email provider not available in dev. Password recovery email to ${to} was not dispatched.`);

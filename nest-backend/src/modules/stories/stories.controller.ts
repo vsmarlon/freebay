@@ -1,27 +1,24 @@
 import {
   Controller,
-  Get,
-  Post,
-  Delete,
   Param,
-  UseGuards,
-  HttpCode,
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { toDataUri } from '@/shared/utils/file.utils';
 import { StoriesService } from './stories.service';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { NonGuestGuard } from '@/shared/guards/non-guest.guard';
-import { CurrentUser } from '@/shared/decorators/current-user.decorator';
-import { AuthUser } from '@/shared/core/types';
-import { ApiDoc } from '@/shared/swagger/api-doc.decorator';
-import { isLeft, left } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+} from '@/shared/decorators';
+import { left } from '@/shared/core/either';
+import { BadRequestError } from '@/shared/core/errors';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
 
 @ApiTags('Stories')
@@ -29,79 +26,59 @@ import { validateImageFile } from '@/shared/utils/image-upload.utils';
 export class StoriesController {
   constructor(private readonly storiesService: StoriesService) {}
 
-  @Get()
-  @ApiDoc({
-    summary: 'Get stories feed',
-    description: 'Returns active stories from followed users',
-  })
-  async getStories(@CurrentUser() user: AuthUser) {
-    const result = await this.storiesService.getStories(user?.userId);
-    if (isLeft(result)) throw result.value;
-    return { stories: result.value.stories, userHasStory: result.value.userHasStory };
+  @GetAuth({ summary: 'List active stories for explore/feed' })
+  async getFeed() {
+    return this.storiesService.getFeed();
   }
 
-  @Get('user/:userId')
-  @ApiDoc({
-    summary: 'Get user stories',
+  @GetAuth('user/:userId', {
+    summary: 'List active stories for a specific user',
     params: [{ name: 'userId', description: 'User UUID' }],
   })
-  async getUserStories(@Param('userId') userId: string) {
-    const result = await this.storiesService.getUserStories(userId);
-    if (isLeft(result)) throw result.value;
-    return { stories: result.value };
+  async getUserStories(@Param('userId', ParseUUIDPipe) userId: string) {
+    return this.storiesService.getUserStories(userId);
   }
 
-  @Post()
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
+  @PostAuth({
+    summary: 'Create a story',
+    description: 'Uploads an image that will be available for 24h',
+    responseStatus: 201,
+    httpCode: HttpStatus.CREATED,
+  })
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
-  @HttpCode(HttpStatus.CREATED)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Create a story',
-    description: 'Uploads an image that will be available for 24h',
-    auth: true,
-    responseStatus: 201,
-  })
   async createStory(
-    @CurrentUser() user: AuthUser,
+    @CurrentUserId() userId: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (!file) return left(new AppError('BAD_REQUEST', 'Imagem é obrigatória'));
+    if (!file) return left(new BadRequestError('Imagem é obrigatória'));
     const mimeError = validateImageFile(file);
-    if (mimeError) return left(new AppError('BAD_REQUEST', mimeError));
+    if (mimeError) return left(new BadRequestError(mimeError));
 
     return this.storiesService.createStory({
-      userId: user.userId,
+      userId,
       imageBase64: toDataUri(file),
     });
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, NonGuestGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
-    summary: 'Delete a story',
-    auth: true,
+  @PatchAuth(':id/delete', {
+    summary: 'Soft-delete a story',
     params: [{ name: 'id', description: 'Story UUID' }],
   })
-  async deleteStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.storiesService.deleteStory({ storyId: id, userId: user.userId });
+  async deleteStory(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.storiesService.deleteStory({ storyId: id, userId });
   }
 
-  @Post(':id/view')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiDoc({
+  @PostAuth(':id/view', {
     summary: 'View a story',
     description: 'Marks a story as viewed by the current user',
     params: [{ name: 'id', description: 'Story UUID' }],
   })
-  async viewStory(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    return this.storiesService.viewStory({ storyId: id, viewerId: user?.userId || '' });
+  async viewStory(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string) {
+    return this.storiesService.viewStory({ storyId: id, viewerId: viewerId || '' });
   }
 }

@@ -1,31 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { RepositoryResponse } from '@/shared/core/either';
 import { PostRepository } from '../../domain/repositories/post.repository';
 import { PostPayload, POST_INCLUDE, FeedQuery, FeedResult, UserPostsQuery, SearchPostsQuery } from '../../types/social.types';
 
 @Injectable()
-export class PrismaPostRepository implements PostRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class PrismaPostRepository extends BasePrismaRepository implements PostRepository {
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
 
   async findById(id: string): RepositoryResponse<PostPayload | null> {
-    try {
+    return this.safeRun(async () => {
       const post = await this.prisma.post.findUnique({
         where: { id },
         include: POST_INCLUDE,
       });
-      return right(post as PostPayload | null);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar post'));
-    }
+      if (post && post.deletedAt !== null) {
+        return null;
+      }
+      return post as PostPayload | null;
+    }, 'Erro ao buscar post');
   }
 
   async findFeed(query: FeedQuery): RepositoryResponse<FeedResult> {
-    try {
+    return this.safeRun(async () => {
       const limit = query.limit ?? 20;
-      const where: Prisma.PostWhereInput = {};
+      const where: Prisma.PostWhereInput = { deletedAt: null };
 
       if (query.contentFilter === 'social') {
         where.type = 'REGULAR';
@@ -41,12 +44,10 @@ export class PrismaPostRepository implements PostRepository {
       }
 
       if (query.type === 'following') {
-        return right(await this.findFollowingFeed(where, query));
+        return this.findFollowingFeed(where, query);
       }
-      return right(await this.findExploreFeed(where, query, limit));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar feed'));
-    }
+      return this.findExploreFeed(where, query, limit);
+    }, 'Erro ao buscar feed');
   }
 
   private async findFollowingFeed(
@@ -128,23 +129,22 @@ export class PrismaPostRepository implements PostRepository {
   }
 
   async findByUserId(query: UserPostsQuery): RepositoryResponse<PostPayload[]> {
-    try {
+    return this.safeRun(async () => {
       const posts = await this.prisma.post.findMany({
-        where: { userId: query.userId },
+        where: { userId: query.userId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         take: query.limit ?? 20,
         ...(query.cursor ? { skip: 1, cursor: { id: query.cursor } } : {}),
         include: POST_INCLUDE,
       });
-      return right(posts as PostPayload[]);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar posts do usuário'));
-    }
+      return posts as PostPayload[];
+    }, 'Erro ao buscar posts do usuário');
   }
 
   async searchPosts(query: SearchPostsQuery): RepositoryResponse<PostPayload[]> {
-    try {
+    return this.safeRun(async () => {
       const where: Prisma.PostWhereInput = {
+        deletedAt: null,
         content: { contains: query.query, mode: 'insensitive' },
       };
 
@@ -175,38 +175,45 @@ export class PrismaPostRepository implements PostRepository {
         ...(query.cursor ? { skip: 1, cursor: { id: query.cursor } } : {}),
         include: POST_INCLUDE,
       });
-      return right(posts as PostPayload[]);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao buscar posts'));
-    }
+      return posts as PostPayload[];
+    }, 'Erro ao buscar posts');
   }
 
   async create(data: Record<string, unknown>): RepositoryResponse<PostPayload> {
-    try {
+    return this.safeRun(async () => {
       const post = await this.prisma.post.create({ data: data as Prisma.PostCreateInput, include: POST_INCLUDE });
-      return right(post as PostPayload);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao criar post'));
-    }
+      return post as PostPayload;
+    }, 'Erro ao criar post');
   }
 
   async update(id: string, data: Record<string, unknown>): RepositoryResponse<unknown> {
-    try {
-      return right(await this.prisma.post.update({ where: { id }, data: data as Prisma.PostUpdateInput }));
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao atualizar post'));
-    }
+    return this.safeRun(
+      () => this.prisma.post.update({ where: { id }, data: data as Prisma.PostUpdateInput }),
+      'Erro ao atualizar post',
+    );
   }
 
   async createMentions(postId: string, mentionedUserIds: string[]): RepositoryResponse<void> {
-    try {
-      await this.prisma.postMention.createMany({
-        data: mentionedUserIds.map((mentionedUserId) => ({ postId, mentionedUserId })),
-        skipDuplicates: true,
-      });
-      return right(undefined);
-    } catch {
-      return left(new AppError('DB_ERROR', 'Erro ao criar menções'));
-    }
+    return this.safeRun(
+      async () => {
+        await this.prisma.postMention.createMany({
+          data: mentionedUserIds.map((mentionedUserId) => ({ postId, mentionedUserId })),
+          skipDuplicates: true,
+        });
+      },
+      'Erro ao criar menções',
+    );
+  }
+
+  async softDelete(id: string): RepositoryResponse<void> {
+    return this.safeRun(
+      async () => {
+        await this.prisma.post.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+        });
+      },
+      'Erro ao apagar post',
+    );
   }
 }
