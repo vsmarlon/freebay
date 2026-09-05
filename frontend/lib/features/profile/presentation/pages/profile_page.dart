@@ -31,6 +31,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   @override
   void initState() {
     super.initState();
+    final suggestions = ref.read(suggestionsProvider);
+    if (suggestions.users.isNotEmpty || suggestions.isLoading) return;
+
     Future.microtask(() {
       if (mounted) {
         ref.read(suggestionsProvider.notifier).loadSuggestions();

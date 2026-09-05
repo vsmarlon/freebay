@@ -27,10 +27,14 @@ class ExplorarPage extends ConsumerStatefulWidget {
   ConsumerState<ExplorarPage> createState() => _ExplorarPageState();
 }
 
-class _ExplorarPageState extends ConsumerState<ExplorarPage> {
+class _ExplorarPageState extends ConsumerState<ExplorarPage>
+    with AutomaticKeepAliveClientMixin {
   final _searchController = TextEditingController();
   bool _showFilters = false;
   Timer? _debounceTimer;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void dispose() {
@@ -53,6 +57,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 

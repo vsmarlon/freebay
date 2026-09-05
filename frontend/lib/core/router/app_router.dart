@@ -121,11 +121,11 @@ final GoRouter appRouter = GoRouter(
     ...supportRoutes,
 
     // Shell routes (with bottom nav)
-    StatefulShellRoute.indexedStack(
+    StatefulShellRoute(
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state, navigationShell) {
-        return AppShell(navigationShell: navigationShell);
-      },
+      builder: (context, state, navigationShell) => navigationShell,
+      navigatorContainerBuilder: (context, navigationShell, children) =>
+          AppShell(navigationShell: navigationShell, branches: children),
       branches: [
         appShellBranch(AppRoutes.feed, (context, state) => const FeedPage()),
         appShellBranch(

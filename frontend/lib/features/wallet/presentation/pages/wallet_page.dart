@@ -34,6 +34,10 @@ class _WalletPageState extends ConsumerState<WalletPage>
   @override
   void initState() {
     super.initState();
+    final wallet = ref.read(walletProvider);
+    final history = ref.read(walletHistoryProvider);
+    if (wallet.hasValue || wallet.isLoading || history.isLoading) return;
+
     Future.microtask(() {
       if (!mounted) return;
       final user = ref.read(authControllerProvider).value;

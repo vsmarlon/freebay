@@ -17,10 +17,18 @@ import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
 
 const double kNavBarContentHeight = 64;
 
+const Duration kShellPageDuration = Duration(milliseconds: 150);
+const double kDrawerOverswipeThreshold = 56;
+
 class AppShell extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
+  final List<Widget> branches;
 
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell({
+    super.key,
+    required this.navigationShell,
+    required this.branches,
+  });
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -29,23 +37,27 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   late final HideOnScrollController _navHide;
-  double _dragStartX = 0.0;
-  int _previousIndex = 0;
+  late final PageController _pageController;
+  double _overscrolledLeft = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _navHide = HideOnScrollController(vsync: this);
-    _previousIndex = widget.navigationShell.currentIndex;
+    _pageController = PageController(
+      initialPage: widget.navigationShell.currentIndex,
+    );
   }
 
   @override
   void didUpdateWidget(AppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.navigationShell.currentIndex !=
-        widget.navigationShell.currentIndex) {
-      _previousIndex = oldWidget.navigationShell.currentIndex;
+    final index = widget.navigationShell.currentIndex;
+    if (_pageController.hasClients &&
+        _pageController.page?.round() != index &&
+        !_pageController.position.isScrollingNotifier.value) {
+      _pageController.jumpToPage(index);
     }
   }
 
@@ -53,6 +65,7 @@ class _AppShellState extends State<AppShell>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _navHide.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -70,31 +83,46 @@ class _AppShellState extends State<AppShell>
   }
 
   void _onDestinationSelected(int index) {
-    if (index < 0 || index > 4) return;
+    if (index < 0 || index >= widget.branches.length) return;
     HapticFeedback.lightImpact();
-    widget.navigationShell.goBranch(
-      index,
-      initialLocation: index == widget.navigationShell.currentIndex,
-    );
-  }
 
-  void _handleHorizontalDragStart(DragStartDetails details) {
-    _dragStartX = details.globalPosition.dx;
-  }
-
-  void _handleHorizontalDragEnd(DragEndDetails details) {
-    final vx = details.primaryVelocity ?? 0;
-    final currentIndex = widget.navigationShell.currentIndex;
-
-    if (vx < -150 || (_dragStartX - details.velocity.pixelsPerSecond.dx > 60)) {
-      if (currentIndex < 4) {
-        _onDestinationSelected(currentIndex + 1);
-      }
-    } else if (vx > 150) {
-      if (currentIndex > 0) {
-        _onDestinationSelected(currentIndex - 1);
-      }
+    if (index == widget.navigationShell.currentIndex) {
+      widget.navigationShell.goBranch(index, initialLocation: true);
+      return;
     }
+
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: kShellPageDuration,
+        curve: Curves.linear,
+      );
+    } else {
+      widget.navigationShell.goBranch(index);
+    }
+  }
+
+  void _onPageChanged(int index) {
+    if (index == widget.navigationShell.currentIndex) return;
+    widget.navigationShell.goBranch(index);
+  }
+
+  bool _handleShellScroll(ScrollNotification notification) {
+    if (notification.metrics.axis == Axis.horizontal) {
+      if (notification is OverscrollNotification &&
+          notification.overscroll < 0 &&
+          widget.navigationShell.currentIndex == 0) {
+        _overscrolledLeft -= notification.overscroll;
+        if (_overscrolledLeft > kDrawerOverswipeThreshold) {
+          _overscrolledLeft = 0;
+          appShellScaffoldKey.currentState?.openDrawer();
+        }
+      } else if (notification is ScrollEndNotification) {
+        _overscrolledLeft = 0;
+      }
+      return false;
+    }
+    return _navHide.handleNotification(notification);
   }
 
   Widget? _fabFor(BuildContext context, int selectedIndex) {
@@ -111,7 +139,6 @@ class _AppShellState extends State<AppShell>
   @override
   Widget build(BuildContext context) {
     final selectedIndex = widget.navigationShell.currentIndex;
-    final isForward = selectedIndex >= _previousIndex;
 
     return Consumer(
       builder: (context, ref, _) {
@@ -140,42 +167,19 @@ class _AppShellState extends State<AppShell>
           body: Stack(
             children: [
               Positioned.fill(
-                child: GestureDetector(
-                  onHorizontalDragStart: _handleHorizontalDragStart,
-                  onHorizontalDragEnd: _handleHorizontalDragEnd,
-                  behavior: HitTestBehavior.translucent,
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: _navHide.handleNotification,
-                    child: MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        padding: MediaQuery.of(context).padding.copyWith(
-                          bottom: isKeyboardOpen ? 0 : navBarHeight,
-                        ),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _handleShellScroll,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      padding: MediaQuery.of(context).padding.copyWith(
+                        bottom: isKeyboardOpen ? 0 : navBarHeight,
                       ),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        switchInCurve: Curves.easeOutQuad,
-                        switchOutCurve: Curves.easeInQuad,
-                        transitionBuilder: (child, animation) {
-                          final beginOffset = isForward
-                              ? const Offset(0.20, 0.0)
-                              : const Offset(-0.20, 0.0);
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: beginOffset,
-                                end: Offset.zero,
-                              ).animate(animation),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: KeyedSubtree(
-                          key: ValueKey<int>(selectedIndex),
-                          child: widget.navigationShell,
-                        ),
-                      ),
+                    ),
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: _onPageChanged,
+                      physics: const ClampingScrollPhysics(),
+                      children: widget.branches,
                     ),
                   ),
                 ),
