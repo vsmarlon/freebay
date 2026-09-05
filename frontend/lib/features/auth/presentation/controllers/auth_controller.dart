@@ -298,6 +298,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   }
 
   Future<void> forceLogout() async {
+    await StorageService.clearBiometricToken();
     await StorageService.clearTokens();
     _invalidateUserProviders();
     state = const AsyncValue.data(null);

@@ -173,6 +173,14 @@ export class InvalidGoogleTokenError extends AppError {
   }
 }
 
+export class UnverifiedGoogleEmailError extends AppError {
+  constructor(
+    message = 'A conta Google precisa ter o e-mail verificado para ser vinculada a uma conta existente',
+  ) {
+    super('UNVERIFIED_GOOGLE_EMAIL', message, 403);
+  }
+}
+
 export class UserNotFoundError extends AppError {
   constructor(message = 'Usuário não encontrado') {
     super('USER_NOT_FOUND', message, 404);

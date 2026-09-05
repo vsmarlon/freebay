@@ -212,6 +212,56 @@ describe('GoogleAuthUseCase', () => {
     }));
   });
 
+  it.each([false, undefined])(
+    'refuses to link an existing account when email_verified is %p',
+    async (emailVerified) => {
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => ({
+          sub: 'attacker-sub',
+          email: 'victim@gmail.com',
+          name: 'Victim',
+          email_verified: emailVerified,
+        }),
+      });
+
+      mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+      mockUserRepository.findByEmail.mockResolvedValue(
+        right({ id: 'victim-id', email: 'victim@gmail.com', googleId: null } as any),
+      );
+
+      const result = await sut.execute('attacker-google-id-token');
+
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
+        expect(result.value.code).toBe('UNVERIFIED_GOOGLE_EMAIL');
+      }
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it('never trusts an unverified address when creating a new account', async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'google-sub-unverified',
+        email: 'unverified@gmail.com',
+        name: 'Unverified',
+        email_verified: false,
+      }),
+    });
+
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+    mockUserRepository.findByEmail.mockResolvedValue(right(null));
+    mockUserRepository.create.mockResolvedValue(
+      right({ id: 'new-id', username: null, email: 'unverified@gmail.com' } as any),
+    );
+
+    await sut.execute('valid-google-id-token');
+
+    expect(mockUserRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ emailVerified: false }),
+    );
+  });
+
   it('should return error when Google token is invalid', async () => {
     mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'));
 

@@ -54,3 +54,5 @@ Thumbs.db
 
 # opencode
 opencode.json
+# Local MCP server config (contains local DB credentials)
+.mcp.json

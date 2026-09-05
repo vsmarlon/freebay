@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, InvalidGoogleTokenError } from '@/shared/core/errors';
+import { AppError, InvalidGoogleTokenError, UnverifiedGoogleEmailError } from '@/shared/core/errors';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
 
@@ -71,10 +71,15 @@ export class GoogleAuthUseCase {
     const byEmail = await this.userRepository.findByEmail(payload.email);
     if (byEmail.isLeft()) return left(byEmail.value);
     if (byEmail.value) {
+      if (payload.email_verified !== true) {
+        this.logger.warn(`Recusando vínculo Google não verificado ao usuário existente: ${byEmail.value.id}`);
+        return left(new UnverifiedGoogleEmailError());
+      }
+
       this.logger.log(`Vinculando conta Google ao usuário existente: ${byEmail.value.id} (${payload.email})`);
       const updated = await this.userRepository.update(byEmail.value.id, {
         googleId: payload.sub,
-        emailVerified: payload.email_verified ?? true,
+        emailVerified: true,
         avatarUrl: byEmail.value.avatarUrl ?? payload.picture ?? null,
       });
       if (updated.isLeft()) {
@@ -92,7 +97,7 @@ export class GoogleAuthUseCase {
       email: payload.email,
       passwordHash: null,
       googleId: payload.sub,
-      emailVerified: payload.email_verified ?? true,
+      emailVerified: payload.email_verified === true,
       cpfHash: null,
       phone: null,
       phoneVerified: false,

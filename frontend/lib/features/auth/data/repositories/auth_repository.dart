@@ -11,6 +11,10 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
+      if (await StorageService.getBiometricToken() != null) {
+        await revokeBiometricToken();
+      }
+
       final refreshToken = await StorageService.getRefreshToken();
       if (refreshToken != null) {
         await safeVoid(
@@ -19,6 +23,7 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
           debugLabel: 'AUTH logout',
         );
       }
+      await StorageService.clearBiometricToken();
       await StorageService.clearTokens();
       return const Right(null);
     } catch (_) {
