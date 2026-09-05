@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/components/app_text_field.dart';
 import 'package:freebay/core/components/brutalist_icon_button.dart';
@@ -130,7 +131,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
             return;
           }
           await _maybeOfferBiometry(user);
-          if (context.mounted) context.go('/feed');
+          if (context.mounted) {
+            final from = GoRouterState.of(context).uri.queryParameters['from'];
+            context.go(resolvePostAuthDestination(from));
+          }
         },
         error: (err, _) {
           HapticFeedback.vibrate();

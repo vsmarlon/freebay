@@ -10,6 +10,7 @@ abstract class MessageEntity with _$MessageEntity {
     required String id,
     required String conversationId,
     required String senderId,
+    String? clientMessageId,
     String? content,
     @Default('TEXT') String type,
     String? attachmentUrl,

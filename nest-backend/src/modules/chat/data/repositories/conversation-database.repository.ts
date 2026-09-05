@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
-import { RepositoryResponse } from '@/shared/core/either';
+import { RepositoryResponse, right, left } from '@/shared/core/either';
+import { DatabaseError } from '@/shared/core/errors';
 import { ConversationRepository } from '../../domain/repositories/conversation.repository';
 import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 import {
@@ -120,13 +121,29 @@ export class ConversationDatabaseRepository extends BasePrismaRepository impleme
   }
 
   async createDirectMessage(data: Prisma.DirectMessageCreateInput, includeSender?: boolean): RepositoryResponse<DirectMessage | DirectMessageWithSender> {
-    return this.safeRun(async () => {
-      const query: Prisma.DirectMessageCreateArgs = { data };
-      if (includeSender) {
-        query.include = { sender: { select: USER_SELECT_MINIMAL } };
+    const query: Prisma.DirectMessageCreateArgs = { data };
+    if (includeSender) {
+      query.include = { sender: { select: USER_SELECT_MINIMAL } };
+    }
+    try {
+      const msg = await this.prisma.directMessage.create(query);
+      return right(msg as DirectMessage | DirectMessageWithSender);
+    } catch (e) {
+      const conversationId = data.conversation.connect?.id;
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002' &&
+        data.clientMessageId &&
+        conversationId
+      ) {
+        const existing = await this.prisma.directMessage.findFirst({
+          where: { conversationId, clientMessageId: data.clientMessageId },
+          include: query.include,
+        });
+        if (existing) return right(existing as DirectMessage | DirectMessageWithSender);
       }
-      return (await this.prisma.directMessage.create(query)) as DirectMessage | DirectMessageWithSender;
-    }, 'Erro ao criar mensagem');
+      return left(new DatabaseError('Erro ao criar mensagem'));
+    }
   }
 
   async findMessagesByConversation(conversationId: string): RepositoryResponse<DirectMessageWithSender[]> {
@@ -144,13 +161,29 @@ export class ConversationDatabaseRepository extends BasePrismaRepository impleme
   }
 
   async createChatMessage(data: Prisma.ChatMessageCreateInput, includeSender?: boolean): RepositoryResponse<ChatMessage | ChatMessageWithSender> {
-    return this.safeRun(async () => {
-      const query: Prisma.ChatMessageCreateArgs = { data };
-      if (includeSender) {
-        query.include = { sender: { select: USER_SELECT_MINIMAL } };
+    const query: Prisma.ChatMessageCreateArgs = { data };
+    if (includeSender) {
+      query.include = { sender: { select: USER_SELECT_MINIMAL } };
+    }
+    try {
+      const msg = await this.prisma.chatMessage.create(query);
+      return right(msg as ChatMessage | ChatMessageWithSender);
+    } catch (e) {
+      const orderId = data.order.connect?.id;
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002' &&
+        data.clientMessageId &&
+        orderId
+      ) {
+        const existing = await this.prisma.chatMessage.findFirst({
+          where: { orderId, clientMessageId: data.clientMessageId },
+          include: query.include,
+        });
+        if (existing) return right(existing as ChatMessage | ChatMessageWithSender);
       }
-      return (await this.prisma.chatMessage.create(query)) as ChatMessage | ChatMessageWithSender;
-    }, 'Erro ao criar mensagem');
+      return left(new DatabaseError('Erro ao criar mensagem'));
+    }
   }
 
   async findChatMessagesByOrder(orderId: string): RepositoryResponse<ChatMessageWithSender[]> {

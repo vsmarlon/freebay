@@ -53,6 +53,7 @@ export class SendMessageUseCase {
     const messageResult = await this.conversationRepository.createDirectMessage({
       conversation: { connect: { id: input.conversationId } },
       sender: { connect: { id: input.senderId } },
+      clientMessageId: input.clientMessageId ?? null,
       content: input.content ?? null,
       type: messageType,
       attachmentUrl: input.attachmentUrl ?? null,
@@ -72,6 +73,7 @@ export class SendMessageUseCase {
       id: msg.id,
       conversationId: msg.conversationId,
       senderId: msg.senderId,
+      clientMessageId: msg.clientMessageId ?? null,
       content: msg.content ?? null,
       type: msg.type,
       attachmentUrl: msg.attachmentUrl ?? null,
@@ -100,6 +102,7 @@ export class SendMessageUseCase {
     const messageResult = await this.conversationRepository.createChatMessage({
       order: { connect: { id: orderId } },
       sender: { connect: { id: input.senderId } },
+      clientMessageId: input.clientMessageId ?? null,
       content: input.content ?? null,
       type: messageType,
       attachmentUrl: input.attachmentUrl ?? null,
@@ -114,6 +117,7 @@ export class SendMessageUseCase {
       id: msg.id,
       conversationId: orderId,
       senderId: msg.senderId,
+      clientMessageId: msg.clientMessageId ?? null,
       content: msg.content ?? null,
       type: msg.type,
       attachmentUrl: msg.attachmentUrl ?? null,

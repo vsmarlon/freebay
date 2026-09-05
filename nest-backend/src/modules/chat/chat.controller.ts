@@ -17,6 +17,7 @@ import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
 import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
 import { VerifyUrlSafetyUseCase } from './usecases/verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './usecases/forward-messages.usecase';
+import { ChatGateway } from './chat.gateway';
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -37,6 +38,7 @@ export class ChatController {
     private readonly toggleReactionUseCase: ToggleReactionUseCase,
     private readonly verifyUrlSafetyUseCase: VerifyUrlSafetyUseCase,
     private readonly forwardMessagesUseCase: ForwardMessagesUseCase,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   @GetAuth('conversations', 'Get all conversations (direct + order)')
@@ -88,9 +90,10 @@ export class ChatController {
 
   @PostAuth('conversations/:id/messages', { summary: 'Send a message', bodyType: SendMessageDTO, responseStatus: 201, httpCode: HttpStatus.CREATED, params: [{ name: 'id', description: 'Conversation UUID' }] })
   async sendMessage(@Param('id', ParseUUIDPipe) id: string, @Body() body: SendMessageDTO, @CurrentUserId() userId: string) {
-    return this.sendMessageUseCase.execute({
+    const result = await this.sendMessageUseCase.execute({
       conversationId: id,
       senderId: userId,
+      clientMessageId: body.clientMessageId,
       content: body.content,
       type: body.type,
       attachmentUrl: body.attachmentUrl,
@@ -98,6 +101,10 @@ export class ChatController {
       metadata: body.metadata,
       viewOnce: body.viewOnce,
     });
+    if (result.isRight()) {
+      this.chatGateway.broadcastNewMessage(id, result.value);
+    }
+    return result;
   }
 
   @PatchAuth('conversations/:id/archive', { summary: 'Archive or unarchive a conversation', params: [{ name: 'id', description: 'Conversation UUID' }] })

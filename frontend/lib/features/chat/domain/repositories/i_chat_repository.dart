@@ -22,11 +22,12 @@ abstract class IChatRepository {
   >
   getConversation(String conversationId);
 
-  Future<Either<Failure, void>> sendMessage(
+  Future<Either<Failure, MessageEntity>> sendMessage(
     String chatId,
     String message, {
     String? replyToId,
     bool viewOnce = false,
+    String? clientMessageId,
   });
   Future<Either<Failure, MessageEntity>> sendRichMessage({
     required String conversationId,

@@ -67,7 +67,7 @@ class PaymentView extends StatelessWidget {
       if (!context.mounted) return;
       AppSnackbar.success(
         context,
-        'Pagamento realizado! O pedido sera confirmado em instantes.',
+        'Pagamento enviado! Estamos confirmando com o provedor.',
       );
       if (createdOrderId != null) context.go('/orders/${createdOrderId!}');
     } on StripeException catch (e) {

@@ -66,20 +66,22 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
   );
 
   @override
-  Future<Either<Failure, void>> sendMessage(
+  Future<Either<Failure, MessageEntity>> sendMessage(
     String chatId,
     String message, {
     String? replyToId,
     bool viewOnce = false,
-  }) => safeVoid(
-    () => client.post(
-      '/chat/conversations/$chatId/messages',
-      data: {
-        'content': message,
-        'replyToId': ?replyToId,
-        if (viewOnce) 'viewOnce': true,
-      },
-    ),
+    String? clientMessageId,
+  }) => safePost<MessageEntity>(
+    '/chat/conversations/$chatId/messages',
+    data: {
+      'content': message,
+      'replyToId': ?replyToId,
+      'clientMessageId': ?clientMessageId,
+      if (viewOnce) 'viewOnce': true,
+    },
+    extractKey: 'data',
+    fromJson: MessageEntity.fromJson,
   );
 
   @override

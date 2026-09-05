@@ -129,17 +129,17 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       if (event is NewMessageEvent &&
           event.message.conversationId == widget.chatId) {
         setState(() {
-          // Remove any temporary message with matching content or add new
+          final incoming = event.message;
           _messages.removeWhere(
             (m) =>
-                m.id.startsWith('temp-') &&
-                m.content == event.message.content &&
-                m.senderId == event.message.senderId,
+                m.id == incoming.id ||
+                (incoming.clientMessageId != null &&
+                    m.id == incoming.clientMessageId) ||
+                (incoming.clientMessageId != null &&
+                    m.clientMessageId == incoming.clientMessageId),
           );
-          if (!_messages.any((m) => m.id == event.message.id)) {
-            _messages.add(event.message);
-            _messageKeys[event.message.id] = GlobalKey();
-          }
+          _messages.add(incoming);
+          _messageKeys[incoming.id] = GlobalKey();
         });
         _scrollToBottom();
       } else if (event is UserTypingEvent) {
@@ -181,6 +181,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       id: tempId,
       conversationId: widget.chatId,
       senderId: currentUserId ?? '',
+      clientMessageId: tempId,
       content: text,
       type: 'TEXT',
       replyToId: replyId,
@@ -203,16 +204,27 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       text,
       replyToId: replyId,
       viewOnce: viewOnce,
+      clientMessageId: tempId,
     );
 
     if (!mounted) return;
     setState(() => _isSending = false);
-    result.fold((f) {
-      setState(() {
-        _messages.removeWhere((m) => m.id == tempId);
-      });
-      AppSnackbar.error(context, f.message);
-    }, (_) => _scrollToBottom());
+    result.fold(
+      (f) {
+        setState(() {
+          _messages.removeWhere((m) => m.id == tempId);
+        });
+        AppSnackbar.error(context, f.message);
+      },
+      (sent) {
+        setState(() {
+          _messages.removeWhere((m) => m.id == tempId || m.id == sent.id);
+          _messages.add(sent);
+          _messageKeys[sent.id] = GlobalKey();
+        });
+        _scrollToBottom();
+      },
+    );
   }
 
   void _showMenu() {

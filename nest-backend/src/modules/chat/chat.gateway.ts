@@ -146,6 +146,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return { event: 'message_sent', data: message };
   }
 
+  broadcastNewMessage(conversationId: string, message: unknown) {
+    this.server.to(`conversation:${conversationId}`).emit('new_message', message);
+  }
+
   @SubscribeMessage('typing')
   handleTyping(
     @ConnectedSocket() client: Socket,

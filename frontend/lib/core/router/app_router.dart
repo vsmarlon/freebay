@@ -35,6 +35,26 @@ final List<String> _publicRoutes = [
   AppRoutes.onboarding,
 ];
 
+final Set<String> _authScreenPaths = {
+  AppRoutes.splash,
+  AppRoutes.login,
+  AppRoutes.register,
+  AppRoutes.recoverPassword,
+  AppRoutes.resetPassword,
+  AppRoutes.onboarding,
+  AppRoutes.completeProfile,
+};
+
+String resolvePostAuthDestination(String? from) {
+  if (from == null || from.isEmpty) return AppRoutes.feed;
+  final decoded = Uri.decodeComponent(from);
+  if (!decoded.startsWith('/') || decoded.startsWith('//'))
+    return AppRoutes.feed;
+  final path = Uri.parse(decoded).path;
+  if (_authScreenPaths.contains(path)) return AppRoutes.feed;
+  return decoded;
+}
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: AppRoutes.splash,
@@ -43,7 +63,6 @@ final GoRouter appRouter = GoRouter(
     final container = ProviderScope.containerOf(context, listen: false);
     final isInitialLoading = container.read(isInitialAuthLoadingProvider);
 
-    // Keep user on splash strictly during cold-boot startup check
     if (isInitialLoading) {
       if (state.matchedLocation != AppRoutes.splash) {
         return AppRoutes.splash;
@@ -54,7 +73,6 @@ final GoRouter appRouter = GoRouter(
     final authState = container.read(authControllerProvider);
     final user = authState.value;
 
-    // Unauthenticated user handling
     if (user == null) {
       if (state.matchedLocation == AppRoutes.splash) {
         final hasSeen = container.read(hasSeenOnboardingProvider);
@@ -62,13 +80,13 @@ final GoRouter appRouter = GoRouter(
       }
       final isPublic = _publicRoutes.any((p) => state.matchedLocation == p);
       if (!isPublic) {
-        return AppRoutes.login;
+        final from = Uri.encodeComponent(state.uri.toString());
+        return '${AppRoutes.login}?from=$from';
       }
       updateCurrentLocation(state.matchedLocation);
       return null;
     }
 
-    // Authenticated user handling
     final isAuthScreen =
         state.matchedLocation == AppRoutes.splash ||
         state.matchedLocation == AppRoutes.login ||
@@ -77,7 +95,6 @@ final GoRouter appRouter = GoRouter(
         state.matchedLocation == AppRoutes.resetPassword ||
         state.matchedLocation == AppRoutes.onboarding;
 
-    // Google OAuth users without username need to complete profile
     final needsProfile = user.username == null;
     if (needsProfile && state.matchedLocation != AppRoutes.completeProfile) {
       return AppRoutes.completeProfile;
@@ -87,7 +104,7 @@ final GoRouter appRouter = GoRouter(
     }
 
     if (isAuthScreen) {
-      return AppRoutes.feed;
+      return resolvePostAuthDestination(state.uri.queryParameters['from']);
     }
 
     updateCurrentLocation(state.matchedLocation);

@@ -555,6 +555,7 @@ model ChatMessage {
   id            String      @id @default(uuid())
   orderId       String
   senderId      String
+  clientMessageId String?
   content       String?
   type          MessageType @default(TEXT)
   attachmentUrl String?
@@ -573,6 +574,7 @@ model ChatMessage {
   reactions              MessageReaction[]
   reportedChatMsgReports Report[]          @relation("ReportedChatMsgReports")
 
+  @@unique([orderId, clientMessageId])
   @@index([orderId, createdAt])
 }
 
@@ -699,6 +701,7 @@ model DirectMessage {
   id             String      @id @default(uuid())
   conversationId String
   senderId       String
+  clientMessageId String?
   content        String?
   type           MessageType @default(TEXT)
   attachmentUrl  String?
@@ -717,6 +720,7 @@ model DirectMessage {
   reactions                MessageReaction[]
   reportedDirectMsgReports Report[]           @relation("ReportedDirectMsgReports")
 
+  @@unique([conversationId, clientMessageId])
   @@index([conversationId, createdAt])
   @@index([senderId])
 }

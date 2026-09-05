@@ -41,6 +41,11 @@ export class SendMessageDTO {
   @SanitizeText()
   readonly content?: string;
 
+  @ApiProperty({ required: false, description: 'Client-generated id for optimistic reconciliation and idempotency' })
+  @IsString()
+  @IsOptional()
+  readonly clientMessageId?: string;
+
   @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'AUDIO', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
   @IsString()
   @IsOptional()
@@ -134,6 +139,7 @@ export class AcceptConversationOutput {
 export interface SendMessageInput {
   senderId: string;
   conversationId: string;
+  clientMessageId?: string;
   content?: string;
   type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'LOCATION' | 'PRODUCT_CARD';
   attachmentUrl?: string;
@@ -146,6 +152,7 @@ export interface SendMessageOutput {
   id: string;
   conversationId: string;
   senderId: string;
+  clientMessageId: string | null;
   content: string | null;
   type: string;
   attachmentUrl: string | null;
