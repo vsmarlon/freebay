@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/core/components/full_screen_image_viewer.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class ImageMessageBubble extends StatelessWidget {
   final String? imageUrl;
@@ -15,9 +15,7 @@ class ImageMessageBubble extends StatelessWidget {
 
   String? get _fullUrl {
     if (imageUrl == null || imageUrl!.isEmpty) return null;
-    final url = imageUrl!;
-    if (url.startsWith('http')) return url;
-    return '${AppConfig.apiBaseUrl}$url';
+    return mediaUrl(imageUrl!);
   }
 
   @override

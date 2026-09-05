@@ -41,7 +41,7 @@ describe('CreateStoryUseCase', () => {
   it('should create a story', async () => {
     const input = {
       userId: 'user-123',
-      imageBase64: 'base64encodedimage',
+      imageUrl: 'base64encodedimage',
     };
 
     const result = await sut.execute(input);

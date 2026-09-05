@@ -366,8 +366,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   }
 
   Future<void> _submit(ProductEntity product) async {
-    if (_paymentMethod == 'stripe' && !_formKey.currentState!.validate())
+    if (_paymentMethod == 'stripe' && !_formKey.currentState!.validate()) {
       return;
+    }
     setState(() => _isSubmitting = true);
 
     try {

@@ -9,7 +9,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { toDataUri } from '@/shared/utils/file.utils';
+import { saveUpload } from '@/shared/utils/file.utils';
 import { StoriesService } from './stories.service';
 import {
   GetAuth,
@@ -61,7 +61,7 @@ export class StoriesController {
 
     return this.storiesService.createStory({
       userId,
-      imageBase64: toDataUri(file),
+      imageUrl: saveUpload(file, 'story'),
     });
   }
 

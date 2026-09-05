@@ -20,7 +20,7 @@ import {
   CurrentUserId,
 } from '@/shared/decorators';
 import { validateImageFile, MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
-import { toDataUri } from '@/shared/utils/file.utils';
+import { saveUpload } from '@/shared/utils/file.utils';
 import { left } from '@/shared/core/either';
 import { BadRequestError } from '@/shared/core/errors';
 import { CreateProductUseCase } from './usecases/create-product/create-product.usecase';
@@ -101,11 +101,11 @@ export class ProductsController {
       return left(new BadRequestError(mimeError));
     }
 
-    const dataUri = toDataUri(file);
+    const imageUrl = saveUpload(file, 'product');
     return this.createProductUseCase.execute({
       sellerId,
       ...body,
-      images: [dataUri],
+      images: [imageUrl],
     });
   }
 

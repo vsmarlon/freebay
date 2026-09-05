@@ -14,7 +14,7 @@ export class CreateStoryUseCase {
 
     const result = await this.storyRepository.create({
       user: { connect: { id: input.userId } },
-      imageUrl: input.imageBase64,
+      imageUrl: input.imageUrl,
       expiresAt,
     });
     if (isLeft(result)) return left(result.value);

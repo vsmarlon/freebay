@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class LoggingInterceptor extends Interceptor {
   @override
@@ -106,6 +107,17 @@ class HttpClient {
 
     // Add logging interceptor first
     dio.interceptors.add(LoggingInterceptor());
+
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onResponse: (response, handler) {
+          if (!response.requestOptions.path.startsWith('/uploads')) {
+            response.data = absolutizeMediaUrls(response.data);
+          }
+          handler.next(response);
+        },
+      ),
+    );
 
     // Auth interceptor — inject JWT token + refresh on 401
     dio.interceptors.add(

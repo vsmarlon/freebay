@@ -1,6 +1,6 @@
 export interface CreateStoryInput {
   userId: string;
-  imageBase64: string;
+  imageUrl: string;
 }
 
 export interface CreateStoryOutput {

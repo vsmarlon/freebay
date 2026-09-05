@@ -5,6 +5,7 @@ import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.reposito
 import { ReviewRepository } from '@/modules/reviews/domain/repositories/review.repository';
 import { REVIEW_INCLUDE, REVIEW_DETAILED_INCLUDE, ReviewWithReviewer, ReviewWithDetails } from '@/modules/reviews/types/review.types';
 import { RepositoryResponse } from '@/shared/core/either';
+import { saveUpload } from '@/shared/utils/file.utils';
 
 @Injectable()
 export class PrismaReviewRepository extends BasePrismaRepository implements ReviewRepository {
@@ -84,7 +85,7 @@ export class PrismaReviewRepository extends BasePrismaRepository implements Revi
   async uploadImage(file: { buffer: Buffer; mimetype: string }): RepositoryResponse<{ imageId: string; url: string }> {
     return this.safeRun(async () => {
       const imageId = uuidv4();
-      const url = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      const url = saveUpload(file, 'review');
       return { imageId, url };
     }, 'Erro ao processar imagem');
   }

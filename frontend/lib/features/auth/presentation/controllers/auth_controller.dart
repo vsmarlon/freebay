@@ -331,20 +331,13 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
       await _ensureGoogleSignInInitialized();
 
       debugPrint('[GoogleSignIn] Abrindo seletor de contas do Google...');
-      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
-      if (googleUser == null) {
-        debugPrint(
-          '[GoogleSignIn] Usuário cancelou ou fechou a janela de autenticação.',
-        );
-        state = const AsyncValue.data(null);
-        return;
-      }
 
       debugPrint(
         '[GoogleSignIn] Conta selecionada: ${googleUser.email}. Obtendo credenciais...',
       );
-      final GoogleSignInAuthentication auth = await googleUser.authentication;
+      final GoogleSignInAuthentication auth = googleUser.authentication;
       final String? idToken = auth.idToken;
 
       if (idToken == null || idToken.isEmpty) {

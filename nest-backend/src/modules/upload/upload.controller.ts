@@ -18,8 +18,14 @@ import {
   MIMETYPE_EXTENSIONS,
   validateMediaFile,
 } from '@/shared/utils/image-upload.utils';
+import { UploadContext } from '@/shared/utils/file.utils';
 
-const VALID_CONTEXTS = ['chat', 'background', 'post', 'avatar'] as const;
+const VALID_CONTEXTS = [
+  'chat',
+  'background',
+  'post',
+  'avatar',
+] as const satisfies readonly UploadContext[];
 
 export function isValidContext(context: unknown): context is (typeof VALID_CONTEXTS)[number] {
   return typeof context === 'string' && (VALID_CONTEXTS as readonly string[]).includes(context);

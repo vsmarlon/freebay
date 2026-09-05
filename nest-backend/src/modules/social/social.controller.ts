@@ -11,7 +11,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { toDataUri } from '@/shared/utils/file.utils';
+import { saveUpload } from '@/shared/utils/file.utils';
 import {
   CreatePostDTO,
   CreateCommentDTO,
@@ -159,7 +159,7 @@ export class SocialController {
       const mimeError = validateImageFile(file);
       if (mimeError) return left(new BadRequestError(mimeError));
     }
-    const imageUrl = file ? toDataUri(file) : body.imageUrl;
+    const imageUrl = file ? saveUpload(file, 'post') : body.imageUrl;
     return this.createPostUseCase.execute({ userId, ...body, imageUrl });
   }
 

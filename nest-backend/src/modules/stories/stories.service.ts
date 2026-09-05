@@ -23,7 +23,7 @@ export class StoriesService {
     return this.getUserStoriesUseCase.execute(userId);
   }
 
-  async createStory(input: { userId: string; imageBase64: string }) {
+  async createStory(input: { userId: string; imageUrl: string }) {
     return this.createStoryUseCase.execute(input);
   }
 

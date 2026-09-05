@@ -48,8 +48,9 @@ final Set<String> _authScreenPaths = {
 String resolvePostAuthDestination(String? from) {
   if (from == null || from.isEmpty) return AppRoutes.feed;
   final decoded = Uri.decodeComponent(from);
-  if (!decoded.startsWith('/') || decoded.startsWith('//'))
+  if (!decoded.startsWith('/') || decoded.startsWith('//')) {
     return AppRoutes.feed;
+  }
   final path = Uri.parse(decoded).path;
   if (_authScreenPaths.contains(path)) return AppRoutes.feed;
   return decoded;

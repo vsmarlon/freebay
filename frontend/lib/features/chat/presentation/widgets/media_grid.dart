@@ -3,11 +3,8 @@ import 'package:freebay/core/theme/app_colors.dart';
 import 'package:freebay/core/theme/app_typography.dart';
 import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
-/// Infinite-scroll grid of images fetched from the conversation media endpoint.
-///
-/// Pass the initial list of messages (already in scope from the details page)
-/// and a [onLoadMore] callback that fetches the next page via the repository.
 class MediaGrid extends StatefulWidget {
   final String conversationId;
   final List<MessageEntity> initialMessages;
@@ -134,7 +131,7 @@ class _MediaGridState extends State<MediaGrid> {
         if (imageUrl == null || imageUrl.isEmpty) {
           return Container(color: context.surfaceMidColor);
         }
-        return _MediaTile(imageUrl: imageUrl, message: msg);
+        return _MediaTile(imageUrl: mediaUrl(imageUrl), message: msg);
       },
     );
   }

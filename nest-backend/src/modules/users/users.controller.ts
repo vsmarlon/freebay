@@ -55,6 +55,7 @@ import {
 import { left, isLeft } from '@/shared/core/either';
 import { NotFoundError } from '@/shared/core/errors';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
+import { saveUpload } from '@/shared/utils/file.utils';
 
 @ApiTags('Users')
 @Controller('users')
@@ -116,8 +117,8 @@ export class UsersController {
     const mimeError = validateImageFile(file);
     if (mimeError) throw new BadRequestException(mimeError);
 
-    const dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-    const updateResult = await this.userRepository.update(userId, { avatarUrl: dataUri });
+    const avatarUrl = saveUpload(file, 'avatar');
+    const updateResult = await this.userRepository.update(userId, { avatarUrl });
     if (isLeft(updateResult)) return left(updateResult.value);
     return toUserResponse(updateResult.value, undefined, true);
   }
@@ -134,8 +135,8 @@ export class UsersController {
     const mimeError = validateImageFile(file, 8 * 1024 * 1024);
     if (mimeError) throw new BadRequestException(mimeError);
 
-    const dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-    const updateResult = await this.userRepository.update(userId, { bannerUrl: dataUri });
+    const bannerUrl = saveUpload(file, 'banner');
+    const updateResult = await this.userRepository.update(userId, { bannerUrl });
     if (isLeft(updateResult)) return left(updateResult.value);
     return toUserResponse(updateResult.value, undefined, true);
   }
