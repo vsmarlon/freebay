@@ -5,7 +5,7 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { AppError } from '@/shared/core/errors';
+import { AppError, InternalServerError } from '@/shared/core/errors';
 
 @Injectable()
 export class EitherInterceptor<T> implements NestInterceptor<T, T> {

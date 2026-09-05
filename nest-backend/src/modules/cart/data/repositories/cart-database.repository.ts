@@ -5,6 +5,7 @@ import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { CartRepository } from '../../domain/repositories/cart.repository';
 import { CartItemPayload, ProductBrief, CART_ITEM_INCLUDE } from '../../types/cart.types';
+import { Product } from '@prisma/client';
 
 @Injectable()
 export class CartDatabaseRepository extends BasePrismaRepository implements CartRepository {
@@ -94,31 +95,32 @@ export class CartDatabaseRepository extends BasePrismaRepository implements Cart
     userId: string;
     sellerId: string;
     productId: string;
+    quantity: number;
     amount: number;
     platformFee: number;
     sellerAmount: number;
   }): RepositoryResponse<{ id: string }> {
     try {
       const order = await this.prisma.$transaction(async (tx) => {
-        const currentProduct = await tx.product.findUnique({
-          where: { id: data.productId },
-          select: { quantity: true, soldCount: true, status: true },
-        });
-
-        if (!currentProduct || currentProduct.status !== 'ACTIVE') {
+        const products = await tx.$queryRaw<Product[]>`
+          SELECT * FROM "Product" WHERE id = ${data.productId} FOR UPDATE
+        `;
+        const current = products[0];
+        if (!current || current.status !== 'ACTIVE') {
           throw new Error('PRODUCT_UNAVAILABLE');
         }
 
-        if (currentProduct.quantity > 1) {
-          if (currentProduct.quantity <= currentProduct.soldCount) {
+        if (current.quantity > 1) {
+          const availableStock = current.quantity - current.soldCount;
+          if (availableStock < data.quantity) {
             throw new Error('PRODUCT_UNAVAILABLE');
           }
-          const newSoldCount = currentProduct.soldCount + 1;
+          const newSoldCount = current.soldCount + data.quantity;
           await tx.product.update({
             where: { id: data.productId },
             data: {
               soldCount: newSoldCount,
-              ...(newSoldCount >= currentProduct.quantity ? { status: 'SOLD' as const } : {}),
+              ...(newSoldCount >= current.quantity ? { status: 'SOLD' as const } : {}),
             },
           });
         } else {
@@ -136,6 +138,7 @@ export class CartDatabaseRepository extends BasePrismaRepository implements Cart
             buyer: { connect: { id: data.userId } },
             seller: { connect: { id: data.sellerId } },
             product: { connect: { id: data.productId } },
+            quantity: data.quantity,
             amount: data.amount,
             platformFee: data.platformFee,
             sellerAmount: data.sellerAmount,
@@ -157,18 +160,22 @@ export class CartDatabaseRepository extends BasePrismaRepository implements Cart
   async rollbackOrderReservation(orderId: string, productId: string): RepositoryResponse<void> {
     return this.safeRun(async () => {
       await this.prisma.$transaction(async (tx) => {
-        await tx.order.update({ where: { id: orderId }, data: { status: 'CANCELLED' } });
-        const currentProduct = await tx.product.findUnique({
-          where: { id: productId },
-          select: { quantity: true, soldCount: true, status: true },
+        const order = await tx.order.update({
+          where: { id: orderId },
+          data: { status: 'CANCELLED' },
+          select: { quantity: true },
         });
-        if (currentProduct && currentProduct.quantity > 1) {
-          const newSoldCount = currentProduct.soldCount - 1;
+        const products = await tx.$queryRaw<Product[]>`
+          SELECT * FROM "Product" WHERE id = ${productId} FOR UPDATE
+        `;
+        const current = products[0];
+        if (current && current.quantity > 1) {
+          const newSoldCount = current.soldCount - order.quantity;
           await tx.product.update({
             where: { id: productId },
             data: {
               soldCount: newSoldCount >= 0 ? newSoldCount : 0,
-              ...(currentProduct.status === 'SOLD' && newSoldCount < currentProduct.quantity ? { status: 'ACTIVE' as const } : {}),
+              ...(current.status === 'SOLD' && newSoldCount < current.quantity ? { status: 'ACTIVE' as const } : {}),
             },
           });
         } else {

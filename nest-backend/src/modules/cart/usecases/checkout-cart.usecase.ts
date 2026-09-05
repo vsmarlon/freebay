@@ -38,11 +38,9 @@ export class CheckoutCartUseCase {
         return left(new BadRequestError('Um ou mais produtos do carrinho não estão disponíveis'));
       }
 
-      if (item.product.quantity > 1) {
-        const availableStock = item.product.quantity - item.product.soldCount;
-        if (availableStock < item.quantity) {
-          return left(new BadRequestError(`Estoque insuficiente para ${item.product.title}`));
-        }
+      const availableStock = Math.max(item.product.quantity - item.product.soldCount, 0);
+      if (item.quantity < 1 || item.quantity > availableStock) {
+        return left(new BadRequestError(`Estoque insuficiente para ${item.product.title}`));
       }
 
       const amount = item.product.price * item.quantity;
@@ -53,6 +51,7 @@ export class CheckoutCartUseCase {
         userId: input.userId,
         sellerId: item.product.sellerId,
         productId: item.productId,
+        quantity: item.quantity,
         amount,
         platformFee,
         sellerAmount,

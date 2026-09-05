@@ -28,7 +28,7 @@ export class StoriesController {
 
   @GetAuth({ summary: 'List active stories for explore/feed' })
   async getFeed() {
-    return this.storiesService.getFeed();
+    return this.storiesService.getStories();
   }
 
   @GetAuth('user/:userId', {

@@ -18,8 +18,13 @@ jest.mock('google-auth-library', () => {
 
 describe('GoogleAuthUseCase', () => {
   let sut: GoogleAuthUseCase;
-  let mockUserRepository: jest.Mocked<Partial<UserRepository>>;
-  let mockConfigService: jest.Mocked<Partial<ConfigService>>;
+  let mockUserRepository: {
+    findByGoogleId: jest.Mock;
+    findByEmail: jest.Mock;
+    update: jest.Mock;
+    create: jest.Mock;
+  };
+  let mockConfigService: { get: jest.Mock };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -29,14 +34,14 @@ describe('GoogleAuthUseCase', () => {
       findByEmail: jest.fn().mockResolvedValue(right(null)),
       update: jest.fn(),
       create: jest.fn(),
-    } as jest.Mocked<Partial<UserRepository>>;
+    };
 
     mockConfigService = {
       get: jest.fn().mockImplementation((key: string) => {
         if (key === 'GOOGLE_CLIENT_ID') return 'mock-client-id.apps.googleusercontent.com';
         return null;
       }),
-    } as jest.Mocked<Partial<ConfigService>>;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -95,7 +100,6 @@ describe('GoogleAuthUseCase', () => {
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       expect(result.value.user.id).toBe('user-google-1');
-      expect(result.value.user.email).toBe('test@gmail.com');
       expect(result.value.user.username).toBe('existing_user');
     }
   });

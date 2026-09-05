@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import * as nodemailer from 'nodemailer';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, EmailDeliveryFailedError } from '@/shared/core/errors';
 
 @Injectable()
 export class EmailService {

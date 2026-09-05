@@ -3,14 +3,13 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { ProcessWebhookInput } from '../dtos/payment.dto';
+import { ProcessWebhookInput, WebhookDataPayload } from '../dtos/payment.dto';
 import { ProductRepository } from '../../products/domain/repositories/product.repository';
 import { TransactionRepository } from '../domain/repositories/transaction.repository';
 import { OrderRepository } from '../../orders/domain/repositories/order.repository';
 import { WalletRepository } from '../../wallet/domain/repositories/wallet.repository';
+import { TransactionWithOrder } from '../types/payment.types';
 
-// Thrown inside $transaction when the conditional PAID/FAILED transition matched
-// zero rows — the concurrent Stripe delivery already mutated the transaction.
 const WEBHOOK_RACE_SKIP = 'WEBHOOK_RACE_SKIP';
 
 @Injectable()
@@ -34,11 +33,29 @@ export class ProcessWebhookUseCase {
       return right({ processed: false });
     }
 
-    if (event === 'checkout.session.completed' || event === 'payment_intent.succeeded') {
-      return this._handleCompleted(orderId);
+    if (event === 'payment_intent.succeeded' || event === 'checkout.session.async_payment_succeeded') {
+      return this._handleCompleted(orderId, data);
     }
 
-    if (event === 'checkout.session.expired' || event === 'payment_intent.canceled') {
+    if (event === 'checkout.session.completed') {
+      if (
+        data.paymentStatus &&
+        data.paymentStatus !== 'paid' &&
+        data.paymentStatus !== 'no_payment_required'
+      ) {
+        this.logger.log(
+          `checkout.session.completed for order ${orderId} is '${data.paymentStatus}'; awaiting async settlement`,
+        );
+        return right({ processed: true });
+      }
+      return this._handleCompleted(orderId, data);
+    }
+
+    if (
+      event === 'checkout.session.expired' ||
+      event === 'payment_intent.canceled' ||
+      event === 'checkout.session.async_payment_failed'
+    ) {
       return this._handleExpired(orderId);
     }
 
@@ -52,6 +69,7 @@ export class ProcessWebhookUseCase {
 
   private async _handleCompleted(
     orderId: string,
+    data: WebhookDataPayload,
   ): Promise<Either<DatabaseError, { processed: boolean }>> {
     const transactionResult = await this.transactionRepo.findByOrderId(orderId);
     if (isLeft(transactionResult)) return left(transactionResult.value);
@@ -71,6 +89,14 @@ export class ProcessWebhookUseCase {
         `Transaction ${transaction.id} is ${transaction.status}; refusing to credit a non-PENDING transaction`,
       );
       return right({ processed: true });
+    }
+
+    const mismatch = this._validateAgainstTransaction(transaction, data);
+    if (mismatch) {
+      this.logger.error(
+        `Webhook object does not match transaction ${transaction.id} for order ${orderId}: ${mismatch}`,
+      );
+      return right({ processed: false });
     }
 
     try {
@@ -141,5 +167,25 @@ export class ProcessWebhookUseCase {
     }
 
     return right({ processed: true });
+  }
+
+  private _validateAgainstTransaction(
+    transaction: TransactionWithOrder,
+    data: WebhookDataPayload,
+  ): string | null {
+    if (
+      data.providerObjectId &&
+      transaction.externalId &&
+      data.providerObjectId !== transaction.externalId
+    ) {
+      return `provider object ${data.providerObjectId} != externalId ${transaction.externalId}`;
+    }
+    if (data.amountTotal != null && data.amountTotal !== transaction.amount) {
+      return `amount ${data.amountTotal} != expected ${transaction.amount}`;
+    }
+    if (data.currency && data.currency.toLowerCase() !== 'brl') {
+      return `currency ${data.currency} != brl`;
+    }
+    return null;
   }
 }

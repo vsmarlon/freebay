@@ -68,49 +68,45 @@ describe('StripeProvider', () => {
     jest.restoreAllMocks();
   });
 
-  describe('onModuleInit', () => {
+  describe('configuration validation', () => {
     it('should throw if STRIPE_WEBHOOK_SECRET is not configured', async () => {
-      const module = await Test.createTestingModule({
-        providers: [
-          StripeProvider,
-          {
-            provide: ConfigService,
-            useValue: {
-              get: (key: string) => {
-                if (key === 'STRIPE_WEBHOOK_SECRET') return '';
-                if (key === 'STRIPE_SECRET_KEY') return SECRET_KEY;
-                return undefined;
+      await expect(
+        Test.createTestingModule({
+          providers: [
+            StripeProvider,
+            {
+              provide: ConfigService,
+              useValue: {
+                get: (key: string) => {
+                  if (key === 'STRIPE_WEBHOOK_SECRET') return '';
+                  if (key === 'STRIPE_SECRET_KEY') return SECRET_KEY;
+                  return undefined;
+                },
               },
             },
-          },
-        ],
-      }).compile();
-
-      await expect(module.init()).rejects.toThrow(
-        'STRIPE_WEBHOOK_SECRET is not configured',
-      );
+          ],
+        }).compile(),
+      ).rejects.toThrow('STRIPE_WEBHOOK_SECRET is not configured');
     });
 
     it('should throw if STRIPE_SECRET_KEY is not configured', async () => {
-      const module = await Test.createTestingModule({
-        providers: [
-          StripeProvider,
-          {
-            provide: ConfigService,
-            useValue: {
-              get: (key: string) => {
-                if (key === 'STRIPE_WEBHOOK_SECRET') return WEBHOOK_SECRET;
-                if (key === 'STRIPE_SECRET_KEY') return '';
-                return undefined;
+      await expect(
+        Test.createTestingModule({
+          providers: [
+            StripeProvider,
+            {
+              provide: ConfigService,
+              useValue: {
+                get: (key: string) => {
+                  if (key === 'STRIPE_WEBHOOK_SECRET') return WEBHOOK_SECRET;
+                  if (key === 'STRIPE_SECRET_KEY') return '';
+                  return undefined;
+                },
               },
             },
-          },
-        ],
-      }).compile();
-
-      await expect(module.init()).rejects.toThrow(
-        'STRIPE_SECRET_KEY is not configured',
-      );
+          ],
+        }).compile(),
+      ).rejects.toThrow('STRIPE_SECRET_KEY is not configured');
     });
   });
 

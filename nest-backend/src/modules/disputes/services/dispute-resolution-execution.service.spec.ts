@@ -8,9 +8,12 @@ describe('DisputeResolutionExecutionService', () => {
     sut = new DisputeResolutionExecutionService();
   });
 
-  function buildTx(walletRow: { availableBalance: number; pendingBalance: number; totalEarned: number } | null) {
+  function buildTx(
+    walletRow: { availableBalance: number; pendingBalance: number; totalEarned: number } | null,
+    claimedCount = 1,
+  ) {
     return {
-      order: { update: jest.fn().mockResolvedValue({}) },
+      order: { updateMany: jest.fn().mockResolvedValue({ count: claimedCount }) },
       wallet: {
         findUnique: jest.fn().mockResolvedValue(walletRow),
         update: jest.fn().mockResolvedValue({}),
@@ -40,8 +43,8 @@ describe('DisputeResolutionExecutionService', () => {
 
       await sut.resolveInFavorOfBuyer(tx, dispute);
 
-      expect(tx.order.update).toHaveBeenCalledWith({
-        where: { id: 'order-1' },
+      expect(tx.order.updateMany).toHaveBeenCalledWith({
+        where: { id: 'order-1', escrowStatus: 'HELD' },
         data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
       });
       expect(tx.wallet.update).toHaveBeenCalledWith({
@@ -57,7 +60,16 @@ describe('DisputeResolutionExecutionService', () => {
       await sut.resolveInFavorOfBuyer(tx, dispute);
 
       expect(tx.wallet.update).not.toHaveBeenCalled();
-      expect(tx.order.update).toHaveBeenCalled();
+      expect(tx.order.updateMany).toHaveBeenCalled();
+    });
+
+    it('does not credit when escrow was already released (claim matches zero rows)', async () => {
+      const tx = buildTx({ availableBalance: 5000, pendingBalance: 0, totalEarned: 0 }, 0);
+      const dispute = buildDispute();
+
+      await sut.resolveInFavorOfBuyer(tx, dispute);
+
+      expect(tx.wallet.update).not.toHaveBeenCalled();
     });
   });
 
@@ -68,8 +80,8 @@ describe('DisputeResolutionExecutionService', () => {
 
       await sut.resolveInFavorOfSeller(tx, dispute);
 
-      expect(tx.order.update).toHaveBeenCalledWith({
-        where: { id: 'order-1' },
+      expect(tx.order.updateMany).toHaveBeenCalledWith({
+        where: { id: 'order-1', escrowStatus: 'HELD' },
         data: { status: 'COMPLETED', escrowStatus: 'RELEASED' },
       });
       expect(tx.wallet.update).toHaveBeenCalledWith({
@@ -89,7 +101,16 @@ describe('DisputeResolutionExecutionService', () => {
       await sut.resolveInFavorOfSeller(tx, dispute);
 
       expect(tx.wallet.update).not.toHaveBeenCalled();
-      expect(tx.order.update).toHaveBeenCalled();
+      expect(tx.order.updateMany).toHaveBeenCalled();
+    });
+
+    it('does not credit when escrow was already released (claim matches zero rows)', async () => {
+      const tx = buildTx({ availableBalance: 2000, pendingBalance: 9000, totalEarned: 0 }, 0);
+      const dispute = buildDispute();
+
+      await sut.resolveInFavorOfSeller(tx, dispute);
+
+      expect(tx.wallet.update).not.toHaveBeenCalled();
     });
   });
 });

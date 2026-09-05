@@ -32,14 +32,17 @@ export class ResolveDisputeUseCase {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        await tx.dispute.update({
-          where: { id: input.disputeId },
+        const claimed = await tx.dispute.updateMany({
+          where: { id: input.disputeId, status: { notIn: ['RESOLVED', 'CANCELLED'] } },
           data: {
             resolution: input.resolution,
             status: 'RESOLVED',
             resolvedAt: new Date(),
           },
         });
+        if (claimed.count === 0) {
+          throw new Error('DISPUTE_NOT_RESOLVABLE');
+        }
 
         if (input.winner === 'BUYER') {
           await this.resolutionExecution.resolveInFavorOfBuyer(tx, dispute);
@@ -47,7 +50,10 @@ export class ResolveDisputeUseCase {
           await this.resolutionExecution.resolveInFavorOfSeller(tx, dispute);
         }
       });
-    } catch {
+    } catch (e) {
+      if ((e as Error).message === 'DISPUTE_NOT_RESOLVABLE') {
+        return left(new BadRequestError('Dispute cannot be resolved while it is not open'));
+      }
       return left(new DatabaseError('Failed to resolve dispute'));
     }
 

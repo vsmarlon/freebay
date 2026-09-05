@@ -14,7 +14,7 @@ This skill defines the standard procedures for running end-to-end and explorator
 | Tool Name | Purpose in FreeBay Testing |
 |---|---|
 | `mobile_list_available_devices` | Discover connected Android/iOS devices and active emulators. |
-| `mobile_launch_app` | Launch FreeBay (`com.example.freebay` / bundle id). |
+| `mobile_launch_app` | Launch FreeBay. appId `com.company.freebay` (today) → `com.freebay.app` (post-Q13). See `docs/DEVICE_TESTING.md` for setup. |
 | `mobile_terminate_app` | Kill app process for cold boot testing. |
 | `mobile_list_elements_on_screen` | Inspect accessibility tree, widget IDs, text labels, and bounding boxes. |
 | `mobile_click_on_screen_at_coordinates` | Tap buttons, inputs, tabs, and interactive brutalist cards. |
@@ -85,7 +85,7 @@ graph TD
    ```
 2. **Launch FreeBay**:
    ```json
-   { "ServerName": "mobile-mcp", "ToolName": "mobile_launch_app", "Arguments": { "appId": "com.example.freebay" } }
+   { "ServerName": "mobile-mcp", "ToolName": "mobile_launch_app", "Arguments": { "appId": "com.company.freebay" } }
    ```
 3. **Inspect UI Hierarchy & Locate Target Coordinates**:
    ```json

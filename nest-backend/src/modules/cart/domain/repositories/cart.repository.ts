@@ -14,6 +14,7 @@ export abstract class CartRepository {
     userId: string;
     sellerId: string;
     productId: string;
+    quantity: number;
     amount: number;
     platformFee: number;
     sellerAmount: number;

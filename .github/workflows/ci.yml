@@ -61,7 +61,11 @@ jobs:
         working-directory: nest-backend
         run: npx tsc --noEmit
 
-      - name: Run Backend Unit & Integration Tests
+      - name: Lint Backend (ESLint)
+        working-directory: nest-backend
+        run: npm run lint
+
+      - name: Run Backend Unit Tests (Jest)
         working-directory: nest-backend
         env:
           NODE_ENV: test
@@ -69,7 +73,23 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
-        run: npm test -- --passWithNoTests
+        run: npm test
+
+      - name: Push Test Schema (Prisma db push)
+        working-directory: nest-backend
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/freebay_test_db?schema=public
+        run: npx prisma db push --accept-data-loss --skip-generate
+
+      - name: Run Backend Integration Tests (Jest)
+        working-directory: nest-backend
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/freebay_test_db?schema=public
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
+        run: npx jest --config jest.config.integration.js --runInBand
 
   frontend-ci:
     name: Frontend CI (Flutter / Dart)

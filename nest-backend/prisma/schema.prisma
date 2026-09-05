@@ -425,6 +425,7 @@ model Order {
   buyerId             String
   sellerId            String
   productId           String
+  quantity            Int          @default(1)
   amount              Int
   platformFee         Int
   sellerAmount        Int

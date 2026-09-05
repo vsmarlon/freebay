@@ -174,14 +174,21 @@ export class PrismaOrderRepository implements OrderRepository {
   async confirmDelivery(data: ConfirmDeliveryData): RepositoryResponse<void> {
     try {
       await this.prisma.$transaction(async (tx) => {
-        await tx.order.update({
-          where: { id: data.orderId },
+        const claimed = await tx.order.updateMany({
+          where: {
+            id: data.orderId,
+            escrowStatus: 'HELD',
+            status: { in: ['CONFIRMED', 'DELIVERED'] },
+          },
           data: {
             status: 'COMPLETED',
             escrowStatus: 'RELEASED',
             deliveryConfirmedAt: new Date(),
           },
         });
+        if (claimed.count === 0) {
+          return;
+        }
 
         const wallet = await tx.wallet.findUnique({ where: { userId: data.sellerId } });
         if (wallet) {

@@ -5,10 +5,13 @@ import { DisputeWithOrder } from '../types/dispute.types';
 @Injectable()
 export class DisputeResolutionExecutionService {
   async resolveInFavorOfBuyer(tx: Prisma.TransactionClient, dispute: DisputeWithOrder): Promise<void> {
-    await tx.order.update({
-      where: { id: dispute.orderId },
+    const claimed = await tx.order.updateMany({
+      where: { id: dispute.orderId, escrowStatus: 'HELD' },
       data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
     });
+    if (claimed.count === 0) {
+      return;
+    }
 
     const buyerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.buyerId } });
     if (buyerWallet) {
@@ -28,10 +31,13 @@ export class DisputeResolutionExecutionService {
   }
 
   async resolveInFavorOfSeller(tx: Prisma.TransactionClient, dispute: DisputeWithOrder): Promise<void> {
-    await tx.order.update({
-      where: { id: dispute.orderId },
+    const claimed = await tx.order.updateMany({
+      where: { id: dispute.orderId, escrowStatus: 'HELD' },
       data: { status: 'COMPLETED', escrowStatus: 'RELEASED' },
     });
+    if (claimed.count === 0) {
+      return;
+    }
 
     const sellerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.sellerId } });
     if (sellerWallet) {

@@ -16,6 +16,10 @@ export interface ProcessWebhookInput {
 
 export interface WebhookDataPayload {
   readonly orderId?: string;
+  readonly providerObjectId?: string;
+  readonly amountTotal?: number;
+  readonly currency?: string;
+  readonly paymentStatus?: string;
 }
 
 export interface ProcessWebhookOutput {

@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { Either, left, right } from '@/shared/core/either';
@@ -12,24 +12,23 @@ import {
 } from '../domain/providers/payment-provider.interface';
 
 @Injectable()
-export class StripeProvider implements OnModuleInit, PaymentProvider {
+export class StripeProvider implements PaymentProvider {
+  private static readonly API_VERSION = '2026-07-29.dahlia';
   private readonly logger = new Logger(StripeProvider.name);
-  private stripe: Stripe;
+  private readonly stripe: Stripe;
   private readonly webhookSecret: string;
 
   constructor(private readonly config: ConfigService) {
-    const key = this.config.get('STRIPE_SECRET_KEY') || 'sk_test_placeholder';
-    this.stripe = new Stripe(key);
-    this.webhookSecret = this.config.get('STRIPE_WEBHOOK_SECRET') || '';
-  }
-
-  onModuleInit() {
-    if (!this.webhookSecret) {
-      throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
-    }
-    if (!this.config.get('STRIPE_SECRET_KEY')) {
+    const key = this.config.get<string>('STRIPE_SECRET_KEY');
+    if (!key) {
       throw new Error('STRIPE_SECRET_KEY is not configured');
     }
+    const webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET');
+    if (!webhookSecret) {
+      throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+    }
+    this.stripe = new Stripe(key, { apiVersion: StripeProvider.API_VERSION });
+    this.webhookSecret = webhookSecret;
   }
 
   async createPaymentSession(

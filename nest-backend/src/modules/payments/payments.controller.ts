@@ -24,6 +24,8 @@ interface WebhookRequest {
 
 const WHITELIST_EVENTS = [
   'checkout.session.completed',
+  'checkout.session.async_payment_succeeded',
+  'checkout.session.async_payment_failed',
   'checkout.session.expired',
   'payment_intent.succeeded',
   'payment_intent.canceled',
@@ -108,9 +110,31 @@ export class PaymentsController {
       return right({ processed: false });
     }
 
-    const object = event.data.object as { metadata?: { orderId?: string } };
-    const orderId = object.metadata?.orderId;
+    let orderId: string | undefined;
+    let providerObjectId: string | undefined;
+    let amountTotal: number | undefined;
+    let currency: string | undefined;
+    let paymentStatus: string | undefined;
 
-    return this.processWebhookUseCase.execute({ event: event.type, data: { orderId } });
+    if (event.type.startsWith('checkout.session.')) {
+      const session = event.data.object as Stripe.Checkout.Session;
+      orderId = session.metadata?.orderId ?? undefined;
+      providerObjectId = session.id;
+      amountTotal = session.amount_total ?? undefined;
+      currency = session.currency ?? undefined;
+      paymentStatus = session.payment_status;
+    } else {
+      const intent = event.data.object as Stripe.PaymentIntent;
+      orderId = intent.metadata?.orderId ?? undefined;
+      providerObjectId = intent.id;
+      amountTotal = intent.amount ?? undefined;
+      currency = intent.currency ?? undefined;
+      paymentStatus = intent.status;
+    }
+
+    return this.processWebhookUseCase.execute({
+      event: event.type,
+      data: { orderId, providerObjectId, amountTotal, currency, paymentStatus },
+    });
   }
 }
