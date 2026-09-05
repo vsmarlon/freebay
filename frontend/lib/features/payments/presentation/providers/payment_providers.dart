@@ -4,7 +4,6 @@ import 'package:freebay/features/payments/data/services/payment_service.dart';
 import 'package:freebay/features/payments/domain/repositories/i_payment_repository.dart';
 import 'package:freebay/features/payments/domain/usecases/create_payment_session_usecase.dart';
 import 'package:freebay/features/payments/domain/usecases/create_payment_intent_usecase.dart';
-import 'package:freebay/features/payments/domain/usecases/create_crypto_payment_usecase.dart';
 
 final paymentServiceProvider = Provider((ref) => PaymentService());
 
@@ -18,8 +17,4 @@ final createPaymentSessionUsecaseProvider = Provider(
 
 final createPaymentIntentUsecaseProvider = Provider(
   (ref) => CreatePaymentIntentUsecase(ref.watch(paymentRepositoryProvider)),
-);
-
-final createCryptoPaymentUsecaseProvider = Provider(
-  (ref) => CreateCryptoPaymentUsecase(ref.watch(paymentRepositoryProvider)),
 );

@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/payments/data/entities/payment_intent_entity.dart';
-import 'package:freebay/features/payments/data/entities/crypto_payment_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 
@@ -43,14 +42,5 @@ class PaymentService extends BaseHttpRepository {
     ),
     extractKey: 'data',
     fromJson: PaymentIntentEntity.fromJson,
-  );
-
-  Future<Either<Failure, CryptoPaymentEntity>> createCryptoPayment({
-    required String orderId,
-    String currency = 'XMR',
-  }) => safePost<CryptoPaymentEntity>(
-    '/payments/crypto/$orderId',
-    extractKey: 'data',
-    fromJson: CryptoPaymentEntity.fromJson,
   );
 }

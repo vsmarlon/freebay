@@ -13,9 +13,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { PostAuth, StripeWebhook, CurrentUserId } from '@/shared/decorators';
 import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.usecase';
 import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
-import { CreateCryptoPaymentUseCase } from './usecases/create-crypto-payment.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
-import { CreatePaymentSessionOutput, CreatePaymentIntentOutput, CreateCryptoPaymentOutput } from './dtos/payment.dto';
+import { CreatePaymentSessionOutput, CreatePaymentIntentOutput } from './dtos/payment.dto';
 import { right } from '@/shared/core/either';
 
 interface WebhookRequest {
@@ -40,7 +39,6 @@ export class PaymentsController {
   constructor(
     private readonly createPaymentSessionUseCase: CreatePaymentSessionUseCase,
     private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
-    private readonly createCryptoPaymentUseCase: CreateCryptoPaymentUseCase,
     private readonly processWebhookUseCase: ProcessWebhookUseCase,
   ) {}
 
@@ -78,23 +76,6 @@ export class PaymentsController {
     @Headers('idempotency-key') idempotencyKey?: string,
   ) {
     return this.createPaymentIntentUseCase.execute({ orderId, userId, idempotencyKey });
-  }
-
-  @PostAuth('crypto/:orderId', {
-    summary: 'Create Monero Ephemeral Payment Address',
-    description: 'Generates a disposable untrackable Monero (XMR) subaddress and QR URI for private escrow (rate limited: 5/min)',
-    responseStatus: 201,
-    responseType: CreateCryptoPaymentOutput,
-    params: [{ name: 'orderId', description: 'Order UUID' }],
-    errors: [{ status: 429, description: 'Too many requests' }],
-    throttle: { limit: 5, ttl: 60000 },
-    httpCode: HttpStatus.CREATED,
-  })
-  async createCryptoPayment(
-    @Param('orderId', ParseUUIDPipe) orderId: string,
-    @CurrentUserId() userId: string,
-  ) {
-    return this.createCryptoPaymentUseCase.execute({ orderId, userId, currency: 'XMR' });
   }
 
   @Post('webhook')
