@@ -34,6 +34,28 @@ void main() {
     test('leaves unrelated paths untouched', () {
       expect(mediaUrl('/products/123'), '/products/123');
     });
+
+    test('absolutizes a private media path', () {
+      expect(mediaUrl('/media/chat/a.jpg'), '$base/media/chat/a.jpg');
+    });
+
+    test('is idempotent on an already absolute media url', () {
+      expect(mediaUrl('$base/media/chat/a.jpg'), '$base/media/chat/a.jpg');
+    });
+  });
+
+  group('mediaAuthHeaders', () {
+    test('returns null for public uploads', () {
+      expect(mediaAuthHeaders('$base/uploads/avatar/a.jpg'), isNull);
+    });
+
+    test('returns null for a foreign host', () {
+      expect(mediaAuthHeaders('https://cdn.example.com/a.jpg'), isNull);
+    });
+
+    test('returns null when no token is cached', () {
+      expect(mediaAuthHeaders('/media/chat/a.jpg'), isNull);
+    });
   });
 
   group('absolutizeMediaUrls', () {

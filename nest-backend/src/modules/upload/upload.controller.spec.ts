@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, CanActivate, ExecutionContext } from '@nestjs/common';
+import { rmSync } from 'fs';
+import { join } from 'path';
 import { UploadController, isValidContext } from './upload.controller';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 
@@ -22,15 +24,32 @@ describe('UploadController', () => {
     sut = module.get<UploadController>(UploadController);
   });
 
-  it('returns relative url when file is provided', () => {
+  it('stores a chat attachment privately, never under the public /uploads root', () => {
     const file = {
-      filename: 'abc123.jpg',
       mimetype: 'image/jpeg',
+      buffer: Buffer.from('img'),
+      size: 3,
     } as Express.Multer.File;
 
     const result = sut.upload(file, 'chat');
 
-    expect(result).toEqual({ url: '/uploads/chat/abc123.jpg' });
+    expect(result.url).toMatch(
+      /^\/media\/chat\/[0-9a-f-]{36}\.jpg$/,
+    );
+    rmSync(join(process.cwd(), result.url.replace('/media/', 'private-uploads/')));
+  });
+
+  it('stores a public context under /uploads', () => {
+    const file = {
+      mimetype: 'image/jpeg',
+      buffer: Buffer.from('img'),
+      size: 3,
+    } as Express.Multer.File;
+
+    const result = sut.upload(file, 'avatar');
+
+    expect(result.url).toMatch(/^\/uploads\/avatar\/[0-9a-f-]{36}\.jpg$/);
+    rmSync(join(process.cwd(), result.url.replace('/uploads/', 'uploads/')));
   });
 
   it('throws BadRequestException when no file', () => {

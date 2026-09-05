@@ -31,6 +31,7 @@ class ImageMessageBubble extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 240, maxHeight: 300),
         child: CachedNetworkImage(
           imageUrl: url,
+          httpHeaders: mediaAuthHeaders(url),
           fit: BoxFit.cover,
           placeholder: (context, url) => Container(
             width: 200,

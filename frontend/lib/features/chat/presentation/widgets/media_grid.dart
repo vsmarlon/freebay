@@ -158,6 +158,7 @@ class _MediaTile extends StatelessWidget {
         color: context.surfaceMidColor,
         child: Image.network(
           imageUrl,
+          headers: mediaAuthHeaders(imageUrl),
           fit: BoxFit.cover,
           loadingBuilder: (_, child, progress) {
             if (progress == null) return child;
@@ -194,6 +195,7 @@ class _FullscreenImageDialog extends StatelessWidget {
               child: InteractiveViewer(
                 child: Image.network(
                   imageUrl,
+                  headers: mediaAuthHeaders(imageUrl),
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) => const Icon(
                     Icons.broken_image_outlined,

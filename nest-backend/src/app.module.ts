@@ -26,6 +26,7 @@ import { StoriesModule } from './modules/stories/stories.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { BugReportModule } from './modules/bug-reports/bug-report.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { MediaModule } from './modules/media/media.module';
 import { HealthModule } from './modules/health/health.module';
 
 @Module({
@@ -85,6 +86,7 @@ import { HealthModule } from './modules/health/health.module';
     TasksModule,
     BugReportModule,
     UploadModule,
+    MediaModule,
     HealthModule,
   ],
   providers: [

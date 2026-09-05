@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   CallHandler,
   Logger,
+  StreamableFile,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
@@ -26,10 +27,11 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
       tap(() => {
         this.logger.log(`${method} ${url} - ${Date.now() - now}ms`);
       }),
-      map((data) => ({
-        success: true,
-        data,
-      })),
+      map((data) =>
+        data instanceof StreamableFile
+          ? (data as unknown as Response<T>)
+          : { success: true, data },
+      ),
     );
   }
 }

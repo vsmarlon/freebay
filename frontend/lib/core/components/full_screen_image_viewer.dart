@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 void showFullScreenImage(BuildContext context, String imageUrl) {
   Navigator.of(context).push(
@@ -28,7 +29,10 @@ class _FullScreenImageViewer extends StatelessWidget {
         children: [
           Center(
             child: PhotoView(
-              imageProvider: NetworkImage(imageUrl),
+              imageProvider: NetworkImage(
+                imageUrl,
+                headers: mediaAuthHeaders(imageUrl),
+              ),
               loadingBuilder: (context, event) => const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               ),

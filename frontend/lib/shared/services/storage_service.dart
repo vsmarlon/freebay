@@ -29,6 +29,8 @@ class StorageService {
     await _storage.write(key: _tokenKey, value: token);
   }
 
+  static String? get cachedToken => _tokenCache;
+
   static Future<String?> getToken() async {
     if (_tokenCache != null) return _tokenCache;
     final token = await _storage.read(key: _tokenKey);

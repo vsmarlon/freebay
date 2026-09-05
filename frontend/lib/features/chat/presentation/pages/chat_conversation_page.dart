@@ -28,6 +28,7 @@ import 'package:freebay/features/chat/presentation/widgets/reply_composer_banner
 import 'package:freebay/features/chat/presentation/widgets/typing_indicator_bubble.dart';
 import 'package:freebay/features/chat/presentation/widgets/who_reacted_sheet.dart';
 import 'package:freebay/shared/events/chat_event.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
@@ -466,7 +467,10 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                       decoration: bgUrl != null && bgUrl.isNotEmpty
                           ? BoxDecoration(
                               image: DecorationImage(
-                                image: NetworkImage(bgUrl),
+                                image: NetworkImage(
+                                  bgUrl,
+                                  headers: mediaAuthHeaders(bgUrl),
+                                ),
                                 fit: BoxFit.cover,
                                 opacity: 0.15,
                               ),
