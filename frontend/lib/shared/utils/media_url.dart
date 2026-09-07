@@ -4,9 +4,19 @@ import 'package:freebay/shared/services/storage_service.dart';
 const String uploadsPrefix = '/uploads/';
 const String privateMediaPrefix = '/media/';
 
-bool isPrivateMedia(String url) =>
-    url.startsWith(privateMediaPrefix) ||
-    url.contains('${AppConfig.apiBaseUrl}$privateMediaPrefix');
+bool isPrivateMedia(String url) {
+  if (url.startsWith(privateMediaPrefix)) return true;
+
+  final parsed = Uri.tryParse(url);
+  if (parsed == null || !parsed.hasAuthority) return false;
+  if (parsed.scheme != 'http' && parsed.scheme != 'https') return false;
+
+  final base = Uri.tryParse(AppConfig.apiBaseUrl);
+  if (base == null || !base.hasAuthority) return false;
+
+  return parsed.origin == base.origin &&
+      parsed.path.startsWith(privateMediaPrefix);
+}
 
 String mediaUrl(String path) {
   if (!path.startsWith(uploadsPrefix) && !path.startsWith(privateMediaPrefix)) {

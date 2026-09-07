@@ -27,6 +27,9 @@ export const PRIVATE_UPLOAD_ROOT = 'private-uploads';
 
 export const STORED_FILENAME = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]{1,5}$/;
 
+export const STORED_MEDIA_PATH =
+  /^\/(media|uploads)\/[a-z]+\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]{1,5}$/;
+
 export function isPrivateContext(context: string): context is PrivateUploadContext {
   return (PRIVATE_UPLOAD_CONTEXTS as readonly string[]).includes(context);
 }

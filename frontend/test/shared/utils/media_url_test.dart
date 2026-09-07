@@ -28,7 +28,10 @@ void main() {
     });
 
     test('leaves legacy data uris untouched', () {
-      expect(mediaUrl('data:image/png;base64,AAAA'), 'data:image/png;base64,AAAA');
+      expect(
+        mediaUrl('data:image/png;base64,AAAA'),
+        'data:image/png;base64,AAAA',
+      );
     });
 
     test('leaves unrelated paths untouched', () {
@@ -51,6 +54,22 @@ void main() {
 
     test('returns null for a foreign host', () {
       expect(mediaAuthHeaders('https://cdn.example.com/a.jpg'), isNull);
+    });
+
+    test('returns null when a foreign host smuggles the api origin in a fragment', () {
+      expect(mediaAuthHeaders('https://evil.example/collect#$base/media/x.jpg'), isNull);
+    });
+
+    test('returns null when a foreign host smuggles the api origin in a query', () {
+      expect(mediaAuthHeaders('https://evil.example/collect?u=$base/media/x.jpg'), isNull);
+    });
+
+    test('returns null when the api origin is only a path segment elsewhere', () {
+      expect(mediaAuthHeaders('https://evil.example/$base/media/x.jpg'), isNull);
+    });
+
+    test('returns null for a lookalike host that merely starts with the api origin', () {
+      expect(mediaAuthHeaders('$base.evil.example/media/x.jpg'), isNull);
     });
 
     test('returns null when no token is cached', () {

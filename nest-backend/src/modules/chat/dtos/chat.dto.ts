@@ -1,6 +1,16 @@
-import { IsString, IsUUID, IsOptional, IsBoolean, IsArray, ArrayNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  ArrayNotEmpty,
+  ArrayMaxSize,
+  Matches,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
+import { STORED_MEDIA_PATH } from '@/shared/utils/file.utils';
 import { ChatThreadType } from '@prisma/client';
 
 export class VerifyUrlDTO {
@@ -12,8 +22,9 @@ export class VerifyUrlDTO {
 export class ForwardMessagesDTO {
   @ApiProperty({ type: [String], example: ['550e8400-e29b-41d4-a716-446655440000'] })
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID('4', { each: true })
   @ArrayNotEmpty()
+  @ArrayMaxSize(50)
   readonly messageIds: string[];
 
   @ApiProperty({ type: [String], example: ['550e8400-e29b-41d4-a716-446655440001'] })
@@ -51,9 +62,15 @@ export class SendMessageDTO {
   @IsOptional()
   readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'LOCATION' | 'PRODUCT_CARD';
 
-  @ApiProperty({ example: '/uploads/chat/abc.jpg', required: false })
+  @ApiProperty({
+    example: '/media/chat/550e8400-e29b-41d4-a716-446655440000.jpg',
+    required: false,
+  })
   @IsString()
   @IsOptional()
+  @Matches(STORED_MEDIA_PATH, {
+    message: 'attachmentUrl deve ser um caminho de upload válido',
+  })
   readonly attachmentUrl?: string;
 
   @ApiProperty({ required: false })
@@ -68,33 +85,6 @@ export class SendMessageDTO {
   @IsBoolean()
   @IsOptional()
   readonly viewOnce?: boolean;
-}
-
-export class ConversationResponse {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly id: string;
-
-  @ApiProperty({
-    example: { id: 'uuid', displayName: 'John Doe', avatarUrl: null, isVerified: true },
-  })
-  readonly otherUser: {
-    id: string;
-    displayName: string;
-    avatarUrl: string | null;
-    isVerified: boolean;
-  };
-
-  @ApiProperty({ example: { content: 'Last message', createdAt: '2026-06-17T12:00:00.000Z' }, nullable: true })
-  readonly lastMessage: { content: string; createdAt: Date } | null;
-
-  @ApiProperty({ example: 3 })
-  readonly unreadCount: number;
-
-  @ApiProperty({ example: 'ACTIVE' })
-  readonly status: 'ACTIVE' | 'PENDING';
-
-  @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  readonly createdAt: Date;
 }
 
 export class MessageResponse {
@@ -162,10 +152,6 @@ export interface SendMessageOutput {
   createdAt: Date;
 }
 
-export interface GetConversationsInput {
-  userId: string;
-}
-
 export interface ConversationWithStatus {
   id: string;
   otherUser: {
@@ -181,11 +167,6 @@ export interface ConversationWithStatus {
   unreadCount: number;
   status: 'ACTIVE' | 'PENDING';
   createdAt: Date;
-}
-
-export interface GetMessagesInput {
-  conversationId: string;
-  userId: string;
 }
 
 export interface ReplyToOutput {
