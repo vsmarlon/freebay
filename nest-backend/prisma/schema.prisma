@@ -94,13 +94,6 @@ enum DisputeStatus {
   CANCELLED
 }
 
-enum WithdrawalStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
 enum ReviewType {
   BUYER_REVIEWING_SELLER
   SELLER_REVIEWING_BUYER
@@ -586,20 +579,6 @@ model Wallet {
   recipientId      String?
 
   user        User         @relation(fields: [userId], references: [id])
-  withdrawals Withdrawal[]
-}
-
-model Withdrawal {
-  id             String           @id @default(uuid())
-  walletId       String
-  amount         Int
-  status         WithdrawalStatus @default(PENDING)
-  idempotencyKey String?          @unique
-  createdAt      DateTime         @default(now())
-
-  wallet Wallet @relation(fields: [walletId], references: [id])
-
-  @@index([walletId])
 }
 
 model Dispute {
@@ -677,6 +656,7 @@ model ChatMessage {
 
   @@unique([orderId, clientMessageId])
   @@index([orderId, createdAt])
+  @@index([attachmentUrl])
 }
 
 model Favorite {
@@ -824,6 +804,7 @@ model DirectMessage {
   @@unique([conversationId, clientMessageId])
   @@index([conversationId, createdAt])
   @@index([senderId])
+  @@index([attachmentUrl])
 }
 
 // ─── Per-user conversation preferences (archive, theme, background) ────
