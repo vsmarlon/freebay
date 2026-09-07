@@ -2,27 +2,27 @@ import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/shared/services/storage_service.dart';
-import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
-class AuthRepository extends BaseHttpRepository implements IAuthRepository {
+class AuthRepository extends BaseHttpRepository {
   AuthRepository({super.client});
 
-  @override
   Future<Either<Failure, void>> logout() async {
     try {
-      if (await StorageService.getBiometricToken() != null) {
-        await revokeBiometricToken();
-      }
-
       final refreshToken = await StorageService.getRefreshToken();
-      if (refreshToken != null) {
-        await safeVoid(
-          () =>
-              client.post('/auth/logout', data: {'refreshToken': refreshToken}),
-          debugLabel: 'AUTH logout',
-        );
-      }
+      final biometricToken = await StorageService.getBiometricToken();
+
+      await safeVoid(
+        () => client.post(
+          '/auth/logout',
+          data: {
+            'refreshToken': ?refreshToken,
+            'biometricToken': ?biometricToken,
+          },
+        ),
+        debugLabel: 'AUTH logout',
+      );
+
       await StorageService.clearBiometricToken();
       await StorageService.clearTokens();
       return const Right(null);
@@ -31,7 +31,6 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
     }
   }
 
-  @override
   Future<Either<Failure, bool>> isLoggedIn() async {
     try {
       final token = await StorageService.getToken();
@@ -43,7 +42,6 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
     }
   }
 
-  @override
   Future<Either<Failure, UserEntity>> login(
     String email,
     String password,
@@ -71,14 +69,12 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
     );
   }
 
-  @override
   Future<Either<Failure, UserEntity>> getCurrentUser() => safeGet<UserEntity>(
     '/users/me',
     extractKey: 'data',
     fromJson: UserEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, UserEntity>> register(
     String email,
     String password,
@@ -113,7 +109,6 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
     );
   }
 
-  @override
   Future<Either<Failure, bool>> checkUsernameAvailable(String username) =>
       safeGet<bool>(
         '/auth/username-available',
@@ -122,13 +117,11 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
         customMapper: (d) => d == true,
       );
 
-  @override
   Future<Either<Failure, void>> requestPasswordRecovery(String email) =>
       safeVoid(
         () => client.post('/auth/forgot-password', data: {'email': email}),
       );
 
-  @override
   Future<Either<Failure, bool>> verifyPasswordRecoveryCode(
     String email,
     String code,
@@ -138,7 +131,6 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
     customMapper: (_) => true,
   );
 
-  @override
   Future<Either<Failure, void>> resetPassword(
     String email,
     String code,
@@ -150,7 +142,6 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
     ),
   );
 
-  @override
   Future<Either<Failure, UserEntity>> biometricLogin(
     String biometricToken,
   ) async {
@@ -167,16 +158,26 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
         }
         StorageService.saveToken(data['token']);
         StorageService.saveRefreshToken(data['refreshToken']);
+        if (data['biometricToken'] != null) {
+          StorageService.saveBiometricToken(data['biometricToken']);
+        }
         return Right(UserEntity.fromJson(data['user']));
       },
     );
   }
 
-  @override
-  Future<Either<Failure, void>> revokeBiometricToken() =>
-      safeVoid(() => client.patch('/auth/biometric-token/revoke'));
+  Future<Either<Failure, void>> revokeBiometricToken() async {
+    final biometricToken = await StorageService.getBiometricToken();
+    if (biometricToken == null) return const Right(null);
+    return safeVoid(
+      () => client.patch(
+        '/auth/biometric-token/revoke',
+        data: {'biometricToken': biometricToken},
+      ),
+      debugLabel: 'AUTH revoke biometric',
+    );
+  }
 
-  @override
   Future<Either<Failure, UserEntity>> googleAuth(String idToken) async {
     return safeCall<UserEntity>(
       () => client.post('/auth/google', data: {'idToken': idToken}),
@@ -197,7 +198,6 @@ class AuthRepository extends BaseHttpRepository implements IAuthRepository {
     );
   }
 
-  @override
   Future<Either<Failure, UserEntity>> completeProfile({
     required String username,
     String? displayName,

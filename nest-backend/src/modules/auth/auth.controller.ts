@@ -4,6 +4,7 @@ import {
   Query,
   HttpStatus,
   Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
@@ -116,17 +117,39 @@ export class AuthController {
     responseType: MessageResponse,
   })
   @AllowTokenTypes(JwtTokenType.ACCESS, JwtTokenType.REFRESH)
-  async logout(@Request() req: { user: AuthUser }, @Body('refreshToken') refreshToken?: string) {
-    let refreshTokenPayload: JwtPayload | undefined;
-    if (refreshToken) {
-      try {
-        const payload = this.jwtService.decode(refreshToken) as JwtPayload | null;
-        if (payload?.type === JwtTokenType.REFRESH && payload.userId === req.user.userId) {
-          refreshTokenPayload = payload;
-        }
-      } catch { void 0; }
-    }
-    return this.authService.logout({ jti: req.user.jti, exp: req.user.exp }, refreshTokenPayload);
+  async logout(
+    @Request() req: { user: AuthUser },
+    @Body('refreshToken') refreshToken?: string,
+    @Body('biometricToken') biometricToken?: string,
+  ) {
+    const refreshTokenPayload = this._ownedPayload(
+      refreshToken,
+      JwtTokenType.REFRESH,
+      req.user.userId,
+    );
+    const biometricTokenPayload = this._ownedPayload(
+      biometricToken,
+      JwtTokenType.BIOMETRIC,
+      req.user.userId,
+    );
+    return this.authService.logout(
+      { jti: req.user.jti, exp: req.user.exp },
+      refreshTokenPayload,
+      biometricTokenPayload,
+    );
+  }
+
+  private _ownedPayload(
+    token: string | undefined,
+    type: JwtTokenType,
+    userId: string,
+  ): JwtPayload | undefined {
+    if (!token) return undefined;
+    try {
+      const payload = this.jwtService.verify<JwtPayload>(token);
+      if (payload?.type === type && payload.userId === userId) return payload;
+    } catch { void 0; }
+    return undefined;
   }
 
   @PostPublic('forgot-password', {
@@ -174,11 +197,23 @@ export class AuthController {
 
   @PatchAuth('biometric-token/revoke', {
     summary: 'Revoke biometric token',
-    description: 'Blacklists the current biometric token so it can no longer be used. Call this when the user disables biometric login.',
+    description: 'Blacklists a biometric token so it can no longer be used. Authenticate with the access token and send the biometric token in the body. Call this when the user disables biometric login.',
+    bodyType: BiometricLoginDTO,
     responseType: MessageResponse,
   })
-  @AllowTokenTypes(JwtTokenType.BIOMETRIC)
-  async revokeBiometricToken(@CurrentUser() user: AuthUser) {
-    return this.authService.revokeBiometricToken(user.jti, user.exp);
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  async revokeBiometricToken(
+    @CurrentUser() user: AuthUser,
+    @Body() body: BiometricLoginDTO,
+  ) {
+    const payload = this._ownedPayload(
+      body.biometricToken,
+      JwtTokenType.BIOMETRIC,
+      user.userId,
+    );
+    if (!payload) {
+      throw new UnauthorizedException('Token biométrico inválido');
+    }
+    return this.authService.revokeBiometricToken(payload.jti, payload.exp);
   }
 }

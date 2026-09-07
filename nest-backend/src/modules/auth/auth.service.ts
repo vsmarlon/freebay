@@ -30,7 +30,7 @@ import {
   UserNotFoundError,
 } from '@/shared/core/errors';
 import { isLeft } from '@/shared/core/either';
-import { UserRepository } from './domain/repositories/user.repository';
+import { UserDatabaseRepository } from './data/repositories/user-database.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { JwtPayload, JwtTokenType } from '@/shared/core/types';
 
@@ -48,7 +48,7 @@ export class AuthService {
     private readonly biometricLoginUseCase: BiometricLoginUseCase,
     private readonly googleAuthUseCase: GoogleAuthUseCase,
     private readonly completeProfileUseCase: CompleteProfileUseCase,
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: UserDatabaseRepository,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
@@ -122,12 +122,20 @@ export class AuthService {
     }
   }
 
-  async logout(user: { jti?: string; exp?: number }, refreshTokenPayload?: { jti?: string; exp?: number }) {
+  async logout(
+    user: { jti?: string; exp?: number },
+    refreshTokenPayload?: { jti?: string; exp?: number },
+    biometricTokenPayload?: { jti?: string; exp?: number },
+  ) {
     try {
       await this.blacklistToken(user.jti, user.exp);
 
       if (refreshTokenPayload) {
         await this.blacklistToken(refreshTokenPayload.jti, refreshTokenPayload.exp);
+      }
+
+      if (biometricTokenPayload) {
+        await this.blacklistToken(biometricTokenPayload.jti, biometricTokenPayload.exp);
       }
 
       return { message: 'Logout realizado' };
@@ -285,7 +293,7 @@ export class AuthService {
     );
     const biometricToken = this.jwtService.sign(
       { userId, role, type: JwtTokenType.BIOMETRIC, jti: biometricJti } as JwtPayload,
-      { expiresIn: this.config.get('JWT_BIOMETRIC_EXPIRES_IN', '30d') },
+      { expiresIn: this.config.get('JWT_BIOMETRIC_EXPIRES_IN', '7d') },
     );
 
     return { token, refreshToken, biometricToken };
