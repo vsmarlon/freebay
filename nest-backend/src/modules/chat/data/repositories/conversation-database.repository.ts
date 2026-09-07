@@ -5,8 +5,8 @@ import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.reposito
 import { RepositoryResponse, right, left } from '@/shared/core/either';
 import { CursorPage, PageQuery, paginateById } from '@/shared/core/pagination';
 import { DatabaseError } from '@/shared/core/errors';
-import { ConversationRepository } from '../../domain/repositories/conversation.repository';
 import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
+import { deleteUpload } from '@/shared/utils/file.utils';
 import {
   DirectConversationWithDetails,
   OrderWithChatRecord,
@@ -28,7 +28,7 @@ const REPLY_TO_SELECT = {
 } as const;
 
 @Injectable()
-export class ConversationDatabaseRepository extends BasePrismaRepository implements ConversationRepository {
+export class ConversationDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }
@@ -309,7 +309,12 @@ export class ConversationDatabaseRepository extends BasePrismaRepository impleme
   async softDeleteDirectMessage(id: string): RepositoryResponse<void> {
     return this.safeRun(
       async () => {
-        await this.prisma.directMessage.update({ where: { id }, data: { deletedAt: new Date() } });
+        const deleted = await this.prisma.directMessage.update({
+          where: { id },
+          data: { deletedAt: new Date() },
+          select: { attachmentUrl: true },
+        });
+        deleteUpload(deleted.attachmentUrl);
       },
       'Erro ao apagar mensagem',
     );
@@ -403,6 +408,28 @@ export class ConversationDatabaseRepository extends BasePrismaRepository impleme
       });
       return result as ChatMessageWithSender[];
     }, 'Erro ao buscar mensagens');
+  }
+
+  async messageBelongsToThread(
+    messageId: string,
+    threadId: string,
+    model: ChatThreadType,
+  ): RepositoryResponse<boolean> {
+    return this.safeRun(async () => {
+      if (model === ChatThreadType.ORDER) {
+        const found = await this.prisma.chatMessage.findFirst({
+          where: { id: messageId, orderId: threadId },
+          select: { id: true },
+        });
+        return found !== null;
+      }
+
+      const found = await this.prisma.directMessage.findFirst({
+        where: { id: messageId, conversationId: threadId },
+        select: { id: true },
+      });
+      return found !== null;
+    }, 'Erro ao verificar mensagem da conversa');
   }
 
   async findReplyToSummary(id: string): RepositoryResponse<ReplyToSummary | null> {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SendMessageUseCase } from './send-message.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
@@ -12,6 +12,7 @@ const mockRepo = {
   createDirectMessage: jest.fn(),
   updateDirectConversation: jest.fn(),
   createChatMessage: jest.fn(),
+  messageBelongsToThread: jest.fn(),
 };
 
 const mockBlockRepository = {
@@ -34,20 +35,21 @@ describe('SendMessageUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SendMessageUseCase,
-        { provide: ConversationRepository, useValue: mockRepo },
-        { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
+        { provide: PrismaBlockRepository, useValue: mockBlockRepository },
         { provide: OgScraperService, useValue: mockOgScraper },
         { provide: ChatThreadAccessService, useValue: mockThreadAccess },
       ],
     }).compile();
 
-    sut = module.get<SendMessageUseCase>(SendMessageUseCase);
+    sut = module.get(SendMessageUseCase);
     jest.clearAllMocks();
     mockBlockRepository.isBlocked.mockResolvedValue(right(false));
     mockOgScraper.extractFirstUrl.mockReturnValue(null);
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );
+    mockRepo.messageBelongsToThread.mockResolvedValue(right(true));
   });
 
   it('should return error if thread cannot be resolved', async () => {
@@ -137,6 +139,21 @@ describe('SendMessageUseCase', () => {
     expect(result.isRight()).toBe(true);
     if (result.isRight()) expect(result.value.conversationId).toBe('order-1');
     expect(mockRepo.createChatMessage).toHaveBeenCalled();
+    expect(mockRepo.createDirectMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reply that targets a message from another conversation', async () => {
+    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
+    mockRepo.messageBelongsToThread.mockResolvedValue(right(false));
+
+    const result = await sut.execute({
+      senderId: 'user-1',
+      conversationId: 'conv-1',
+      content: 'Resposta',
+      replyToId: 'msg-from-elsewhere',
+    });
+
+    expect(result.isLeft()).toBe(true);
     expect(mockRepo.createDirectMessage).not.toHaveBeenCalled();
   });
 });

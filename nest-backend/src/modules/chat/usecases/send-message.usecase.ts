@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { SendMessageInput, SendMessageOutput } from '../dtos/chat.dto';
-import { Prisma, DirectMessage, ChatMessage, MessageType } from '@prisma/client';
+import { Prisma, DirectMessage, ChatMessage, MessageType, ChatThreadType } from '@prisma/client';
 
 @Injectable()
 export class SendMessageUseCase {
   constructor(
-    private readonly conversationRepository: ConversationRepository,
-    private readonly blockRepository: BlockRepository,
+    private readonly conversationRepository: ConversationDatabaseRepository,
+    private readonly blockRepository: PrismaBlockRepository,
     private readonly ogScraper: OgScraperService,
     private readonly threadAccess: ChatThreadAccessService,
   ) {}
@@ -49,6 +49,13 @@ export class SendMessageUseCase {
     if (productCardError) return left(productCardError);
 
     const metadata = await this.buildMetadata(messageType, input);
+
+    const replyScope = await this.assertReplyInThread(
+      input.replyToId,
+      input.conversationId,
+      ChatThreadType.DIRECT,
+    );
+    if (replyScope) return left(replyScope);
 
     const messageResult = await this.conversationRepository.createDirectMessage({
       conversation: { connect: { id: input.conversationId } },
@@ -99,6 +106,13 @@ export class SendMessageUseCase {
 
     const metadata = await this.buildMetadata(messageType, input);
 
+    const replyScope = await this.assertReplyInThread(
+      input.replyToId,
+      orderId,
+      ChatThreadType.ORDER,
+    );
+    if (replyScope) return left(replyScope);
+
     const messageResult = await this.conversationRepository.createChatMessage({
       order: { connect: { id: orderId } },
       sender: { connect: { id: input.senderId } },
@@ -126,6 +140,22 @@ export class SendMessageUseCase {
       viewOnce: msg.viewOnce,
       createdAt: msg.createdAt,
     });
+  }
+
+  private async assertReplyInThread(
+    replyToId: string | undefined,
+    threadId: string,
+    model: ChatThreadType,
+  ): Promise<AppError | null> {
+    if (!replyToId) return null;
+    const belongs = await this.conversationRepository.messageBelongsToThread(
+      replyToId,
+      threadId,
+      model,
+    );
+    if (isLeft(belongs)) return belongs.value;
+    if (!belongs.value) return new NotFoundError('Mensagem referenciada');
+    return null;
   }
 
   private async assertNotBlocked(senderId: string, otherUserId: string): Promise<AppError | null> {

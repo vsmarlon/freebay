@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ForwardMessagesInput, ForwardMessagesOutput, SendMessageOutput } from '../dtos/chat.dto';
@@ -12,8 +12,8 @@ import { Prisma, MessageType } from '@prisma/client';
 export class ForwardMessagesUseCase {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly conversationRepository: ConversationRepository,
-    private readonly blockRepository: BlockRepository,
+    private readonly conversationRepository: ConversationDatabaseRepository,
+    private readonly blockRepository: PrismaBlockRepository,
     private readonly threadAccess: ChatThreadAccessService,
   ) {}
 
@@ -26,7 +26,6 @@ export class ForwardMessagesUseCase {
       return left(new BadRequestError('Nenhum destinatário selecionado para encaminhamento'));
     }
 
-    // 1. Fetch source messages
     const [directMsgs, orderMsgs] = await Promise.all([
       this.prisma.directMessage.findMany({
         where: { id: { in: input.messageIds }, deletedAt: null },
@@ -45,14 +44,36 @@ export class ForwardMessagesUseCase {
       attachmentUrl: string | null;
       metadata: Prisma.JsonValue;
       sender: { displayName: string } | null;
+      viewOnce: boolean;
+      readAt: Date | null;
+      sourceThreadId: string;
     };
 
-    const allSourceMsgs: SourceMsg[] = [...directMsgs, ...orderMsgs];
+    const allSourceMsgs: SourceMsg[] = [
+      ...directMsgs.map((m) => ({ ...m, sourceThreadId: m.conversationId })),
+      ...orderMsgs.map((m) => ({ ...m, sourceThreadId: m.orderId })),
+    ];
     if (allSourceMsgs.length === 0) {
       return left(new NotFoundError('Mensagens para encaminhamento'));
     }
 
-    // Sort to match requested order
+    for (const sourceMsg of allSourceMsgs) {
+      const sourceThread = await this.threadAccess.resolveThread(
+        input.userId,
+        sourceMsg.sourceThreadId,
+      );
+      if (isLeft(sourceThread)) {
+        return left(new ForbiddenError('Você não participa da conversa de origem'));
+      }
+
+      if (sourceMsg.viewOnce) {
+        return left(
+          new ForbiddenError('Mensagens de visualização única não podem ser encaminhadas'),
+        );
+      }
+    }
+
+
     const sortedMessages: SourceMsg[] = [];
     for (const id of input.messageIds) {
       const found = allSourceMsgs.find((m) => m.id === id);
@@ -61,7 +82,7 @@ export class ForwardMessagesUseCase {
 
     const createdOutputs: SendMessageOutput[] = [];
 
-    // 2. Validate and forward to each target conversation
+
     for (const targetConvId of input.targetConversationIds) {
       const threadRes = await this.threadAccess.resolveThread(input.userId, targetConvId);
       if (isLeft(threadRes)) {

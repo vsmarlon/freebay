@@ -93,6 +93,23 @@ export type ReplyToSummary = {
   readAt: Date | null;
 };
 
+type RedactableReply = {
+  content: string | null;
+  attachmentUrl: string | null;
+  deletedAt: Date | null;
+  viewOnce: boolean;
+  readAt: Date | null;
+};
+
+export function isReplyPayloadHidden(reply: RedactableReply): boolean {
+  return reply.deletedAt !== null || (reply.viewOnce && reply.readAt !== null);
+}
+
+export function redactReplySummary<T extends RedactableReply>(reply: T): T {
+  if (!isReplyPayloadHidden(reply)) return reply;
+  return { ...reply, content: null, attachmentUrl: null };
+}
+
 // ─── API DTO Response Interfaces ───────────────────────────────────────────────
 
 export interface UnifiedConversationResponse {

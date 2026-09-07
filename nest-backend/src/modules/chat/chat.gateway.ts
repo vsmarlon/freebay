@@ -11,13 +11,14 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
-import { ConversationRepository } from './domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from './data/repositories/conversation-database.repository';
+import { redactReplySummary } from './mappers/conversation.mapper';
 import { SendMessageUseCase } from './usecases/send-message.usecase';
 import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
 import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
 import { ChatThreadAccessService } from './services/chat-thread-access.service';
 import { NotificationService } from '../notifications/services/notification.service';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 
 interface AuthenticatedUser {
   userId: string;
@@ -39,13 +40,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private tokenValidator: JwtTokenValidatorService,
-    private conversationRepository: ConversationRepository,
+    private conversationRepository: ConversationDatabaseRepository,
     private sendMessageUseCase: SendMessageUseCase,
     private deleteMessageUseCase: DeleteMessageUseCase,
     private toggleReactionUseCase: ToggleReactionUseCase,
     private threadAccess: ChatThreadAccessService,
     private notificationService: NotificationService,
-    private blockRepository: BlockRepository,
+    private blockRepository: PrismaBlockRepository,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -241,8 +242,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     let replyTo = null;
     if (resultValue.replyToId) {
       const replyResult = await this.conversationRepository.findReplyToSummary(resultValue.replyToId);
-      if (!replyResult.isLeft()) {
-        replyTo = replyResult.value;
+      if (!replyResult.isLeft() && replyResult.value) {
+        replyTo =
+          replyResult.value.conversationId === conversationId
+            ? redactReplySummary(replyResult.value)
+            : null;
       }
     }
 
