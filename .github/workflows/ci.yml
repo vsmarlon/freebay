@@ -66,6 +66,10 @@ jobs:
         working-directory: nest-backend
         run: npm run lint
 
+      - name: Verify Test Database Guard
+        working-directory: nest-backend
+        run: npm run test:safety
+
       - name: Run Backend Unit Tests (Jest)
         working-directory: nest-backend
         env:
@@ -74,13 +78,15 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
+          GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
         run: npm test
 
       - name: Push Test Schema (Prisma db push)
         working-directory: nest-backend
         env:
+          NODE_ENV: test
           DATABASE_URL: postgresql://test_user:test_password@localhost:5432/freebay_test_db?schema=public
-        run: npx prisma db push --accept-data-loss --skip-generate
+        run: node scripts/safe-prisma-db-push.js
 
       - name: Run Backend Integration Tests (Jest)
         working-directory: nest-backend
@@ -90,6 +96,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
+          GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
         run: npx jest --config jest.config.integration.js --runInBand
 
   frontend-ci:

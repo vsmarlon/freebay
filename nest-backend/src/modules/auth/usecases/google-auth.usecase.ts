@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidGoogleTokenError, UnverifiedGoogleEmailError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
 
 interface GooglePayload {
@@ -18,34 +18,35 @@ interface GooglePayload {
 export class GoogleAuthUseCase {
   private readonly logger = new Logger(GoogleAuthUseCase.name);
   private readonly client: OAuth2Client;
+  private readonly audiences: string[];
 
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: UserDatabaseRepository,
     private readonly config: ConfigService,
   ) {
-    const defaultClientId = this.config.get<string>('GOOGLE_CLIENT_ID') || this.config.get<string>('GOOGLE_SERVER_CLIENT_ID');
-    this.client = new OAuth2Client(defaultClientId);
+    this.audiences = [
+      this.config.get<string>('GOOGLE_CLIENT_ID'),
+      this.config.get<string>('GOOGLE_SERVER_CLIENT_ID'),
+    ]
+      .filter((id): id is string => Boolean(id && id.trim().length > 0))
+      .flatMap((id) => id.split(',').map((s) => s.trim()))
+      .filter((id) => id.length > 0);
+
+    if (this.audiences.length === 0) {
+      throw new Error(
+        'GOOGLE_CLIENT_ID ou GOOGLE_SERVER_CLIENT_ID precisa estar definido: sem audience o token Google seria aceito de qualquer cliente OAuth',
+      );
+    }
+
+    this.client = new OAuth2Client(this.audiences[0]);
   }
 
   async execute(idToken: string): Promise<Either<AppError, AuthResponse>> {
     let payload: GooglePayload;
     try {
-      const configuredAudiences = [
-        this.config.get<string>('GOOGLE_CLIENT_ID'),
-        this.config.get<string>('GOOGLE_SERVER_CLIENT_ID'),
-      ]
-        .filter((id): id is string => Boolean(id && id.trim().length > 0))
-        .flatMap((id) => id.split(',').map((s) => s.trim()));
-
-      const audienceParam = configuredAudiences.length === 1
-        ? configuredAudiences[0]
-        : configuredAudiences.length > 1
-          ? configuredAudiences
-          : undefined;
-
       const ticket = await this.client.verifyIdToken({
         idToken,
-        audience: audienceParam,
+        audience: this.audiences.length === 1 ? this.audiences[0] : this.audiences,
       });
       payload = ticket.getPayload() as GooglePayload;
     } catch (err) {
