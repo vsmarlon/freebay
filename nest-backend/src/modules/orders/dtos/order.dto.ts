@@ -7,29 +7,6 @@ export class CreateOrderDTO {
   readonly productId: string;
 }
 
-export class OrderResponse {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly id: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly buyerId: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly sellerId: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly productId: string;
-
-  @ApiProperty({ example: 15000 })
-  readonly amount: number;
-
-  @ApiProperty({ example: 'PENDING' })
-  readonly status: string;
-
-  @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  readonly createdAt: Date;
-}
-
 export interface CreateOrderInput {
   buyerId: string;
   sellerId: string;

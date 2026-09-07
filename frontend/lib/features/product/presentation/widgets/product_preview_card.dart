@@ -1,11 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 
 class ProductPreviewCard extends StatelessWidget {
   final String title;
@@ -46,7 +42,7 @@ class ProductPreviewCard extends StatelessWidget {
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+              color: context.colors.primary,
             ),
           ),
           const SizedBox(height: 12),
@@ -132,7 +128,7 @@ class ProductPreviewCard extends StatelessWidget {
                           fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.white : AppColors.onSurface,
+                          color: context.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -150,8 +146,9 @@ class ProductPreviewCard extends StatelessWidget {
                             fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
-                            color:
-                                isDark ? AppColors.white : AppColors.onSurface,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.onSurface,
                           ),
                         ),
                       ),

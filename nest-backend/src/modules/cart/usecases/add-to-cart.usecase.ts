@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
-import { CartRepository } from '../domain/repositories/cart.repository';
+import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 
 import { AddToCartInput, AddToCartOutput } from '../dtos/cart.dto';
 
 @Injectable()
 export class AddToCartUseCase {
-  constructor(private readonly cartRepository: CartRepository) {}
+  constructor(private readonly cartRepository: CartDatabaseRepository) {}
 
   async execute(input: AddToCartInput): Promise<Either<AppError, AddToCartOutput>> {
     const quantity = Math.min(Math.max(input.quantity, 1), 10);

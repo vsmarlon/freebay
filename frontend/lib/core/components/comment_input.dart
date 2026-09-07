@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class CommentInput extends StatelessWidget {
   final TextEditingController controller;
@@ -40,10 +37,7 @@ class CommentInput extends StatelessWidget {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(color: AppColors.mediumGray),
-              border: const OutlineInputBorder(
-                borderRadius: BorderRadius.zero,
-                borderSide: BorderSide.none,
-              ),
+              border: const OutlineInputBorder(borderSide: BorderSide.none),
               filled: true,
               fillColor: context.surfaceMidColor,
               contentPadding: padding,

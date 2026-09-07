@@ -3,11 +3,10 @@ import { Report, Prisma, User, Post, DirectConversation, Order } from '@prisma/c
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { ReportRepository } from '../../domain/repositories/report.repository';
 import { DirectMessageWithConversation, ChatMessageWithOrder, CreateReportData } from '../../types/report.types';
 
 @Injectable()
-export class ReportDatabaseRepository extends BasePrismaRepository implements ReportRepository {
+export class ReportDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { FollowRepository } from '../domain/repositories/follow.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { PrismaFollowRepository } from '../data/repositories/follow-database.repository';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { FollowResponse } from '../mappers/user.mapper';
 import { FollowUserInput } from '../dtos/user.dto';
@@ -10,8 +10,8 @@ import { FollowUserInput } from '../dtos/user.dto';
 @Injectable()
 export class FollowUserUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly followRepository: FollowRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly followRepository: PrismaFollowRepository,
     private readonly notificationService: NotificationService,
   ) {}
 

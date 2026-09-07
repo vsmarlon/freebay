@@ -1,7 +1,7 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
-import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/shared/services/storage_service.dart';
@@ -13,7 +13,7 @@ import 'package:freebay/shared/services/storage_service.dart';
 /// are preserved so the user can retry.
 /// On API failure (wrong password, etc.), clears stale credentials.
 class BiometricLoginUsecase implements NoParamsUsecase<UserEntity> {
-  final IAuthRepository _repository;
+  final AuthRepository _repository;
   final BiometryService _biometryService;
 
   BiometricLoginUsecase(this._repository, this._biometryService);

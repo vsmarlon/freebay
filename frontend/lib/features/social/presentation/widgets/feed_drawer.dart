@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_dialog.dart';
-import 'package:freebay/core/components/menu_list_tile.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/stat_column.dart';
-import 'package:freebay/core/components/user_avatar.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/bug_report/presentation/widgets/bug_report_sheet.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
@@ -52,13 +45,11 @@ class FeedDrawer extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
     final user = authState.value;
     final bio = user?.bio;
-    final isDark = context.isDark;
 
     return Drawer(
       elevation: 0,
       width: MediaQuery.of(context).size.width * 0.78,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      backgroundColor: isDark ? const Color(0xFF0F172A) : AppColors.surface,
+      backgroundColor: context.bgColor,
       child: Container(
         decoration: BoxDecoration(
           border: Border(
@@ -271,7 +262,7 @@ class _Header extends StatelessWidget {
                       ),
                     ),
                     Spacing.vXs,
-                    Text(
+                    const Text(
                       'VER MEU PERFIL',
                       style: TextStyle(
                         fontFamily: AppTypography.headlineFontFamily,
@@ -375,7 +366,7 @@ class _BioBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'BIO',
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,

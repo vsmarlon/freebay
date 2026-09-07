@@ -6,22 +6,16 @@ class AppConfig {
 
   static const String _apiBaseUrlDefine = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: '',
   );
 
   static const String _stripePublishableKeyDefine = String.fromEnvironment(
     'STRIPE_PUBLISHABLE_KEY',
-    defaultValue: '',
   );
 
-  static const String _sentryDsnDefine = String.fromEnvironment(
-    'SENTRY_DSN',
-    defaultValue: '',
-  );
+  static const String _sentryDsnDefine = String.fromEnvironment('SENTRY_DSN');
 
   static const String _googleServerClientIdDefine = String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',
-    defaultValue: '',
   );
 
   static String get googleServerClientId {

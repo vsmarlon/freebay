@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 
 class LocationMessageBubble extends StatelessWidget {
   final Map<String, dynamic>? metadata;
@@ -60,7 +59,7 @@ class LocationMessageBubble extends StatelessWidget {
         color: context.isDark
             ? AppColors.surfaceContainerDark
             : AppColors.surfaceContainerLow,
-        border: Border.all(color: context.borderColor, width: 1),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,7 +88,7 @@ class LocationMessageBubble extends StatelessWidget {
                         point: coords,
                         width: 32,
                         height: 32,
-                        child: Icon(
+                        child: const Icon(
                           Icons.location_pin,
                           color: AppColors.primaryContainer,
                           size: 32,

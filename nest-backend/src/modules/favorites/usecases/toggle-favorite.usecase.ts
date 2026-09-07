@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
-import { FavoriteRepository } from '../domain/repositories/favorite.repository';
+import { FavoriteDatabaseRepository } from '../data/repositories/favorite-database.repository';
 
 @Injectable()
 export class ToggleFavoriteUseCase {
-  constructor(private readonly favoriteRepository: FavoriteRepository) {}
+  constructor(private readonly favoriteRepository: FavoriteDatabaseRepository) {}
 
   async execute(userId: string, productId: string): Promise<Either<AppError, void>> {
     const productResult = await this.favoriteRepository.findProductById(productId);

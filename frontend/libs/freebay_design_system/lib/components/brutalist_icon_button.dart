@@ -1,3 +1,5 @@
+import '../tokens/app_depth.dart';
+import '../tokens/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../tokens/theme_extension.dart';
@@ -37,10 +39,7 @@ class _BrutalistIconButtonState extends State<BrutalistIconButton> {
   @override
   Widget build(BuildContext context) {
     final effectiveBorder = widget.gradient == null
-        ? Border.all(
-            color: widget.borderColor ?? context.borderColor,
-            width: 1.0,
-          )
+        ? Border.all(color: widget.borderColor ?? context.borderColor)
         : null;
 
     return GestureDetector(
@@ -58,11 +57,10 @@ class _BrutalistIconButtonState extends State<BrutalistIconButton> {
           : null,
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.linear,
+        duration: AppMotion.tap,
         transform: Matrix4.translationValues(
-          _isPressed ? 1.5 : 0.0,
-          _isPressed ? 1.5 : 0.0,
+          _isPressed ? AppDepth.pressOffset : 0.0,
+          _isPressed ? AppDepth.pressOffset : 0.0,
           0.0,
         ),
         width: widget.size,
@@ -73,7 +71,6 @@ class _BrutalistIconButtonState extends State<BrutalistIconButton> {
               ? (widget.backgroundColor ?? context.surfaceColor)
               : null,
           border: effectiveBorder,
-          borderRadius: BorderRadius.zero,
         ),
         child: Center(
           child: widget.isLoading

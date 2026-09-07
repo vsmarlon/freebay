@@ -3,13 +3,11 @@ import { ConnectAccount, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { ConnectAccountRepository } from '../../domain/repositories/connect-account.repository';
 import { ConnectAccountSnapshot } from '../../types/connect.types';
 
 @Injectable()
 export class ConnectAccountDatabaseRepository
   extends BasePrismaRepository
-  implements ConnectAccountRepository
 {
   constructor(prisma: PrismaService) {
     super(prisma);

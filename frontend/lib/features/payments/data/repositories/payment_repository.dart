@@ -2,15 +2,13 @@ import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/payments/data/entities/payment_intent_entity.dart';
 import 'package:freebay/features/payments/data/services/payment_service.dart';
-import 'package:freebay/features/payments/domain/repositories/i_payment_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
-class PaymentRepository implements IPaymentRepository {
+class PaymentRepository {
   final PaymentService _service;
 
   PaymentRepository(this._service);
 
-  @override
   Future<Either<Failure, PaymentEntity>> createPaymentSession({
     required String orderId,
     required String customerName,
@@ -27,7 +25,6 @@ class PaymentRepository implements IPaymentRepository {
     );
   }
 
-  @override
   Future<Either<Failure, PaymentIntentEntity>> createPaymentIntent({
     required String orderId,
     String? idempotencyKey,

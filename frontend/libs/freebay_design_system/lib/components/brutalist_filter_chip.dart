@@ -1,3 +1,4 @@
+import '../tokens/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../tokens/app_colors.dart';
@@ -33,12 +34,10 @@ class BrutalistFilterChip extends StatelessWidget {
         _callback?.call();
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.linear,
+        duration: AppMotion.base,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: _active ? AppColors.primaryContainer : context.surfaceColor,
-          borderRadius: BorderRadius.zero,
           border: Border.all(
             color: _active ? AppColors.primaryContainer : context.borderColor,
             width: 1.5,

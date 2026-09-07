@@ -5,7 +5,9 @@ void main() {
   group('UploadService', () {
     test('returns relative path on success', () {
       expect(
-        UploadService.relativePathFromResponse({'url': '/uploads/chat/abc.jpg'}),
+        UploadService.relativePathFromResponse({
+          'url': '/uploads/chat/abc.jpg',
+        }),
         '/uploads/chat/abc.jpg',
       );
     });

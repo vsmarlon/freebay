@@ -1,14 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
-/// Digital Brutalist rich text viewer that parses and highlights:
-/// - Links (URLs starting with http://, https://, or www.)
-/// - Mentions (@username)
-/// - Hashtags (#hashtag)
-/// - Optional search query matches
 class BrutalistHighlightedText extends StatefulWidget {
   final String text;
   final TextStyle? style;
@@ -78,17 +71,13 @@ class _BrutalistHighlightedTextState extends State<BrutalistHighlightedText> {
           color: context.textPrimary,
         );
 
-    final effectiveLinkColor =
-        widget.linkColor ??
-        (context.isDark ? AppColors.primaryContainer : AppColors.primary);
+    final effectiveLinkColor = widget.linkColor ?? (context.colors.primary);
 
     final effectiveMentionColor =
-        widget.mentionColor ??
-        (context.isDark ? AppColors.primaryContainer : AppColors.primary);
+        widget.mentionColor ?? (context.colors.primary);
 
     final effectiveHashtagColor =
-        widget.hashtagColor ??
-        (context.isDark ? AppColors.primaryContainer : AppColors.primary);
+        widget.hashtagColor ?? (context.colors.primary);
 
     final effectiveHighlightColor =
         widget.highlightColor ??
@@ -123,10 +112,6 @@ class _BrutalistHighlightedTextState extends State<BrutalistHighlightedText> {
   }) {
     if (text.isEmpty) return const [];
 
-    // Combined regex for URLs, Mentions, and Hashtags
-    // Group 1: URL
-    // Group 2: Mention (@...)
-    // Group 3: Hashtag (#...)
     final pattern = RegExp(
       r'(https?:\/\/[^\s]+|www\.[^\s]+)|(@[a-zA-Z0-9_\.]+)|(#[a-zA-Z0-9_\u00C0-\u00FF]+)',
       caseSensitive: false,

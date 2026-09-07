@@ -3,11 +3,10 @@ import { BugReport } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { BugReportRepository } from '../../domain/repositories/bug-report.repository';
 import { CreateBugReportInput } from '../../dtos/bug-report.dto';
 
 @Injectable()
-export class BugReportDatabaseRepository extends BasePrismaRepository implements BugReportRepository {
+export class BugReportDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

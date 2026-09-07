@@ -7,19 +7,13 @@ class BreadcrumbItem {
   final String label;
   final VoidCallback? onTap;
 
-  const BreadcrumbItem({
-    required this.label,
-    this.onTap,
-  });
+  const BreadcrumbItem({required this.label, this.onTap});
 }
 
 class BrutalistBreadcrumb extends StatelessWidget {
   final List<BreadcrumbItem> items;
 
-  const BrutalistBreadcrumb({
-    super.key,
-    required this.items,
-  });
+  const BrutalistBreadcrumb({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +47,9 @@ class BrutalistBreadcrumb extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.2,
-                color: isDark ? AppColors.primaryContainer : AppColors.onSurface,
+                color: isDark
+                    ? AppColors.primaryContainer
+                    : AppColors.onSurface,
                 height: 1.4,
               ),
               overflow: TextOverflow.ellipsis,

@@ -3,12 +3,12 @@ import { ReportStatus } from '@prisma/client';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { CursorPage, clampLimit, decodeIdCursor } from '@/shared/core/pagination';
-import { ModerationRepository } from '../domain/repositories/moderation.repository';
+import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 import { AdminReportRow } from '../types/admin.types';
 
 @Injectable()
 export class ListReportsUseCase {
-  constructor(private readonly moderationRepository: ModerationRepository) {}
+  constructor(private readonly moderationRepository: ModerationDatabaseRepository) {}
 
   async execute(input: {
     status?: ReportStatus;

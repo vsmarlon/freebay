@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 
 class ChatHeader extends StatelessWidget {
   final String name;

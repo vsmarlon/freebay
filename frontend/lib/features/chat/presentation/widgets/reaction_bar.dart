@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
 
 class ReactionBar extends StatelessWidget {
@@ -37,7 +35,7 @@ class ReactionBar extends StatelessWidget {
                 color: context.isDark
                     ? AppColors.surfaceContainerDark
                     : AppColors.surfaceContainerHigh,
-                border: Border.all(color: AppColors.outlineVariant, width: 1),
+                border: Border.all(color: AppColors.outlineVariant),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

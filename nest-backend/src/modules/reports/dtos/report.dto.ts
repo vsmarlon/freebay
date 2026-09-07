@@ -44,27 +44,12 @@ export class GetReportsQueryDTO {
   readonly status?: 'PENDING' | 'REVIEWED' | 'RESOLVED' | 'REJECTED';
 }
 
-export class ResolveReportOutput {
-  @ApiProperty({ example: true })
-  readonly resolved: boolean;
-}
-
 export interface CreateReportInput {
   reporterId: string;
   targetType: 'USER' | 'POST' | 'CONVERSATION' | 'MESSAGE' | 'ORDER_CHAT' | 'CHAT_MESSAGE';
   targetId: string;
   reason: string;
   description?: string;
-}
-
-export interface GetReportsInput {
-  status?: string;
-}
-
-export interface ResolveReportInput {
-  reportId: string;
-  status: 'REVIEWED' | 'RESOLVED' | 'REJECTED';
-  adminNote?: string;
 }
 
 export interface ReportWithRelations {

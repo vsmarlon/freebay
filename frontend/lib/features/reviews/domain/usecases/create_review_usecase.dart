@@ -1,7 +1,7 @@
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
-import 'package:freebay/features/reviews/domain/repositories/i_review_repository.dart';
+import 'package:freebay/features/reviews/data/repositories/review_repository.dart';
 
 class CreateReviewParams {
   final String orderId;
@@ -22,7 +22,7 @@ class CreateReviewParams {
 }
 
 class CreateReviewUsecase implements Usecase<ReviewEntity, CreateReviewParams> {
-  final IReviewRepository _repository;
+  final ReviewRepository _repository;
 
   CreateReviewUsecase(this._repository);
 

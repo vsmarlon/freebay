@@ -1,40 +1,15 @@
+// ignore_for_file: sort_child_properties_last
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/username_field.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/brutalist_error_banner.dart';
-import 'package:freebay/core/components/brutalist_snackbar.dart';
-import 'package:freebay/core/components/brutalist_background.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import 'package:freebay/core/components/brutalist_biometric_modal.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/utils/value_utils.dart';
-import 'package:freebay/core/components/centered_form_wrapper.dart';
-
-Widget _buildAnimatedItem(
-  Widget child,
-  Animation<double> animation,
-  Interval interval,
-) {
-  final curve = CurvedAnimation(parent: animation, curve: interval);
-  final slide = Tween<Offset>(
-    begin: const Offset(0, 0.08),
-    end: Offset.zero,
-  ).animate(curve);
-  return FadeTransition(
-    opacity: curve,
-    child: SlideTransition(position: slide, child: child),
-  );
-}
+import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
 
 class RegisterPage extends HookConsumerWidget {
   const RegisterPage({super.key});
@@ -46,13 +21,11 @@ class RegisterPage extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
-    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final formKey = useMemoized(GlobalKey<FormState>.new);
     final errorMessage = useState<String?>(null);
     final authState = ref.watch(authControllerProvider);
 
-    final animController = useAnimationController(
-      duration: const Duration(milliseconds: 900),
-    );
+    final animController = useAnimationController(duration: AppMotion.enter);
     useEffect(() {
       animController.forward();
       return null;
@@ -110,11 +83,7 @@ class RegisterPage extends HookConsumerWidget {
               ? err
               : 'Erro ao criar conta. Verifique os dados e tente novamente.';
           errorMessage.value = friendlyError;
-          BrutalistSnackBar.show(
-            context,
-            message: friendlyError,
-            type: BrutalistSnackBarType.error,
-          );
+          AppSnackbar.error(context, friendlyError);
         },
       );
     });
@@ -145,7 +114,6 @@ class RegisterPage extends HookConsumerWidget {
                       alignment: Alignment.centerLeft,
                       child: BrutalistIconButton(
                         icon: Icons.arrow_back,
-                        size: 40,
                         onTap: () => context.pop(),
                       ),
                     ),
@@ -160,10 +128,9 @@ class RegisterPage extends HookConsumerWidget {
                           letterSpacing: 2.0,
                           color: context.textPrimary,
                           shadows: [
-                            Shadow(
-                              color: AppColors.accentAmber.withAlpha(80),
-                              offset: const Offset(2, 2),
-                              blurRadius: 0,
+                            const Shadow(
+                              color: AppColors.primaryContainer,
+                              offset: AppDepth.shadowOffsetSmall,
                             ),
                           ],
                         ),
@@ -184,8 +151,8 @@ class RegisterPage extends HookConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Spacing.vMd,
-                          _buildAnimatedItem(
-                            AppTextField(
+                          AuthStagger(
+                            child: AppTextField(
                               controller: nameController,
                               label: 'Nome de exibição',
                               hint: 'Seu apelido na plataforma',
@@ -200,18 +167,22 @@ class RegisterPage extends HookConsumerWidget {
                                 return null;
                               },
                             ),
-                            animController,
-                            const Interval(0.0, 0.25),
+                            animation: animController,
+                            begin: 0.0,
+                            end: 0.25,
                           ),
                           Spacing.vMd,
-                          _buildAnimatedItem(
-                            UsernameField(controller: usernameController),
-                            animController,
-                            const Interval(0.1, 0.33),
+                          AuthStagger(
+                            child: UsernameField(
+                              controller: usernameController,
+                            ),
+                            animation: animController,
+                            begin: 0.1,
+                            end: 0.33,
                           ),
                           Spacing.vMd,
-                          _buildAnimatedItem(
-                            AppTextField(
+                          AuthStagger(
+                            child: AppTextField(
                               controller: emailController,
                               label: 'E-mail',
                               hint: 'seu@email.com',
@@ -227,12 +198,13 @@ class RegisterPage extends HookConsumerWidget {
                                 return null;
                               },
                             ),
-                            animController,
-                            const Interval(0.2, 0.43),
+                            animation: animController,
+                            begin: 0.2,
+                            end: 0.43,
                           ),
                           Spacing.vMd,
-                          _buildAnimatedItem(
-                            AppTextField(
+                          AuthStagger(
+                            child: AppTextField(
                               controller: passwordController,
                               label: 'Senha',
                               hint: 'Mínimo 8 caracteres',
@@ -249,12 +221,13 @@ class RegisterPage extends HookConsumerWidget {
                                 return null;
                               },
                             ),
-                            animController,
-                            const Interval(0.3, 0.53),
+                            animation: animController,
+                            begin: 0.3,
+                            end: 0.53,
                           ),
                           Spacing.vMd,
-                          _buildAnimatedItem(
-                            AppTextField(
+                          AuthStagger(
+                            child: AppTextField(
                               controller: confirmPasswordController,
                               label: 'Confirmar Senha',
                               hint: 'Digite a senha novamente',
@@ -271,19 +244,20 @@ class RegisterPage extends HookConsumerWidget {
                                 return null;
                               },
                             ),
-                            animController,
-                            const Interval(0.4, 0.63),
+                            animation: animController,
+                            begin: 0.4,
+                            end: 0.63,
                           ),
                           if (errorMessage.value != null) ...[
                             Spacing.vSm,
-                            BrutalistErrorBanner(
+                            EmptyState.error(
                               message: errorMessage.value!,
-                              onDismiss: () => errorMessage.value = null,
+                              onRetry: () => errorMessage.value = null,
                             ),
                           ],
                           Spacing.vLg,
-                          _buildAnimatedItem(
-                            AppButton(
+                          AuthStagger(
+                            child: AppButton(
                               label: 'FINALIZAR CADASTRO',
                               size: AppButtonSize.large,
                               isLoading: authState.isLoading,
@@ -303,12 +277,13 @@ class RegisterPage extends HookConsumerWidget {
                                 }
                               },
                             ),
-                            animController,
-                            const Interval(0.55, 0.8),
+                            animation: animController,
+                            begin: 0.55,
+                            end: 0.8,
                           ),
                           Spacing.vMd,
-                          _buildAnimatedItem(
-                            InkWell(
+                          AuthStagger(
+                            child: InkWell(
                               onTap: authState.isLoading
                                   ? null
                                   : () => ref
@@ -321,7 +296,6 @@ class RegisterPage extends HookConsumerWidget {
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: context.borderColor.withAlpha(60),
-                                    width: 1.0,
                                   ),
                                 ),
                                 child: Row(
@@ -348,8 +322,9 @@ class RegisterPage extends HookConsumerWidget {
                                 ),
                               ),
                             ),
-                            animController,
-                            const Interval(0.65, 0.9),
+                            animation: animController,
+                            begin: 0.65,
+                            end: 0.9,
                           ),
                           Spacing.vLg,
                         ],

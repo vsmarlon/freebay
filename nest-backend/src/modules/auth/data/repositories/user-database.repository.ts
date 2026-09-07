@@ -3,7 +3,6 @@ import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { UserRepository } from '../../domain/repositories/user.repository';
 import {
   UserProfileCounts,
   UserSearchResult,
@@ -16,7 +15,7 @@ import {
 const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
 
 @Injectable()
-export class UserDatabaseRepository extends BasePrismaRepository implements UserRepository {
+export class UserDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

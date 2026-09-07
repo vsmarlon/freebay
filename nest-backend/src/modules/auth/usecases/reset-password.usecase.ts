@@ -7,16 +7,16 @@ import {
   RecoveryCodeExpiredError,
   RecoveryCodeNotFoundError,
 } from '@/shared/core/errors';
-import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { ResetPasswordDTO } from '../dtos/password-recovery.dto';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly recoveryRepository: PasswordRecoveryRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly recoveryRepository: PasswordRecoveryDatabaseRepository,
     private readonly sessionRevoker: SessionRevokerService,
   ) {}
 

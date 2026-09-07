@@ -2,15 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/components/post_actions.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 import 'package:freebay/core/components/brutalist_highlighted_text.dart';
 import 'package:freebay/core/components/brutalist_safe_link_dialog.dart';
 
@@ -161,11 +157,10 @@ class _SocialPostState extends State<SocialPost> {
       onTapUp: (_) => setState(() => _isCardPressed = false),
       onTapCancel: () => setState(() => _isCardPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.linear,
+        duration: AppMotion.base,
         transform: Matrix4.translationValues(
-          _isCardPressed ? 2 : 0,
-          _isCardPressed ? 2 : 0,
+          _isCardPressed ? AppDepth.pressOffset : 0.0,
+          _isCardPressed ? AppDepth.pressOffset : 0.0,
           0,
         ),
         decoration: BoxDecoration(
@@ -196,8 +191,7 @@ class _SocialPostState extends State<SocialPost> {
                 onLongPressStart: (_) => setState(() => _isImagePressed = true),
                 onLongPressEnd: (_) => setState(() => _isImagePressed = false),
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  curve: Curves.linear,
+                  duration: AppMotion.base,
                   transform: _isImagePressed
                       ? (Matrix4.identity()
                           ..setEntry(0, 0, 1.02)
@@ -229,8 +223,8 @@ class _SocialPostState extends State<SocialPost> {
                 Center(
                   child: TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0.3, end: 1.2),
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.elasticOut,
+                    duration: AppMotion.enter,
+                    curve: AppMotion.enterCurve,
                     builder: (context, scale, child) {
                       return Transform.scale(
                         scale: scale,
@@ -239,13 +233,13 @@ class _SocialPostState extends State<SocialPost> {
                           decoration: BoxDecoration(
                             color: Colors.black45,
                             border: Border.all(
-                              color: const Color(0xFF8A1083),
+                              color: AppColors.primaryContainer,
                               width: 2,
                             ),
                           ),
                           child: const Icon(
                             Icons.favorite,
-                            color: Color(0xFF8A1083),
+                            color: AppColors.primaryContainer,
                             size: 64,
                           ),
                         ),
@@ -275,7 +269,9 @@ class _SocialPostState extends State<SocialPost> {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(gradient: AppColors.brutalistGradient),
+          decoration: const BoxDecoration(
+            gradient: AppColors.brutalistGradient,
+          ),
           child: BrutalistHighlightedText(
             text: widget.content ?? '',
             style: AppTypography.bodyMedium.copyWith(
@@ -319,7 +315,6 @@ class _SocialPostState extends State<SocialPost> {
               height: 40,
               decoration: const BoxDecoration(
                 color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.zero,
               ),
               child:
                   widget.userAvatarUrl != null &&

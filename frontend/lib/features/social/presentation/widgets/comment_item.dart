@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_highlighted_text.dart';
-import 'package:freebay/core/components/brutalist_safe_link_dialog.dart';
 
 class CommentItem extends StatelessWidget {
   final CommentEntity comment;
@@ -115,7 +111,9 @@ class CommentItem extends StatelessWidget {
                           Icon(
                             isLiked ? Icons.favorite : Icons.favorite_border,
                             size: 14,
-                            color: isLiked ? Colors.red : AppColors.mediumGray,
+                            color: isLiked
+                                ? AppColors.error
+                                : AppColors.mediumGray,
                           ),
                           Spacing.hXs,
                           if (likesCount > 0)
@@ -124,7 +122,7 @@ class CommentItem extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isLiked
-                                    ? Colors.red
+                                    ? AppColors.error
                                     : AppColors.mediumGray,
                               ),
                             ),

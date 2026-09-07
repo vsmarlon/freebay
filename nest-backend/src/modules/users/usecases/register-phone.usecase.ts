@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, InvalidPhoneError } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { SmsService } from '../services/sms.service';
 
 export interface RegisterPhoneInput {
@@ -14,8 +14,8 @@ export interface RegisterPhoneInput {
 @Injectable()
 export class RegisterPhoneUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly phoneVerificationRepository: PhoneVerificationRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly phoneVerificationRepository: PhoneVerificationDatabaseRepository,
     private readonly smsService: SmsService,
   ) {}
 

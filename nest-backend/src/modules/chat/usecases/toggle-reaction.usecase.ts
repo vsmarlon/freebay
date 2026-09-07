@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ChatThreadType } from '@prisma/client';
 
@@ -16,7 +16,7 @@ export interface ReactionSummary {
 @Injectable()
 export class ToggleReactionUseCase {
   constructor(
-    private readonly conversationRepository: ConversationRepository,
+    private readonly conversationRepository: ConversationDatabaseRepository,
     private readonly threadAccess: ChatThreadAccessService,
   ) {}
 

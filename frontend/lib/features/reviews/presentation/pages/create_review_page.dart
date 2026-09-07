@@ -2,18 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/image_picker_grid.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/features/reviews/domain/usecases/create_review_usecase.dart';
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class CreateReviewPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -106,10 +99,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     ),
                     child: Row(
                       children: [
-                        UserAvatar(
-                          imageUrl: widget.reviewedAvatarUrl,
-                          size: AppAvatarSize.medium,
-                        ),
+                        UserAvatar(imageUrl: widget.reviewedAvatarUrl),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -175,14 +165,12 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                       filled: true,
                       fillColor: context.surfaceColor,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.zero,
                         borderSide: BorderSide(
                           color: context.borderColor,
                           width: 2,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.zero,
                         borderSide: BorderSide(
                           color: context.borderColor,
                           width: 2,

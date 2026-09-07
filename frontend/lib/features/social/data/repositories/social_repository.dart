@@ -10,12 +10,10 @@ import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/entities/user_post_entry.dart';
 import 'package:freebay/features/social/data/entities/feed_page_result.dart';
 import 'package:freebay/features/social/data/entities/user_search_page_result.dart';
-import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
 
-class SocialRepository extends BaseHttpRepository implements ISocialRepository {
+class SocialRepository extends BaseHttpRepository {
   SocialRepository({super.client});
 
-  @override
   Future<Either<Failure, FeedPageResult>> getFeed({
     int limit = 20,
     String? cursor,
@@ -50,7 +48,6 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     );
   }
 
-  @override
   Future<Either<Failure, PostEntity>> createPost({
     String? content,
     String? imagePath,
@@ -78,20 +75,16 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     }
   }
 
-  @override
   Future<Either<Failure, void>> likePost(String postId) => safeVoid(
     () => client.post('/social/posts/$postId/like', data: {'_': true}),
   );
 
-  @override
   Future<Either<Failure, void>> unlikePost(String postId) =>
       safeVoid(() => client.patch('/social/posts/$postId/unlike'));
 
-  @override
   Future<Either<Failure, void>> deletePost(String postId) =>
       safeVoid(() => client.patch('/social/posts/$postId/delete'));
 
-  @override
   Future<Either<Failure, void>> commentPost(
     String postId,
     String content, {
@@ -106,7 +99,6 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     ),
   );
 
-  @override
   Future<Either<Failure, List<CommentEntity>>> getComments(
     String postId, {
     int limit = 20,
@@ -118,24 +110,19 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     fromJson: CommentEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, void>> likeComment(String commentId) => safeVoid(
     () => client.post('/social/comments/$commentId/like', data: {'_': true}),
   );
 
-  @override
   Future<Either<Failure, void>> unlikeComment(String commentId) =>
       safeVoid(() => client.patch('/social/comments/$commentId/unlike'));
 
-  @override
   Future<Either<Failure, void>> repost(String postId) =>
       safeVoid(() => client.post('/social/posts/$postId/share'));
 
-  @override
   Future<Either<Failure, void>> unrepost(String postId) =>
       safeVoid(() => client.patch('/social/posts/$postId/unshare'));
 
-  @override
   Future<Either<Failure, void>> sharePost(String postId, String? content) =>
       safeVoid(
         () => client.post(
@@ -144,7 +131,6 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
         ),
       );
 
-  @override
   Future<Either<Failure, StoriesResponse>> getStories() =>
       safeGet<StoriesResponse>(
         '/stories',
@@ -166,7 +152,6 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
         },
       );
 
-  @override
   Future<Either<Failure, StoryEntity>> createStory(String imagePath) async {
     try {
       final data = FormData.fromMap({
@@ -187,15 +172,12 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     }
   }
 
-  @override
   Future<Either<Failure, void>> deleteStory(String storyId) =>
       safeVoid(() => client.patch('/stories/$storyId/delete'));
 
-  @override
   Future<Either<Failure, void>> viewStory(String storyId) =>
       safeVoid(() => client.post('/stories/$storyId/view'));
 
-  @override
   Future<Either<Failure, UserSearchPageResult>> searchUsers({
     String? query,
     int limit = 20,
@@ -226,7 +208,6 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     },
   );
 
-  @override
   Future<Either<Failure, List<UserSearchEntity>>> getSuggestions({
     int limit = 10,
   }) => safeGetList<UserSearchEntity>(
@@ -236,15 +217,12 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     fromJson: UserSearchEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, void>> followUser(String userId) =>
       safeVoid(() => client.post('/users/$userId/follow'));
 
-  @override
   Future<Either<Failure, void>> unfollowUser(String userId) =>
       safeVoid(() => client.patch('/users/$userId/unfollow'));
 
-  @override
   Future<Either<Failure, List<PostEntity>>> searchPosts({
     String? query,
     String filter = 'all',
@@ -262,7 +240,6 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     fromJson: PostEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, List<PostEntity>>> getPostsByUser(
     String userId, {
     int limit = 20,
@@ -282,7 +259,6 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     },
   );
 
-  @override
   Future<Either<Failure, List<PostEntity>>> getLikedPosts({
     int limit = 20,
     String? cursor,
@@ -293,16 +269,13 @@ class SocialRepository extends BaseHttpRepository implements ISocialRepository {
     fromJson: PostEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, void>> savePost(String postId) => safeVoid(
     () => client.post('/social/posts/$postId/save', data: {'_': true}),
   );
 
-  @override
   Future<Either<Failure, void>> unsavePost(String postId) =>
       safeVoid(() => client.patch('/social/posts/$postId/unsave'));
 
-  @override
   Future<Either<Failure, List<StoryEntity>>> getUserStories(String userId) =>
       safeGetList<StoryEntity>(
         '/stories/user/$userId',

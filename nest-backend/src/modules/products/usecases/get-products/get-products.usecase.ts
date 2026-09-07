@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { ProductQueryDTO } from '../../dtos/product.dto';
 import { ProductListPayload } from '../../types/product.types';
 
 @Injectable()
 export class GetProductsUseCase {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(private readonly productRepository: ProductDatabaseRepository) {}
 
   async execute(query: ProductQueryDTO): Promise<Either<AppError, { products: ProductListPayload[]; nextCursor: string | null }>> {
     const limit = query.limit ?? 20;

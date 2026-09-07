@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, EmailAlreadyExistsError, UsernameAlreadyExistsError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RegisterDTO } from '../dtos/auth.dto';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
 
 @Injectable()
 export class RegisterUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(private readonly userRepository: UserDatabaseRepository) {}
 
   async execute(input: RegisterDTO): Promise<Either<AppError, AuthResponse>> {
     const existingResult = await this.userRepository.findByEmail(input.email);

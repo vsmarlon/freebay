@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AccountDeletionBlockedError, AppError, UserNotFoundError } from '@/shared/core/errors';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { AccountLifecycleRepository } from '../domain/repositories/account-lifecycle.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { AccountDeletionState } from '../types/account.types';
 
 export const ACCOUNT_DELETION_GRACE_DAYS = 30;
@@ -11,8 +11,8 @@ export const ACCOUNT_DELETION_GRACE_DAYS = 30;
 @Injectable()
 export class RequestAccountDeletionUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly accountLifecycleRepository: AccountLifecycleRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly accountLifecycleRepository: AccountLifecycleDatabaseRepository,
     private readonly sessionRevoker: SessionRevokerService,
   ) {}
 

@@ -1,15 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/infinite_scroll_listener.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
@@ -194,8 +189,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
+          duration: AppMotion.enter,
+          curve: AppMotion.enterCurve,
         );
       }
     });
@@ -217,7 +212,6 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       senderId: currentUserId ?? '',
       clientMessageId: tempId,
       content: text,
-      type: 'TEXT',
       replyToId: replyId,
       createdAt: DateTime.now(),
       viewOnce: viewOnce,
@@ -284,11 +278,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
             onTap: () async {
               Navigator.pop(ctx);
               final isArchived = _preference?.isArchived ?? false;
-              await ref.read(archiveChatUsecaseProvider)(
-                widget.chatId,
-                _threadType,
-                !isArchived,
-              );
+              await ref
+                  .read(chatRepositoryProvider)
+                  .archiveChat(widget.chatId, _threadType, !isArchived);
               if (mounted) context.pop();
             },
           ),
@@ -312,11 +304,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
               return GestureDetector(
                 onTap: () async {
                   setSheetState(() => currentTheme = t.apiValue);
-                  final res = await ref.read(setChatThemeUsecaseProvider)(
-                    widget.chatId,
-                    _threadType,
-                    t.apiValue,
-                  );
+                  final res = await ref
+                      .read(chatRepositoryProvider)
+                      .setTheme(widget.chatId, _threadType, t.apiValue);
                   res.fold((_) {}, (p) {
                     if (mounted) {
                       setState(() => _preference = p);

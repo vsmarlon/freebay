@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { ShareRepository } from '../domain/repositories/share.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PrismaShareRepository } from '../data/repositories/share-database.repository';
 
 @Injectable()
 export class UnsharePostUseCase {
   constructor(
-    private readonly postRepository: PostRepository,
-    private readonly shareRepository: ShareRepository,
+    private readonly postRepository: PrismaPostRepository,
+    private readonly shareRepository: PrismaShareRepository,
   ) {}
 
   async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {

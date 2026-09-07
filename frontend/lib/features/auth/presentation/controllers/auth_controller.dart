@@ -2,10 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
-import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:freebay/features/auth/domain/usecases/login_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/register_usecase.dart';
-import 'package:freebay/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/request_password_recovery_usecase.dart';
 import 'package:freebay/features/auth/domain/usecases/verify_password_recovery_code_usecase.dart';
@@ -25,7 +23,7 @@ import 'package:freebay/features/chat/presentation/providers/chat_provider.dart'
 import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/shared/config/app_config.dart';
 
-final authRepositoryProvider = Provider<IAuthRepository>((ref) {
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
 });
 
@@ -34,9 +32,6 @@ final loginUsecaseProvider = Provider(
 );
 final registerUsecaseProvider = Provider(
   (ref) => RegisterUsecase(ref.watch(authRepositoryProvider)),
-);
-final logoutUsecaseProvider = Provider(
-  (ref) => LogoutUsecase(ref.watch(authRepositoryProvider)),
 );
 final getCurrentUserUsecaseProvider = Provider(
   (ref) => GetCurrentUserUsecase(ref.watch(authRepositoryProvider)),
@@ -250,7 +245,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
 
   Future<void> logout() async {
     state = const AsyncValue.loading();
-    final result = await ref.read(logoutUsecaseProvider)();
+    final result = await ref.read(authRepositoryProvider).logout();
 
     result.fold(
       (failure) =>

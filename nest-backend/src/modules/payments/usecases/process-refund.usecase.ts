@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
 import { SellerPayoutService } from '../services/seller-payout.service';
 
 @Injectable()
@@ -10,8 +10,8 @@ export class ProcessRefundUseCase {
   private readonly logger = new Logger(ProcessRefundUseCase.name);
 
   constructor(
-    private readonly transactionRepo: TransactionRepository,
-    private readonly orderRepo: OrderRepository,
+    private readonly transactionRepo: TransactionDatabaseRepository,
+    private readonly orderRepo: PrismaOrderRepository,
     private readonly payoutService: SellerPayoutService,
   ) {}
 

@@ -2,13 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_card.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/presentation/widgets/product_results_grid.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
 import 'package:freebay/features/product/presentation/widgets/product_filter_bar.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
@@ -16,9 +11,6 @@ import 'package:freebay/features/product/domain/usecases/get_products_usecase.da
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
 
 class ExplorarPage extends ConsumerStatefulWidget {
   const ExplorarPage({super.key});
@@ -78,7 +70,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                 onPressed: () => setState(() => _showFilters = !_showFilters),
               ),
               IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.add_box_outlined,
                   color: AppColors.primaryContainer,
                 ),
@@ -94,7 +86,6 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                   primary: false,
                   floating: true,
                   snap: true,
-                  pinned: false,
                   elevation: 0,
                   backgroundColor: context.surfaceColor,
                   surfaceTintColor: Colors.transparent,
@@ -170,7 +161,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
           categoriesAsync.when(
             data: (categories) {
               if (categories.isEmpty) {
-                return EmptyState(
+                return const EmptyState(
                   icon: Icons.category_outlined,
                   title: 'NENHUMA CATEGORIA',
                   subtitle: 'Nenhuma categoria disponível',
@@ -218,25 +209,9 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
     }
 
     if (feedState.error != null && feedState.products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: AppColors.error, size: 48),
-            Spacing.vMd,
-            Text(
-              'Erro ao carregar\nerro: ${feedState.error}',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: context.textPrimary),
-            ),
-            Spacing.vMd,
-            AppButton(
-              label: 'Tentar novamente',
-              onPressed: () =>
-                  ref.read(productsFeedProvider(params).notifier).load(),
-            ),
-          ],
-        ),
+      return EmptyState.error(
+        message: 'Erro ao carregar\n${feedState.error}',
+        onRetry: () => ref.read(productsFeedProvider(params).notifier).load(),
       );
     }
 
@@ -249,7 +224,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                EmptyState(
+                const EmptyState(
                   icon: Icons.search_off,
                   title: 'NENHUM PRODUTO',
                   subtitle: 'Nenhum produto encontrado.',

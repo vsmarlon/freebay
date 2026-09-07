@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { USERNAME_REGEX } from '../dtos/auth.dto';
 
 export interface CheckUsernameAvailabilityInput {
@@ -14,7 +14,7 @@ export interface CheckUsernameAvailabilityOutput {
 
 @Injectable()
 export class CheckUsernameAvailabilityUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(private readonly userRepository: UserDatabaseRepository) {}
 
   async execute(
     input: CheckUsernameAvailabilityInput,

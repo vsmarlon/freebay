@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 
 /// Renders a PRODUCT_CARD message bubble inside the chat.
@@ -41,7 +39,7 @@ class ProductCardBubble extends StatelessWidget {
           color: context.isDark
               ? AppColors.surfaceContainerDark
               : AppColors.surfaceContainerLow,
-          border: Border.all(color: AppColors.outlineVariant, width: 1),
+          border: Border.all(color: AppColors.outlineVariant),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,7 +90,7 @@ class ProductCardBubble extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       priceStr,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -101,7 +99,7 @@ class ProductCardBubble extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Ver produto →',
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,

@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { CommentRepository } from '../domain/repositories/comment.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
 import { CreateCommentInput, CreateCommentOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 @Injectable()
 export class CommentUseCase {
   constructor(
-    private readonly commentRepository: CommentRepository,
-    private readonly postRepository: PostRepository,
+    private readonly commentRepository: PrismaCommentRepository,
+    private readonly postRepository: PrismaPostRepository,
     private readonly notificationService: NotificationService,
   ) {}
 

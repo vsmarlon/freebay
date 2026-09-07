@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
-import 'package:freebay/features/profile/domain/repositories/i_profile_repository.dart';
-import 'package:freebay/features/profile/domain/usecases/get_profile_usecase.dart';
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -45,13 +43,9 @@ class UserPosts extends _$UserPosts {
 }
 
 // Providers
-final profileRepositoryProvider = Provider<IProfileRepository>((ref) {
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository();
 });
-
-final getProfileUsecaseProvider = Provider(
-  (ref) => GetProfileUsecase(ref.watch(profileRepositoryProvider)),
-);
 
 // Provides user profile details
 final profileFutureProvider = FutureProvider.family<UserEntity, String>((
@@ -59,8 +53,7 @@ final profileFutureProvider = FutureProvider.family<UserEntity, String>((
   userId,
 ) async {
   ref.watch(authControllerProvider);
-  final usecase = ref.watch(getProfileUsecaseProvider);
-  final result = await usecase(userId);
+  final result = await ref.read(profileRepositoryProvider).getProfile(userId);
 
   return result.fold(
     (failure) => throw Exception(failure.message),

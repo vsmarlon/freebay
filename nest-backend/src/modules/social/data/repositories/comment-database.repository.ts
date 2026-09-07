@@ -3,11 +3,10 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { CommentRepository } from '../../domain/repositories/comment.repository';
 import { CommentFlatPayload, CommentPayload, COMMENT_FLAT_INCLUDE, COMMENT_INCLUDE } from '../../types/social.types';
 
 @Injectable()
-export class PrismaCommentRepository extends BasePrismaRepository implements CommentRepository {
+export class PrismaCommentRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

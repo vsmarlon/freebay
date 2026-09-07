@@ -2,7 +2,7 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/domain/repositories/i_order_repository.dart';
+import 'package:freebay/features/orders/data/repositories/order_repository.dart';
 
 class GetMySalesParams {
   final String? cursor;
@@ -14,7 +14,7 @@ class GetMySalesParams {
 
 class GetMySalesUsecase
     implements Usecase<CursorPage<OrderEntity>, GetMySalesParams> {
-  final IOrderRepository _repository;
+  final OrderRepository _repository;
 
   GetMySalesUsecase(this._repository);
 

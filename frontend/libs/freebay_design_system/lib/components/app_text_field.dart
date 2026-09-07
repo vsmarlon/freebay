@@ -111,18 +111,22 @@ class _AppTextFieldState extends State<AppTextField> {
               )
             : null,
         hintText: widget.hint,
-        hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.mediumGray),
+        hintStyle: AppTypography.bodyMedium.copyWith(
+          color: AppColors.mediumGray,
+        ),
         errorText: widget.errorText,
         filled: false,
         contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
-        prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon, color: AppColors.mediumGray) : null,
+        prefixIcon: widget.prefixIcon != null
+            ? Icon(widget.prefixIcon, color: AppColors.mediumGray)
+            : null,
         suffixIcon: builtSuffix,
         border: const UnderlineInputBorder(),
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: AppColors.mediumGray),
         ),
         focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.accentAmber, width: 2.0),
+          borderSide: BorderSide(color: AppColors.primaryContainer, width: 2.0),
         ),
         errorBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: AppColors.error, width: 2.0),

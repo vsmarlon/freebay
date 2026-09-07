@@ -1,9 +1,9 @@
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
-import 'package:freebay/features/reviews/domain/repositories/i_review_repository.dart';
+import 'package:freebay/features/reviews/data/repositories/review_repository.dart';
 
 class CanReviewOrderUsecase implements Usecase<bool, String> {
-  final IReviewRepository _repository;
+  final ReviewRepository _repository;
 
   CanReviewOrderUsecase(this._repository);
 

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError, BadRequestError } from '@/shared/core/errors';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { UpdateProductInput, UpdateProductOutput } from '../../dtos/product.dto';
 
 @Injectable()
 export class UpdateProductUseCase {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(private readonly productRepository: ProductDatabaseRepository) {}
 
   async execute(input: UpdateProductInput): Promise<Either<AppError, UpdateProductOutput>> {
     const product = await this.productRepository.findById(input.productId);

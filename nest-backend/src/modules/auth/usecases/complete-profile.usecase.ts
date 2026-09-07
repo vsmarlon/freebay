@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, UsernameAlreadyExistsError, UserNotFoundError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { CompleteProfileDTO } from '../dtos/auth.dto';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
 
 @Injectable()
 export class CompleteProfileUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(private readonly userRepository: UserDatabaseRepository) {}
 
   async execute(
     userId: string,

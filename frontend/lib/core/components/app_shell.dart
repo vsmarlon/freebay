@@ -3,13 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/components/brutalist_fab.dart';
 import 'package:freebay/core/components/app_shell_scaffold_key.dart';
 import 'package:freebay/core/components/hide_on_scroll.dart';
@@ -95,7 +92,7 @@ class _AppShellState extends State<AppShell>
       _pageController.animateToPage(
         index,
         duration: kShellPageDuration,
-        curve: Curves.linear,
+        curve: AppMotion.baseCurve,
       );
     } else {
       widget.navigationShell.goBranch(index);
@@ -197,8 +194,7 @@ class _AppShellState extends State<AppShell>
                     edge: ScrollBarEdge.bottom,
                     child: _BrutalistNavBar(
                       selectedIndex: selectedIndex,
-                      onDestinationSelected: (index) =>
-                          _onDestinationSelected(index),
+                      onDestinationSelected: _onDestinationSelected,
                     ),
                   ),
                 ),
@@ -224,7 +220,6 @@ class _BrutalistNavBar extends StatelessWidget {
     final isDark = context.isDark;
 
     return ClipRRect(
-      borderRadius: BorderRadius.zero,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
@@ -232,7 +227,6 @@ class _BrutalistNavBar extends StatelessWidget {
             color: isDark
                 ? AppColors.surfaceDark.withAlpha(220)
                 : AppColors.white.withAlpha(230),
-            borderRadius: BorderRadius.zero,
             border: Border.all(
               color: isDark
                   ? Colors.white.withAlpha(30)
@@ -341,7 +335,6 @@ class _NavItem extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 2, top: 2),
                   decoration: const BoxDecoration(
                     color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.zero,
                   ),
                 )
               else

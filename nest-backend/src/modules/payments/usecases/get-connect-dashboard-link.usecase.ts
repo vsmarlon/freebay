@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
 import { StripeProvider } from '../providers/stripe-provider';
-import { ConnectAccountRepository } from '../domain/repositories/connect-account.repository';
+import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
 
 @Injectable()
 export class GetConnectDashboardLinkUseCase {
   constructor(
-    private readonly connectRepo: ConnectAccountRepository,
+    private readonly connectRepo: ConnectAccountDatabaseRepository,
     private readonly stripe: StripeProvider,
   ) {}
 

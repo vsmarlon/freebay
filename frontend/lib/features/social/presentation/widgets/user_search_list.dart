@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/infinite_scroll_listener.dart';
 
 const _loadMoreThreshold = 200.0;
 
@@ -34,17 +29,13 @@ class UserSearchList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (users.isEmpty && !isLoading) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.person_search,
-              size: 64,
-              color: AppColors.mediumGray,
-            ),
+            Icon(Icons.person_search, size: 64, color: AppColors.mediumGray),
             Spacing.vMd,
-            const Text(
+            Text(
               'Nenhum usuário encontrado',
               style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
             ),

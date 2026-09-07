@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+const { validateTestDatabaseUrl } = require('../../scripts/safe-prisma-db-push');
 
 /**
  * Create a mock ConfigService for testing
@@ -59,38 +60,20 @@ export function wait(ms: number): Promise<void> {
  * Clean database (alternative to TRUNCATE)
  */
 export async function cleanDatabase(prisma: PrismaClient): Promise<void> {
-  const tableNames = [
-    'Review',
-    'Dispute',
-    'Withdrawal',
-    'Transaction',
-    'Order',
-    'ChatMessage',
-    'DirectMessage',
-    'DirectConversation',
-    'StoryView',
-    'Story',
-    'Share',
-    'CommentLike',
-    'Comment',
-    'Like',
-    'Post',
-    'ProductImage',
-    'Product',
-    'Wallet',
-    'Block',
-    'Follow',
-    'Notification',
-    'Report',
-    'User',
-    'Category',
-  ];
+  assertSafeTestEnvironment();
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE
+    "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",
+    "ConversationPreference", "DirectMessage", "DirectConversation",
+    "ChatMessage", "ReviewImage", "Review", "Dispute",
+    "WalletEntry", "ConnectAccount", "PaymentGroup", "Transaction", "Order",
+    "CartItem", "Favorite", "StoryView", "Story", "SavedPost", "Share",
+    "CommentMention", "CommentLike", "Comment", "PostMention", "Like", "Post",
+    "Block", "Follow", "Notification", "Report", "ModerationAction", "BugReport",
+    "ProductImage", "Product", "Wallet", "User", "Category" CASCADE`);
+}
 
-  for (const tableName of tableNames) {
-    try {
-      await prisma.$executeRawUnsafe(`DELETE FROM "${tableName}"`);
-    } catch {
-      // Ignore errors for tables that don't exist
-    }
+export function assertSafeTestEnvironment(): void {
+  if (process.env.NODE_ENV !== 'test' || !validateTestDatabaseUrl(process.env.DATABASE_URL)) {
+    throw new Error('Refusing test database cleanup outside the configured test database');
   }
 }

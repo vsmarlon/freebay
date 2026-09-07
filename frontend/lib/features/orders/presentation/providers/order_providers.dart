@@ -2,14 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/data/repositories/order_repository.dart';
 import 'package:freebay/features/orders/data/services/order_service.dart';
-import 'package:freebay/features/orders/domain/repositories/i_order_repository.dart';
 import 'package:freebay/features/orders/domain/usecases/cancel_order_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/can_review_order_usecase.dart';
-import 'package:freebay/features/orders/domain/usecases/confirm_delivery_usecase.dart';
-import 'package:freebay/features/orders/domain/usecases/create_order_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/get_my_purchases_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/get_my_sales_usecase.dart';
-import 'package:freebay/features/orders/domain/usecases/get_order_usecase.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -19,24 +15,15 @@ part 'order_providers.g.dart';
 
 final orderServiceProvider = Provider((ref) => OrderService());
 
-final orderRepositoryProvider = Provider<IOrderRepository>((ref) {
+final orderRepositoryProvider = Provider<OrderRepository>((ref) {
   return OrderRepository(ref.watch(orderServiceProvider));
 });
 
-final getOrderUsecaseProvider = Provider(
-  (ref) => GetOrderUsecase(ref.watch(orderRepositoryProvider)),
-);
 final getMyPurchasesUsecaseProvider = Provider(
   (ref) => GetMyPurchasesUsecase(ref.watch(orderRepositoryProvider)),
 );
 final getMySalesUsecaseProvider = Provider(
   (ref) => GetMySalesUsecase(ref.watch(orderRepositoryProvider)),
-);
-final confirmDeliveryUsecaseProvider = Provider(
-  (ref) => ConfirmDeliveryUsecase(ref.watch(orderRepositoryProvider)),
-);
-final createOrderUsecaseProvider = Provider(
-  (ref) => CreateOrderUsecase(ref.watch(orderRepositoryProvider)),
 );
 final cancelOrderUsecaseProvider = Provider(
   (ref) => CancelOrderUsecase(ref.watch(orderRepositoryProvider)),
@@ -45,13 +32,12 @@ final canReviewOrderUsecaseProvider = Provider(
   (ref) => CanReviewOrderUsecase(ref.watch(orderRepositoryProvider)),
 );
 
-@Riverpod(keepAlive: false)
+@Riverpod()
 class OrderDetail extends _$OrderDetail {
   @override
   OrderDetailState build(String orderId) {
-    ref.watch(getOrderUsecaseProvider);
+    ref.watch(orderRepositoryProvider);
     ref.watch(canReviewOrderUsecaseProvider);
-    ref.watch(confirmDeliveryUsecaseProvider);
     ref.watch(cancelOrderUsecaseProvider);
     return const OrderDetailState();
   }
@@ -59,7 +45,9 @@ class OrderDetail extends _$OrderDetail {
   Future<void> loadOrder() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    final orderResult = await ref.read(getOrderUsecaseProvider)(orderId);
+    final orderResult = await ref
+        .read(orderRepositoryProvider)
+        .getOrder(orderId);
     final canReviewResult = await ref.read(canReviewOrderUsecaseProvider)(
       orderId,
     );
@@ -72,7 +60,7 @@ class OrderDetail extends _$OrderDetail {
           (_) => state = state.copyWith(
             isLoading: false,
             order: order,
-            canReviewResponse: const CanReviewResponse(canReview: false),
+            canReviewResponse: const CanReviewResponse(),
           ),
           (canReview) => state = state.copyWith(
             isLoading: false,
@@ -87,7 +75,9 @@ class OrderDetail extends _$OrderDetail {
   Future<bool> confirmDelivery() async {
     state = state.copyWith(isPerformingAction: true, error: null);
 
-    final result = await ref.read(confirmDeliveryUsecaseProvider)(orderId);
+    final result = await ref
+        .read(orderRepositoryProvider)
+        .confirmDelivery(orderId);
     return result.fold(
       (failure) {
         state = state.copyWith(

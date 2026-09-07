@@ -1,3 +1,4 @@
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,11 +16,11 @@ Page<T> buildSlidePage<T>({
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
-        curve: Curves.linear,
+        curve: AppMotion.baseCurve,
       );
       final curvedSecondary = CurvedAnimation(
         parent: secondaryAnimation,
-        curve: Curves.linear,
+        curve: AppMotion.baseCurve,
       );
 
       return SlideTransition(
@@ -104,7 +105,10 @@ Page<T> buildFadePage<T>({
     reverseTransitionDuration: const Duration(milliseconds: 200),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
-        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        opacity: CurvedAnimation(
+          parent: animation,
+          curve: AppMotion.enterCurve,
+        ),
         child: child,
       );
     },
@@ -137,18 +141,16 @@ Page<T> buildSharedAxisHorizontalPage<T>({
   return CustomTransitionPage<T>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 300),
-    reverseTransitionDuration: const Duration(milliseconds: 300),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
+        curve: AppMotion.enterCurve,
+        reverseCurve: AppMotion.enterCurve,
       );
       final curvedSecondary = CurvedAnimation(
         parent: secondaryAnimation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
+        curve: AppMotion.enterCurve,
+        reverseCurve: AppMotion.enterCurve,
       );
       return SlideTransition(
         position: Tween<Offset>(
@@ -185,13 +187,11 @@ Page<T> buildSharedAxisVerticalPage<T>({
   return CustomTransitionPage<T>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 300),
-    reverseTransitionDuration: const Duration(milliseconds: 300),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
+        curve: AppMotion.enterCurve,
+        reverseCurve: AppMotion.enterCurve,
       );
       return SlideTransition(
         position: Tween<Offset>(

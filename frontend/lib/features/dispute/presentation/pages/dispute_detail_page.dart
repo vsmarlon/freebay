@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/brutalist_box.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class DisputeDetailPage extends ConsumerStatefulWidget {
   final String disputeId;
@@ -129,7 +122,7 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
           ),
           if (dispute.isOpen) ...[
             Spacing.vLg,
-            Text('Enviar Evidência', style: AppTypography.h3),
+            const Text('Enviar Evidência', style: AppTypography.h3),
             Spacing.vSm,
             BrutalistBox(
               child: TextField(
@@ -149,7 +142,7 @@ class _DisputeDetailPageState extends ConsumerState<DisputeDetailPage> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: state.isSubmitting ? null : () => _submitEvidence(),
+                    onTap: state.isSubmitting ? null : _submitEvidence,
                     child: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Center(

@@ -2,11 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/services/upload_service.dart';
 
 /// Result returned by the attachment bottom sheet.

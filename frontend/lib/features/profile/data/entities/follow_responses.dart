@@ -1,6 +1,14 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'follow_responses.g.dart';
+
+@JsonSerializable()
 class FollowResponse {
+  @JsonKey(defaultValue: false)
   final bool following;
+  @JsonKey(defaultValue: 0)
   final int followersCount;
+  @JsonKey(defaultValue: 0)
   final int followingCount;
 
   const FollowResponse({
@@ -9,22 +17,19 @@ class FollowResponse {
     required this.followingCount,
   });
 
-  factory FollowResponse.fromJson(Map<String, dynamic> json) => FollowResponse(
-    following: json['following'] as bool? ?? false,
-    followersCount: json['followersCount'] as int? ?? 0,
-    followingCount: json['followingCount'] as int? ?? 0,
-  );
+  factory FollowResponse.fromJson(Map<String, dynamic> json) =>
+      _$FollowResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-    'following': following,
-    'followersCount': followersCount,
-    'followingCount': followingCount,
-  };
+  Map<String, dynamic> toJson() => _$FollowResponseToJson(this);
 }
 
+@JsonSerializable()
 class FollowStatusResponse {
+  @JsonKey(defaultValue: false)
   final bool isFollowing;
+  @JsonKey(defaultValue: 0)
   final int followersCount;
+  @JsonKey(defaultValue: 0)
   final int followingCount;
 
   const FollowStatusResponse({
@@ -34,27 +39,22 @@ class FollowStatusResponse {
   });
 
   factory FollowStatusResponse.fromJson(Map<String, dynamic> json) =>
-      FollowStatusResponse(
-        isFollowing: json['isFollowing'] as bool? ?? false,
-        followersCount: json['followersCount'] as int? ?? 0,
-        followingCount: json['followingCount'] as int? ?? 0,
-      );
+      _$FollowStatusResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-    'isFollowing': isFollowing,
-    'followersCount': followersCount,
-    'followingCount': followingCount,
-  };
+  Map<String, dynamic> toJson() => _$FollowStatusResponseToJson(this);
 }
 
-class FollowListUser {
+@JsonSerializable()
+class UserBrief {
   final String id;
   final String displayName;
   final String? avatarUrl;
+  @JsonKey(defaultValue: false)
   final bool isVerified;
+  @JsonKey(defaultValue: 0.0)
   final double reputationScore;
 
-  const FollowListUser({
+  const UserBrief({
     required this.id,
     required this.displayName,
     this.avatarUrl,
@@ -62,27 +62,22 @@ class FollowListUser {
     required this.reputationScore,
   });
 
-  factory FollowListUser.fromJson(Map<String, dynamic> json) => FollowListUser(
-    id: json['id'] as String,
-    displayName: json['displayName'] as String,
-    avatarUrl: json['avatarUrl'] as String?,
-    isVerified: json['isVerified'] as bool? ?? false,
-    reputationScore: (json['reputationScore'] as num?)?.toDouble() ?? 0.0,
-  );
+  factory UserBrief.fromJson(Map<String, dynamic> json) =>
+      _$UserBriefFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'displayName': displayName,
-    'avatarUrl': avatarUrl,
-    'isVerified': isVerified,
-    'reputationScore': reputationScore,
-  };
+  Map<String, dynamic> toJson() => _$UserBriefToJson(this);
 }
 
+typedef FollowListUser = UserBrief;
+
+@JsonSerializable()
 class FollowListResponse {
   final List<FollowListUser> users;
+  @JsonKey(defaultValue: 0)
   final int total;
+  @JsonKey(defaultValue: 0)
   final int limit;
+  @JsonKey(defaultValue: 0)
   final int offset;
 
   const FollowListResponse({
@@ -93,21 +88,7 @@ class FollowListResponse {
   });
 
   factory FollowListResponse.fromJson(Map<String, dynamic> json) =>
-      FollowListResponse(
-        users:
-            (json['users'] as List<dynamic>?)
-                ?.map((e) => FollowListUser.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            const [],
-        total: json['total'] as int? ?? 0,
-        limit: json['limit'] as int? ?? 0,
-        offset: json['offset'] as int? ?? 0,
-      );
+      _$FollowListResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-    'users': users.map((e) => e.toJson()).toList(),
-    'total': total,
-    'limit': limit,
-    'offset': offset,
-  };
+  Map<String, dynamic> toJson() => _$FollowListResponseToJson(this);
 }

@@ -1,3 +1,4 @@
+import '../tokens/app_depth.dart';
 import 'package:flutter/material.dart';
 import '../tokens/app_colors.dart';
 import '../tokens/app_typography.dart';
@@ -23,7 +24,6 @@ class BrutalistLogo extends StatelessWidget {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (showBadge) ...[
           Container(
@@ -32,19 +32,12 @@ class BrutalistLogo extends StatelessWidget {
               color: isDark
                   ? AppColors.primaryContainer.withAlpha(40)
                   : AppColors.primaryContainer.withAlpha(25),
-              border: Border.all(
-                color: AppColors.primaryContainer,
-                width: 1.5,
-              ),
+              border: Border.all(color: AppColors.primaryContainer, width: 1.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  color: AppColors.success,
-                ),
+                Container(width: 6, height: 6, color: AppColors.success),
                 const SizedBox(width: 6),
                 Text(
                   'DECENTRALIZED COMMERCE',
@@ -64,7 +57,6 @@ class BrutalistLogo extends StatelessWidget {
           const SizedBox(height: 12),
         ],
 
-        // Main Brand Logo Text
         RichText(
           textAlign: TextAlign.center,
           text: TextSpan(
@@ -77,10 +69,9 @@ class BrutalistLogo extends StatelessWidget {
               letterSpacing: -1.0,
               color: context.textPrimary,
               shadows: [
-                Shadow(
-                  color: AppColors.primaryContainer.withAlpha(120),
-                  offset: const Offset(2, 2),
-                  blurRadius: 0,
+                const Shadow(
+                  color: AppColors.primaryContainer,
+                  offset: AppDepth.shadowOffsetSmall,
                 ),
               ],
             ),

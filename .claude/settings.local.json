@@ -45,5 +45,8 @@
       "PowerShell(fvm list *)",
       "PowerShell(& \"$env:USERPROFILE\\\\fvm\\\\default\\\\bin\\\\dart.bat\" --version 2>&1 | Out-String; \"=== help mcp-server ===\"; & \"$env:USERPROFILE\\\\fvm\\\\default\\\\bin\\\\dart.bat\" mcp-server --help 2>&1 | Out-String)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "postgres"
+  ]
 }

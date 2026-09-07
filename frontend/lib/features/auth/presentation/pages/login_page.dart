@@ -3,22 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/brutalist_error_banner.dart';
-import 'package:freebay/core/components/brutalist_snackbar.dart';
-import 'package:freebay/core/components/brutalist_background.dart';
-import 'package:freebay/core/components/brutalist_logo.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import 'package:freebay/core/components/brutalist_biometric_modal.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/utils/value_utils.dart';
-import 'package:freebay/core/components/centered_form_wrapper.dart';
+import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -30,14 +19,14 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _anim = AnimationController(
-    duration: const Duration(milliseconds: 700),
+    duration: AppMotion.enter,
     vsync: this,
   )..forward();
 
   Animation<double> _fadeFor(double begin, double end) {
     return CurvedAnimation(
       parent: _anim,
-      curve: Interval(begin, end, curve: Curves.easeOut),
+      curve: Interval(begin, end, curve: AppMotion.enterCurve),
     );
   }
 
@@ -48,7 +37,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     ).animate(
       CurvedAnimation(
         parent: _anim,
-        curve: Interval(begin, end, curve: Curves.easeOut),
+        curve: Interval(begin, end, curve: AppMotion.enterCurve),
       ),
     );
   }
@@ -142,11 +131,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
               ? err
               : 'Credenciais inválidas ou erro de conexão. Tente novamente.';
           setState(() => _errorMessage = msg);
-          BrutalistSnackBar.show(
-            context,
-            message: msg,
-            type: BrutalistSnackBarType.error,
-          );
+          AppSnackbar.error(context, msg);
         },
       );
     });
@@ -177,7 +162,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         alignment: Alignment.centerLeft,
                         child: BrutalistIconButton(
                           icon: Icons.arrow_back,
-                          size: 40,
                           onTap: () => context.pop(),
                         ),
                       ),
@@ -192,9 +176,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           letterSpacing: 2.0,
                           color: context.textPrimary,
                           shadows: [
-                            Shadow(
-                              color: AppColors.accentAmber.withAlpha(80),
-                              offset: const Offset(2, 2),
+                            const Shadow(
+                              color: AppColors.primaryContainer,
+                              offset: AppDepth.shadowOffsetSmall,
                             ),
                           ],
                         ),
@@ -211,16 +195,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Spacing.vMd,
-                        FadeTransition(
+                        AuthStagger.fromAnimations(
                           opacity: _logoFade,
-                          child: SlideTransition(
-                            position: _logoSlide,
-                            child: const BrutalistLogo(
-                              fontSize: 46,
-                              showBadge: true,
-                              showTagline: true,
-                            ),
-                          ),
+                          slide: _logoSlide,
+                          child: const BrutalistLogo(fontSize: 46),
                         ),
                         Spacing.vXl,
                         FadeTransition(
@@ -278,7 +256,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                       onChanged: (v) => setState(
                                         () => _rememberMe = v ?? false,
                                       ),
-                                      activeColor: AppColors.accentAmber,
+                                      activeColor: AppColors.primaryContainer,
                                       side: BorderSide(
                                         color: isDark
                                             ? AppColors.white
@@ -312,7 +290,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     'Esqueceu a senha?',
                                     style: TextStyle(
                                       fontFamily: AppTypography.fontFamily,
-                                      color: AppColors.accentAmber,
+                                      color: AppColors.primaryContainer,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 11,
                                     ),
@@ -324,10 +302,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         ),
                         if (_errorMessage != null) ...[
                           Spacing.vSm,
-                          BrutalistErrorBanner(
+                          EmptyState.error(
                             message: _errorMessage!,
-                            onDismiss: () =>
-                                setState(() => _errorMessage = null),
+                            onRetry: () => setState(() => _errorMessage = null),
                           ),
                         ],
                         Spacing.vMd,
@@ -362,7 +339,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         color: context.borderColor.withAlpha(
                                           60,
                                         ),
-                                        width: 1.0,
                                       ),
                                     ),
                                     child: Row(
@@ -421,7 +397,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     style: TextStyle(
                                       fontFamily:
                                           AppTypography.headlineFontFamily,
-                                      color: AppColors.accentAmber,
+                                      color: AppColors.primaryContainer,
                                       fontWeight: FontWeight.w800,
                                       letterSpacing: 0.5,
                                     ),

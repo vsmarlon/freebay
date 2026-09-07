@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { ConversationWithStatus } from '../dtos/chat.dto';
 
 @Injectable()
 export class GetConversationsUseCase {
-  constructor(private readonly conversationRepository: ConversationRepository) {}
+  constructor(private readonly conversationRepository: ConversationDatabaseRepository) {}
 
   async execute(userId: string): Promise<Either<AppError, ConversationWithStatus[]>> {
     const convsResult = await this.conversationRepository.findDirectConversationsByUser(userId);

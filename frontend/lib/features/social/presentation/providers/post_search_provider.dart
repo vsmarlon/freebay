@@ -1,4 +1,4 @@
-import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -47,7 +47,7 @@ class PostSearchState {
 
 @Riverpod(keepAlive: true)
 class PostSearch extends _$PostSearch {
-  late final ISocialRepository _repository;
+  late final SocialRepository _repository;
 
   @override
   PostSearchState build() {
@@ -68,7 +68,6 @@ class PostSearch extends _$PostSearch {
 
     state = state.copyWith(
       isLoading: true,
-      error: null,
       posts: refresh ? [] : state.posts,
       query: newQuery,
       filter: newFilter,

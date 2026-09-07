@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, UserNotFoundError } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { AccountLifecycleRepository } from '../domain/repositories/account-lifecycle.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 
 @Injectable()
 export class CancelAccountDeletionUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly accountLifecycleRepository: AccountLifecycleRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly accountLifecycleRepository: AccountLifecycleDatabaseRepository,
   ) {}
 
   async execute(input: { userId: string }): Promise<Either<AppError, void>> {

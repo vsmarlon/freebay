@@ -2,16 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/brutalist_box.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class DisputeListPage extends ConsumerStatefulWidget {
   const DisputeListPage({super.key});
@@ -55,13 +47,13 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
       return SkeletonPage(
         child: SkeletonList(
           itemCount: 5,
-          itemBuilder: (_, i) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          itemBuilder: (_, i) => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             child: Row(
               children: [
-                const ShimmerBlock(width: 40, height: 40),
-                const SizedBox(width: 12),
-                const Column(
+                ShimmerBlock(width: 40, height: 40),
+                SizedBox(width: 12),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ShimmerBlock(height: 16, width: 140),
@@ -69,8 +61,8 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
                     ShimmerBlock(height: 14, width: 100),
                   ],
                 ),
-                const Spacer(),
-                const ShimmerBlock(height: 14, width: 60),
+                Spacer(),
+                ShimmerBlock(height: 14, width: 60),
               ],
             ),
           ),
@@ -79,31 +71,9 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
     }
 
     if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(state.error!, style: TextStyle(color: AppColors.error)),
-            Spacing.vMd,
-            Container(
-              color: AppColors.primaryContainer,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () =>
-                      ref.read(disputeListProvider.notifier).loadDisputes(),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    child: Text(
-                      'Tentar novamente',
-                      style: AppTypography.button,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+      return EmptyState.error(
+        message: state.error,
+        onRetry: () => ref.read(disputeListProvider.notifier).loadDisputes(),
       );
     }
 

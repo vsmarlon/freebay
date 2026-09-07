@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
-  static const _storage = FlutterSecureStorage(aOptions: AndroidOptions());
+  static const _storage = FlutterSecureStorage();
 
   static const _tokenKey = 'auth_token';
   static const _refreshTokenKey = 'refresh_token';

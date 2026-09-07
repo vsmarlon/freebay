@@ -8,7 +8,6 @@ const String _biometryPromptedKey = 'biometry_prompted';
 class BiometryService {
   final LocalAuthentication _localAuth = LocalAuthentication();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
 
@@ -48,10 +47,7 @@ class BiometryService {
     try {
       return await _localAuth.authenticate(
         localizedReason: reason,
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: false,
-        ),
+        options: const AuthenticationOptions(stickyAuth: true),
       );
     } on PlatformException {
       return false;

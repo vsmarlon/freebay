@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
+import 'package:freebay/core/ui.dart';
 
 class FaqPage extends StatelessWidget {
   const FaqPage({super.key});

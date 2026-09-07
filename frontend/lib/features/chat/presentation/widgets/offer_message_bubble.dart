@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 
@@ -32,15 +29,19 @@ class OfferMessageBubble extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.surfaceMidColor,
-        border: Border.all(color: const Color(0xFF8A1083), width: 2),
+        border: Border.all(color: AppColors.primaryContainer, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.local_offer, size: 16, color: Color(0xFF8A1083)),
+              Icon(
+                Icons.local_offer,
+                size: 16,
+                color: AppColors.primaryContainer,
+              ),
               Spacing.hSm,
               Text(
                 'PROPOSTA DE COMPRA',
@@ -48,7 +49,7 @@ class OfferMessageBubble extends StatelessWidget {
                   fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  color: const Color(0xFF8A1083),
+                  color: AppColors.primaryContainer,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -85,7 +86,7 @@ class OfferMessageBubble extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF8A1083),
+                  color: AppColors.primaryContainer,
                 ),
               ),
             ],

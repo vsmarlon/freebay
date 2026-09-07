@@ -3,10 +3,9 @@ import { Prisma, PhoneVerificationCode } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { PhoneVerificationRepository } from '../../domain/repositories/phone-verification.repository';
 
 @Injectable()
-export class PhoneVerificationDatabaseRepository extends BasePrismaRepository implements PhoneVerificationRepository {
+export class PhoneVerificationDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

@@ -3,11 +3,10 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, PageQuery, paginateById } from '@/shared/core/pagination';
-import { NotificationRepository } from '../../domain/repositories/notification.repository';
 import { Notification, Prisma } from '@prisma/client';
 
 @Injectable()
-export class NotificationDatabaseRepository extends BasePrismaRepository implements NotificationRepository {
+export class NotificationDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

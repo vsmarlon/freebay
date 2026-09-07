@@ -6,12 +6,11 @@ import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
-import 'package:freebay/features/chat/domain/repositories/i_chat_repository.dart';
+import 'package:freebay/features/profile/data/entities/block_responses.dart';
 
-class ChatRepository extends BaseHttpRepository implements IChatRepository {
+class ChatRepository extends BaseHttpRepository {
   ChatRepository({super.client});
 
-  @override
   Future<Either<Failure, List<ChatEntity>>> getChats({String? query}) =>
       safeGetList<ChatEntity>(
         query != null && query.isNotEmpty
@@ -21,7 +20,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
         fromJson: ChatEntity.fromJson,
       );
 
-  @override
   Future<Either<Failure, List<ChatEntity>>> getArchivedChats() =>
       safeGetList<ChatEntity>(
         '/chat/archived',
@@ -29,7 +27,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
         fromJson: ChatEntity.fromJson,
       );
 
-  @override
   Future<
     Either<
       Failure,
@@ -73,7 +70,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
         },
       );
 
-  @override
   Future<Either<Failure, MessageEntity>> sendMessage(
     String chatId,
     String message, {
@@ -92,11 +88,9 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     fromJson: MessageEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, void>> markAsRead(String chatId) =>
       safeVoid(() => client.patch('/chat/conversations/$chatId/read'));
 
-  @override
   Future<Either<Failure, void>> archiveChat(
     String id,
     ChatThreadType type,
@@ -108,11 +102,16 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     ),
   );
 
-  @override
   Future<Either<Failure, void>> deleteChat(String id, ChatThreadType type) =>
       safeVoid(() => client.patch('/chat/conversations/$id/delete'));
 
-  @override
+  Future<Either<Failure, BlockResponse>> blockUser(String userId) =>
+      safePost<BlockResponse>(
+        '/users/$userId/block',
+        extractKey: 'data',
+        fromJson: BlockResponse.fromJson,
+      );
+
   Future<Either<Failure, ConversationPreference>> setTheme(
     String id,
     ChatThreadType type,
@@ -124,7 +123,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     fromJson: ConversationPreference.fromJson,
   );
 
-  @override
   Future<Either<Failure, ConversationPreference>> setBackground(
     String id,
     ChatThreadType type,
@@ -136,7 +134,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     fromJson: ConversationPreference.fromJson,
   );
 
-  @override
   Future<Either<Failure, MessageEntity>> sendRichMessage({
     required String conversationId,
     String? content,
@@ -159,7 +156,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     fromJson: MessageEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, void>> deleteMessage(
     String conversationId,
     String messageId,
@@ -169,7 +165,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     ),
   );
 
-  @override
   Future<Either<Failure, List<MessageReactionEntity>>> reactToMessage(
     String conversationId,
     String messageId,
@@ -189,7 +184,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
         [],
   );
 
-  @override
   Future<Either<Failure, ({List<MessageEntity> messages, String? nextCursor})>>
   getConversationMedia(
     String conversationId, {
@@ -211,7 +205,6 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
     },
   );
 
-  @override
   Future<Either<Failure, List<MessageEntity>>> forwardMessages({
     required List<String> messageIds,
     required List<String> targetConversationIds,

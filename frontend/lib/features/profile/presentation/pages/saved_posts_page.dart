@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class SavedPostsPage extends StatelessWidget {
   const SavedPostsPage({super.key});
@@ -33,7 +29,7 @@ class SavedPostsPage extends StatelessWidget {
                   Icon(
                     Icons.bookmark_outline,
                     size: 80,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
+                    color: context.textSecondary,
                   ),
                   Spacing.vLg,
                   Text(
@@ -41,7 +37,7 @@ class SavedPostsPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      color: context.textPrimary,
                     ),
                   ),
                   Spacing.vSm,

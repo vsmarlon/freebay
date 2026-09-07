@@ -1,16 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/centered_form_wrapper.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   final String token;
@@ -97,7 +89,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       ),
                     ),
                     Spacing.vSm,
-                    Text(
+                    const Text(
                       'Escolha uma senha forte com pelo menos 8 caracteres.',
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,

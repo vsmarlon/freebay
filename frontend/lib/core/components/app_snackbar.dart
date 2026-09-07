@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/providers/last_error_provider.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
 enum AppSnackbarType { success, error, warning, info }
@@ -48,7 +47,6 @@ class AppSnackbar {
         ),
         backgroundColor: AppColors.darkGray,
         behavior: SnackBarBehavior.floating,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         duration: duration,
         margin: const EdgeInsets.all(16),
       ),
@@ -88,5 +86,5 @@ class AppSnackbar {
       show(context, message: message, type: AppSnackbarType.warning);
 
   static void info(BuildContext context, String message) =>
-      show(context, message: message, type: AppSnackbarType.info);
+      show(context, message: message);
 }

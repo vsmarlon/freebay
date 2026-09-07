@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
@@ -80,7 +74,6 @@ class _ConversationDetailsPageState
                     final repo = ref.read(chatRepositoryProvider);
                     final res = await repo.getConversationMedia(
                       widget.chatId,
-                      type: 'IMAGE',
                       cursor: cursor,
                     );
                     return res.fold((l) => [], (r) => r.messages);
@@ -111,7 +104,6 @@ class _ConversationDetailsPageState
             decoration: BoxDecoration(
               color: AppColors.mediumGray,
               border: Border.all(color: context.borderColor, width: 2),
-              borderRadius: BorderRadius.zero,
               image: widget.avatarUrl != null
                   ? DecorationImage(
                       image: NetworkImage(widget.avatarUrl!),
@@ -186,7 +178,9 @@ class _ConversationDetailsPageState
                       ),
                       onTap: () async {
                         Navigator.pop(ctx);
-                        await ref.read(blockUserUsecaseProvider)(widget.chatId);
+                        await ref
+                            .read(chatRepositoryProvider)
+                            .blockUser(widget.chatId);
                         if (mounted) {
                           AppSnackbar.success(context, 'Usuário bloqueado');
                           context.pop();
@@ -231,10 +225,9 @@ class _ConversationDetailsPageState
                       ),
                       onTap: () async {
                         Navigator.pop(ctx);
-                        await ref.read(deleteChatUsecaseProvider)(
-                          widget.chatId,
-                          ChatThreadType.direct,
-                        );
+                        await ref
+                            .read(chatRepositoryProvider)
+                            .deleteChat(widget.chatId, ChatThreadType.direct);
                         ref.invalidate(chatsProvider);
                         if (mounted) {
                           AppSnackbar.info(context, 'Conversa apagada');
@@ -269,24 +262,20 @@ class _ConversationDetailsPageState
               title: const Text('Padrão Magenta FreeBay'),
               onTap: () async {
                 Navigator.pop(ctx);
-                await ref.read(setChatThemeUsecaseProvider)(
-                  widget.chatId,
-                  ChatThreadType.direct,
-                  'DEFAULT',
-                );
+                await ref
+                    .read(chatRepositoryProvider)
+                    .setTheme(widget.chatId, ChatThreadType.direct, 'DEFAULT');
                 if (mounted) AppSnackbar.success(context, 'Tema atualizado');
               },
             ),
             ListTile(
-              leading: const Icon(Icons.circle, color: Colors.blueAccent),
+              leading: const Icon(Icons.circle, color: AppColors.info),
               title: const Text('Azul Oceano'),
               onTap: () async {
                 Navigator.pop(ctx);
-                await ref.read(setChatThemeUsecaseProvider)(
-                  widget.chatId,
-                  ChatThreadType.direct,
-                  'OCEAN',
-                );
+                await ref
+                    .read(chatRepositoryProvider)
+                    .setTheme(widget.chatId, ChatThreadType.direct, 'OCEAN');
                 if (mounted) AppSnackbar.success(context, 'Tema atualizado');
               },
             ),
@@ -307,9 +296,7 @@ class _ConversationDetailsPageState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: context.borderColor, width: 1),
-          ),
+          border: Border(bottom: BorderSide(color: context.borderColor)),
         ),
         child: Row(
           children: [

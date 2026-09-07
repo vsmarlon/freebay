@@ -2,14 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Either, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { StripeProvider } from '../providers/stripe-provider';
-import { ConnectAccountRepository } from '../domain/repositories/connect-account.repository';
+import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
 
 @Injectable()
 export class SyncConnectAccountUseCase {
   private readonly logger = new Logger(SyncConnectAccountUseCase.name);
 
   constructor(
-    private readonly connectRepo: ConnectAccountRepository,
+    private readonly connectRepo: ConnectAccountDatabaseRepository,
     private readonly stripe: StripeProvider,
   ) {}
 

@@ -3,14 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -69,7 +62,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     final result = await repository.createPost(
       content: content,
       imagePath: _selectedImagePath,
-      type: 'REGULAR',
     );
 
     setState(() => _isLoading = false);
@@ -85,7 +77,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     final user = ref.watch(authControllerProvider).value;
 
     return Scaffold(
@@ -102,11 +93,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 decoration: BoxDecoration(
                   border: Border.all(color: context.borderColor, width: 2),
                 ),
-                child: Icon(
-                  Icons.close,
-                  color: isDark ? AppColors.white : AppColors.onSurface,
-                  size: 20,
-                ),
+                child: Icon(Icons.close, color: context.textPrimary, size: 20),
               ),
             ),
             actions: [
@@ -129,10 +116,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 children: [
                   Row(
                     children: [
-                      UserAvatar(
-                        imageUrl: user?.avatarUrl,
-                        size: AppAvatarSize.medium,
-                      ),
+                      UserAvatar(imageUrl: user?.avatarUrl),
                       Spacing.hSm,
                       Text(
                         user?.displayNameOrDefault ?? 'Meu perfil',
@@ -239,9 +223,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         ),
                         label: const Text('Galeria'),
                         style: OutlinedButton.styleFrom(
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
+                          shape: const RoundedRectangleBorder(),
                         ),
                       ),
                       Spacing.hSm,
@@ -250,9 +232,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         icon: const Icon(Icons.camera_alt_outlined, size: 18),
                         label: const Text('Câmera'),
                         style: OutlinedButton.styleFrom(
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
-                          ),
+                          shape: const RoundedRectangleBorder(),
                         ),
                       ),
                     ],

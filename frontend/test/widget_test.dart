@@ -11,11 +11,7 @@ void main() {
   });
 
   testWidgets('App renders correctly', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const ProviderScope(
-        child: FreeBayApp(),
-      ),
-    );
+    await tester.pumpWidget(const ProviderScope(child: FreeBayApp()));
 
     await tester.pump(const Duration(milliseconds: 10));
 

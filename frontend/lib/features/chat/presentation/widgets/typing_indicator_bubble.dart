@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/ui.dart';
 
 /// Animated typing indicator shown when the other user is typing.
 ///
@@ -18,10 +18,8 @@ class _TypingIndicatorBubbleState extends State<TypingIndicatorBubble>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
+    _ctrl = AnimationController(vsync: this, duration: AppMotion.enter)
+      ..repeat();
   }
 
   @override
@@ -59,7 +57,7 @@ class _Dot extends StatelessWidget {
     return AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
-        final value = Curves.easeInOut.transform(
+        final value = AppMotion.enterCurve.transform(
           animation.value >= begin && animation.value <= end
               ? ((animation.value - begin) / (end - begin))
               : animation.value < begin

@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 
 extension AppThemeContext on BuildContext {
-  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  ThemeData get theme => Theme.of(this);
 
-  ColorScheme get colors => Theme.of(this).colorScheme;
+  bool get isDark => theme.brightness == Brightness.dark;
 
-  TextTheme get textTheme => Theme.of(this).textTheme;
+  ColorScheme get colors => theme.colorScheme;
 
-  Color get bgColor =>
-      isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+  TextTheme get textTheme => theme.textTheme;
 
-  Color get surfaceColor =>
-      isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainerLowest;
+  Color get bgColor => colors.surface;
 
-  Color get surfaceMidColor =>
-      isDark ? AppColors.surfaceContainerLowDark : AppColors.surfaceContainer;
+  Color get surfaceColor => colors.surfaceContainerLow;
 
-  Color get textPrimary => isDark ? AppColors.white : AppColors.darkGray;
+  Color get surfaceMidColor => colors.surfaceContainer;
 
-  Color get textSecondary => AppColors.mediumGray;
+  Color get surfaceHighColor => colors.surfaceContainerHigh;
 
-  Color get borderColor =>
-      isDark ? AppColors.outlineVariant : AppColors.outline;
+  Color get textPrimary => colors.onSurface;
 
-  Color get appBarColor =>
-      isDark ? AppColors.surfaceDark : AppColors.surfaceContainerLowest;
+  Color get textSecondary => colors.onSurfaceVariant;
+
+  Color get borderColor => colors.outline;
+
+  Color get borderSoftColor => colors.outlineVariant;
+
+  Color get appBarColor => colors.surface;
 }

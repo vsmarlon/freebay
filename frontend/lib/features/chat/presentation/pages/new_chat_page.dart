@@ -2,17 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/shared/services/http_client.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class NewChatPage extends ConsumerStatefulWidget {
   const NewChatPage({super.key});
@@ -207,7 +201,6 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
                           ? AppColors.surfaceDark
                           : AppColors.white,
                       border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.zero,
                         borderSide: BorderSide.none,
                       ),
                     ),
@@ -294,7 +287,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: isDark ? AppColors.white : AppColors.darkGray,
+          color: context.textPrimary,
         ),
       ),
     );
@@ -312,7 +305,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
                   fit: BoxFit.cover,
                 )
               : null,
-          color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
+          color: context.surfaceColor,
         ),
         child: user.avatarUrl == null
             ? Center(
@@ -331,7 +324,7 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
               user.displayName,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.darkGray,
+                color: context.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
             ),

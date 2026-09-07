@@ -11,14 +11,18 @@ void main() {
     });
 
     test('identifies safe external https links', () {
-      final result = UrlSafetyAnalyzer.analyze('https://google.com/search?q=freebay');
+      final result = UrlSafetyAnalyzer.analyze(
+        'https://google.com/search?q=freebay',
+      );
       expect(result.riskLevel, UrlRiskLevel.safe);
       expect(result.isBlocked, false);
       expect(result.host, 'google.com');
     });
 
     test('identifies dangerous javascript: scheme and blocks it', () {
-      final result = UrlSafetyAnalyzer.analyze('javascript:alert(document.cookie)');
+      final result = UrlSafetyAnalyzer.analyze(
+        'javascript:alert(document.cookie)',
+      );
       expect(result.riskLevel, UrlRiskLevel.dangerous);
       expect(result.isBlocked, true);
     });
@@ -28,27 +32,38 @@ void main() {
       expect(fileRes.riskLevel, UrlRiskLevel.dangerous);
       expect(fileRes.isBlocked, true);
 
-      final dataRes = UrlSafetyAnalyzer.analyze('data:text/html,<script>alert(1)</script>');
+      final dataRes = UrlSafetyAnalyzer.analyze(
+        'data:text/html,<script>alert(1)</script>',
+      );
       expect(dataRes.riskLevel, UrlRiskLevel.dangerous);
       expect(dataRes.isBlocked, true);
     });
 
-    test('identifies localhost and private IP addresses as dangerous (SSRF/local network protection)', () {
-      final localRes = UrlSafetyAnalyzer.analyze('http://127.0.0.1:8080');
-      expect(localRes.riskLevel, UrlRiskLevel.dangerous);
-      expect(localRes.isBlocked, true);
+    test(
+      'identifies localhost and private IP addresses as dangerous (SSRF/local network protection)',
+      () {
+        final localRes = UrlSafetyAnalyzer.analyze('http://127.0.0.1:8080');
+        expect(localRes.riskLevel, UrlRiskLevel.dangerous);
+        expect(localRes.isBlocked, true);
 
-      final privateRes = UrlSafetyAnalyzer.analyze('http://192.168.1.1/admin');
-      expect(privateRes.riskLevel, UrlRiskLevel.dangerous);
-      expect(privateRes.isBlocked, true);
+        final privateRes = UrlSafetyAnalyzer.analyze(
+          'http://192.168.1.1/admin',
+        );
+        expect(privateRes.riskLevel, UrlRiskLevel.dangerous);
+        expect(privateRes.isBlocked, true);
 
-      final awsMetaRes = UrlSafetyAnalyzer.analyze('http://169.254.169.254/latest/meta-data');
-      expect(awsMetaRes.riskLevel, UrlRiskLevel.dangerous);
-      expect(awsMetaRes.isBlocked, true);
-    });
+        final awsMetaRes = UrlSafetyAnalyzer.analyze(
+          'http://169.254.169.254/latest/meta-data',
+        );
+        expect(awsMetaRes.riskLevel, UrlRiskLevel.dangerous);
+        expect(awsMetaRes.isBlocked, true);
+      },
+    );
 
     test('identifies executable extensions as dangerous malware risk', () {
-      final exeRes = UrlSafetyAnalyzer.analyze('https://example.com/software/installer.exe');
+      final exeRes = UrlSafetyAnalyzer.analyze(
+        'https://example.com/software/installer.exe',
+      );
       expect(exeRes.riskLevel, UrlRiskLevel.dangerous);
       expect(exeRes.isBlocked, true);
 
@@ -58,12 +73,16 @@ void main() {
     });
 
     test('identifies phishing keywords as dangerous', () {
-      final phishRes = UrlSafetyAnalyzer.analyze('https://freebay-login-secure.com');
+      final phishRes = UrlSafetyAnalyzer.analyze(
+        'https://freebay-login-secure.com',
+      );
       expect(phishRes.riskLevel, UrlRiskLevel.dangerous);
     });
 
     test('identifies unencrypted HTTP as suspicious', () {
-      final httpRes = UrlSafetyAnalyzer.analyze('http://unencrypted-website.com');
+      final httpRes = UrlSafetyAnalyzer.analyze(
+        'http://unencrypted-website.com',
+      );
       expect(httpRes.riskLevel, UrlRiskLevel.suspicious);
       expect(httpRes.isBlocked, false);
     });

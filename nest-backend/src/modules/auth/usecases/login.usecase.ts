@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidCredentialsError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { LoginDTO } from '../dtos/auth.dto';
 import { LoginResponse, toLoginResponse } from '../mappers/auth.mapper';
 
 @Injectable()
 export class LoginUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(private readonly userRepository: UserDatabaseRepository) {}
 
   async execute(input: LoginDTO): Promise<Either<AppError, LoginResponse>> {
     const userResult = await this.userRepository.findByEmail(input.email);

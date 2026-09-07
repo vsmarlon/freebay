@@ -4,11 +4,10 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
-import { BlockRepository } from '../../domain/repositories/block.repository';
 import { UserBrief } from '../../types/user.types';
 
 @Injectable()
-export class PrismaBlockRepository extends BasePrismaRepository implements BlockRepository {
+export class PrismaBlockRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

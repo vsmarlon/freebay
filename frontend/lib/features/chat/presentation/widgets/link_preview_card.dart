@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/brutalist_safe_link_dialog.dart';
+import 'package:freebay/core/ui.dart';
 
 class LinkPreviewCard extends StatelessWidget {
   final Map<String, dynamic>? metadata;
@@ -38,7 +35,7 @@ class LinkPreviewCard extends StatelessWidget {
           color: context.isDark
               ? AppColors.surfaceContainerDark
               : AppColors.surfaceContainerLow,
-          border: Border.all(color: AppColors.outlineVariant, width: 1),
+          border: Border.all(color: AppColors.outlineVariant),
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(

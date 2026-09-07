@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 
 @Injectable()
 export class DeleteMessageUseCase {
-  constructor(private readonly conversationRepository: ConversationRepository) {}
+  constructor(private readonly conversationRepository: ConversationDatabaseRepository) {}
 
   async execute(input: {
     messageId: string;

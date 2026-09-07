@@ -1,35 +1,46 @@
 import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_entity.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_transaction_entity.dart';
 import 'package:freebay/features/wallet/data/entities/connect_status_entity.dart';
-import 'package:freebay/features/wallet/data/services/wallet_service.dart';
-import 'package:freebay/features/wallet/domain/repositories/i_wallet_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
 
-class WalletRepository implements IWalletRepository {
-  final WalletService _service;
+class WalletRepository extends BaseHttpRepository {
+  WalletRepository({super.client});
 
-  WalletRepository(this._service);
+  Future<Either<Failure, WalletEntity>> getWallet() => safeGet<WalletEntity>(
+    '/wallet/',
+    extractKey: 'data',
+    fromJson: WalletEntity.fromJson,
+  );
 
-  @override
-  Future<Either<Failure, WalletEntity>> getWallet() => _service.getWallet();
-
-  @override
   Future<Either<Failure, CursorPage<WalletTransactionEntity>>> getTransactions({
     String? cursor,
     int? limit,
-  }) => _service.getTransactions(cursor: cursor, limit: limit);
+  }) => safePage<WalletTransactionEntity>(
+    '/wallet/transactions',
+    WalletTransactionEntity.fromJson,
+    cursor: cursor,
+    limit: limit,
+  );
 
-  @override
   Future<Either<Failure, ConnectStatusEntity>> getConnectStatus() =>
-      _service.getConnectStatus();
+      safeGet<ConnectStatusEntity>(
+        '/payments/connect/status',
+        extractKey: 'data',
+        fromJson: ConnectStatusEntity.fromJson,
+      );
 
-  @override
-  Future<Either<Failure, String>> startConnectOnboarding() =>
-      _service.startConnectOnboarding();
+  Future<Either<Failure, String>> startConnectOnboarding() => safePost<String>(
+    '/payments/connect/onboarding',
+    extractKey: 'data.onboardingUrl',
+    customMapper: (value) => value as String,
+  );
 
-  @override
-  Future<Either<Failure, String>> getConnectDashboardLink() =>
-      _service.getConnectDashboardLink();
+  Future<Either<Failure, String>> getConnectDashboardLink() => safePost<String>(
+    '/payments/connect/dashboard',
+    extractKey: 'data.dashboardUrl',
+    customMapper: (value) => value as String,
+  );
 }

@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
 import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
 import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { SendMessageUseCase } from './send-message.usecase';
 import { GetConversationsUseCase } from './get-conversations.usecase';
@@ -26,12 +23,10 @@ import { ForwardMessagesUseCase } from './forward-messages.usecase';
 
 @Module({
   providers: [
-    { provide: ConversationRepository, useClass: ConversationDatabaseRepository },
+    ConversationDatabaseRepository,
     PrismaConversationPreferenceRepository,
-    { provide: ConversationPreferenceRepository, useExisting: PrismaConversationPreferenceRepository },
     ChatThreadAccessService,
     PrismaBlockRepository,
-    { provide: BlockRepository, useExisting: PrismaBlockRepository },
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,
@@ -51,9 +46,9 @@ import { ForwardMessagesUseCase } from './forward-messages.usecase';
     ForwardMessagesUseCase,
   ],
   exports: [
-    ConversationRepository,
+    ConversationDatabaseRepository,
     ChatThreadAccessService,
-    BlockRepository,
+    PrismaBlockRepository,
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,

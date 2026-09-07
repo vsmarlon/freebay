@@ -12,9 +12,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { ApiTags } from '@nestjs/swagger';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { FollowRepository } from './domain/repositories/follow.repository';
-import { BlockRepository } from './domain/repositories/block.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { PrismaFollowRepository } from './data/repositories/follow-database.repository';
+import { PrismaBlockRepository } from './data/repositories/block-database.repository';
 import {
   GetUserStatsUseCase,
   RegisterPhoneUseCase,
@@ -66,9 +66,9 @@ import { saveUpload } from '@/shared/utils/file.utils';
 @Controller('users')
 export class UsersController {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly followRepository: FollowRepository,
-    private readonly blockRepository: BlockRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly followRepository: PrismaFollowRepository,
+    private readonly blockRepository: PrismaBlockRepository,
     private readonly getUserStatsUseCase: GetUserStatsUseCase,
     private readonly registerPhoneUseCase: RegisterPhoneUseCase,
     private readonly verifyPhoneUseCase: VerifyPhoneUseCase,

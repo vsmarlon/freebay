@@ -3,11 +3,10 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ChatThreadType, ConversationPreference } from '@prisma/client';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
-import { ConversationPreferenceRepository } from '../../domain/repositories/conversation-preference.repository';
 import { UpsertPreferenceInput } from '../../types/chat.types';
 
 @Injectable()
-export class PrismaConversationPreferenceRepository implements ConversationPreferenceRepository {
+export class PrismaConversationPreferenceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByAnyId(userId: string, threadId: string): RepositoryResponse<ConversationPreference | null> {

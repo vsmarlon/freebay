@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class CategorySelectorField extends StatelessWidget {
   final AsyncValue<List<CategoryEntity>> categoriesAsync;
@@ -37,7 +31,7 @@ class CategorySelectorField extends StatelessWidget {
         child: Container(
           height: 64,
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
+          color: context.bgColor,
           child: Row(
             children: [
               const Icon(
@@ -68,7 +62,7 @@ class CategorySelectorField extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
-                        color: isDark ? AppColors.white : AppColors.darkGray,
+                        color: context.textPrimary,
                       ),
                     ),
                   ],
@@ -84,12 +78,12 @@ class CategorySelectorField extends StatelessWidget {
       ),
       loading: () => Container(
         height: 64,
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
+        color: context.bgColor,
         child: const Center(child: ShimmerBlock(width: 24, height: 24)),
       ),
       error: (_, _) => Container(
         padding: const EdgeInsets.all(16),
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
+        color: context.bgColor,
         child: Row(
           children: [
             Expanded(
@@ -97,7 +91,7 @@ class CategorySelectorField extends StatelessWidget {
                 'Não foi possível carregar categorias agora.',
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
+                  color: context.textPrimary,
                 ),
               ),
             ),
@@ -146,7 +140,7 @@ class CategorySelectorField extends StatelessWidget {
                     ? (isDark
                           ? AppColors.surfaceContainerDark
                           : AppColors.surfaceContainerHighest)
-                    : (isDark ? AppColors.surfaceDark : AppColors.white),
+                    : (context.bgColor),
                 child: Row(
                   children: [
                     Expanded(
@@ -157,7 +151,7 @@ class CategorySelectorField extends StatelessWidget {
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w500,
-                          color: isDark ? AppColors.white : AppColors.onSurface,
+                          color: context.textPrimary,
                         ),
                       ),
                     ),

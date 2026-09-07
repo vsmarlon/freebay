@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { StoryRepository } from '../domain/repositories/story.repository';
+import { PrismaStoryRepository } from '../data/repositories/story-database.repository';
 import { CreateStoryInput, CreateStoryOutput } from '../dtos/stories.dto';
 
 @Injectable()
 export class CreateStoryUseCase {
-  constructor(private readonly storyRepository: StoryRepository) {}
+  constructor(private readonly storyRepository: PrismaStoryRepository) {}
 
   async execute(input: CreateStoryInput): Promise<Either<AppError, CreateStoryOutput>> {
     const expiresAt = new Date();

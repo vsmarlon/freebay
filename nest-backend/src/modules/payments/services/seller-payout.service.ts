@@ -4,16 +4,16 @@ import { isLeft } from '@/shared/core/either';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { StripeProvider } from '../providers/stripe-provider';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { ConnectAccountRepository } from '../domain/repositories/connect-account.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
 
 @Injectable()
 export class SellerPayoutService {
   private readonly logger = new Logger(SellerPayoutService.name);
 
   constructor(
-    private readonly transactionRepo: TransactionRepository,
-    private readonly connectRepo: ConnectAccountRepository,
+    private readonly transactionRepo: TransactionDatabaseRepository,
+    private readonly connectRepo: ConnectAccountDatabaseRepository,
     private readonly stripe: StripeProvider,
     private readonly prisma: PrismaService,
   ) {}

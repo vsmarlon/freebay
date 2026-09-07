@@ -2,19 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_card.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class MyProductsPage extends ConsumerWidget {
   const MyProductsPage({super.key});
@@ -36,10 +27,7 @@ class MyProductsPage extends ConsumerWidget {
             ),
             actions: [
               IconButton(
-                icon: Icon(
-                  Icons.add,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                ),
+                icon: Icon(Icons.add, color: context.textPrimary),
                 onPressed: () => context.push('/products/create'),
               ),
             ],
@@ -115,9 +103,7 @@ class MyProductsPage extends ConsumerWidget {
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar an\u00fancios',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      style: TextStyle(color: context.textPrimary),
                     ),
                   ],
                 ),
@@ -140,8 +126,7 @@ class MyProductsPage extends ConsumerWidget {
       onTap: () => context.push('/products/${product.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
-          borderRadius: BorderRadius.zero,
+          color: context.bgColor,
           border: Border.all(
             color: AppColors.onSurface.withValues(alpha: 0.15),
             width: 2,
@@ -193,7 +178,7 @@ class MyProductsPage extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      color: context.textPrimary,
                     ),
                   ),
                   Spacing.vXs,
@@ -264,10 +249,7 @@ class MyProductsPage extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.zero,
-      ),
+      decoration: BoxDecoration(color: bgColor),
       child: Text(
         status,
         style: TextStyle(

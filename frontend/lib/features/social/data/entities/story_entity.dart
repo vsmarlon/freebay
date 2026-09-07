@@ -35,3 +35,10 @@ abstract class StoryEntity with _$StoryEntity {
 
   bool get isExpired => expiresAt.isBefore(DateTime.now());
 }
+
+class StoriesResponse {
+  final List<StoryEntity> stories;
+  final bool userHasStory;
+
+  const StoriesResponse({this.stories = const [], this.userHasStory = false});
+}

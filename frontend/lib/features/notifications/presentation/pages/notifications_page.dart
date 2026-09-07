@@ -1,18 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/infinite_scroll_listener.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
@@ -56,24 +48,21 @@ class NotificationsPage extends ConsumerWidget {
               loading: () => SkeletonPage(
                 child: SkeletonList(
                   itemCount: 6,
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 16,
-                    ),
+                  itemBuilder: (_, i) => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ShimmerBlock(width: 40, height: 40),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ShimmerBlock(height: 16, width: 180),
-                              const SizedBox(height: 6),
-                              ShimmerBlock(height: 14, width: double.infinity),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 6),
+                              ShimmerBlock(height: 14),
+                              SizedBox(height: 4),
                               ShimmerBlock(height: 12, width: 80),
                             ],
                           ),
@@ -83,46 +72,11 @@ class NotificationsPage extends ConsumerWidget {
                   ),
                 ),
               ),
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.notifications_off_outlined,
-                        size: 48,
-                        color: theme.colorScheme.outline,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        'Não foi possível carregar suas notificações.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.brightness == Brightness.dark
-                              ? AppColors.white
-                              : AppColors.onSurface,
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      Text(
-                        'Puxe para atualizar ou tente novamente em instantes.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.outline,
-                        ),
-                      ),
-                      Spacing.vMd,
-                      AppButton(
-                        label: 'Tentar novamente',
-                        onPressed: () =>
-                            ref.read(notificationsProvider.notifier).refresh(),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (error, _) => EmptyState.error(
+                message:
+                    'Não foi possível carregar suas notificações. Puxe para atualizar ou tente novamente em instantes.',
+                onRetry: () =>
+                    ref.read(notificationsProvider.notifier).refresh(),
               ),
               data: (notifications) {
                 if (notifications.isEmpty) {

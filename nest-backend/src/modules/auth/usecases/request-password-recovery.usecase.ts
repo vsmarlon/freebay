@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
-import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { RequestPasswordRecoveryDTO } from '../dtos/password-recovery.dto';
 import { ResendService } from '../services/resend.service';
 
 @Injectable()
 export class RequestPasswordRecoveryUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly recoveryRepository: PasswordRecoveryRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly recoveryRepository: PasswordRecoveryDatabaseRepository,
     private readonly resendService: ResendService,
   ) {}
 

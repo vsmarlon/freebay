@@ -33,28 +33,40 @@ class Freebay {
   static EdgeInsets paddingAll24 = const EdgeInsets.all(lg);
   static EdgeInsets paddingAll32 = const EdgeInsets.all(xl);
 
-  static EdgeInsets paddingHorizontal8 =
-      const EdgeInsets.symmetric(horizontal: sm);
-  static EdgeInsets paddingHorizontal12 =
-      const EdgeInsets.symmetric(horizontal: 12);
-  static EdgeInsets paddingHorizontal16 =
-      const EdgeInsets.symmetric(horizontal: md);
-  static EdgeInsets paddingHorizontal24 =
-      const EdgeInsets.symmetric(horizontal: lg);
-  static EdgeInsets paddingHorizontal32 =
-      const EdgeInsets.symmetric(horizontal: xl);
+  static EdgeInsets paddingHorizontal8 = const EdgeInsets.symmetric(
+    horizontal: sm,
+  );
+  static EdgeInsets paddingHorizontal12 = const EdgeInsets.symmetric(
+    horizontal: 12,
+  );
+  static EdgeInsets paddingHorizontal16 = const EdgeInsets.symmetric(
+    horizontal: md,
+  );
+  static EdgeInsets paddingHorizontal24 = const EdgeInsets.symmetric(
+    horizontal: lg,
+  );
+  static EdgeInsets paddingHorizontal32 = const EdgeInsets.symmetric(
+    horizontal: xl,
+  );
 
   static EdgeInsets paddingVertical8 = const EdgeInsets.symmetric(vertical: sm);
-  static EdgeInsets paddingVertical12 =
-      const EdgeInsets.symmetric(vertical: 12);
-  static EdgeInsets paddingVertical16 =
-      const EdgeInsets.symmetric(vertical: md);
-  static EdgeInsets paddingVertical24 =
-      const EdgeInsets.symmetric(vertical: lg);
-  static EdgeInsets paddingVertical32 =
-      const EdgeInsets.symmetric(vertical: xl);
+  static EdgeInsets paddingVertical12 = const EdgeInsets.symmetric(
+    vertical: 12,
+  );
+  static EdgeInsets paddingVertical16 = const EdgeInsets.symmetric(
+    vertical: md,
+  );
+  static EdgeInsets paddingVertical24 = const EdgeInsets.symmetric(
+    vertical: lg,
+  );
+  static EdgeInsets paddingVertical32 = const EdgeInsets.symmetric(
+    vertical: xl,
+  );
 
   static EdgeInsets paddingLTRB(
-          double left, double top, double right, double bottom) =>
-      EdgeInsets.fromLTRB(left, top, right, bottom);
+    double left,
+    double top,
+    double right,
+    double bottom,
+  ) => EdgeInsets.fromLTRB(left, top, right, bottom);
 }

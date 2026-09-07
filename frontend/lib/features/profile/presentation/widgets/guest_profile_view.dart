@@ -3,11 +3,7 @@ import 'package:freebay/core/router/app_router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
 
 class GuestProfileView extends ConsumerWidget {
   const GuestProfileView({super.key});

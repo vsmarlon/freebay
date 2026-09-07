@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class CartCheckoutPage extends ConsumerStatefulWidget {
   const CartCheckoutPage({super.key});
@@ -34,7 +27,7 @@ class _CartCheckoutPageState extends ConsumerState<CartCheckoutPage> {
 
   Future<void> _submitCheckout() async {
     setState(() => _isSubmitting = true);
-    final result = await ref.read(checkoutCartUsecaseProvider)();
+    final result = await ref.read(cartRepositoryProvider).checkoutCart();
     if (!mounted) return;
     setState(() => _isSubmitting = false);
     result.fold(

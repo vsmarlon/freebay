@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 
 /// A toggle button for enabling/disabling view-once (ephemeral) messages.
 ///
@@ -28,7 +27,6 @@ class ViewOnceToggle extends StatelessWidget {
               color: enabled
                   ? AppColors.primaryContainer.withAlpha(30)
                   : Colors.transparent,
-              borderRadius: BorderRadius.zero,
               border: Border.all(
                 color: enabled
                     ? AppColors.primaryContainer

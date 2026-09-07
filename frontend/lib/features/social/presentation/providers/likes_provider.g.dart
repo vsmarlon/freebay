@@ -40,7 +40,7 @@ final class LikesProvider extends $NotifierProvider<Likes, LikesState> {
   }
 }
 
-String _$likesHash() => r'3d42b47a951adebc7b1beb7e27fe3ae50fffcfc4';
+String _$likesHash() => r'18d51c6c0c6cd36ac08f5863846fceb3b2b4747c';
 
 abstract class _$Likes extends $Notifier<LikesState> {
   LikesState build();

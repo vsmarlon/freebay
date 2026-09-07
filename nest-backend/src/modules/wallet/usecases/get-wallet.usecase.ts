@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { WalletRepository } from '../domain/repositories/wallet.repository';
+import { WalletDatabaseRepository } from '../data/repositories/wallet-database.repository';
 import { GetWalletOutput } from '../dtos/wallet.dto';
 
 @Injectable()
 export class GetWalletUseCase {
-  constructor(private walletRepository: WalletRepository) {}
+  constructor(private walletRepository: WalletDatabaseRepository) {}
 
   async execute(userId: string): Promise<Either<AppError, GetWalletOutput>> {
     const result = await this.walletRepository.findByUserId(userId);

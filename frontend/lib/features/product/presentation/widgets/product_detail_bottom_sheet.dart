@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
@@ -33,13 +30,12 @@ class _ProductDetailBottomSheetState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.white,
+        color: context.bgColor,
         border: Border(
           top: BorderSide(
             color: isDark
                 ? AppColors.mediumGray.withAlpha(50)
                 : AppColors.lightGray,
-            width: 1,
           ),
         ),
       ),
@@ -55,7 +51,7 @@ class _ProductDetailBottomSheetState
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
+                      color: context.textPrimary,
                     ),
                   ),
                   const Spacer(),
@@ -90,7 +86,9 @@ class _ProductDetailBottomSheetState
                               return;
                             }
                             AppSnackbar.success(
-                                context, 'Produto adicionado ao carrinho');
+                              context,
+                              'Produto adicionado ao carrinho',
+                            );
                           }
                         : null,
                     child: Container(
@@ -98,14 +96,13 @@ class _ProductDetailBottomSheetState
                       decoration: BoxDecoration(
                         color: canAdd
                             ? (isDark
-                                ? AppColors.surfaceContainerDark
-                                : AppColors.lightGray)
+                                  ? AppColors.surfaceContainerDark
+                                  : AppColors.lightGray)
                             : AppColors.mediumGray.withAlpha(50),
                         border: Border.all(
                           color: canAdd
-                              ? (isDark ? AppColors.white : AppColors.onSurface)
+                              ? (context.textPrimary)
                               : AppColors.mediumGray.withAlpha(50),
-                          width: 1,
                         ),
                       ),
                       child: Center(
@@ -116,8 +113,8 @@ class _ProductDetailBottomSheetState
                             fontWeight: FontWeight.w600,
                             color: canAdd
                                 ? (isDark
-                                    ? AppColors.white
-                                    : AppColors.onSurface)
+                                      ? AppColors.white
+                                      : AppColors.onSurface)
                                 : AppColors.mediumGray,
                           ),
                         ),
@@ -132,7 +129,8 @@ class _ProductDetailBottomSheetState
                     onPressed: canAdd
                         ? () {
                             context.push(
-                                '/profile/payment?productId=${product.id}');
+                              '/profile/payment?productId=${product.id}',
+                            );
                           }
                         : null,
                   ),
@@ -177,7 +175,7 @@ class _QuantityControl extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.white : AppColors.darkGray,
+            color: context.textPrimary,
           ),
         ),
         const SizedBox(width: 16),
@@ -196,11 +194,7 @@ class _QuantityButton extends StatelessWidget {
   final bool isDark;
   final VoidCallback? onTap;
 
-  const _QuantityButton({
-    required this.icon,
-    required this.isDark,
-    this.onTap,
-  });
+  const _QuantityButton({required this.icon, required this.isDark, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -210,20 +204,17 @@ class _QuantityButton extends StatelessWidget {
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceContainerDark : AppColors.lightGray,
+          color: context.surfaceColor,
           border: Border.all(
             color: isDark
                 ? AppColors.mediumGray.withAlpha(100)
                 : AppColors.mediumGray.withAlpha(50),
-            width: 1,
           ),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: onTap != null
-              ? (isDark ? AppColors.white : AppColors.darkGray)
-              : AppColors.mediumGray,
+          color: onTap != null ? (context.textPrimary) : AppColors.mediumGray,
         ),
       ),
     );

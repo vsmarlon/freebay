@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { CommentRepository } from '../domain/repositories/comment.repository';
+import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
 import { CommentTree } from '../types/social.types';
 
 @Injectable()
 export class GetCommentsUseCase {
-  constructor(private readonly commentRepository: CommentRepository) {}
+  constructor(private readonly commentRepository: PrismaCommentRepository) {}
 
   async execute(input: { postId: string; limit?: number; offset?: number }): Promise<Either<AppError, CommentTree[]>> {
     const result = await this.commentRepository.findAllByPostId(input.postId);

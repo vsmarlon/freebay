@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 String _currentLocation = '/';
 
@@ -17,7 +17,6 @@ const _labels = <String, String>{
   '/profile': 'Perfil',
   '/create-post': 'Nova Publicação',
   '/post/:id': 'Post',
-  '/post/:id/comments': 'Comentários',
   '/posts/search': 'Buscar',
   '/products/create': 'Novo Anúncio',
   '/products/:id': 'Produto',

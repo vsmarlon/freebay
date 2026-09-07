@@ -2,21 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/router/app_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class UserProfilePage extends ConsumerWidget {
   final String userId;
@@ -60,7 +53,7 @@ class UserProfilePage extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.white : AppColors.darkGray,
+                        color: context.textPrimary,
                       ),
                     ),
                     Spacing.vSm,
@@ -199,7 +192,11 @@ class UserProfilePage extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.star, size: 18, color: AppColors.warning),
+                        const Icon(
+                          Icons.star,
+                          size: 18,
+                          color: AppColors.warning,
+                        ),
                         Spacing.hSm,
                         Text(
                           '${user.reputationScore.toStringAsFixed(1)} (${user.totalReviews} ${user.totalReviews == 1 ? 'avaliação' : 'avaliações'})',
@@ -213,7 +210,7 @@ class UserProfilePage extends ConsumerWidget {
                           ),
                         ),
                         Spacing.hXs,
-                        Icon(
+                        const Icon(
                           Icons.chevron_right,
                           size: 18,
                           color: AppColors.outline,
@@ -258,9 +255,7 @@ class UserProfilePage extends ConsumerWidget {
       children: [
         Text(
           'Entre para seguir este usuário',
-          style: TextStyle(
-            color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-          ),
+          style: TextStyle(color: context.textSecondary),
         ),
         Spacing.vMd,
         Row(

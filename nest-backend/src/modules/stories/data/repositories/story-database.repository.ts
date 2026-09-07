@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { StoryRepository } from '../../domain/repositories/story.repository';
 import { StoryWithViews, StoryBrief, CreateStoryInput, StoryCreatePayload } from '../../types/story.types';
 
 @Injectable()
-export class PrismaStoryRepository extends BasePrismaRepository implements StoryRepository {
+export class PrismaStoryRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

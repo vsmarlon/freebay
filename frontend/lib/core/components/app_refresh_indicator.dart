@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class AppRefreshIndicator extends StatelessWidget {
   final Future<void> Function() onRefresh;

@@ -1,6 +1,6 @@
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:flutter/material.dart';
@@ -46,6 +46,4 @@ class PostDetailsController {
 }
 
 final postDetailsControllerProvider =
-    Provider.family<PostDetailsController, String>(
-      (ref, postId) => PostDetailsController(ref, postId),
-    );
+    Provider.family<PostDetailsController, String>(PostDetailsController.new);

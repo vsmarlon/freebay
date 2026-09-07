@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/brutalist_background.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/storage_service.dart';
@@ -132,11 +127,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     ),
                     GestureDetector(
                       onTap: _finish,
-                      child: Text(
+                      child: const Text(
                         'PULAR',
                         style: TextStyle(
                           fontFamily: AppTypography.fontFamily,
-                          color: AppColors.accentAmber,
+                          color: AppColors.primaryContainer,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                           letterSpacing: 1.0,
@@ -164,12 +159,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 height: 3,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.zero,
                   child: LinearProgressIndicator(
                     value: (_index + 1) / _slides.length,
                     backgroundColor: Colors.white.withAlpha(30),
                     valueColor: const AlwaysStoppedAnimation(
-                      AppColors.accentAmber,
+                      AppColors.primaryContainer,
                     ),
                   ),
                 ),
@@ -191,8 +185,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       _finish();
                     } else {
                       _pageController.nextPage(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.linear,
+                        duration: AppMotion.enter,
+                        curve: AppMotion.baseCurve,
                       );
                     }
                   },
@@ -228,7 +222,6 @@ class _SlideView extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   gradient: AppColors.brutalistGradient,
-                  borderRadius: BorderRadius.zero,
                   border: Border.all(
                     color: Colors.white.withAlpha(40),
                     width: 2,
@@ -302,8 +295,7 @@ class _SlideView extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: context.surfaceColor,
-                    borderRadius: BorderRadius.zero,
-                    border: Border.all(color: context.borderColor, width: 1.0),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: Text(
                     tag,

@@ -17,7 +17,7 @@ import {
   PAGINATION_QUERIES,
 } from '@/shared/decorators';
 import { PageQuery } from '@/shared/core/pagination';
-import { OrderRepository } from './domain/repositories/order.repository';
+import { PrismaOrderRepository } from './data/repositories/order-database.repository';
 import { CreateOrderUseCase } from './usecases/create-order.usecase';
 import { ConfirmDeliveryUseCase } from './usecases/confirm-delivery.usecase';
 import { MarkAsShippedUseCase } from './usecases/mark-as-shipped.usecase';
@@ -33,7 +33,7 @@ import { getPlatformFeePercent } from '@/shared/core/platform-fee';
 @Controller('orders')
 export class OrdersController {
   constructor(
-    private readonly orderRepository: OrderRepository,
+    private readonly orderRepository: PrismaOrderRepository,
     private readonly createOrderUseCase: CreateOrderUseCase,
     private readonly confirmDeliveryUseCase: ConfirmDeliveryUseCase,
     private readonly markAsShippedUseCase: MarkAsShippedUseCase,
@@ -156,4 +156,3 @@ export class OrdersController {
       : this.orderRepository.findByBuyerId(userId, page);
   }
 }
-

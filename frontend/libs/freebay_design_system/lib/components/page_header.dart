@@ -30,10 +30,10 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(
-        subtitle != null || (breadcrumbs != null && breadcrumbs!.isNotEmpty)
-            ? 76.0
-            : 56.0,
-      );
+    subtitle != null || (breadcrumbs != null && breadcrumbs!.isNotEmpty)
+        ? 76.0
+        : 56.0,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -63,10 +63,7 @@ class PageHeader extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Row(
             children: [
-              if (leading != null) ...[
-                leading!,
-                const SizedBox(width: 12),
-              ],
+              if (leading != null) ...[leading!, const SizedBox(width: 12)],
               Expanded(
                 child: RichText(
                   overflow: TextOverflow.ellipsis,

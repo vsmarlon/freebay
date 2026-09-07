@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
-import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
+import 'package:freebay/features/product/data/repositories/product_repository.dart';
 import 'package:freebay/features/product/data/entities/product_page_result.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 
@@ -50,7 +50,7 @@ class GetProductsParams extends Equatable {
 
 class GetProductsUsecase
     implements Usecase<ProductPageResult, GetProductsParams> {
-  final IProductRepository _repository;
+  final ProductRepository _repository;
 
   GetProductsUsecase(this._repository);
 

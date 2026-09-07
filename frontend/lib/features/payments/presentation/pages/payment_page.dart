@@ -2,13 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/brutalist_box.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -20,10 +14,6 @@ import 'package:freebay/features/payments/presentation/providers/payment_provide
 import 'package:freebay/features/payments/presentation/widgets/payment_view.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key});
@@ -137,7 +127,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           backgroundColor: isDark
               ? AppColors.surfaceContainerDark
               : AppColors.surfaceContainer,
-          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -160,7 +149,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               Spacing.vSm,
               Text(
                 CurrencyUtils.formatCents(product.price),
-                style: TextStyle(
+                style: const TextStyle(
                   fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -231,9 +220,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      final orderResult = await ref.read(createOrderUsecaseProvider)(
-        product.id,
-      );
+      final orderResult = await ref
+          .read(orderRepositoryProvider)
+          .createOrder(product.id);
       if (orderResult.isLeft) {
         if (mounted) {
           AppSnackbar.error(

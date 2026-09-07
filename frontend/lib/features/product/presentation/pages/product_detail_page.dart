@@ -1,22 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:freebay_design_system/tokens/app_typography.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/full_screen_image_viewer.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/product_detail_bottom_sheet.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class ProductDetailPage extends ConsumerWidget {
   final String productId;
@@ -41,22 +33,9 @@ class ProductDetailPage extends ConsumerWidget {
             ],
           ),
         ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Erro ao carregar produto',
-                style: TextStyle(color: context.textPrimary),
-              ),
-              const SizedBox(height: 12),
-              AppButton(
-                label: 'TENTAR NOVAMENTE',
-                size: AppButtonSize.compact,
-                onPressed: () => ref.invalidate(productByIdProvider(productId)),
-              ),
-            ],
-          ),
+        error: (err, _) => EmptyState.error(
+          message: 'Erro ao carregar produto',
+          onRetry: () => ref.invalidate(productByIdProvider(productId)),
         ),
       ),
     );
@@ -164,7 +143,7 @@ class ProductDetailPage extends ConsumerWidget {
                     children: [
                       Text(
                         priceFormatted,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
                           color: AppColors.primaryContainer,
@@ -178,11 +157,11 @@ class ProductDetailPage extends ConsumerWidget {
                         ),
                         decoration: BoxDecoration(
                           color: product.condition.toUpperCase() == 'NEW'
-                              ? const Color(0xFF8A1083).withAlpha(30)
+                              ? AppColors.primaryContainer.withAlpha(30)
                               : context.surfaceMidColor,
                           border: Border.all(
                             color: product.condition.toUpperCase() == 'NEW'
-                                ? const Color(0xFF8A1083)
+                                ? AppColors.primaryContainer
                                 : context.borderColor,
                             width: 1.5,
                           ),
@@ -196,7 +175,7 @@ class ProductDetailPage extends ConsumerWidget {
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
                             color: product.condition.toUpperCase() == 'NEW'
-                                ? const Color(0xFF8A1083)
+                                ? AppColors.primaryContainer
                                 : context.textPrimary,
                             letterSpacing: 0.5,
                           ),
@@ -210,9 +189,9 @@ class ProductDetailPage extends ConsumerWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.accentAmber.withAlpha(20),
+                      color: AppColors.primaryContainer.withAlpha(20),
                       border: Border.all(
-                        color: AppColors.accentAmber,
+                        color: AppColors.primaryContainer,
                         width: 1.5,
                       ),
                     ),
@@ -221,7 +200,7 @@ class ProductDetailPage extends ConsumerWidget {
                       children: [
                         const Icon(
                           Icons.shield_outlined,
-                          color: AppColors.accentAmber,
+                          color: AppColors.primaryContainer,
                           size: 20,
                         ),
                         Spacing.hSm,
@@ -234,7 +213,7 @@ class ProductDetailPage extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w900,
-                                  color: AppColors.accentAmber,
+                                  color: AppColors.primaryContainer,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -265,10 +244,7 @@ class ProductDetailPage extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        UserAvatar(
-                          imageUrl: product.seller?.avatarUrl,
-                          size: AppAvatarSize.medium,
-                        ),
+                        UserAvatar(imageUrl: product.seller?.avatarUrl),
                         Spacing.hSm,
                         Expanded(
                           child: Column(

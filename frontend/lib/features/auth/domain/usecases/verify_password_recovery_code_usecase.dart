@@ -1,7 +1,7 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
-import 'package:freebay/features/auth/domain/repositories/i_auth_repository.dart';
+import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 
 class VerifyPasswordRecoveryCodeParams {
   final String email;
@@ -12,7 +12,7 @@ class VerifyPasswordRecoveryCodeParams {
 
 class VerifyPasswordRecoveryCodeUsecase
     implements Usecase<bool, VerifyPasswordRecoveryCodeParams> {
-  final IAuthRepository _repository;
+  final AuthRepository _repository;
 
   VerifyPasswordRecoveryCodeUsecase(this._repository);
 

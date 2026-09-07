@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
-import { ModerationRepository } from './domain/repositories/moderation.repository';
 import { ModerationDatabaseRepository } from './data/repositories/moderation-database.repository';
 import { ListReportsUseCase } from './usecases/list-reports.usecase';
 import { ResolveReportUseCase } from './usecases/resolve-report.usecase';
@@ -12,7 +11,6 @@ import { ListModerationActionsUseCase } from './usecases/list-moderation-actions
   controllers: [AdminController],
   providers: [
     ModerationDatabaseRepository,
-    { provide: ModerationRepository, useExisting: ModerationDatabaseRepository },
     ListReportsUseCase,
     ResolveReportUseCase,
     SuspendUserUseCase,

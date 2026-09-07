@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 
 class ForwardMessageSheet extends ConsumerStatefulWidget {
@@ -117,15 +109,12 @@ class _ForwardMessageSheetState extends ConsumerState<ForwardMessageSheet> {
                     ? AppColors.surfaceDark
                     : AppColors.surfaceContainerHighest,
                 border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: AppColors.outlineVariant),
                 ),
                 enabledBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: AppColors.outlineVariant),
                 ),
                 focusedBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(
                     color: AppColors.primaryContainer,
                     width: 2,
@@ -215,35 +204,9 @@ class _ForwardMessageSheetState extends ConsumerState<ForwardMessageSheet> {
                           child: Row(
                             children: [
                               // Avatar
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.primaryContainer,
-                                  borderRadius: BorderRadius.zero,
-                                ),
-                                child:
-                                    chat.otherAvatarUrl != null &&
-                                        chat.otherAvatarUrl!.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: chat.otherAvatarUrl!,
-                                        fit: BoxFit.cover,
-                                        placeholder: (_, _) => const Icon(
-                                          Icons.person,
-                                          color: AppColors.onPrimary,
-                                          size: 20,
-                                        ),
-                                        errorWidget: (_, _, _) => const Icon(
-                                          Icons.person,
-                                          color: AppColors.onPrimary,
-                                          size: 20,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.person,
-                                        color: AppColors.onPrimary,
-                                        size: 20,
-                                      ),
+                              UserAvatar(
+                                imageUrl: chat.otherAvatarUrl,
+                                dimension: 40,
                               ),
                               const SizedBox(width: 12),
                               // Name & info
@@ -321,7 +284,7 @@ class _ForwardMessageSheetState extends ConsumerState<ForwardMessageSheet> {
               error: (e, _) => Center(
                 child: Text(
                   'Erro ao carregar conversas: $e',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     color: AppColors.error,
                   ),
@@ -338,7 +301,7 @@ class _ForwardMessageSheetState extends ConsumerState<ForwardMessageSheet> {
                   ? AppColors.surfaceDark
                   : AppColors.surfaceContainerHighest,
               border: const Border(
-                top: BorderSide(color: AppColors.outlineVariant, width: 1),
+                top: BorderSide(color: AppColors.outlineVariant),
               ),
             ),
             child: AppButton(
@@ -347,7 +310,6 @@ class _ForwardMessageSheetState extends ConsumerState<ForwardMessageSheet> {
                   : 'ENCAMINHAR (${_selectedChatIds.length})',
               onPressed: _selectedChatIds.isNotEmpty ? _handleForward : null,
               isLoading: _isForwarding,
-              variant: AppButtonVariant.primary,
             ),
           ),
         ],

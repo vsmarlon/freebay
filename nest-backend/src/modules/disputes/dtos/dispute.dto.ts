@@ -50,21 +50,6 @@ export class OpenDisputeOutput {
   readonly expiresAt: Date;
 }
 
-export class SubmitEvidenceOutput {
-  @ApiProperty({ example: true })
-  readonly submitted: boolean;
-}
-
-export class ResolveDisputeOutput {
-  @ApiProperty({ example: true })
-  readonly resolved: boolean;
-}
-
-export class WithdrawDisputeOutput {
-  @ApiProperty({ example: true })
-  readonly withdrawn: boolean;
-}
-
 export interface OpenDisputeInput {
   userId: string;
   orderId: string;

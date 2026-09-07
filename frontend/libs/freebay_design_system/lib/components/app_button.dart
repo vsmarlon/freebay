@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../tokens/app_colors.dart';
+import '../tokens/app_depth.dart';
+import '../tokens/app_motion.dart';
 import '../tokens/app_typography.dart';
-import 'spacing.dart';
+import '../tokens/spacing.dart';
+import '../tokens/theme_extension.dart';
 
 enum AppButtonVariant { primary, secondary, ghost, danger }
 
@@ -37,11 +41,12 @@ class _AppButtonState extends State<AppButton> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = context.colors;
     final isEnabled = !widget.isLoading && widget.onPressed != null;
-    final backgroundColor = _backgroundColor(isEnabled);
-    final foregroundColor = _foregroundColor(isEnabled);
-    final border = _border(isEnabled);
-    final shadowColor = _shadowColor(isEnabled);
+    final backgroundColor = _backgroundColor(scheme, isEnabled);
+    final foregroundColor = _foregroundColor(scheme, isEnabled);
+    final border = _border(scheme, isEnabled);
+    final shadowColor = _shadowColor(scheme, isEnabled);
     final gradient = widget.variant == AppButtonVariant.primary && isEnabled
         ? AppColors.brutalistGradient
         : null;
@@ -53,30 +58,26 @@ class _AppButtonState extends State<AppButton> {
     switch (widget.size) {
       case AppButtonSize.compact:
         height = 36.0;
-        horizontalPadding = 12.0;
+        horizontalPadding = Spacing.sm + 4;
         textStyle = AppTypography.button.copyWith(fontSize: 13);
-        break;
       case AppButtonSize.standard:
         height = 48.0;
-        horizontalPadding = 16.0;
+        horizontalPadding = Spacing.md;
         textStyle = AppTypography.button;
-        break;
       case AppButtonSize.large:
         height = 56.0;
-        horizontalPadding = 24.0;
+        horizontalPadding = Spacing.lg;
         textStyle = AppTypography.button.copyWith(
           fontSize: 16,
           letterSpacing: 0.5,
         );
-        break;
     }
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 100),
-      curve: Curves.linear,
+      duration: AppMotion.tap,
       transform: Matrix4.translationValues(
-        _isPressed ? 3.0 : 0.0,
-        _isPressed ? 3.0 : 0.0,
+        _isPressed ? AppDepth.pressOffset : 0.0,
+        _isPressed ? AppDepth.pressOffset : 0.0,
         0.0,
       ),
       child: SizedBox(
@@ -84,69 +85,59 @@ class _AppButtonState extends State<AppButton> {
         height: height,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.zero,
             gradient: gradient,
             color: gradient == null ? backgroundColor : null,
             border: border,
-            boxShadow: shadowColor != null
-                ? [
-                    BoxShadow(
-                      color: shadowColor,
-                      offset: _isPressed
-                          ? const Offset(0, 0)
-                          : const Offset(3, 3),
-                      blurRadius: 0,
-                    ),
-                  ]
+            boxShadow: shadowColor != null && !_isPressed
+                ? AppDepth.hard(shadowColor)
                 : null,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.zero,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: isEnabled ? () {
-                  HapticFeedback.lightImpact();
-                  widget.onPressed?.call();
-                } : null,
-                onHighlightChanged: isEnabled ? (highlighted) {
-                  setState(() => _isPressed = highlighted);
-                } : null,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  child: Center(
-                    child: widget.isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                foregroundColor,
-                              ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isEnabled
+                  ? () {
+                      HapticFeedback.lightImpact();
+                      widget.onPressed?.call();
+                    }
+                  : null,
+              onHighlightChanged: isEnabled
+                  ? (highlighted) {
+                      setState(() => _isPressed = highlighted);
+                    }
+                  : null,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                child: Center(
+                  child: widget.isLoading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              foregroundColor,
                             ),
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (widget.icon != null) ...[
-                                Icon(
-                                  widget.icon,
-                                  size: 20,
-                                  color: foregroundColor,
-                                ),
-                                Spacing.hSm,
-                              ],
-                              Text(
-                                widget.label,
-                                style: textStyle.copyWith(
-                                  color: foregroundColor,
-                                ),
-                              ),
-                            ],
                           ),
-                  ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (widget.icon != null) ...[
+                              Icon(
+                                widget.icon,
+                                size: 20,
+                                color: foregroundColor,
+                              ),
+                              Spacing.hSm,
+                            ],
+                            Text(
+                              widget.label,
+                              style: textStyle.copyWith(color: foregroundColor),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
@@ -156,67 +147,67 @@ class _AppButtonState extends State<AppButton> {
     );
   }
 
-  Color _backgroundColor(bool isEnabled) {
-    if (!isEnabled) {
-      return AppColors.surfaceContainerHighest;
-    }
+  Color _backgroundColor(ColorScheme scheme, bool isEnabled) {
+    if (!isEnabled) return scheme.surfaceContainerHigh;
 
     switch (widget.variant) {
       case AppButtonVariant.primary:
         return AppColors.primaryContainer;
       case AppButtonVariant.secondary:
-        return AppColors.onSurface;
+        return scheme.surface;
       case AppButtonVariant.ghost:
         return Colors.transparent;
       case AppButtonVariant.danger:
-        return AppColors.error;
+        return scheme.error;
     }
   }
 
-  Color _foregroundColor(bool isEnabled) {
-    if (!isEnabled) {
-      return AppColors.onSurfaceVariant;
-    }
+  Color _foregroundColor(ColorScheme scheme, bool isEnabled) {
+    if (!isEnabled) return scheme.onSurfaceVariant;
 
     switch (widget.variant) {
       case AppButtonVariant.primary:
-      case AppButtonVariant.secondary:
       case AppButtonVariant.danger:
         return AppColors.onPrimary;
+      case AppButtonVariant.secondary:
+        return scheme.onSurface;
       case AppButtonVariant.ghost:
         return AppColors.primaryContainer;
     }
   }
 
-  Border? _border(bool isEnabled) {
-    if (widget.variant == AppButtonVariant.ghost) {
+  Border? _border(ColorScheme scheme, bool isEnabled) {
+    if (!isEnabled) {
       return Border.all(
-        color: isEnabled ? AppColors.accentAmber : AppColors.outlineVariant,
-        width: 1.5,
+        color: scheme.outlineVariant,
+        width: AppDepth.borderThin,
       );
     }
 
-    if (!isEnabled) {
-      return Border.all(color: AppColors.outlineVariant, width: 1.5);
+    switch (widget.variant) {
+      case AppButtonVariant.ghost:
+        return Border.all(
+          color: AppColors.primaryContainer,
+          width: AppDepth.borderThin,
+        );
+      case AppButtonVariant.secondary:
+        return Border.all(color: scheme.onSurface, width: AppDepth.borderThick);
+      case AppButtonVariant.primary:
+      case AppButtonVariant.danger:
+        return null;
     }
-
-    if (widget.variant == AppButtonVariant.secondary) {
-      return Border.all(color: AppColors.onSurface, width: 2);
-    }
-
-    return null;
   }
 
-  Color? _shadowColor(bool isEnabled) {
+  Color? _shadowColor(ColorScheme scheme, bool isEnabled) {
     if (!isEnabled) return null;
 
     switch (widget.variant) {
       case AppButtonVariant.primary:
-        return AppColors.primary.withAlpha(180);
+        return AppColors.primary;
       case AppButtonVariant.secondary:
-        return AppColors.onSurface.withAlpha(100);
+        return scheme.onSurface;
       case AppButtonVariant.danger:
-        return AppColors.error.withAlpha(150);
+        return scheme.error;
       case AppButtonVariant.ghost:
         return null;
     }

@@ -67,6 +67,6 @@ class OrderService extends BaseHttpRepository {
         fromJson: CanReviewResponse.fromJson,
         customMapper: (d) => d is Map<String, dynamic>
             ? CanReviewResponse.fromJson(d)
-            : const CanReviewResponse(canReview: false),
+            : const CanReviewResponse(),
       );
 }

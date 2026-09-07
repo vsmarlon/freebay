@@ -3,10 +3,9 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { LikeRepository } from '../../domain/repositories/like.repository';
 
 @Injectable()
-export class PrismaLikeRepository extends BasePrismaRepository implements LikeRepository {
+export class PrismaLikeRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

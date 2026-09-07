@@ -1,7 +1,6 @@
+import 'package:freebay/core/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_card.dart';
-import 'package:freebay/core/components/infinite_scroll_listener.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
 const _crossAxisCount = 2;

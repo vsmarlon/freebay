@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { CursorPage, FIRST_PAGE, PageQuery } from '@/shared/core/pagination';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ChatThreadType } from '@prisma/client';
 import { GetMessagesOutput, GetMessagesResult } from '../dtos/chat.dto';
@@ -15,8 +15,8 @@ import {
 @Injectable()
 export class GetMessagesUseCase {
   constructor(
-    private readonly conversationRepository: ConversationRepository,
-    private readonly preferenceRepository: ConversationPreferenceRepository,
+    private readonly conversationRepository: ConversationDatabaseRepository,
+    private readonly preferenceRepository: PrismaConversationPreferenceRepository,
     private readonly threadAccess: ChatThreadAccessService,
   ) {}
 

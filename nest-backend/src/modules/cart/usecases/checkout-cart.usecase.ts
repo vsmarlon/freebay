@@ -1,18 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { splitAmount } from '@/shared/core/platform-fee';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { PaymentGroupRepository } from '@/modules/payments/domain/repositories/payment-group.repository';
-import {
-  PaymentLineItem,
-  PaymentProvider,
-} from '@/modules/payments/domain/providers/payment-provider.interface';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { PaymentGroupDatabaseRepository } from '@/modules/payments/data/repositories/payment-group-database.repository';
+import { PaymentLineItem } from '@/modules/payments/types/payment-provider.types';
+import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 import { PaymentGroupSnapshot } from '@/modules/payments/types/payment-group.types';
-import { CartRepository } from '../domain/repositories/cart.repository';
+import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 import { PRODUCT_UNAVAILABLE, ReserveOrderInput } from '../types/cart.types';
 import {
   CheckoutCartInput,
@@ -33,10 +31,10 @@ export class CheckoutCartUseCase {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cartRepository: CartRepository,
-    private readonly paymentGroupRepository: PaymentGroupRepository,
-    private readonly userRepository: UserRepository,
-    private readonly paymentProvider: PaymentProvider,
+    private readonly cartRepository: CartDatabaseRepository,
+    private readonly paymentGroupRepository: PaymentGroupDatabaseRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    @Inject(StripeProvider) private readonly paymentProvider: StripeProvider,
   ) {}
 
   async execute(input: CheckoutCartInput): Promise<Either<AppError, CheckoutCartOutput>> {

@@ -3,11 +3,10 @@ import { Category } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { CategoryRepository } from '../../domain/repositories/category.repository';
 import { CategoryWithChildren } from '../../types/category.types';
 
 @Injectable()
-export class CategoryDatabaseRepository extends BasePrismaRepository implements CategoryRepository {
+export class CategoryDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

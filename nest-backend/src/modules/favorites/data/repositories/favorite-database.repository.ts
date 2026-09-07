@@ -3,12 +3,11 @@ import { Favorite, Product } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { FavoriteRepository } from '../../domain/repositories/favorite.repository';
 import { FavoriteWithProduct } from '../../types/favorite.types';
 import { SELLER_SELECT_FULL } from '@/shared/utils/prisma-selects';
 
 @Injectable()
-export class FavoriteDatabaseRepository extends BasePrismaRepository implements FavoriteRepository {
+export class FavoriteDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

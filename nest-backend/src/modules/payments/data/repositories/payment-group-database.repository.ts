@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { PaymentGroupRepository } from '../../domain/repositories/payment-group.repository';
 import {
   AttachGroupPaymentInput,
   CreatePaymentGroupInput,
@@ -36,7 +35,6 @@ type GroupPayload = Prisma.PaymentGroupGetPayload<{ include: typeof GROUP_INCLUD
 @Injectable()
 export class PaymentGroupDatabaseRepository
   extends BasePrismaRepository
-  implements PaymentGroupRepository
 {
   constructor(prisma: PrismaService) {
     super(prisma);

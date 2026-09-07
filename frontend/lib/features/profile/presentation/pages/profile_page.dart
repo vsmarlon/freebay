@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/guest_profile_view.dart';
@@ -117,25 +112,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ),
                 );
               },
-              loading: () => SkeletonPage(
+              loading: () => const SkeletonPage(
                 child: Column(
                   children: [
-                    const SizedBox(height: 16),
-                    const ShimmerBlock(height: 80, width: 80),
-                    const SizedBox(height: 12),
-                    const ShimmerBlock(height: 20, width: 160),
-                    const SizedBox(height: 6),
-                    const ShimmerBlock(height: 14, width: 100),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 80, width: 80),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 20, width: 160),
+                    SizedBox(height: 6),
+                    ShimmerBlock(height: 14, width: 100),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const ShimmerBlock(height: 20, width: 40),
-                              const SizedBox(height: 4),
-                              const ShimmerBlock(height: 12, width: 60),
+                              ShimmerBlock(height: 20, width: 40),
+                              SizedBox(height: 4),
+                              ShimmerBlock(height: 12, width: 60),
                             ],
                           ),
                         ),
@@ -143,9 +138,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const ShimmerBlock(height: 20, width: 40),
-                              const SizedBox(height: 4),
-                              const ShimmerBlock(height: 12, width: 60),
+                              ShimmerBlock(height: 20, width: 40),
+                              SizedBox(height: 4),
+                              ShimmerBlock(height: 12, width: 60),
                             ],
                           ),
                         ),
@@ -153,23 +148,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const ShimmerBlock(height: 20, width: 40),
-                              const SizedBox(height: 4),
-                              const ShimmerBlock(height: 12, width: 60),
+                              ShimmerBlock(height: 20, width: 40),
+                              SizedBox(height: 4),
+                              ShimmerBlock(height: 12, width: 60),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
-                    const ShimmerBlock(height: 40),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 24),
+                    ShimmerBlock(height: 40),
+                    SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(child: ShimmerBlock(height: 120)),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(child: ShimmerBlock(height: 120)),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(child: ShimmerBlock(height: 120)),
                       ],
                     ),

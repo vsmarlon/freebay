@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { CartRepository } from '../../domain/repositories/cart.repository';
 import {
   CartItemPayload,
   ProductBrief,
@@ -13,7 +12,7 @@ import {
 import { Prisma, Product } from '@prisma/client';
 
 @Injectable()
-export class CartDatabaseRepository extends BasePrismaRepository implements CartRepository {
+export class CartDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

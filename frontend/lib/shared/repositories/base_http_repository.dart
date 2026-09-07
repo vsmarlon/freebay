@@ -30,6 +30,26 @@ abstract class BaseHttpRepository {
     return current;
   }
 
+  Either<Failure, T> _mapSingle<T>(
+    dynamic extracted, {
+    T Function(Map<String, dynamic> json)? fromJson,
+    T Function(dynamic data)? customMapper,
+  }) {
+    if (customMapper != null) {
+      return Right(customMapper(extracted));
+    }
+    if (fromJson != null) {
+      if (extracted is Map<String, dynamic>) {
+        return Right(fromJson(extracted));
+      }
+      if (extracted is Map) {
+        return Right(fromJson(Map<String, dynamic>.from(extracted)));
+      }
+      return const Left(ServerFailure('Resposta inválida do servidor.'));
+    }
+    return Right(extracted as T);
+  }
+
   /// Core template execution wrapper.
   Future<Either<Failure, T>> safeCall<T>(
     Future<Response> Function() request, {
@@ -46,7 +66,7 @@ abstract class BaseHttpRepository {
           response.statusCode! < 300) {
         return onSuccess(response);
       }
-      return const Left(ServerFailure('Erro ao se comunicar com o servidor.'));
+      return const Left(ServerFailure());
     } on DioException catch (e) {
       if (kDebugMode && debugLabel != null) {
         debugPrint('[$debugLabel] DioException: ${e.type} ${e.message}');
@@ -77,18 +97,11 @@ abstract class BaseHttpRepository {
       debugLabel: debugLabel ?? 'GET $path',
       onSuccess: (res) {
         final extracted = _extract(res.data, extractKey);
-        if (customMapper != null) {
-          return Right(customMapper(extracted));
-        }
-        if (fromJson != null) {
-          if (extracted is Map<String, dynamic>) {
-            return Right(fromJson(extracted));
-          } else if (extracted is Map) {
-            return Right(fromJson(Map<String, dynamic>.from(extracted)));
-          }
-          return const Left(ServerFailure('Resposta inválida do servidor.'));
-        }
-        return Right(extracted as T);
+        return _mapSingle(
+          extracted,
+          fromJson: fromJson,
+          customMapper: customMapper,
+        );
       },
     );
   }
@@ -145,7 +158,8 @@ abstract class BaseHttpRepository {
               .toList();
           return Right(list);
         }
-        return Right(<T>[]);
+        final empty = <T>[];
+        return Right(empty);
       },
     );
   }
@@ -171,18 +185,11 @@ abstract class BaseHttpRepository {
       debugLabel: debugLabel ?? 'POST $path',
       onSuccess: (res) {
         final extracted = _extract(res.data, extractKey);
-        if (customMapper != null) {
-          return Right(customMapper(extracted));
-        }
-        if (fromJson != null) {
-          if (extracted is Map<String, dynamic>) {
-            return Right(fromJson(extracted));
-          } else if (extracted is Map) {
-            return Right(fromJson(Map<String, dynamic>.from(extracted)));
-          }
-          return const Left(ServerFailure('Resposta inválida do servidor.'));
-        }
-        return Right(extracted as T);
+        return _mapSingle(
+          extracted,
+          fromJson: fromJson,
+          customMapper: customMapper,
+        );
       },
     );
   }
@@ -208,18 +215,11 @@ abstract class BaseHttpRepository {
       debugLabel: debugLabel ?? 'PUT $path',
       onSuccess: (res) {
         final extracted = _extract(res.data, extractKey);
-        if (customMapper != null) {
-          return Right(customMapper(extracted));
-        }
-        if (fromJson != null) {
-          if (extracted is Map<String, dynamic>) {
-            return Right(fromJson(extracted));
-          } else if (extracted is Map) {
-            return Right(fromJson(Map<String, dynamic>.from(extracted)));
-          }
-          return const Left(ServerFailure('Resposta inválida do servidor.'));
-        }
-        return Right(extracted as T);
+        return _mapSingle(
+          extracted,
+          fromJson: fromJson,
+          customMapper: customMapper,
+        );
       },
     );
   }
@@ -245,18 +245,11 @@ abstract class BaseHttpRepository {
       debugLabel: debugLabel ?? 'PATCH $path',
       onSuccess: (res) {
         final extracted = _extract(res.data, extractKey);
-        if (customMapper != null) {
-          return Right(customMapper(extracted));
-        }
-        if (fromJson != null) {
-          if (extracted is Map<String, dynamic>) {
-            return Right(fromJson(extracted));
-          } else if (extracted is Map) {
-            return Right(fromJson(Map<String, dynamic>.from(extracted)));
-          }
-          return const Left(ServerFailure('Resposta inválida do servidor.'));
-        }
-        return Right(extracted as T);
+        return _mapSingle(
+          extracted,
+          fromJson: fromJson,
+          customMapper: customMapper,
+        );
       },
     );
   }
@@ -282,18 +275,11 @@ abstract class BaseHttpRepository {
       debugLabel: debugLabel ?? 'DELETE $path',
       onSuccess: (res) {
         final extracted = _extract(res.data, extractKey);
-        if (customMapper != null) {
-          return Right(customMapper(extracted));
-        }
-        if (fromJson != null) {
-          if (extracted is Map<String, dynamic>) {
-            return Right(fromJson(extracted));
-          } else if (extracted is Map) {
-            return Right(fromJson(Map<String, dynamic>.from(extracted)));
-          }
-          return const Left(ServerFailure('Resposta inválida do servidor.'));
-        }
-        return Right(extracted as T);
+        return _mapSingle(
+          extracted,
+          fromJson: fromJson,
+          customMapper: customMapper,
+        );
       },
     );
   }

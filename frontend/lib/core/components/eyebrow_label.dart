@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
-/// Small all-caps Inter label that sits above a block of content.
 class EyebrowLabel extends StatelessWidget {
   final String text;
 

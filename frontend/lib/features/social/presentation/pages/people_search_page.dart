@@ -2,16 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
 import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PeopleSearchPage extends ConsumerStatefulWidget {
   const PeopleSearchPage({super.key});
@@ -87,11 +82,11 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
 
   Widget _buildContent(UserSearchState searchState, String query) {
     if (query.isEmpty && searchState.users.isEmpty && !searchState.isLoading) {
-      return SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      return const SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 32),
               child: Column(
                 children: [
@@ -108,7 +103,7 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
                 ],
               ),
             ),
-            const SuggestionsSection(asSliver: false),
+            SuggestionsSection(asSliver: false),
           ],
         ),
       );

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { CartRepository } from '../domain/repositories/cart.repository';
+import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 
 import { RemoveFromCartInput } from '../dtos/cart.dto';
 
 @Injectable()
 export class RemoveFromCartUseCase {
-  constructor(private readonly cartRepository: CartRepository) {}
+  constructor(private readonly cartRepository: CartDatabaseRepository) {}
 
   async execute(input: RemoveFromCartInput): Promise<Either<AppError, void>> {
     const existingResult = await this.cartRepository.findItem(input.userId, input.productId);

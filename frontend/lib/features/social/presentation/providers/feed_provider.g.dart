@@ -145,7 +145,7 @@ final class FeedProvider extends $NotifierProvider<Feed, FeedState> {
   }
 }
 
-String _$feedHash() => r'732c6e9d817383674982c128d520f1d22b77d089';
+String _$feedHash() => r'046e8ae7c25e06a711efa39d2481bd09775ac310';
 
 abstract class _$Feed extends $Notifier<FeedState> {
   FeedState build();

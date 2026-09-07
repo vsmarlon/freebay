@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { SearchUserResponse } from '../mappers/user.mapper';
 import { SearchUsersInput } from '../dtos/user.dto';
 
 @Injectable()
 export class SearchUsersUseCase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(private readonly userRepository: UserDatabaseRepository) {}
 
   async execute(input: SearchUsersInput): Promise<Either<AppError, SearchUserResponse[]>> {
     const result = await this.userRepository.searchUsers(input.query, input.limit, input.offset, input.viewerId);

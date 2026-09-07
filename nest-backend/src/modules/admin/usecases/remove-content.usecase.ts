@@ -3,7 +3,7 @@ import { ModerationActionType } from '@prisma/client';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { RepositoryResponse } from '@/shared/core/either';
-import { ModerationRepository } from '../domain/repositories/moderation.repository';
+import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 
 export type RemovableContentType = 'PRODUCT' | 'POST' | 'COMMENT';
 
@@ -21,7 +21,7 @@ const LABEL_BY_TYPE: Record<RemovableContentType, string> = {
 
 @Injectable()
 export class RemoveContentUseCase {
-  constructor(private readonly moderationRepository: ModerationRepository) {}
+  constructor(private readonly moderationRepository: ModerationDatabaseRepository) {}
 
   async execute(input: {
     targetType: RemovableContentType;

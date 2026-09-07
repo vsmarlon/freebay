@@ -5,13 +5,13 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
 import { OpenDisputeInput, OpenDisputeOutput } from '../dtos/dispute.dto';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
 
 @Injectable()
 export class OpenDisputeUseCase {
   constructor(
     private prisma: PrismaService,
-    private disputeRepo: DisputeRepository,
+    private disputeRepo: PrismaDisputeRepository,
     private notificationService: NotificationService,
   ) {}
 

@@ -3,18 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class OrdersPage extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -71,7 +63,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
               ),
               child: TabBar(
                 controller: _tabController,
-                indicatorColor: const Color(0xFF8A1083),
+                indicatorColor: AppColors.primaryContainer,
                 indicatorWeight: 3,
                 labelColor: context.textPrimary,
                 unselectedLabelColor: context.textSecondary,
@@ -90,7 +82,10 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: const [_PurchasesTab(), _SalesTab()],
+                children: const [
+                  _OrdersTab(isSeller: false),
+                  _OrdersTab(isSeller: true),
+                ],
               ),
             ),
           ],
@@ -100,133 +95,66 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
   }
 }
 
-class _PurchasesTab extends ConsumerWidget {
-  const _PurchasesTab();
+class _OrdersTab extends ConsumerWidget {
+  final bool isSeller;
+
+  const _OrdersTab({required this.isSeller});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(purchasesListProvider);
+    // The generated providers expose distinct state classes with the same UI shape.
+    final dynamic state = isSeller
+        ? ref.watch(salesListProvider)
+        : ref.watch(purchasesListProvider);
 
     if (state.isLoading && state.orders.isEmpty) {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 4,
         separatorBuilder: (context, index) => Spacing.vSm,
-        itemBuilder: (context, index) =>
-            const ShimmerBlock(height: 110, width: double.infinity),
+        itemBuilder: (context, index) => const ShimmerBlock(height: 110),
       );
     }
 
     if (state.error != null && state.orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Erro ao carregar compras: ${state.error}',
-              style: TextStyle(color: context.textSecondary),
-            ),
-            Spacing.vMd,
-            AppButton(
-              label: 'TENTAR NOVAMENTE',
-              size: AppButtonSize.compact,
-              onPressed: () =>
-                  ref.read(purchasesListProvider.notifier).refresh(),
-            ),
-          ],
-        ),
+      final refresh = isSeller
+          ? () => ref.read(salesListProvider.notifier).refresh()
+          : () => ref.read(purchasesListProvider.notifier).refresh();
+      return EmptyState.error(
+        message:
+            'Erro ao carregar ${isSeller ? 'vendas' : 'compras'}: ${state.error}',
+        onRetry: refresh,
       );
     }
 
     if (state.orders.isEmpty) {
       return EmptyState(
         icon: Icons.shopping_bag_outlined,
-        title: 'NENHUMA COMPRA',
-        subtitle: 'Você ainda não realizou compras no FreeBay.',
+        title: isSeller ? 'NENHUMA VENDA' : 'NENHUMA COMPRA',
+        subtitle: isSeller
+            ? 'Você ainda não vendeu produtos no FreeBay.'
+            : 'Você ainda não realizou compras no FreeBay.',
         action: AppButton(
-          label: 'EXPLORAR PRODUTOS',
-          icon: Icons.explore_outlined,
+          label: isSeller ? 'CRIAR ANÚNCIO' : 'EXPLORAR PRODUTOS',
+          icon: isSeller ? Icons.add_circle_outline : Icons.explore_outlined,
           size: AppButtonSize.compact,
-          onPressed: () => context.go('/explore'),
+          onPressed: () =>
+              context.go(isSeller ? '/products/create' : '/explore'),
         ),
       );
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF8A1083),
-      onRefresh: () => ref.read(purchasesListProvider.notifier).refresh(),
+      color: AppColors.primaryContainer,
+      onRefresh: () => isSeller
+          ? ref.read(salesListProvider.notifier).refresh()
+          : ref.read(purchasesListProvider.notifier).refresh(),
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: state.orders.length,
         separatorBuilder: (context, index) => Spacing.vSm,
         itemBuilder: (context, index) {
-          return _OrderCard(order: state.orders[index], isSeller: false);
-        },
-      ),
-    );
-  }
-}
-
-class _SalesTab extends ConsumerWidget {
-  const _SalesTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(salesListProvider);
-
-    if (state.isLoading && state.orders.isEmpty) {
-      return ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: 4,
-        separatorBuilder: (context, index) => Spacing.vSm,
-        itemBuilder: (context, index) =>
-            const ShimmerBlock(height: 110, width: double.infinity),
-      );
-    }
-
-    if (state.error != null && state.orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Erro ao carregar vendas: ${state.error}',
-              style: TextStyle(color: context.textSecondary),
-            ),
-            Spacing.vMd,
-            AppButton(
-              label: 'TENTAR NOVAMENTE',
-              size: AppButtonSize.compact,
-              onPressed: () => ref.read(salesListProvider.notifier).refresh(),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (state.orders.isEmpty) {
-      return EmptyState(
-        icon: Icons.storefront_outlined,
-        title: 'NENHUMA VENDA',
-        subtitle: 'Você ainda não vendeu produtos no FreeBay.',
-        action: AppButton(
-          label: 'CRIAR ANÚNCIO',
-          icon: Icons.add_circle_outline,
-          size: AppButtonSize.compact,
-          onPressed: () => context.push('/products/create'),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      color: const Color(0xFF8A1083),
-      onRefresh: () => ref.read(salesListProvider.notifier).refresh(),
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: state.orders.length,
-        separatorBuilder: (context, index) => Spacing.vSm,
-        itemBuilder: (context, index) {
-          return _OrderCard(order: state.orders[index], isSeller: true);
+          return _OrderCard(order: state.orders[index], isSeller: isSeller);
         },
       ),
     );
@@ -242,18 +170,18 @@ class _OrderCard extends StatelessWidget {
   Color _statusColor(OrderStatus status) {
     switch (status) {
       case OrderStatus.confirmed:
-        return AppColors.accentAmber;
+        return AppColors.primaryContainer;
       case OrderStatus.shipped:
-        return Colors.blueAccent;
+        return AppColors.info;
       case OrderStatus.delivered:
       case OrderStatus.completed:
         return AppColors.success;
       case OrderStatus.disputed:
         return AppColors.error;
       case OrderStatus.cancelled:
-        return Colors.grey;
+        return AppColors.mediumGray;
       case OrderStatus.pending:
-        return const Color(0xFF8A1083);
+        return AppColors.primaryContainer;
     }
   }
 
@@ -276,7 +204,6 @@ class _OrderCard extends StatelessWidget {
         ),
         padding: const EdgeInsets.all(12),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Product image or placeholder
             Container(
@@ -284,7 +211,7 @@ class _OrderCard extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 color: context.surfaceMidColor,
-                border: Border.all(color: context.borderColor, width: 1),
+                border: Border.all(color: context.borderColor),
               ),
               child: product?.imageUrl != null && product!.imageUrl!.isNotEmpty
                   ? CachedNetworkImage(
@@ -324,7 +251,7 @@ class _OrderCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: color.withAlpha(30),
-                          border: Border.all(color: color, width: 1),
+                          border: Border.all(color: color),
                         ),
                         child: Text(
                           status.label.toUpperCase(),

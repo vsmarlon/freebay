@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/infinite_scroll_listener.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
@@ -132,10 +127,7 @@ class _PostGridTile extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/post/${post.id}'),
       child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainer,
-          borderRadius: BorderRadius.zero,
-        ),
+        decoration: const BoxDecoration(color: AppColors.surfaceContainer),
         child: post.imageUrl != null
             ? CachedNetworkImage(
                 imageUrl: post.imageUrl!,

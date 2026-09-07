@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freebay/features/product/data/repositories/product_repository.dart';
 import 'package:freebay/features/product/data/repositories/category_repository.dart';
-import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
-import 'package:freebay/features/product/domain/repositories/i_category_repository.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/domain/usecases/create_product_usecase.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
@@ -13,11 +11,11 @@ import 'package:freebay/features/product/data/entities/category_entity.dart';
 
 part 'product_controller.g.dart';
 
-final productRepositoryProvider = Provider<IProductRepository>((ref) {
+final productRepositoryProvider = Provider<ProductRepository>((ref) {
   return ProductRepository();
 });
 
-final categoryRepositoryProvider = Provider<ICategoryRepository>((ref) {
+final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
   return CategoryRepository();
 });
 
@@ -95,7 +93,7 @@ class ProductsFeed extends _$ProductsFeed {
   }
 
   Future<void> load() async {
-    state = state.copyWith(isLoading: true, error: null, nextCursor: null);
+    state = state.copyWith(isLoading: true);
     final usecase = ref.read(getProductsUsecaseProvider);
     final result = await usecase(params.withCursor(null));
 

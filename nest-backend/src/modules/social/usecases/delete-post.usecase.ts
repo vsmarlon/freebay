@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 
 export interface DeletePostInput {
   postId: string;
@@ -10,7 +10,7 @@ export interface DeletePostInput {
 
 @Injectable()
 export class DeletePostUseCase {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(private readonly postRepository: PrismaPostRepository) {}
 
   async execute(input: DeletePostInput): Promise<Either<AppError, void>> {
     const post = await this.postRepository.findById(input.postId);

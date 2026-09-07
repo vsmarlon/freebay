@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/components/user_avatar.dart';
 
 class UserListTileItem {
@@ -38,7 +38,7 @@ class UserListTile extends StatelessWidget {
         onTap: () => context.push('/user/${user.id}'),
         child: Row(
           children: [
-            UserAvatar(imageUrl: user.avatarUrl, size: AppAvatarSize.medium),
+            UserAvatar(imageUrl: user.avatarUrl),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

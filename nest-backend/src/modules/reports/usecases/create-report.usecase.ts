@@ -3,11 +3,11 @@ import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { Report, ReportReason, ReportTargetType } from '@prisma/client';
 import { CreateReportInput } from '../dtos/report.dto';
-import { ReportRepository } from '../domain/repositories/report.repository';
+import { ReportDatabaseRepository } from '../data/repositories/report-database.repository';
 
 @Injectable()
 export class CreateReportUseCase {
-  constructor(private readonly reportRepository: ReportRepository) {}
+  constructor(private readonly reportRepository: ReportDatabaseRepository) {}
 
   async execute(input: CreateReportInput): Promise<Either<AppError, Report>> {
     switch (input.targetType) {

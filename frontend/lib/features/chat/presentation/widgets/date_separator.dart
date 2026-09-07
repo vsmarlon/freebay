@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/date_utils.dart';
 
 class DateSeparator extends StatelessWidget {
@@ -20,11 +18,7 @@ class DateSeparator extends StatelessWidget {
             color: context.isDark
                 ? AppColors.surfaceContainerLowDark
                 : AppColors.surfaceContainerHighest,
-            borderRadius: BorderRadius.zero,
-            border: Border.all(
-              color: context.borderColor.withAlpha(40),
-              width: 1,
-            ),
+            border: Border.all(color: context.borderColor.withAlpha(40)),
           ),
           child: Text(
             formatDateSeparator(date),

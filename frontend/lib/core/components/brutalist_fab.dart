@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
-/// The signature floating action button — Digital Brutalist.
-///
-/// Gradient block, 0px radius, 2px [AppColors.onSurface] frame, with a Material
-/// [InkWell] ripple and a 150ms linear press-scale. Use this everywhere instead
-/// of inlining a `GestureDetector`/`Container` FAB so the press animation stays
-/// consistent across the app.
 class BrutalistFab extends StatefulWidget {
   final VoidCallback onTap;
   final IconData icon;
@@ -35,8 +29,7 @@ class _BrutalistFabState extends State<BrutalistFab> {
   Widget build(BuildContext context) {
     return AnimatedScale(
       scale: _pressed ? 0.92 : 1.0,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
+      duration: AppMotion.base,
       child: Container(
         width: widget.size,
         height: widget.size,

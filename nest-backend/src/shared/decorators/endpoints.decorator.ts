@@ -9,7 +9,6 @@ import {
   Get,
   Post,
   Patch,
-  Put,
   Delete,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -195,11 +194,6 @@ export function PatchAuth(pathOrOptions?: string | AuthOptionsInput, options?: A
   return applyDecorators(Patch(parsed.path), Auth(parsed.options));
 }
 
-export function PutAuth(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
-  const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
-  return applyDecorators(Put(parsed.path), Auth(parsed.options));
-}
-
 export function DeleteAuth(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
   const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
   return applyDecorators(Delete(parsed.path), Auth(parsed.options));
@@ -216,16 +210,6 @@ export function PostPublic(pathOrOptions?: string | PublicOptionsInput, options?
   return applyDecorators(Post(parsed.path), PublicEndpoint(parsed.options));
 }
 
-export function PatchPublic(pathOrOptions?: string | PublicOptionsInput, options?: PublicOptionsInput): MethodDecorator {
-  const parsed = parseRouteArgs<EndpointOptions>(pathOrOptions, options);
-  return applyDecorators(Patch(parsed.path), PublicEndpoint(parsed.options));
-}
-
-export function PutPublic(pathOrOptions?: string | PublicOptionsInput, options?: PublicOptionsInput): MethodDecorator {
-  const parsed = parseRouteArgs<EndpointOptions>(pathOrOptions, options);
-  return applyDecorators(Put(parsed.path), PublicEndpoint(parsed.options));
-}
-
 // Admin-Only Route Composites
 export function GetAdmin(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
   const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
@@ -240,11 +224,6 @@ export function PostAdmin(pathOrOptions?: string | AuthOptionsInput, options?: A
 export function PatchAdmin(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
   const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
   return applyDecorators(Patch(parsed.path), AdminOnly(parsed.options));
-}
-
-export function PutAdmin(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
-  const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
-  return applyDecorators(Put(parsed.path), AdminOnly(parsed.options));
 }
 
 export function DeleteAdmin(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {

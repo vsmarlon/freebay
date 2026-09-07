@@ -2,15 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PurchasesPage extends ConsumerStatefulWidget {
   const PurchasesPage({super.key});
@@ -78,24 +72,10 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                     ),
                   )
                 : state.error != null && state.orders.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          state.error!,
-                          style: TextStyle(color: context.textPrimary),
-                        ),
-                        const SizedBox(height: 12),
-                        AppButton(
-                          label: 'TENTAR NOVAMENTE',
-                          size: AppButtonSize.compact,
-                          onPressed: () => ref
-                              .read(purchasesListProvider.notifier)
-                              .refresh(),
-                        ),
-                      ],
-                    ),
+                ? EmptyState.error(
+                    message: state.error,
+                    onRetry: () =>
+                        ref.read(purchasesListProvider.notifier).refresh(),
                   )
                 : state.orders.isEmpty
                 ? const EmptyState(

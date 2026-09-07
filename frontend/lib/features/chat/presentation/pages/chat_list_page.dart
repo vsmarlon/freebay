@@ -3,22 +3,13 @@ import 'package:freebay/core/router/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/guest_gate_view.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_search_bar.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -42,7 +33,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: AppMotion.base,
       vsync: this,
     );
     _animationController.forward();
@@ -84,8 +75,9 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   }
 
   Future<void> _archiveChat(ChatEntity chat) async {
-    final usecase = ref.read(archiveChatUsecaseProvider);
-    final result = await usecase(chat.id, chat.threadType, !chat.isArchived);
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .archiveChat(chat.id, chat.threadType, !chat.isArchived);
     result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
       ref.invalidate(chatsProvider);
       ref.invalidate(liveChatListProvider);
@@ -126,8 +118,9 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   }
 
   Future<void> _deleteChat(ChatEntity chat) async {
-    final usecase = ref.read(deleteChatUsecaseProvider);
-    final result = await usecase(chat.id, chat.threadType);
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .deleteChat(chat.id, chat.threadType);
     result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
       ref.invalidate(chatsProvider);
       ref.invalidate(liveChatListProvider);
@@ -206,7 +199,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
       backgroundColor: context.bgColor,
       body: Column(
         children: [
-          PageHeader(text: 'MENSAGENS'),
+          const PageHeader(text: 'MENSAGENS'),
           Expanded(
             child: Column(
               children: [
@@ -258,7 +251,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                               ChatListLoadingTile(isDark: isDark),
                         ),
                       ),
-                      error: (error, stack) => _buildErrorState(isDark),
+                      error: (error, stack) => _buildErrorState(),
                     ),
               ],
             ),
@@ -297,38 +290,15 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     );
   }
 
-  Widget _buildErrorState(bool isDark) {
+  Widget _buildErrorState() {
     return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.error),
-            Spacing.vMd,
-            Text(
-              'Erro ao carregar conversas',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.white : AppColors.darkGray,
-              ),
-            ),
-            Spacing.vSm,
-            Text(
-              'Não foi possível carregar suas conversas. Verifique sua conexão.',
-              style: TextStyle(color: AppColors.mediumGray),
-              textAlign: TextAlign.center,
-            ),
-            Spacing.vMd,
-            AppButton(
-              label: 'Tentar novamente',
-              onPressed: () {
-                ref.invalidate(chatsProvider);
-                ref.invalidate(liveChatListProvider);
-              },
-            ),
-          ],
-        ),
+      child: EmptyState.error(
+        message:
+            'Não foi possível carregar suas conversas. Verifique sua conexão.',
+        onRetry: () {
+          ref.invalidate(chatsProvider);
+          ref.invalidate(liveChatListProvider);
+        },
       ),
     );
   }

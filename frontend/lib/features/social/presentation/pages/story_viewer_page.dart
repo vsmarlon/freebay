@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 
@@ -61,8 +60,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
       // Tap on left side - go to previous story
       if (_currentIndex > 0) {
         _pageController.previousPage(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.linear,
+          duration: AppMotion.base,
+          curve: AppMotion.baseCurve,
         );
       } else {
         Navigator.pop(context);
@@ -71,8 +70,8 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
       // Tap on right side - go to next story
       if (_currentIndex < widget.stories.length - 1) {
         _pageController.nextPage(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.linear,
+          duration: AppMotion.base,
+          curve: AppMotion.baseCurve,
         );
       } else {
         Navigator.pop(context);
@@ -140,7 +139,6 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
   }
 
   Widget _buildHeader() {
-    final isDark = context.isDark;
     final story = widget.stories[_currentIndex];
 
     return Positioned(
@@ -155,7 +153,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+                color: context.bgColor,
                 image: story.user.avatarUrl != null
                     ? DecorationImage(
                         image: NetworkImage(story.user.avatarUrl!),

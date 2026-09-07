@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/brutalist_filter_chip.dart';
-import 'package:freebay/core/components/eyebrow_label.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 
@@ -100,7 +95,6 @@ class ProductFilterBar extends StatelessWidget {
           ),
           RangeSlider(
             values: range,
-            min: 0,
             max: ProductFilterLimits.maxPriceReais,
             divisions: _priceDivisions,
             activeColor: AppColors.primaryContainer,

@@ -1,13 +1,7 @@
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/social_post.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/comment_input.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
 import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
@@ -19,12 +13,8 @@ import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -95,7 +85,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
       TextPosition(offset: _replyController.text.length),
     );
     // Bring up keyboard focused on the reply field.
-    Future.microtask(() => _replyFocusNode.requestFocus());
+    Future.microtask(_replyFocusNode.requestFocus);
   }
 
   TreeNode<CommentEntity> _buildTree(List<CommentEntity> rootComments) {
@@ -180,22 +170,10 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     }
 
     if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            Spacing.vMd,
-            Text(state.error!, style: TextStyle(color: context.textPrimary)),
-            Spacing.vMd,
-            AppButton(
-              label: 'Tentar novamente',
-              onPressed: () => ref
-                  .read(postDetailsProvider(widget.postId).notifier)
-                  .refresh(),
-            ),
-          ],
-        ),
+      return EmptyState.error(
+        message: state.error,
+        onRetry: () =>
+            ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
       );
     }
 
@@ -359,9 +337,9 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
             ),
           ),
           if (state.comments.isEmpty)
-            SliverFillRemaining(
+            const SliverFillRemaining(
               hasScrollBody: false,
-              child: const EmptyState(
+              child: EmptyState(
                 icon: Icons.chat_bubble_outline,
                 title: 'NENHUM COMENTÁRIO',
                 subtitle: 'Seja o primeiro a comentar!',
@@ -380,9 +358,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                         color: context.textPrimary,
                         padding: const EdgeInsets.all(8),
                       ),
-                  indentation: const Indentation(
-                    style: IndentStyle.squareJoint,
-                  ),
+                  indentation: const Indentation(),
                   builder: (context, node) {
                     final comment = node.data;
                     if (comment == null) return const SizedBox.shrink();

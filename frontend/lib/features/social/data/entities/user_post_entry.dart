@@ -1,6 +1,10 @@
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'user_post_entry.g.dart';
+
+@JsonSerializable()
 class UserPostEntry {
   final PostEntity post;
   final DateTime? repostedAt;
@@ -16,25 +20,10 @@ class UserPostEntry {
     this.sharesCount,
   });
 
-  factory UserPostEntry.fromJson(Map<String, dynamic> json) => UserPostEntry(
-    post: PostEntity.fromJson(json['post'] as Map<String, dynamic>),
-    repostedAt: json['repostedAt'] != null
-        ? DateTime.parse(json['repostedAt'] as String)
-        : null,
-    repostedBy: json['repostedBy'] != null
-        ? UserEntity.fromJson(json['repostedBy'] as Map<String, dynamic>)
-        : null,
-    isReposted: json['isReposted'] as bool? ?? false,
-    sharesCount: json['sharesCount'] as int?,
-  );
+  factory UserPostEntry.fromJson(Map<String, dynamic> json) =>
+      _$UserPostEntryFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-    'post': post.toJson(),
-    'repostedAt': repostedAt?.toIso8601String(),
-    'repostedBy': repostedBy?.toJson(),
-    'isReposted': isReposted,
-    'sharesCount': sharesCount,
-  };
+  Map<String, dynamic> toJson() => _$UserPostEntryToJson(this);
 
   PostEntity toPostEntity() {
     return post.copyWith(

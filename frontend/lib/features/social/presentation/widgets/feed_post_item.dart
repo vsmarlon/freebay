@@ -1,8 +1,7 @@
+import 'package:freebay/core/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
@@ -42,8 +41,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
+      duration: AppMotion.base,
       builder: (context, value, child) => Opacity(opacity: value, child: child),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

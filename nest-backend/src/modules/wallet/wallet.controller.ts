@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetWalletUseCase } from './usecases/get-wallet.usecase';
 import { WalletResponse } from './dtos/wallet.dto';
-import { WalletRepository } from './domain/repositories/wallet.repository';
+import { WalletDatabaseRepository } from './data/repositories/wallet-database.repository';
 import { GetAuth, CurrentUserId, Paginated, PAGINATION_QUERIES } from '@/shared/decorators';
 import { PageQuery } from '@/shared/core/pagination';
 
@@ -11,7 +11,7 @@ import { PageQuery } from '@/shared/core/pagination';
 export class WalletController {
   constructor(
     private readonly getWalletUseCase: GetWalletUseCase,
-    private readonly walletRepository: WalletRepository,
+    private readonly walletRepository: WalletDatabaseRepository,
   ) {}
 
   @GetAuth({

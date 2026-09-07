@@ -2,20 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/empty_state.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/create_composer_sheet.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/components/app_shell_scaffold_key.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 import 'package:freebay/features/social/presentation/widgets/stories_row.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
@@ -37,12 +29,12 @@ class _FeedPageState extends ConsumerState<FeedPage>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: AppMotion.base,
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.linear,
+      curve: AppMotion.baseCurve,
     );
     _animationController.forward();
 
@@ -152,7 +144,6 @@ class _FeedPageState extends ConsumerState<FeedPage>
               SliverAppBar(
                 floating: true,
                 snap: true,
-                pinned: false,
                 backgroundColor: context.appBarColor,
                 elevation: 0,
                 scrolledUnderElevation: 0,
@@ -197,17 +188,17 @@ class _FeedPageState extends ConsumerState<FeedPage>
                   ),
                 ),
                 actions: [
-                  _HeaderIcon(
+                  const _HeaderIcon(
                     icon: Icons.person_search_outlined,
                     route: AppRoutes.peopleSearch,
                   ),
                   const SizedBox(width: 8),
-                  _HeaderIcon(
+                  const _HeaderIcon(
                     icon: Icons.notifications_outlined,
                     route: '/notifications',
                   ),
                   const SizedBox(width: 8),
-                  _HeaderIcon(
+                  const _HeaderIcon(
                     icon: Icons.account_balance_wallet_outlined,
                     route: '/wallet',
                     useGo: true,
@@ -303,7 +294,6 @@ class _FeedPageState extends ConsumerState<FeedPage>
                 ? AppColors.surfaceContainerDark
                 : AppColors.surfaceContainerLowest,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.zero,
               side: BorderSide(color: context.borderColor, width: 2),
             ),
             itemBuilder: (context) => [

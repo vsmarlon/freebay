@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { StartConversationOutput } from '../dtos/chat.dto';
 
 @Injectable()
 export class StartConversationUseCase {
   constructor(
-    private readonly conversationRepository: ConversationRepository,
-    private readonly blockRepository: BlockRepository,
+    private readonly conversationRepository: ConversationDatabaseRepository,
+    private readonly blockRepository: PrismaBlockRepository,
   ) {}
 
   async execute(initiatorId: string, targetUserId: string): Promise<Either<AppError, StartConversationOutput>> {

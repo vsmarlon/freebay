@@ -1,34 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/dispute/data/entities/dispute_entity.dart';
-import 'package:freebay/features/dispute/data/repositories/dispute_repository.dart';
 import 'package:freebay/features/dispute/data/services/dispute_service.dart';
-import 'package:freebay/features/dispute/domain/repositories/i_dispute_repository.dart';
-import 'package:freebay/features/dispute/domain/usecases/create_dispute_usecase.dart';
-import 'package:freebay/features/dispute/domain/usecases/get_dispute_usecase.dart';
-import 'package:freebay/features/dispute/domain/usecases/get_my_disputes_usecase.dart';
-import 'package:freebay/features/dispute/domain/usecases/submit_evidence_usecase.dart';
+import 'package:freebay/features/dispute/data/repositories/dispute_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'dispute_providers.g.dart';
 
 final disputeServiceProvider = Provider((ref) => DisputeService());
 
-final disputeRepositoryProvider = Provider<IDisputeRepository>((ref) {
+final disputeRepositoryProvider = Provider<DisputeRepository>((ref) {
   return DisputeRepository(ref.watch(disputeServiceProvider));
 });
-
-final getDisputeUsecaseProvider = Provider(
-  (ref) => GetDisputeUsecase(ref.watch(disputeRepositoryProvider)),
-);
-final getMyDisputesUsecaseProvider = Provider(
-  (ref) => GetMyDisputesUsecase(ref.watch(disputeRepositoryProvider)),
-);
-final createDisputeUsecaseProvider = Provider(
-  (ref) => CreateDisputeUsecase(ref.watch(disputeRepositoryProvider)),
-);
-final submitEvidenceUsecaseProvider = Provider(
-  (ref) => SubmitEvidenceUsecase(ref.watch(disputeRepositoryProvider)),
-);
 
 class DisputeListState {
   final bool isLoading;
@@ -58,13 +40,13 @@ class DisputeListState {
 class DisputeList extends _$DisputeList {
   @override
   DisputeListState build() {
-    ref.watch(getMyDisputesUsecaseProvider);
+    ref.watch(disputeRepositoryProvider);
     return const DisputeListState();
   }
 
   Future<void> loadDisputes() async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await ref.read(getMyDisputesUsecaseProvider)();
+    state = state.copyWith(isLoading: true);
+    final result = await ref.read(disputeRepositoryProvider).getMyDisputes();
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -102,18 +84,19 @@ class DisputeDetailState {
   }
 }
 
-@Riverpod(keepAlive: false)
+@Riverpod()
 class DisputeDetail extends _$DisputeDetail {
   @override
   DisputeDetailState build(String disputeId) {
-    ref.watch(getDisputeUsecaseProvider);
-    ref.watch(submitEvidenceUsecaseProvider);
+    ref.watch(disputeRepositoryProvider);
     return const DisputeDetailState();
   }
 
   Future<void> loadDispute() async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await ref.read(getDisputeUsecaseProvider)(disputeId);
+    state = state.copyWith(isLoading: true);
+    final result = await ref
+        .read(disputeRepositoryProvider)
+        .getDispute(disputeId);
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -122,10 +105,10 @@ class DisputeDetail extends _$DisputeDetail {
   }
 
   Future<bool> submitEvidence(String evidence) async {
-    state = state.copyWith(isSubmitting: true, error: null);
-    final result = await ref.read(submitEvidenceUsecaseProvider)(
-      SubmitEvidenceParams(disputeId: disputeId, evidence: evidence),
-    );
+    state = state.copyWith(isSubmitting: true);
+    final result = await ref
+        .read(disputeRepositoryProvider)
+        .submitEvidence(disputeId, evidence);
     return result.fold(
       (failure) {
         state = state.copyWith(isSubmitting: false, error: failure.message);

@@ -3,11 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class CreateStoryPage extends ConsumerStatefulWidget {
   const CreateStoryPage({super.key});
@@ -247,7 +245,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: _isTakingPicture
-                              ? Colors.grey
+                              ? AppColors.mediumGray
                               : AppColors.onPrimary,
                         ),
                       ),

@@ -1,10 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class AppDialog extends StatelessWidget {
   final String? logoAsset;
@@ -81,13 +78,15 @@ class AppDialog extends StatelessWidget {
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         final curvedAnimation = CurvedAnimation(
           parent: animation,
-          curve: Curves.linear,
+          curve: AppMotion.baseCurve,
         );
         return FadeTransition(
           opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation),
           child: ScaleTransition(
-            scale:
-                Tween<double>(begin: 0.95, end: 1.0).animate(curvedAnimation),
+            scale: Tween<double>(
+              begin: 0.95,
+              end: 1.0,
+            ).animate(curvedAnimation),
             child: child,
           ),
         );
@@ -161,11 +160,8 @@ class AppDialog extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (showCloseButton) _buildCloseButton(context),
-                      if (icon != null) ...[
-                        _buildIcon(isDark),
-                        Spacing.vMd,
-                      ],
-                      _buildTitle(isDark),
+                      if (icon != null) ...[_buildIcon(isDark), Spacing.vMd],
+                      _buildTitle(context),
                       if (subtitle != null) ...[
                         Spacing.vSm,
                         _buildSubtitle(isDark),
@@ -193,8 +189,8 @@ class AppDialog extends StatelessWidget {
           colors: isError
               ? [AppColors.error, AppColors.error.withAlpha(150)]
               : isSuccess
-                  ? [AppColors.success, AppColors.success.withAlpha(150)]
-                  : colors,
+              ? [AppColors.success, AppColors.success.withAlpha(150)]
+              : colors,
         ),
       ),
     );
@@ -219,16 +215,12 @@ class AppDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildTitle(bool isDark) {
+  Widget _buildTitle(BuildContext context) {
     return Text(
       title.toUpperCase(),
-      style: TextStyle(
-        fontFamily: AppTypography.headlineFontFamily,
-        fontSize: 18,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0.5,
-        color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-      ),
+      style: AppTypography.h3
+          .weight(800)
+          .copyWith(letterSpacing: 0.5, color: context.textPrimary),
       textAlign: TextAlign.center,
     );
   }
@@ -236,7 +228,7 @@ class AppDialog extends StatelessWidget {
   Widget _buildSubtitle(bool isDark) {
     return Text(
       subtitle!,
-      style: TextStyle(
+      style: const TextStyle(
         fontFamily: AppTypography.fontFamily,
         fontSize: 14,
         fontWeight: FontWeight.w400,
@@ -248,9 +240,7 @@ class AppDialog extends StatelessWidget {
 
   Widget _buildActions(BuildContext context, bool isDark) {
     if (customActions != null) {
-      return Row(
-        children: customActions!,
-      );
+      return Row(children: customActions!);
     }
 
     final hasDismiss = dismissText != null;
@@ -318,9 +308,10 @@ class AppDialog extends StatelessWidget {
         textColor = AppColors.onPrimary;
       }
     } else {
-      backgroundColor =
-          isDark ? AppColors.surfaceContainerDark : AppColors.surfaceContainer;
-      textColor = isDark ? AppColors.inverseOnSurface : AppColors.onSurface;
+      backgroundColor = isDark
+          ? AppColors.surfaceContainerDark
+          : AppColors.surfaceContainer;
+      textColor = context.textPrimary;
     }
 
     return GestureDetector(
@@ -365,13 +356,9 @@ class AppDialog extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.outline, width: 1),
+            border: Border.all(color: AppColors.outline),
           ),
-          child: Icon(
-            Icons.close,
-            size: 18,
-            color: AppColors.outline,
-          ),
+          child: const Icon(Icons.close, size: 18, color: AppColors.outline),
         ),
       ),
     );

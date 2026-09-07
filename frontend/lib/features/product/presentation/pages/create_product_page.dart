@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:freebay_design_system/components/brutalist_icon_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/features/product/data/entities/create_product_input.dart';
 import 'package:freebay/features/product/presentation/widgets/category_selector_field.dart';
 import 'package:freebay/features/product/presentation/widgets/product_preview_card.dart';
 
@@ -79,15 +74,16 @@ class CreateProductPage extends HookConsumerWidget {
       }
 
       isLoading.value = true;
-      final usecase = ref.read(createProductUsecaseProvider);
-      final result = await usecase({
-        'title': title,
-        'description': description,
-        'price': price,
-        'condition': isNewProduct.value ? 'NEW' : 'USED',
-        'categoryId': selectedCategoryId.value,
-        'imagePath': selectedImagePath.value!,
-      });
+      final result = await ref.read(createProductUsecaseProvider)(
+        CreateProductInput(
+          title: title,
+          description: description,
+          price: price,
+          condition: isNewProduct.value ? 'NEW' : 'USED',
+          categoryId: selectedCategoryId.value!,
+          imagePath: selectedImagePath.value!,
+        ),
+      );
 
       if (!context.mounted) return;
       isLoading.value = false;
@@ -185,9 +181,7 @@ class CreateProductPage extends HookConsumerWidget {
                           icon: const Icon(Icons.photo_library, size: 16),
                           label: const Text('Galeria'),
                           style: OutlinedButton.styleFrom(
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.zero,
-                            ),
+                            shape: const RoundedRectangleBorder(),
                           ),
                         ),
                         Spacing.hSm,
@@ -196,9 +190,7 @@ class CreateProductPage extends HookConsumerWidget {
                           icon: const Icon(Icons.camera_alt, size: 16),
                           label: const Text('Câmera'),
                           style: OutlinedButton.styleFrom(
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.zero,
-                            ),
+                            shape: const RoundedRectangleBorder(),
                           ),
                         ),
                       ],

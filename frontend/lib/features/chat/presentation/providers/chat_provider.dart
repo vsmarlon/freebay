@@ -4,48 +4,15 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/last_message_info.dart';
 import 'package:freebay/features/chat/data/repositories/chat_repository.dart';
-import 'package:freebay/features/chat/domain/repositories/i_chat_repository.dart';
-import 'package:freebay/features/chat/domain/usecases/archive_chat_usecase.dart';
-import 'package:freebay/features/chat/domain/usecases/delete_chat_usecase.dart';
-import 'package:freebay/features/chat/domain/usecases/block_user_usecase.dart';
 import 'package:freebay/features/chat/domain/usecases/report_chat_usecase.dart';
-import 'package:freebay/features/chat/domain/usecases/set_chat_theme_usecase.dart';
-import 'package:freebay/features/chat/domain/usecases/set_chat_background_usecase.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
-import 'package:freebay/features/profile/data/services/block_service.dart';
 
-final chatRepositoryProvider = Provider<IChatRepository>((ref) {
+final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   return ChatRepository();
-});
-
-final blockServiceProvider = Provider<BlockService>((ref) {
-  return BlockService();
-});
-
-final archiveChatUsecaseProvider = Provider<ArchiveChatUsecase>((ref) {
-  return ArchiveChatUsecase(ref.watch(chatRepositoryProvider));
-});
-
-final deleteChatUsecaseProvider = Provider<DeleteChatUsecase>((ref) {
-  return DeleteChatUsecase(ref.watch(chatRepositoryProvider));
-});
-
-final blockUserUsecaseProvider = Provider<BlockUserUsecase>((ref) {
-  return BlockUserUsecase(ref.watch(blockServiceProvider));
 });
 
 final reportChatUsecaseProvider = Provider<ReportChatUsecase>((ref) {
   return ReportChatUsecase();
-});
-
-final setChatThemeUsecaseProvider = Provider<SetChatThemeUsecase>((ref) {
-  return SetChatThemeUsecase(ref.watch(chatRepositoryProvider));
-});
-
-final setChatBackgroundUsecaseProvider = Provider<SetChatBackgroundUsecase>((
-  ref,
-) {
-  return SetChatBackgroundUsecase(ref.watch(chatRepositoryProvider));
 });
 
 final chatsProvider = FutureProvider<List<ChatEntity>>((ref) async {

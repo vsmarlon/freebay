@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
@@ -37,13 +34,14 @@ class ChatListTile extends StatelessWidget {
           children: [
             Container(
               width: 4,
-              color:
-                  chat.unread ? AppColors.primaryContainer : Colors.transparent,
+              color: chat.unread
+                  ? AppColors.primaryContainer
+                  : Colors.transparent,
             ),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : AppColors.white,
+                  color: context.bgColor,
                   border: Border.all(color: context.borderColor),
                 ),
                 padding: const EdgeInsets.all(16),
@@ -102,7 +100,7 @@ class ChatListTile extends StatelessWidget {
                               color: isDark
                                   ? AppColors.surfaceContainerLowDark
                                   : AppColors.surfaceContainerHighest,
-                              child: Text(
+                              child: const Text(
                                 'PEDIDO',
                                 style: TextStyle(
                                   fontFamily: AppTypography.fontFamily,
@@ -125,8 +123,8 @@ class ChatListTile extends StatelessWidget {
                                     fontFamily: AppTypography.fontFamily,
                                     color: chat.unread
                                         ? (isDark
-                                            ? AppColors.white
-                                            : AppColors.darkGray)
+                                              ? AppColors.white
+                                              : AppColors.darkGray)
                                         : AppColors.mediumGray,
                                     fontWeight: chat.unread
                                         ? FontWeight.w500
@@ -137,11 +135,14 @@ class ChatListTile extends StatelessWidget {
                               ),
                               if (!canSwipe) ...[
                                 Spacing.hXs,
-                                Tooltip(
+                                const Tooltip(
                                   message:
                                       'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
-                                  child: Icon(Icons.lock_outline,
-                                      size: 16, color: AppColors.mediumGray),
+                                  child: Icon(
+                                    Icons.lock_outline,
+                                    size: 16,
+                                    color: AppColors.mediumGray,
+                                  ),
                                 ),
                               ],
                             ],
@@ -169,8 +170,11 @@ class ChatListTile extends StatelessWidget {
           decoration: const BoxDecoration(
             gradient: AppColors.brutalistGradient,
           ),
-          child:
-              const Icon(Icons.archive, color: AppColors.onPrimary, size: 28),
+          child: const Icon(
+            Icons.archive,
+            color: AppColors.onPrimary,
+            size: 28,
+          ),
         ),
         confirmDismiss: (direction) async {
           await onArchive();
@@ -182,8 +186,7 @@ class ChatListTile extends StatelessWidget {
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
+      duration: AppMotion.base,
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(30 * (1 - value), 0),
@@ -205,15 +208,15 @@ class ChatListTile extends StatelessWidget {
             image: chat.otherAvatarUrl != null
                 ? DecorationImage(
                     image: NetworkImage(chat.otherAvatarUrl!),
-                    fit: BoxFit.cover)
+                    fit: BoxFit.cover,
+                  )
                 : null,
             color: isDark
                 ? AppColors.mediumGray.withAlpha(51)
                 : AppColors.lightGray,
           ),
           child: chat.otherAvatarUrl == null
-              ? Icon(Icons.person,
-                  color: isDark ? AppColors.white : AppColors.mediumGray)
+              ? Icon(Icons.person, color: context.textPrimary)
               : null,
         ),
         if (chat.unread)
@@ -225,9 +228,7 @@ class ChatListTile extends StatelessWidget {
               height: 14,
               decoration: BoxDecoration(
                 color: AppColors.success,
-                border: Border.all(
-                    color: isDark ? AppColors.surfaceDark : AppColors.white,
-                    width: 2),
+                border: Border.all(color: context.bgColor, width: 2),
               ),
             ),
           ),
@@ -248,7 +249,7 @@ class ChatListLoadingTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
+          color: context.bgColor,
           border: Border.all(color: context.borderColor),
         ),
         child: Row(

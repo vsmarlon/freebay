@@ -8,7 +8,6 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String createPost = '/create-post';
   static const String postDetails = '/post/:id';
-  static const String comments = 'comments';
   static const String postSearch = '/posts/search';
   static const String peopleSearch = '/people/search';
   static const String createProduct = '/products/create';

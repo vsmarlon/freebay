@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_background.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
 class SplashPage extends StatefulWidget {
@@ -18,21 +15,21 @@ class _SplashPageState extends State<SplashPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1200),
+    duration: AppMotion.enter,
   )..forward();
 
   late final Animation<double> _logoOpacity = Tween<double>(begin: 0, end: 1)
       .animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.0, 0.25, curve: Curves.easeOut),
+          curve: const Interval(0.0, 0.25, curve: AppMotion.enterCurve),
         ),
       );
   late final Animation<double> _logoScale = Tween<double>(begin: 0.9, end: 1.0)
       .animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.0, 0.25, curve: Curves.easeOutBack),
+          curve: const Interval(0.0, 0.25, curve: AppMotion.enterCurve),
         ),
       );
 
@@ -40,14 +37,14 @@ class _SplashPageState extends State<SplashPage>
       .animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.166, 0.375, curve: Curves.easeOut),
+          curve: const Interval(0.166, 0.375, curve: AppMotion.enterCurve),
         ),
       );
   late final Animation<Offset> _taglineSlide =
       Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.166, 0.375, curve: Curves.easeOut),
+          curve: const Interval(0.166, 0.375, curve: AppMotion.enterCurve),
         ),
       );
 
@@ -55,14 +52,14 @@ class _SplashPageState extends State<SplashPage>
       .animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.416, 0.625, curve: Curves.easeOut),
+          curve: const Interval(0.416, 0.625, curve: AppMotion.enterCurve),
         ),
       );
   late final Animation<Offset> _statsSlide =
       Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.416, 0.625, curve: Curves.easeOut),
+          curve: const Interval(0.416, 0.625, curve: AppMotion.enterCurve),
         ),
       );
 
@@ -70,14 +67,14 @@ class _SplashPageState extends State<SplashPage>
       .animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.666, 0.916, curve: Curves.easeOut),
+          curve: const Interval(0.666, 0.916, curve: AppMotion.enterCurve),
         ),
       );
   late final Animation<Offset> _btnSlide =
       Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
         CurvedAnimation(
           parent: _anim,
-          curve: const Interval(0.666, 0.916, curve: Curves.easeOut),
+          curve: const Interval(0.666, 0.916, curve: AppMotion.enterCurve),
         ),
       );
 
@@ -90,7 +87,7 @@ class _SplashPageState extends State<SplashPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF07000C),
+      backgroundColor: AppColors.surfaceContainerLowestDark,
       body: BrutalistBackground(
         forceDark: true,
         child: SafeArea(
@@ -105,14 +102,14 @@ class _SplashPageState extends State<SplashPage>
                     children: [
                       FadeTransition(
                         opacity: _logoOpacity,
-                        child: Text(
+                        child: const Text(
                           'THE MARKETPLACE REBUILT',
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 2.0,
-                            color: const Color(0xFFB0B0B0),
+                            color: AppColors.onSurfaceVariantDark,
                           ),
                         ),
                       ),
@@ -121,7 +118,7 @@ class _SplashPageState extends State<SplashPage>
                         opacity: _logoOpacity,
                         child: ScaleTransition(
                           scale: _logoScale,
-                          child: Text(
+                          child: const Text(
                             'freebay',
                             style: TextStyle(
                               fontFamily: AppTypography.headlineFontFamily,
@@ -129,13 +126,6 @@ class _SplashPageState extends State<SplashPage>
                               fontWeight: FontWeight.w800,
                               letterSpacing: -3,
                               color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: AppColors.primary.withAlpha(160),
-                                  offset: const Offset(0, 4),
-                                  blurRadius: 24,
-                                ),
-                              ],
                             ),
                           ),
                         ),
@@ -145,14 +135,14 @@ class _SplashPageState extends State<SplashPage>
                         position: _taglineSlide,
                         child: FadeTransition(
                           opacity: _taglineOpacity,
-                          child: Text(
+                          child: const Text(
                             'TRADE YOUR WORLD',
                             style: TextStyle(
                               fontFamily: AppTypography.fontFamily,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 2.5,
-                              color: AppColors.accentAmber,
+                              color: AppColors.primaryContainer,
                             ),
                           ),
                         ),
@@ -236,25 +226,18 @@ class _GetStartedButtonState extends State<_GetStartedButton> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
+        duration: AppMotion.tap,
         transform: Matrix4.translationValues(
-          _isPressed ? 3 : 0,
-          _isPressed ? 3 : 0,
+          _isPressed ? AppDepth.pressOffset : 0.0,
+          _isPressed ? AppDepth.pressOffset : 0.0,
           0,
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.zero,
           border: Border.all(color: Colors.white, width: 2),
           boxShadow: _isPressed
               ? []
-              : const [
-                  BoxShadow(
-                    color: Color(0xFF8A1083),
-                    offset: Offset(4, 4),
-                    blurRadius: 0,
-                  ),
-                ],
+              : AppDepth.hard(AppColors.primaryContainer),
         ),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
         child: const Row(
@@ -302,12 +285,12 @@ class _StatBlock extends StatelessWidget {
         Spacing.vXs,
         Text(
           label.toUpperCase(),
-          style: TextStyle(
+          style: const TextStyle(
             fontFamily: AppTypography.fontFamily,
             fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.8,
-            color: const Color(0xFFA0A0A0),
+            color: AppColors.onSurfaceVariantDark,
           ),
         ),
       ],

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { NotificationRepository } from '../domain/repositories/notification.repository';
+import { NotificationDatabaseRepository } from '../data/repositories/notification-database.repository';
 
 @Injectable()
 export class RegisterFcmTokenUseCase {
-  constructor(private readonly notificationRepository: NotificationRepository) {}
+  constructor(private readonly notificationRepository: NotificationDatabaseRepository) {}
 
   async execute(userId: string, fcmToken: string): Promise<Either<AppError, void>> {
     const result = await this.notificationRepository.updateUserFcmToken(userId, fcmToken);

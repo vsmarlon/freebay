@@ -2,11 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/bug_report/presentation/providers/bug_report_provider.dart';
 
 Future<void> showBugReportSheet(
@@ -28,10 +24,7 @@ class _BugReportSheetContent extends ConsumerStatefulWidget {
   final String? prefillDescription;
   final String? screenContext;
 
-  const _BugReportSheetContent({
-    this.prefillDescription,
-    this.screenContext,
-  });
+  const _BugReportSheetContent({this.prefillDescription, this.screenContext});
 
   @override
   ConsumerState<_BugReportSheetContent> createState() =>
@@ -78,13 +71,10 @@ class _BugReportSheetContentState
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
-      (_) {
-        Navigator.pop(context);
-        AppSnackbar.success(context, 'Relatório enviado. Obrigado!');
-      },
-    );
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
+      Navigator.pop(context);
+      AppSnackbar.success(context, 'Relatório enviado. Obrigado!');
+    });
   }
 
   @override

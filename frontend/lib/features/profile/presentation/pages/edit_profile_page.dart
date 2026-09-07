@@ -2,18 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/core/utils/value_utils.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/username_field.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key});
@@ -138,7 +131,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     final profileAsync = ref.watch(profileFutureProvider('me'));
 
     return Scaffold(
@@ -273,9 +265,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar perfil',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      style: TextStyle(color: context.textPrimary),
                     ),
                   ],
                 ),

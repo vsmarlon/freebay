@@ -4,7 +4,6 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, buildIdCursorPage } from '@/shared/core/pagination';
-import { ModerationRepository } from '../../domain/repositories/moderation.repository';
 import {
   AdminReportRow,
   CreateModerationActionInput,
@@ -40,7 +39,6 @@ const REPORT_SELECT = {
 @Injectable()
 export class ModerationDatabaseRepository
   extends BasePrismaRepository
-  implements ModerationRepository
 {
   constructor(prisma: PrismaService) {
     super(prisma);

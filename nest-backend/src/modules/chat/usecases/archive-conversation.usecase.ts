@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, ForbiddenError } from '@/shared/core/errors';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
+import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ConversationPreference } from '@prisma/client';
 
 @Injectable()
 export class ArchiveConversationUseCase {
   constructor(
     private threadAccess: ChatThreadAccessService,
-    private preferenceRepo: ConversationPreferenceRepository,
+    private preferenceRepo: PrismaConversationPreferenceRepository,
   ) {}
 
   async execute(

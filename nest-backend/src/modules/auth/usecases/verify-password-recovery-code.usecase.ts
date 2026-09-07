@@ -8,12 +8,12 @@ import {
   RecoveryCodeExpiredError,
   RecoveryCodeNotFoundError,
 } from '@/shared/core/errors';
-import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
+import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { VerifyPasswordRecoveryCodeDTO } from '../dtos/password-recovery.dto';
 
 @Injectable()
 export class VerifyPasswordRecoveryCodeUseCase {
-  constructor(private readonly recoveryRepository: PasswordRecoveryRepository) {}
+  constructor(private readonly recoveryRepository: PasswordRecoveryDatabaseRepository) {}
 
   async execute(input: VerifyPasswordRecoveryCodeDTO): Promise<Either<AppError, void>> {
     const recoveryResult = await this.recoveryRepository.findLatestByEmail(input.email);

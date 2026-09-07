@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
-import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -40,7 +40,7 @@ class UserSearchState {
 
 @Riverpod(keepAlive: true)
 class UserSearch extends _$UserSearch {
-  late final ISocialRepository _repository;
+  late final SocialRepository _repository;
 
   @override
   UserSearchState build() {
@@ -56,7 +56,6 @@ class UserSearch extends _$UserSearch {
 
     state = state.copyWith(
       isLoading: true,
-      error: null,
       users: refresh ? [] : state.users,
       offset: refresh ? 0 : state.offset,
     );
@@ -108,7 +107,7 @@ class SuggestionsState {
 /// Only invalidated explicitly after a follow/unfollow action via [ref.invalidate].
 @Riverpod(keepAlive: true)
 class Suggestions extends _$Suggestions {
-  late final ISocialRepository _repository;
+  late final SocialRepository _repository;
 
   @override
   SuggestionsState build() {
@@ -121,7 +120,7 @@ class Suggestions extends _$Suggestions {
   Future<void> loadSuggestions() async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     final result = await _repository.getSuggestions();
 
@@ -134,7 +133,7 @@ class Suggestions extends _$Suggestions {
 
   /// Force-refresh after the user follows or unfollows someone.
   Future<void> refresh() async {
-    state = state.copyWith(users: [], isLoading: true, error: null);
+    state = state.copyWith(users: [], isLoading: true);
     final result = await _repository.getSuggestions();
     result.fold(
       (failure) =>
@@ -146,7 +145,7 @@ class Suggestions extends _$Suggestions {
   /// Fetches more suggestions and appends them to the current list
   Future<void> fetchMore() async {
     if (state.isLoading) return;
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     final result = await _repository.getSuggestions();
     result.fold(

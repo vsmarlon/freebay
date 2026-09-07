@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
-import { OrderRepository } from '../domain/repositories/order.repository';
+import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { CreateOrderInput, CreateOrderOutput } from '../dtos/order.dto';
 
 @Injectable()
 export class CreateOrderUseCase {
   constructor(
-    private readonly orderRepository: OrderRepository,
+    private readonly orderRepository: PrismaOrderRepository,
     private readonly notificationService: NotificationService,
   ) {}
 

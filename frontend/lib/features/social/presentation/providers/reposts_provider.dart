@@ -1,4 +1,4 @@
-import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -9,7 +9,7 @@ part 'reposts_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Reposts extends _$Reposts {
-  late final ISocialRepository _repository;
+  late final SocialRepository _repository;
 
   @override
   RepostsState build() {

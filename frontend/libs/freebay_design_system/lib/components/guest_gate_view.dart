@@ -5,7 +5,7 @@ import '../tokens/theme_extension.dart';
 import 'app_button.dart';
 import 'brutalist_box.dart';
 import 'brutalist_background.dart';
-import 'spacing.dart';
+import '../tokens/spacing.dart';
 
 class GuestGateView extends StatelessWidget {
   final IconData icon;
@@ -50,7 +50,6 @@ class GuestGateView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Glowing icon badge
                   Center(
                     child: Container(
                       width: 72,
@@ -71,11 +70,12 @@ class GuestGateView extends StatelessWidget {
                   ),
                   Spacing.vLg,
 
-                  // Restrict tag
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark
                             ? AppColors.surfaceContainerDark
@@ -99,7 +99,6 @@ class GuestGateView extends StatelessWidget {
                   ),
                   Spacing.vSm,
 
-                  // Title
                   Text(
                     title.toUpperCase(),
                     textAlign: TextAlign.center,
@@ -114,7 +113,6 @@ class GuestGateView extends StatelessWidget {
                   ),
                   Spacing.vSm,
 
-                  // Description
                   Text(
                     description,
                     textAlign: TextAlign.center,
@@ -127,7 +125,6 @@ class GuestGateView extends StatelessWidget {
                   ),
                   Spacing.vLg,
 
-                  // Benefits list
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -136,7 +133,6 @@ class GuestGateView extends StatelessWidget {
                           : AppColors.surfaceContainerLow,
                       border: Border.all(
                         color: context.borderColor.withAlpha(40),
-                        width: 1.0,
                       ),
                     ),
                     child: Column(
@@ -173,19 +169,19 @@ class GuestGateView extends StatelessWidget {
                   ),
                   Spacing.vXl,
 
-                  // Actions
                   AppButton(
                     label: 'ENTRAR NA CONTA',
                     size: AppButtonSize.large,
-                    onPressed: onLoginPressed ??
+                    onPressed:
+                        onLoginPressed ??
                         () => Navigator.of(context).pushNamed('/login'),
                   ),
                   Spacing.vSm,
                   AppButton(
                     label: 'CRIAR CONTA GRATUITA',
                     variant: AppButtonVariant.ghost,
-                    size: AppButtonSize.standard,
-                    onPressed: onRegisterPressed ??
+                    onPressed:
+                        onRegisterPressed ??
                         () => Navigator.of(context).pushNamed('/register'),
                   ),
                 ],

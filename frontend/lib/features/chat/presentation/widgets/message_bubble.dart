@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/brutalist_highlighted_text.dart';
-import 'package:freebay/core/components/brutalist_safe_link_dialog.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/product_card_bubble.dart';
 import 'package:freebay/features/chat/presentation/widgets/offer_message_bubble.dart';
@@ -81,7 +77,7 @@ class MessageBubble extends StatelessWidget {
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(left: 12),
               color: AppColors.primaryContainer.withValues(alpha: 0.15),
-              child: Icon(
+              child: const Icon(
                 Icons.reply,
                 color: AppColors.primaryContainer,
                 size: 20,
@@ -360,19 +356,17 @@ class MessageBubble extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
-                  color: isMe
-                      ? AppColors.onPrimary
-                      : (isDark ? AppColors.white : AppColors.darkGray),
+                  color: isMe ? AppColors.onPrimary : (context.textPrimary),
                 ),
                 linkColor: isMe
                     ? AppColors.onPrimary
-                    : (isDark ? AppColors.primaryContainer : AppColors.primary),
+                    : (context.colors.primary),
                 mentionColor: isMe
                     ? AppColors.onPrimary
-                    : (isDark ? AppColors.primaryContainer : AppColors.primary),
+                    : (context.colors.primary),
                 hashtagColor: isMe
                     ? AppColors.onPrimary
-                    : (isDark ? AppColors.primaryContainer : AppColors.primary),
+                    : (context.colors.primary),
                 onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
                 onMentionTap: (mention) {
                   final username = mention.replaceFirst('@', '');
@@ -404,7 +398,7 @@ class _ReadStatusIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isRead) {
-      return Row(
+      return const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.done_all, size: 14, color: AppColors.primaryContainer),

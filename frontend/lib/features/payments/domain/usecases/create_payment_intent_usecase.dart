@@ -1,7 +1,7 @@
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/features/payments/data/entities/payment_intent_entity.dart';
-import 'package:freebay/features/payments/domain/repositories/i_payment_repository.dart';
+import 'package:freebay/features/payments/data/repositories/payment_repository.dart';
 
 class CreatePaymentIntentParams {
   final String orderId;
@@ -12,7 +12,7 @@ class CreatePaymentIntentParams {
 
 class CreatePaymentIntentUsecase
     implements Usecase<PaymentIntentEntity, CreatePaymentIntentParams> {
-  final IPaymentRepository _repository;
+  final PaymentRepository _repository;
 
   CreatePaymentIntentUsecase(this._repository);
 

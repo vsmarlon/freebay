@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError } from '@/shared/core/errors';
-import { StoryRepository } from '../domain/repositories/story.repository';
+import { PrismaStoryRepository } from '../data/repositories/story-database.repository';
 
 @Injectable()
 export class DeleteStoryUseCase {
-  constructor(private readonly storyRepository: StoryRepository) {}
+  constructor(private readonly storyRepository: PrismaStoryRepository) {}
 
   async execute(input: { storyId: string; userId: string }): Promise<Either<AppError, void>> {
     const storyResult = await this.storyRepository.findById(input.storyId);

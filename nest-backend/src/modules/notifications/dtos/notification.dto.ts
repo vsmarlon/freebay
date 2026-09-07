@@ -1,6 +1,5 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Notification } from '@prisma/client';
 
 export class RegisterFcmTokenDTO {
   @ApiProperty({ example: 'fcm-token-abc123' })
@@ -24,21 +23,4 @@ export class NotificationResponse {
 
   @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
   readonly createdAt: Date;
-}
-
-export interface GetNotificationsInput {
-  userId: string;
-  limit?: number;
-}
-
-export type GetNotificationsOutput = Notification[];
-
-export interface MarkAsReadInput {
-  notificationId: string;
-  userId: string;
-}
-
-export interface RegisterFcmTokenInput {
-  userId: string;
-  fcmToken: string;
 }

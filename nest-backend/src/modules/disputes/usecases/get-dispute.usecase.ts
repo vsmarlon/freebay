@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError } from '@/shared/core/errors';
 import { GetDisputeOutput } from '../dtos/dispute.dto';
-import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
 
 @Injectable()
 export class GetDisputeUseCase {
-  constructor(private disputeRepo: DisputeRepository) {}
+  constructor(private disputeRepo: PrismaDisputeRepository) {}
 
   async execute(disputeId: string, userId: string): Promise<Either<AppError, GetDisputeOutput>> {
     const result = await this.disputeRepo.findByIdWithDetails(disputeId);

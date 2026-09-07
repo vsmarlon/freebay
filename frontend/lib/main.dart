@@ -1,3 +1,4 @@
+import 'package:freebay/core/ui.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,10 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/providers/theme_provider.dart';
-import 'core/components/app_error_widget.dart';
 import 'shared/config/app_config.dart';
 import 'shared/services/http_client.dart';
 import 'shared/services/error_reporter.dart';
@@ -30,7 +29,7 @@ void main() {
 Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await dotenv.load(fileName: '.env');
+    await dotenv.load();
   } catch (e) {
     debugPrint('[AppConfig] Info: No .env asset loaded from bundle ($e)');
   }

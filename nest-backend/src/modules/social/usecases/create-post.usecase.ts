@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 @Injectable()
 export class CreatePostUseCase {
   constructor(
-    private readonly postRepository: PostRepository,
+    private readonly postRepository: PrismaPostRepository,
     private readonly notificationService: NotificationService,
   ) {}
 

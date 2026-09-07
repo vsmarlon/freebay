@@ -12,7 +12,7 @@ abstract class NotificationEntity with _$NotificationEntity {
     required String type,
     required String title,
     required String body,
-    @JsonKey(defaultValue: null) Map<String, dynamic>? data,
+    @JsonKey() Map<String, dynamic>? data,
     required bool read,
     required DateTime createdAt,
   }) = _NotificationEntity;

@@ -4,14 +4,13 @@ import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
-import 'package:freebay/features/product/domain/repositories/i_product_repository.dart';
 import 'package:freebay/features/product/data/entities/product_page_result.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/data/entities/create_product_input.dart';
 
 const _kProductCacheBox = 'product_catalog_cache';
 
-class ProductRepository extends BaseHttpRepository
-    implements IProductRepository {
+class ProductRepository extends BaseHttpRepository {
   ProductRepository({super.client});
 
   Future<Box> _cacheBox() => Hive.openBox(_kProductCacheBox);
@@ -38,7 +37,6 @@ class ProductRepository extends BaseHttpRepository
     }
   }
 
-  @override
   Future<Either<Failure, ProductEntity>> getProductById(String id) =>
       safeGet<ProductEntity>(
         '/products/$id',
@@ -46,7 +44,6 @@ class ProductRepository extends BaseHttpRepository
         fromJson: ProductEntity.fromJson,
       );
 
-  @override
   Future<Either<Failure, ProductPageResult>> getProducts({
     String? search,
     String? category,
@@ -97,17 +94,19 @@ class ProductRepository extends BaseHttpRepository
     return result;
   }
 
-  @override
   Future<Either<Failure, ProductEntity>> createProduct(
-    Map<String, dynamic> productData,
+    CreateProductInput input,
   ) async {
     try {
-      final imagePath = productData.remove('imagePath') as String?;
       final formData = FormData.fromMap({
-        ...productData,
-        if (imagePath != null)
+        'title': input.title,
+        'description': input.description,
+        'price': input.price,
+        'condition': input.condition,
+        'categoryId': input.categoryId,
+        if (input.imagePath.isNotEmpty)
           'image': await ImageUploadService.compressedMultipartFile(
-            imagePath,
+            input.imagePath,
             filename: 'product.jpg',
           ),
       });
@@ -124,7 +123,6 @@ class ProductRepository extends BaseHttpRepository
     }
   }
 
-  @override
   Future<Either<Failure, ProductEntity>> updateProduct(
     String id,
     Map<String, dynamic> productData,
@@ -135,7 +133,6 @@ class ProductRepository extends BaseHttpRepository
     fromJson: ProductEntity.fromJson,
   );
 
-  @override
   Future<Either<Failure, List<ProductEntity>>> getMyProducts() =>
       safeGetList<ProductEntity>(
         '/products/mine/all',

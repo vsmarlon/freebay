@@ -5,11 +5,10 @@ import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.reposito
 import { RepositoryResponse } from '@/shared/core/either';
 import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 import { GetDisputeOutput, GetUserDisputesOutput } from '../../dtos/dispute.dto';
-import { DisputeRepository } from '../../domain/repositories/dispute.repository';
 import { DisputeWithOrder, CreateDisputeInput } from '../../types/dispute.types';
 
 @Injectable()
-export class PrismaDisputeRepository extends BasePrismaRepository implements DisputeRepository {
+export class PrismaDisputeRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

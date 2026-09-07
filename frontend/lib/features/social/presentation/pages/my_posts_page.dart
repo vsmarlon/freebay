@@ -2,18 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final userPostsProvider = FutureProvider.family<List<PostEntity>, String>((
   ref,
@@ -216,15 +208,11 @@ class MyPostsPage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppColors.primaryContainer.withAlpha(204),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.repeat,
-                      size: 10,
-                      color: AppColors.onPrimary,
-                    ),
-                    const SizedBox(width: 2),
+                    Icon(Icons.repeat, size: 10, color: AppColors.onPrimary),
+                    SizedBox(width: 2),
                     Text(
                       'Reposted',
                       style: TextStyle(

@@ -3,36 +3,25 @@ import 'package:freebay/features/wallet/data/entities/connect_status_entity.dart
 import 'package:freebay/features/wallet/data/entities/wallet_entity.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_transaction_entity.dart';
 import 'package:freebay/features/wallet/data/repositories/wallet_repository.dart';
-import 'package:freebay/features/wallet/data/services/wallet_service.dart';
-import 'package:freebay/features/wallet/domain/repositories/i_wallet_repository.dart';
-import 'package:freebay/features/wallet/domain/usecases/get_wallet_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'wallet_controller.g.dart';
 
-final walletServiceProvider = Provider<WalletService>((ref) {
-  return WalletService();
+final walletRepositoryProvider = Provider<WalletRepository>((ref) {
+  return WalletRepository();
 });
-
-final walletRepositoryProvider = Provider<IWalletRepository>((ref) {
-  return WalletRepository(ref.watch(walletServiceProvider));
-});
-
-final getWalletUsecaseProvider = Provider(
-  (ref) => GetWalletUsecase(ref.watch(walletRepositoryProvider)),
-);
 
 @Riverpod(keepAlive: true)
 class Wallet extends _$Wallet {
   @override
   AsyncValue<WalletEntity?> build() {
-    ref.watch(getWalletUsecaseProvider);
+    ref.watch(walletRepositoryProvider);
     return const AsyncValue.loading();
   }
 
   Future<void> loadWallet() async {
     state = const AsyncValue.loading();
-    final result = await ref.read(getWalletUsecaseProvider)();
+    final result = await ref.read(walletRepositoryProvider).getWallet();
 
     result.fold(
       (failure) =>
@@ -87,7 +76,7 @@ class WalletHistory extends _$WalletHistory {
   }
 
   Future<void> load() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
 
     final result = await ref.read(walletRepositoryProvider).getTransactions();
 
@@ -106,7 +95,7 @@ class WalletHistory extends _$WalletHistory {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
     if (state.nextCursor == null) return;
 
-    state = state.copyWith(isLoadingMore: true, error: null);
+    state = state.copyWith(isLoadingMore: true);
 
     final result = await ref
         .read(walletRepositoryProvider)

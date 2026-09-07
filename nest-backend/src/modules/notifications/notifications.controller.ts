@@ -14,7 +14,7 @@ import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { MarkAllAsReadUseCase } from './usecases/mark-all-as-read.usecase';
 import { RegisterFcmTokenUseCase } from './usecases/register-fcm-token.usecase';
 import { RegisterFcmTokenDTO, NotificationResponse } from './dtos/notification.dto';
-import { NotificationRepository } from './domain/repositories/notification.repository';
+import { NotificationDatabaseRepository } from './data/repositories/notification-database.repository';
 import { isLeft } from '@/shared/core/either';
 
 @ApiTags('Notifications')
@@ -25,7 +25,7 @@ export class NotificationsController {
     private readonly markAsReadUseCase: MarkAsReadUseCase,
     private readonly markAllAsReadUseCase: MarkAllAsReadUseCase,
     private readonly registerFcmTokenUseCase: RegisterFcmTokenUseCase,
-    private readonly notificationRepository: NotificationRepository,
+    private readonly notificationRepository: NotificationDatabaseRepository,
   ) {}
 
   @GetAuth({

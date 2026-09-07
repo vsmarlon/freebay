@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
 import { Prisma } from '@prisma/client';
-import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 
 @Injectable()
 export class SubmitEvidenceUseCase {
   constructor(
-    private disputeRepo: DisputeRepository,
+    private disputeRepo: PrismaDisputeRepository,
     private transitionPolicy: DisputeTransitionPolicy,
   ) {}
 

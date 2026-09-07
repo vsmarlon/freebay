@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { Category } from '@prisma/client';
-import { CategoryRepository } from '../domain/repositories/category.repository';
+import { CategoryDatabaseRepository } from '../data/repositories/category-database.repository';
 
 @Injectable()
 export class GetCategoryUseCase {
-  constructor(private readonly categoryRepository: CategoryRepository) {}
+  constructor(private readonly categoryRepository: CategoryDatabaseRepository) {}
 
   async execute(id: string): Promise<Either<AppError, { category: Category }>> {
     const result = await this.categoryRepository.findById(id);

@@ -20,12 +20,15 @@ void main() {
     expect(await StorageService.getBiometricToken(), 'biometric-credential');
   });
 
-  test('clearBiometricToken removes the credential a logout must not keep', () async {
-    await StorageService.clearBiometricToken();
-    await StorageService.clearTokens();
+  test(
+    'clearBiometricToken removes the credential a logout must not keep',
+    () async {
+      await StorageService.clearBiometricToken();
+      await StorageService.clearTokens();
 
-    expect(await StorageService.getToken(), isNull);
-    expect(await StorageService.getRefreshToken(), isNull);
-    expect(await StorageService.getBiometricToken(), isNull);
-  });
+      expect(await StorageService.getToken(), isNull);
+      expect(await StorageService.getRefreshToken(), isNull);
+      expect(await StorageService.getBiometricToken(), isNull);
+    },
+  );
 }

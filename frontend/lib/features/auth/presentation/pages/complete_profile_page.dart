@@ -2,18 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/brutalist_error_banner.dart';
-import 'package:freebay/core/components/brutalist_snackbar.dart';
-import 'package:freebay/core/components/brutalist_background.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/centered_form_wrapper.dart';
+import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
 
 class CompleteProfilePage extends ConsumerStatefulWidget {
   const CompleteProfilePage({super.key});
@@ -26,14 +18,14 @@ class CompleteProfilePage extends ConsumerStatefulWidget {
 class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _anim = AnimationController(
-    duration: const Duration(milliseconds: 700),
+    duration: AppMotion.enter,
     vsync: this,
   )..forward();
 
   Animation<double> _fadeFor(double begin, double end) {
     return CurvedAnimation(
       parent: _anim,
-      curve: Interval(begin, end, curve: Curves.easeOut),
+      curve: Interval(begin, end, curve: AppMotion.enterCurve),
     );
   }
 
@@ -44,7 +36,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     ).animate(
       CurvedAnimation(
         parent: _anim,
-        curve: Interval(begin, end, curve: Curves.easeOut),
+        curve: Interval(begin, end, curve: AppMotion.enterCurve),
       ),
     );
   }
@@ -116,11 +108,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
               ? err
               : 'Erro ao completar perfil. Tente novamente.';
           setState(() => _errorMessage = msg);
-          BrutalistSnackBar.show(
-            context,
-            message: msg,
-            type: BrutalistSnackBarType.error,
-          );
+          AppSnackbar.error(context, msg);
         },
       );
     });
@@ -154,9 +142,9 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                       letterSpacing: 2.0,
                       color: context.textPrimary,
                       shadows: [
-                        Shadow(
-                          color: AppColors.accentAmber.withAlpha(80),
-                          offset: const Offset(2, 2),
+                        const Shadow(
+                          color: AppColors.primaryContainer,
+                          offset: AppDepth.shadowOffsetSmall,
                         ),
                       ],
                     ),
@@ -171,21 +159,17 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Spacing.vMd,
-                        FadeTransition(
+                        AuthStagger.fromAnimations(
                           opacity: _titleFade,
-                          child: SlideTransition(
-                            position: _titleSlide,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                              ),
-                              child: Text(
-                                'Escolha seu @username e preencha seus dados.',
-                                style: TextStyle(
-                                  fontFamily: AppTypography.fontFamily,
-                                  fontSize: 14,
-                                  color: context.textSecondary,
-                                ),
+                          slide: _titleSlide,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              'Escolha seu @username e preencha seus dados.',
+                              style: TextStyle(
+                                fontFamily: AppTypography.fontFamily,
+                                fontSize: 14,
+                                color: context.textSecondary,
                               ),
                             ),
                           ),
@@ -254,10 +238,9 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                         ),
                         if (_errorMessage != null) ...[
                           Spacing.vSm,
-                          BrutalistErrorBanner(
+                          EmptyState.error(
                             message: _errorMessage!,
-                            onDismiss: () =>
-                                setState(() => _errorMessage = null),
+                            onRetry: () => setState(() => _errorMessage = null),
                           ),
                         ],
                         Spacing.vLg,

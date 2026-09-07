@@ -7,12 +7,12 @@ import {
   UserNotFoundError,
 } from '@/shared/core/errors';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
-import { ModerationRepository } from '../domain/repositories/moderation.repository';
+import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 
 @Injectable()
 export class SuspendUserUseCase {
   constructor(
-    private readonly moderationRepository: ModerationRepository,
+    private readonly moderationRepository: ModerationDatabaseRepository,
     private readonly sessionRevoker: SessionRevokerService,
   ) {}
 

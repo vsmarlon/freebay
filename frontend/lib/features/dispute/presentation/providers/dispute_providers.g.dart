@@ -41,7 +41,7 @@ final class DisputeListProvider
   }
 }
 
-String _$disputeListHash() => r'a97a31b481778f49655e0eb52eb7361a7cceec82';
+String _$disputeListHash() => r'32389839eebaf8221120468fbd3b3261dcc26794';
 
 abstract class _$DisputeList extends $Notifier<DisputeListState> {
   DisputeListState build();
@@ -110,7 +110,7 @@ final class DisputeDetailProvider
   }
 }
 
-String _$disputeDetailHash() => r'0de7671232262df1efcbb8e7ba5fe65228814ac7';
+String _$disputeDetailHash() => r'7da768b65112fb969039f740a149f8127cf14be8';
 
 final class DisputeDetailFamily extends $Family
     with

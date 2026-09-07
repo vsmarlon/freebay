@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { LikeRepository } from '../domain/repositories/like.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PrismaLikeRepository } from '../data/repositories/like-database.repository';
 import { LikePostInput } from '../dtos/social.dto';
 
 @Injectable()
 export class LikePostUseCase {
   constructor(
-    private readonly postRepository: PostRepository,
-    private readonly likeRepository: LikeRepository,
+    private readonly postRepository: PrismaPostRepository,
+    private readonly likeRepository: PrismaLikeRepository,
   ) {}
 
   async execute(input: LikePostInput): Promise<Either<AppError, void>> {

@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/domain/usecases/get_user_reviews_usecase.dart';
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
   ref,
@@ -113,24 +107,24 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
       return SkeletonPage(
         child: SkeletonList(
           itemCount: 4,
-          itemBuilder: (_, i) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          itemBuilder: (_, i) => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     ShimmerBlock(width: 40, height: 40),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             ShimmerBlock(height: 14, width: 16),
-                            const SizedBox(width: 2),
+                            SizedBox(width: 2),
                             ShimmerBlock(height: 14, width: 16),
-                            const SizedBox(width: 2),
+                            SizedBox(width: 2),
                             ShimmerBlock(height: 14, width: 16),
                           ],
                         ),
@@ -138,9 +132,9 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                ShimmerBlock(height: 14, width: double.infinity),
-                const SizedBox(height: 4),
+                SizedBox(height: 8),
+                ShimmerBlock(height: 14),
+                SizedBox(height: 4),
                 ShimmerBlock(height: 14, width: 200),
               ],
             ),

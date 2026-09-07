@@ -1,7 +1,7 @@
 # Firebase
 **/google-services.json
 **/GoogleService-Info.plist
-**/firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
 *.pem
 
 # Environment
@@ -11,7 +11,6 @@
 !.env.production.example
 
 # IDE / Tooling Secrets
-opencode.json
 *.credentials.json
 session-*.md
 
@@ -34,9 +33,6 @@ coverage-integration/
 *.lcov
 *.coverage
 
-# Flutter web build
-web/
-
 # Dist
 dist/
 
@@ -52,7 +48,8 @@ Thumbs.db
 # claude
 .claude/settings.local.json
 
-# opencode
-opencode.json
 # Local MCP server config (contains local DB credentials)
 .mcp.json
+
+# Kotlin tooling output
+.kotlin/

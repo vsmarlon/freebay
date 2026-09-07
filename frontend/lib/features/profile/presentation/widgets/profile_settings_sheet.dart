@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/phone_verification_sheet.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
 
 void showProfileSettingsSheet(BuildContext context) {
   showBrutalistSheet(
@@ -347,7 +341,7 @@ class _BrutalistSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    final borderColor = isDark ? AppColors.white : AppColors.onSurface;
+    final borderColor = context.textPrimary;
     final activeColor = AppColors.primaryContainer;
     final trackColor = value
         ? activeColor
@@ -367,8 +361,8 @@ class _BrutalistSwitch extends StatelessWidget {
         child: Stack(
           children: [
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeInOut,
+              duration: AppMotion.base,
+              curve: AppMotion.enterCurve,
               left: value ? 24 : 0,
               top: 0,
               bottom: 0,

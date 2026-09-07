@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class EscrowStatusCard extends StatelessWidget {
   final EscrowStatus escrowStatus;
@@ -80,7 +77,11 @@ class EscrowStatusCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildRow(context, 'Valor total', CurrencyUtils.formatCents(amount)),
+                _buildRow(
+                  context,
+                  'Valor total',
+                  CurrencyUtils.formatCents(amount),
+                ),
                 if (!isBuyer) ...[
                   const SizedBox(height: 12),
                   _buildRow(

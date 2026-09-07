@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CreateReviewUseCase } from './usecases/create-review/create-review.usecase';
 import { GetUserReviewsUseCase } from './usecases/get-user-reviews/get-user-reviews.usecase';
 import { CanReviewOrderUseCase } from './usecases/can-review-order/can-review-order.usecase';
-import { ReviewRepository } from './domain/repositories/review.repository';
+import { PrismaReviewRepository } from './data/repositories/review-database.repository';
 import { CreateReviewInput } from './dtos/create-review.dto';
 import { AuthUser } from '@/shared/core/types';
 import { validateImageFile } from '@/shared/utils/image-upload.utils';
@@ -18,7 +18,7 @@ export class ReviewsService {
     private readonly createReviewUseCase: CreateReviewUseCase,
     private readonly getUserReviewsUseCase: GetUserReviewsUseCase,
     private readonly canReviewOrderUseCase: CanReviewOrderUseCase,
-    private readonly reviewRepository: ReviewRepository,
+    private readonly reviewRepository: PrismaReviewRepository,
   ) {}
 
   async createReview(

@@ -41,7 +41,7 @@ final class WalletProvider
   }
 }
 
-String _$walletHash() => r'1ae087dc1cb408ac9fd79f4aa06a10d87ca49443';
+String _$walletHash() => r'93f1f87eefa45204e2749a708e3bdb606c9fa308';
 
 abstract class _$Wallet extends $Notifier<AsyncValue<WalletEntity?>> {
   AsyncValue<WalletEntity?> build();
@@ -94,7 +94,7 @@ final class WalletHistoryProvider
   }
 }
 
-String _$walletHistoryHash() => r'57524d2376c919f5e10cb47e89386c9c588c7bc7';
+String _$walletHistoryHash() => r'47d7222c4ffb18465a58e5594770f352c77918c8';
 
 abstract class _$WalletHistory extends $Notifier<WalletHistoryState> {
   WalletHistoryState build();

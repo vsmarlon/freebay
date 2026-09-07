@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/user_list_tile.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/data/entities/follower_entity.dart';
@@ -141,23 +135,9 @@ class FollowersPage extends ConsumerWidget {
                   ],
                 ),
               ),
-              error: (err, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Erro ao carregar',
-                      style: TextStyle(color: context.textPrimary),
-                    ),
-                    const SizedBox(height: 8),
-                    AppButton(
-                      label: 'TENTAR NOVAMENTE',
-                      size: AppButtonSize.compact,
-                      onPressed: () =>
-                          ref.invalidate(followersProvider(userId)),
-                    ),
-                  ],
-                ),
+              error: (err, _) => EmptyState.error(
+                message: 'Erro ao carregar',
+                onRetry: () => ref.invalidate(followersProvider(userId)),
               ),
             ),
           ),

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { ReportRepository } from '../domain/repositories/report.repository';
+import { ReportDatabaseRepository } from '../data/repositories/report-database.repository';
 
 @Injectable()
 export class ResolveReportUseCase {
-  constructor(private readonly reportRepository: ReportRepository) {}
+  constructor(private readonly reportRepository: ReportDatabaseRepository) {}
 
   async execute(input: { reportId: string; status: 'REVIEWED' | 'RESOLVED' | 'REJECTED'; adminNote?: string }): Promise<Either<AppError, void>> {
     const reportResult = await this.reportRepository.findReportById(input.reportId);

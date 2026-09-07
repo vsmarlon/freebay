@@ -1,110 +1,113 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 
-/// Typography tokens for the Neo-Brutalist Refined design system.
-/// All text uses Space Grotesk with weight differentiation.
+extension AppTextWeight on TextStyle {
+  TextStyle weight(int wght) => copyWith(
+    fontWeight: FontWeight.values[(wght ~/ 100) - 1],
+    fontVariations: [FontVariation('wght', wght.toDouble())],
+  );
+}
+
 class AppTypography {
   AppTypography._();
 
-  static const String fontFamily = 'SpaceGrotesk';
-  static const String headlineFontFamily = 'SpaceGrotesk';
+  static const String fontFamily = 'Inter';
+  static const String displayFontFamily = 'SpaceGrotesk';
+  static const String headlineFontFamily = displayFontFamily;
 
-  // ─── Display Hero ──────────────────────────────────────
   static const TextStyle displayHero = TextStyle(
-    fontFamily: headlineFontFamily,
+    fontFamily: displayFontFamily,
     fontSize: 56,
-    fontWeight: FontWeight.w900,
-    letterSpacing: -2.5,
+    fontWeight: FontWeight.w800,
+    fontVariations: [FontVariation('wght', 800)],
+    letterSpacing: -2.0,
     height: 0.95,
-    color: AppColors.darkGray,
   );
 
-  // ─── Headings (Space Grotesk) ──────────────────────────
   static const TextStyle h1 = TextStyle(
-    fontFamily: headlineFontFamily,
-    fontSize: 32,
+    fontFamily: displayFontFamily,
+    fontSize: 34,
     fontWeight: FontWeight.w700,
-    color: AppColors.darkGray,
-    height: 1.2,
-    letterSpacing: -0.5,
+    fontVariations: [FontVariation('wght', 700)],
+    letterSpacing: -1.0,
+    height: 1.15,
   );
 
   static const TextStyle h2 = TextStyle(
-    fontFamily: headlineFontFamily,
+    fontFamily: displayFontFamily,
     fontSize: 24,
-    fontWeight: FontWeight.w600,
-    color: AppColors.darkGray,
-    height: 1.3,
-    letterSpacing: -0.3,
+    fontWeight: FontWeight.w700,
+    fontVariations: [FontVariation('wght', 700)],
+    letterSpacing: -0.5,
+    height: 1.20,
   );
 
   static const TextStyle h3 = TextStyle(
-    fontFamily: headlineFontFamily,
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: AppColors.darkGray,
-    height: 1.3,
+    fontFamily: displayFontFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    fontVariations: [FontVariation('wght', 700)],
+    letterSpacing: -0.2,
+    height: 1.30,
   );
 
-  // ─── Body (Space Grotesk – lighter weights) ────────────
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: AppColors.darkGray,
-    height: 1.5,
-    letterSpacing: 0.1,
+    fontVariations: [FontVariation('wght', 400)],
+    height: 1.55,
   );
 
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.mediumGray,
-    height: 1.5,
-    letterSpacing: 0.05,
+    fontVariations: [FontVariation('wght', 400)],
+    height: 1.50,
   );
 
   static const TextStyle bodySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    color: AppColors.mediumGray,
-    height: 1.4,
+    fontVariations: [FontVariation('wght', 400)],
+    letterSpacing: 0.1,
+    height: 1.40,
   );
 
-  // ─── Labels ───────────────────────────────────────────
   static const TextStyle labelLarge = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.darkGray,
-    letterSpacing: 0.1,
+    fontVariations: [FontVariation('wght', 600)],
+    letterSpacing: 0.2,
+    height: 1.20,
   );
 
   static const TextStyle labelSmall = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    color: AppColors.mediumGray,
-    letterSpacing: 0.1,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    fontVariations: [FontVariation('wght', 600)],
+    letterSpacing: 0.3,
+    height: 1.20,
   );
 
-  // ─── Tag / Badge ──────────────────────────────────────
   static const TextStyle brutalistTag = TextStyle(
-    fontFamily: headlineFontFamily,
+    fontFamily: displayFontFamily,
     fontSize: 11,
     fontWeight: FontWeight.w700,
-    letterSpacing: 0.5,
+    fontVariations: [FontVariation('wght', 700)],
+    letterSpacing: 0.6,
+    height: 1.0,
   );
 
-  // ─── Button ───────────────────────────────────────────
   static const TextStyle button = TextStyle(
-    fontFamily: headlineFontFamily,
+    fontFamily: displayFontFamily,
     fontSize: 15,
     fontWeight: FontWeight.w700,
+    fontVariations: [FontVariation('wght', 700)],
     letterSpacing: 0.3,
-    color: AppColors.white,
+    height: 1.0,
   );
 }
-

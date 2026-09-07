@@ -6,14 +6,13 @@ import { GetUserStoriesUseCase } from './usecases/get-user-stories.usecase';
 import { CreateStoryUseCase } from './usecases/create-story.usecase';
 import { ViewStoryUseCase } from './usecases/view-story.usecase';
 import { DeleteStoryUseCase } from './usecases/delete-story.usecase';
-import { StoryRepository } from './domain/repositories/story.repository';
 import { PrismaStoryRepository } from './data/repositories/story-database.repository';
 
 @Module({
   controllers: [StoriesController],
   providers: [
     StoriesService,
-    { provide: StoryRepository, useClass: PrismaStoryRepository },
+    PrismaStoryRepository,
     GetStoriesUseCase,
     GetUserStoriesUseCase,
     CreateStoryUseCase,

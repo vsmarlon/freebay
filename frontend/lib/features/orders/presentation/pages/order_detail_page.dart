@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay_design_system/components/brutalist_icon_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
@@ -78,24 +72,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     }
     final order = state.order;
     if (order == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              state.error ?? 'Pedido não encontrado',
-              style: TextStyle(color: context.textPrimary),
-            ),
-            const SizedBox(height: 12),
-            AppButton(
-              label: 'TENTAR NOVAMENTE',
-              size: AppButtonSize.compact,
-              onPressed: () => ref
-                  .read(orderDetailProvider(widget.orderId).notifier)
-                  .loadOrder(),
-            ),
-          ],
-        ),
+      return EmptyState.error(
+        message: state.error ?? 'Pedido não encontrado',
+        onRetry: () =>
+            ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder(),
       );
     }
 
@@ -207,10 +187,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          UserAvatar(
-            imageUrl: participant?.avatarUrl,
-            size: AppAvatarSize.medium,
-          ),
+          UserAvatar(imageUrl: participant?.avatarUrl),
           Spacing.hMd,
           Expanded(
             child: Column(
@@ -290,7 +267,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Future<void> _handleConfirmDelivery() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => BrutalistConfirmDialog(
+      builder: (_) => const BrutalistConfirmDialog(
         title: 'Confirmar Recebimento',
         message:
             'Ao confirmar o recebimento, o pagamento será liberado para o vendedor.',
@@ -350,7 +327,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Future<void> _handleCancel() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => BrutalistConfirmDialog(
+      builder: (_) => const BrutalistConfirmDialog(
         title: 'Cancelar Pedido',
         message:
             'Tem certeza que deseja cancelar este pedido? O valor será reembolsado.',

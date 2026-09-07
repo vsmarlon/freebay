@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { ProductDetailPayload } from '../../types/product.types';
 
 @Injectable()
 export class GetProductByIdUseCase {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(private readonly productRepository: ProductDatabaseRepository) {}
 
   async execute(id: string): Promise<Either<AppError, { product: ProductDetailPayload }>> {
     const result = await this.productRepository.findById(id);

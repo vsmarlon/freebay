@@ -2,26 +2,19 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
 class BrutalistBiometricModal extends StatelessWidget {
   const BrutalistBiometricModal({super.key});
 
-  /// Shows the brutalist biometric opt-in modal on first login or post-registration.
-  /// Returns `true` if biometrics was enabled, `false` otherwise.
   static Future<bool> show(BuildContext context, WidgetRef ref) async {
     final biometryService = ref.read(biometryServiceProvider);
     final isAvailable = await biometryService.isAvailable();
     final isEnabled = await biometryService.isEnabled();
 
-    // If device doesn't support biometrics or already enabled, skip
     if (!isAvailable || isEnabled) return false;
 
-    // Mark as prompted so we don't repeat on next logins if declined
     await biometryService.setHasPrompted(true);
 
     if (!context.mounted) return false;
@@ -38,7 +31,7 @@ class BrutalistBiometricModal extends StatelessWidget {
       transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
         final curvedAnimation = CurvedAnimation(
           parent: animation,
-          curve: Curves.linear,
+          curve: AppMotion.baseCurve,
         );
         return FadeTransition(
           opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation),
@@ -77,7 +70,6 @@ class BrutalistBiometricModal extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Top decorative laser accent bar
                 Container(
                   height: 4,
                   decoration: const BoxDecoration(
@@ -93,7 +85,6 @@ class BrutalistBiometricModal extends StatelessWidget {
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Biometric Icon Container (0px radius)
                           Container(
                             width: 64,
                             height: 64,
@@ -111,7 +102,6 @@ class BrutalistBiometricModal extends StatelessWidget {
                             ),
                           ),
                           Spacing.vLg,
-                          // Title
                           Text(
                             'ATIVAR BIOMETRIA?',
                             style: TextStyle(
@@ -126,7 +116,6 @@ class BrutalistBiometricModal extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
                           Spacing.vSm,
-                          // Body
                           Text(
                             'Use sua impressão digital ou Face ID para entrar com rapidez, facilidade e segurança nas próximas vezes.',
                             style: TextStyle(
@@ -141,7 +130,6 @@ class BrutalistBiometricModal extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
                           Spacing.vXl,
-                          // Action buttons
                           Row(
                             children: [
                               Expanded(
@@ -215,9 +203,7 @@ class BrutalistBiometricModal extends StatelessWidget {
         : (isDark
               ? AppColors.surfaceContainerDark
               : AppColors.surfaceContainer);
-    final textColor = isPrimary
-        ? AppColors.onPrimary
-        : (isDark ? AppColors.inverseOnSurface : AppColors.onSurface);
+    final textColor = isPrimary ? AppColors.onPrimary : (context.textPrimary);
 
     return GestureDetector(
       onTap: () {

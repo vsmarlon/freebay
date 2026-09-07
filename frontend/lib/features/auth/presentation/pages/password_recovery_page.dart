@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/brutalist_background.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/centered_form_wrapper.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class PasswordRecoveryPage extends ConsumerStatefulWidget {
   const PasswordRecoveryPage({super.key});
@@ -122,8 +115,8 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                       ),
                       Spacing.vMd,
                       AnimatedSize(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOutCubic,
+                        duration: AppMotion.enter,
+                        curve: AppMotion.enterCurve,
                         child: _step == 2
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,

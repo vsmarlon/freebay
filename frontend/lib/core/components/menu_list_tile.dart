@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class MenuListTile extends StatelessWidget {
   final IconData icon;
@@ -44,7 +42,11 @@ class MenuListTile extends StatelessWidget {
         ),
         trailing:
             trailing ??
-            Icon(Icons.chevron_right, color: AppColors.mediumGray, size: 20),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.mediumGray,
+              size: 20,
+            ),
         onTap: onTap,
       ),
     );

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/presentation/widgets/view_once_toggle.dart';
 
 class ChatInputBar extends StatefulWidget {
@@ -85,7 +82,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 color: context.isDark
                     ? Colors.white.withAlpha(13)
                     : Colors.black.withAlpha(13),
-                borderRadius: BorderRadius.zero,
                 border: Border.all(color: context.borderColor, width: 2),
               ),
               child: Row(

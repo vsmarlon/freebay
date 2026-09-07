@@ -41,8 +41,3 @@ export class MessageResponse {
   @ApiProperty({ example: 'Logout realizado' })
   message: string;
 }
-
-export class StatusResponse {
-  @ApiProperty({ example: true })
-  status: boolean;
-}

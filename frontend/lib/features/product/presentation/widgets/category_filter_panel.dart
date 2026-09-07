@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/brutalist_filter_chip.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 
 class CategoryFilterPanel extends StatelessWidget {
@@ -21,11 +20,7 @@ class CategoryFilterPanel extends StatelessWidget {
       height: 180,
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        border: Border(
-          bottom: BorderSide(
-            color: context.borderColor,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: context.borderColor)),
       ),
       child: SingleChildScrollView(
         child: Padding(

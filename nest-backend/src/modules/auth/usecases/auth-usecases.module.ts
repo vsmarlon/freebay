@@ -8,16 +8,14 @@ import { CheckUsernameAvailabilityUseCase } from './check-username-availability.
 import { BiometricLoginUseCase } from './biometric-login.usecase';
 import { GoogleAuthUseCase } from './google-auth.usecase';
 import { CompleteProfileUseCase } from './complete-profile.usecase';
-import { UserRepository } from '../domain/repositories/user.repository';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
-import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
 import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { ResendService } from '../services/resend.service';
 
 @Module({
   providers: [
-    { provide: UserRepository, useClass: UserDatabaseRepository },
-    { provide: PasswordRecoveryRepository, useClass: PasswordRecoveryDatabaseRepository },
+    UserDatabaseRepository,
+    PasswordRecoveryDatabaseRepository,
     RegisterUseCase,
     LoginUseCase,
     RequestPasswordRecoveryUseCase,
@@ -30,7 +28,7 @@ import { ResendService } from '../services/resend.service';
     ResendService,
   ],
   exports: [
-    UserRepository,
+    UserDatabaseRepository,
     RegisterUseCase,
     LoginUseCase,
     RequestPasswordRecoveryUseCase,

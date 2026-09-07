@@ -2,14 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { isLeft } from '@/shared/core/either';
 import { deleteUpload } from '@/shared/utils/file.utils';
-import { AccountLifecycleRepository } from '@/modules/users/domain/repositories/account-lifecycle.repository';
+import { AccountLifecycleDatabaseRepository } from '@/modules/users/data/repositories/account-lifecycle-database.repository';
 import { ACCOUNT_DELETION_GRACE_DAYS } from '@/modules/users/usecases/request-account-deletion.usecase';
 
 @Injectable()
 export class AccountDeletionTask {
   private readonly logger = new Logger(AccountDeletionTask.name);
 
-  constructor(private readonly accountLifecycleRepository: AccountLifecycleRepository) {}
+  constructor(private readonly accountLifecycleRepository: AccountLifecycleDatabaseRepository) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async purgeExpiredDeletionRequests() {

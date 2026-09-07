@@ -38,7 +38,6 @@ class BrutalistDrawer extends StatelessWidget {
 
     return Drawer(
       backgroundColor: context.surfaceColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,10 +47,7 @@ class BrutalistDrawer extends StatelessWidget {
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: items.length,
-                separatorBuilder: (context, index) => Divider(
-                  color: context.borderColor.withAlpha(50),
-                  height: 1,
-                ),
+                separatorBuilder: (context, index) => const SizedBox(height: 2),
                 itemBuilder: (context, index) {
                   final item = items[index];
                   final itemColor = item.isDestructive

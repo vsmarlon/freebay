@@ -9,7 +9,6 @@ import { MarkAllAsReadUseCase } from './usecases/mark-all-as-read.usecase';
 import { RegisterFcmTokenUseCase } from './usecases/register-fcm-token.usecase';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationDatabaseRepository } from './data/repositories/notification-database.repository';
-import { NotificationRepository } from './domain/repositories/notification.repository';
 
 @Global()
 @Module({
@@ -24,7 +23,7 @@ import { NotificationRepository } from './domain/repositories/notification.repos
     RegisterFcmTokenUseCase,
     PrismaService,
     NotificationDatabaseRepository,
-    { provide: NotificationRepository, useExisting: NotificationDatabaseRepository },
+    NotificationDatabaseRepository,
   ],
   exports: [NotificationService, FcmService],
 })

@@ -98,7 +98,7 @@ class NotificationService {
     final payload = response.payload;
     if (payload != null) {
       final data = Map<String, dynamic>.from(
-        Uri.splitQueryString(payload).map((k, v) => MapEntry(k, v)),
+        Uri.splitQueryString(payload).map(MapEntry.new),
       );
       onNotificationTapped?.call(data);
     }
@@ -108,7 +108,7 @@ class NotificationService {
     final fm = _firebaseMessaging;
     if (fm == null) return;
     if (Platform.isIOS) {
-      await fm.requestPermission(alert: true, badge: true, sound: true);
+      await fm.requestPermission();
     } else if (Platform.isAndroid) {
       await fm.requestPermission();
     }
@@ -170,7 +170,7 @@ class NotificationService {
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
-    final androidDetails = AndroidNotificationDetails(
+    final androidDetails = const AndroidNotificationDetails(
       'freebay_notifications',
       'FreeBay Notifications',
       channelDescription: 'Notifications from FreeBay',
@@ -178,7 +178,7 @@ class NotificationService {
       priority: Priority.high,
     );
 
-    final iosDetails = DarwinNotificationDetails(
+    final iosDetails = const DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,

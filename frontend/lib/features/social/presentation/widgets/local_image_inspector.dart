@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/ui.dart';
 
 /// Full-screen viewer for a local file image with zoom + edit button.
 class LocalImageFullScreen extends StatefulWidget {
@@ -52,7 +51,6 @@ class _LocalImageFullScreenState extends State<LocalImageFullScreen> {
             onDoubleTap: () {},
             child: InteractiveViewer(
               transformationController: _transformController,
-              minScale: 0.8,
               maxScale: 6,
               child: Center(
                 child: Image.file(File(widget.path), fit: BoxFit.contain),
@@ -166,8 +164,7 @@ class ImageOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final fg = isDark ? AppColors.white : AppColors.onSurface;
+    final fg = context.textPrimary;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

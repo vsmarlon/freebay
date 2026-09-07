@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/eyebrow_label.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -87,8 +82,7 @@ class SuggestionsSection extends ConsumerWidget {
         child: Container(
           width: 100,
           decoration: BoxDecoration(
-            border: Border.all(color: context.borderColor, width: 1),
-            borderRadius: BorderRadius.zero,
+            border: Border.all(color: context.borderColor),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -188,7 +182,7 @@ class _CompactSuggestionCardState
         child: Container(
           width: 100,
           decoration: BoxDecoration(
-            border: Border.all(color: context.borderColor, width: 1),
+            border: Border.all(color: context.borderColor),
           ),
           child: Column(
             children: [
@@ -198,7 +192,7 @@ class _CompactSuggestionCardState
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.outlineVariant, width: 1),
+                  border: Border.all(color: AppColors.outlineVariant),
                   image: widget.user.avatarUrl != null
                       ? DecorationImage(
                           image: NetworkImage(widget.user.avatarUrl!),

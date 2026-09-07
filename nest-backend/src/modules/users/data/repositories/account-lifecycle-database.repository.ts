@@ -7,7 +7,6 @@ import {
   PurgeCandidate,
   UserDataExport,
 } from '../../types/account.types';
-import { AccountLifecycleRepository } from '../../domain/repositories/account-lifecycle.repository';
 
 const OPEN_ORDER_STATUSES: OrderStatus[] = [
   OrderStatus.PENDING,
@@ -26,7 +25,6 @@ const OPEN_DISPUTE_STATUSES: DisputeStatus[] = [
 @Injectable()
 export class AccountLifecycleDatabaseRepository
   extends BasePrismaRepository
-  implements AccountLifecycleRepository
 {
   async findDeletionBlockers(userId: string): RepositoryResponse<AccountDeletionBlockers> {
     return this.safeRun(async () => {

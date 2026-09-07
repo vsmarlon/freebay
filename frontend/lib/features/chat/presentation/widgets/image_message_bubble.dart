@@ -1,6 +1,6 @@
+import 'package:freebay/core/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/components/full_screen_image_viewer.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 
 class ImageMessageBubble extends StatelessWidget {

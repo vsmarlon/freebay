@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class WalletCard extends StatefulWidget {
   final int availableBalanceInCents;
@@ -64,10 +61,7 @@ class _WalletCardState extends State<WalletCard> {
       onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          gradient: AppColors.brutalistGradient,
-          borderRadius: BorderRadius.zero,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.brutalistGradient),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -138,17 +132,13 @@ class _WalletCardState extends State<WalletCard> {
       onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.surfaceColor,
-          borderRadius: BorderRadius.zero,
-        ),
+        decoration: BoxDecoration(color: context.surfaceColor),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppColors.primaryContainer.withAlpha(25),
-                borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
                 Icons.account_balance_wallet_outlined,
@@ -161,7 +151,7 @@ class _WalletCardState extends State<WalletCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Saldo', style: AppTypography.bodySmall),
+                  const Text('Saldo', style: AppTypography.bodySmall),
                   const SizedBox(height: 2),
                   Text(
                     _masked(

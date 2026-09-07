@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { left, right, isLeft } from '@/shared/core/either';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { ShareRepository } from '../domain/repositories/share.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PrismaShareRepository } from '../data/repositories/share-database.repository';
 import { SearchPostsQuery } from '../types/social.types';
 
 @Injectable()
 export class SearchPostsUseCase {
   constructor(
-    private readonly postRepository: PostRepository,
-    private readonly shareRepository: ShareRepository,
+    private readonly postRepository: PrismaPostRepository,
+    private readonly shareRepository: PrismaShareRepository,
   ) {}
 
   async execute(query: SearchPostsQuery) {

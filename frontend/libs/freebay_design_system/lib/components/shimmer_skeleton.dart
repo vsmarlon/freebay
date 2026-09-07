@@ -1,3 +1,4 @@
+import '../tokens/app_motion.dart';
 import 'package:flutter/material.dart';
 import '../tokens/app_colors.dart';
 import '../tokens/theme_extension.dart';
@@ -29,10 +30,8 @@ class _ShimmerBlockState extends State<ShimmerBlock>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: AppMotion.shimmer)
+      ..repeat(reverse: true);
   }
 
   @override
@@ -43,11 +42,13 @@ class _ShimmerBlockState extends State<ShimmerBlock>
 
   @override
   Widget build(BuildContext context) {
-    final base = widget.baseColor ??
+    final base =
+        widget.baseColor ??
         (context.isDark
             ? AppColors.surfaceContainerDark
             : AppColors.surfaceContainerLow);
-    final highlight = widget.highlightColor ??
+    final highlight =
+        widget.highlightColor ??
         (context.isDark
             ? AppColors.surfaceContainerLowDark
             : AppColors.surfaceContainerLowest);
@@ -60,7 +61,7 @@ class _ShimmerBlockState extends State<ShimmerBlock>
           height: widget.height,
           decoration: BoxDecoration(
             color: Color.lerp(base, highlight, _controller.value),
-            border: Border.all(color: AppColors.outlineVariant, width: 1),
+            border: Border.all(color: AppColors.outlineVariant),
           ),
         );
       },
@@ -130,7 +131,7 @@ class WalletSkeleton extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             color: context.isDark
                 ? AppColors.surfaceDark
-                : AppColors.surfaceLight,
+                : AppColors.surfaceContainerLowest,
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

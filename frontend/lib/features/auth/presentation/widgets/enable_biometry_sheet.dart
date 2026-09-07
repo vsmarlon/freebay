@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
 /// Shows a bottom sheet offering biometric login opt-in after a
@@ -52,7 +47,7 @@ Future<bool> showEnableBiometrySheet(BuildContext context) async {
                 ),
               ),
               Spacing.vSm,
-              Text(
+              const Text(
                 'Use sua impressão digital ou Face ID para entrar '
                 'rapidamente, sem digitar sua senha.',
                 style: TextStyle(

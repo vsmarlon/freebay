@@ -52,13 +52,6 @@ export class LoginDTO {
   readonly password: string;
 }
 
-export class LogoutDTO {
-  @ApiPropertyOptional({ description: 'Refresh token to blacklist alongside the access token' })
-  @IsOptional()
-  @IsString()
-  readonly refreshToken?: string;
-}
-
 export class BiometricLoginDTO {
   @ApiProperty({ description: 'Backend-issued biometric token (JWT type: biometric)' })
   @IsString()

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 enum AppCardVariant { compact, full, skeleton }
 
@@ -59,33 +56,20 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     final isNew = widget.condition == 'new' || widget.condition == 'NOVO';
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 100),
-      curve: Curves.easeOut,
+      duration: AppMotion.tap,
       transform: Matrix4.translationValues(
-        _isPressed ? 2.0 : 0.0,
-        _isPressed ? 2.0 : 0.0,
+        _isPressed ? AppDepth.pressOffset : 0.0,
+        _isPressed ? AppDepth.pressOffset : 0.0,
         0.0,
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark
-              ? const Color(0xFF131B2E)
-              : AppColors.surfaceContainerLowest,
+          color: context.surfaceColor,
           border: Border.all(
-            color: isDark ? AppColors.outline.withAlpha(120) : AppColors.black,
-            width: 2.0,
+            color: context.borderColor,
+            width: AppDepth.borderThick,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: _isPressed
-                  ? Colors.transparent
-                  : (isDark
-                        ? AppColors.primaryContainer.withAlpha(100)
-                        : AppColors.black),
-              offset: const Offset(3.5, 3.5),
-              blurRadius: 0,
-            ),
-          ],
+          boxShadow: _isPressed ? null : AppDepth.hard(context.borderColor),
         ),
         clipBehavior: Clip.antiAlias,
         child: Material(
@@ -104,12 +88,10 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Product Image Container with badges
                 Stack(
                   children: [
                     _buildImage(),
 
-                    // Condition Badge
                     Positioned(
                       top: 8,
                       left: 8,
@@ -121,11 +103,9 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                         decoration: BoxDecoration(
                           color: isNew
                               ? AppColors.primaryContainer
-                              : (isDark
-                                    ? const Color(0xFF1E293B)
-                                    : AppColors.darkGray),
+                              : (context.colors.inverseSurface),
                           border: Border.all(
-                            color: isDark ? AppColors.white : AppColors.black,
+                            color: context.textPrimary,
                             width: 1.2,
                           ),
                         ),
@@ -142,7 +122,6 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       ),
                     ),
 
-                    // 0% TAXA badge
                     Positioned(
                       top: 8,
                       right: 8,
@@ -152,36 +131,25 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF064E3B)
-                              : const Color(0xFFD1FAE5),
-                          border: Border.all(
-                            color: isDark
-                                ? AppColors.success
-                                : const Color(0xFF059669),
-                            width: 1.0,
-                          ),
+                          color: AppColors.success.withAlpha(isDark ? 40 : 30),
+                          border: Border.all(color: AppColors.success),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.bolt,
                               size: 10,
-                              color: isDark
-                                  ? AppColors.success
-                                  : const Color(0xFF059669),
+                              color: AppColors.success,
                             ),
-                            const SizedBox(width: 2),
+                            SizedBox(width: 2),
                             Text(
                               '0% TAXA',
                               style: TextStyle(
                                 fontFamily: AppTypography.headlineFontFamily,
                                 fontSize: 8,
                                 fontWeight: FontWeight.w900,
-                                color: isDark
-                                    ? AppColors.success
-                                    : const Color(0xFF059669),
+                                color: AppColors.success,
                               ),
                             ),
                           ],
@@ -191,13 +159,11 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                   ],
                 ),
 
-                // Info body
                 Padding(
                   padding: const EdgeInsets.all(10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
                       Text(
                         widget.title,
                         style: TextStyle(
@@ -216,7 +182,6 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                       ),
                       const SizedBox(height: 8),
 
-                      // Price Tag Box
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
@@ -245,9 +210,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                                     : 16,
                                 fontWeight: FontWeight.w900,
                                 fontStyle: FontStyle.italic,
-                                color: isDark
-                                    ? AppColors.onPrimaryContainer
-                                    : AppColors.primaryContainer,
+                                color: context.colors.primary,
                               ),
                             ),
                             if (widget.score != null) ...[
@@ -305,32 +268,26 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildPlaceholder(double height) {
-    final isDark = context.isDark;
-
     return Container(
       height: height,
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark
-              ? const [Color(0xFF1E1630), Color(0xFF13192B), Color(0xFF2A1538)]
-              : const [Color(0xFFF3E8FF), Color(0xFFE0E7FF), Color(0xFFFCE7F3)],
+          colors: [context.surfaceMidColor, context.surfaceHighColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: Center(
+      child: const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.shopping_bag_outlined,
-              color: isDark
-                  ? AppColors.primaryContainer.withAlpha(180)
-                  : AppColors.primaryContainer,
+              color: AppColors.primaryContainer,
               size: 32,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               'FREEBAY',
               style: TextStyle(
@@ -338,9 +295,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                 fontSize: 9,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.5,
-                color: isDark
-                    ? AppColors.primaryContainer.withAlpha(180)
-                    : AppColors.primaryContainer,
+                color: AppColors.primaryContainer,
               ),
             ),
           ],
@@ -350,31 +305,18 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildSkeleton(BuildContext context) {
-    final isDark = context.isDark;
     final height = widget.variant == AppCardVariant.compact ? 120.0 : 160.0;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF131B2E)
-            : AppColors.surfaceContainerLowest,
-        border: Border.all(
-          color: isDark
-              ? AppColors.outline.withAlpha(80)
-              : AppColors.outlineVariant,
-          width: 1.5,
-        ),
+        color: context.surfaceColor,
+        border: Border.all(color: context.borderSoftColor, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            height: height,
-            color: isDark
-                ? AppColors.surfaceContainerDark
-                : AppColors.surfaceContainerHigh,
-          ),
+          Container(height: height, color: context.surfaceHighColor),
           Padding(
             padding: const EdgeInsets.all(10),
             child: Column(
@@ -383,17 +325,13 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                 Container(
                   height: 14,
                   width: 100,
-                  color: isDark
-                      ? AppColors.surfaceContainerDark
-                      : AppColors.surfaceContainerHigh,
+                  color: context.surfaceHighColor,
                 ),
                 Spacing.vSm,
                 Container(
                   height: 20,
                   width: double.infinity,
-                  color: isDark
-                      ? AppColors.surfaceContainerDark
-                      : AppColors.surfaceContainerHigh,
+                  color: context.surfaceHighColor,
                 ),
               ],
             ),

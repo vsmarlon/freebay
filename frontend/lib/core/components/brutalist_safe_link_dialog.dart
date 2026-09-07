@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
 import 'package:freebay/core/utils/url_safety_analyzer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Digital Brutalist interstitial security dialog displayed before navigating to external URLs.
 class BrutalistSafeLinkDialog extends StatelessWidget {
   final String rawUrl;
   final UrlSafetyResult safetyResult;
@@ -97,7 +93,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
             Row(
               children: [
                 Icon(
@@ -134,14 +129,13 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Badge
             Align(
               alignment: Alignment.centerLeft,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: badgeColor.withValues(alpha: 0.15),
-                  border: Border.all(color: badgeColor, width: 1),
+                  border: Border.all(color: badgeColor),
                 ),
                 child: Text(
                   badgeText,
@@ -157,14 +151,13 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Destination Domain Box
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isDark
                     ? AppColors.surfaceDark
                     : AppColors.surfaceContainerHighest,
-                border: Border.all(color: AppColors.outlineVariant, width: 1),
+                border: Border.all(color: AppColors.outlineVariant),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,7 +211,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
               ),
             ),
 
-            // Threat Reasons (if any)
             if (safetyResult.riskReasons.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
@@ -229,7 +221,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
                       : AppColors.warning.withValues(alpha: 0.08),
                   border: Border.all(
                     color: isDangerous ? AppColors.error : AppColors.warning,
-                    width: 1,
                   ),
                 ),
                 child: Column(
@@ -269,7 +260,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Security Advice
             Text(
               isDangerous
                   ? 'Este link foi classificado como perigoso e não pode ser aberto diretamente pelo FreeBay para proteger sua conta e dispositivo.'
@@ -283,7 +273,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Actions
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -291,7 +280,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
                   label: 'VOLTAR COM SEGURANÇA',
                   onPressed: () =>
                       Navigator.of(context, rootNavigator: true).pop(),
-                  variant: AppButtonVariant.primary,
                 ),
                 if (!isDangerous) ...[
                   const SizedBox(height: 8),
@@ -310,7 +298,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
   }
 }
 
-/// Helper function to analyze and display the safe link interstitial dialog.
 Future<void> showBrutalistSafeLinkDialog(
   BuildContext context,
   String rawUrl,
@@ -319,7 +306,6 @@ Future<void> showBrutalistSafeLinkDialog(
 
   return showDialog(
     context: context,
-    barrierDismissible: true,
     builder: (ctx) =>
         BrutalistSafeLinkDialog(rawUrl: rawUrl, safetyResult: safetyResult),
   );

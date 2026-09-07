@@ -3,11 +3,10 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
-import { ProductRepository } from '../../domain/repositories/product.repository';
 import { ProductDetailPayload, ProductListPayload, FindManyParams, ProductSort, PRODUCT_DETAIL_INCLUDE, PRODUCT_LIST_INCLUDE } from '../../types/product.types';
 
 @Injectable()
-export class ProductDatabaseRepository implements ProductRepository {
+export class ProductDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string) {

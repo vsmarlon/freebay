@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
-import { OrderRepository } from '../domain/repositories/order.repository';
+import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { MarkAsShippedInput } from '../dtos/order.dto';
 
 @Injectable()
 export class MarkAsShippedUseCase {
-  constructor(private readonly orderRepository: OrderRepository) {}
+  constructor(private readonly orderRepository: PrismaOrderRepository) {}
 
   async execute(input: MarkAsShippedInput): Promise<Either<AppError, void>> {
     const orderResult = await this.orderRepository.findById(input.orderId);

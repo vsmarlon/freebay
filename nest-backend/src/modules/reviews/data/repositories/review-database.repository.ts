@@ -2,13 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma, ReviewType } from '@prisma/client';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
-import { ReviewRepository } from '@/modules/reviews/domain/repositories/review.repository';
 import { REVIEW_INCLUDE, REVIEW_DETAILED_INCLUDE, ReviewWithReviewer, ReviewWithDetails } from '@/modules/reviews/types/review.types';
 import { RepositoryResponse } from '@/shared/core/either';
 import { saveUpload } from '@/shared/utils/file.utils';
 
 @Injectable()
-export class PrismaReviewRepository extends BasePrismaRepository implements ReviewRepository {
+export class PrismaReviewRepository extends BasePrismaRepository {
   async findById(id: string): RepositoryResponse<ReviewWithDetails | null> {
     return this.safeRun(() => this.prisma.review.findUnique({
       where: { id },

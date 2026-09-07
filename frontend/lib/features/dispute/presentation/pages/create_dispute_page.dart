@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/brutalist_box.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 import 'package:freebay/shared/services/http_client.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 class CreateDisputePage extends ConsumerStatefulWidget {
   final String orderId;
@@ -53,9 +45,9 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
                 children: [
                   BrutalistBreadcrumb(items: context.breadcrumbs),
                   Spacing.vMd,
-                  Text('Descreva o problema', style: AppTypography.h3),
+                  const Text('Descreva o problema', style: AppTypography.h3),
                   Spacing.vSm,
-                  Text(
+                  const Text(
                     'Explique detalhadamente o que houve de errado com o pedido',
                     style: AppTypography.bodySmall,
                   ),

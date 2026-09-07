@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { SavedPostRepository } from '../domain/repositories/saved-post.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PrismaSavedPostRepository } from '../data/repositories/saved-post-database.repository';
 
 @Injectable()
 export class SavePostUseCase {
   constructor(
-    private readonly postRepository: PostRepository,
-    private readonly savedPostRepository: SavedPostRepository,
+    private readonly postRepository: PrismaPostRepository,
+    private readonly savedPostRepository: PrismaSavedPostRepository,
   ) {}
 
   async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {

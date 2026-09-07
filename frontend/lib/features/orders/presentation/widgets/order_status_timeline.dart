@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class OrderStatusTimeline extends StatelessWidget {
   final OrderStatus currentStatus;
 
-  const OrderStatusTimeline({
-    super.key,
-    required this.currentStatus,
-  });
+  const OrderStatusTimeline({super.key, required this.currentStatus});
 
   static const _statusOrder = [
     OrderStatus.pending,
@@ -79,11 +73,7 @@ class OrderStatusTimeline extends StatelessWidget {
                 );
               }
               final stepIndex = index ~/ 2;
-              return _buildStep(
-                context,
-                _statusOrder[stepIndex],
-                stepIndex,
-              );
+              return _buildStep(context, _statusOrder[stepIndex], stepIndex);
             }),
           ),
           Spacing.vMd,
@@ -120,11 +110,7 @@ class OrderStatusTimeline extends StatelessWidget {
       ),
       child: Center(
         child: isCompleted
-            ? Icon(
-                Icons.check,
-                color: context.colors.onPrimary,
-                size: 18,
-              )
+            ? Icon(Icons.check, color: context.colors.onPrimary, size: 18)
             : Text(
                 '${stepIndex + 1}',
                 style: TextStyle(
@@ -140,7 +126,12 @@ class OrderStatusTimeline extends StatelessWidget {
     );
   }
 
-  Widget _buildSpecialStatus(BuildContext context, String label, IconData icon, Color color) {
+  Widget _buildSpecialStatus(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       color: context.surfaceColor,
       padding: const EdgeInsets.all(24),
@@ -150,9 +141,7 @@ class OrderStatusTimeline extends StatelessWidget {
             width: 48,
             height: 48,
             color: color.withValues(alpha: 0.1),
-            child: Center(
-              child: Icon(icon, color: color, size: 24),
-            ),
+            child: Center(child: Icon(icon, color: color, size: 24)),
           ),
           Spacing.hMd,
           Expanded(

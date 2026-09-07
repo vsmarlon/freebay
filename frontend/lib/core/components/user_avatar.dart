@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 enum AppAvatarSize {
   small(32),
@@ -15,16 +15,19 @@ class UserAvatar extends StatelessWidget {
   final String? imageUrl;
   final bool isVerified;
   final AppAvatarSize size;
+  final double? dimension;
 
   const UserAvatar({
     super.key,
     this.imageUrl,
     this.isVerified = false,
     this.size = AppAvatarSize.medium,
+    this.dimension,
   });
 
   @override
   Widget build(BuildContext context) {
+    final avatarDimension = dimension ?? size.value;
     final borderColor = isVerified
         ? AppColors.primaryContainer
         : AppColors.onSurface.withValues(alpha: 0.15);
@@ -33,10 +36,9 @@ class UserAvatar extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          width: size.value,
-          height: size.value,
+          width: avatarDimension,
+          height: avatarDimension,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.zero,
             color: AppColors.surfaceContainerLow,
             border: Border.all(color: borderColor, width: 2),
           ),
@@ -44,8 +46,8 @@ class UserAvatar extends StatelessWidget {
               ? CachedNetworkImage(
                   imageUrl: imageUrl!,
                   fit: BoxFit.cover,
-                  memCacheWidth: (size.value * 2.5).toInt(),
-                  memCacheHeight: (size.value * 2.5).toInt(),
+                  memCacheWidth: (avatarDimension * 2.5).toInt(),
+                  memCacheHeight: (avatarDimension * 2.5).toInt(),
                   placeholder: (context, url) => _buildPlaceholder(),
                   errorWidget: (context, url, error) => _buildPlaceholder(),
                 )
@@ -59,7 +61,6 @@ class UserAvatar extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 color: AppColors.onPrimary,
-                borderRadius: BorderRadius.zero,
                 border: Border.all(color: AppColors.primaryContainer, width: 2),
               ),
               child: Icon(
@@ -77,7 +78,7 @@ class UserAvatar extends StatelessWidget {
     return Icon(
       Icons.person,
       color: AppColors.onSurfaceVariant,
-      size: size.value * 0.5,
+      size: (dimension ?? size.value) * 0.5,
     );
   }
 }

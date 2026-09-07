@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/features/social/domain/repositories/i_social_repository.dart';
+import 'package:freebay/features/social/data/entities/story_entity.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -46,7 +47,7 @@ class FeedContentFilterSetting extends _$FeedContentFilterSetting {
 
 @Riverpod(keepAlive: true)
 class Feed extends _$Feed {
-  late final ISocialRepository _repository;
+  late final SocialRepository _repository;
   int _currentRequestId = 0;
 
   @override

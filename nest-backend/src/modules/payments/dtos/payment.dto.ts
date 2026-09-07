@@ -24,15 +24,6 @@ export interface WebhookDataPayload {
   readonly chargeId?: string;
 }
 
-
-export interface CreateWithdrawalInput {
-  readonly withdrawalId: string;
-}
-
-export interface CreateWithdrawalOutput {
-  readonly transferred: boolean;
-}
-
 export class CreatePaymentSessionOutput {
   @ApiProperty({ example: 'cs_test_abc123' })
   readonly stripeSessionId: string;
@@ -60,4 +51,3 @@ export class CreatePaymentIntentOutput {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   readonly orderId: string;
 }
-

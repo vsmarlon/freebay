@@ -2,15 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class ProfileHeader extends ConsumerWidget {
   final UserEntity user;
@@ -168,16 +163,22 @@ class ProfileHeader extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _StatItem(value: '${user.postsCount}', label: 'posts'),
-                  _StatItem(
+                  StatColumn(
+                    value: '${user.postsCount}',
+                    label: 'posts',
+                    size: 18,
+                  ),
+                  StatColumn(
                     value: '$followersCount',
                     label: 'seguidores',
+                    size: 18,
                     onTap: () =>
                         context.push('/profile/followers?userId=${user.id}'),
                   ),
-                  _StatItem(
+                  StatColumn(
                     value: '$followingCount',
                     label: 'seguindo',
+                    size: 18,
                     onTap: () =>
                         context.push('/profile/following?userId=${user.id}'),
                   ),
@@ -274,10 +275,7 @@ class _AvatarWithStoryRing extends ConsumerWidget {
     if (hasStory) {
       avatar = Container(
         padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.zero,
-          gradient: AppColors.brutalistGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.brutalistGradient),
         child: avatar,
       );
     }
@@ -299,7 +297,6 @@ class _AvatarWithStoryRing extends ConsumerWidget {
                 height: 48,
                 decoration: const BoxDecoration(
                   gradient: AppColors.brutalistGradient,
-                  borderRadius: BorderRadius.zero,
                 ),
                 child: const Icon(Icons.camera_alt, color: AppColors.white),
               ),
@@ -315,7 +312,6 @@ class _AvatarWithStoryRing extends ConsumerWidget {
                 height: 48,
                 decoration: const BoxDecoration(
                   gradient: AppColors.brutalistGradient,
-                  borderRadius: BorderRadius.zero,
                 ),
                 child: const Icon(Icons.add, color: AppColors.white),
               ),
@@ -336,9 +332,8 @@ class _AvatarWithStoryRing extends ConsumerWidget {
                   height: 48,
                   decoration: const BoxDecoration(
                     color: AppColors.surfaceContainerHighest,
-                    borderRadius: BorderRadius.zero,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.auto_awesome,
                     color: AppColors.primaryContainer,
                   ),
@@ -383,40 +378,5 @@ class _AvatarWithStoryRing extends ConsumerWidget {
         ref.invalidate(profileFutureProvider('me'));
       },
     );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String value;
-  final String label;
-  final VoidCallback? onTap;
-
-  const _StatItem({required this.value, required this.label, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: context.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.mediumGray),
-        ),
-      ],
-    );
-
-    if (onTap != null) {
-      return InkWell(onTap: onTap, child: content);
-    }
-    return content;
   }
 }

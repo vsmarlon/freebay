@@ -34,7 +34,6 @@ class BrutalistBox extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: backgroundColor ?? context.surfaceColor,
-        borderRadius: BorderRadius.zero,
         border: Border.all(
           color: borderColor ?? context.borderColor,
           width: borderWidth,
@@ -46,10 +45,7 @@ class BrutalistBox extends StatelessWidget {
     if (onTap != null) {
       content = Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: content,
-        ),
+        child: InkWell(onTap: onTap, child: content),
       );
     }
 

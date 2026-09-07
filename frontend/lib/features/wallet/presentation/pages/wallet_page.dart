@@ -2,21 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/router/app_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_refresh_indicator.dart';
-import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/components/guest_gate_view.dart';
-import 'package:freebay/core/components/wallet_card.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/page_header.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/wallet/data/entities/connect_status_entity.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 
 class WalletPage extends ConsumerStatefulWidget {
@@ -228,7 +218,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
     if (!mounted) return;
     result.fold(
       (failure) => AppSnackbar.error(context, failure.message),
-      (url) => _openExternal(url),
+      _openExternal,
     );
   }
 
@@ -239,7 +229,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
     if (!mounted) return;
     result.fold(
       (failure) => AppSnackbar.error(context, failure.message),
-      (url) => _openExternal(url),
+      _openExternal,
     );
   }
 

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
-import { CartRepository } from '../domain/repositories/cart.repository';
+import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 
 import { UpdateCartItemInput, UpdateCartItemOutput } from '../dtos/cart.dto';
 
 @Injectable()
 export class UpdateCartItemUseCase {
-  constructor(private readonly cartRepository: CartRepository) {}
+  constructor(private readonly cartRepository: CartDatabaseRepository) {}
 
   async execute(input: UpdateCartItemInput): Promise<Either<AppError, UpdateCartItemOutput>> {
     if (!Number.isInteger(input.quantity) || input.quantity < 1 || input.quantity > 10) {

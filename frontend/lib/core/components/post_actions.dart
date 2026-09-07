@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class PostActions extends StatelessWidget {
   final bool isLiked;
@@ -39,7 +36,7 @@ class PostActions extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: AppColors.onSurface.withAlpha(26), width: 1),
+          top: BorderSide(color: AppColors.onSurface.withAlpha(26)),
         ),
       ),
       child: Row(
@@ -258,20 +255,16 @@ class PostShareBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
-          leading: Icon(
-            Icons.link,
-            color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-          ),
+          leading: Icon(Icons.link, color: context.textPrimary),
           title: Text(
             'Compartilhar externamente',
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
-              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+              color: context.textPrimary,
             ),
           ),
           subtitle: const Text(
@@ -285,15 +278,12 @@ class PostShareBottomSheet extends StatelessWidget {
           onTap: onShareExternal,
         ),
         ListTile(
-          leading: Icon(
-            Icons.article_outlined,
-            color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
-          ),
+          leading: Icon(Icons.article_outlined, color: context.textPrimary),
           title: Text(
             'Compartilhar no perfil',
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
-              color: isDark ? AppColors.inverseOnSurface : AppColors.onSurface,
+              color: context.textPrimary,
             ),
           ),
           subtitle: Text(

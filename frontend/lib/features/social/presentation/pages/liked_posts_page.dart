@@ -2,17 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
   final repository = ref.watch(socialRepositoryProvider);
@@ -103,9 +96,7 @@ class LikedPostsPage extends ConsumerWidget {
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar posts curtidos',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      style: TextStyle(color: context.textPrimary),
                     ),
                   ],
                 ),
@@ -124,7 +115,7 @@ class LikedPostsPage extends ConsumerWidget {
       onTap: () => context.push('/post/${post.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+          color: context.bgColor,
           border: Border.all(
             color: AppColors.onSurface.withValues(alpha: 0.15),
             width: 2,
@@ -136,9 +127,7 @@ class LikedPostsPage extends ConsumerWidget {
                 fit: BoxFit.cover,
                 memCacheWidth: 300,
                 memCacheHeight: 300,
-                placeholder: (_, _) => Container(
-                  color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
-                ),
+                placeholder: (_, _) => Container(color: context.bgColor),
                 errorWidget: (_, _, _) =>
                     const Icon(Icons.image, color: AppColors.mediumGray),
               )
@@ -148,10 +137,7 @@ class LikedPostsPage extends ConsumerWidget {
                   padding: const EdgeInsets.all(8),
                   child: Text(
                     post.content!,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.white : AppColors.darkGray,
-                    ),
+                    style: TextStyle(fontSize: 12, color: context.textPrimary),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),

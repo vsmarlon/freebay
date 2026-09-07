@@ -1,18 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final userStoriesProvider = FutureProvider.family<List<StoryEntity>, String>((
   ref,
@@ -48,10 +40,7 @@ class MyStoriesPage extends ConsumerWidget {
             ),
             actions: [
               IconButton(
-                icon: Icon(
-                  Icons.add,
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                ),
+                icon: Icon(Icons.add, color: context.textPrimary),
                 onPressed: () => context.push('/create-story'),
               ),
             ],
@@ -132,9 +121,7 @@ class MyStoriesPage extends ConsumerWidget {
                     Spacing.vMd,
                     Text(
                       'Erro ao carregar hist\u00f3rias',
-                      style: TextStyle(
-                        color: isDark ? AppColors.white : AppColors.darkGray,
-                      ),
+                      style: TextStyle(color: context.textPrimary),
                     ),
                   ],
                 ),
@@ -164,7 +151,6 @@ class MyStoriesPage extends ConsumerWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.zero,
               border: Border.all(
                 color: AppColors.onSurface.withValues(alpha: 0.15),
                 width: 2,
@@ -175,7 +161,7 @@ class MyStoriesPage extends ConsumerWidget {
                       fit: BoxFit.cover,
                     )
                   : null,
-              color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+              color: context.bgColor,
             ),
             child: story.imageUrl.isEmpty
                 ? const Icon(Icons.image, color: AppColors.mediumGray)
@@ -184,7 +170,6 @@ class MyStoriesPage extends ConsumerWidget {
           if (isExpired)
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.zero,
                 color: AppColors.onSurface.withValues(alpha: 0.5),
               ),
               child: const Center(
@@ -205,18 +190,14 @@ class MyStoriesPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.white,
+        backgroundColor: context.bgColor,
         title: Text(
           'Excluir história?',
-          style: TextStyle(
-            color: isDark ? AppColors.white : AppColors.darkGray,
-          ),
+          style: TextStyle(color: context.textPrimary),
         ),
         content: Text(
           'Esta ação não pode ser desfeita.',
-          style: TextStyle(
-            color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-          ),
+          style: TextStyle(color: context.textSecondary),
         ),
         actions: [
           InkWell(
@@ -225,9 +206,7 @@ class MyStoriesPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Text(
                 'Cancelar',
-                style: TextStyle(
-                  color: isDark ? AppColors.white : AppColors.darkGray,
-                ),
+                style: TextStyle(color: context.textPrimary),
               ),
             ),
           ),

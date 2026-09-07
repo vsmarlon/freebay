@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class ArchivedChatsPage extends ConsumerWidget {
   const ArchivedChatsPage({super.key});
@@ -70,17 +65,17 @@ class ArchivedChatsPage extends ConsumerWidget {
     return SkeletonList(
       itemCount: 5,
       itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        return const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Row(
             children: [
               ShimmerBlock(width: 56, height: 56),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerBlock(height: 14, width: 100),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   ShimmerBlock(height: 12, width: 150),
                 ],
               ),
@@ -101,13 +96,11 @@ class ArchivedChatsPage extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : AppColors.white,
-          borderRadius: BorderRadius.zero,
+          color: context.bgColor,
           border: Border.all(
             color: isDark
                 ? AppColors.mediumGray.withAlpha(76)
                 : AppColors.mediumGray.withAlpha(102),
-            width: 1,
           ),
         ),
         child: ListTile(
@@ -130,17 +123,14 @@ class ArchivedChatsPage extends ConsumerWidget {
                   : AppColors.lightGray,
             ),
             child: chat.otherAvatarUrl == null
-                ? Icon(
-                    Icons.person,
-                    color: isDark ? AppColors.white : AppColors.mediumGray,
-                  )
+                ? Icon(Icons.person, color: context.textPrimary)
                 : null,
           ),
           title: Text(
             chat.otherName,
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.white : AppColors.darkGray,
+              color: context.textPrimary,
               fontSize: 15,
             ),
           ),
@@ -148,17 +138,19 @@ class ArchivedChatsPage extends ConsumerWidget {
             chat.lastMessage ?? '',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: AppColors.mediumGray, fontSize: 13),
+            style: const TextStyle(color: AppColors.mediumGray, fontSize: 13),
           ),
           trailing: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
-                final usecase = ref.read(archiveChatUsecaseProvider);
-                usecase(chat.id, chat.threadType, false).then((_) {
-                  ref.invalidate(archivedChatsProvider);
-                  ref.invalidate(chatsProvider);
-                });
+                ref
+                    .read(chatRepositoryProvider)
+                    .archiveChat(chat.id, chat.threadType, false)
+                    .then((_) {
+                      ref.invalidate(archivedChatsProvider);
+                      ref.invalidate(chatsProvider);
+                    });
               },
               child: Container(
                 width: 40,

@@ -49,22 +49,6 @@ export class ForbiddenError extends AppError {
   }
 }
 
-export class InsufficientBalanceError extends AppError {
-  constructor() {
-    super('INSUFFICIENT_BALANCE', 'Saldo insuficiente para saque', 422);
-  }
-}
-
-export class NoRecipientError extends AppError {
-  constructor() {
-    super(
-      'NO_RECIPIENT',
-      'Nenhuma conta bancária cadastrada, configure seu recipient primeiro',
-      422,
-    );
-  }
-}
-
 export class InvalidOrderStateError extends AppError {
   constructor(expected: string, current: string) {
     super('INVALID_ORDER_STATE', `Pedido deveria estar ${expected}, mas está ${current}`, 422);
@@ -80,12 +64,6 @@ export class ValidationError extends AppError {
 export class BadRequestError extends AppError {
   constructor(message = 'Requisição inválida') {
     super('BAD_REQUEST', message, 400);
-  }
-}
-
-export class AlreadyExistsError extends AppError {
-  constructor(resource: string) {
-    super('ALREADY_EXISTS', `${resource} já existe`, 409);
   }
 }
 
@@ -193,18 +171,6 @@ export class PaymentProviderError extends AppError {
   }
 }
 
-export class CryptoRpcError extends AppError {
-  constructor(message = 'Falha na comunicação com a carteira crypto', statusCode = 502) {
-    super('CRYPTO_RPC_ERROR', message, statusCode);
-  }
-}
-
-export class UnsupportedCurrencyError extends AppError {
-  constructor(currency: string) {
-    super('UNSUPPORTED_CURRENCY', `Moeda não suportada: ${currency}`, 400);
-  }
-}
-
 export class ConflictError extends AppError {
   constructor(message = 'Conflito de dados') {
     super('CONFLICT', message, 409);
@@ -214,12 +180,6 @@ export class ConflictError extends AppError {
 export class EmailDeliveryFailedError extends AppError {
   constructor(message = 'Falha ao enviar e-mail') {
     super('EMAIL_DELIVERY_FAILED', message, 500);
-  }
-}
-
-export class NotImplementedError extends AppError {
-  constructor(feature: string) {
-    super('NOT_IMPLEMENTED', `${feature} is not yet implemented`, 501);
   }
 }
 

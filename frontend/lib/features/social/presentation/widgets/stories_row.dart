@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class StoriesRow extends ConsumerWidget {
   const StoriesRow({super.key});
@@ -80,7 +77,6 @@ class _AddStoryItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: context.surfaceColor,
                 border: Border.all(color: AppColors.primaryContainer, width: 2),
-                borderRadius: BorderRadius.zero,
               ),
               child: const Icon(
                 Icons.add,
@@ -135,7 +131,6 @@ class _StoryItem extends StatelessWidget {
                       : AppColors.primaryContainer,
                   width: 2,
                 ),
-                borderRadius: BorderRadius.zero,
                 image: story.imageUrl.isNotEmpty
                     ? DecorationImage(
                         image: NetworkImage(story.imageUrl),

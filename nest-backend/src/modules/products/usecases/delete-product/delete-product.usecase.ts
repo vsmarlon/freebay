@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
-import { ProductRepository } from '../../domain/repositories/product.repository';
+import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { DeleteProductInput } from '../../dtos/product.dto';
 
 @Injectable()
 export class DeleteProductUseCase {
-  constructor(private readonly productRepository: ProductRepository) {}
+  constructor(private readonly productRepository: ProductDatabaseRepository) {}
 
   async execute(input: DeleteProductInput): Promise<Either<AppError, void>> {
     const product = await this.productRepository.findById(input.productId);

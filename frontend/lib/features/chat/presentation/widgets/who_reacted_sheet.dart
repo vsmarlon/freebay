@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
 import 'package:freebay/shared/services/http_client.dart';
 
@@ -105,7 +104,7 @@ class _WhoReactedSheetState extends State<WhoReactedSheet> {
                   const SizedBox(width: 12),
                   Text(
                     _userNames[uid] ?? 'Carregando...',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 13,
                     ),

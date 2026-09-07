@@ -4,12 +4,11 @@ import Stripe from 'stripe';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, PaymentProviderError } from '@/shared/core/errors';
 import {
-  PaymentProvider,
   PaymentIntentParams,
   PaymentIntentResult,
   PaymentSessionParams,
   PaymentSessionResult,
-} from '../domain/providers/payment-provider.interface';
+} from '../types/payment-provider.types';
 import {
   ConnectAccountSnapshot,
   CreateConnectAccountParams,
@@ -17,7 +16,7 @@ import {
 } from '../types/connect.types';
 
 @Injectable()
-export class StripeProvider implements PaymentProvider {
+export class StripeProvider {
   private static readonly API_VERSION = '2026-07-29.dahlia';
   private readonly logger = new Logger(StripeProvider.name);
   private readonly stripe: Stripe;

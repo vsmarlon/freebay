@@ -2,16 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
 enum UsernameFieldStatus { idle, checking, available, taken, invalid }
 
-/// Username input with a debounced live availability check against
-/// GET /auth/username-available. Pass [initialUsername] in edit flows so the
-/// field treats the user's own current username as valid (no self-conflict).
 class UsernameField extends ConsumerStatefulWidget {
   final TextEditingController controller;
   final String? initialUsername;
@@ -84,7 +80,7 @@ class _UsernameFieldState extends ConsumerState<UsernameField> {
           ),
         );
       case UsernameFieldStatus.available:
-        return const Icon(Icons.check_circle, color: Colors.green);
+        return const Icon(Icons.check_circle, color: AppColors.success);
       case UsernameFieldStatus.taken:
       case UsernameFieldStatus.invalid:
         return const Icon(Icons.cancel, color: AppColors.error);

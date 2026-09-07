@@ -1,13 +1,9 @@
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
 
 class CommentBottomSheet extends ConsumerStatefulWidget {
   final PostEntity post;
@@ -95,10 +91,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      decoration: BoxDecoration(
-        color: context.surfaceMidColor,
-        borderRadius: BorderRadius.zero,
-      ),
+      decoration: BoxDecoration(color: context.surfaceMidColor),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -110,7 +103,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                   Container(
                     width: 36,
                     height: 36,
-                    color: isDark ? AppColors.surfaceDark : AppColors.lightGray,
+                    color: context.bgColor,
                     child: const Icon(Icons.person, size: 20),
                   ),
                   const SizedBox(width: 12),
@@ -120,7 +113,6 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                       decoration: InputDecoration(
                         hintText: 'Adicione um comentário...',
                         border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.zero,
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
@@ -156,7 +148,7 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
                   '$_commentCount comentários',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.white : AppColors.darkGray,
+                    color: context.textPrimary,
                   ),
                 ),
               ),
@@ -166,18 +158,4 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       ),
     );
   }
-}
-
-void showCommentSheet(
-  BuildContext context,
-  PostEntity post, {
-  String? parentId,
-}) {
-  showBrutalistSheet(
-    context: context,
-    title: 'COMENTÁRIOS',
-    showDragHandle: true,
-    padding: EdgeInsets.zero,
-    builder: (context) => CommentBottomSheet(post: post, parentId: parentId),
-  );
 }

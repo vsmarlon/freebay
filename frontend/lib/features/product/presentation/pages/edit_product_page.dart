@@ -1,18 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
 
 class EditProductPage extends ConsumerStatefulWidget {
   final String productId;
@@ -50,7 +42,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
       backgroundColor: context.bgColor,
       body: Column(
         children: [
-          PageHeader(text: 'EDITAR ANÚNCIO'),
+          const PageHeader(text: 'EDITAR ANÚNCIO'),
           Expanded(
             child: productAsync.when(
               loading: () => const SkeletonPage(
@@ -76,7 +68,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
                   'Não foi possível carregar o anúncio.',
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
-                    color: isDark ? AppColors.white : AppColors.onSurface,
+                    color: context.textPrimary,
                   ),
                 ),
               ),
@@ -137,7 +129,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           style: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.white : AppColors.onSurface,
+            color: context.textPrimary,
           ),
         ),
         Spacing.vSm,
@@ -170,7 +162,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           style: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
-            color: isDark ? AppColors.white : AppColors.onSurface,
+            color: context.textPrimary,
           ),
         ),
         Spacing.vSm,

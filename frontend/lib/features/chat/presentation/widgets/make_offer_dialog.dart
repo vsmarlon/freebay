@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_text_field.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 
 class MakeOfferDialog extends StatefulWidget {
@@ -76,7 +72,6 @@ class _MakeOfferDialogState extends State<MakeOfferDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: context.surfaceColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(

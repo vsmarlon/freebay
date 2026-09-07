@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/brutalist_filter_chip.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
 
 class FeedContentFilterBar extends StatelessWidget {
   final FeedContentFilter currentFilter;
@@ -61,7 +57,6 @@ class FeedTypeDropdown extends StatelessWidget {
       offset: const Offset(0, 32),
       color: context.surfaceColor,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.zero,
         side: BorderSide(color: AppColors.onSurface, width: 2),
       ),
       itemBuilder: (context) => [
@@ -124,10 +119,7 @@ class FeedTypeDropdown extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: context.surfaceMidColor,
-          border: Border.all(
-            color: AppColors.onSurface,
-            width: 2,
-          ),
+          border: Border.all(color: AppColors.onSurface, width: 2),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -149,11 +141,7 @@ class FeedTypeDropdown extends StatelessWidget {
               ),
             ),
             Spacing.hXs,
-            Icon(
-              Icons.expand_more,
-              size: 14,
-              color: context.textPrimary,
-            ),
+            Icon(Icons.expand_more, size: 14, color: context.textPrimary),
           ],
         ),
       ),

@@ -3,11 +3,11 @@ import { Either, isLeft, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { CursorPage, PageQuery } from '@/shared/core/pagination';
 import { Notification } from '@prisma/client';
-import { NotificationRepository } from '../domain/repositories/notification.repository';
+import { NotificationDatabaseRepository } from '../data/repositories/notification-database.repository';
 
 @Injectable()
 export class GetNotificationsUseCase {
-  constructor(private readonly notificationRepository: NotificationRepository) {}
+  constructor(private readonly notificationRepository: NotificationDatabaseRepository) {}
 
   async execute(
     userId: string,

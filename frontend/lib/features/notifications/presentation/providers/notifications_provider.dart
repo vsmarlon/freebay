@@ -1,12 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/data/repositories/notification_repository.dart';
-import 'package:freebay/features/notifications/domain/repositories/i_notification_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'notifications_provider.g.dart';
 
-final notificationRepositoryProvider = Provider<INotificationRepository>((ref) {
+final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
   return NotificationRepository();
 });
 

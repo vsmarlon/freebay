@@ -3,11 +3,10 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { ShareRepository } from '../../domain/repositories/share.repository';
 import { POST_INCLUDE_FULL, ShareWithPost } from '../../types/social.types';
 
 @Injectable()
-export class PrismaShareRepository extends BasePrismaRepository implements ShareRepository {
+export class PrismaShareRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

@@ -1,39 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
-import 'package:freebay/features/cart/data/repositories/cart_repository.dart';
 import 'package:freebay/features/cart/data/services/cart_service.dart';
-import 'package:freebay/features/cart/domain/repositories/i_cart_repository.dart';
-import 'package:freebay/features/cart/domain/usecases/add_to_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/checkout_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/clear_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/get_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/remove_from_cart_usecase.dart';
-import 'package:freebay/features/cart/domain/usecases/update_cart_quantity_usecase.dart';
+import 'package:freebay/features/cart/data/repositories/cart_repository.dart';
 
 final cartServiceProvider = Provider((ref) => CartService());
 
-final cartRepositoryProvider = Provider<ICartRepository>((ref) {
+final cartRepositoryProvider = Provider<CartRepository>((ref) {
   return CartRepository(ref.watch(cartServiceProvider));
 });
-
-final getCartUsecaseProvider = Provider(
-  (ref) => GetCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final addToCartUsecaseProvider = Provider(
-  (ref) => AddToCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final updateCartQuantityUsecaseProvider = Provider(
-  (ref) => UpdateCartQuantityUsecase(ref.watch(cartRepositoryProvider)),
-);
-final removeFromCartUsecaseProvider = Provider(
-  (ref) => RemoveFromCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final clearCartUsecaseProvider = Provider(
-  (ref) => ClearCartUsecase(ref.watch(cartRepositoryProvider)),
-);
-final checkoutCartUsecaseProvider = Provider(
-  (ref) => CheckoutCartUsecase(ref.watch(cartRepositoryProvider)),
-);
 
 class CartState {
   final bool isLoading;
@@ -42,7 +16,7 @@ class CartState {
 
   const CartState({
     this.isLoading = false,
-    this.cart = const CartEntity(items: [], totalItems: 0, totalPrice: 0),
+    this.cart = const CartEntity(),
     this.error,
   });
 
@@ -60,8 +34,8 @@ class CartNotifier extends Notifier<CartState> {
   CartState build() => const CartState();
 
   Future<void> loadCart() async {
-    state = state.copyWith(isLoading: true, error: null);
-    final result = await ref.read(getCartUsecaseProvider)();
+    state = state.copyWith(isLoading: true);
+    final result = await ref.read(cartRepositoryProvider).getCart();
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -70,9 +44,9 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   Future<bool> addToCart(String productId, {int quantity = 1}) async {
-    final result = await ref.read(addToCartUsecaseProvider)(
-      AddToCartParams(productId: productId, quantity: quantity),
-    );
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .addToCart(productId, quantity: quantity);
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -86,9 +60,9 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   Future<bool> updateQuantity(String productId, int quantity) async {
-    final result = await ref.read(updateCartQuantityUsecaseProvider)(
-      UpdateCartQuantityParams(productId: productId, quantity: quantity),
-    );
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .updateQuantity(productId, quantity);
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -102,7 +76,9 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   Future<bool> removeFromCart(String productId) async {
-    final result = await ref.read(removeFromCartUsecaseProvider)(productId);
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .removeFromCart(productId);
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -116,7 +92,7 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   Future<bool> clearCart() async {
-    final result = await ref.read(clearCartUsecaseProvider)();
+    final result = await ref.read(cartRepositoryProvider).clearCart();
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);

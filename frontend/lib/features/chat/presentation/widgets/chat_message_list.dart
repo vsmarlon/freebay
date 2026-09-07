@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:freebay/features/chat/presentation/widgets/date_separator.dart';
@@ -135,7 +135,7 @@ class ChatMessageList extends StatelessWidget {
                         right: isMe ? 0 : null,
                         child: IgnorePointer(
                           child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
+                            duration: AppMotion.base,
                             width: 20,
                             height: 20,
                             decoration: BoxDecoration(

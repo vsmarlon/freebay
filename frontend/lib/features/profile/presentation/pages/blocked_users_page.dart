@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/user_avatar.dart';
-import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/profile/data/services/block_service.dart';
 import 'package:freebay/features/profile/data/entities/block_responses.dart';
-import 'package:freebay/core/components/spacing.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/components/page_header.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
 
 final blockServiceProvider = Provider<BlockService>((ref) {
   return BlockService();
@@ -110,44 +103,10 @@ class BlockedUsersPage extends ConsumerWidget {
               },
               loading: () =>
                   const Center(child: ShimmerBlock(width: 20, height: 20)),
-              error: (err, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: AppColors.error,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        'Erro ao carregar usuários bloqueados',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      Text(
-                        'Não foi possível carregar a lista. Verifique sua conexão.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark
-                              ? AppColors.mediumGray
-                              : AppColors.mediumGray,
-                        ),
-                      ),
-                      Spacing.vMd,
-                      AppButton(
-                        label: 'Tentar novamente',
-                        onPressed: () => ref.invalidate(blockedUsersProvider),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (err, stack) => EmptyState.error(
+                message:
+                    'Não foi possível carregar a lista. Verifique sua conexão.',
+                onRetry: () => ref.invalidate(blockedUsersProvider),
               ),
             ),
           ),
@@ -174,11 +133,7 @@ class _BlockedUserTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          UserAvatar(
-            imageUrl: user.avatarUrl,
-            isVerified: user.isVerified,
-            size: AppAvatarSize.medium,
-          ),
+          UserAvatar(imageUrl: user.avatarUrl, isVerified: user.isVerified),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -192,7 +147,7 @@ class _BlockedUserTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
-                          color: isDark ? AppColors.white : AppColors.darkGray,
+                          color: context.textPrimary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -210,10 +165,7 @@ class _BlockedUserTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${user.reputationScore.toStringAsFixed(1)} ★',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.mediumGray : AppColors.mediumGray,
-                  ),
+                  style: TextStyle(fontSize: 12, color: context.textSecondary),
                 ),
               ],
             ),

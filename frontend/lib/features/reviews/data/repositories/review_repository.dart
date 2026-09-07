@@ -1,15 +1,13 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/data/services/review_service.dart';
-import 'package:freebay/features/reviews/domain/repositories/i_review_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
-class ReviewRepository implements IReviewRepository {
+class ReviewRepository {
   final ReviewService _service;
 
   ReviewRepository(this._service);
 
-  @override
   Future<Either<Failure, String>> uploadReviewImage({
     required String orderId,
     required String filePath,
@@ -17,7 +15,6 @@ class ReviewRepository implements IReviewRepository {
     return _service.uploadReviewImage(orderId: orderId, filePath: filePath);
   }
 
-  @override
   Future<Either<Failure, ReviewEntity>> createReview({
     required String orderId,
     required String reviewedId,
@@ -36,7 +33,6 @@ class ReviewRepository implements IReviewRepository {
     );
   }
 
-  @override
   Future<Either<Failure, ReviewListResponse>> getUserReviews(
     String userId, {
     String? type,
@@ -51,7 +47,6 @@ class ReviewRepository implements IReviewRepository {
     );
   }
 
-  @override
   Future<Either<Failure, bool>> canReviewOrder(String orderId) {
     return _service.canReviewOrder(orderId);
   }

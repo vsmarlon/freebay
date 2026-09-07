@@ -214,7 +214,3 @@ export interface UpdateProductOutput {
   soldCount: number;
   createdAt: Date;
 }
-
-export interface DeleteProductOutput {
-  deleted: boolean;
-}

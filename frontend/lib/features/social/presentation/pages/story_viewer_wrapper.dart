@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/pages/story_viewer_page.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/ui.dart';
 
 class StoryViewerWrapper extends ConsumerWidget {
   final String? indexParam;
@@ -35,15 +34,12 @@ class StoryViewerWrapper extends ConsumerWidget {
           }
         }
 
-        return StoryViewerPage(
-          stories: stories,
-          initialIndex: initialIndex,
-        );
+        return StoryViewerPage(stories: stories, initialIndex: initialIndex);
       },
       loading: () => const SkeletonPage(
         child: Column(
           children: [
-            ShimmerBlock(height: 4, width: double.infinity),
+            ShimmerBlock(height: 4),
             SizedBox(height: 12),
             Row(
               children: [
@@ -57,9 +53,7 @@ class StoryViewerWrapper extends ConsumerWidget {
           ],
         ),
       ),
-      error: (err, _) => Scaffold(
-        body: Center(child: Text('Error: $err')),
-      ),
+      error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
     );
   }
 }

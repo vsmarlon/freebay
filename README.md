@@ -377,9 +377,7 @@ lib/
 
 - **Node.js** 18.x ou superior
 - **Flutter** 3.6.x
-- **PostgreSQL** (local ou Docker)
-- **Redis** (local ou Docker)
-- **Docker** (opcional, para DB)
+- **PostgreSQL** e **Redis** nativos ou em um serviço externo
 
 ### Backend
 
@@ -430,6 +428,7 @@ npm run test
 npm run test:watch
 
 # Backend - Integration tests
+# Requires explicitly configured native/external PostgreSQL and Redis.
 npm run test:integration
 
 # Backend - Todos os testes
@@ -547,9 +546,7 @@ freebay/
 │   ├── pubspec.yaml
 │   └── test/
 │
-├── db/                            # Database
-│   └── migrations/
-│       └── 001_create_tables.sql # SQL migration
+├── db/                            # Database notes and seeds
 │
 ├── package.json                   # Root package (scripts)
 ├── README.md

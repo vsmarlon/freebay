@@ -2,10 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { ProductRepository } from '../../products/domain/repositories/product.repository';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { PaymentGroupRepository } from '../domain/repositories/payment-group.repository';
+import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
 
 const GROUP_RACE_SKIP = 'GROUP_RACE_SKIP';
 
@@ -14,10 +14,10 @@ export class ExpireCheckoutGroupUseCase {
   private readonly logger = new Logger(ExpireCheckoutGroupUseCase.name);
 
   constructor(
-    private readonly paymentGroupRepo: PaymentGroupRepository,
-    private readonly transactionRepo: TransactionRepository,
-    private readonly productRepo: ProductRepository,
-    private readonly orderRepo: OrderRepository,
+    private readonly paymentGroupRepo: PaymentGroupDatabaseRepository,
+    private readonly transactionRepo: TransactionDatabaseRepository,
+    private readonly productRepo: ProductDatabaseRepository,
+    private readonly orderRepo: PrismaOrderRepository,
     private readonly prisma: PrismaService,
   ) {}
 

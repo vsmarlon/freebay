@@ -1,6 +1,6 @@
+import 'package:freebay/core/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:freebay/core/components/hide_on_scroll.dart';
 
 class _Harness extends StatefulWidget {
   const _Harness({required this.onController, required this.itemCount});
@@ -36,10 +36,8 @@ class _HarnessState extends State<_Harness> with TickerProviderStateMixin {
           onNotification: controller.handleNotification,
           child: ListView.builder(
             itemCount: widget.itemCount,
-            itemBuilder: (context, index) => SizedBox(
-              height: 100,
-              child: Text('Item $index'),
-            ),
+            itemBuilder: (context, index) =>
+                SizedBox(height: 100, child: Text('Item $index')),
           ),
         ),
       ),
@@ -80,10 +78,8 @@ class _HorizontalHarnessState extends State<_HorizontalHarness>
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 50,
-        itemBuilder: (context, index) => SizedBox(
-          width: 100,
-          child: Text('Item $index'),
-        ),
+        itemBuilder: (context, index) =>
+            SizedBox(width: 100, child: Text('Item $index')),
       ),
     );
   }
@@ -105,7 +101,9 @@ void main() {
     expect(controller.animation.value, 0.0);
   });
 
-  testWidgets('reveals after scrolling back up past the threshold', (tester) async {
+  testWidgets('reveals after scrolling back up past the threshold', (
+    tester,
+  ) async {
     late HideOnScrollController controller;
     await tester.pumpWidget(
       _Harness(onController: (c) => controller = c, itemCount: 100),
@@ -135,7 +133,9 @@ void main() {
     expect(controller.animation.value, 1.0);
   });
 
-  testWidgets('never hides when the list fits within the viewport', (tester) async {
+  testWidgets('never hides when the list fits within the viewport', (
+    tester,
+  ) async {
     late HideOnScrollController controller;
     await tester.pumpWidget(
       _Harness(onController: (c) => controller = c, itemCount: 2),
@@ -148,7 +148,9 @@ void main() {
     expect(controller.animation.value, 1.0);
   });
 
-  testWidgets('reveals immediately once scrolled back to the top', (tester) async {
+  testWidgets('reveals immediately once scrolled back to the top', (
+    tester,
+  ) async {
     late HideOnScrollController controller;
     await tester.pumpWidget(
       _Harness(onController: (c) => controller = c, itemCount: 100),

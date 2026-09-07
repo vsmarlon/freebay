@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ReportRepository } from '../domain/repositories/report.repository';
 import { ReportDatabaseRepository } from '../data/repositories/report-database.repository';
 import { CreateReportUseCase } from './create-report.usecase';
 import { GetReportsUseCase } from './get-reports.usecase';
@@ -7,7 +6,7 @@ import { ResolveReportUseCase } from './resolve-report.usecase';
 
 @Module({
   providers: [
-    { provide: ReportRepository, useClass: ReportDatabaseRepository },
+    ReportDatabaseRepository,
     CreateReportUseCase,
     GetReportsUseCase,
     ResolveReportUseCase,

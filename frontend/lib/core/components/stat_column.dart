@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 
 class StatColumn extends StatelessWidget {
   final String label;
@@ -10,6 +7,7 @@ class StatColumn extends StatelessWidget {
   final VoidCallback? onTap;
   final bool usePrimaryColor;
   final bool uppercaseLabel;
+  final double? size;
 
   const StatColumn({
     super.key,
@@ -18,6 +16,7 @@ class StatColumn extends StatelessWidget {
     this.onTap,
     this.usePrimaryColor = false,
     this.uppercaseLabel = false,
+    this.size,
   });
 
   @override
@@ -33,7 +32,7 @@ class StatColumn extends StatelessWidget {
           value,
           style: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 20,
+            fontSize: size ?? 20,
             fontWeight: FontWeight.bold,
             color: textColor,
           ),
@@ -53,10 +52,7 @@ class StatColumn extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return InkWell(
-        onTap: onTap,
-        child: content,
-      );
+      return InkWell(onTap: onTap, child: content);
     }
 
     return content;

@@ -41,7 +41,7 @@ final class CommentLikesProvider
   }
 }
 
-String _$commentLikesHash() => r'af2f7e025a43f67ee75981128f0ce6d96f6936da';
+String _$commentLikesHash() => r'67f91b7c10377a873ca4a30542787248d1588652';
 
 abstract class _$CommentLikes extends $Notifier<CommentLikesState> {
   CommentLikesState build();

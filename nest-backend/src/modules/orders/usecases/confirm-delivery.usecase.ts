@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
-import { OrderRepository } from '../domain/repositories/order.repository';
+import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { ConfirmDeliveryInput } from '../dtos/order.dto';
 
 @Injectable()
 export class ConfirmDeliveryUseCase {
   constructor(
-    private readonly orderRepository: OrderRepository,
+    private readonly orderRepository: PrismaOrderRepository,
     private readonly payoutService: SellerPayoutService,
   ) {}
 

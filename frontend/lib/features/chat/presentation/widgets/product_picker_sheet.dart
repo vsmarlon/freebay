@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
@@ -84,15 +81,12 @@ class _ProductPickerSheetState extends ConsumerState<_ProductPickerSheet> {
                     ? AppColors.surfaceContainerDark
                     : AppColors.lightGray,
                 border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: AppColors.outline),
                 ),
                 enabledBorder: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide(color: AppColors.outline),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
+                focusedBorder: const OutlineInputBorder(
                   borderSide: BorderSide(
                     color: AppColors.primaryContainer,
                     width: 2,
@@ -194,9 +188,7 @@ class _ProductPickerItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: context.borderColor, width: 1),
-          ),
+          border: Border(bottom: BorderSide(color: context.borderColor)),
         ),
         child: Row(
           children: [
@@ -205,7 +197,7 @@ class _ProductPickerItem extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.outlineVariant, width: 1),
+                border: Border.all(color: AppColors.outlineVariant),
               ),
               child: product.imageUrl != null
                   ? Image.network(
@@ -235,7 +227,7 @@ class _ProductPickerItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     priceStr,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

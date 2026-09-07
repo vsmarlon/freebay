@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { OrderRepository } from '../domain/repositories/order.repository';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { CreateOrderUseCase } from './create-order.usecase';
 import { ConfirmDeliveryUseCase } from './confirm-delivery.usecase';
@@ -13,7 +12,6 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
   imports: [NotificationsModule, PaymentsModule],
   providers: [
     PrismaOrderRepository,
-    { provide: OrderRepository, useExisting: PrismaOrderRepository },
     CreateOrderUseCase,
     ConfirmDeliveryUseCase,
     MarkAsShippedUseCase,
@@ -21,7 +19,6 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
     CancelOrderUseCase,
   ],
   exports: [
-    OrderRepository,
     PrismaOrderRepository,
     CreateOrderUseCase,
     ConfirmDeliveryUseCase,

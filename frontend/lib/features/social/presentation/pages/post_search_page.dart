@@ -2,16 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/core/components/empty_state.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/shimmer_skeleton.dart';
-import 'package:freebay/core/components/social_post.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/post_search_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/components/brutalist_breadcrumb.dart';
-import 'package:freebay/core/components/page_header.dart';
 
 class PostSearchPage extends ConsumerStatefulWidget {
   const PostSearchPage({super.key});
@@ -52,14 +45,13 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     final searchState = ref.watch(postSearchProvider);
 
     return Scaffold(
       backgroundColor: context.bgColor,
       body: Column(
         children: [
-          PageHeader(text: 'BUSCAR POSTS'),
+          const PageHeader(text: 'BUSCAR POSTS'),
           BrutalistBreadcrumb(
             items: [
               BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
@@ -89,11 +81,8 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                       )
                     : null,
                 filled: true,
-                fillColor: isDark ? AppColors.surfaceDark : AppColors.white,
-                border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.zero,
-                  borderSide: BorderSide.none,
-                ),
+                fillColor: context.bgColor,
+                border: const OutlineInputBorder(borderSide: BorderSide.none),
               ),
               onChanged: _onSearchDebounced,
             ),
@@ -222,7 +211,6 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return GestureDetector(
       onTap: onSelected,
       child: Container(
@@ -231,7 +219,6 @@ class _FilterChip extends StatelessWidget {
           color: isSelected
               ? AppColors.primaryContainer.withValues(alpha: 0.2)
               : context.surfaceMidColor,
-          borderRadius: BorderRadius.zero,
           border: Border.all(
             color: isSelected
                 ? AppColors.primaryContainer
@@ -243,7 +230,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             color: isSelected
                 ? AppColors.primaryContainer
-                : (isDark ? AppColors.white : AppColors.darkGray),
+                : (context.textPrimary),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),

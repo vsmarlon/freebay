@@ -6,7 +6,7 @@ commands live in `AGENTS.md`. This file is only the device loop.
 
 ## 1. Backend up
 ```
-docker compose up -d          # postgres :5432, redis :6379
+# PostgreSQL :5432 and Redis :6379 must already be available.
 cd nest-backend && npm run start:dev   # API on :3000, health at GET /health
 psql "$DATABASE_URL" -f db/seeds/001_seed_dev.sql   # demo catalog + users
 ```

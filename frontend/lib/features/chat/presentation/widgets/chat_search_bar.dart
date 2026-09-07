@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:freebay/core/components/brutalist_icon_button.dart';
-import 'package:freebay/core/components/spacing.dart';
-import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/ui.dart';
 
 class ChatSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -31,7 +29,7 @@ class ChatSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: isDark ? AppColors.surfaceDark : AppColors.white,
+      color: context.bgColor,
       child: Column(
         children: [
           Row(
@@ -50,10 +48,10 @@ class ChatSearchBar extends StatelessWidget {
                           )
                         : null,
                     filled: true,
-                    fillColor:
-                        isDark ? AppColors.backgroundDark : AppColors.lightGray,
+                    fillColor: isDark
+                        ? AppColors.backgroundDark
+                        : AppColors.lightGray,
                     border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -79,9 +77,9 @@ class ChatSearchBar extends StatelessWidget {
           Spacing.vSm,
           Row(
             children: [
-              _buildSortChip('Recentes', 'recent'),
+              _buildSortChip(context, 'Recentes', 'recent'),
               Spacing.hSm,
-              _buildSortChip('Nome', 'name'),
+              _buildSortChip(context, 'Nome', 'name'),
             ],
           ),
         ],
@@ -89,26 +87,21 @@ class ChatSearchBar extends StatelessWidget {
     );
   }
 
-  Widget _buildSortChip(String label, String value) {
+  Widget _buildSortChip(BuildContext context, String label, String value) {
     final isSelected = sortBy == value;
     return GestureDetector(
       onTap: () => onSortChanged(value),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryContainer
-              : (isDark ? AppColors.backgroundDark : AppColors.lightGray),
-          borderRadius: BorderRadius.zero,
+          color: isSelected ? AppColors.primaryContainer : AppColors.surface,
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected
-                ? AppColors.onPrimary
-                : (isDark ? AppColors.white : AppColors.darkGray),
+            color: isSelected ? AppColors.onPrimary : AppColors.onSurface,
           ),
         ),
       ),

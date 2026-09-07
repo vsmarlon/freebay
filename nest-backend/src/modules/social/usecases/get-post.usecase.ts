@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { PostRepository } from '../domain/repositories/post.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { PostPayload } from '../types/social.types';
 
 @Injectable()
 export class GetPostUseCase {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(private readonly postRepository: PrismaPostRepository) {}
 
   async execute(id: string): Promise<Either<AppError, PostPayload>> {
     const result = await this.postRepository.findById(id);

@@ -1,21 +1,14 @@
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:flutter/material.dart';
 
-/// Twitter-style scroll direction tracker: hides on scroll-down, reveals on
-/// scroll-up, and always reveals at the top of the list.
-///
-/// Feed a bubbled [ScrollNotification] into [handleNotification] (always
-/// returns false so the notification keeps bubbling up the tree), then drive
-/// a [ScrollAwareBar] with [animation].
 class HideOnScrollController {
   HideOnScrollController({required TickerProvider vsync, this.threshold = 12})
     : _controller = AnimationController(
         vsync: vsync,
-        duration: const Duration(milliseconds: 150),
+        duration: AppMotion.base,
         value: 1,
       );
 
-  /// Minimum accumulated scroll delta (px) before toggling visibility.
-  /// Avoids jitter from tiny scroll bounces.
   final double threshold;
 
   final AnimationController _controller;
@@ -59,19 +52,11 @@ class HideOnScrollController {
   }
 
   void _show() {
-    _controller.animateTo(
-      1,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
-    );
+    _controller.animateTo(1, duration: AppMotion.base);
   }
 
   void _hide() {
-    _controller.animateTo(
-      0,
-      duration: const Duration(milliseconds: 150),
-      curve: Curves.linear,
-    );
+    _controller.animateTo(0, duration: AppMotion.base);
   }
 
   void dispose() {
@@ -81,9 +66,6 @@ class HideOnScrollController {
 
 enum ScrollBarEdge { top, bottom }
 
-/// Overlays [child] and translates it off-screen toward [edge] as
-/// [animation] goes from 1 (visible) to 0 (hidden). Uses [Transform.translate]
-/// (GPU-accelerated, no relayout) rather than a height/size animation.
 class ScrollAwareBar extends StatelessWidget {
   const ScrollAwareBar({
     super.key,

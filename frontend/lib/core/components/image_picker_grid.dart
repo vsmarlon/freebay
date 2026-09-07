@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/brutalist_bottom_sheet.dart';
+import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/features/social/presentation/widgets/local_image_inspector.dart';
 
 class ImagePickerGrid extends StatelessWidget {

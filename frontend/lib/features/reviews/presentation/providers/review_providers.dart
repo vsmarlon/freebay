@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:freebay/features/reviews/data/repositories/review_repository.dart';
 import 'package:freebay/features/reviews/data/services/review_service.dart';
-import 'package:freebay/features/reviews/domain/repositories/i_review_repository.dart';
+import 'package:freebay/features/reviews/data/repositories/review_repository.dart';
 import 'package:freebay/features/reviews/domain/usecases/can_review_order_usecase.dart';
 import 'package:freebay/features/reviews/domain/usecases/create_review_usecase.dart';
 import 'package:freebay/features/reviews/domain/usecases/get_user_reviews_usecase.dart';
@@ -9,7 +8,7 @@ import 'package:freebay/features/reviews/domain/usecases/upload_review_image_use
 
 final reviewServiceProvider = Provider<ReviewService>((ref) => ReviewService());
 
-final reviewRepositoryProvider = Provider<IReviewRepository>((ref) {
+final reviewRepositoryProvider = Provider<ReviewRepository>((ref) {
   return ReviewRepository(ref.watch(reviewServiceProvider));
 });
 

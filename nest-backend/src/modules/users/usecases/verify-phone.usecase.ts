@@ -8,9 +8,9 @@ import {
   PhoneCodeExpiredError,
   PhoneCodeNotFoundError,
 } from '@/shared/core/errors';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
+import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { UserResponse, toUserResponse } from '../mappers/user.mapper';
 
 export interface VerifyPhoneInput {
@@ -21,8 +21,8 @@ export interface VerifyPhoneInput {
 @Injectable()
 export class VerifyPhoneUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
-    private readonly phoneVerificationRepository: PhoneVerificationRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly phoneVerificationRepository: PhoneVerificationDatabaseRepository,
     private readonly prisma: PrismaService,
   ) {}
 

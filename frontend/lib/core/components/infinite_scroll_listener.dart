@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Which end of the scroll view triggers the next page.
-///
-/// Most lists grow downward ([ScrollEdge.end]). A chat transcript renders
-/// oldest-first and pages backwards, so it loads from [ScrollEdge.start].
 enum ScrollEdge { start, end }
 
-/// Fires [onLoadMore] once a scroll settles within [threshold] pixels of [edge].
 class InfiniteScrollListener extends StatelessWidget {
   static const double defaultThreshold = 400;
 

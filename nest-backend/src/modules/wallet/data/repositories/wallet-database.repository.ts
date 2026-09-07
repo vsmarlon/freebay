@@ -5,7 +5,6 @@ import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.reposito
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, PageQuery, mapPage, paginateById } from '@/shared/core/pagination';
 import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
-import { WalletRepository } from '../../domain/repositories/wallet.repository';
 import { TransactionEntry } from '../../types/wallet.types';
 
 const WALLET_ENTRY_INCLUDE = {
@@ -13,7 +12,7 @@ const WALLET_ENTRY_INCLUDE = {
 } satisfies Prisma.WalletEntryInclude;
 
 @Injectable()
-export class WalletDatabaseRepository extends BasePrismaRepository implements WalletRepository {
+export class WalletDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

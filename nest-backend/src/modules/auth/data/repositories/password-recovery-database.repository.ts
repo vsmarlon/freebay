@@ -3,10 +3,9 @@ import { Prisma, PasswordRecoveryCode } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { PasswordRecoveryRepository } from '../../domain/repositories/password-recovery.repository';
 
 @Injectable()
-export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository implements PasswordRecoveryRepository {
+export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }

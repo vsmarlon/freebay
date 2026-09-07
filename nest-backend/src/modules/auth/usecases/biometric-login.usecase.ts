@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError } from '@/shared/core/errors';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { LoginResponse, toLoginResponse } from '../mappers/auth.mapper';
 import { AuthUser, JwtTokenType } from '@/shared/core/types';
@@ -11,7 +11,7 @@ import { AuthUser, JwtTokenType } from '@/shared/core/types';
 @Injectable()
 export class BiometricLoginUseCase {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: UserDatabaseRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,

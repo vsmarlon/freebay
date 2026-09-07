@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:freebay/core/components/app_button.dart';
-import 'package:freebay/core/components/app_snackbar.dart';
-import 'package:freebay/core/theme/app_colors.dart';
-import 'package:freebay/core/theme/app_typography.dart';
-import 'package:freebay/core/theme/theme_extension.dart';
-import 'package:freebay/core/components/spacing.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
@@ -18,14 +13,13 @@ class PaymentSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Text(
       text,
       style: TextStyle(
         fontFamily: AppTypography.fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w700,
-        color: isDark ? AppColors.onPrimaryContainer : AppColors.primary,
+        color: context.colors.primary,
       ),
     );
   }
@@ -119,7 +113,7 @@ class PaymentView extends StatelessWidget {
                   fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.white : AppColors.onSurface,
+                  color: context.textPrimary,
                 ),
               ),
               if (payment != null) ...[
@@ -152,7 +146,7 @@ class PaymentView extends StatelessWidget {
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 13,
                 height: 1.5,
-                color: isDark ? AppColors.white : AppColors.onSurface,
+                color: context.textPrimary,
               ),
             ),
           ),

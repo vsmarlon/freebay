@@ -1,8 +1,9 @@
+import '../tokens/app_motion.dart';
 import 'package:flutter/material.dart';
 import '../tokens/app_colors.dart';
 import '../tokens/app_typography.dart';
 import '../tokens/theme_extension.dart';
-import 'spacing.dart';
+import '../tokens/spacing.dart';
 
 Future<T?> showBrutalistSheet<T>({
   required BuildContext context,
@@ -23,22 +24,18 @@ Future<T?> showBrutalistSheet<T>({
     useRootNavigator: useRootNavigator,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.zero,
-    ),
     builder: (sheetContext) {
       final media = MediaQuery.of(sheetContext);
       return AnimatedPadding(
         padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
+        duration: AppMotion.base,
+        curve: AppMotion.enterCurve,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
           child: Material(
             color: sheetContext.isDark
                 ? AppColors.surfaceDark
                 : AppColors.white,
-            borderRadius: BorderRadius.zero,
             child: SingleChildScrollView(
               physics: const ClampingScrollPhysics(),
               child: BrutalistSheetScaffold(
@@ -89,7 +86,6 @@ class BrutalistSheetScaffold extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   color: dragHandleColor ?? AppColors.mediumGray.withAlpha(77),
-                  borderRadius: BorderRadius.zero,
                 ),
               ),
             ),
@@ -151,10 +147,7 @@ class BrutalistBottomSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.surfaceColor,
-        borderRadius: BorderRadius.zero,
-        border: Border(
-          top: BorderSide(color: context.borderColor, width: 1.5),
-        ),
+        border: Border(top: BorderSide(color: context.borderColor, width: 1.5)),
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 16,
@@ -189,10 +182,7 @@ class BrutalistBottomSheet extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 12),
           ),
           child,
-          if (action != null) ...[
-            const SizedBox(height: 16),
-            action!,
-          ],
+          if (action != null) ...[const SizedBox(height: 16), action!],
         ],
       ),
     );
