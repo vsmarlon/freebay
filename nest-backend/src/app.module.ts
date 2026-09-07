@@ -19,6 +19,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { CartModule } from './modules/cart/cart.module';
@@ -66,6 +67,11 @@ import { HealthModule } from './modules/health/health.module';
       serveRoot: '/uploads',
       serveStaticOptions: { index: false },
     }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'legal'),
+      serveRoot: '/legal',
+      serveStaticOptions: { index: 'index.html', extensions: ['html'] },
+    }),
     SharedModule,
     AuthModule,
     UsersModule,
@@ -79,6 +85,7 @@ import { HealthModule } from './modules/health/health.module';
     NotificationsModule,
     DisputesModule,
     ReportsModule,
+    AdminModule,
     ReviewsModule,
     FavoritesModule,
     CartModule,

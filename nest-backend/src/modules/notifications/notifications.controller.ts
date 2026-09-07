@@ -1,11 +1,20 @@
 import { Controller, Body, Param, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetAuth, PostAuth, PatchAuth, CurrentUserId } from '@/shared/decorators';
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+  Paginated,
+  PAGINATION_QUERIES,
+} from '@/shared/decorators';
+import { PageQuery } from '@/shared/core/pagination';
 import { GetNotificationsUseCase } from './usecases/get-notifications.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { MarkAllAsReadUseCase } from './usecases/mark-all-as-read.usecase';
 import { RegisterFcmTokenUseCase } from './usecases/register-fcm-token.usecase';
 import { RegisterFcmTokenDTO, NotificationResponse } from './dtos/notification.dto';
+import { NotificationRepository } from './domain/repositories/notification.repository';
 import { isLeft } from '@/shared/core/either';
 
 @ApiTags('Notifications')
@@ -16,16 +25,26 @@ export class NotificationsController {
     private readonly markAsReadUseCase: MarkAsReadUseCase,
     private readonly markAllAsReadUseCase: MarkAllAsReadUseCase,
     private readonly registerFcmTokenUseCase: RegisterFcmTokenUseCase,
+    private readonly notificationRepository: NotificationRepository,
   ) {}
 
   @GetAuth({
     summary: 'Get notifications',
+    description: 'Cursor-paginated, newest first',
     responseType: NotificationResponse,
+    queries: PAGINATION_QUERIES,
   })
-  async findAll(@CurrentUserId() userId: string) {
-    const result = await this.getNotificationsUseCase.execute(userId);
+  async findAll(@CurrentUserId() userId: string, @Paginated() page: PageQuery) {
+    return this.getNotificationsUseCase.execute(userId, page);
+  }
+
+  @GetAuth('unread-count', {
+    summary: 'Count unread notifications',
+  })
+  async countUnread(@CurrentUserId() userId: string) {
+    const result = await this.notificationRepository.countUnread(userId);
     if (isLeft(result)) return result;
-    return { notifications: result.value };
+    return { count: result.value };
   }
 
   @PostAuth('read-all', {
@@ -33,9 +52,7 @@ export class NotificationsController {
     httpCode: HttpStatus.OK,
   })
   async markAllAsRead(@CurrentUserId() userId: string) {
-    const result = await this.markAllAsReadUseCase.execute(userId);
-    if (isLeft(result)) return result;
-    return result.value;
+    return this.markAllAsReadUseCase.execute(userId);
   }
 
   @PostAuth('fcm-token', {
@@ -43,9 +60,7 @@ export class NotificationsController {
     bodyType: RegisterFcmTokenDTO,
   })
   async registerFcmToken(@CurrentUserId() userId: string, @Body() body: RegisterFcmTokenDTO) {
-    const result = await this.registerFcmTokenUseCase.execute(userId, body.fcmToken);
-    if (isLeft(result)) return result;
-    return result.value;
+    return this.registerFcmTokenUseCase.execute(userId, body.fcmToken);
   }
 
   @PatchAuth(':id/read', {
@@ -54,8 +69,6 @@ export class NotificationsController {
     errors: [{ status: 404, description: 'Notification not found' }],
   })
   async markAsRead(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
-    const result = await this.markAsReadUseCase.execute(id, userId);
-    if (isLeft(result)) return result;
-    return result.value;
+    return this.markAsReadUseCase.execute(id, userId);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/router/app_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -266,7 +267,7 @@ class UserProfilePage extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             InkWell(
-              onTap: () => context.push('/login'),
+              onTap: () => context.push(loginPathFrom(context)),
               child: Container(
                 height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 18),

@@ -5,6 +5,7 @@ import { OrderRepository } from '../domain/repositories/order.repository';
 import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { right } from '@/shared/core/either';
+import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 
 describe('CreateOrderUseCase', () => {
   let sut: CreateOrderUseCase;
@@ -92,6 +93,7 @@ describe('ConfirmDeliveryUseCase', () => {
       providers: [
         ConfirmDeliveryUseCase,
         { provide: OrderRepository, useValue: mockOrderRepository },
+        { provide: SellerPayoutService, useValue: { payoutForOrder: jest.fn() } },
       ],
     }).compile();
 

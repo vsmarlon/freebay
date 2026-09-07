@@ -1,7 +1,7 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/data/services/order_service.dart';
-import 'package:freebay/features/orders/data/entities/order_list_response.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/features/orders/domain/repositories/i_order_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
@@ -16,25 +16,25 @@ class OrderRepository implements IOrderRepository {
   }
 
   @override
-  Future<Either<Failure, OrderListResponse>> getMyPurchases({
-    int limit = 10,
-    int offset = 0,
+  Future<Either<Failure, CursorPage<OrderEntity>>> getMyPurchases({
+    String? cursor,
+    int limit = 20,
     String? status,
   }) {
     return _service.getMyPurchases(
+      cursor: cursor,
       limit: limit,
-      offset: offset,
       status: status,
     );
   }
 
   @override
-  Future<Either<Failure, OrderListResponse>> getMySales({
-    int limit = 10,
-    int offset = 0,
+  Future<Either<Failure, CursorPage<OrderEntity>>> getMySales({
+    String? cursor,
+    int limit = 20,
     String? status,
   }) {
-    return _service.getMySales(limit: limit, offset: offset, status: status);
+    return _service.getMySales(cursor: cursor, limit: limit, status: status);
   }
 
   @override

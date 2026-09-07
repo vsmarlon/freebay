@@ -22,6 +22,7 @@ import {
   ResetPasswordDTO,
 } from './dtos/password-recovery.dto';
 import {
+  AccountSuspendedError,
   AppError,
   InternalServerError,
   InvalidTokenError,
@@ -59,6 +60,7 @@ export class AuthService {
       if (result.isLeft()) throw result.value;
 
       const { user } = result.value;
+      this._assertNotSuspended(user);
       const tokens = this._generateSessionTokens(user.id, user.role);
       return { user, ...tokens };
     } catch (err) {
@@ -74,6 +76,7 @@ export class AuthService {
       if (result.isLeft()) throw result.value;
 
       const { user } = result.value;
+      this._assertNotSuspended(user);
       const tokens = this._generateSessionTokens(user.id, user.role);
       return { user, ...tokens };
     } catch (err) {
@@ -97,6 +100,8 @@ export class AuthService {
       if (isLeft(existingUser) || !existingUser.value) {
         throw new UserNotFoundError('Usuário não encontrado');
       }
+
+      this._assertNotSuspended(existingUser.value);
 
       await this.blacklistToken(user.jti, user.exp);
 
@@ -198,6 +203,7 @@ export class AuthService {
       if (result.isLeft()) throw result.value;
 
       const { user } = result.value;
+      this._assertNotSuspended(user);
       const tokens = this._generateSessionTokens(user.id, user.role);
 
       // Rotate: blacklist the old biometric token now that a new one is issued
@@ -228,6 +234,7 @@ export class AuthService {
       if (result.isLeft()) throw result.value;
 
       const { user } = result.value;
+      this._assertNotSuspended(user);
       const tokens = this._generateSessionTokens(user.id, user.role);
       return { user, ...tokens };
     } catch (err) {
@@ -254,6 +261,12 @@ export class AuthService {
     const ttl = exp - Math.floor(Date.now() / 1000);
     if (ttl > 0) {
       await this.redisService.add(`blacklist:${jti}`, '1', ttl);
+    }
+  }
+
+  private _assertNotSuspended(user: { suspendedAt?: Date | null; suspensionReason?: string | null }) {
+    if (user.suspendedAt) {
+      throw new AccountSuspendedError(user.suspensionReason ?? null);
     }
   }
 

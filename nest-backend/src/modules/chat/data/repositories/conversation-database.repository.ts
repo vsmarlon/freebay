@@ -3,6 +3,7 @@ import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThrea
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse, right, left } from '@/shared/core/either';
+import { CursorPage, PageQuery, paginateById } from '@/shared/core/pagination';
 import { DatabaseError } from '@/shared/core/errors';
 import { ConversationRepository } from '../../domain/repositories/conversation.repository';
 import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
@@ -146,18 +147,27 @@ export class ConversationDatabaseRepository extends BasePrismaRepository impleme
     }
   }
 
-  async findMessagesByConversation(conversationId: string): RepositoryResponse<DirectMessageWithSender[]> {
-    return this.safeRun(async () => {
-      const msgs = await this.prisma.directMessage.findMany({
-        where: { conversationId },
-        orderBy: { createdAt: 'asc' },
-        include: {
-          sender: { select: USER_SELECT_MINIMAL },
-          replyTo: { select: REPLY_TO_SELECT },
-        },
-      });
-      return msgs as DirectMessageWithSender[];
-    }, 'Erro ao buscar mensagens');
+  async findMessagesByConversation(
+    conversationId: string,
+    page: PageQuery,
+  ): RepositoryResponse<CursorPage<DirectMessageWithSender>> {
+    return this.safeRun(
+      () =>
+        paginateById<DirectMessageWithSender, Prisma.DirectMessageFindManyArgs>(
+          (args) =>
+            this.prisma.directMessage.findMany(args) as Promise<DirectMessageWithSender[]>,
+          {
+            where: { conversationId },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            include: {
+              sender: { select: USER_SELECT_MINIMAL },
+              replyTo: { select: REPLY_TO_SELECT },
+            },
+          },
+          page,
+        ),
+      'Erro ao buscar mensagens',
+    );
   }
 
   async createChatMessage(data: Prisma.ChatMessageCreateInput, includeSender?: boolean): RepositoryResponse<ChatMessage | ChatMessageWithSender> {
@@ -186,18 +196,26 @@ export class ConversationDatabaseRepository extends BasePrismaRepository impleme
     }
   }
 
-  async findChatMessagesByOrder(orderId: string): RepositoryResponse<ChatMessageWithSender[]> {
-    return this.safeRun(async () => {
-      const msgs = await this.prisma.chatMessage.findMany({
-        where: { orderId },
-        orderBy: { createdAt: 'asc' },
-        include: {
-          sender: { select: USER_SELECT_MINIMAL },
-          replyTo: { select: REPLY_TO_SELECT },
-        },
-      });
-      return msgs as ChatMessageWithSender[];
-    }, 'Erro ao buscar mensagens');
+  async findChatMessagesByOrder(
+    orderId: string,
+    page: PageQuery,
+  ): RepositoryResponse<CursorPage<ChatMessageWithSender>> {
+    return this.safeRun(
+      () =>
+        paginateById<ChatMessageWithSender, Prisma.ChatMessageFindManyArgs>(
+          (args) => this.prisma.chatMessage.findMany(args) as Promise<ChatMessageWithSender[]>,
+          {
+            where: { orderId },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            include: {
+              sender: { select: USER_SELECT_MINIMAL },
+              replyTo: { select: REPLY_TO_SELECT },
+            },
+          },
+          page,
+        ),
+      'Erro ao buscar mensagens',
+    );
   }
 
   async markChatMessagesRead(orderId: string, userId: string): RepositoryResponse<void> {

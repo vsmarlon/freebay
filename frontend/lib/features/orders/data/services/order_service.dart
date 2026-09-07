@@ -2,7 +2,7 @@ import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/data/entities/order_list_response.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
 
 class OrderService extends BaseHttpRepository {
   OrderService({super.client});
@@ -14,26 +14,28 @@ class OrderService extends BaseHttpRepository {
         fromJson: OrderEntity.fromJson,
       );
 
-  Future<Either<Failure, OrderListResponse>> getMyPurchases({
-    int limit = 10,
-    int offset = 0,
+  Future<Either<Failure, CursorPage<OrderEntity>>> getMyPurchases({
+    String? cursor,
+    int limit = 20,
     String? status,
-  }) => safeGet<OrderListResponse>(
+  }) => safePage<OrderEntity>(
     '/orders/my/purchases',
-    queryParameters: {'limit': limit, 'offset': offset, 'status': ?status},
-    extractKey: 'data',
-    fromJson: OrderListResponse.fromJson,
+    OrderEntity.fromJson,
+    cursor: cursor,
+    limit: limit,
+    queryParameters: {'status': ?status},
   );
 
-  Future<Either<Failure, OrderListResponse>> getMySales({
-    int limit = 10,
-    int offset = 0,
+  Future<Either<Failure, CursorPage<OrderEntity>>> getMySales({
+    String? cursor,
+    int limit = 20,
     String? status,
-  }) => safeGet<OrderListResponse>(
+  }) => safePage<OrderEntity>(
     '/orders/my/sales',
-    queryParameters: {'limit': limit, 'offset': offset, 'status': ?status},
-    extractKey: 'data',
-    fromJson: OrderListResponse.fromJson,
+    OrderEntity.fromJson,
+    cursor: cursor,
+    limit: limit,
+    queryParameters: {'status': ?status},
   );
 
   Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) =>

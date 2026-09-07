@@ -2,9 +2,10 @@ name: FreeBay CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, 'feat/**', 'fix/**']
   pull_request:
     branches: [main, master, develop]
+  workflow_dispatch:
 
 jobs:
   backend-ci:
@@ -111,7 +112,7 @@ jobs:
 
       - name: Analyze Flutter Code
         working-directory: frontend
-        run: flutter analyze
+        run: flutter analyze --fatal-infos
 
       - name: Run Flutter Widget & Unit Tests
         working-directory: frontend

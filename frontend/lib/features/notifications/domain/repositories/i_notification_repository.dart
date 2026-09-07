@@ -1,9 +1,10 @@
+import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 
 abstract class INotificationRepository {
-  Future<List<NotificationEntity>> getNotifications({
+  Future<CursorPage<NotificationEntity>> getNotifications({
+    String? cursor,
     int limit = 20,
-    int offset = 0,
   });
   Future<int> getUnreadCount();
   Future<void> markAsRead(String notificationId);

@@ -33,28 +33,24 @@ describe('ProcessWebhookUseCase Integration', () => {
     jest.clearAllMocks();
   });
 
-  it('should return processed false for unknown event', async () => {
+  it('should succeed without mutating anything for an unknown event', async () => {
     const result = await sut.execute({ event: 'unknown.event', data: {} });
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
   });
 
-  it('should return processed false when no orderId', async () => {
+  it('should succeed without mutating anything when orderId is missing', async () => {
     const result = await sut.execute({ event: 'checkout.session.completed', data: {} });
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
   });
 
-  it('should return processed false for payment_intent.succeeded without orderId', async () => {
+  it('should succeed without mutating anything for payment_intent.succeeded with no orderId', async () => {
     const result = await sut.execute({ event: 'payment_intent.succeeded', data: {} });
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
   });
 
-  it('should return processed false for unknown event even with orderId', async () => {
+  it('should succeed without mutating anything for an unknown event even with orderId', async () => {
     const result = await sut.execute({ event: 'unknown.event', data: { orderId: 'o1' } });
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
   });
 
   it('should skip duplicate completion when transaction is already PAID', async () => {
@@ -76,7 +72,6 @@ describe('ProcessWebhookUseCase Integration', () => {
       });
 
       expect(isRight(result)).toBe(true);
-      if (isRight(result)) expect(result.value.processed).toBe(true);
       expect(txSpy).not.toHaveBeenCalled();
     } finally {
       txSpy.mockRestore();

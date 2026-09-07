@@ -94,7 +94,7 @@ final class WalletHistoryProvider
   }
 }
 
-String _$walletHistoryHash() => r'dc3788bb64c25a94c67ca062540db53bf56e3a81';
+String _$walletHistoryHash() => r'57524d2376c919f5e10cb47e89386c9c588c7bc7';
 
 abstract class _$WalletHistory extends $Notifier<WalletHistoryState> {
   WalletHistoryState build();
@@ -107,6 +107,69 @@ abstract class _$WalletHistory extends $Notifier<WalletHistoryState> {
             as $ClassProviderElement<
               AnyNotifier<WalletHistoryState, WalletHistoryState>,
               WalletHistoryState,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
+@ProviderFor(ConnectStatus)
+final connectStatusProvider = ConnectStatusProvider._();
+
+final class ConnectStatusProvider
+    extends $NotifierProvider<ConnectStatus, AsyncValue<ConnectStatusEntity?>> {
+  ConnectStatusProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'connectStatusProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$connectStatusHash();
+
+  @$internal
+  @override
+  ConnectStatus create() => ConnectStatus();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<ConnectStatusEntity?> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<ConnectStatusEntity?>>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$connectStatusHash() => r'76104238aca0cd4f818f9e7560de0c1f3f7b4810';
+
+abstract class _$ConnectStatus
+    extends $Notifier<AsyncValue<ConnectStatusEntity?>> {
+  AsyncValue<ConnectStatusEntity?> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref =
+        this.ref
+            as $Ref<
+              AsyncValue<ConnectStatusEntity?>,
+              AsyncValue<ConnectStatusEntity?>
+            >;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                AsyncValue<ConnectStatusEntity?>,
+                AsyncValue<ConnectStatusEntity?>
+              >,
+              AsyncValue<ConnectStatusEntity?>,
               Object?,
               Object?
             >;

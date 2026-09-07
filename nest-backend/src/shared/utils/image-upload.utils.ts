@@ -47,21 +47,21 @@ export const MIMETYPE_EXTENSIONS: Record<string, string> = {
 
 export function validateMediaFile(file: Express.Multer.File): string | null {
   const mime = file.mimetype;
-  if (ALLOWED_IMAGE_MIMES.includes(mime as any)) {
+  if (ALLOWED_IMAGE_MIMES.includes(mime as never)) {
     if (file.size > MAX_IMAGE_SIZE) {
       return `Imagem muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 5MB.`;
     }
     return null;
   }
 
-  if (ALLOWED_AUDIO_MIMES.includes(mime as any)) {
+  if (ALLOWED_AUDIO_MIMES.includes(mime as never)) {
     if (file.size > MAX_AUDIO_SIZE) {
       return `Áudio muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 10MB.`;
     }
     return null;
   }
 
-  if (ALLOWED_VIDEO_MIMES.includes(mime as any)) {
+  if (ALLOWED_VIDEO_MIMES.includes(mime as never)) {
     if (file.size > MAX_VIDEO_SIZE) {
       return `Vídeo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 25MB.`;
     }

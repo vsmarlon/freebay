@@ -1,20 +1,16 @@
-import { Controller, Body, HttpStatus } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetWalletUseCase } from './usecases/get-wallet.usecase';
-import { WithdrawUseCase } from './usecases/withdraw.usecase';
-import { RegisterBankAccountUseCase } from './usecases/register-bank-account.usecase';
-import { WithdrawDTO, BankAccountDTO, WalletResponse } from './dtos/wallet.dto';
+import { WalletResponse } from './dtos/wallet.dto';
 import { WalletRepository } from './domain/repositories/wallet.repository';
-import { GetAuth, PostAuth, CurrentUserId } from '@/shared/decorators';
-import { isLeft } from '@/shared/core/either';
+import { GetAuth, CurrentUserId, Paginated, PAGINATION_QUERIES } from '@/shared/decorators';
+import { PageQuery } from '@/shared/core/pagination';
 
 @ApiTags('Wallet')
 @Controller('wallet')
 export class WalletController {
   constructor(
     private readonly getWalletUseCase: GetWalletUseCase,
-    private readonly withdrawUseCase: WithdrawUseCase,
-    private readonly registerBankAccountUseCase: RegisterBankAccountUseCase,
     private readonly walletRepository: WalletRepository,
   ) {}
 
@@ -24,61 +20,15 @@ export class WalletController {
     responseType: WalletResponse,
   })
   async getWallet(@CurrentUserId() userId: string) {
-    const result = await this.getWalletUseCase.execute(userId);
-    if (isLeft(result)) return result;
-    return result.value;
-  }
-
-  @PostAuth('withdraw', {
-    summary: 'Request withdrawal',
-    description: 'Request a PIX withdrawal from the wallet',
-    bodyType: WithdrawDTO,
-    responseStatus: 201,
-    httpCode: HttpStatus.CREATED,
-    errors: [{ status: 400, description: 'Insufficient balance or invalid data' }],
-  })
-  async withdraw(@CurrentUserId() userId: string, @Body() body: WithdrawDTO) {
-    const result = await this.withdrawUseCase.execute({ userId, ...body });
-    if (isLeft(result)) return result;
-    return result.value;
-  }
-
-  @PostAuth('bank-account', {
-    summary: 'Register bank account',
-    description: 'Register a bank account for withdrawals',
-    bodyType: BankAccountDTO,
-    responseStatus: 201,
-    httpCode: HttpStatus.CREATED,
-  })
-  async registerBankAccount(@CurrentUserId() userId: string, @Body() body: BankAccountDTO) {
-    const result = await this.registerBankAccountUseCase.execute({ userId, ...body });
-    if (isLeft(result)) return result;
-    return result.value;
+    return this.getWalletUseCase.execute(userId);
   }
 
   @GetAuth('transactions', {
-    summary: 'Get transactions',
-    description: 'Returns the transaction history for the wallet',
+    summary: 'Get wallet statement',
+    description: 'Cursor-paginated ledger entries that make up the wallet balance, newest first',
+    queries: PAGINATION_QUERIES,
   })
-  async getTransactions(@CurrentUserId() userId: string) {
-    const result = await this.walletRepository.getTransactions(userId);
-    if (isLeft(result)) return result;
-    return { transactions: result.value };
-  }
-
-  @GetAuth('withdrawals', {
-    summary: 'Get withdrawals',
-    description: 'Returns the withdrawal history for the wallet',
-  })
-  async getWithdrawals(@CurrentUserId() userId: string) {
-    const walletResult = await this.walletRepository.findByUserId(userId);
-    if (isLeft(walletResult)) return walletResult;
-    if (!walletResult.value) {
-      return { withdrawals: [] };
-    }
-
-    const withdrawalsResult = await this.walletRepository.getWithdrawals(walletResult.value.id);
-    if (isLeft(withdrawalsResult)) return withdrawalsResult;
-    return { withdrawals: withdrawalsResult.value };
+  async getTransactions(@CurrentUserId() userId: string, @Paginated() page: PageQuery) {
+    return this.walletRepository.getTransactions(userId, page);
   }
 }

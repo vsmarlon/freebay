@@ -21,15 +21,13 @@ export class CancelOrderUseCase {
       return left(new InvalidOrderStateError('PENDING or CONFIRMED', order.status));
     }
 
-    const productQuantity = order.product?.quantity ?? 1;
-
     const result = await this.orderRepository.cancelOrder({
       orderId: input.orderId,
       productId: order.productId,
       buyerId: order.buyerId,
       amount: order.amount,
       status: order.status,
-      quantity: productQuantity,
+      orderQuantity: order.quantity,
       sellerId: order.sellerId,
       sellerAmount: order.sellerAmount,
     });

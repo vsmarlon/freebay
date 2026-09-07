@@ -25,12 +25,12 @@ export class ProcessWebhookUseCase {
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(input: ProcessWebhookInput): Promise<Either<DatabaseError, { processed: boolean }>> {
+  async execute(input: ProcessWebhookInput): Promise<Either<DatabaseError, void>> {
     const { event, data } = input;
     const orderId = data.orderId as string | undefined;
 
     if (!orderId) {
-      return right({ processed: false });
+      return right(undefined);
     }
 
     if (event === 'payment_intent.succeeded' || event === 'checkout.session.async_payment_succeeded') {
@@ -46,7 +46,7 @@ export class ProcessWebhookUseCase {
         this.logger.log(
           `checkout.session.completed for order ${orderId} is '${data.paymentStatus}'; awaiting async settlement`,
         );
-        return right({ processed: true });
+        return right(undefined);
       }
       return this._handleCompleted(orderId, data);
     }
@@ -61,34 +61,37 @@ export class ProcessWebhookUseCase {
 
     if (event === 'payment_intent.payment_failed') {
       this.logger.warn(`Payment failed for order ${orderId}; leaving transaction as-is`);
-      return right({ processed: false });
+      return right(undefined);
     }
 
-    return right({ processed: false });
+    return right(undefined);
   }
 
   private async _handleCompleted(
     orderId: string,
     data: WebhookDataPayload,
-  ): Promise<Either<DatabaseError, { processed: boolean }>> {
+  ): Promise<Either<DatabaseError, void>> {
     const transactionResult = await this.transactionRepo.findByOrderId(orderId);
     if (isLeft(transactionResult)) return left(transactionResult.value);
 
     const transaction = transactionResult.value;
     if (!transaction) {
-      return right({ processed: false });
+      return right(undefined);
     }
 
     if (transaction.status === 'PAID') {
+      if (data.chargeId && !transaction.chargeId) {
+        await this.transactionRepo.setChargeId(transaction.orderId, data.chargeId);
+      }
       this.logger.log(`Transaction ${transaction.id} already PAID; skipping duplicate completion`);
-      return right({ processed: true });
+      return right(undefined);
     }
 
     if (transaction.status !== 'PENDING') {
       this.logger.warn(
         `Transaction ${transaction.id} is ${transaction.status}; refusing to credit a non-PENDING transaction`,
       );
-      return right({ processed: true });
+      return right(undefined);
     }
 
     const mismatch = this._validateAgainstTransaction(transaction, data);
@@ -96,25 +99,34 @@ export class ProcessWebhookUseCase {
       this.logger.error(
         `Webhook object does not match transaction ${transaction.id} for order ${orderId}: ${mismatch}`,
       );
-      return right({ processed: false });
+      return right(undefined);
     }
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        const paid = await this.transactionRepo.markAsPaid(transaction.id, tx);
+        const paid = await this.transactionRepo.markAsPaid(transaction.id, data.chargeId ?? null, tx);
         if (isLeft(paid)) throw new Error(paid.value.message);
         if (paid.value.count === 0) throw new Error(WEBHOOK_RACE_SKIP);
         await this.productRepo.updateInventoryOnSale(transaction.order.productId, tx);
         await this.orderRepo.confirm(transaction.orderId, tx);
-        await this.walletRepo.creditPending(transaction.order.sellerId, transaction.sellerAmount, tx);
+        await this.walletRepo.creditPending(
+          transaction.order.sellerId,
+          transaction.sellerAmount,
+          transaction.orderId,
+          tx,
+        );
       });
     } catch (error) {
       if (error instanceof Error && error.message === WEBHOOK_RACE_SKIP) {
         this.logger.log(
           `Transaction ${transaction.id} lost the completion race; concurrent delivery already paid it`,
         );
-        return right({ processed: true });
+        return right(undefined);
       }
+      this.logger.error(
+        `Failed to settle transaction ${transaction.id} for order ${orderId}: ${(error as Error).message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       return left(new DatabaseError('Failed to process payment webhook'));
     }
 
@@ -127,25 +139,25 @@ export class ProcessWebhookUseCase {
       );
     }
 
-    return right({ processed: true });
+    return right(undefined);
   }
 
   private async _handleExpired(
     orderId: string,
-  ): Promise<Either<DatabaseError, { processed: boolean }>> {
+  ): Promise<Either<DatabaseError, void>> {
     const transactionResult = await this.transactionRepo.findByOrderId(orderId);
     if (isLeft(transactionResult)) return left(transactionResult.value);
 
     const transaction = transactionResult.value;
     if (!transaction) {
-      return right({ processed: false });
+      return right(undefined);
     }
 
     if (transaction.status !== 'PENDING') {
       this.logger.warn(
         `Transaction ${transaction.id} is ${transaction.status}; refusing to expire a non-PENDING transaction`,
       );
-      return right({ processed: true });
+      return right(undefined);
     }
 
     try {
@@ -154,19 +166,23 @@ export class ProcessWebhookUseCase {
         if (isLeft(failed)) throw new Error(failed.value.message);
         if (failed.value.count === 0) throw new Error(WEBHOOK_RACE_SKIP);
         await this.orderRepo.cancel(transaction.orderId, tx);
-        await this.productRepo.restoreInventoryOnExpiry(transaction.order.productId, tx);
+        await this.productRepo.restoreInventoryOnExpiry(transaction.order.productId, transaction.order.quantity, tx);
       });
     } catch (error) {
       if (error instanceof Error && error.message === WEBHOOK_RACE_SKIP) {
         this.logger.log(
           `Transaction ${transaction.id} lost the expiry race; skipping order cancellation`,
         );
-        return right({ processed: true });
+        return right(undefined);
       }
+      this.logger.error(
+        `Failed to expire transaction ${transaction.id} for order ${orderId}: ${(error as Error).message}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       return left(new DatabaseError('Failed to process webhook'));
     }
 
-    return right({ processed: true });
+    return right(undefined);
   }
 
   private _validateAgainstTransaction(

@@ -7,7 +7,7 @@ description: Use when editing the Prisma schema, adding migrations, or working w
 
 ## Source of truth
 
-The Prisma schema (`prisma/schema.prisma`) is the single source of truth for the data model. All changes start here.
+The Prisma schema (`nest-backend/prisma/schema.prisma`) is the single source of truth for the data model. All changes start here.
 
 ## Cents convention
 

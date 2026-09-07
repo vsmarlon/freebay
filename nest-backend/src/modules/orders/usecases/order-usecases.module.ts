@@ -3,20 +3,19 @@ import { OrderRepository } from '../domain/repositories/order.repository';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { CreateOrderUseCase } from './create-order.usecase';
 import { ConfirmDeliveryUseCase } from './confirm-delivery.usecase';
-import { ActivateEscrowUseCase } from './activate-escrow.usecase';
 import { MarkAsShippedUseCase } from './mark-as-shipped.usecase';
 import { MarkAsDeliveredUseCase } from './mark-as-delivered.usecase';
 import { CancelOrderUseCase } from './cancel-order.usecase';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
+import { PaymentsModule } from '@/modules/payments/payments.module';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, PaymentsModule],
   providers: [
     PrismaOrderRepository,
     { provide: OrderRepository, useExisting: PrismaOrderRepository },
     CreateOrderUseCase,
     ConfirmDeliveryUseCase,
-    ActivateEscrowUseCase,
     MarkAsShippedUseCase,
     MarkAsDeliveredUseCase,
     CancelOrderUseCase,
@@ -26,7 +25,6 @@ import { NotificationsModule } from '@/modules/notifications/notifications.modul
     PrismaOrderRepository,
     CreateOrderUseCase,
     ConfirmDeliveryUseCase,
-    ActivateEscrowUseCase,
     MarkAsShippedUseCase,
     MarkAsDeliveredUseCase,
     CancelOrderUseCase,

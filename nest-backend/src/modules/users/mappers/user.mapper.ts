@@ -49,6 +49,12 @@ export class UserResponse {
   @ApiPropertyOptional({ example: '123.***.***-00' })
   cpf?: string;
 
+  @ApiPropertyOptional({ example: '2026-09-06T10:30:00.000Z', nullable: true })
+  deletionRequestedAt?: Date | null;
+
+  @ApiPropertyOptional({ example: null, nullable: true })
+  suspendedAt?: Date | null;
+
   @ApiProperty({ example: 12 })
   postsCount: number;
 
@@ -121,6 +127,14 @@ export class SearchUserResponse {
   followingCount: number;
 }
 
+export class AccountDeletionResponse {
+  @ApiProperty({ example: '2026-09-06T10:30:00.000Z' })
+  deletionRequestedAt: Date;
+
+  @ApiProperty({ example: '2026-10-06T10:30:00.000Z' })
+  purgeAfter: Date;
+}
+
 export class SuggestionResponse {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id: string;
@@ -190,6 +204,8 @@ export const toUserResponse = (
         ? `${user.cpf.substring(0, 2)}.***.***/****-${user.cpf.substring(12)}`
         : '***'
     : undefined,
+  deletionRequestedAt: isOwner ? user.deletionRequestedAt : undefined,
+  suspendedAt: isOwner ? user.suspendedAt : undefined,
   postsCount: extras?.postsCount ?? 0,
   productsCount: extras?.productsCount ?? 0,
   hasActiveStory: extras?.hasActiveStory ?? false,

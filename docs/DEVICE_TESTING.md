@@ -28,7 +28,7 @@ flutter build apk --debug     # build/app/outputs/flutter-apk/app-debug.apk
 ```
 - `mobile_list_available_devices` → pick the device id
 - `mobile_install_app` with the apk path above
-- `mobile_launch_app` appId — **`com.company.freebay`** today; becomes **`com.freebay.app`** after the identity unification (Q13). Confirm with `applicationId` in `frontend/android/app/build.gradle.kts`.
+- `mobile_launch_app` appId — **`com.freebay.app`** on both platforms (Q13 landed 2026-09-06). Confirm with `applicationId` in `frontend/android/app/build.gradle.kts` and `PRODUCT_BUNDLE_IDENTIFIER` in the Xcode project.
 
 ## 4. Selector policy
 `mobile_list_elements_on_screen` returns the accessibility tree. Today it exposes only rendered
@@ -51,8 +51,10 @@ Stripe PaymentSheet → success only after backend confirms (not on sheet dismis
 **D. Chat** — open conversation → send → bubble reconciles to a real id (no dupes on double-send);
 kill wifi, send, restore → message flushes once; received messages appear live.
 
-**E. Wallet** — balance shows available/pending; start Connect onboarding (hosted link opens);
-withdraw → status advances past PENDING.
+**E. Wallet** — balance shows available/pending; statement rows come from the ledger and carry a
+reason label; "CONFIGURAR RECEBIMENTOS" opens the Stripe hosted onboarding; once the account can
+receive transfers the button becomes "ABRIR PAINEL DE PAGAMENTOS" and opens the Express dashboard.
+There is no in-app withdraw form — Stripe pays the seller out on its own schedule.
 
 **F. Push + deep link** — background app, trigger a push, tap it → routes to the target screen
 (foreground / background / terminated). Cold-start a `freebay://` (later https) link → same target.

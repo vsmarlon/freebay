@@ -10,6 +10,7 @@ import {
   Post,
   Patch,
   Put,
+  Delete,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -199,6 +200,11 @@ export function PutAuth(pathOrOptions?: string | AuthOptionsInput, options?: Aut
   return applyDecorators(Put(parsed.path), Auth(parsed.options));
 }
 
+export function DeleteAuth(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
+  const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
+  return applyDecorators(Delete(parsed.path), Auth(parsed.options));
+}
+
 // Public Route Composites
 export function GetPublic(pathOrOptions?: string | PublicOptionsInput, options?: PublicOptionsInput): MethodDecorator {
   const parsed = parseRouteArgs<EndpointOptions>(pathOrOptions, options);
@@ -239,4 +245,9 @@ export function PatchAdmin(pathOrOptions?: string | AuthOptionsInput, options?: 
 export function PutAdmin(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
   const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
   return applyDecorators(Put(parsed.path), AdminOnly(parsed.options));
+}
+
+export function DeleteAdmin(pathOrOptions?: string | AuthOptionsInput, options?: AuthOptionsInput): MethodDecorator {
+  const parsed = parseRouteArgs<AuthenticatedOptions>(pathOrOptions, options);
+  return applyDecorators(Delete(parsed.path), AdminOnly(parsed.options));
 }

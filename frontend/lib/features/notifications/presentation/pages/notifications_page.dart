@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/components/infinite_scroll_listener.dart';
 import 'package:freebay/core/components/empty_state.dart';
 import 'package:freebay/core/components/app_button.dart';
 import 'package:freebay/core/theme/app_colors.dart';
@@ -136,12 +137,16 @@ class NotificationsPage extends ConsumerWidget {
                 return RefreshIndicator(
                   onRefresh: () =>
                       ref.read(notificationsProvider.notifier).refresh(),
-                  child: ListView.builder(
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = notifications[index];
-                      return _NotificationTile(notification: notification);
-                    },
+                  child: InfiniteScrollListener(
+                    onLoadMore: () =>
+                        ref.read(notificationsProvider.notifier).loadMore(),
+                    child: ListView.builder(
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        final notification = notifications[index];
+                        return _NotificationTile(notification: notification);
+                      },
+                    ),
                   ),
                 );
               },

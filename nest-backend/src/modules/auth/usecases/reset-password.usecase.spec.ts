@@ -3,14 +3,14 @@ import { UserRepository } from '../domain/repositories/user.repository';
 import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
 import { RecoveryCodeNotFoundError } from '@/shared/core/errors';
 import { ResetPasswordUseCase } from './reset-password.usecase';
-import { RedisService } from '@/shared/infra/redis/redis.service';
+import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 import { right } from '@/shared/core/either';
 
 describe('ResetPasswordUseCase', () => {
   let sut: ResetPasswordUseCase;
   let userRepository: jest.Mocked<Partial<UserRepository>>;
   let recoveryRepository: jest.Mocked<Partial<PasswordRecoveryRepository>>;
-  let redisService: jest.Mocked<Partial<RedisService>>;
+  let sessionRevoker: jest.Mocked<Partial<SessionRevokerService>>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -22,14 +22,14 @@ describe('ResetPasswordUseCase', () => {
       findLatestByEmail: jest.fn(),
       markUsed: jest.fn(),
     } as jest.Mocked<Partial<PasswordRecoveryRepository>>;
-    redisService = {
-      add: jest.fn(),
+    sessionRevoker = {
+      revokeAllSessions: jest.fn(),
     };
 
     sut = new ResetPasswordUseCase(
       userRepository as UserRepository,
       recoveryRepository as PasswordRecoveryRepository,
-      redisService as RedisService,
+      sessionRevoker as SessionRevokerService,
     );
   });
 
@@ -58,11 +58,7 @@ describe('ResetPasswordUseCase', () => {
       expect.objectContaining({ passwordHash: expect.any(String) }),
     );
     expect(recoveryRepository.markUsed).toHaveBeenCalledWith('recovery-1');
-    expect(redisService.add).toHaveBeenCalledWith(
-      'user_tokens_invalid_before:user-1',
-      expect.any(String),
-      2592000,
-    );
+    expect(sessionRevoker.revokeAllSessions).toHaveBeenCalledWith('user-1');
   });
 
   it('returns left(RecoveryCodeNotFoundError) when recovery code is not found', async () => {

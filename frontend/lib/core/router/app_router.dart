@@ -35,6 +35,27 @@ final List<String> _publicRoutes = [
   AppRoutes.onboarding,
 ];
 
+final List<String> _guestBrowsableRoutes = [
+  AppRoutes.feed,
+  AppRoutes.explore,
+  AppRoutes.products,
+  AppRoutes.wallet,
+  AppRoutes.chat,
+  AppRoutes.profile,
+  AppRoutes.postSearch,
+  AppRoutes.peopleSearch,
+];
+
+final List<String> _guestBrowsablePrefixes = ['/products/', '/post/', '/user/'];
+
+bool _isGuestBrowsable(String location) {
+  if (_guestBrowsableRoutes.contains(location)) return true;
+  return _guestBrowsablePrefixes.any(
+    (prefix) =>
+        location.startsWith(prefix) && location != AppRoutes.createProduct,
+  );
+}
+
 final Set<String> _authScreenPaths = {
   AppRoutes.splash,
   AppRoutes.login,
@@ -54,6 +75,14 @@ String resolvePostAuthDestination(String? from) {
   final path = Uri.parse(decoded).path;
   if (_authScreenPaths.contains(path)) return AppRoutes.feed;
   return decoded;
+}
+
+String loginPathFrom(BuildContext context) {
+  final location = GoRouterState.of(context).uri.toString();
+  if (location.isEmpty || _authScreenPaths.contains(Uri.parse(location).path)) {
+    return AppRoutes.login;
+  }
+  return '${AppRoutes.login}?from=${Uri.encodeComponent(location)}';
 }
 
 final GoRouter appRouter = GoRouter(
@@ -79,7 +108,9 @@ final GoRouter appRouter = GoRouter(
         final hasSeen = container.read(hasSeenOnboardingProvider);
         return hasSeen ? AppRoutes.login : AppRoutes.onboarding;
       }
-      final isPublic = _publicRoutes.any((p) => state.matchedLocation == p);
+      final isPublic =
+          _publicRoutes.any((p) => state.matchedLocation == p) ||
+          _isGuestBrowsable(state.matchedLocation);
       if (!isPublic) {
         final from = Uri.encodeComponent(state.uri.toString());
         return '${AppRoutes.login}?from=$from';

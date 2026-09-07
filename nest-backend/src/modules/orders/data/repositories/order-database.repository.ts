@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { WalletEntryReason } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
+import { CursorPage, PageQuery, paginateById } from '@/shared/core/pagination';
 import { DatabaseError, NotFoundError, BadRequestError } from '@/shared/core/errors';
+import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { OrderRepository } from '../../domain/repositories/order.repository';
 import {
   OrderFullPayload,
@@ -43,27 +46,35 @@ export class PrismaOrderRepository implements OrderRepository {
     }
   }
 
-  async findByBuyerId(buyerId: string): RepositoryResponse<OrderProductPayload[]> {
-    try {
-      const orders = await this.prisma.order.findMany({
-        where: { buyerId },
-        orderBy: { createdAt: 'desc' },
-        include: ORDER_INCLUDE_PRODUCT,
-      });
-      return right(orders as OrderProductPayload[]);
-    } catch {
-      return left(new DatabaseError('Erro ao buscar pedidos'));
-    }
+  async findByBuyerId(
+    buyerId: string,
+    page: PageQuery,
+  ): RepositoryResponse<CursorPage<OrderProductPayload>> {
+    return this.findOrderPage({ buyerId }, page);
   }
 
-  async findBySellerId(sellerId: string): RepositoryResponse<OrderProductPayload[]> {
+  async findBySellerId(
+    sellerId: string,
+    page: PageQuery,
+  ): RepositoryResponse<CursorPage<OrderProductPayload>> {
+    return this.findOrderPage({ sellerId }, page);
+  }
+
+  private async findOrderPage(
+    where: Prisma.OrderWhereInput,
+    page: PageQuery,
+  ): RepositoryResponse<CursorPage<OrderProductPayload>> {
     try {
-      const orders = await this.prisma.order.findMany({
-        where: { sellerId },
-        orderBy: { createdAt: 'desc' },
-        include: ORDER_INCLUDE_PRODUCT,
-      });
-      return right(orders as OrderProductPayload[]);
+      const result = await paginateById<OrderProductPayload, Prisma.OrderFindManyArgs>(
+        (args) => this.prisma.order.findMany(args) as Promise<OrderProductPayload[]>,
+        {
+          where,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          include: ORDER_INCLUDE_PRODUCT,
+        },
+        page,
+      );
+      return right(result);
     } catch {
       return left(new DatabaseError('Erro ao buscar pedidos'));
     }
@@ -190,17 +201,16 @@ export class PrismaOrderRepository implements OrderRepository {
           return;
         }
 
-        const wallet = await tx.wallet.findUnique({ where: { userId: data.sellerId } });
-        if (wallet) {
-          await tx.wallet.update({
-            where: { userId: data.sellerId },
-            data: {
-              pendingBalance: { decrement: data.sellerAmount },
-              availableBalance: { increment: data.sellerAmount },
-              totalEarned: { increment: data.sellerAmount },
-            },
-          });
-        }
+        await applyWalletDelta(
+          tx,
+          data.sellerId,
+          {
+            pendingBalance: -data.sellerAmount,
+            availableBalance: data.sellerAmount,
+            totalEarned: data.sellerAmount,
+          },
+          { reason: WalletEntryReason.SALE_RELEASED, orderId: data.orderId },
+        );
 
         await tx.transaction.update({
           where: { orderId: data.orderId },
@@ -213,48 +223,31 @@ export class PrismaOrderRepository implements OrderRepository {
     }
   }
 
-  async activateEscrow(orderId: string, sellerId: string, sellerAmount: number): RepositoryResponse<void> {
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.order.update({
-          where: { id: orderId },
-          data: { status: 'CONFIRMED', escrowStatus: 'HELD' },
-        });
-
-        const wallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
-        if (wallet) {
-          await tx.wallet.update({
-            where: { userId: sellerId },
-            data: { pendingBalance: { increment: sellerAmount } },
-          });
-        }
-      });
-      return right(void 0);
-    } catch {
-      return left(new DatabaseError('Erro ao ativar escrow'));
-    }
-  }
-
   async cancelOrder(data: CancelOrderTxData): RepositoryResponse<void> {
     try {
       await this.prisma.$transaction(async (tx) => {
-        await tx.order.update({
-          where: { id: data.orderId },
+        const claimed = await tx.order.updateMany({
+          where: { id: data.orderId, status: { notIn: ['CANCELLED', 'COMPLETED'] } },
           data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
         });
+        if (claimed.count === 0) {
+          return;
+        }
 
-        if (data.quantity > 1) {
-          const current = await tx.product.findUnique({ where: { id: data.productId } });
-          if (current) {
-            const newSoldCount = Math.max(current.soldCount - 1, 0);
-            await tx.product.update({
-              where: { id: data.productId },
-              data: {
-                soldCount: newSoldCount,
-                ...(current.status === 'SOLD' && newSoldCount < current.quantity ? { status: 'ACTIVE' as const } : {}),
-              },
-            });
-          }
+        const product = await tx.product.findUnique({
+          where: { id: data.productId },
+          select: { quantity: true },
+        });
+
+        if ((product?.quantity ?? 1) > 1) {
+          await tx.product.updateMany({
+            where: { id: data.productId, soldCount: { gte: data.orderQuantity } },
+            data: { soldCount: { decrement: data.orderQuantity } },
+          });
+          await tx.product.updateMany({
+            where: { id: data.productId, status: 'SOLD' },
+            data: { status: 'ACTIVE' },
+          });
         } else {
           await tx.product.update({
             where: { id: data.productId },
@@ -263,20 +256,18 @@ export class PrismaOrderRepository implements OrderRepository {
         }
 
         if (data.status === 'CONFIRMED') {
-          const wallet = await tx.wallet.findUnique({ where: { userId: data.buyerId } });
-          if (wallet) {
-            await tx.wallet.update({
-              where: { userId: data.buyerId },
-              data: { availableBalance: { increment: data.amount } },
-            });
-          }
-          const sellerWallet = await tx.wallet.findUnique({ where: { userId: data.sellerId } });
-          if (sellerWallet) {
-            await tx.wallet.update({
-              where: { userId: data.sellerId },
-              data: { pendingBalance: { decrement: data.sellerAmount } },
-            });
-          }
+          await applyWalletDelta(
+            tx,
+            data.buyerId,
+            { availableBalance: data.amount },
+            { reason: WalletEntryReason.REFUND, orderId: data.orderId },
+          );
+          await applyWalletDelta(
+            tx,
+            data.sellerId,
+            { pendingBalance: -data.sellerAmount },
+            { reason: WalletEntryReason.HOLD_RELEASED, orderId: data.orderId },
+          );
         }
       });
       return right(void 0);

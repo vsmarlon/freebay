@@ -16,15 +16,14 @@ export interface ProcessWebhookInput {
 
 export interface WebhookDataPayload {
   readonly orderId?: string;
+  readonly paymentGroupId?: string;
   readonly providerObjectId?: string;
   readonly amountTotal?: number;
   readonly currency?: string;
   readonly paymentStatus?: string;
+  readonly chargeId?: string;
 }
 
-export interface ProcessWebhookOutput {
-  readonly processed: boolean;
-}
 
 export interface CreateWithdrawalInput {
   readonly withdrawalId: string;

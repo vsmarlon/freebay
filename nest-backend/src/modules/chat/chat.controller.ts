@@ -1,6 +1,14 @@
 import { Controller, Body, Param, Query, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetAuth, PostAuth, PatchAuth, CurrentUserId } from '@/shared/decorators';
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUserId,
+  Paginated,
+  PAGINATION_QUERIES,
+} from '@/shared/decorators';
+import { PageQuery } from '@/shared/core/pagination';
 import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO, VerifyUrlDTO, ForwardMessagesDTO } from './dtos/chat.dto';
 import { GetUnifiedConversationsUseCase } from './usecases/get-unified-conversations.usecase';
 import { GetConversationsUseCase } from './usecases/get-conversations.usecase';
@@ -66,9 +74,19 @@ export class ChatController {
     return this.acceptConversationUseCase.execute(id, userId);
   }
 
-  @GetAuth('conversations/:id', { summary: 'Get conversation messages', params: [{ name: 'id', description: 'Conversation UUID' }] })
-  async getConversation(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
-    return this.getMessagesUseCase.execute(id, userId);
+  @GetAuth('conversations/:id', {
+    summary: 'Get conversation messages',
+    description:
+      'Returns the newest page of the transcript, oldest-first. Follow nextCursor to load older messages.',
+    params: [{ name: 'id', description: 'Conversation UUID' }],
+    queries: PAGINATION_QUERIES,
+  })
+  async getConversation(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+    @Paginated() page: PageQuery,
+  ) {
+    return this.getMessagesUseCase.execute(id, userId, page);
   }
 
   @GetAuth('conversations/:id/messages', { summary: 'Get filtered messages by type (media)', params: [{ name: 'id', description: 'Conversation UUID' }] })

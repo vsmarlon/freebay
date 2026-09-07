@@ -10,6 +10,7 @@ import { WithdrawDisputeUseCase } from './withdraw-dispute.usecase';
 import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
+import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { PrismaTag, NotificationTag } from '../effect-harness/tags';
 import { TestNotificationsLayer, RecordedNotification } from '../effect-harness/test-notifications.layer';
 import type { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -202,6 +203,7 @@ describe('Disputes Effect Integration', () => {
         { notifyDispute: jest.fn(), notifyOrderStatus: jest.fn() } as unknown as NotificationService,
         new DisputeTransitionPolicy(),
         new DisputeResolutionExecutionService(),
+        { payoutForOrder: jest.fn(), reverseForOrder: jest.fn() } as unknown as SellerPayoutService,
       );
     }
 

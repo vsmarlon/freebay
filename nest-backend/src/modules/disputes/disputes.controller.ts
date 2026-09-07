@@ -77,11 +77,16 @@ export class DisputesController {
     params: [{ name: 'id', description: 'Dispute UUID' }],
     errors: [{ status: 404, description: 'Dispute not found' }],
   })
-  async resolve(@Param('id', ParseUUIDPipe) id: string, @Body() body: ResolveDisputeDTO) {
+  async resolve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() adminId: string,
+    @Body() body: ResolveDisputeDTO,
+  ) {
     return this.resolveDisputeUseCase.execute({
       disputeId: id,
       resolution: body.resolution,
       winner: body.winner,
+      resolvedById: adminId,
     });
   }
 

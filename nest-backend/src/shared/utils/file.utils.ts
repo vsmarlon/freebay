@@ -1,5 +1,5 @@
-import { mkdirSync, writeFileSync } from 'fs';
-import { extname, join } from 'path';
+import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { basename, extname, join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { MIMETYPE_EXTENSIONS } from './image-upload.utils';
 
@@ -47,6 +47,20 @@ export function saveUpload(
   return isPrivate
     ? `/media/${context}/${filename}`
     : `/uploads/${context}/${filename}`;
+}
+
+export function deleteUpload(url: string | null | undefined): void {
+  if (!url) return;
+
+  const match = /^\/(uploads|media)\/([a-z]+)\/([^/?#]+)$/.exec(url);
+  if (!match) return;
+
+  const [, prefix, context, filename] = match;
+  if (!(UPLOAD_CONTEXTS as readonly string[]).includes(context)) return;
+  if (basename(filename) !== filename || !STORED_FILENAME.test(filename)) return;
+
+  const root = prefix === 'media' ? PRIVATE_UPLOAD_ROOT : PUBLIC_UPLOAD_ROOT;
+  rmSync(join(process.cwd(), root, context, filename), { force: true });
 }
 
 export function mimeForFilename(filename: string): string {

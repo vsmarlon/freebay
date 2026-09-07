@@ -222,3 +222,23 @@ export class NotImplementedError extends AppError {
     super('NOT_IMPLEMENTED', `${feature} is not yet implemented`, 501);
   }
 }
+
+export class AccountDeletionBlockedError extends AppError {
+  constructor(reasons: string[]) {
+    super(
+      'ACCOUNT_DELETION_BLOCKED',
+      `Não é possível excluir a conta agora: ${reasons.join('; ')}`,
+      409,
+    );
+  }
+}
+
+export class AccountSuspendedError extends AppError {
+  constructor(reason?: string | null) {
+    super(
+      'ACCOUNT_SUSPENDED',
+      reason ? `Conta suspensa: ${reason}` : 'Conta suspensa',
+      403,
+    );
+  }
+}

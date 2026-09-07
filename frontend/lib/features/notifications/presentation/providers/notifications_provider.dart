@@ -12,10 +12,16 @@ final notificationRepositoryProvider = Provider<INotificationRepository>((ref) {
 
 @Riverpod(keepAlive: true)
 class Notifications extends _$Notifications {
+  String? _nextCursor;
+  bool _hasMore = false;
+  bool _isLoadingMore = false;
+
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
+
   @override
   AsyncValue<List<NotificationEntity>> build() {
     ref.watch(notificationRepositoryProvider);
-    // Preserve the eager load that used to happen in the constructor.
     Future.microtask(loadNotifications);
     return const AsyncValue.loading();
   }
@@ -23,12 +29,31 @@ class Notifications extends _$Notifications {
   Future<void> loadNotifications() async {
     state = const AsyncValue.loading();
     try {
-      final notifications = await ref
+      final page = await ref
           .read(notificationRepositoryProvider)
           .getNotifications();
-      state = AsyncValue.data(notifications);
+      _nextCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      state = AsyncValue.data(page.items);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (_isLoadingMore || !_hasMore || _nextCursor == null) return;
+
+    _isLoadingMore = true;
+    try {
+      final page = await ref
+          .read(notificationRepositoryProvider)
+          .getNotifications(cursor: _nextCursor);
+      _nextCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      state = AsyncValue.data([...(state.value ?? const []), ...page.items]);
+    } catch (_) {
+    } finally {
+      _isLoadingMore = false;
     }
   }
 

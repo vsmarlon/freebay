@@ -6,21 +6,22 @@ part 'wallet_transaction_entity.g.dart';
 @JsonSerializable()
 class WalletTransactionEntity {
   final String id;
-  final String orderId;
+  final String? orderId;
   final int amount;
-  final String status;
-  @JsonKey(unknownEnumValue: WalletTransactionType.purchase)
-  final WalletTransactionType type;
+  @JsonKey(unknownEnumValue: WalletBalanceKind.available)
+  final WalletBalanceKind kind;
+  @JsonKey(unknownEnumValue: WalletEntryReason.adjustment)
+  final WalletEntryReason reason;
   final String? productTitle;
   final DateTime createdAt;
 
   const WalletTransactionEntity({
     required this.id,
-    required this.orderId,
     required this.amount,
-    required this.status,
-    required this.type,
+    required this.kind,
+    required this.reason,
     required this.createdAt,
+    this.orderId,
     this.productTitle,
   });
 
@@ -29,12 +30,13 @@ class WalletTransactionEntity {
 
   Map<String, dynamic> toJson() => _$WalletTransactionEntityToJson(this);
 
-  bool get isCredit => type.isCredit;
+  bool get isCredit => amount > 0;
+
+  bool get isPending => kind == WalletBalanceKind.pending;
 
   String get label {
-    final prefix = isCredit ? 'Venda' : 'Compra';
     final title = productTitle;
-    if (title != null && title.isNotEmpty) return '$prefix · $title';
-    return prefix;
+    if (title != null && title.isNotEmpty) return '${reason.label} · $title';
+    return reason.label;
   }
 }

@@ -35,35 +35,43 @@ class ChatRepository extends BaseHttpRepository implements IChatRepository {
       Failure,
       ({
         List<MessageEntity> messages,
+        bool hasMore,
+        String? nextCursor,
         String threadType,
         String? otherUserId,
         ConversationPreference? preference,
       })
     >
   >
-  getConversation(String conversationId) => safeCall(
-    () => client.get('/chat/conversations/$conversationId'),
-    onSuccess: (response) {
-      final data = response.data['data'] as Map<String, dynamic>? ?? {};
-      final rawMessages = (data['messages'] as List<dynamic>?) ?? [];
-      final messages = rawMessages
-          .map((m) => MessageEntity.fromJson(m as Map<String, dynamic>))
-          .toList();
-      final threadType = (data['threadType'] as String?) ?? 'DIRECT';
-      final otherUserId = data['otherUserId'] as String?;
-      final rawPref = data['preference'] as Map<String, dynamic>?;
-      final preference = rawPref != null
-          ? ConversationPreference.fromJson(rawPref)
-          : null;
+  getConversation(String conversationId, {String? cursor, int? limit}) =>
+      safeCall(
+        () => client.get(
+          '/chat/conversations/$conversationId',
+          queryParameters: {'cursor': ?cursor, 'limit': ?limit},
+        ),
+        onSuccess: (response) {
+          final data = response.data['data'] as Map<String, dynamic>? ?? {};
+          final rawMessages = (data['messages'] as List<dynamic>?) ?? [];
+          final messages = rawMessages
+              .map((m) => MessageEntity.fromJson(m as Map<String, dynamic>))
+              .toList();
+          final threadType = (data['threadType'] as String?) ?? 'DIRECT';
+          final otherUserId = data['otherUserId'] as String?;
+          final rawPref = data['preference'] as Map<String, dynamic>?;
+          final preference = rawPref != null
+              ? ConversationPreference.fromJson(rawPref)
+              : null;
 
-      return Right((
-        messages: messages,
-        threadType: threadType,
-        otherUserId: otherUserId,
-        preference: preference,
-      ));
-    },
-  );
+          return Right((
+            messages: messages,
+            hasMore: data['hasMore'] == true,
+            nextCursor: data['nextCursor'] as String?,
+            threadType: threadType,
+            otherUserId: otherUserId,
+            preference: preference,
+          ));
+        },
+      );
 
   @override
   Future<Either<Failure, MessageEntity>> sendMessage(

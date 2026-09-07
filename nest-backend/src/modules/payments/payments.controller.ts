@@ -10,12 +10,24 @@ import {
 } from '@nestjs/common';
 import Stripe from 'stripe';
 import { ApiTags } from '@nestjs/swagger';
-import { PostAuth, StripeWebhook, CurrentUserId } from '@/shared/decorators';
+import { GetAuth, PostAuth, StripeWebhook, CurrentUserId } from '@/shared/decorators';
 import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.usecase';
 import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
+import { ProcessGroupWebhookUseCase } from './usecases/process-group-webhook.usecase';
+import { ProcessRefundUseCase } from './usecases/process-refund.usecase';
+import { StartConnectOnboardingUseCase } from './usecases/start-connect-onboarding.usecase';
+import { GetConnectStatusUseCase } from './usecases/get-connect-status.usecase';
+import { GetConnectDashboardLinkUseCase } from './usecases/get-connect-dashboard-link.usecase';
+import { SyncConnectAccountUseCase } from './usecases/sync-connect-account.usecase';
+import {
+  ConnectStatusOutput,
+  ConnectOnboardingOutput,
+  ConnectDashboardOutput,
+} from './dtos/connect.dto';
 import { CreatePaymentSessionOutput, CreatePaymentIntentOutput } from './dtos/payment.dto';
 import { right } from '@/shared/core/either';
+import { setContextUserId } from '@/shared/observability/request-context';
 
 interface WebhookRequest {
   stripeEvent?: Stripe.Event;
@@ -29,6 +41,10 @@ const WHITELIST_EVENTS = [
   'payment_intent.succeeded',
   'payment_intent.canceled',
   'payment_intent.payment_failed',
+  'account.updated',
+  'charge.refunded',
+  'charge.dispute.created',
+  'charge.dispute.closed',
 ];
 
 @ApiTags('Payments')
@@ -40,7 +56,44 @@ export class PaymentsController {
     private readonly createPaymentSessionUseCase: CreatePaymentSessionUseCase,
     private readonly createPaymentIntentUseCase: CreatePaymentIntentUseCase,
     private readonly processWebhookUseCase: ProcessWebhookUseCase,
+    private readonly processGroupWebhookUseCase: ProcessGroupWebhookUseCase,
+    private readonly processRefundUseCase: ProcessRefundUseCase,
+    private readonly startConnectOnboardingUseCase: StartConnectOnboardingUseCase,
+    private readonly getConnectStatusUseCase: GetConnectStatusUseCase,
+    private readonly getConnectDashboardLinkUseCase: GetConnectDashboardLinkUseCase,
+    private readonly syncConnectAccountUseCase: SyncConnectAccountUseCase,
   ) {}
+
+  @PostAuth('connect/onboarding', {
+    summary: 'Start or resume Stripe Connect onboarding',
+    description: 'Creates the connected account if needed and returns a hosted onboarding link',
+    responseStatus: 201,
+    responseType: ConnectOnboardingOutput,
+    httpCode: HttpStatus.CREATED,
+  })
+  async startConnectOnboarding(@CurrentUserId() userId: string) {
+    return this.startConnectOnboardingUseCase.execute(userId);
+  }
+
+  @GetAuth('connect/status', {
+    summary: 'Get Stripe Connect account status',
+    description: 'Returns onboarding and capability state for the current seller',
+    responseType: ConnectStatusOutput,
+  })
+  async getConnectStatus(@CurrentUserId() userId: string) {
+    return this.getConnectStatusUseCase.execute(userId);
+  }
+
+  @PostAuth('connect/dashboard', {
+    summary: 'Open the Stripe Express dashboard',
+    description: 'Returns a single-use login link to the seller Express dashboard',
+    responseStatus: 201,
+    responseType: ConnectDashboardOutput,
+    httpCode: HttpStatus.CREATED,
+  })
+  async getConnectDashboardLink(@CurrentUserId() userId: string) {
+    return this.getConnectDashboardLinkUseCase.execute(userId);
+  }
 
   @PostAuth('checkout/:orderId', {
     summary: 'Create Stripe Checkout payment session',
@@ -84,38 +137,79 @@ export class PaymentsController {
     const event = request.stripeEvent;
     if (!event) {
       this.logger.error('Webhook guard did not attach stripeEvent to request');
-      return right({ processed: false });
+      return right(undefined);
     }
 
+    setContextUserId(`stripe-event:${event.id}`);
+
     if (!WHITELIST_EVENTS.includes(event.type)) {
-      return right({ processed: false });
+      this.logger.log(`Ignoring non-whitelisted Stripe event ${event.type} (${event.id})`);
+      return right(undefined);
+    }
+
+    if (event.type === 'account.updated' || event.type.startsWith('v2.core.account')) {
+      const accountId =
+        event.account ?? (event.data.object as { id?: string }).id ?? undefined;
+      if (!accountId) return right(undefined);
+      return this.syncConnectAccountUseCase.execute(accountId);
+    }
+
+    if (event.type.startsWith('charge.')) {
+      const charge = event.data.object as Stripe.Charge | Stripe.Dispute;
+      const chargeId =
+        'charge' in charge && typeof charge.charge === 'string' ? charge.charge : charge.id;
+      if (event.type === 'charge.refunded') {
+        return this.processRefundUseCase.execute(chargeId);
+      }
+      this.logger.warn(`Dispute event ${event.type} received for charge ${chargeId}`);
+      return right(undefined);
     }
 
     let orderId: string | undefined;
+    let paymentGroupId: string | undefined;
     let providerObjectId: string | undefined;
     let amountTotal: number | undefined;
     let currency: string | undefined;
     let paymentStatus: string | undefined;
+    let chargeId: string | undefined;
 
     if (event.type.startsWith('checkout.session.')) {
       const session = event.data.object as Stripe.Checkout.Session;
       orderId = session.metadata?.orderId ?? undefined;
+      paymentGroupId = session.metadata?.paymentGroupId ?? undefined;
       providerObjectId = session.id;
       amountTotal = session.amount_total ?? undefined;
       currency = session.currency ?? undefined;
       paymentStatus = session.payment_status;
+      chargeId =
+        typeof session.payment_intent === 'string'
+          ? undefined
+          : ((session.payment_intent?.latest_charge as string | undefined) ?? undefined);
     } else {
       const intent = event.data.object as Stripe.PaymentIntent;
       orderId = intent.metadata?.orderId ?? undefined;
+      paymentGroupId = intent.metadata?.paymentGroupId ?? undefined;
       providerObjectId = intent.id;
       amountTotal = intent.amount ?? undefined;
       currency = intent.currency ?? undefined;
       paymentStatus = intent.status;
+      chargeId = typeof intent.latest_charge === 'string' ? intent.latest_charge : (intent.latest_charge?.id ?? undefined);
     }
 
-    return this.processWebhookUseCase.execute({
-      event: event.type,
-      data: { orderId, providerObjectId, amountTotal, currency, paymentStatus },
-    });
+    const data = {
+      orderId,
+      paymentGroupId,
+      providerObjectId,
+      amountTotal,
+      currency,
+      paymentStatus,
+      chargeId,
+    };
+
+    if (paymentGroupId) {
+      return this.processGroupWebhookUseCase.execute({ event: event.type, data });
+    }
+
+    return this.processWebhookUseCase.execute({ event: event.type, data });
   }
 }

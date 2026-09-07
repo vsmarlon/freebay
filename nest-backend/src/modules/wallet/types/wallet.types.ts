@@ -1,9 +1,11 @@
+import { WalletBalanceKind, WalletEntryReason } from '@prisma/client';
+
 export type TransactionEntry = {
   id: string;
-  orderId: string;
+  orderId: string | null;
   amount: number;
-  status: string;
+  kind: WalletBalanceKind;
+  reason: WalletEntryReason;
   createdAt: Date;
-  type: 'PURCHASE' | 'SALE';
   productTitle: string | null;
 };

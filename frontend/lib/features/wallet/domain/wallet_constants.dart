@@ -1,44 +1,35 @@
 import 'package:json_annotation/json_annotation.dart';
 
-class WalletConstants {
-  WalletConstants._();
-
-  /// Mirrors MIN_WITHDRAWAL in nest-backend withdraw.usecase.ts.
-  static const int minWithdrawalCents = 2000;
-}
-
-enum PixKeyType {
-  cpf('CPF', 'CPF'),
-  email('EMAIL', 'E-mail'),
-  phone('PHONE', 'Telefone'),
-  random('RANDOM', 'Aleatória');
-
-  const PixKeyType(this.wireValue, this.label);
-
-  final String wireValue;
-  final String label;
-}
-
-enum WalletTransactionType {
-  @JsonValue('PURCHASE')
-  purchase,
-  @JsonValue('SALE')
-  sale;
-
-  bool get isCredit => this == WalletTransactionType.sale;
-}
-
-enum WithdrawalStatus {
+enum WalletBalanceKind {
+  @JsonValue('AVAILABLE')
+  available,
   @JsonValue('PENDING')
-  pending('Pendente'),
-  @JsonValue('PROCESSING')
-  processing('Processando'),
-  @JsonValue('COMPLETED')
-  completed('Concluído'),
-  @JsonValue('FAILED')
-  failed('Falhou');
+  pending,
+  @JsonValue('TOTAL_EARNED')
+  totalEarned,
+}
 
-  const WithdrawalStatus(this.label);
+enum WalletEntryReason {
+  @JsonValue('SALE_HELD')
+  saleHeld('Venda em custódia'),
+  @JsonValue('SALE_RELEASED')
+  saleReleased('Venda liberada'),
+  @JsonValue('HOLD_RELEASED')
+  holdReleased('Custódia encerrada'),
+  @JsonValue('REFUND')
+  refund('Reembolso'),
+  @JsonValue('DISPUTE_REFUND')
+  disputeRefund('Reembolso por disputa'),
+  @JsonValue('DISPUTE_RELEASE')
+  disputeRelease('Disputa resolvida'),
+  @JsonValue('PAYOUT')
+  payout('Repasse enviado'),
+  @JsonValue('WITHDRAWAL')
+  withdrawal('Saque'),
+  @JsonValue('ADJUSTMENT')
+  adjustment('Ajuste');
+
+  const WalletEntryReason(this.label);
 
   final String label;
 }

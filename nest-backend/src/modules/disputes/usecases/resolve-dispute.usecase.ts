@@ -6,6 +6,7 @@ import { NotificationService } from '../../notifications/services/notification.s
 import { DisputeRepository } from '../domain/repositories/dispute.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
+import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 
 @Injectable()
 export class ResolveDisputeUseCase {
@@ -15,9 +16,15 @@ export class ResolveDisputeUseCase {
     private notificationService: NotificationService,
     private transitionPolicy: DisputeTransitionPolicy,
     private resolutionExecution: DisputeResolutionExecutionService,
+    private payoutService: SellerPayoutService,
   ) {}
 
-  async execute(input: { disputeId: string; resolution: string; winner: 'BUYER' | 'SELLER' }): Promise<Either<AppError, void>> {
+  async execute(input: {
+    disputeId: string;
+    resolution: string;
+    winner: 'BUYER' | 'SELLER';
+    resolvedById?: string;
+  }): Promise<Either<AppError, void>> {
     const disputeResult = await this.disputeRepo.findById(input.disputeId);
     if (disputeResult.isLeft()) return left(disputeResult.value);
 
@@ -36,6 +43,7 @@ export class ResolveDisputeUseCase {
           where: { id: input.disputeId, status: { notIn: ['RESOLVED', 'CANCELLED'] } },
           data: {
             resolution: input.resolution,
+            resolvedById: input.resolvedById ?? null,
             status: 'RESOLVED',
             resolvedAt: new Date(),
           },
@@ -55,6 +63,10 @@ export class ResolveDisputeUseCase {
         return left(new BadRequestError('Dispute cannot be resolved while it is not open'));
       }
       return left(new DatabaseError('Failed to resolve dispute'));
+    }
+
+    if (input.winner === 'SELLER') {
+      await this.payoutService.payoutForOrder(dispute.orderId);
     }
 
     const buyerMsg = input.winner === 'BUYER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do vendedor';

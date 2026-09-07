@@ -10,14 +10,14 @@ description: Use when scaffolding or modifying a Flutter feature in the Freebay 
 ```
 lib/features/<feature>/
 ├── data/
-│   ├── entities/          # data classes / Freezed models
+│   ├── entities/          # data classes with @JsonSerializable() & .g.dart
 │   ├── repositories/      # concrete repo implementing domain interface (Dio)
 │   └── datasources/       # (optional) remote/local data sources
 ├── domain/
 │   ├── repositories/      # abstract repository interface
-│   └── usecases/          # business logic
+│   └── usecases/          # business logic invokers
 └── presentation/
-    ├── controllers/       # Riverpod notifiers / providers
+    ├── controllers/       # Riverpod StateNotifier / Notifier
     ├── providers/         # Riverpod providers
     ├── pages/             # full-screen pages
     └── widgets/           # reusable UI widgets for this feature
@@ -28,6 +28,11 @@ lib/features/<feature>/
 ### 1. Entity (`data/entities/`)
 
 ```dart
+import 'package:json_annotation/json_annotation.dart';
+
+part 'my_entity.g.dart';
+
+@JsonSerializable()
 class MyEntity {
   final String id;
   final String name;
@@ -35,20 +40,21 @@ class MyEntity {
 
   const MyEntity({required this.id, required this.name, required this.amount});
 
-  factory MyEntity.fromJson(Map<String, dynamic> json) => MyEntity(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    amount: json['amount'] as int,
-  );
+  factory MyEntity.fromJson(Map<String, dynamic> json) => _$MyEntityFromJson(json);
+  Map<String, dynamic> toJson() => _$MyEntityToJson(this);
 }
 ```
 
 ### 2. Repository interface (`domain/repositories/`)
 
 ```dart
+import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/errors/failure.dart';
+import 'package:freebay/features/my_feature/data/entities/my_entity.dart';
+
 abstract class MyEntityRepository {
-  Future<List<MyEntity>> getAll();
-  Future<MyEntity> getById(String id);
+  Future<Either<Failure, List<MyEntity>>> getAll();
+  Future<Either<Failure, MyEntity>> getById(String id);
 }
 ```
 
@@ -58,6 +64,11 @@ Use the shared `http_client` from `shared/services/http_client.dart` (Dio-based)
 
 ```dart
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/errors/failure.dart';
+import 'package:freebay/shared/utils/safe_call.dart';
+import 'package:freebay/features/my_feature/domain/repositories/my_entity_repository.dart';
+import 'package:freebay/features/my_feature/data/entities/my_entity.dart';
 
 class MyEntityRepositoryImpl implements MyEntityRepository {
   final HttpClient _client;
@@ -65,41 +76,64 @@ class MyEntityRepositoryImpl implements MyEntityRepository {
   MyEntityRepositoryImpl(this._client);
 
   @override
-  Future<List<MyEntity>> getAll() async {
-    final response = await _client.get('/my-entities');
-    return (response.data['data'] as List).map((e) => MyEntity.fromJson(e)).toList();
+  Future<Either<Failure, List<MyEntity>>> getAll() async {
+    return safeCall<List<MyEntity>>(
+      () => _client.get('/my-entities'),
+      debugLabel: 'MY_ENTITY getAll',
+      onSuccess: (response) {
+        final list = (response.data['data'] as List)
+            .map((e) => MyEntity.fromJson(e as Map<String, dynamic>))
+            .toList();
+        return Right(list);
+      },
+    );
+  }
+
+  @override
+  Future<Either<Failure, MyEntity>> getById(String id) async {
+    return safeCall<MyEntity>(
+      () => _client.get('/my-entities/$id'),
+      debugLabel: 'MY_ENTITY getById',
+      onSuccess: (response) => Right(MyEntity.fromJson(response.data['data'])),
+    );
   }
 }
 ```
 
-### 3. Riverpod providers (`presentation/providers/` or `controllers/`)
+### 4. Riverpod providers (`presentation/providers/` or `controllers/`)
 
 ```dart
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/features/my_feature/domain/repositories/my_entity_repository.dart';
+import 'package:freebay/features/my_feature/data/repositories/my_entity_repository_impl.dart';
 
-part 'my_entity_provider.g.dart';
-
-@riverpod
-MyEntityRepositoryImpl myEntityRepository(MyEntityRepositoryRef ref) {
+final myEntityRepositoryProvider = Provider<MyEntityRepository>((ref) {
   return MyEntityRepositoryImpl(ref.watch(httpClientProvider));
-}
+});
 
-@riverpod
-Future<List<MyEntity>> myEntityList(MyEntityListRef ref) async {
+final myEntityListProvider = FutureProvider.autoDispose((ref) async {
   final repo = ref.watch(myEntityRepositoryProvider);
-  return repo.getAll();
-}
+  final result = await repo.getAll();
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (data) => data,
+  );
+});
 ```
 
-### 4. Page (`presentation/pages/`)
+### 5. Page (`presentation/pages/`)
 
-Always consume design-system components from `core/components/`. Never inline a primitive.
+Always consume design-system components from `package:freebay/core/components/` or `package:freebay_design_system/components/`. Never inline a raw unstyled primitive.
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/core/components/app_button.dart';
+import 'package:freebay/core/components/brutalist_box.dart';
 import 'package:freebay/core/theme/app_colors.dart';
+import 'package:freebay/core/theme/app_typography.dart';
+import 'package:freebay/features/my_feature/presentation/providers/my_feature_providers.dart';
 
 class MyEntityListPage extends ConsumerWidget {
   const MyEntityListPage({super.key});
@@ -109,31 +143,31 @@ class MyEntityListPage extends ConsumerWidget {
     final entitiesAsync = ref.watch(myEntityListProvider);
 
     return Scaffold(
+      appBar: AppBar(title: const Text('Entidades', style: AppTypography.displaySmall)),
       body: entitiesAsync.when(
-        data: (entities) => ListView.builder(
+        data: (entities) => ListView.separated(
+          padding: const EdgeInsets.all(16),
           itemCount: entities.length,
-          itemBuilder: (_, i) => ListTile(title: Text(entities[i].name)),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (_, i) => BrutalistBox(
+            child: Text(entities[i].name, style: AppTypography.bodyMedium),
+          ),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        error: (e, _) => Center(child: Text('$e', style: AppTypography.bodySmall)),
       ),
     );
   }
 }
 ```
 
-### 5. Route registration
+### 6. Route registration
 
-Add the new page to `core/router/app_router.dart`:
+Add the new route constant to `lib/core/router/app_routes.dart` and register it in the appropriate router module in `lib/core/router/routes/` or `lib/core/router/app_router.dart`.
 
 ```dart
-// Import the page
-import 'package:freebay/features/<feature>/presentation/pages/<feature>_page.dart';
-
-// Add a GoRoute entry
 GoRoute(
-  path: '/<feature>',
-  name: '<feature>',
+  path: AppRoutes.myEntity,
   builder: (context, state) => const MyEntityListPage(),
 )
 ```
@@ -147,10 +181,3 @@ GoRoute(
 - **Primary color** (`#8A1083`) sparingly — "a laser, not a paint bucket"
 - **Animations:** 150ms max, `Curves.linear`
 - All screens **must handle dark mode** — use `context.isDark` and theme extension accessors
-
-## References
-
-- Clean exemplar features: `features/reviews/`, `features/favorites/`
-- Shared HTTP client: `shared/services/http_client.dart`
-- Project Either type: `shared/either/either.dart`
-- Design system components: `core/components/`

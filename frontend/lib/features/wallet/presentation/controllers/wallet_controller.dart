@@ -1,13 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freebay/features/wallet/data/entities/connect_status_entity.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_entity.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_transaction_entity.dart';
-import 'package:freebay/features/wallet/data/entities/withdrawal_entity.dart';
 import 'package:freebay/features/wallet/data/repositories/wallet_repository.dart';
 import 'package:freebay/features/wallet/data/services/wallet_service.dart';
 import 'package:freebay/features/wallet/domain/repositories/i_wallet_repository.dart';
 import 'package:freebay/features/wallet/domain/usecases/get_wallet_usecase.dart';
-import 'package:freebay/shared/either/either.dart';
-import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'wallet_controller.g.dart';
@@ -46,27 +44,35 @@ class Wallet extends _$Wallet {
 
 class WalletHistoryState {
   final List<WalletTransactionEntity> transactions;
-  final List<WithdrawalEntity> withdrawals;
   final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final String? nextCursor;
   final String? error;
 
   const WalletHistoryState({
     this.transactions = const [],
-    this.withdrawals = const [],
     this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = false,
+    this.nextCursor,
     this.error,
   });
 
   WalletHistoryState copyWith({
     List<WalletTransactionEntity>? transactions,
-    List<WithdrawalEntity>? withdrawals,
     bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    String? nextCursor,
     String? error,
   }) {
     return WalletHistoryState(
       transactions: transactions ?? this.transactions,
-      withdrawals: withdrawals ?? this.withdrawals,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      nextCursor: nextCursor ?? this.nextCursor,
       error: error,
     );
   }
@@ -83,28 +89,60 @@ class WalletHistory extends _$WalletHistory {
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    final repository = ref.read(walletRepositoryProvider);
-    final results = await Future.wait([
-      repository.getTransactions(),
-      repository.getWithdrawals(),
-    ]);
+    final result = await ref.read(walletRepositoryProvider).getTransactions();
 
-    final transactionsResult =
-        results[0] as Either<Failure, List<WalletTransactionEntity>>;
-    final withdrawalsResult =
-        results[1] as Either<Failure, List<WithdrawalEntity>>;
+    result.fold(
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
+      (page) => state = WalletHistoryState(
+        transactions: page.items,
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+      ),
+    );
+  }
 
-    final failure =
-        transactionsResult.leftOrNull ?? withdrawalsResult.leftOrNull;
-    if (failure != null) {
-      state = state.copyWith(isLoading: false, error: failure.message);
-      return;
-    }
+  Future<void> loadMore() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    if (state.nextCursor == null) return;
 
-    state = state.copyWith(
-      isLoading: false,
-      transactions: transactionsResult.rightOrNull ?? const [],
-      withdrawals: withdrawalsResult.rightOrNull ?? const [],
+    state = state.copyWith(isLoadingMore: true, error: null);
+
+    final result = await ref
+        .read(walletRepositoryProvider)
+        .getTransactions(cursor: state.nextCursor);
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        isLoadingMore: false,
+        error: failure.message,
+        nextCursor: state.nextCursor,
+      ),
+      (page) => state = WalletHistoryState(
+        transactions: [...state.transactions, ...page.items],
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+      ),
+    );
+  }
+}
+
+@Riverpod(keepAlive: true)
+class ConnectStatus extends _$ConnectStatus {
+  @override
+  AsyncValue<ConnectStatusEntity?> build() {
+    ref.watch(walletRepositoryProvider);
+    return const AsyncValue.data(null);
+  }
+
+  Future<void> load() async {
+    state = const AsyncValue.loading();
+    final result = await ref.read(walletRepositoryProvider).getConnectStatus();
+
+    result.fold(
+      (failure) =>
+          state = AsyncValue.error(failure.message, StackTrace.current),
+      (status) => state = AsyncValue.data(status),
     );
   }
 }

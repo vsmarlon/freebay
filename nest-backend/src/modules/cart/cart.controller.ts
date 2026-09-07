@@ -7,7 +7,13 @@ import { UpdateCartItemUseCase } from './usecases/update-cart-item.usecase';
 import { RemoveFromCartUseCase } from './usecases/remove-from-cart.usecase';
 import { ClearCartUseCase } from './usecases/clear-cart.usecase';
 import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
-import { AddToCartDTO, UpdateCartItemDTO, CartResponse, CheckoutCartResponse } from './dtos/cart.dto';
+import {
+  AddToCartDTO,
+  UpdateCartItemDTO,
+  CheckoutCartDTO,
+  CartResponse,
+  CheckoutCartResponse,
+} from './dtos/cart.dto';
 
 @ApiTags('Cart')
 @Controller('cart')
@@ -31,11 +37,17 @@ export class CartController {
 
   @PostAuth('checkout', {
     summary: 'Checkout cart',
-    description: 'Creates orders for all items in cart with Stripe payment sessions',
+    description:
+      'Creates one order per cart item under a single Stripe payment. Either every order is created or none is. Pass mode=intent for the mobile PaymentSheet.',
+    bodyType: CheckoutCartDTO,
     responseType: CheckoutCartResponse,
+    throttle: { limit: 5, ttl: 60000 },
+    errors: [
+      { status: 400, description: 'Empty cart, missing CPF, or unavailable stock' },
+    ],
   })
-  async checkout(@CurrentUserId() userId: string) {
-    return this.checkoutCartUseCase.execute({ userId });
+  async checkout(@CurrentUserId() userId: string, @Body() body: CheckoutCartDTO) {
+    return this.checkoutCartUseCase.execute({ userId, mode: body.mode });
   }
 
   @PostAuth(':productId', {

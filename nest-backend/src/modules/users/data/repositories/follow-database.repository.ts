@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
@@ -16,8 +17,8 @@ export class PrismaFollowRepository extends BasePrismaRepository implements Foll
     try {
       await this.prisma.follow.create({ data: { followerId, followingId } });
       return right(undefined);
-    } catch (error: any) {
-      if (error?.code === 'P2002') return left(new BadRequestError('Already following'));
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return left(new BadRequestError('Already following'));
       return left(new DatabaseError('Failed to follow user'));
     }
   }
@@ -26,8 +27,8 @@ export class PrismaFollowRepository extends BasePrismaRepository implements Foll
     try {
       await this.prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
       return right(undefined);
-    } catch (error: any) {
-      if (error?.code === 'P2025') return left(new BadRequestError('Not following'));
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') return left(new BadRequestError('Not following'));
       return left(new DatabaseError('Failed to unfollow user'));
     }
   }

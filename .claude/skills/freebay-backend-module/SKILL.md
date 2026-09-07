@@ -16,8 +16,12 @@ src/modules/<feature>/
 ├── dtos/                     # class-validator + @nestjs/swagger (NOT Zod)
 │   ├── <feature>.dto.ts
 │   └── <feature>-response.class.ts
-├── repositories/             # concrete Prisma*Repository (no I*Repository interfaces)
-│   └── <feature>.repository.ts
+├── domain/
+│   └── repositories/         # abstract Repository classes
+│       └── <feature>.repository.ts
+├── data/
+│   └── repositories/         # concrete Prisma*Repository implementations
+│       └── <feature>-database.repository.ts
 ├── usecases/                 # one class per file, returns Either<AppError, Output>
 │   ├── create-<entity>.usecase.ts
 │   └── *.spec.ts             # colocated test
@@ -57,10 +61,10 @@ export class CreateMyEntityDTO {
 ```typescript
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { PrismaMyEntityRepository } from '../repositories/my-entity.repository';
+import { MyEntityRepository } from '../domain/repositories/my-entity.repository';
 
 export class GetMyEntityUseCase {
-  constructor(private readonly repo: PrismaMyEntityRepository) {}
+  constructor(private readonly repo: MyEntityRepository) {}
 
   async execute(id: string): Promise<Either<AppError, Output>> {
     const entity = await this.repo.findById(id);
@@ -70,17 +74,25 @@ export class GetMyEntityUseCase {
 }
 ```
 
-### 3. Repository (`repositories/`)
+### 3. Repository (`domain/repositories/` & `data/repositories/`)
 
-Concrete class, injected directly (no interface). Use Prisma generated types.
+Define the abstract class in `domain/repositories/`, and the concrete implementation in `data/repositories/`.
 
 ```typescript
+// domain/repositories/my-entity.repository.ts
+export abstract class MyEntityRepository {
+  abstract findById(id: string): Promise<MyEntity | null>;
+  abstract create(data: Prisma.MyEntityCreateInput): Promise<MyEntity>;
+}
+
+// data/repositories/my-entity-database.repository.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, MyEntity } from '@prisma/client';
+import { MyEntityRepository } from '../../domain/repositories/my-entity.repository';
 
 @Injectable()
-export class PrismaMyEntityRepository {
+export class PrismaMyEntityRepository implements MyEntityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string) {
@@ -137,19 +149,22 @@ async create(@CurrentUser() user: AuthUser, @Body() body: CreateMyEntityDTO) {
 ```typescript
 @Module({
   controllers: [MyEntityController],
-  providers: [MyEntityController, CreateMyEntityUseCase, PrismaMyEntityRepository],
+  providers: [
+    MyEntityController,
+    CreateMyEntityUseCase,
+    PrismaMyEntityRepository,
+    { provide: MyEntityRepository, useExisting: PrismaMyEntityRepository },
+  ],
 })
 export class MyEntityModule {}
 ```
-
-Then import `MyEntityModule` in `src/app.module.ts`.
 
 ### 7. Test (`*.spec.ts`)
 
 ```typescript
 describe('CreateMyEntityUseCase', () => {
   let sut: CreateMyEntityUseCase;
-  let mockRepo: jest.Mocked<PrismaMyEntityRepository>;
+  let mockRepo: jest.Mocked<MyEntityRepository>;
 
   beforeEach(async () => {
     mockRepo = { create: jest.fn() } as any;
@@ -157,16 +172,11 @@ describe('CreateMyEntityUseCase', () => {
   });
 
   it('should create entity', async () => {
-    mockRepo.create.mockResolvedValue({ id: '1', name: 'Test' });
+    mockRepo.create.mockResolvedValue({ id: '1', name: 'Test' } as any);
     const result = await sut.execute({ name: 'Test' });
     expect(result.isRight()).toBe(true);
   });
 });
 ```
 
-## References
-
-- Clean exemplar modules: `modules/reviews/`, `modules/favorites/`
-- Cents-as-Int rule: all monetary fields in Prisma are `Int` (see `schema.prisma`)
-- Path alias `@/` maps to `src/`
-- Standard guards: `JwtAuthGuard`, `NonGuestGuard`, `@Roles()`, `@Public()`
+---

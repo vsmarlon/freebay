@@ -14,13 +14,15 @@ abstract class IChatRepository {
       Failure,
       ({
         List<MessageEntity> messages,
+        bool hasMore,
+        String? nextCursor,
         String threadType,
         String? otherUserId,
         ConversationPreference? preference,
       })
     >
   >
-  getConversation(String conversationId);
+  getConversation(String conversationId, {String? cursor, int? limit});
 
   Future<Either<Failure, MessageEntity>> sendMessage(
     String chatId,

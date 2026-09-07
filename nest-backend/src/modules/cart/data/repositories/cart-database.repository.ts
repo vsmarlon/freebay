@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { BadRequestError, DatabaseError } from '@/shared/core/errors';
+import { RepositoryResponse } from '@/shared/core/either';
 import { CartRepository } from '../../domain/repositories/cart.repository';
-import { CartItemPayload, ProductBrief, CART_ITEM_INCLUDE } from '../../types/cart.types';
-import { Product } from '@prisma/client';
+import {
+  CartItemPayload,
+  ProductBrief,
+  ReserveOrderInput,
+  CART_ITEM_INCLUDE,
+  PRODUCT_UNAVAILABLE,
+} from '../../types/cart.types';
+import { Prisma, Product } from '@prisma/client';
 
 @Injectable()
 export class CartDatabaseRepository extends BasePrismaRepository implements CartRepository {
@@ -64,9 +69,9 @@ export class CartDatabaseRepository extends BasePrismaRepository implements Cart
     }, 'Erro ao remover item do carrinho');
   }
 
-  async clear(userId: string): RepositoryResponse<void> {
+  async clear(userId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
     return this.safeRun(async () => {
-      await this.prisma.cartItem.deleteMany({ where: { userId } });
+      await (tx ?? this.prisma).cartItem.deleteMany({ where: { userId } });
     }, 'Erro ao limpar carrinho');
   }
 
@@ -91,100 +96,94 @@ export class CartDatabaseRepository extends BasePrismaRepository implements Cart
     }, 'Erro ao buscar usuário');
   }
 
-  async createOrderFromCheckout(data: {
-    userId: string;
-    sellerId: string;
-    productId: string;
-    quantity: number;
-    amount: number;
-    platformFee: number;
-    sellerAmount: number;
-  }): RepositoryResponse<{ id: string }> {
-    try {
-      const order = await this.prisma.$transaction(async (tx) => {
-        const products = await tx.$queryRaw<Product[]>`
-          SELECT * FROM "Product" WHERE id = ${data.productId} FOR UPDATE
-        `;
-        const current = products[0];
-        if (!current || current.status !== 'ACTIVE') {
-          throw new Error('PRODUCT_UNAVAILABLE');
-        }
-
-        if (current.quantity > 1) {
-          const availableStock = current.quantity - current.soldCount;
-          if (availableStock < data.quantity) {
-            throw new Error('PRODUCT_UNAVAILABLE');
-          }
-          const newSoldCount = current.soldCount + data.quantity;
-          await tx.product.update({
-            where: { id: data.productId },
-            data: {
-              soldCount: newSoldCount,
-              ...(newSoldCount >= current.quantity ? { status: 'SOLD' as const } : {}),
-            },
-          });
-        } else {
-          const reserveResult = await tx.product.updateMany({
-            where: { id: data.productId, status: 'ACTIVE' },
-            data: { status: 'PAUSED' },
-          });
-          if (reserveResult.count === 0) {
-            throw new Error('PRODUCT_UNAVAILABLE');
-          }
-        }
-
-        return tx.order.create({
-          data: {
-            buyer: { connect: { id: data.userId } },
-            seller: { connect: { id: data.sellerId } },
-            product: { connect: { id: data.productId } },
-            quantity: data.quantity,
-            amount: data.amount,
-            platformFee: data.platformFee,
-            sellerAmount: data.sellerAmount,
-            status: 'PENDING',
-            escrowStatus: 'HELD',
-          },
-          select: { id: true },
-        });
-      });
-      return right(order);
-    } catch (e) {
-      if ((e as Error).message === 'PRODUCT_UNAVAILABLE') {
-        return left(new BadRequestError('Um ou mais produtos não estão mais disponíveis'));
-      }
-      return left(new DatabaseError('Erro ao criar pedido'));
+  async reserveAndCreateOrder(
+    data: ReserveOrderInput,
+    tx: Prisma.TransactionClient,
+  ): Promise<{ id: string }> {
+    const products = await tx.$queryRaw<Product[]>`
+      SELECT * FROM "Product" WHERE id = ${data.productId} FOR UPDATE
+    `;
+    const current = products[0];
+    if (!current || current.status !== 'ACTIVE') {
+      throw new Error(PRODUCT_UNAVAILABLE);
     }
+
+    if (current.quantity > 1) {
+      const availableStock = current.quantity - current.soldCount;
+      if (availableStock < data.quantity) {
+        throw new Error(PRODUCT_UNAVAILABLE);
+      }
+      const newSoldCount = current.soldCount + data.quantity;
+      await tx.product.update({
+        where: { id: data.productId },
+        data: {
+          soldCount: newSoldCount,
+          ...(newSoldCount >= current.quantity ? { status: 'SOLD' as const } : {}),
+        },
+      });
+    } else {
+      const reserveResult = await tx.product.updateMany({
+        where: { id: data.productId, status: 'ACTIVE' },
+        data: { status: 'PAUSED' },
+      });
+      if (reserveResult.count === 0) {
+        throw new Error(PRODUCT_UNAVAILABLE);
+      }
+    }
+
+    return tx.order.create({
+      data: {
+        buyer: { connect: { id: data.userId } },
+        seller: { connect: { id: data.sellerId } },
+        product: { connect: { id: data.productId } },
+        quantity: data.quantity,
+        amount: data.amount,
+        platformFee: data.platformFee,
+        sellerAmount: data.sellerAmount,
+        status: 'PENDING',
+        escrowStatus: 'HELD',
+      },
+      select: { id: true },
+    });
   }
 
-  async rollbackOrderReservation(orderId: string, productId: string): RepositoryResponse<void> {
-    return this.safeRun(async () => {
-      await this.prisma.$transaction(async (tx) => {
-        const order = await tx.order.update({
-          where: { id: orderId },
-          data: { status: 'CANCELLED' },
-          select: { quantity: true },
-        });
-        const products = await tx.$queryRaw<Product[]>`
-          SELECT * FROM "Product" WHERE id = ${productId} FOR UPDATE
-        `;
-        const current = products[0];
-        if (current && current.quantity > 1) {
-          const newSoldCount = current.soldCount - order.quantity;
-          await tx.product.update({
-            where: { id: productId },
-            data: {
-              soldCount: newSoldCount >= 0 ? newSoldCount : 0,
-              ...(current.status === 'SOLD' && newSoldCount < current.quantity ? { status: 'ACTIVE' as const } : {}),
-            },
-          });
-        } else {
-          await tx.product.updateMany({
-            where: { id: productId, status: 'PAUSED' },
-            data: { status: 'ACTIVE' },
-          });
-        }
+  async restoreOrderReservation(
+    orderId: string,
+    productId: string,
+    tx: Prisma.TransactionClient,
+  ): Promise<void> {
+    const claimed = await tx.order.updateMany({
+      where: { id: orderId, status: { notIn: ['CANCELLED', 'COMPLETED'] } },
+      data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
+    });
+    if (claimed.count === 0) return;
+
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      select: { quantity: true },
+    });
+    const products = await tx.$queryRaw<Product[]>`
+      SELECT * FROM "Product" WHERE id = ${productId} FOR UPDATE
+    `;
+    const current = products[0];
+    if (!current) return;
+
+    if (current.quantity > 1) {
+      const newSoldCount = current.soldCount - (order?.quantity ?? 1);
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          soldCount: newSoldCount >= 0 ? newSoldCount : 0,
+          ...(current.status === 'SOLD' && newSoldCount < current.quantity
+            ? { status: 'ACTIVE' as const }
+            : {}),
+        },
       });
-    }, 'Erro ao reverter pedido');
+    } else {
+      await tx.product.updateMany({
+        where: { id: productId, status: 'PAUSED' },
+        data: { status: 'ACTIVE' },
+      });
+    }
   }
 }

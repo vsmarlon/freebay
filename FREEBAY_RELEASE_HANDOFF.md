@@ -2,13 +2,53 @@
 
 Generated: 2026-09-05
 
-> **SUPERSEDED 2026-09-05 (same day).** The interview is finished — Questions 9–21 are
-> resolved. The canonical, approved decision record and phase plan now live at
-> `C:\Users\Qiyana\.claude\plans\freebay-release-handoff-md-leia-o-drifting-lampson.md`.
+> **SUPERSEDED — last revised 2026-09-06.** The Q1–Q21 interview is finished. The canonical
+> decision record and phase plan live at
+> `~/.claude/plans/claude-resume-5808f309-5fa3-465d-a647-cb-smooth-hartmanis.md`.
 > Device-testing guide: `docs/DEVICE_TESTING.md`. Do **not** resume the interview at Q9.
-> Three read-only code audits corrected several claims below — see the plan's
-> "Audit corrections" before trusting any risk/recon section here. Sections kept only for
-> the verbatim user prompts and original evidence pointers.
+> Sections below are kept only for the verbatim user prompts and original evidence pointers —
+> several of their risk/recon claims were refuted by audit. See "Revisions" immediately below.
+
+## Revisions
+
+### 2026-09-06 — scope change and eight new findings
+
+**Scope reversal:** Stripe **Connect Express is no longer deferred** (user decision). Epic #1's
+"Explicit exclusions" section still lists it as out of scope and is now stale on that point.
+DM E2EE and shipping remain deferred. Platform account country locked to **Brazil**; app identity
+unified on **`com.freebay.app`**.
+
+Connect uses **separate charges and transfers** — the only pattern compatible with a multi-seller
+cart plus delivery-gated release. Consequence: `application_fee_amount` must never be set; the
+platform fee stays transfer math (`amount − sellerAmount`). Accounts are created through the
+**Accounts v2 API** with the `recipient` configuration (`dashboard: express`,
+`fees_collector/losses_collector: application`).
+
+**Findings this session (all verified in code, none previously recorded):**
+
+| # | Finding | Status |
+|---|---|---|
+| F1 | `POST /wallet/withdraw` debited the balance, wrote a `PENDING` row nothing ever processed, and discarded the PIX key. `register-bank-account` was a hard 501 for **PagBank**, the pre-Stripe provider. | Rail removed end to end; replaced by Connect payouts + Express dashboard link. |
+| F2 | Sold inventory was consumed twice — order creation reserved `quantity`, then the payment webhook consumed `1` more. Expiry/cancel restored only `1`, permanently losing stock. | Fixed: sale is now a status confirmation only; restores use `order.quantity`. |
+| F3 | `escrow-release.task.spec.ts` passed green while the code under test threw `TypeError: tx.order.updateMany is not a function`. The single test guarding auto-release asserted nothing about the release. | Fake spec deleted; replaced by a real-DB integration spec. |
+| F4 | `updateInventoryOnSale` / `restoreInventoryOnExpiry` / `cancelOrder` were read-then-write with no lock under READ COMMITTED. | Fixed: conditional `updateMany` with atomic `decrement`. |
+| F5 | `ActivateEscrowUseCase` was registered and exported but injected nowhere — a second, divergent implementation of the webhook credit path. | Deleted, including the orphaned repository method. |
+| F6 | Cart checkout creates one Stripe session per item and, on partial failure, rolls back only the failing item, leaving orphan orders and reserved stock. | **Open** — see the plan's phase E. |
+| F7 | `charge.refunded` and `charge.dispute.*` were unhandled; a Stripe-side refund left the seller credited. | Refund handled with transfer reversal; dispute events logged. |
+| F8 | Frontend called `GET /notifications/unread-count` (route did not exist) and `POST /notifications/:id/read` against a `PATCH` route — badge stuck at 0, mark-as-read never persisted. | Both fixed. |
+
+**Corrections to this document's own recon:**
+
+- The Firebase admin JSON is **not** a leak. It is gitignored and untracked; the commits that
+  contain it (`2ce9ffa`, `dc85385`) are reachable only from `refs/stash`, not from `HEAD` or any
+  branch, so pushing this branch cannot carry the blob. Residual action is local hygiene only
+  (`git stash drop` + `git gc --prune`).
+- Non-zero `borderRadius` does **not** exist in `frontend/lib/` — all 57 occurrences are
+  `BorderRadius.zero`. Do not budget work for it.
+- Unpaginated list endpoints number **21**, not 12. The two that will actually hurt are
+  `GET /chat/conversations/:id` (entire message history per open) and `GET /wallet/transactions`.
+- Guest browsing was never missing — `GuestGateView` and its call sites already existed and were
+  unreachable because `_publicRoutes` excluded the shell tabs. Fixed as a routing change.
 
 This is the continuation checkpoint for the repository-wide FreeBay production-readiness program. A fresh agent must read this entire file before asking another question, planning work, changing code, creating GitHub issues, or opening a pull request.
 

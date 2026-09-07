@@ -1,4 +1,5 @@
 import { RepositoryResponse } from '@/shared/core/either';
+import { CursorPage, PageQuery } from '@/shared/core/pagination';
 import { DirectConversation, User, Prisma, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType } from '@prisma/client';
 import {
   DirectConversationWithDetails,
@@ -18,11 +19,17 @@ export abstract class ConversationRepository {
   abstract createDirectMessage(data: Prisma.DirectMessageCreateInput, includeSender?: boolean): RepositoryResponse<DirectMessage | DirectMessageWithSender>;
   abstract findDirectMessageById(id: string): RepositoryResponse<DirectMessage | null>;
   abstract softDeleteDirectMessage(id: string): RepositoryResponse<void>;
-  abstract findMessagesByConversation(conversationId: string): RepositoryResponse<DirectMessageWithSender[]>;
+  abstract findMessagesByConversation(
+    conversationId: string,
+    page: PageQuery,
+  ): RepositoryResponse<CursorPage<DirectMessageWithSender>>;
   abstract markMessagesDelivered(conversationId: string, userId: string): RepositoryResponse<void>;
   abstract markMessagesRead(conversationId: string, userId: string): RepositoryResponse<void>;
   abstract createChatMessage(data: Prisma.ChatMessageCreateInput, includeSender?: boolean): RepositoryResponse<ChatMessage | ChatMessageWithSender>;
-  abstract findChatMessagesByOrder(orderId: string): RepositoryResponse<ChatMessageWithSender[]>;
+  abstract findChatMessagesByOrder(
+    orderId: string,
+    page: PageQuery,
+  ): RepositoryResponse<CursorPage<ChatMessageWithSender>>;
   abstract markChatMessagesRead(orderId: string, userId: string): RepositoryResponse<void>;
   abstract findOrdersByUser(userId: string): RepositoryResponse<OrderWithChatRecord[]>;
   abstract countUnreadChatMessages(orderIds: string[], userId: string): RepositoryResponse<Record<string, number>>;

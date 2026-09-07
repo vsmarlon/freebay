@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
 import { OrderRepository } from '../domain/repositories/order.repository';
+import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { ConfirmDeliveryInput } from '../dtos/order.dto';
 
 @Injectable()
 export class ConfirmDeliveryUseCase {
-  constructor(private readonly orderRepository: OrderRepository) {}
+  constructor(
+    private readonly orderRepository: OrderRepository,
+    private readonly payoutService: SellerPayoutService,
+  ) {}
 
   async execute(input: ConfirmDeliveryInput): Promise<Either<AppError, { sellerAmount: number }>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
@@ -28,6 +32,8 @@ export class ConfirmDeliveryUseCase {
       sellerAmount: order.sellerAmount,
     });
     if (isLeft(result)) return left(result.value);
+
+    await this.payoutService.payoutForOrder(input.orderId);
 
     return right({ sellerAmount: order.sellerAmount });
   }

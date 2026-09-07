@@ -10,3 +10,6 @@ export * from './search-users.usecase';
 export * from './get-suggestions.usecase';
 export * from './register-phone.usecase';
 export * from './verify-phone.usecase';
+export * from './request-account-deletion.usecase';
+export * from './cancel-account-deletion.usecase';
+export * from './export-user-data.usecase';

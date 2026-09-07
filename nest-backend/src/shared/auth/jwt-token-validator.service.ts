@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthUser, JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
+import { SESSION_INVALID_BEFORE_PREFIX } from '@/shared/auth/session-revoker.service';
 
 @Injectable()
 export class JwtTokenValidatorService {
@@ -29,7 +30,7 @@ export class JwtTokenValidatorService {
     }
 
     if (payload.userId && payload.iat) {
-      const invalidBefore = await this.redisService.get(`user_tokens_invalid_before:${payload.userId}`);
+      const invalidBefore = await this.redisService.get(`${SESSION_INVALID_BEFORE_PREFIX}${payload.userId}`);
       if (invalidBefore && payload.iat < Number(invalidBefore)) {
         throw new UnauthorizedException('Sessão expirada');
       }

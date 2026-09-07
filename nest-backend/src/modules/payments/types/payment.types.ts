@@ -7,6 +7,13 @@ export type TransactionWithOrder = Transaction & {
   };
 };
 
+export interface ExpiredPendingTransaction {
+  readonly id: string;
+  readonly orderId: string;
+  readonly productId: string;
+  readonly quantity: number;
+}
+
 export interface UpsertTransactionData {
   readonly orderId: string;
   readonly externalId: string;

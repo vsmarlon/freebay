@@ -41,6 +41,8 @@ afterEach(async () => {
     'Review',
     'Dispute',
     'Withdrawal',
+    'WalletEntry',
+    'ConnectAccount',
     'Transaction',
     'Order',
     'ChatMessage',

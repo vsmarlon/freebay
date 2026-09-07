@@ -11,8 +11,10 @@ import { PrismaDisputeRepository } from './data/repositories/dispute-database.re
 import { DisputeTransitionPolicy } from './services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from './services/dispute-resolution-execution.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
+  imports: [PaymentsModule],
   controllers: [DisputesController],
   providers: [
     OpenDisputeUseCase,

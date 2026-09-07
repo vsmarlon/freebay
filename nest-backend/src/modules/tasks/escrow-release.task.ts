@@ -1,12 +1,18 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { WalletEntryReason } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
+import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 
 @Injectable()
 export class EscrowReleaseTask {
   private readonly logger = new Logger(EscrowReleaseTask.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private payoutService: SellerPayoutService,
+  ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async autoReleaseDeliveredOrders() {
@@ -39,17 +45,16 @@ export class EscrowReleaseTask {
             throw new Error('DISPUTE_OPENED');
           }
 
-          const wallet = await tx.wallet.findUnique({ where: { userId: order.sellerId } });
-          if (wallet) {
-            await tx.wallet.update({
-              where: { userId: order.sellerId },
-              data: {
-                pendingBalance: { decrement: order.sellerAmount },
-                availableBalance: { increment: order.sellerAmount },
-                totalEarned: { increment: order.sellerAmount },
-              },
-            });
-          }
+          await applyWalletDelta(
+            tx,
+            order.sellerId,
+            {
+              pendingBalance: -order.sellerAmount,
+              availableBalance: order.sellerAmount,
+              totalEarned: order.sellerAmount,
+            },
+            { reason: WalletEntryReason.SALE_RELEASED, orderId: order.id },
+          );
 
           await tx.transaction.update({
             where: { orderId: order.id },
@@ -59,6 +64,7 @@ export class EscrowReleaseTask {
         });
 
         if (released) {
+          await this.payoutService.payoutForOrder(order.id);
           this.logger.log(`Auto-released escrow for delivered order ${order.id}`);
         }
       } catch (e) {

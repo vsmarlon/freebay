@@ -2,14 +2,22 @@ import { Either } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import Stripe from 'stripe';
 
+export interface PaymentLineItem {
+  name: string;
+  amount: number;
+  quantity: number;
+}
+
 export interface PaymentSessionParams {
-  orderId: string;
+  orderId?: string;
+  paymentGroupId?: string;
   amount: number;
   currency: string;
   customerEmail?: string;
   customerName?: string;
   customerTaxId?: string;
   idempotencyKey?: string;
+  lineItems?: PaymentLineItem[];
   successUrl: string;
   cancelUrl: string;
 }
@@ -21,7 +29,8 @@ export interface PaymentSessionResult {
 }
 
 export interface PaymentIntentParams {
-  orderId: string;
+  orderId?: string;
+  paymentGroupId?: string;
   amount: number;
   currency: string;
   receiptEmail?: string;

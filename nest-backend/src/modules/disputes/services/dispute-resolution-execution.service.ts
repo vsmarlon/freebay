@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, WalletEntryReason } from '@prisma/client';
+import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { DisputeWithOrder } from '../types/dispute.types';
 
 @Injectable()
@@ -13,21 +14,18 @@ export class DisputeResolutionExecutionService {
       return;
     }
 
-    const buyerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.buyerId } });
-    if (buyerWallet) {
-      await tx.wallet.update({
-        where: { userId: dispute.order.buyerId },
-        data: { availableBalance: { increment: dispute.order.amount } },
-      });
-    }
-
-    const sellerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.sellerId } });
-    if (sellerWallet) {
-      await tx.wallet.update({
-        where: { userId: dispute.order.sellerId },
-        data: { pendingBalance: { decrement: dispute.order.sellerAmount } },
-      });
-    }
+    await applyWalletDelta(
+      tx,
+      dispute.order.buyerId,
+      { availableBalance: dispute.order.amount },
+      { reason: WalletEntryReason.DISPUTE_REFUND, orderId: dispute.orderId },
+    );
+    await applyWalletDelta(
+      tx,
+      dispute.order.sellerId,
+      { pendingBalance: -dispute.order.sellerAmount },
+      { reason: WalletEntryReason.HOLD_RELEASED, orderId: dispute.orderId },
+    );
   }
 
   async resolveInFavorOfSeller(tx: Prisma.TransactionClient, dispute: DisputeWithOrder): Promise<void> {
@@ -39,16 +37,15 @@ export class DisputeResolutionExecutionService {
       return;
     }
 
-    const sellerWallet = await tx.wallet.findUnique({ where: { userId: dispute.order.sellerId } });
-    if (sellerWallet) {
-      await tx.wallet.update({
-        where: { userId: dispute.order.sellerId },
-        data: {
-          pendingBalance: { decrement: dispute.order.sellerAmount },
-          availableBalance: { increment: dispute.order.sellerAmount },
-          totalEarned: { increment: dispute.order.sellerAmount },
-        },
-      });
-    }
+    await applyWalletDelta(
+      tx,
+      dispute.order.sellerId,
+      {
+        pendingBalance: -dispute.order.sellerAmount,
+        availableBalance: dispute.order.sellerAmount,
+        totalEarned: dispute.order.sellerAmount,
+      },
+      { reason: WalletEntryReason.DISPUTE_RELEASE, orderId: dispute.orderId },
+    );
   }
 }

@@ -35,7 +35,7 @@ export interface CancelOrderTxData {
   buyerId: string;
   amount: number;
   status: string;
-  quantity: number;
+  orderQuantity: number;
   sellerId: string;
   sellerAmount: number;
 }

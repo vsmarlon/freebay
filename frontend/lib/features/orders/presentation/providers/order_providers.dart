@@ -137,31 +137,36 @@ class PurchasesList extends _$PurchasesList {
   }
 
   Future<void> loadPurchases({bool refresh = false}) async {
-    if (state.isLoading) return;
+    if (state.isLoading || state.isLoadingMore) return;
+    if (!refresh && state.nextCursor == null && state.orders.isNotEmpty) return;
 
-    final offset = refresh ? 0 : state.orders.length;
+    final isFirstPage = refresh || state.orders.isEmpty;
     state = state.copyWith(
-      isLoading: true,
+      isLoading: isFirstPage,
+      isLoadingMore: !isFirstPage,
       error: null,
       orders: refresh ? [] : state.orders,
     );
 
     final result = await ref.read(getMyPurchasesUsecaseProvider)(
-      GetMyPurchasesParams(offset: offset),
+      GetMyPurchasesParams(cursor: refresh ? null : state.nextCursor),
     );
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (response) => state = state.copyWith(
+      (failure) => state = state.copyWith(
         isLoading: false,
-        orders: refresh
-            ? response.orders
-            : [...state.orders, ...response.orders],
-        total: response.total,
-        hasMore: response.hasMore,
+        isLoadingMore: false,
+        error: failure.message,
+        nextCursor: state.nextCursor,
+      ),
+      (page) => state = PurchasesListState(
+        orders: refresh ? page.items : [...state.orders, ...page.items],
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
       ),
     );
   }
+
+  Future<void> loadMore() => loadPurchases();
 
   Future<void> refresh() => loadPurchases(refresh: true);
 }
@@ -175,31 +180,36 @@ class SalesList extends _$SalesList {
   }
 
   Future<void> loadSales({bool refresh = false}) async {
-    if (state.isLoading) return;
+    if (state.isLoading || state.isLoadingMore) return;
+    if (!refresh && state.nextCursor == null && state.orders.isNotEmpty) return;
 
-    final offset = refresh ? 0 : state.orders.length;
+    final isFirstPage = refresh || state.orders.isEmpty;
     state = state.copyWith(
-      isLoading: true,
+      isLoading: isFirstPage,
+      isLoadingMore: !isFirstPage,
       error: null,
       orders: refresh ? [] : state.orders,
     );
 
     final result = await ref.read(getMySalesUsecaseProvider)(
-      GetMySalesParams(offset: offset),
+      GetMySalesParams(cursor: refresh ? null : state.nextCursor),
     );
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
-      (response) => state = state.copyWith(
+      (failure) => state = state.copyWith(
         isLoading: false,
-        orders: refresh
-            ? response.orders
-            : [...state.orders, ...response.orders],
-        total: response.total,
-        hasMore: response.hasMore,
+        isLoadingMore: false,
+        error: failure.message,
+        nextCursor: state.nextCursor,
+      ),
+      (page) => state = SalesListState(
+        orders: refresh ? page.items : [...state.orders, ...page.items],
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
       ),
     );
   }
+
+  Future<void> loadMore() => loadSales();
 
   Future<void> refresh() => loadSales(refresh: true);
 }

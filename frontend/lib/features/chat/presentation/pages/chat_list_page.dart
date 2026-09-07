@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:freebay/core/router/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -195,7 +196,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
             'Envio e negociação de propostas diretas',
             'Notificações instantâneas de novas mensagens',
           ],
-          onLoginPressed: () => context.push('/login'),
+          onLoginPressed: () => context.push(loginPathFrom(context)),
           onRegisterPressed: () => context.push('/register'),
         ),
       );

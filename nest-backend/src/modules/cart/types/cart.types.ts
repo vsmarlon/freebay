@@ -17,3 +17,15 @@ export interface ProductBrief {
   status: string;
   price: number;
 }
+
+export interface ReserveOrderInput {
+  userId: string;
+  sellerId: string;
+  productId: string;
+  quantity: number;
+  amount: number;
+  platformFee: number;
+  sellerAmount: number;
+}
+
+export const PRODUCT_UNAVAILABLE = 'PRODUCT_UNAVAILABLE';

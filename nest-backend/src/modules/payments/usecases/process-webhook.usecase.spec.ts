@@ -35,7 +35,7 @@ describe('ProcessWebhookUseCase', () => {
     status: 'PAID',
     amount: 10000,
     sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1' },
+    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3 },
   };
 
   const pendingTransaction = {
@@ -44,7 +44,7 @@ describe('ProcessWebhookUseCase', () => {
     status: 'PENDING',
     amount: 10000,
     sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1' },
+    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3 },
   };
 
   const failedTransaction = {
@@ -53,7 +53,7 @@ describe('ProcessWebhookUseCase', () => {
     status: 'FAILED',
     amount: 10000,
     sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1' },
+    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3 },
   };
 
   beforeEach(() => {
@@ -99,7 +99,6 @@ describe('ProcessWebhookUseCase', () => {
       const result = await sut.execute({ event, data: { orderId: 'o1' } });
 
       expect(isRight(result)).toBe(true);
-      if (isRight(result)) expect(result.value.processed).toBe(true);
       expect(mockPrisma.$transaction).not.toHaveBeenCalled();
       expect(mockTransactionRepo.markAsPaid).not.toHaveBeenCalled();
       expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
@@ -115,10 +114,9 @@ describe('ProcessWebhookUseCase', () => {
       const result = await sut.execute({ event, data: { orderId: 'o1' } });
 
       expect(isRight(result)).toBe(true);
-      if (isRight(result)) expect(result.value.processed).toBe(true);
       expect(mockTransactionRepo.markAsFailed).toHaveBeenCalledWith('tx-pending', tx);
       expect(mockOrderRepo.cancel).toHaveBeenCalledWith('o1', tx);
-      expect(mockProductRepo.restoreInventoryOnExpiry).toHaveBeenCalledWith('p1', tx);
+      expect(mockProductRepo.restoreInventoryOnExpiry).toHaveBeenCalledWith('p1', 3, tx);
       expect(mockTransactionRepo.markAsPaid).not.toHaveBeenCalled();
       expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
     },
@@ -133,7 +131,6 @@ describe('ProcessWebhookUseCase', () => {
     });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsFailed).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsPaid).not.toHaveBeenCalled();
@@ -143,7 +140,6 @@ describe('ProcessWebhookUseCase', () => {
     const result = await sut.execute({ event: 'charge.refunded', data: { orderId: 'o1' } });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
     expect(mockTransactionRepo.findByOrderId).not.toHaveBeenCalled();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
@@ -152,12 +148,11 @@ describe('ProcessWebhookUseCase', () => {
     const result = await sut.execute({ event: 'payment_intent.succeeded', data: {} });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
     expect(mockTransactionRepo.findByOrderId).not.toHaveBeenCalled();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should return processed false when no transaction exists for the order', async () => {
+  it('should not mutate anything when no transaction exists for the order', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(null));
 
     const result = await sut.execute({
@@ -166,7 +161,6 @@ describe('ProcessWebhookUseCase', () => {
     });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(false);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
   });
@@ -194,11 +188,10 @@ describe('ProcessWebhookUseCase', () => {
     });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(true);
     expect(mockProductRepo.updateInventoryOnSale).toHaveBeenCalledWith('p1', tx);
-    expect(mockTransactionRepo.markAsPaid).toHaveBeenCalledWith('tx-pending', tx);
+    expect(mockTransactionRepo.markAsPaid).toHaveBeenCalledWith('tx-pending', null, tx);
     expect(mockOrderRepo.confirm).toHaveBeenCalledWith('o1', tx);
-    expect(mockWalletRepo.creditPending).toHaveBeenCalledWith('s1', 9000, tx);
+    expect(mockWalletRepo.creditPending).toHaveBeenCalledWith('s1', 9000, 'o1', tx);
     expect(mockNotificationService.notifyPayment).toHaveBeenCalledWith('s1', 10000);
     expect(mockNotificationService.notifyOrderStatus).toHaveBeenCalledWith('b1', 'o1', 'CONFIRMED');
     expect(mockTransactionRepo.markAsFailed).not.toHaveBeenCalled();
@@ -220,8 +213,6 @@ describe('ProcessWebhookUseCase', () => {
 
     expect(isRight(first)).toBe(true);
     expect(isRight(second)).toBe(true);
-    if (isRight(first)) expect(first.value.processed).toBe(true);
-    if (isRight(second)) expect(second.value.processed).toBe(true);
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     expect(mockTransactionRepo.markAsPaid).toHaveBeenCalledTimes(1);
     expect(mockNotificationService.notifyPayment).toHaveBeenCalledTimes(1);
@@ -238,7 +229,6 @@ describe('ProcessWebhookUseCase', () => {
     });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(true);
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     expect(mockProductRepo.updateInventoryOnSale).not.toHaveBeenCalled();
     expect(mockOrderRepo.confirm).not.toHaveBeenCalled();
@@ -256,7 +246,6 @@ describe('ProcessWebhookUseCase', () => {
     });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(true);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsPaid).not.toHaveBeenCalled();
     expect(mockOrderRepo.confirm).not.toHaveBeenCalled();
@@ -274,7 +263,6 @@ describe('ProcessWebhookUseCase', () => {
     });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(true);
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
     expect(mockProductRepo.restoreInventoryOnExpiry).not.toHaveBeenCalled();
@@ -289,7 +277,6 @@ describe('ProcessWebhookUseCase', () => {
     });
 
     expect(isRight(result)).toBe(true);
-    if (isRight(result)) expect(result.value.processed).toBe(true);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsFailed).not.toHaveBeenCalled();
     expect(mockOrderRepo.cancel).not.toHaveBeenCalled();

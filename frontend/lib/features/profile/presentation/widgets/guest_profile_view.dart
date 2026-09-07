@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freebay/core/router/app_router.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
@@ -62,8 +63,10 @@ class GuestProfileView extends ConsumerWidget {
                     const SizedBox(height: 12),
                     const Text(
                       'Faça login ou cadastre-se para\nter acesso completo ao app',
-                      style:
-                          TextStyle(fontSize: 16, color: AppColors.mediumGray),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.mediumGray,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     Spacing.vXl,
@@ -71,7 +74,7 @@ class GuestProfileView extends ConsumerWidget {
                       width: double.infinity,
                       child: AppButton(
                         label: 'Entrar',
-                        onPressed: () => context.push('/login'),
+                        onPressed: () => context.push(loginPathFrom(context)),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -82,8 +85,9 @@ class GuestProfileView extends ConsumerWidget {
                         child: Container(
                           height: 52,
                           decoration: BoxDecoration(
-                            border:
-                                Border.all(color: AppColors.primaryContainer),
+                            border: Border.all(
+                              color: AppColors.primaryContainer,
+                            ),
                           ),
                           child: const Center(
                             child: Text(

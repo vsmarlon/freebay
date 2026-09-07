@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:freebay/core/components/infinite_scroll_listener.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -57,6 +58,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
 
   List<MessageEntity> _messages = [];
   bool _isLoading = true;
+  bool _isLoadingOlder = false;
+  bool _hasOlderMessages = false;
+  String? _olderCursor;
   bool _isSending = false;
   bool _isSelecting = false;
   bool _otherUserTyping = false;
@@ -113,6 +117,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
       final data = results.rightOrNull;
       _messages = List.from(data?.messages ?? []);
       _preference = data?.preference;
+      _hasOlderMessages = data?.hasMore ?? false;
+      _olderCursor = data?.nextCursor;
       for (final m in _messages) {
         _messageKeys[m.id] = GlobalKey();
       }
@@ -120,6 +126,33 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
 
     setState(() => _isLoading = false);
     _scrollToBottom();
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if (_isLoadingOlder || !_hasOlderMessages || _olderCursor == null) return;
+
+    setState(() => _isLoadingOlder = true);
+
+    final repo = ref.read(chatRepositoryProvider);
+    final results = await repo.getConversation(
+      widget.chatId,
+      cursor: _olderCursor,
+    );
+
+    if (!mounted) return;
+
+    if (results.isRight) {
+      final data = results.rightOrNull;
+      final older = data?.messages ?? const <MessageEntity>[];
+      for (final m in older) {
+        _messageKeys[m.id] = GlobalKey();
+      }
+      _messages = [...older, ..._messages];
+      _hasOlderMessages = data?.hasMore ?? false;
+      _olderCursor = data?.nextCursor;
+    }
+
+    setState(() => _isLoadingOlder = false);
   }
 
   void _subscribeSocket() {
@@ -476,49 +509,53 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                               ),
                             )
                           : null,
-                      child: ChatMessageList(
-                        scrollController: _scrollController,
-                        messages: _messages,
-                        currentUserId: currentUserId,
-                        otherUserName: widget.orderName,
-                        isDark: context.isDark,
-                        accentColor: _accentColor,
-                        messageKeys: _messageKeys,
-                        highlightedMessageId: _highlightedMessageId,
-                        isSelecting: _isSelecting,
-                        selectedMessageIds: _selectedMessageIds,
-                        onToggleSelection: (id) => setState(() {
-                          if (_selectedMessageIds.contains(id)) {
-                            _selectedMessageIds.remove(id);
-                            if (_selectedMessageIds.isEmpty) {
-                              _isSelecting = false;
+                      child: InfiniteScrollListener(
+                        edge: ScrollEdge.start,
+                        onLoadMore: _loadOlderMessages,
+                        child: ChatMessageList(
+                          scrollController: _scrollController,
+                          messages: _messages,
+                          currentUserId: currentUserId,
+                          otherUserName: widget.orderName,
+                          isDark: context.isDark,
+                          accentColor: _accentColor,
+                          messageKeys: _messageKeys,
+                          highlightedMessageId: _highlightedMessageId,
+                          isSelecting: _isSelecting,
+                          selectedMessageIds: _selectedMessageIds,
+                          onToggleSelection: (id) => setState(() {
+                            if (_selectedMessageIds.contains(id)) {
+                              _selectedMessageIds.remove(id);
+                              if (_selectedMessageIds.isEmpty) {
+                                _isSelecting = false;
+                              }
+                            } else {
+                              _selectedMessageIds.add(id);
                             }
-                          } else {
+                          }),
+                          onEnterSelectionMode: (id) => setState(() {
+                            _isSelecting = true;
                             _selectedMessageIds.add(id);
-                          }
-                        }),
-                        onEnterSelectionMode: (id) => setState(() {
-                          _isSelecting = true;
-                          _selectedMessageIds.add(id);
-                        }),
-                        onReplyTap: (id) {},
-                        onSwipeToReply: (msg) =>
-                            setState(() => _replyTarget = msg),
-                        onReactionTap: (msgId, emoji) => ref
-                            .read(chatRepositoryProvider)
-                            .reactToMessage(widget.chatId, msgId, emoji),
-                        onReactionLongPress: (msg, emoji) =>
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: Colors.transparent,
-                              builder: (_) => WhoReactedSheet(
-                                reactions: msg.reactions,
-                                initialEmoji: emoji,
+                          }),
+                          onReplyTap: (id) {},
+                          onSwipeToReply: (msg) =>
+                              setState(() => _replyTarget = msg),
+                          onReactionTap: (msgId, emoji) => ref
+                              .read(chatRepositoryProvider)
+                              .reactToMessage(widget.chatId, msgId, emoji),
+                          onReactionLongPress: (msg, emoji) =>
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: Colors.transparent,
+                                builder: (_) => WhoReactedSheet(
+                                  reactions: msg.reactions,
+                                  initialEmoji: emoji,
+                                ),
                               ),
-                            ),
-                        onViewOnceReveal: (msgId) => ref
-                            .read(chatRepositoryProvider)
-                            .markAsRead(widget.chatId),
+                          onViewOnceReveal: (msgId) => ref
+                              .read(chatRepositoryProvider)
+                              .markAsRead(widget.chatId),
+                        ),
                       ),
                     ),
             ),

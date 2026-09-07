@@ -7,35 +7,33 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { setContextUserId } from '../observability/request-context';
+import { JsonValue, redact } from '../utils/redact.util';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
-  private readonly sensitiveKeys = new Set([
-    'password',
-    'newPassword',
-    'token',
-    'refreshToken',
-    'authorization',
-    'code',
-    'clientSecret',
-    'paymentIntentClientSecret',
-  ]);
 
-  private readonly isDebug = process.env.NODE_ENV !== 'production' && process.env.LOG_DEBUG === 'true';
+  private readonly isDebug =
+    process.env.NODE_ENV !== 'production' && process.env.LOG_DEBUG === 'true';
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<JsonValue | void> {
-    const request = context.switchToHttp().getRequest();
-    const { method, url, body, headers } = request;
+    const httpContext = context.switchToHttp();
+    const request = httpContext.getRequest();
+    const response = httpContext.getResponse();
+    const { method, url, body, headers, user } = request;
     const now = Date.now();
 
-    this.logger.log(`[REQUEST] ${method} ${url}`);
+    if (user?.userId) {
+      setContextUserId(user.userId);
+    }
+
     if (this.isDebug) {
       if (headers?.authorization) {
         this.logger.debug('[AUTH_HEADER] [REDACTED]');
       }
       if (body && Object.keys(body).length > 0) {
-        this.logger.debug(`[BODY] ${JSON.stringify(this.redact(body))}`);
+        this.logger.debug(`[BODY] ${JSON.stringify(redact(body))}`);
       }
     }
 
@@ -43,52 +41,26 @@ export class LoggingInterceptor implements NestInterceptor {
       tap({
         next: (data) => {
           const responseTime = Date.now() - now;
-          this.logger.log(`[RESPONSE] ${method} ${url} - ${responseTime}ms`);
+          this.logger.log(
+            `${method} ${url} ${response?.statusCode ?? ''} - ${responseTime}ms`,
+          );
           if (this.isDebug && data && typeof data === 'object' && 'data' in data) {
             const responseData = (data as { data: JsonValue }).data;
             if (responseData !== undefined && responseData !== null) {
-              const dataStr = JSON.stringify(this.redact(responseData));
-              if (dataStr.length <= 1000) {
-                this.logger.debug(`[RESPONSE_DATA] ${dataStr}`);
-              } else {
-                this.logger.debug(`[RESPONSE_DATA] ${dataStr.substring(0, 1000)}... (truncated)`);
-              }
+              const dataStr = JSON.stringify(redact(responseData));
+              this.logger.debug(
+                dataStr.length <= 1000
+                  ? `[RESPONSE_DATA] ${dataStr}`
+                  : `[RESPONSE_DATA] ${dataStr.substring(0, 1000)}... (truncated)`,
+              );
             }
           }
         },
         error: (error) => {
           const responseTime = Date.now() - now;
-          this.logger.error(`[ERROR] ${method} ${url} - ${responseTime}ms - ${error.message}`);
+          this.logger.error(`${method} ${url} - ${responseTime}ms - ${error.message}`);
         },
       }),
     );
   }
-
-  private redact(value: JsonValue, depth = 0): JsonValue {
-    if (depth > 5) return '[NESTED]';
-    if (Array.isArray(value)) {
-      if (value.length > 20) {
-        return `[Array(${value.length})]`;
-      }
-      return value.map((item) => this.redact(item, depth + 1));
-    }
-
-    if (!value || typeof value !== 'object') {
-      if (typeof value === 'string' && value.startsWith('data:image/')) {
-        return '[IMAGE_DATA_URI]';
-      }
-      return value;
-    }
-
-    return Object.fromEntries(
-      Object.entries(value).map(([key, nestedValue]) => [
-        key,
-        this.sensitiveKeys.has(key) || key.toLowerCase().includes('secret')
-          ? '[REDACTED]'
-          : this.redact(nestedValue as JsonValue, depth + 1),
-      ]),
-    );
-  }
 }
-
-type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];

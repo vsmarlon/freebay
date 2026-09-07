@@ -1,3 +1,4 @@
+import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/domain/repositories/i_notification_repository.dart';
@@ -7,17 +8,17 @@ class NotificationRepository extends BaseHttpRepository
   NotificationRepository({super.client});
 
   @override
-  Future<List<NotificationEntity>> getNotifications({
+  Future<CursorPage<NotificationEntity>> getNotifications({
+    String? cursor,
     int limit = 20,
-    int offset = 0,
   }) async {
-    final result = await safeGetList<NotificationEntity>(
+    final result = await safePage<NotificationEntity>(
       '/notifications',
-      queryParameters: {'limit': limit, 'offset': offset},
-      listKey: 'data.notifications',
-      fromJson: NotificationEntity.fromJson,
+      NotificationEntity.fromJson,
+      cursor: cursor,
+      limit: limit,
     );
-    return result.rightOrNull ?? <NotificationEntity>[];
+    return result.rightOrNull ?? const CursorPage<NotificationEntity>.empty();
   }
 
   @override
@@ -32,7 +33,7 @@ class NotificationRepository extends BaseHttpRepository
 
   @override
   Future<void> markAsRead(String notificationId) async {
-    await safeVoid(() => client.post('/notifications/$notificationId/read'));
+    await safeVoid(() => client.patch('/notifications/$notificationId/read'));
   }
 
   @override

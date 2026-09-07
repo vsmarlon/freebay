@@ -7,7 +7,16 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { GetAuth, PostAuth, PatchAuth, CurrentUser, CurrentUserId } from '@/shared/decorators';
+import {
+  GetAuth,
+  PostAuth,
+  PatchAuth,
+  CurrentUser,
+  CurrentUserId,
+  Paginated,
+  PAGINATION_QUERIES,
+} from '@/shared/decorators';
+import { PageQuery } from '@/shared/core/pagination';
 import { OrderRepository } from './domain/repositories/order.repository';
 import { CreateOrderUseCase } from './usecases/create-order.usecase';
 import { ConfirmDeliveryUseCase } from './usecases/confirm-delivery.usecase';
@@ -18,6 +27,7 @@ import { CreateOrderDTO } from './dtos/order.dto';
 import { AuthUser } from '@/shared/core/types';
 import { left, isLeft } from '@/shared/core/either';
 import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
+import { getPlatformFeePercent } from '@/shared/core/platform-fee';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -49,22 +59,18 @@ export class OrdersController {
       sellerId: product.sellerId,
       productId: product.id,
       amount: product.price,
-      platformFeePercent: 10,
+      platformFeePercent: getPlatformFeePercent(),
     });
   }
 
-  @GetAuth('my/purchases', 'Get my purchases')
-  async getMyPurchases(@CurrentUserId() userId: string) {
-    const result = await this.orderRepository.findByBuyerId(userId);
-    if (isLeft(result)) return result;
-    return { orders: result.value };
+  @GetAuth('my/purchases', { summary: 'Get my purchases', queries: PAGINATION_QUERIES })
+  async getMyPurchases(@CurrentUserId() userId: string, @Paginated() page: PageQuery) {
+    return this.orderRepository.findByBuyerId(userId, page);
   }
 
-  @GetAuth('my/sales', 'Get my sales')
-  async getMySales(@CurrentUserId() userId: string) {
-    const result = await this.orderRepository.findBySellerId(userId);
-    if (isLeft(result)) return result;
-    return { orders: result.value };
+  @GetAuth('my/sales', { summary: 'Get my sales', queries: PAGINATION_QUERIES })
+  async getMySales(@CurrentUserId() userId: string, @Paginated() page: PageQuery) {
+    return this.orderRepository.findBySellerId(userId, page);
   }
 
   @GetAuth(':id', {
@@ -137,14 +143,17 @@ export class OrdersController {
     summary: 'List user orders',
     queries: [
       { name: 'role', required: false, description: 'Filter by role: "seller" or "buyer" (default)' },
+      ...PAGINATION_QUERIES,
     ],
   })
-  async findAll(@CurrentUserId() userId: string, @Query('role') role?: string) {
-    const result = await (role === 'seller'
-      ? this.orderRepository.findBySellerId(userId)
-      : this.orderRepository.findByBuyerId(userId));
-    if (isLeft(result)) return result;
-    return { orders: result.value };
+  async findAll(
+    @CurrentUserId() userId: string,
+    @Paginated() page: PageQuery,
+    @Query('role') role?: string,
+  ) {
+    return role === 'seller'
+      ? this.orderRepository.findBySellerId(userId, page)
+      : this.orderRepository.findByBuyerId(userId, page);
   }
 }
 

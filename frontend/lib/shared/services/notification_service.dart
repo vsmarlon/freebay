@@ -51,6 +51,7 @@ class NotificationService {
         await _getToken();
         await _handleForegroundMessages();
         await _handleBackgroundMessages();
+        _handleNotificationOpens();
       } catch (e) {
         debugPrint('[NotificationService] FCM init skipped: $e');
       }
@@ -152,6 +153,20 @@ class NotificationService {
 
   Future<void> _handleBackgroundMessages() async {
     FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+  }
+
+  void _handleNotificationOpens() {
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      if (message.data.isEmpty) return;
+      onNotificationTapped?.call(Map<String, dynamic>.from(message.data));
+    });
+  }
+
+  Future<void> consumeLaunchNotification() async {
+    final message = await getInitialMessage();
+    final data = message?.data;
+    if (data == null || data.isEmpty) return;
+    onNotificationTapped?.call(Map<String, dynamic>.from(data));
   }
 
   Future<void> _showLocalNotification(RemoteMessage message) async {

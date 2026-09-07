@@ -18,6 +18,7 @@ export class UserFactory {
         passwordHash,
         emailVerified: overrides.emailVerified ?? false,
         cpfHash: overrides.cpfHash || (overrides.cpfHash !== null ? generateTestCpfHash() : null),
+        cpf: overrides.cpf ?? null,
         phone: overrides.phone || null,
         phoneVerified: overrides.phoneVerified ?? false,
         city: overrides.city || null,

@@ -10,5 +10,5 @@ export abstract class ProductRepository {
   abstract update(id: string, data: Prisma.ProductUpdateInput): RepositoryResponse<ProductDetailPayload>;
   abstract delete(id: string): RepositoryResponse<void>;
   abstract updateInventoryOnSale(productId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
-  abstract restoreInventoryOnExpiry(productId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
+  abstract restoreInventoryOnExpiry(productId: string, quantity: number, tx?: Prisma.TransactionClient): RepositoryResponse<void>;
 }

@@ -107,7 +107,7 @@ describe('CreateOrderUseCase Integration', () => {
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
         expect(result.value.code).toBe('NOT_FOUND');
-        expect(result.value.message).toContain('Product');
+        expect(result.value.message).toContain('Produto');
       }
     });
 
@@ -131,8 +131,8 @@ describe('CreateOrderUseCase Integration', () => {
       // Assert
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
-        expect(result.value.code).toBe('INVALID_ORDER_STATE');
-        expect(result.value.message).toContain('already sold');
+        expect(result.value.code).toBe('BAD_REQUEST');
+        expect(result.value.message).toContain('não está mais disponível');
       }
     });
 

@@ -11,7 +11,9 @@ export class ProductFactory {
       data: {
         title: overrides.title || 'Test Product',
         description: overrides.description || 'This is a test product description.',
-        price: overrides.price ?? 10000, // R$100.00 in cents
+        price: overrides.price ?? 10000,
+        quantity: overrides.quantity ?? 1,
+        soldCount: overrides.soldCount ?? 0,
         condition: overrides.condition || Condition.NEW,
         status: overrides.status || ProductStatus.ACTIVE,
         sellerId,

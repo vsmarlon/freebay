@@ -12,13 +12,19 @@ import 'core/providers/theme_provider.dart';
 import 'core/components/app_error_widget.dart';
 import 'shared/config/app_config.dart';
 import 'shared/services/http_client.dart';
+import 'shared/services/error_reporter.dart';
 import 'shared/services/notification_service.dart';
+import 'core/router/app_link.dart';
 import 'shared/services/storage_service.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/data/entities/user_entity.dart';
+import 'features/notifications/presentation/providers/notifications_provider.dart';
 
 void main() {
-  runZonedGuarded(_bootstrap, (e, s) => debugPrint('[FATAL] $e\n$s'));
+  runZonedGuarded(
+    () => ErrorReporter.run(_bootstrap),
+    (e, s) => ErrorReporter.report('uncaught', e, s),
+  );
 }
 
 Future<void> _bootstrap() async {
@@ -33,21 +39,26 @@ Future<void> _bootstrap() async {
     try {
       Stripe.publishableKey = AppConfig.stripePublishableKey;
       await Stripe.instance.applySettings();
-    } catch (e) {
-      debugPrint('[Stripe] Initialization error: $e');
+    } catch (e, s) {
+      ErrorReporter.report('stripe-init', e, s);
     }
   }
   await Hive.initFlutter();
   try {
     await Firebase.initializeApp();
-  } catch (e) {
-    debugPrint('[Firebase] Initialization skipped or failed: $e');
+  } catch (e, s) {
+    ErrorReporter.report('firebase-init', e, s);
   }
   try {
     await NotificationService().initialize();
-  } catch (e) {
-    debugPrint('[NotificationService] Initialization error: $e');
+  } catch (e, s) {
+    ErrorReporter.report('notifications-init', e, s);
   }
+  NotificationService().onNotificationTapped = (data) {
+    appRouter.go(AppLink.fromNotification(data));
+  };
+  unawaited(NotificationService().consumeLaunchNotification());
+
   ErrorWidget.builder = (d) => AppErrorWidget(details: d);
   runApp(const ProviderScope(child: FreeBayApp()));
 }
@@ -69,6 +80,18 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
         appRouter.go('/login');
       });
     };
+
+    ref.listenManual(authControllerProvider, (previous, next) {
+      final user = next.value;
+      if (user == null || previous?.value?.id == user.id) return;
+      unawaited(_registerPushToken());
+    });
+  }
+
+  Future<void> _registerPushToken() async {
+    final token = await NotificationService().getSavedToken();
+    if (token == null || token.isEmpty) return;
+    await ref.read(notificationRepositoryProvider).updateFcmToken(token);
   }
 
   @override

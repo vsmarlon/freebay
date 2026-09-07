@@ -28,12 +28,16 @@ import {
   UnblockUserUseCase,
   SearchUsersUseCase,
   GetSuggestionsUseCase,
+  RequestAccountDeletionUseCase,
+  CancelAccountDeletionUseCase,
+  ExportUserDataUseCase,
 } from './usecases';
 import {
   GetAuth,
   GetPublic,
   PostAuth,
   PatchAuth,
+  DeleteAuth,
   CurrentUserId,
 } from '@/shared/decorators';
 import {
@@ -50,6 +54,7 @@ import {
   UserStatsResponse,
   FollowResponse,
   BlockResponse,
+  AccountDeletionResponse,
   toUserResponse,
 } from './mappers/user.mapper';
 import { left, isLeft } from '@/shared/core/either';
@@ -76,6 +81,9 @@ export class UsersController {
     private readonly unblockUserUseCase: UnblockUserUseCase,
     private readonly searchUsersUseCase: SearchUsersUseCase,
     private readonly getSuggestionsUseCase: GetSuggestionsUseCase,
+    private readonly requestAccountDeletionUseCase: RequestAccountDeletionUseCase,
+    private readonly cancelAccountDeletionUseCase: CancelAccountDeletionUseCase,
+    private readonly exportUserDataUseCase: ExportUserDataUseCase,
   ) {}
 
   @GetAuth('me', {
@@ -93,6 +101,43 @@ export class UsersController {
   })
   async getMyStats(@CurrentUserId() userId: string) {
     return this.getUserStatsUseCase.execute({ userId });
+  }
+
+  @GetAuth('me/export', {
+    summary: 'Export all personal data',
+    description:
+      'Returns every record tied to the account as a single JSON document (LGPD data portability).',
+    throttle: { limit: 3, ttl: 3600000 },
+    errors: [{ status: 404, description: 'User not found' }],
+  })
+  async exportMyData(@CurrentUserId() userId: string) {
+    return this.exportUserDataUseCase.execute({ userId });
+  }
+
+  @DeleteAuth('me', {
+    summary: 'Request account deletion',
+    description:
+      'Starts the 30-day deletion window: sessions are revoked, listings are paused, and the account is anonymized by the purge job unless cancelled.',
+    responseType: AccountDeletionResponse,
+    throttle: { limit: 3, ttl: 3600000 },
+    errors: [
+      { status: 404, description: 'User not found' },
+      { status: 409, description: 'Account has open orders, disputes or a wallet balance' },
+    ],
+  })
+  async requestAccountDeletion(@CurrentUserId() userId: string) {
+    return this.requestAccountDeletionUseCase.execute({ userId });
+  }
+
+  @PatchAuth('me/deletion/cancel', {
+    summary: 'Cancel a pending account deletion',
+    errors: [
+      { status: 400, description: 'No pending deletion' },
+      { status: 404, description: 'User not found' },
+    ],
+  })
+  async cancelAccountDeletion(@CurrentUserId() userId: string) {
+    return this.cancelAccountDeletionUseCase.execute({ userId });
   }
 
   @PatchAuth('me', {

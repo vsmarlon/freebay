@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/shared/services/http_client.dart';
 
 /// Base class providing type-safe, DRY network methods for repositories.
@@ -89,6 +90,36 @@ abstract class BaseHttpRepository {
         }
         return Right(extracted as T);
       },
+    );
+  }
+
+  /// Performs a GET request against a cursor-paginated endpoint.
+  ///
+  /// Sends `cursor`/`limit` and parses the shared `{ items, hasMore, nextCursor }`
+  /// envelope. Pass `itemsKey` only for a legacy endpoint that still names its
+  /// list something else.
+  Future<Either<Failure, CursorPage<T>>> safePage<T>(
+    String path,
+    T Function(Map<String, dynamic> json) fromJson, {
+    String? cursor,
+    int? limit,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    String itemsKey = 'items',
+    String? debugLabel,
+  }) {
+    return safeGet<CursorPage<T>>(
+      path,
+      queryParameters: {
+        ...?queryParameters,
+        'cursor': ?cursor,
+        'limit': ?limit,
+      },
+      options: options,
+      extractKey: 'data',
+      customMapper: (data) =>
+          parseCursorPage<T>(data, fromJson, itemsKey: itemsKey),
+      debugLabel: debugLabel,
     );
   }
 

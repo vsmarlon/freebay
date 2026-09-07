@@ -10,14 +10,14 @@ import {
 import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
 import { UserRepository } from '../domain/repositories/user.repository';
 import { ResetPasswordDTO } from '../dtos/password-recovery.dto';
-import { RedisService } from '@/shared/infra/redis/redis.service';
+import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly recoveryRepository: PasswordRecoveryRepository,
-    private readonly redisService: RedisService,
+    private readonly sessionRevoker: SessionRevokerService,
   ) {}
 
   async execute(input: ResetPasswordDTO): Promise<Either<AppError, void>> {
@@ -58,11 +58,7 @@ export class ResetPasswordUseCase {
     const markResult = await this.recoveryRepository.markUsed(recovery.id);
     if (markResult.isLeft()) return left(markResult.value);
 
-    await this.redisService.add(
-      `user_tokens_invalid_before:${user.id}`,
-      Math.floor(Date.now() / 1000).toString(),
-      60 * 60 * 24 * 30,
-    );
+    await this.sessionRevoker.revokeAllSessions(user.id);
 
     return right(undefined);
   }

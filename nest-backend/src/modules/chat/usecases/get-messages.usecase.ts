@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
+import { CursorPage, FIRST_PAGE, PageQuery } from '@/shared/core/pagination';
 import { ConversationRepository } from '../domain/repositories/conversation.repository';
 import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
@@ -19,7 +20,11 @@ export class GetMessagesUseCase {
     private readonly threadAccess: ChatThreadAccessService,
   ) {}
 
-  async execute(conversationId: string, userId: string): Promise<Either<AppError, GetMessagesResult>> {
+  async execute(
+    conversationId: string,
+    userId: string,
+    query: PageQuery = FIRST_PAGE,
+  ): Promise<Either<AppError, GetMessagesResult>> {
     const resolved = await this.threadAccess.resolveThread(userId, conversationId);
     if (isLeft(resolved)) return left(resolved.value);
 
@@ -27,24 +32,33 @@ export class GetMessagesUseCase {
     const isOrderThread = Boolean(orderId);
 
     const messages: GetMessagesOutput[] = [];
+    let page: CursorPage<DirectMessageWithSender | ChatMessageWithSender>;
 
     if (isOrderThread) {
-      const msgsResult = await this.conversationRepository.findChatMessagesByOrder(orderId!);
+      const msgsResult = await this.conversationRepository.findChatMessagesByOrder(orderId!, query);
       if (isLeft(msgsResult)) return left(msgsResult.value);
 
       const readResult = await this.conversationRepository.markChatMessagesRead(orderId!, userId);
       if (isLeft(readResult)) return left(readResult.value);
 
-      messages.push(...msgsResult.value.map((msg) => this.toOutput(msg, conversationId)));
+      page = msgsResult.value;
     } else {
-      const msgsResult = await this.conversationRepository.findMessagesByConversation(directConversationId!);
+      const msgsResult = await this.conversationRepository.findMessagesByConversation(
+        directConversationId!,
+        query,
+      );
       if (isLeft(msgsResult)) return left(msgsResult.value);
 
       const readResult = await this.conversationRepository.markMessagesRead(directConversationId!, userId);
       if (isLeft(readResult)) return left(readResult.value);
 
-      messages.push(...msgsResult.value.map((msg) => this.toOutput(msg, conversationId)));
+      page = msgsResult.value;
     }
+
+    // Newest-first from the database, oldest-first for the transcript the client renders
+    messages.push(
+      ...[...page.items].reverse().map((msg) => this.toOutput(msg, conversationId)),
+    );
 
     const preferenceResult = await this.preferenceRepository.findByAnyId(userId, conversationId);
     if (isLeft(preferenceResult)) return left(preferenceResult.value);
@@ -52,6 +66,8 @@ export class GetMessagesUseCase {
 
     return right({
       messages,
+      hasMore: page.hasMore,
+      nextCursor: page.nextCursor,
       threadType: isOrderThread ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
       otherUserId,
       preference: preference

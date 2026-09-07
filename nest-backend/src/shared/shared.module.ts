@@ -5,6 +5,7 @@ import { PrismaService } from './infra/prisma/prisma.service';
 import { RedisService } from './infra/redis/redis.service';
 import { EmailService } from './infra/email/email.service';
 import { JwtTokenValidatorService } from './auth/jwt-token-validator.service';
+import { SessionRevokerService } from './auth/session-revoker.service';
 import { RolesGuard } from './guards/roles.guard';
 
 @Global()
@@ -20,7 +21,22 @@ import { RolesGuard } from './guards/roles.guard';
       }),
     }),
   ],
-  providers: [PrismaService, RedisService, EmailService, JwtTokenValidatorService, RolesGuard],
-  exports: [PrismaService, RedisService, EmailService, JwtModule, JwtTokenValidatorService, RolesGuard],
+  providers: [
+    PrismaService,
+    RedisService,
+    EmailService,
+    JwtTokenValidatorService,
+    SessionRevokerService,
+    RolesGuard,
+  ],
+  exports: [
+    PrismaService,
+    RedisService,
+    EmailService,
+    JwtModule,
+    JwtTokenValidatorService,
+    SessionRevokerService,
+    RolesGuard,
+  ],
 })
 export class SharedModule {}

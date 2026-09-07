@@ -26,10 +26,22 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to log in quickly and securely.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Para compartilhar sua localização no chat</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Para compartilhar sua localização no chat</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Para tirar fotos e gravar vídeos dos seus anúncios, publicações e mensagens</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Para gravar o áudio dos vídeos que você publica ou envia no chat</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Para escolher fotos e vídeos dos seus anúncios, publicações e mensagens</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Para salvar na sua galeria as imagens que você baixa do FreeBay</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -53,11 +65,26 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>FlutterDeepLinkingEnabled</key>
+	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.company.freebay</string>
+			<string>com.freebay.app.googlesignin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.822277156637-efatk58podgtv0d25gvmcfqhto8ral1h</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.freebay.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>freebay</string>
@@ -65,7 +92,7 @@
 		</dict>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.company.freebay.stripe</string>
+			<string>com.freebay.app.stripe</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>flutterstripe</string>

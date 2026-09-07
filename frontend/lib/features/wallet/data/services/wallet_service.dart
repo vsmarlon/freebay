@@ -1,9 +1,10 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_entity.dart';
 import 'package:freebay/features/wallet/data/entities/wallet_transaction_entity.dart';
-import 'package:freebay/features/wallet/data/entities/withdrawal_entity.dart';
+import 'package:freebay/features/wallet/data/entities/connect_status_entity.dart';
 
 class WalletService extends BaseHttpRepository {
   WalletService({super.client});
@@ -14,34 +15,32 @@ class WalletService extends BaseHttpRepository {
     fromJson: WalletEntity.fromJson,
   );
 
-  Future<Either<Failure, List<WalletTransactionEntity>>> getTransactions() =>
-      safeGetList<WalletTransactionEntity>(
-        '/wallet/transactions',
-        listKey: 'data.transactions',
-        fromJson: WalletTransactionEntity.fromJson,
+  Future<Either<Failure, CursorPage<WalletTransactionEntity>>> getTransactions({
+    String? cursor,
+    int? limit,
+  }) => safePage<WalletTransactionEntity>(
+    '/wallet/transactions',
+    WalletTransactionEntity.fromJson,
+    cursor: cursor,
+    limit: limit,
+  );
+
+  Future<Either<Failure, ConnectStatusEntity>> getConnectStatus() =>
+      safeGet<ConnectStatusEntity>(
+        '/payments/connect/status',
+        extractKey: 'data',
+        fromJson: ConnectStatusEntity.fromJson,
       );
 
-  Future<Either<Failure, List<WithdrawalEntity>>> getWithdrawals() =>
-      safeGetList<WithdrawalEntity>(
-        '/wallet/withdrawals',
-        listKey: 'data.withdrawals',
-        fromJson: WithdrawalEntity.fromJson,
-      );
+  Future<Either<Failure, String>> startConnectOnboarding() => safePost<String>(
+    '/payments/connect/onboarding',
+    extractKey: 'data.onboardingUrl',
+    customMapper: (value) => value as String,
+  );
 
-  Future<Either<Failure, void>> withdraw({
-    required int amountCents,
-    required String pixKey,
-    required String pixKeyType,
-    required String idempotencyKey,
-  }) => safeVoid(
-    () => client.post(
-      '/wallet/withdraw',
-      data: {
-        'amount': amountCents,
-        'pixKey': pixKey,
-        'pixKeyType': pixKeyType,
-        'idempotencyKey': idempotencyKey,
-      },
-    ),
+  Future<Either<Failure, String>> getConnectDashboardLink() => safePost<String>(
+    '/payments/connect/dashboard',
+    extractKey: 'data.dashboardUrl',
+    customMapper: (value) => value as String,
   );
 }

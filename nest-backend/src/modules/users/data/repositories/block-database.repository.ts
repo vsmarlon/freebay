@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
@@ -16,8 +17,8 @@ export class PrismaBlockRepository extends BasePrismaRepository implements Block
     try {
       await this.prisma.block.create({ data: { blockerId, blockedId } });
       return right(undefined);
-    } catch (error: any) {
-      if (error?.code === 'P2002') return left(new BadRequestError('Already blocked'));
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return left(new BadRequestError('Already blocked'));
       return left(new DatabaseError('Failed to block user'));
     }
   }
@@ -26,8 +27,8 @@ export class PrismaBlockRepository extends BasePrismaRepository implements Block
     try {
       await this.prisma.block.delete({ where: { blockerId_blockedId: { blockerId, blockedId } } });
       return right(undefined);
-    } catch (error: any) {
-      if (error?.code === 'P2025') return left(new BadRequestError('Not blocked'));
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') return left(new BadRequestError('Not blocked'));
       return left(new DatabaseError('Failed to unblock user'));
     }
   }

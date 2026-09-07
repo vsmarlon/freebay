@@ -22,8 +22,9 @@ abstract class OrderDetailState with _$OrderDetailState {
 abstract class PurchasesListState with _$PurchasesListState {
   const factory PurchasesListState({
     @Default(false) bool isLoading,
+    @Default(false) bool isLoadingMore,
     @Default([]) List<OrderEntity> orders,
-    @Default(0) int total,
+    String? nextCursor,
     String? error,
     @Default(true) bool hasMore,
   }) = _PurchasesListState;
@@ -33,8 +34,9 @@ abstract class PurchasesListState with _$PurchasesListState {
 abstract class SalesListState with _$SalesListState {
   const factory SalesListState({
     @Default(false) bool isLoading,
+    @Default(false) bool isLoadingMore,
     @Default([]) List<OrderEntity> orders,
-    @Default(0) int total,
+    String? nextCursor,
     String? error,
     @Default(true) bool hasMore,
   }) = _SalesListState;

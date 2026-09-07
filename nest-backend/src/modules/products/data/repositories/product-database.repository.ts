@@ -175,41 +175,34 @@ export class ProductDatabaseRepository implements ProductRepository {
       const product = await client.product.findUnique({ where: { id: productId } });
       if (!product) return left(new DatabaseError('Product not found'));
 
-      if (product.quantity > 1) {
-        const newSoldCount = product.soldCount + 1;
-        await client.product.update({
-          where: { id: productId },
-          data: {
-            soldCount: newSoldCount,
-            ...(newSoldCount >= product.quantity ? { status: 'SOLD' as const } : {}),
-          },
-        });
-      } else {
-        await client.product.update({
-          where: { id: productId },
-          data: { status: 'SOLD' },
-        });
+      if (product.quantity > 1 && product.soldCount < product.quantity) {
+        return right(undefined);
       }
+
+      await client.product.updateMany({
+        where: { id: productId, status: { not: 'SOLD' } },
+        data: { status: 'SOLD' },
+      });
       return right(undefined);
     } catch {
       return left(new DatabaseError('Failed to update inventory on sale'));
     }
   }
 
-  async restoreInventoryOnExpiry(productId: string, tx?: Prisma.TransactionClient) {
+  async restoreInventoryOnExpiry(productId: string, quantity: number, tx?: Prisma.TransactionClient) {
     try {
       const client = tx ?? this.prisma;
       const product = await client.product.findUnique({ where: { id: productId } });
       if (!product) return left(new DatabaseError('Product not found'));
 
       if (product.quantity > 1) {
-        const newSoldCount = Math.max(product.soldCount - 1, 0);
-        await client.product.update({
-          where: { id: productId },
-          data: {
-            soldCount: newSoldCount,
-            ...(product.status === 'SOLD' && newSoldCount < product.quantity ? { status: 'ACTIVE' as const } : {}),
-          },
+        await client.product.updateMany({
+          where: { id: productId, soldCount: { gte: quantity } },
+          data: { soldCount: { decrement: quantity } },
+        });
+        await client.product.updateMany({
+          where: { id: productId, status: 'SOLD' },
+          data: { status: 'ACTIVE' },
         });
       } else {
         await client.product.updateMany({

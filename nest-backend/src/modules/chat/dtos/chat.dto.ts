@@ -255,6 +255,8 @@ export interface ConversationPreferenceSummary {
 
 export interface GetMessagesResult {
   messages: GetMessagesOutput[];
+  hasMore: boolean;
+  nextCursor: string | null;
   threadType: ChatThreadType;
   otherUserId: string;
   preference: ConversationPreferenceSummary | null;

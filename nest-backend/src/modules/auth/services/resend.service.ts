@@ -14,7 +14,7 @@ export class ResendService {
     const deepLinkScheme = this.config.get<string>('DEEP_LINK_SCHEME', 'freebay');
     
     const webResetLink = `${appUrl}/reset-password?token=${code}&email=${encodeURIComponent(email)}`;
-    const appDeepLink = `${deepLinkScheme}://reset-password?token=${code}&email=${encodeURIComponent(email)}`;
+    const appDeepLink = `${deepLinkScheme}://app/reset-password?token=${code}&email=${encodeURIComponent(email)}`;
 
     if (!apiKey) {
       this.logger.warn('Recovery email not sent: RESEND_API_KEY is not configured');

@@ -30,6 +30,12 @@ module.exports = [
     },
   },
   {
+    files: ['test/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     files: ['**/*.spec.ts'],
     languageOptions: {
       globals: {

@@ -138,7 +138,7 @@ final class PurchasesListProvider
   }
 }
 
-String _$purchasesListHash() => r'0cf9c9bc717c07fd31b314222b74da71dd68c4d7';
+String _$purchasesListHash() => r'f70d95a996d99ed953578df5b229494291c02f03';
 
 abstract class _$PurchasesList extends $Notifier<PurchasesListState> {
   PurchasesListState build();
@@ -190,7 +190,7 @@ final class SalesListProvider
   }
 }
 
-String _$salesListHash() => r'9a7e9bc2a729bc38d87a722f88bd7c412810876e';
+String _$salesListHash() => r'd8fc2d046dccd8dc3c2f8b34cb7ffbe0fccaf116';
 
 abstract class _$SalesList extends $Notifier<SalesListState> {
   SalesListState build();
