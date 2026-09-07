@@ -1,5 +1,6 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { DeleteMessageUseCase } from './delete-message.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { right } from '@/shared/core/either';
 import { ForbiddenError, NotFoundError } from '@/shared/core/errors';
 
@@ -11,9 +12,16 @@ const mockRepo = {
 describe('DeleteMessageUseCase', () => {
   let sut: DeleteMessageUseCase;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-    sut = new DeleteMessageUseCase(mockRepo as unknown as ConversationRepository);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        DeleteMessageUseCase,
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
+      ],
+    }).compile();
+
+    sut = module.get(DeleteMessageUseCase);
   });
 
   it('returns void on success', async () => {

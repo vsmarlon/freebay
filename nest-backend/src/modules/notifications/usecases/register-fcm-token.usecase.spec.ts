@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterFcmTokenUseCase } from './register-fcm-token.usecase';
-import { NotificationRepository } from '../domain/repositories/notification.repository';
+import { NotificationDatabaseRepository } from '../data/repositories/notification-database.repository';
 import { right } from '@/shared/core/either';
 
 describe('RegisterFcmTokenUseCase', () => {
@@ -15,11 +15,11 @@ describe('RegisterFcmTokenUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RegisterFcmTokenUseCase,
-        { provide: NotificationRepository, useValue: mockNotificationRepository },
+        { provide: NotificationDatabaseRepository, useValue: mockNotificationRepository },
       ],
     }).compile();
 
-    sut = module.get<RegisterFcmTokenUseCase>(RegisterFcmTokenUseCase);
+    sut = module.get(RegisterFcmTokenUseCase);
     jest.clearAllMocks();
   });
 

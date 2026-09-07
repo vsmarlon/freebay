@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetProfileUseCase, GetUserStatsUseCase, UpdateProfileUseCase, FollowUserUseCase, UnfollowUserUseCase, BlockUserUseCase, UnblockUserUseCase, SearchUsersUseCase, GetSuggestionsUseCase } from './index';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { FollowRepository } from '../domain/repositories/follow.repository';
-import { BlockRepository } from '../domain/repositories/block.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { PrismaFollowRepository } from '../data/repositories/follow-database.repository';
+import { PrismaBlockRepository } from '../data/repositories/block-database.repository';
 import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
@@ -88,9 +88,9 @@ describe('Users UseCases', () => {
         UnblockUserUseCase,
         SearchUsersUseCase,
         GetSuggestionsUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: FollowRepository, useValue: mockFollowRepository },
-        { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: PrismaFollowRepository, useValue: mockFollowRepository },
+        { provide: PrismaBlockRepository, useValue: mockBlockRepository },
         { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: NotificationService, useValue: mockNotificationService },

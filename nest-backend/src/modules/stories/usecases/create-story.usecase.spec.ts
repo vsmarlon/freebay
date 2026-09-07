@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateStoryUseCase } from './create-story.usecase';
-import { StoryRepository } from '../domain/repositories/story.repository';
+import { PrismaStoryRepository } from '../data/repositories/story-database.repository';
 import { right } from '@/shared/core/either';
 
 describe('CreateStoryUseCase', () => {
@@ -27,7 +27,7 @@ describe('CreateStoryUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateStoryUseCase,
-        { provide: StoryRepository, useValue: mockStoryRepository },
+        { provide: PrismaStoryRepository, useValue: mockStoryRepository },
       ],
     }).compile();
 

@@ -1,3 +1,6 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { Provider, Type } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
 import { Effect, Layer, TestClock, Clock, TestContext } from 'effect';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory, OrderFactory } from '../../../../test/factories';
@@ -11,10 +14,10 @@ import { PrismaDisputeRepository } from '../data/repositories/dispute-database.r
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
-import { PrismaTag, NotificationTag } from '../effect-harness/tags';
+import { PrismaTag, NotificationTag, NotificationServiceShape } from '../effect-harness/tags';
 import { TestNotificationsLayer, RecordedNotification } from '../effect-harness/test-notifications.layer';
-import type { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import type { NotificationService } from '@/modules/notifications/services/notification.service';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { DisputeCleanupTask } from '@/modules/tasks/dispute-cleanup.task';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
@@ -48,12 +51,32 @@ describe('Disputes Effect Integration', () => {
     );
   }
 
-  function prismaAsService(): PrismaService {
-    return prisma as unknown as PrismaService;
+  async function buildUsecase<T>(
+    usecase: Type<T>,
+    overrides: Provider[] = [],
+    prismaClient: PrismaClient = prisma,
+  ): Promise<T> {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        usecase,
+        PrismaDisputeRepository,
+        DisputeTransitionPolicy,
+        DisputeResolutionExecutionService,
+        { provide: PrismaService, useValue: prismaClient },
+        { provide: NotificationService, useValue: notificationDouble() },
+        ...overrides,
+      ],
+    }).compile();
+
+    return module.get(usecase);
   }
 
-  function disputeRepoFor(prismaService: PrismaService): PrismaDisputeRepository {
-    return new PrismaDisputeRepository(prismaService);
+  function notificationDouble(): NotificationServiceShape {
+    return {
+      notifyDispute: jest.fn().mockResolvedValue(undefined),
+      notifyOrderStatus: jest.fn().mockResolvedValue(undefined),
+      create: jest.fn().mockResolvedValue({ id: 'mock-notification-id' }),
+    };
   }
 
   describe('OpenDisputeUseCase — 48h window', () => {
@@ -66,8 +89,12 @@ describe('Disputes Effect Integration', () => {
         return { db, buyer, seller, product };
       });
 
-    function makeUsecase(prismaService: PrismaService, notif: NotificationService) {
-      return new OpenDisputeUseCase(prismaService, disputeRepoFor(prismaService), notif);
+    function makeUsecase(prismaClient: PrismaClient, notif: NotificationServiceShape) {
+      return buildUsecase(
+        OpenDisputeUseCase,
+        [{ provide: NotificationService, useValue: notif }],
+        prismaClient,
+      );
     }
 
     it('should succeed 47h59m after delivery', async () => {
@@ -83,7 +110,7 @@ describe('Disputes Effect Integration', () => {
         );
 
         const notif = yield* NotificationTag;
-        const uc = makeUsecase(db as unknown as PrismaService, notif as unknown as NotificationService);
+        const uc = yield* Effect.promise(() => makeUsecase(db, notif));
         const result = yield* Effect.promise(() =>
           uc.execute(
             { orderId: order.id, userId: buyer.id, reason: 'Within window' },
@@ -112,7 +139,7 @@ describe('Disputes Effect Integration', () => {
         );
 
         const notif = yield* NotificationTag;
-        const uc = makeUsecase(db as unknown as PrismaService, notif as unknown as NotificationService);
+        const uc = yield* Effect.promise(() => makeUsecase(db, notif));
         const result = yield* Effect.promise(() =>
           uc.execute(
             { orderId: order.id, userId: buyer.id, reason: 'Too late' },
@@ -146,7 +173,7 @@ describe('Disputes Effect Integration', () => {
         );
 
         const notif = yield* NotificationTag;
-        const uc = makeUsecase(db as unknown as PrismaService, notif as unknown as NotificationService);
+        const uc = yield* Effect.promise(() => makeUsecase(db, notif));
         const result = yield* Effect.promise(() =>
           uc.execute({ orderId: order.id, userId: stranger.id, reason: 'Hacker' }),
         );
@@ -197,19 +224,17 @@ describe('Disputes Effect Integration', () => {
     }
 
     function makeUsecase() {
-      return new ResolveDisputeUseCase(
-        prismaAsService(),
-        disputeRepoFor(prismaAsService()),
-        { notifyDispute: jest.fn(), notifyOrderStatus: jest.fn() } as unknown as NotificationService,
-        new DisputeTransitionPolicy(),
-        new DisputeResolutionExecutionService(),
-        { payoutForOrder: jest.fn(), reverseForOrder: jest.fn() } as unknown as SellerPayoutService,
-      );
+      return buildUsecase(ResolveDisputeUseCase, [
+        {
+          provide: SellerPayoutService,
+          useValue: { payoutForOrder: jest.fn(), reverseForOrder: jest.fn() },
+        },
+      ]);
     }
 
     it('should resolve in seller favor and update wallet', async () => {
       const { seller, dispute } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         resolution: 'Seller wins',
         winner: 'SELLER',
@@ -225,7 +250,7 @@ describe('Disputes Effect Integration', () => {
 
     it('should resolve in buyer favor and refund wallet', async () => {
       const { buyer, dispute } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         resolution: 'Buyer wins',
         winner: 'BUYER',
@@ -243,7 +268,7 @@ describe('Disputes Effect Integration', () => {
 
     it('should reject resolving an already-resolved dispute (BUG FIX)', async () => {
       const { seller, dispute } = await seed();
-      const uc = makeUsecase();
+      const uc = await makeUsecase();
 
       const first = await uc.execute({
         disputeId: dispute.id,
@@ -272,7 +297,7 @@ describe('Disputes Effect Integration', () => {
       const { seller, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'CANCELLED' } });
 
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         resolution: 'Seller wins',
         winner: 'SELLER',
@@ -311,12 +336,12 @@ describe('Disputes Effect Integration', () => {
     }
 
     function makeUsecase() {
-      return new SubmitEvidenceUseCase(disputeRepoFor(prismaAsService()), new DisputeTransitionPolicy());
+      return buildUsecase(SubmitEvidenceUseCase);
     }
 
     it('should set AWAITING_SELLER when buyer submits', async () => {
       const { dispute } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: dispute.openedById,
         evidence: { message: 'Buyer evidence' },
@@ -331,7 +356,7 @@ describe('Disputes Effect Integration', () => {
 
     it('should set AWAITING_BUYER when seller submits', async () => {
       const { dispute, seller } = await seed();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: seller.id,
         evidence: { message: 'Seller evidence' },
@@ -347,7 +372,7 @@ describe('Disputes Effect Integration', () => {
     it('should reject non-participant', async () => {
       const { dispute } = await seed();
       const stranger = await userFactory.create();
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: stranger.id,
         evidence: { message: 'Hacker' },
@@ -366,7 +391,7 @@ describe('Disputes Effect Integration', () => {
         data: { status: 'RESOLVED', resolution: 'Done', resolvedAt: new Date() },
       });
 
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: dispute.openedById,
         evidence: { message: 'Too late' },
@@ -382,7 +407,7 @@ describe('Disputes Effect Integration', () => {
         data: { status: 'CANCELLED' },
       });
 
-      const result = await makeUsecase().execute({
+      const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
         userId: dispute.openedById,
         evidence: { message: 'Too late' },
@@ -414,7 +439,7 @@ describe('Disputes Effect Integration', () => {
         },
       });
 
-      const task = new DisputeCleanupTask(prismaAsService(), new DisputeResolutionExecutionService());
+      const task = await buildUsecase(DisputeCleanupTask);
       await task.cleanupExpiredDisputes();
 
       const dbDispute = await prisma.dispute.findFirst({
@@ -454,7 +479,7 @@ describe('Disputes Effect Integration', () => {
         },
       });
 
-      const task = new DisputeCleanupTask(prismaAsService(), new DisputeResolutionExecutionService());
+      const task = await buildUsecase(DisputeCleanupTask);
       await task.cleanupExpiredDisputes();
 
       const db = await prisma.dispute.findFirst({
@@ -487,18 +512,13 @@ describe('Disputes Effect Integration', () => {
     }
 
     function makeUsecase() {
-      return new WithdrawDisputeUseCase(
-        prismaAsService(),
-        disputeRepoFor(prismaAsService()),
-        new DisputeTransitionPolicy(),
-        { notifyDispute: jest.fn(), notifyOrderStatus: jest.fn() } as unknown as NotificationService,
-      );
+      return buildUsecase(WithdrawDisputeUseCase);
     }
 
     it('should withdraw dispute, cancel it, and restore order to DELIVERED with escrow HELD', async () => {
       const { buyer, order, dispute } = await seed();
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
       expect(isRight(result)).toBe(true);
 
@@ -513,7 +533,7 @@ describe('Disputes Effect Integration', () => {
     it('should return UnauthorizedError when userId is not the dispute opener', async () => {
       const { seller, dispute } = await seed();
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: seller.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: seller.id });
 
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
@@ -525,7 +545,7 @@ describe('Disputes Effect Integration', () => {
       const { buyer, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'RESOLVED' } });
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
@@ -537,7 +557,7 @@ describe('Disputes Effect Integration', () => {
       const { buyer, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'CANCELLED' } });
 
-      const result = await makeUsecase().execute({ disputeId: dispute.id, userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {
@@ -548,7 +568,7 @@ describe('Disputes Effect Integration', () => {
     it('should return NotFoundError when dispute does not exist', async () => {
       const { buyer } = await seed();
 
-      const result = await makeUsecase().execute({ disputeId: 'does-not-exist', userId: buyer.id });
+      const result = await (await makeUsecase()).execute({ disputeId: 'does-not-exist', userId: buyer.id });
 
       expect(isLeft(result)).toBe(true);
       if (isLeft(result)) {

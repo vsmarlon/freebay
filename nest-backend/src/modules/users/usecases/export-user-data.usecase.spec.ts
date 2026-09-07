@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExportUserDataUseCase } from './export-user-data.usecase';
-import { AccountLifecycleRepository } from '../domain/repositories/account-lifecycle.repository';
+import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError, UserNotFoundError } from '@/shared/core/errors';
 
@@ -17,7 +17,7 @@ describe('ExportUserDataUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExportUserDataUseCase,
-        { provide: AccountLifecycleRepository, useValue: mockAccountLifecycleRepository },
+        { provide: AccountLifecycleDatabaseRepository, useValue: mockAccountLifecycleRepository },
       ],
     }).compile();
 

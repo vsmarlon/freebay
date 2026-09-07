@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetMessagesUseCase } from './get-messages.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { ConversationPreferenceRepository } from '../domain/repositories/conversation-preference.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
@@ -21,6 +21,8 @@ const mockThreadAccess = {
   resolveThread: jest.fn(),
 };
 
+const page = <T>(items: T[]) => ({ items, hasMore: false, nextCursor: null });
+
 describe('GetMessagesUseCase', () => {
   let sut: GetMessagesUseCase;
 
@@ -28,13 +30,13 @@ describe('GetMessagesUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetMessagesUseCase,
-        { provide: ConversationRepository, useValue: mockRepo },
-        { provide: ConversationPreferenceRepository, useValue: mockPreferenceRepo },
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
+        { provide: PrismaConversationPreferenceRepository, useValue: mockPreferenceRepo },
         { provide: ChatThreadAccessService, useValue: mockThreadAccess },
       ],
     }).compile();
 
-    sut = module.get<GetMessagesUseCase>(GetMessagesUseCase);
+    sut = module.get(GetMessagesUseCase);
     jest.clearAllMocks();
     mockRepo.markMessagesRead.mockResolvedValue(right(undefined));
     mockRepo.markChatMessagesRead.mockResolvedValue(right(undefined));
@@ -66,7 +68,7 @@ describe('GetMessagesUseCase', () => {
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );
-    mockRepo.findMessagesByConversation.mockResolvedValue(right([
+    mockRepo.findMessagesByConversation.mockResolvedValue(right(page([
       {
         id: 'msg-1',
         conversationId: 'conv-1',
@@ -83,7 +85,7 @@ describe('GetMessagesUseCase', () => {
         createdAt: now,
         sender: { id: 'user-2', displayName: 'Other', avatarUrl: null },
       },
-    ]));
+    ])));
 
     const result = await sut.execute('conv-1', 'user-1');
 
@@ -93,6 +95,8 @@ describe('GetMessagesUseCase', () => {
       expect(result.value.otherUserId).toBe('user-2');
       expect(result.value.messages).toHaveLength(1);
       expect(result.value.messages[0].content).toBe('Hello');
+      expect(result.value.hasMore).toBe(false);
+      expect(result.value.nextCursor).toBeNull();
     }
     expect(mockRepo.markMessagesRead).toHaveBeenCalledWith('conv-1', 'user-1');
   });
@@ -102,7 +106,7 @@ describe('GetMessagesUseCase', () => {
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ orderId: 'order-1', otherUserId: 'seller-1', orderStatus: 'CONFIRMED' }),
     );
-    mockRepo.findChatMessagesByOrder.mockResolvedValue(right([
+    mockRepo.findChatMessagesByOrder.mockResolvedValue(right(page([
       {
         id: 'msg-1',
         orderId: 'order-1',
@@ -119,7 +123,7 @@ describe('GetMessagesUseCase', () => {
         createdAt: now,
         sender: { id: 'seller-1', displayName: 'Seller', avatarUrl: null },
       },
-    ]));
+    ])));
 
     const result = await sut.execute('order-1', 'buyer-1');
 
@@ -137,7 +141,7 @@ describe('GetMessagesUseCase', () => {
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );
-    mockRepo.findMessagesByConversation.mockResolvedValue(right([
+    mockRepo.findMessagesByConversation.mockResolvedValue(right(page([
       {
         id: 'msg-2',
         conversationId: 'conv-1',
@@ -161,7 +165,7 @@ describe('GetMessagesUseCase', () => {
         createdAt: now,
         sender: { id: 'user-1', displayName: 'Me', avatarUrl: null },
       },
-    ]));
+    ])));
 
     const result = await sut.execute('conv-1', 'user-1');
 
@@ -177,7 +181,7 @@ describe('GetMessagesUseCase', () => {
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );
-    mockRepo.findMessagesByConversation.mockResolvedValue(right([]));
+    mockRepo.findMessagesByConversation.mockResolvedValue(right(page([])));
     mockPreferenceRepo.findByAnyId.mockResolvedValue(right({
       isArchived: false,
       theme: 'COBALT',

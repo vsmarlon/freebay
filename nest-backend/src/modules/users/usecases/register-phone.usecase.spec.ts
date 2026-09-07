@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterPhoneUseCase } from './register-phone.usecase';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { SmsService } from '../services/sms.service';
 import { right, left } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
@@ -29,8 +29,8 @@ describe('RegisterPhoneUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RegisterPhoneUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: PhoneVerificationRepository, useValue: mockPhoneVerificationRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: PhoneVerificationDatabaseRepository, useValue: mockPhoneVerificationRepository },
         { provide: SmsService, useValue: mockSmsService },
       ],
     }).compile();

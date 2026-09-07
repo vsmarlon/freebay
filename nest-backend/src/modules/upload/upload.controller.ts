@@ -42,7 +42,7 @@ export class UploadController {
     }),
   )
   upload(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File | undefined,
     @Query('context') context: string,
   ): { url: string } {
     if (!file) {

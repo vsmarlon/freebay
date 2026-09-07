@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { createExecutionContext } from '@/shared/testing/test-doubles';
 import { WebhookGuard } from './webhook.guard';
 import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 
@@ -14,11 +15,7 @@ describe('WebhookGuard', () => {
     rawBody = '',
   ): ExecutionContext => {
     const request = { headers, rawBody };
-    return {
-      switchToHttp: () => ({
-        getRequest: () => request,
-      }),
-    } as ExecutionContext;
+    return createExecutionContext({ request });
   };
 
   beforeEach(async () => {

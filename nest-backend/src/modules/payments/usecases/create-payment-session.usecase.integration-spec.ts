@@ -1,8 +1,9 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentSessionUseCase } from './create-payment-session.usecase';
 import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
 import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
-import { PaymentProvider } from '../domain/providers/payment-provider.interface';
+import { StripeProvider } from '../providers/stripe-provider';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
 import { isLeft } from '@/shared/core/either';
@@ -13,28 +14,30 @@ const mockPaymentProvider = {
   createPaymentSession: jest.fn(),
   verifyWebhook: jest.fn(),
   constructWebhookEvent: jest.fn(),
-} as unknown as PaymentProvider;
+};
 
 describe('CreatePaymentSessionUseCase Integration', () => {
   let sut: CreatePaymentSessionUseCase;
-  let orderRepository: PrismaOrderRepository;
-  let userRepository: UserDatabaseRepository;
-  let transactionRepository: TransactionDatabaseRepository;
   let userFactory: UserFactory;
   let productFactory: ProductFactory;
 
-  beforeEach(() => {
-    orderRepository = new PrismaOrderRepository(prisma as PrismaService);
-    userRepository = new UserDatabaseRepository(prisma as PrismaService);
-    transactionRepository = new TransactionDatabaseRepository(prisma as PrismaService);
+  beforeEach(async () => {
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
-    sut = new CreatePaymentSessionUseCase(
-      orderRepository,
-      userRepository,
-      transactionRepository,
-      mockPaymentProvider,
-    );
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CreatePaymentSessionUseCase,
+        PrismaOrderRepository,
+        UserDatabaseRepository,
+        TransactionDatabaseRepository,
+        { provide: PrismaService, useValue: prisma },
+        { provide: StripeProvider, useValue: mockPaymentProvider },
+      ],
+    }).compile();
+
+    sut = module.get(CreatePaymentSessionUseCase);
+
     jest.clearAllMocks();
     mockPaymentProvider.createPaymentSession = jest.fn().mockResolvedValue(
       right({

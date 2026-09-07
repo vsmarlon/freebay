@@ -1,12 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUseCase } from './register.usecase';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { EmailAlreadyExistsError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
 describe('RegisterUseCase', () => {
   let sut: RegisterUseCase;
-  let mockUserRepository: jest.Mocked<Partial<UserRepository>>;
+  let mockUserRepository: jest.Mocked<Partial<UserDatabaseRepository>>;
 
   beforeEach(async () => {
     mockUserRepository = {
@@ -34,16 +33,9 @@ describe('RegisterUseCase', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       })),
-    } as jest.Mocked<Partial<UserRepository>>;
+    } as jest.Mocked<Partial<UserDatabaseRepository>>;
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        RegisterUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-      ],
-    }).compile();
-
-    sut = module.get<RegisterUseCase>(RegisterUseCase);
+    sut = new RegisterUseCase(mockUserRepository as UserDatabaseRepository);
   });
 
   it('should be defined', () => {

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetConversationsUseCase } from './get-conversations.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { right } from '@/shared/core/either';
 
 const mockRepo = {
@@ -15,11 +15,11 @@ describe('GetConversationsUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetConversationsUseCase,
-        { provide: ConversationRepository, useValue: mockRepo },
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
       ],
     }).compile();
 
-    sut = module.get<GetConversationsUseCase>(GetConversationsUseCase);
+    sut = module.get(GetConversationsUseCase);
     jest.clearAllMocks();
   });
 

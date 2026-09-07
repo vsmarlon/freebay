@@ -1,3 +1,6 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ToggleReactionUseCase } from './toggle-reaction.usecase';
 import { left, right } from '@/shared/core/either';
 import { BadRequestError, ForbiddenError } from '@/shared/core/errors';
@@ -16,12 +19,21 @@ const mockThreadAccess = {
 describe('ToggleReactionUseCase', () => {
   let sut: ToggleReactionUseCase;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'c1', otherUserId: 'u2' }),
     );
-    sut = new ToggleReactionUseCase(mockRepo as any, mockThreadAccess as any);
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ToggleReactionUseCase,
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
+        { provide: ChatThreadAccessService, useValue: mockThreadAccess },
+      ],
+    }).compile();
+
+    sut = module.get(ToggleReactionUseCase);
   });
 
   it('adds reaction when user has none', async () => {

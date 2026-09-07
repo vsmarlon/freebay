@@ -1,25 +1,27 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { DeletePostUseCase } from './delete-post.usecase';
-import { PostRepository } from '../domain/repositories/post.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { right } from '@/shared/core/either';
 import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
 
 describe('DeletePostUseCase', () => {
   let useCase: DeletePostUseCase;
-  let mockPostRepo: jest.Mocked<PostRepository>;
+  let mockPostRepo: { findById: jest.Mock; softDelete: jest.Mock };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockPostRepo = {
       findById: jest.fn(),
-      findFeed: jest.fn(),
-      findByUserId: jest.fn(),
-      searchPosts: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      createMentions: jest.fn(),
       softDelete: jest.fn(),
-    } as unknown as jest.Mocked<PostRepository>;
+    };
 
-    useCase = new DeletePostUseCase(mockPostRepo);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        DeletePostUseCase,
+        { provide: PrismaPostRepository, useValue: mockPostRepo },
+      ],
+    }).compile();
+
+    useCase = module.get(DeletePostUseCase);
   });
 
   it('should return NotFoundError if post is not found', async () => {
@@ -33,7 +35,7 @@ describe('DeletePostUseCase', () => {
 
   it('should return ForbiddenError if user is not author', async () => {
     mockPostRepo.findById.mockResolvedValue(
-      right({ id: 'post-1', userId: 'other-user' } as any),
+      right({ id: 'post-1', userId: 'other-user' }),
     );
 
     const result = await useCase.execute({ postId: 'post-1', userId: 'user-1' });
@@ -44,7 +46,7 @@ describe('DeletePostUseCase', () => {
 
   it('should soft delete post successfully', async () => {
     mockPostRepo.findById.mockResolvedValue(
-      right({ id: 'post-1', userId: 'user-1' } as any),
+      right({ id: 'post-1', userId: 'user-1' }),
     );
     mockPostRepo.softDelete.mockResolvedValue(right(undefined));
 

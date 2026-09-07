@@ -1,3 +1,4 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { WalletEntryReason } from '@prisma/client';
 import { prisma } from '../../../test/setup-integration';
 import { UserFactory, ProductFactory, OrderFactory } from '../../../test/factories';
@@ -21,12 +22,18 @@ describe('EscrowReleaseTask Integration', () => {
     orderFactory = new OrderFactory(prisma);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     payoutService = { payoutForOrder: jest.fn().mockResolvedValue(undefined) };
-    sut = new EscrowReleaseTask(
-      prisma as PrismaService,
-      payoutService as unknown as SellerPayoutService,
-    );
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        EscrowReleaseTask,
+        { provide: PrismaService, useValue: prisma },
+        { provide: SellerPayoutService, useValue: payoutService },
+      ],
+    }).compile();
+
+    sut = module.get(EscrowReleaseTask);
   });
 
   async function seedDeliveredOrder() {

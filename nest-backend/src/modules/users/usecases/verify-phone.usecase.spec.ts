@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
 import { VerifyPhoneUseCase } from './verify-phone.usecase';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { PhoneVerificationRepository } from '../domain/repositories/phone-verification.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { right } from '@/shared/core/either';
 import {
@@ -47,8 +47,8 @@ describe('VerifyPhoneUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         VerifyPhoneUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: PhoneVerificationRepository, useValue: mockPhoneVerificationRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: PhoneVerificationDatabaseRepository, useValue: mockPhoneVerificationRepository },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();

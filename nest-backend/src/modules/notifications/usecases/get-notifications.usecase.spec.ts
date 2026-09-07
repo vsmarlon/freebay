@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetNotificationsUseCase } from './get-notifications.usecase';
-import { NotificationRepository } from '../domain/repositories/notification.repository';
+import { NotificationDatabaseRepository } from '../data/repositories/notification-database.repository';
 import { right } from '@/shared/core/either';
 
 const mockNotifications = [
@@ -32,11 +32,11 @@ describe('GetNotificationsUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetNotificationsUseCase,
-        { provide: NotificationRepository, useValue: mockNotificationRepository },
+        { provide: NotificationDatabaseRepository, useValue: mockNotificationRepository },
       ],
     }).compile();
 
-    sut = module.get<GetNotificationsUseCase>(GetNotificationsUseCase);
+    sut = module.get(GetNotificationsUseCase);
     jest.clearAllMocks();
   });
 

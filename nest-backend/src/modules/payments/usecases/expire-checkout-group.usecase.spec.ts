@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExpireCheckoutGroupUseCase } from './expire-checkout-group.usecase';
-import { PaymentGroupRepository } from '../domain/repositories/payment-group.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { ProductRepository } from '../../products/domain/repositories/product.repository';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
+import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
@@ -67,10 +67,10 @@ describe('ExpireCheckoutGroupUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExpireCheckoutGroupUseCase,
-        { provide: PaymentGroupRepository, useValue: mockPaymentGroupRepository },
-        { provide: TransactionRepository, useValue: mockTransactionRepository },
-        { provide: ProductRepository, useValue: mockProductRepository },
-        { provide: OrderRepository, useValue: mockOrderRepository },
+        { provide: PaymentGroupDatabaseRepository, useValue: mockPaymentGroupRepository },
+        { provide: TransactionDatabaseRepository, useValue: mockTransactionRepository },
+        { provide: ProductDatabaseRepository, useValue: mockProductRepository },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();

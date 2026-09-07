@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MarkAsReadUseCase } from './mark-as-read.usecase';
-import { NotificationRepository } from '../domain/repositories/notification.repository';
+import { NotificationDatabaseRepository } from '../data/repositories/notification-database.repository';
 import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
@@ -20,11 +20,11 @@ describe('MarkAsReadUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MarkAsReadUseCase,
-        { provide: NotificationRepository, useValue: mockNotificationRepository },
+        { provide: NotificationDatabaseRepository, useValue: mockNotificationRepository },
       ],
     }).compile();
 
-    sut = module.get<MarkAsReadUseCase>(MarkAsReadUseCase);
+    sut = module.get(MarkAsReadUseCase);
     jest.clearAllMocks();
   });
 

@@ -1,35 +1,41 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { ProcessWebhookUseCase } from './process-webhook.usecase';
 import { prisma } from '../../../../test/setup-integration';
 import { isRight, right } from '@/shared/core/either';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { ProductRepository } from '../../products/domain/repositories/product.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { WalletRepository } from '../../wallet/domain/repositories/wallet.repository';
+import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 
 const mockNotificationService = {
   notifyPayment: jest.fn().mockResolvedValue(undefined),
   notifyOrderStatus: jest.fn().mockResolvedValue(undefined),
-} as unknown as NotificationService;
+};
 
-const mockProductRepo = {} as ProductRepository;
-const mockTransactionRepo = {} as TransactionRepository;
-const mockOrderRepo = {} as OrderRepository;
-const mockWalletRepo = {} as WalletRepository;
+const mockProductRepo: Record<string, jest.Mock> = {};
+const mockTransactionRepo: { findByOrderId?: jest.Mock } = {};
+const mockOrderRepo: Record<string, jest.Mock> = {};
+const mockWalletRepo: Record<string, jest.Mock> = {};
 
 describe('ProcessWebhookUseCase Integration', () => {
   let sut: ProcessWebhookUseCase;
 
-  beforeEach(() => {
-    sut = new ProcessWebhookUseCase(
-      mockProductRepo,
-      mockTransactionRepo,
-      mockOrderRepo,
-      mockWalletRepo,
-      mockNotificationService,
-      prisma as PrismaService,
-    );
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ProcessWebhookUseCase,
+        { provide: ProductDatabaseRepository, useValue: mockProductRepo },
+        { provide: TransactionDatabaseRepository, useValue: mockTransactionRepo },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepo },
+        { provide: WalletDatabaseRepository, useValue: mockWalletRepo },
+        { provide: NotificationService, useValue: mockNotificationService },
+        { provide: PrismaService, useValue: prisma },
+      ],
+    }).compile();
+
+    sut = module.get(ProcessWebhookUseCase);
     jest.clearAllMocks();
   });
 

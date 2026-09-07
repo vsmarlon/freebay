@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RemoveContentUseCase } from './remove-content.usecase';
-import { ModerationRepository } from '../domain/repositories/moderation.repository';
+import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError, NotFoundError } from '@/shared/core/errors';
 
@@ -20,7 +20,7 @@ describe('RemoveContentUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RemoveContentUseCase,
-        { provide: ModerationRepository, useValue: mockModerationRepository },
+        { provide: ModerationDatabaseRepository, useValue: mockModerationRepository },
       ],
     }).compile();
 

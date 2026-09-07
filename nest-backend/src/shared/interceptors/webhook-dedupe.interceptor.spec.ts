@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CallHandler, ExecutionContext } from '@nestjs/common';
+import { createExecutionContext } from '@/shared/testing/test-doubles';
 import { of, throwError, lastValueFrom } from 'rxjs';
 import { WebhookDedupeInterceptor } from './webhook-dedupe.interceptor';
 import { RedisService } from '@/shared/infra/redis/redis.service';
@@ -10,11 +11,7 @@ describe('WebhookDedupeInterceptor', () => {
 
   const createContext = (stripeEvent: { id: string } | undefined): ExecutionContext => {
     const request = { stripeEvent };
-    return {
-      switchToHttp: () => ({
-        getRequest: () => request,
-      }),
-    } as ExecutionContext;
+    return createExecutionContext({ request });
   };
 
   beforeEach(async () => {

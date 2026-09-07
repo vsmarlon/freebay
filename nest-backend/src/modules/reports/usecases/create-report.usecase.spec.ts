@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateReportUseCase } from './create-report.usecase';
-import { ReportRepository } from '../domain/repositories/report.repository';
+import { ReportDatabaseRepository } from '../data/repositories/report-database.repository';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 import { ReportTargetType } from '@prisma/client';
@@ -23,7 +23,7 @@ describe('CreateReportUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateReportUseCase,
-        { provide: ReportRepository, useValue: mockRepo },
+        { provide: ReportDatabaseRepository, useValue: mockRepo },
       ],
     }).compile();
 

@@ -1,22 +1,27 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { DeleteCommentUseCase } from './delete-comment.usecase';
-import { CommentRepository } from '../domain/repositories/comment.repository';
+import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
 import { right } from '@/shared/core/either';
 import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
 
 describe('DeleteCommentUseCase', () => {
   let useCase: DeleteCommentUseCase;
-  let mockCommentRepo: jest.Mocked<CommentRepository>;
+  let mockCommentRepo: { findById: jest.Mock; softDelete: jest.Mock };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockCommentRepo = {
       findById: jest.fn(),
-      findAllByPostId: jest.fn(),
-      create: jest.fn(),
-      createMentions: jest.fn(),
       softDelete: jest.fn(),
-    } as unknown as jest.Mocked<CommentRepository>;
+    };
 
-    useCase = new DeleteCommentUseCase(mockCommentRepo);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        DeleteCommentUseCase,
+        { provide: PrismaCommentRepository, useValue: mockCommentRepo },
+      ],
+    }).compile();
+
+    useCase = module.get(DeleteCommentUseCase);
   });
 
   it('should return NotFoundError if comment not found', async () => {
@@ -30,7 +35,7 @@ describe('DeleteCommentUseCase', () => {
 
   it('should return ForbiddenError if user is not author', async () => {
     mockCommentRepo.findById.mockResolvedValue(
-      right({ id: 'c-1', userId: 'other-user' } as any),
+      right({ id: 'c-1', userId: 'other-user' }),
     );
 
     const result = await useCase.execute({ commentId: 'c-1', userId: 'user-1' });
@@ -41,7 +46,7 @@ describe('DeleteCommentUseCase', () => {
 
   it('should soft delete comment successfully', async () => {
     mockCommentRepo.findById.mockResolvedValue(
-      right({ id: 'c-1', userId: 'user-1' } as any),
+      right({ id: 'c-1', userId: 'user-1' }),
     );
     mockCommentRepo.softDelete.mockResolvedValue(right(undefined));
 

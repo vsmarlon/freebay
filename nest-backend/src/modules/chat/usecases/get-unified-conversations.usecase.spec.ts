@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetUnifiedConversationsUseCase } from './get-unified-conversations.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { right } from '@/shared/core/either';
 
 const mockRepo = {
@@ -17,11 +17,11 @@ describe('GetUnifiedConversationsUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetUnifiedConversationsUseCase,
-        { provide: ConversationRepository, useValue: mockRepo },
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
       ],
     }).compile();
 
-    sut = module.get<GetUnifiedConversationsUseCase>(GetUnifiedConversationsUseCase);
+    sut = module.get(GetUnifiedConversationsUseCase);
     jest.clearAllMocks();
     mockRepo.countUnreadChatMessages.mockResolvedValue(right({}));
   });

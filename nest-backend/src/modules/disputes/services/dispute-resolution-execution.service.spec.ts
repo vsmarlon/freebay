@@ -1,3 +1,4 @@
+import { createTransactionClient } from '@/shared/testing/test-doubles';
 import { DisputeResolutionExecutionService } from './dispute-resolution-execution.service';
 import { WalletMissingError } from '@/shared/wallet/wallet-mutation';
 import { DisputeWithOrder } from '../types/dispute.types';
@@ -10,29 +11,49 @@ describe('DisputeResolutionExecutionService', () => {
   });
 
   function buildTx(walletExists = true, claimedCount = 1) {
-    return {
+    return createTransactionClient({
       order: { updateMany: jest.fn().mockResolvedValue({ count: claimedCount }) },
       wallet: {
         findUnique: jest.fn().mockResolvedValue(walletExists ? { userId: 'seller-1' } : null),
         upsert: jest.fn().mockResolvedValue({}),
       },
       walletEntry: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
-    } as unknown as Parameters<DisputeResolutionExecutionService['resolveInFavorOfBuyer']>[0];
+    });
   }
 
   function buildDispute(overrides: Partial<DisputeWithOrder['order']> = {}): DisputeWithOrder {
+    const now = new Date();
     return {
       id: 'dispute-1',
       orderId: 'order-1',
+      openedById: 'buyer-1',
+      status: 'OPEN',
+      reason: 'Item não recebido',
+      buyerEvidence: null,
+      sellerEvidence: null,
+      resolution: null,
+      resolvedAt: null,
+      resolvedById: null,
+      createdAt: now,
+      expiresAt: now,
       order: {
         id: 'order-1',
         buyerId: 'buyer-1',
         sellerId: 'seller-1',
+        productId: 'product-1',
+        quantity: 1,
         amount: 10000,
+        platformFee: 1000,
         sellerAmount: 9000,
+        status: 'DISPUTED',
+        escrowStatus: 'HELD',
+        meetingScheduledAt: null,
+        deliveryConfirmedAt: null,
+        createdAt: now,
+        updatedAt: now,
         ...overrides,
       },
-    } as unknown as DisputeWithOrder;
+    };
   }
 
   describe('resolveInFavorOfBuyer', () => {

@@ -1,15 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { UrlSafetyService } from './url-safety.service';
 
 describe('UrlSafetyService', () => {
   let service: UrlSafetyService;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [UrlSafetyService],
-    }).compile();
-
-    service = module.get<UrlSafetyService>(UrlSafetyService);
+  beforeEach(() => {
+    service = new UrlSafetyService();
   });
 
   it('should mark legitimate https website as SAFE', () => {

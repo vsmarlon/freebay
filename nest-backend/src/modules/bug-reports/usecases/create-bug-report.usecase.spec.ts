@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateBugReportUseCase } from './create-bug-report.usecase';
-import { BugReportRepository } from '../domain/repositories/bug-report.repository';
+import { BugReportDatabaseRepository } from '../data/repositories/bug-report-database.repository';
 import { DatabaseError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
 
@@ -15,7 +15,7 @@ describe('CreateBugReportUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateBugReportUseCase,
-        { provide: BugReportRepository, useValue: mockRepo },
+        { provide: BugReportDatabaseRepository, useValue: mockRepo },
       ],
     }).compile();
 

@@ -14,13 +14,16 @@ export interface Response<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
-  intercept(_context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+export class TransformInterceptor<T>
+  implements NestInterceptor<T, Response<T> | StreamableFile>
+{
+  intercept(
+    _context: ExecutionContext,
+    next: CallHandler<T | StreamableFile>,
+  ): Observable<Response<T> | StreamableFile> {
     return next.handle().pipe(
       map((data) =>
-        data instanceof StreamableFile
-          ? (data as unknown as Response<T>)
-          : { success: true, data },
+        data instanceof StreamableFile ? data : { success: true, data },
       ),
     );
   }

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CancelAccountDeletionUseCase } from './cancel-account-deletion.usecase';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { AccountLifecycleRepository } from '../domain/repositories/account-lifecycle.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError, UserNotFoundError } from '@/shared/core/errors';
 
@@ -22,8 +22,8 @@ describe('CancelAccountDeletionUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CancelAccountDeletionUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: AccountLifecycleRepository, useValue: mockAccountLifecycleRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: AccountLifecycleDatabaseRepository, useValue: mockAccountLifecycleRepository },
       ],
     }).compile();
 

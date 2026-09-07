@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForwardMessagesUseCase } from './forward-messages.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BadRequestError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
@@ -38,13 +38,13 @@ describe('ForwardMessagesUseCase', () => {
       providers: [
         ForwardMessagesUseCase,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: ConversationRepository, useValue: mockRepo },
-        { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
+        { provide: PrismaBlockRepository, useValue: mockBlockRepository },
         { provide: ChatThreadAccessService, useValue: mockThreadAccess },
       ],
     }).compile();
 
-    sut = module.get<ForwardMessagesUseCase>(ForwardMessagesUseCase);
+    sut = module.get(ForwardMessagesUseCase);
     jest.clearAllMocks();
     mockBlockRepository.isBlocked.mockResolvedValue(right(false));
   });

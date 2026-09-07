@@ -1,12 +1,12 @@
 import { ForgotPasswordUseCase } from './forgot-password.usecase';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { EmailService } from '@/shared/infra/email/email.service';
 import { right } from '@/shared/core/either';
 
 describe('ForgotPasswordUseCase', () => {
   let sut: ForgotPasswordUseCase;
-  let userRepository: jest.Mocked<Partial<UserRepository>>;
+  let userRepository: jest.Mocked<Partial<UserDatabaseRepository>>;
   let redisService: jest.Mocked<Partial<RedisService>>;
   let emailService: jest.Mocked<Partial<EmailService>>;
 
@@ -25,7 +25,7 @@ describe('ForgotPasswordUseCase', () => {
     emailService = { sendPasswordReset: jest.fn() };
 
     sut = new ForgotPasswordUseCase(
-      userRepository as UserRepository,
+      userRepository as UserDatabaseRepository,
       redisService as RedisService,
       emailService as EmailService,
     );

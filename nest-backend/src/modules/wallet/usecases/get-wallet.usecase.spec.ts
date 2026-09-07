@@ -1,25 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetWalletUseCase } from './get-wallet.usecase';
-import { WalletRepository } from '../domain/repositories/wallet.repository';
+import { WalletDatabaseRepository } from '../data/repositories/wallet-database.repository';
 import { right } from '@/shared/core/either';
 
 describe('GetWalletUseCase', () => {
   let sut: GetWalletUseCase;
-  let mockWalletRepository: any;
+  let mockWalletRepository: { findByUserId: jest.Mock };
 
   beforeEach(async () => {
     mockWalletRepository = {
       findByUserId: jest.fn(),
-    } as jest.Mocked<Partial<WalletRepository>>;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetWalletUseCase,
-        { provide: WalletRepository, useValue: mockWalletRepository },
+        { provide: WalletDatabaseRepository, useValue: mockWalletRepository },
       ],
     }).compile();
 
-    sut = module.get<GetWalletUseCase>(GetWalletUseCase);
+    sut = module.get(GetWalletUseCase);
   });
 
   it('should be defined', () => {

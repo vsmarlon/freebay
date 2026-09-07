@@ -1,3 +1,4 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { CreateOrderUseCase } from './create-order.usecase';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { prisma } from '../../../../test/setup-integration';
@@ -9,16 +10,23 @@ import { NotificationService } from '@/modules/notifications/services/notificati
 
 describe('CreateOrderUseCase Integration', () => {
   let sut: CreateOrderUseCase;
-  let orderRepository: PrismaOrderRepository;
   let userFactory: UserFactory;
   let productFactory: ProductFactory;
 
-  beforeAll(() => {
-    orderRepository = new PrismaOrderRepository(prisma as PrismaService);
+  beforeAll(async () => {
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
-    const notificationService = { create: jest.fn() } as unknown as NotificationService;
-    sut = new CreateOrderUseCase(orderRepository, notificationService);
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CreateOrderUseCase,
+        PrismaOrderRepository,
+        { provide: PrismaService, useValue: prisma },
+        { provide: NotificationService, useValue: { create: jest.fn() } },
+      ],
+    }).compile();
+
+    sut = module.get(CreateOrderUseCase);
   });
 
   describe('Business Rules', () => {

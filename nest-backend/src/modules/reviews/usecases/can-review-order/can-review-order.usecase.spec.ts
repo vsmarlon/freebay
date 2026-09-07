@@ -1,3 +1,5 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { CanReviewOrderUseCase } from './can-review-order.usecase';
 import { OrderStatus, ReviewType, EscrowStatus } from '@prisma/client';
 import { isLeft, isRight } from '@/shared/core/either';
@@ -28,7 +30,7 @@ describe('CanReviewOrderUseCase', () => {
     updatedAt: new Date(),
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockPrisma = {
       order: {
         findUnique: jest.fn(),
@@ -38,7 +40,14 @@ describe('CanReviewOrderUseCase', () => {
       },
     };
 
-    sut = new CanReviewOrderUseCase(mockPrisma as any);
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CanReviewOrderUseCase,
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
+    }).compile();
+
+    sut = module.get(CanReviewOrderUseCase);
   });
 
   describe('when order does not exist', () => {

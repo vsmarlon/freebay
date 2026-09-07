@@ -5,9 +5,9 @@ import { UnlikePostUseCase } from './unlike-post.usecase';
 import { CommentUseCase } from './comment.usecase';
 import { NotFoundError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
-import { PostRepository } from '../domain/repositories/post.repository';
-import { LikeRepository } from '../domain/repositories/like.repository';
-import { CommentRepository } from '../domain/repositories/comment.repository';
+import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PrismaLikeRepository } from '../data/repositories/like-database.repository';
+import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 
 describe('CreatePostUseCase', () => {
@@ -44,12 +44,12 @@ describe('CreatePostUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePostUseCase,
-        { provide: PostRepository, useValue: mockPostRepository },
+        { provide: PrismaPostRepository, useValue: mockPostRepository },
         { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
-    sut = module.get<CreatePostUseCase>(CreatePostUseCase);
+    sut = module.get(CreatePostUseCase);
   });
 
   it('should be defined', () => {
@@ -157,12 +157,12 @@ describe('LikePostUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LikePostUseCase,
-        { provide: PostRepository, useValue: mockPostRepository },
-        { provide: LikeRepository, useValue: mockLikeRepository },
+        { provide: PrismaPostRepository, useValue: mockPostRepository },
+        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
-    sut = module.get<LikePostUseCase>(LikePostUseCase);
+    sut = module.get(LikePostUseCase);
   });
 
   it('should be defined', () => {
@@ -215,12 +215,12 @@ describe('UnlikePostUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UnlikePostUseCase,
-        { provide: PostRepository, useValue: mockPostRepository },
-        { provide: LikeRepository, useValue: mockLikeRepository },
+        { provide: PrismaPostRepository, useValue: mockPostRepository },
+        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
-    sut = module.get<UnlikePostUseCase>(UnlikePostUseCase);
+    sut = module.get(UnlikePostUseCase);
   });
 
   it('should be defined', () => {
@@ -268,13 +268,13 @@ describe('CommentUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CommentUseCase,
-        { provide: CommentRepository, useValue: mockCommentRepository },
-        { provide: PostRepository, useValue: mockPostRepository },
+        { provide: PrismaCommentRepository, useValue: mockCommentRepository },
+        { provide: PrismaPostRepository, useValue: mockPostRepository },
         { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
-    sut = module.get<CommentUseCase>(CommentUseCase);
+    sut = module.get(CommentUseCase);
   });
 
   it('should be defined', () => {

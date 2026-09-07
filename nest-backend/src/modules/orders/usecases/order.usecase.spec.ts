@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateOrderUseCase } from './create-order.usecase';
 import { ConfirmDeliveryUseCase } from './confirm-delivery.usecase';
-import { OrderRepository } from '../domain/repositories/order.repository';
+import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { right } from '@/shared/core/either';
@@ -19,7 +19,7 @@ describe('CreateOrderUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderUseCase,
-        { provide: OrderRepository, useValue: mockOrderRepository },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: NotificationService, useValue: { create: jest.fn() } },
       ],
     }).compile();
@@ -92,7 +92,7 @@ describe('ConfirmDeliveryUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConfirmDeliveryUseCase,
-        { provide: OrderRepository, useValue: mockOrderRepository },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: SellerPayoutService, useValue: { payoutForOrder: jest.fn() } },
       ],
     }).compile();
@@ -251,7 +251,7 @@ describe('CreateOrderUseCase - platform fee calculations', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderUseCase,
-        { provide: OrderRepository, useValue: mockOrderRepository },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: NotificationService, useValue: { create: jest.fn() } },
       ],
     }).compile();

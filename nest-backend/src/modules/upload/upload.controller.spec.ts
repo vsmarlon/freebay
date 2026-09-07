@@ -53,7 +53,7 @@ describe('UploadController', () => {
   });
 
   it('throws BadRequestException when no file', () => {
-    expect(() => sut.upload(undefined as any, 'chat')).toThrow(BadRequestException);
+    expect(() => sut.upload(undefined, 'chat')).toThrow(BadRequestException);
   });
 
   it('throws BadRequestException for invalid context', () => {

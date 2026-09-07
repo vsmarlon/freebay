@@ -5,6 +5,21 @@
 
 ---
 
+## 🚫 No type escape hatches
+
+**`as unknown as X`, `as any`, and bare `any` are banned everywhere — production code and tests alike.** They do not fix a type error, they silence it, and they leave the next reader with a false statement about what the value is. There is no "it's only a mock" exemption: test doubles are where this creeps in most and where it most often hides a real signature drift.
+
+A failing typecheck is information. Fix the type, not the message:
+
+- **Partial test double for a class-typed dependency** — build the spec with `Test.createTestingModule({ providers: [{ provide: SomeRepository, useValue: mockRepo }] })` and get the subject via `module.get(SomeUseCase)`. The provider seam accepts the partial mock, so nothing in our code asserts a type. Never `new SomeUseCase(mock as unknown as Repo)`.
+- **A value genuinely has several shapes** — widen the declared type to the union and narrow with `instanceof` or a type guard.
+- **Value of unknown origin** (parsed JSON, `catch` binding) — type it `unknown` and narrow with a predicate.
+- **A third-party type is wrong** — correct it once in a typed helper or module augmentation, not at each call site.
+
+If a cast is genuinely unavoidable, it lives in exactly one named place with a comment justifying it — never spread across call sites, and never in a spec.
+
+---
+
 ## 🛠️ Common Commands for Verifying Work
 
 Before completing tasks or opening PRs, agents must run the following verification commands to ensure zero errors, zero linter warnings, and passing tests across both backend and frontend.
@@ -26,7 +41,7 @@ npx jest src/modules/auth/usecases/register.usecase.spec.ts
 # Run tests by name pattern
 npx jest --testNamePattern "should return error"
 
-# Integration tests (requires Docker PostgreSQL + Redis or test DB)
+# Integration tests (requires explicitly configured native/external PostgreSQL + Redis)
 npm run test:integration
 
 # Linting & code style
@@ -70,14 +85,13 @@ flutter build apk --debug
 # Unit test suite (TypeScript + Jest backend + Flutter unit tests)
 make test-unit
 
-# Integration test suite (Flutter integration with headless Chrome)
+# Backend integration test suite (configured native/external services)
 make test-integration
 
 # Complete test suite
 make test
 
-# Start local test DB & Redis dependencies for integration tests
-docker compose -f docker-compose.test.yml up -d
+# CI provides PostgreSQL and Redis service containers; local runs use configured `.env.test` services.
 ```
 
 ---
@@ -89,7 +103,7 @@ All agents must follow the conventions defined in the corresponding skill before
 | Skill Name | Target Stack & Scope | Location |
 |---|---|---|
 | **[`freebay-app-flows`](./.agents/skills/freebay-app-flows/SKILL.md)** | End-to-end user journeys, sequence flows, state hierarchy, and navigation routes (Auth, Biometry, Google Login, Onboarding, Wallet, Chat, Profile, Feed/Explore, Checkout, Disputes, Notifications). | [`.agents/skills/freebay-app-flows/SKILL.md`](./.agents/skills/freebay-app-flows/SKILL.md) |
-| **[`freebay-design-system`](./.agents/skills/freebay-design-system/SKILL.md)** | Flutter "Digital Brutalist" UI: strict 0px border radius, no drop shadows (tonal layering only), no divider lines, Space Grotesk / Inter fonts, `#8A1083` magenta accent, 150ms linear micro-animations, dark mode tokens, and widget primitives. | [`.agents/skills/freebay-design-system/SKILL.md`](./.agents/skills/freebay-design-system/SKILL.md) |
+| **[`freebay-design-system`](./.agents/skills/freebay-design-system/SKILL.md)** | Flutter "Digital Brutalist" UI: strict 0px border radius, no drop shadows (tonal layering only), no divider lines, Space Grotesk / Inter fonts, `#8A1083` magenta accent, role-based motion tokens, theme-driven dark mode, and widget primitives. Points at `frontend/DESIGN.md` for token values. | [`.agents/skills/freebay-design-system/SKILL.md`](./.agents/skills/freebay-design-system/SKILL.md) |
 | **[`freebay-flutter-feature`](./.agents/skills/freebay-flutter-feature/SKILL.md)** | Frontend Flutter Clean Architecture: `data/domain/presentation` layers, Riverpod state management, Dio HTTP client, `safeCall` error wrapper, GoRouter route definitions, and widget tests. | [`.agents/skills/freebay-flutter-feature/SKILL.md`](./.agents/skills/freebay-flutter-feature/SKILL.md) |
 | **[`freebay-backend-module`](./.agents/skills/freebay-backend-module/SKILL.md)** | NestJS Backend vertical slices: `dtos/` with `class-validator` + `@ApiDoc`, single-class `usecases/` returning `Either<AppError, Output>`, `domain/repositories/` abstract interfaces, `data/repositories/` concrete Prisma repos, mappers, and colocated `*.spec.ts` tests. | [`.agents/skills/freebay-backend-module/SKILL.md`](./.agents/skills/freebay-backend-module/SKILL.md) |
 | **[`freebay-data-model`](./.agents/skills/freebay-data-model/SKILL.md)** | PostgreSQL / Prisma schema conventions: strict monetary **cents-as-Int** (`price Int // em centavos`), real enums over strings, mandatory `onDelete` cascading rules, foreign key indexing, and migration workflows. | [`.agents/skills/freebay-data-model/SKILL.md`](./.agents/skills/freebay-data-model/SKILL.md) |
@@ -211,15 +225,18 @@ graph TD
 
 ## 🎨 Digital Brutalist Design System Reference
 
-| Token / Concept | Specification | Implementation Rule |
-|---|---|---|
-| **Corner Radius** | `0.0` (Strict 0px) | Never use `BorderRadius.circular()`. Only `BorderRadius.zero` or no decoration radius. |
-| **Elevation & Depth** | Tonal layering | Never use `BoxShadow` or elevation blur. Shift background surface tones (`#F9F9F9` → `#F3F3F3` → `#EEEEEE` → `#E2E2E2`). |
-| **Separators** | Tonal blocking | Never use standard `Divider()`. Contrast adjacent blocks or outline with crisp 1px borders. |
-| **Primary Accent** | `#8A1083` (Magenta) | Use sparingly as a focal laser (CTA buttons, status badges, active indicators). |
-| **Typography** | Space Grotesk & Inter | Space Grotesk for display/headlines/price tags (`AppTypography.display*`); Inter for UI body (`AppTypography.body*`). |
-| **Micro-Animations** | 150ms `Curves.linear` | Snappy, mechanical brutalist feedback without bouncy ease curves. |
-| **Dark Mode** | Full dark theme support | Always check theme extensions and `context.isDark`. |
+**[`frontend/DESIGN.md`](./frontend/DESIGN.md) is the source of truth for every token.** Values are not duplicated here — a hex that lives in two files is a hex that will drift. Read it before writing UI.
+
+| Concept | Implementation Rule |
+|---|---|
+| **Corner Radius** | Strict 0px. Never `BorderRadius.circular()`. The theme squares every Material widget that would round itself, so don't write `BorderRadius.zero` either. |
+| **Elevation & Depth** | Step the surface tone, or use the hard offset shadow from `AppDepth`. Any `blurRadius` is a bug. |
+| **Separators** | Tonal blocking. Never `Divider()`, and never a hairline `Border(bottom:)` standing in for one. |
+| **Primary Accent** | The magenta from `AppColors.primaryContainer`, used as a focal laser (CTAs, status badges, active indicators). There is no secondary accent. |
+| **Typography** | Space Grotesk display, Inter body — via `AppTypography.*`. Both are variable fonts, so weight must come through `fontVariations`; use `.weight(n)` to override, never bare `fontWeight`. |
+| **Micro-Animations** | `AppMotion` roles (`tap`, `base`, `enter`), never raw milliseconds. `elasticOut`, `easeOutBack`, `easeInOut` are banned. |
+| **Dark Mode** | Read colours from `AppThemeContext` (`context.textPrimary`, `context.surfaceColor`, …). An `isDark ? colorA : colorB` is always redundant and always drifts. |
+| **Enforcement** | `make design-check` greps for the banned patterns above. |
 
 ---
 

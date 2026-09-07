@@ -1,4 +1,6 @@
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { UnauthorizedException } from '@nestjs/common';
+import { createExecutionContext } from '@/shared/testing/test-doubles';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ALLOWED_TOKEN_TYPES_KEY } from './token-types.decorator';
@@ -15,16 +17,12 @@ describe('JwtAuthGuard', () => {
       headers: { authorization },
     };
 
-    const context = {
-      switchToHttp: () => ({ getRequest: () => request }),
-      getHandler: () => 'handler',
-      getClass: () => 'class',
-    } as unknown as ExecutionContext;
+    const context = createExecutionContext({ request });
 
     return { context, request };
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     reflector = {
       getAllAndOverride: jest.fn((key: string) => {
         if (key === ALLOWED_TOKEN_TYPES_KEY) {
@@ -37,10 +35,15 @@ describe('JwtAuthGuard', () => {
       verifyAndValidate: jest.fn(),
     };
 
-    guard = new JwtAuthGuard(
-      reflector as unknown as Reflector,
-      tokenValidator as unknown as JwtTokenValidatorService,
-    );
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        JwtAuthGuard,
+        { provide: Reflector, useValue: reflector },
+        { provide: JwtTokenValidatorService, useValue: tokenValidator },
+      ],
+    }).compile();
+
+    guard = module.get(JwtAuthGuard);
   });
 
   it('rejects requests without token', async () => {

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SuspendUserUseCase } from './suspend-user.usecase';
-import { ModerationRepository } from '../domain/repositories/moderation.repository';
+import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 import { left, right } from '@/shared/core/either';
 import {
@@ -29,7 +29,7 @@ describe('SuspendUserUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SuspendUserUseCase,
-        { provide: ModerationRepository, useValue: mockModerationRepository },
+        { provide: ModerationDatabaseRepository, useValue: mockModerationRepository },
         { provide: SessionRevokerService, useValue: mockSessionRevoker },
       ],
     }).compile();

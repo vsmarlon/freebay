@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcryptjs';
-import { UserRepository } from '../domain/repositories/user.repository';
-import { PasswordRecoveryRepository } from '../domain/repositories/password-recovery.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { RecoveryCodeNotFoundError } from '@/shared/core/errors';
 import { ResetPasswordUseCase } from './reset-password.usecase';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
@@ -8,8 +8,8 @@ import { right } from '@/shared/core/either';
 
 describe('ResetPasswordUseCase', () => {
   let sut: ResetPasswordUseCase;
-  let userRepository: jest.Mocked<Partial<UserRepository>>;
-  let recoveryRepository: jest.Mocked<Partial<PasswordRecoveryRepository>>;
+  let userRepository: jest.Mocked<Partial<UserDatabaseRepository>>;
+  let recoveryRepository: jest.Mocked<Partial<PasswordRecoveryDatabaseRepository>>;
   let sessionRevoker: jest.Mocked<Partial<SessionRevokerService>>;
 
   beforeEach(() => {
@@ -21,14 +21,14 @@ describe('ResetPasswordUseCase', () => {
     recoveryRepository = {
       findLatestByEmail: jest.fn(),
       markUsed: jest.fn(),
-    } as jest.Mocked<Partial<PasswordRecoveryRepository>>;
+    } as jest.Mocked<Partial<PasswordRecoveryDatabaseRepository>>;
     sessionRevoker = {
       revokeAllSessions: jest.fn(),
     };
 
     sut = new ResetPasswordUseCase(
-      userRepository as UserRepository,
-      recoveryRepository as PasswordRecoveryRepository,
+      userRepository as UserDatabaseRepository,
+      recoveryRepository as PasswordRecoveryDatabaseRepository,
       sessionRevoker as SessionRevokerService,
     );
   });

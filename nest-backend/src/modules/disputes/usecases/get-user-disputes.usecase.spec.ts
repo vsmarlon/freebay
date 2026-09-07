@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetUserDisputesUseCase } from './get-user-disputes.usecase';
-import { DisputeRepository } from '../domain/repositories/dispute.repository';
+import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
 import { right } from '@/shared/core/either';
 
 const mockDisputeRepo = {
@@ -21,7 +21,7 @@ describe('GetUserDisputesUseCase', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GetUserDisputesUseCase, { provide: DisputeRepository, useValue: mockDisputeRepo }],
+      providers: [GetUserDisputesUseCase, { provide: PrismaDisputeRepository, useValue: mockDisputeRepo }],
     }).compile();
 
     sut = module.get<GetUserDisputesUseCase>(GetUserDisputesUseCase);

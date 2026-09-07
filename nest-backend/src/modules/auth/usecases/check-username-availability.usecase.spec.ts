@@ -1,26 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { CheckUsernameAvailabilityUseCase } from './check-username-availability.usecase';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { DatabaseError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
 
 describe('CheckUsernameAvailabilityUseCase', () => {
   let sut: CheckUsernameAvailabilityUseCase;
-  let mockUserRepository: jest.Mocked<Partial<UserRepository>>;
+  let mockUserRepository: jest.Mocked<Partial<UserDatabaseRepository>>;
 
   beforeEach(async () => {
     mockUserRepository = {
       findByUsername: jest.fn().mockResolvedValue(right(null)),
-    } as jest.Mocked<Partial<UserRepository>>;
+    } as jest.Mocked<Partial<UserDatabaseRepository>>;
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CheckUsernameAvailabilityUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-      ],
-    }).compile();
-
-    sut = module.get<CheckUsernameAvailabilityUseCase>(CheckUsernameAvailabilityUseCase);
+    sut = new CheckUsernameAvailabilityUseCase(mockUserRepository as UserDatabaseRepository);
   });
 
   it('should be defined', () => {
@@ -45,7 +37,7 @@ describe('CheckUsernameAvailabilityUseCase', () => {
         id: 'existing-id',
         username: 'valid_user',
         displayName: 'Existing User',
-      } as any),
+      }),
     );
 
     const result = await sut.execute({ username: 'valid_user' });

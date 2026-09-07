@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetReportsUseCase } from './get-reports.usecase';
-import { ReportRepository } from '../domain/repositories/report.repository';
+import { ReportDatabaseRepository } from '../data/repositories/report-database.repository';
 import { right } from '@/shared/core/either';
 
 const mockRepo = {
@@ -14,7 +14,7 @@ describe('GetReportsUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetReportsUseCase,
-        { provide: ReportRepository, useValue: mockRepo },
+        { provide: ReportDatabaseRepository, useValue: mockRepo },
       ],
     }).compile();
 

@@ -3,8 +3,8 @@ import {
   ACCOUNT_DELETION_GRACE_DAYS,
   RequestAccountDeletionUseCase,
 } from './request-account-deletion.usecase';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
-import { AccountLifecycleRepository } from '../domain/repositories/account-lifecycle.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 import { left, right } from '@/shared/core/either';
 import {
@@ -42,8 +42,8 @@ describe('RequestAccountDeletionUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RequestAccountDeletionUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: AccountLifecycleRepository, useValue: mockAccountLifecycleRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: AccountLifecycleDatabaseRepository, useValue: mockAccountLifecycleRepository },
         { provide: SessionRevokerService, useValue: mockSessionRevoker },
       ],
     }).compile();

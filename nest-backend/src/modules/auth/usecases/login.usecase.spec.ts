@@ -1,6 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { LoginUseCase } from './login.usecase';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { InvalidCredentialsError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 import * as bcrypt from 'bcryptjs';
@@ -9,21 +8,14 @@ jest.mock('bcryptjs');
 
 describe('LoginUseCase', () => {
   let sut: LoginUseCase;
-  let mockUserRepository: jest.Mocked<Partial<UserRepository>>;
+  let mockUserRepository: jest.Mocked<Partial<UserDatabaseRepository>>;
 
   beforeEach(async () => {
     mockUserRepository = {
       findByEmail: jest.fn(),
-    } as jest.Mocked<Partial<UserRepository>>;
+    } as jest.Mocked<Partial<UserDatabaseRepository>>;
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        LoginUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
-      ],
-    }).compile();
-
-    sut = module.get<LoginUseCase>(LoginUseCase);
+    sut = new LoginUseCase(mockUserRepository as UserDatabaseRepository);
   });
 
   it('should be defined', () => {

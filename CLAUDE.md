@@ -239,7 +239,7 @@ npm run test:integration:watch
 npm run test:integration:cov
 ```
 
-The `.env.test` database is synced via `prisma db push --accept-data-loss` before each run. Integration tests are **not** included in plain `npm test`. They require a local PostgreSQL + Redis instance (use `docker-compose.test.yml` from the repo root).
+The `.env.test` database is synced via the guarded `npm run prisma:test:sync` before each run. Integration tests are **not** included in plain `npm test`. They require explicitly configured native or external PostgreSQL + Redis; local Docker is not required.
 
 ### Swagger UI
 
@@ -303,21 +303,20 @@ cd frontend && flutter pub run build_runner build --delete-conflicting-outputs
 
 ### Design System: "The Digital Brutalist"
 
-When building or modifying any frontend UI, invoke the `freebay-design-system` skill. The core rules are:
+**`frontend/DESIGN.md` is the source of truth for every design token.** Read it before writing any UI, and invoke the `freebay-design-system` skill. Token values are deliberately not duplicated here — a hex that lives in two files is a hex that will drift.
 
-- **0px border radius** on everything — no exceptions, not even 2px
-- **No standard shadows** — depth via tonal layering (surface color shifts) only
-- **No divider lines** — section breaks via tonal blocking (adjacent surface tones)
-- **Space Grotesk** for headlines/display, **Inter** for body/UI text
-- **Primary color** `#8A1083` (magenta) used sparingly — "a laser, not a paint bucket"
-- **Animations:** 150ms, `Curves.linear` — never ease-in-out
-- **Buttons:** Custom `Container` + `InkWell` with signature gradient (`#660062` → `#8A1083`), not `ElevatedButton`
-- **Price tags:** `surface_container_highest` (#E2E2E2) block with Space Grotesk typography
-- **Surface hierarchy:** `#F9F9F9` → `#F3F3F3` → `#EEEEEE` → `#E2E2E2` (light to elevated)
+The rules that get broken most:
 
-Check `core/components/` before building any UI pattern from scratch (e.g. `BrutalistBox`, `BrutalistFilterChip`, `EmptyState`, `SectionTitle`, `MenuListTile`, `StatColumn`) — extend a primitive instead of inlining a copy.
+- **0px border radius** on everything. The theme squares every Material widget that would round itself, so you never write `BorderRadius.zero` either. Avatars are squares.
+- **No blurred shadows.** Depth is a tonal surface step or the hard offset shadow from `AppDepth`. Any `blurRadius` is a bug.
+- **No divider lines** — section breaks via tonal blocking, including hairline `Border(bottom:)` used as a separator.
+- **Never read a colour from `isDark`.** `context.textPrimary`, `context.surfaceColor`, `context.borderColor` and the rest of `AppThemeContext` already resolve per brightness.
+- **Weights need `fontVariations`** — both faces are variable fonts, so `fontWeight` alone renders as synthetic bold. Use `AppTypography.*`, and `.weight(n)` to override.
+- **Motion uses `AppMotion` roles**, not raw milliseconds. `elasticOut`, `easeOutBack` and `easeInOut` are banned.
 
-Dark mode required on all screens.
+Tokens live in `frontend/libs/freebay_design_system/lib/tokens/`, design system components in that package's `components/`, app-level components in `lib/core/components/`. Import everything through `package:freebay/core/ui.dart`. Check what exists before building a primitive — `DESIGN.md` has the table of what to use instead of what.
+
+Dark mode required on all screens. `make design-check` enforces the banned patterns.
 
 ---
 
@@ -333,13 +332,28 @@ Chat is real-time via a Nest WebSocket gateway (`modules/chat/chat.gateway.ts`),
 
 ---
 
+## Type safety
+
+**`as unknown as X`, `as any`, and bare `any` are banned — in production code and in tests alike.** They do not fix a type error, they silence it, and the next person reads a lie about what the value is. There is no "just for a mock" exemption; test doubles are the most common place this creeps in and the most common place it hides a real signature drift.
+
+When the compiler objects, fix the type, not the message:
+
+| Situation | Do this instead |
+|---|---|
+| Partial test double for a class-typed dependency | Build the spec with `Test.createTestingModule({ providers: [{ provide: SomeRepository, useValue: mockRepo }] })` and pull the subject out with `module.get(SomeUseCase)`. The provider seam takes the partial mock; nothing in our code asserts a type. |
+| A value really is one of several shapes | Widen the declared type to the union (`Response<T> \| StreamableFile`) and narrow with `instanceof` / a type guard |
+| Value of unknown origin (parsed JSON, `catch` binding) | Type it `unknown` and narrow with a predicate before use |
+| Third-party type is wrong or too narrow | Declare the corrected shape once in a typed helper or module augmentation, not at each call site |
+
+A cast is a claim that you know better than the compiler. If it turns out you need one, it belongs in exactly one named place with a comment justifying it — never sprinkled across call sites, and never in a spec.
+
 ## Testing patterns
 
 **Backend (Jest + ts-jest, NestJS testing utilities):**
 - Name the subject `sut` (`let sut: RegisterUseCase`)
-- Build with `Test.createTestingModule({ providers: [...] }).compile()`, mocking repositories via `{ provide: PrismaUserRepository, useValue: mockUserRepository }`
+- Build with `Test.createTestingModule({ providers: [...] }).compile()`, mocking repositories via `{ provide: PrismaUserRepository, useValue: mockUserRepository }`. This is also how a partial mock stays type-safe — never `new SomeUseCase(mock as unknown as Repo)`
 - Spec files live alongside the source file they test (`*.spec.ts`)
-- `npm run test:integration` runs a separate suite (`jest.config.integration.js`) against `.env.test`, syncing the schema with `prisma db push` first — these are not run by plain `npm test`
+- `npm run test:integration` runs a separate suite (`jest.config.integration.js`) against `.env.test`, syncing the schema with the guarded test-only Prisma entrypoint first — these are not run by plain `npm test`
 
 **Flutter:**
 - Unit/widget tests in `test/`, integration tests in `integration_test/`

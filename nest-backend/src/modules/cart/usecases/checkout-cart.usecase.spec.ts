@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CheckoutCartUseCase } from './checkout-cart.usecase';
-import { CartRepository } from '../domain/repositories/cart.repository';
-import { PaymentGroupRepository } from '@/modules/payments/domain/repositories/payment-group.repository';
-import { PaymentProvider } from '@/modules/payments/domain/providers/payment-provider.interface';
-import { UserRepository } from '@/modules/auth/domain/repositories/user.repository';
+import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
+import { PaymentGroupDatabaseRepository } from '@/modules/payments/data/repositories/payment-group-database.repository';
+import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
@@ -39,6 +39,7 @@ const mockPrisma = {
 const buildCartItem = (overrides: Record<string, unknown> = {}) => ({
   productId: 'product-1',
   quantity: 1,
+  ...overrides,
   product: {
     id: 'product-1',
     sellerId: 'seller-1',
@@ -49,7 +50,6 @@ const buildCartItem = (overrides: Record<string, unknown> = {}) => ({
     soldCount: 0,
     ...((overrides.product as Record<string, unknown>) ?? {}),
   },
-  ...overrides,
 });
 
 describe('CheckoutCartUseCase', () => {
@@ -61,11 +61,11 @@ describe('CheckoutCartUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CheckoutCartUseCase,
-        { provide: CartRepository, useValue: mockCartRepository },
-        { provide: PaymentGroupRepository, useValue: mockPaymentGroupRepository },
-        { provide: PaymentProvider, useValue: mockPaymentProvider },
-        { provide: UserRepository, useValue: mockUserRepository },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: CartDatabaseRepository, useValue: mockCartRepository },
+        { provide: PaymentGroupDatabaseRepository, useValue: mockPaymentGroupRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: StripeProvider, useValue: mockPaymentProvider },
       ],
     }).compile();
 

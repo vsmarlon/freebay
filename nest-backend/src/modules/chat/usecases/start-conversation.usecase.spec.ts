@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StartConversationUseCase } from './start-conversation.usecase';
-import { ConversationRepository } from '../domain/repositories/conversation.repository';
-import { BlockRepository } from '@/modules/users/domain/repositories/block.repository';
+import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
+import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { BadRequestError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
@@ -23,12 +23,12 @@ describe('StartConversationUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StartConversationUseCase,
-        { provide: ConversationRepository, useValue: mockRepo },
-        { provide: BlockRepository, useValue: mockBlockRepository },
+        { provide: ConversationDatabaseRepository, useValue: mockRepo },
+        { provide: PrismaBlockRepository, useValue: mockBlockRepository },
       ],
     }).compile();
 
-    sut = module.get<StartConversationUseCase>(StartConversationUseCase);
+    sut = module.get(StartConversationUseCase);
     jest.clearAllMocks();
   });
 

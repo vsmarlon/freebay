@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { GoogleAuthUseCase } from './google-auth.usecase';
-import { UserRepository } from '../domain/repositories/user.repository';
+import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { right } from '@/shared/core/either';
 
 const mockVerifyIdToken = jest.fn();
@@ -46,12 +46,12 @@ describe('GoogleAuthUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GoogleAuthUseCase,
-        { provide: UserRepository, useValue: mockUserRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
         { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
-    sut = module.get<GoogleAuthUseCase>(GoogleAuthUseCase);
+    sut = module.get(GoogleAuthUseCase);
   });
 
   it('should be defined', () => {
@@ -93,7 +93,7 @@ describe('GoogleAuthUseCase', () => {
       updatedAt: new Date(),
     };
 
-    mockUserRepository.findByGoogleId.mockResolvedValue(right(existingUser as any));
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(existingUser));
 
     const result = await sut.execute('valid-google-id-token');
 
@@ -140,13 +140,13 @@ describe('GoogleAuthUseCase', () => {
     };
 
     mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
-    mockUserRepository.findByEmail.mockResolvedValue(right(existingEmailUser as any));
+    mockUserRepository.findByEmail.mockResolvedValue(right(existingEmailUser));
     mockUserRepository.update.mockResolvedValue(right({
       ...existingEmailUser,
       googleId: 'google-sub-456',
       emailVerified: true,
       avatarUrl: 'https://avatar.com/new.png',
-    } as any));
+    }));
 
     const result = await sut.execute('valid-google-id-token');
 
@@ -195,7 +195,7 @@ describe('GoogleAuthUseCase', () => {
 
     mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
     mockUserRepository.findByEmail.mockResolvedValue(right(null));
-    mockUserRepository.create.mockResolvedValue(right(newlyCreatedUser as any));
+    mockUserRepository.create.mockResolvedValue(right(newlyCreatedUser));
 
     const result = await sut.execute('valid-google-id-token');
 
@@ -226,7 +226,7 @@ describe('GoogleAuthUseCase', () => {
 
       mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
       mockUserRepository.findByEmail.mockResolvedValue(
-        right({ id: 'victim-id', email: 'victim@gmail.com', googleId: null } as any),
+        right({ id: 'victim-id', email: 'victim@gmail.com', googleId: null }),
       );
 
       const result = await sut.execute('attacker-google-id-token');
@@ -252,7 +252,7 @@ describe('GoogleAuthUseCase', () => {
     mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
     mockUserRepository.findByEmail.mockResolvedValue(right(null));
     mockUserRepository.create.mockResolvedValue(
-      right({ id: 'new-id', username: null, email: 'unverified@gmail.com' } as any),
+      right({ id: 'new-id', username: null, email: 'unverified@gmail.com' }),
     );
 
     await sut.execute('valid-google-id-token');

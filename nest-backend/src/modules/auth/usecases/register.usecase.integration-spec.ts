@@ -1,3 +1,4 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUseCase } from './register.usecase';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { prisma } from '../../../../test/setup-integration';
@@ -12,8 +13,15 @@ describe('RegisterUseCase Integration', () => {
   let userRepository: UserDatabaseRepository;
   let userFactory: UserFactory;
 
-  beforeEach(() => {
-    userRepository = new UserDatabaseRepository(prisma as unknown as PrismaService);
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UserDatabaseRepository,
+        { provide: PrismaService, useValue: prisma },
+      ],
+    }).compile();
+
+    userRepository = module.get(UserDatabaseRepository);
     userFactory = new UserFactory(prisma);
     sut = new RegisterUseCase(userRepository);
   });

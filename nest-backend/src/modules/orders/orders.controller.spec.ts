@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
-import { OrderRepository } from './domain/repositories/order.repository';
+import { PrismaOrderRepository } from './data/repositories/order-database.repository';
 import { CreateOrderUseCase } from './usecases/create-order.usecase';
 import { ConfirmDeliveryUseCase } from './usecases/confirm-delivery.usecase';
 import { MarkAsShippedUseCase } from './usecases/mark-as-shipped.usecase';
 import { MarkAsDeliveredUseCase } from './usecases/mark-as-delivered.usecase';
 import { CancelOrderUseCase } from './usecases/cancel-order.usecase';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { right, isLeft, Either } from '@/shared/core/either';
-import { AppError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
+import { right, Left } from '@/shared/core/either';
+import { ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { AuthUser } from '@/shared/core/types';
 
 describe('OrdersController', () => {
@@ -26,7 +26,7 @@ describe('OrdersController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
-        { provide: OrderRepository, useValue: mockOrderRepository },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
         { provide: CreateOrderUseCase, useValue: {} },
         { provide: ConfirmDeliveryUseCase, useValue: {} },
         { provide: MarkAsShippedUseCase, useValue: {} },
@@ -56,7 +56,7 @@ describe('OrdersController', () => {
 
       const result = await controller.findOne('order-123', buyerUser);
 
-      expect((result as any).order).toEqual(mockOrder);
+      expect(result).toEqual({ order: mockOrder });
     });
 
     it('should allow the seller to view their order', async () => {
@@ -65,7 +65,7 @@ describe('OrdersController', () => {
 
       const result = await controller.findOne('order-123', sellerUser);
 
-      expect((result as any).order).toEqual(mockOrder);
+      expect(result).toEqual({ order: mockOrder });
     });
 
     it('should allow an admin to view any order', async () => {
@@ -74,7 +74,7 @@ describe('OrdersController', () => {
 
       const result = await controller.findOne('order-123', adminUser);
 
-      expect((result as any).order).toEqual(mockOrder);
+      expect(result).toEqual({ order: mockOrder });
     });
 
     it('should block an unrelated user with ForbiddenError (preventing IDOR)', async () => {
@@ -83,10 +83,9 @@ describe('OrdersController', () => {
 
       const result = await controller.findOne('order-123', attackerUser);
 
-      const eitherResult = result as unknown as Either<AppError, unknown>;
-      expect(isLeft(eitherResult)).toBe(true);
-      if (isLeft(eitherResult)) {
-        expect(eitherResult.value).toBeInstanceOf(ForbiddenError);
+      expect(result).toBeInstanceOf(Left);
+      if (result instanceof Left) {
+        expect(result.value).toBeInstanceOf(ForbiddenError);
       }
     });
 
@@ -96,10 +95,9 @@ describe('OrdersController', () => {
 
       const result = await controller.findOne('non-existent-order', anyUser);
 
-      const eitherResult = result as unknown as Either<AppError, unknown>;
-      expect(isLeft(eitherResult)).toBe(true);
-      if (isLeft(eitherResult)) {
-        expect(eitherResult.value).toBeInstanceOf(NotFoundError);
+      expect(result).toBeInstanceOf(Left);
+      if (result instanceof Left) {
+        expect(result.value).toBeInstanceOf(NotFoundError);
       }
     });
   });

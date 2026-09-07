@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProcessGroupWebhookUseCase } from './process-group-webhook.usecase';
-import { PaymentGroupRepository } from '../domain/repositories/payment-group.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { ProductRepository } from '../../products/domain/repositories/product.repository';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { WalletRepository } from '../../wallet/domain/repositories/wallet.repository';
+import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
@@ -80,11 +80,11 @@ describe('ProcessGroupWebhookUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProcessGroupWebhookUseCase,
-        { provide: PaymentGroupRepository, useValue: mockPaymentGroupRepository },
-        { provide: TransactionRepository, useValue: mockTransactionRepository },
-        { provide: ProductRepository, useValue: mockProductRepository },
-        { provide: OrderRepository, useValue: mockOrderRepository },
-        { provide: WalletRepository, useValue: mockWalletRepository },
+        { provide: PaymentGroupDatabaseRepository, useValue: mockPaymentGroupRepository },
+        { provide: TransactionDatabaseRepository, useValue: mockTransactionRepository },
+        { provide: ProductDatabaseRepository, useValue: mockProductRepository },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: WalletDatabaseRepository, useValue: mockWalletRepository },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: PrismaService, useValue: mockPrisma },
       ],
