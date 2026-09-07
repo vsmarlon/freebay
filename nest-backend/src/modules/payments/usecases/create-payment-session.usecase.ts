@@ -1,21 +1,27 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { PaymentProvider, PaymentSessionParams } from '../domain/providers/payment-provider.interface';
+import {
+  AppError,
+  NotFoundError,
+  BadRequestError,
+  InvalidOrderStateError,
+} from '@/shared/core/errors';
+import { PaymentSessionParams } from '../types/payment-provider.types';
+import { StripeProvider } from '../providers/stripe-provider';
 import { CreatePaymentSessionInput, CreatePaymentSessionOutput } from '../dtos/payment.dto';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { UserRepository } from '../../auth/domain/repositories/user.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 
 @Injectable()
 export class CreatePaymentSessionUseCase {
   private readonly logger = new Logger(CreatePaymentSessionUseCase.name);
 
   constructor(
-    private readonly orderRepository: OrderRepository,
-    private readonly userRepository: UserRepository,
-    private readonly transactionRepository: TransactionRepository,
-    private readonly paymentProvider: PaymentProvider,
+    private readonly orderRepository: PrismaOrderRepository,
+    private readonly userRepository: UserDatabaseRepository,
+    private readonly transactionRepository: TransactionDatabaseRepository,
+    @Inject(StripeProvider) private readonly paymentProvider: StripeProvider,
   ) {}
 
   async execute(
@@ -30,6 +36,10 @@ export class CreatePaymentSessionUseCase {
       return left(new BadRequestError('Order does not belong to this user'));
     }
 
+    if (order.status !== 'PENDING') {
+      return left(new InvalidOrderStateError('PENDING', order.status));
+    }
+
     const userResult = await this.userRepository.findPaymentInfo(input.userId);
     if (isLeft(userResult)) return left(userResult.value);
 
@@ -38,20 +48,31 @@ export class CreatePaymentSessionUseCase {
     const customerEmail = input.customerEmail ?? user.email;
     const customerTaxId = input.customerTaxId ?? user.cpf;
 
-    // CPF is required for Checkout Session (web/PIX flow)
     if (!customerTaxId) {
       return left(
         new BadRequestError('CPF é obrigatório para pagamento via Checkout. Atualize seu perfil.'),
       );
     }
 
-    // Derived key isolates web Checkout flow from mobile PaymentIntent flow
     const derivedKey = `session:${input.orderId}`;
 
-    const existingResult = await this.transactionRepository.findByDerivedKey(derivedKey);
+    const existingResult = await this.transactionRepository.findByOrderId(input.orderId);
     if (isLeft(existingResult)) return left(existingResult.value);
 
     const existingTx = existingResult.value;
+
+    if (existingTx && existingTx.status !== 'PENDING') {
+      return left(new BadRequestError('Order is not payable'));
+    }
+
+    if (existingTx?.externalId?.startsWith('pi_')) {
+      return left(
+        new BadRequestError(
+          'A PaymentIntent is already active for this order. Complete it in the app or wait for it to expire.',
+        ),
+      );
+    }
+
     if (existingTx?.externalId) {
       return right({
         stripeSessionId: existingTx.externalId,

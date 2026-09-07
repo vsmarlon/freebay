@@ -5,7 +5,6 @@ import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { CursorPage, PageQuery, paginateById } from '@/shared/core/pagination';
 import { DatabaseError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
-import { OrderRepository } from '../../domain/repositories/order.repository';
 import {
   OrderFullPayload,
   OrderProductPayload,
@@ -19,7 +18,7 @@ import {
 import { Product, Prisma } from '@prisma/client';
 
 @Injectable()
-export class PrismaOrderRepository implements OrderRepository {
+export class PrismaOrderRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): RepositoryResponse<OrderFullPayload | null> {
@@ -276,27 +275,30 @@ export class PrismaOrderRepository implements OrderRepository {
     }
   }
 
-  async confirm(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
+  async confirm(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<boolean> {
     try {
       const client = tx ?? this.prisma;
-      await client.order.update({
-        where: { id: orderId },
+      const claimed = await client.order.updateMany({
+        where: { id: orderId, status: 'PENDING' },
         data: { status: 'CONFIRMED', escrowStatus: 'HELD' },
       });
-      return right(undefined);
+      return right(claimed.count > 0);
     } catch {
       return left(new DatabaseError('Failed to confirm order'));
     }
   }
 
-  async cancel(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<void> {
+  async cancel(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<boolean> {
     try {
       const client = tx ?? this.prisma;
-      await client.order.update({
-        where: { id: orderId },
+      const claimed = await client.order.updateMany({
+        where: {
+          id: orderId,
+          status: { notIn: ['CANCELLED', 'COMPLETED', 'DELIVERED', 'SHIPPED'] },
+        },
         data: { status: 'CANCELLED' },
       });
-      return right(undefined);
+      return right(claimed.count > 0);
     } catch {
       return left(new DatabaseError('Failed to cancel order'));
     }

@@ -1,11 +1,12 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { ProcessWebhookUseCase } from './process-webhook.usecase';
 import { right, isRight, isLeft } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { ProductRepository } from '../../products/domain/repositories/product.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { WalletRepository } from '../../wallet/domain/repositories/wallet.repository';
+import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
 const tx = {} as never;
@@ -35,7 +36,7 @@ describe('ProcessWebhookUseCase', () => {
     status: 'PAID',
     amount: 10000,
     sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3 },
+    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3, status: 'PENDING' },
   };
 
   const pendingTransaction = {
@@ -44,7 +45,7 @@ describe('ProcessWebhookUseCase', () => {
     status: 'PENDING',
     amount: 10000,
     sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3 },
+    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3, status: 'PENDING' },
   };
 
   const failedTransaction = {
@@ -53,10 +54,10 @@ describe('ProcessWebhookUseCase', () => {
     status: 'FAILED',
     amount: 10000,
     sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3 },
+    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3, status: 'PENDING' },
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockProductRepo = {
       updateInventoryOnSale: jest.fn().mockResolvedValue(right(undefined)),
       restoreInventoryOnExpiry: jest.fn().mockResolvedValue(right(undefined)),
@@ -67,7 +68,7 @@ describe('ProcessWebhookUseCase', () => {
       markAsFailed: jest.fn().mockResolvedValue(right({ count: 1 })),
     };
     mockOrderRepo = {
-      confirm: jest.fn().mockResolvedValue(right(undefined)),
+      confirm: jest.fn().mockResolvedValue(right(true)),
       cancel: jest.fn().mockResolvedValue(right(undefined)),
     };
     mockWalletRepo = {
@@ -81,14 +82,19 @@ describe('ProcessWebhookUseCase', () => {
       $transaction: jest.fn(async (fn: (client: typeof tx) => Promise<unknown>) => fn(tx)),
     };
 
-    sut = new ProcessWebhookUseCase(
-      mockProductRepo as unknown as ProductRepository,
-      mockTransactionRepo as unknown as TransactionRepository,
-      mockOrderRepo as unknown as OrderRepository,
-      mockWalletRepo as unknown as WalletRepository,
-      mockNotificationService as unknown as NotificationService,
-      mockPrisma as unknown as PrismaService,
-    );
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ProcessWebhookUseCase,
+        { provide: ProductDatabaseRepository, useValue: mockProductRepo },
+        { provide: TransactionDatabaseRepository, useValue: mockTransactionRepo },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepo },
+        { provide: WalletDatabaseRepository, useValue: mockWalletRepo },
+        { provide: NotificationService, useValue: mockNotificationService },
+        { provide: PrismaService, useValue: mockPrisma },
+      ],
+    }).compile();
+
+    sut = module.get(ProcessWebhookUseCase);
   });
 
   it.each(['checkout.session.completed', 'payment_intent.succeeded'])(
@@ -280,5 +286,42 @@ describe('ProcessWebhookUseCase', () => {
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsFailed).not.toHaveBeenCalled();
     expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
+  });
+
+  it('refuses to cancel an order that is no longer PENDING on expiry', async () => {
+    mockTransactionRepo.findByOrderId.mockResolvedValue(
+      right({ ...pendingTransaction, order: { ...pendingTransaction.order, status: 'DELIVERED' } }),
+    );
+
+    const result = await sut.execute({ event: 'checkout.session.expired', data: { orderId: 'o1' } });
+
+    expect(isRight(result)).toBe(true);
+    expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
+    expect(mockProductRepo.restoreInventoryOnExpiry).not.toHaveBeenCalled();
+  });
+
+  it('ignores an expiry that references a different provider object than the transaction holds', async () => {
+    mockTransactionRepo.findByOrderId.mockResolvedValue(
+      right({ ...pendingTransaction, externalId: 'cs_current' }),
+    );
+
+    const result = await sut.execute({
+      event: 'checkout.session.expired',
+      data: { orderId: 'o1', providerObjectId: 'cs_stale' },
+    });
+
+    expect(isRight(result)).toBe(true);
+    expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
+  });
+
+  it('does not credit the seller when the order confirm claim finds no PENDING row', async () => {
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+    mockOrderRepo.confirm.mockResolvedValue(right(false));
+
+    const result = await sut.execute({ event: 'payment_intent.succeeded', data: { orderId: 'o1' } });
+
+    expect(isRight(result)).toBe(true);
+    expect(mockWalletRepo.creditPending).not.toHaveBeenCalled();
+    expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
   });
 });

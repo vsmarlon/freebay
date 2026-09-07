@@ -4,23 +4,24 @@ import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { ProcessWebhookInput, WebhookDataPayload } from '../dtos/payment.dto';
-import { ProductRepository } from '../../products/domain/repositories/product.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { WalletRepository } from '../../wallet/domain/repositories/wallet.repository';
+import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 import { TransactionWithOrder } from '../types/payment.types';
 
 const WEBHOOK_RACE_SKIP = 'WEBHOOK_RACE_SKIP';
+const WEBHOOK_ORDER_NOT_PENDING = 'WEBHOOK_ORDER_NOT_PENDING';
 
 @Injectable()
 export class ProcessWebhookUseCase {
   private readonly logger = new Logger(ProcessWebhookUseCase.name);
 
   constructor(
-    private readonly productRepo: ProductRepository,
-    private readonly transactionRepo: TransactionRepository,
-    private readonly orderRepo: OrderRepository,
-    private readonly walletRepo: WalletRepository,
+    private readonly productRepo: ProductDatabaseRepository,
+    private readonly transactionRepo: TransactionDatabaseRepository,
+    private readonly orderRepo: PrismaOrderRepository,
+    private readonly walletRepo: WalletDatabaseRepository,
     private readonly notificationService: NotificationService,
     private readonly prisma: PrismaService,
   ) {}
@@ -56,7 +57,7 @@ export class ProcessWebhookUseCase {
       event === 'payment_intent.canceled' ||
       event === 'checkout.session.async_payment_failed'
     ) {
-      return this._handleExpired(orderId);
+      return this._handleExpired(orderId, data);
     }
 
     if (event === 'payment_intent.payment_failed') {
@@ -107,8 +108,10 @@ export class ProcessWebhookUseCase {
         const paid = await this.transactionRepo.markAsPaid(transaction.id, data.chargeId ?? null, tx);
         if (isLeft(paid)) throw new Error(paid.value.message);
         if (paid.value.count === 0) throw new Error(WEBHOOK_RACE_SKIP);
+        const confirmed = await this.orderRepo.confirm(transaction.orderId, tx);
+        if (isLeft(confirmed)) throw new Error(confirmed.value.message);
+        if (!confirmed.value) throw new Error(WEBHOOK_ORDER_NOT_PENDING);
         await this.productRepo.updateInventoryOnSale(transaction.order.productId, tx);
-        await this.orderRepo.confirm(transaction.orderId, tx);
         await this.walletRepo.creditPending(
           transaction.order.sellerId,
           transaction.sellerAmount,
@@ -120,6 +123,12 @@ export class ProcessWebhookUseCase {
       if (error instanceof Error && error.message === WEBHOOK_RACE_SKIP) {
         this.logger.log(
           `Transaction ${transaction.id} lost the completion race; concurrent delivery already paid it`,
+        );
+        return right(undefined);
+      }
+      if (error instanceof Error && error.message === WEBHOOK_ORDER_NOT_PENDING) {
+        this.logger.error(
+          `Order ${orderId} is not PENDING; refusing to confirm and credit it from a payment webhook`,
         );
         return right(undefined);
       }
@@ -144,6 +153,7 @@ export class ProcessWebhookUseCase {
 
   private async _handleExpired(
     orderId: string,
+    data: WebhookDataPayload,
   ): Promise<Either<DatabaseError, void>> {
     const transactionResult = await this.transactionRepo.findByOrderId(orderId);
     if (isLeft(transactionResult)) return left(transactionResult.value);
@@ -156,6 +166,24 @@ export class ProcessWebhookUseCase {
     if (transaction.status !== 'PENDING') {
       this.logger.warn(
         `Transaction ${transaction.id} is ${transaction.status}; refusing to expire a non-PENDING transaction`,
+      );
+      return right(undefined);
+    }
+
+    if (
+      data.providerObjectId &&
+      transaction.externalId &&
+      data.providerObjectId !== transaction.externalId
+    ) {
+      this.logger.warn(
+        `Expiry for order ${orderId} references ${data.providerObjectId} but the transaction holds ${transaction.externalId}; ignoring`,
+      );
+      return right(undefined);
+    }
+
+    if (transaction.order.status !== 'PENDING') {
+      this.logger.warn(
+        `Order ${orderId} is ${transaction.order.status}; refusing to cancel it on expiry`,
       );
       return right(undefined);
     }

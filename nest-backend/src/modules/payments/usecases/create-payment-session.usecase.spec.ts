@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentSessionUseCase } from './create-payment-session.usecase';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { UserRepository } from '../../auth/domain/repositories/user.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { PaymentProvider } from '../domain/providers/payment-provider.interface';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { StripeProvider } from '../providers/stripe-provider';
 import { NotFoundError, BadRequestError, PaymentProviderError } from '@/shared/core/errors';
 import { right, left } from '@/shared/core/either';
 
@@ -12,7 +12,7 @@ describe('CreatePaymentSessionUseCase', () => {
   let mockOrderRepository: { findById: jest.Mock };
   let mockUserRepository: { findPaymentInfo: jest.Mock };
   let mockTransactionRepository: {
-    findByDerivedKey: jest.Mock;
+    findByOrderId: jest.Mock;
     upsertTransaction: jest.Mock;
   };
   let mockPaymentProvider: { createPaymentSession: jest.Mock };
@@ -35,7 +35,7 @@ describe('CreatePaymentSessionUseCase', () => {
       ),
     };
     mockTransactionRepository = {
-      findByDerivedKey: jest.fn().mockResolvedValue(right(null)),
+      findByOrderId: jest.fn().mockResolvedValue(right(null)),
       upsertTransaction: jest.fn().mockResolvedValue(right(undefined)),
     };
     mockPaymentProvider = {
@@ -51,14 +51,14 @@ describe('CreatePaymentSessionUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePaymentSessionUseCase,
-        { provide: OrderRepository, useValue: mockOrderRepository },
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: TransactionRepository, useValue: mockTransactionRepository },
-        { provide: PaymentProvider, useValue: mockPaymentProvider },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: TransactionDatabaseRepository, useValue: mockTransactionRepository },
+        { provide: StripeProvider, useValue: mockPaymentProvider },
       ],
     }).compile();
 
-    sut = module.get<CreatePaymentSessionUseCase>(CreatePaymentSessionUseCase);
+    sut = module.get(CreatePaymentSessionUseCase);
   });
 
   it('should be defined', () => {
@@ -148,9 +148,10 @@ describe('CreatePaymentSessionUseCase', () => {
 
   it('should return existing transaction for duplicate idempotency key', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
-    mockTransactionRepository.findByDerivedKey = jest.fn().mockResolvedValue(
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({
         id: 'tx-existing',
+        status: 'PENDING',
         externalId: 'cs_existing_session',
         checkoutUrl: 'https://checkout.stripe.com/pay/cs_existing',
         checkoutExpiresAt: new Date('2026-03-30T12:00:00Z'),
@@ -170,12 +171,9 @@ describe('CreatePaymentSessionUseCase', () => {
     expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
   });
 
-  it('creates a fresh Checkout Session when a PaymentIntent exists under a different idempotency key (cross-flow isolation)', async () => {
-    // The mobile flow stores a PaymentIntent under `pi:${orderId}` and the web
-    // flow derives `session:${orderId}`, so the session lookup never finds the
-    // pi_ transaction and must not return it as a valid Checkout Session.
+  it('creates a fresh Checkout Session when the order has no transaction yet', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
-    mockTransactionRepository.findByDerivedKey = jest.fn().mockResolvedValue(right(null));
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(right(null));
 
     const result = await sut.execute({
       orderId: 'order-123',
@@ -187,9 +185,56 @@ describe('CreatePaymentSessionUseCase', () => {
     if (result.isRight()) {
       expect(result.value.stripeSessionId).toBe('cs_test_abc123');
     }
-    expect(mockTransactionRepository.findByDerivedKey).toHaveBeenCalledWith('session:order-123');
+    expect(mockTransactionRepository.findByOrderId).toHaveBeenCalledWith('order-123');
     expect(mockPaymentProvider.createPaymentSession).toHaveBeenCalledWith(
       expect.objectContaining({ idempotencyKey: 'session:order-123' }),
     );
+  });
+
+  it('refuses to open a Checkout Session while a PaymentIntent is active on the same order', async () => {
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
+      right({ id: 'tx-pi', status: 'PENDING', externalId: 'pi_active_intent' }),
+    );
+
+    const result = await sut.execute({
+      orderId: 'order-123',
+      userId: 'user-buyer',
+      idempotencyKey: 'order-123',
+    });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
+  });
+
+  it('refuses to reopen a Checkout Session on an already PAID order', async () => {
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
+      right({ id: 'tx-paid', status: 'PAID', externalId: 'cs_paid_session' }),
+    );
+
+    const result = await sut.execute({
+      orderId: 'order-123',
+      userId: 'user-buyer',
+      idempotencyKey: 'order-123',
+    });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
+  });
+
+  it('refuses to pay an order that is no longer PENDING', async () => {
+    mockOrderRepository.findById = jest
+      .fn()
+      .mockResolvedValue(right({ ...mockOrder, status: 'CANCELLED' }));
+
+    const result = await sut.execute({
+      orderId: 'order-123',
+      userId: 'user-buyer',
+      idempotencyKey: 'order-123',
+    });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
   });
 });

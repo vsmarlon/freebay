@@ -3,7 +3,7 @@ import { Prisma, Transaction } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { TransactionRepository } from '../../domain/repositories/transaction.repository';
+import { ConflictError } from '@/shared/core/errors';
 import {
   ExpiredPendingTransaction,
   TransactionWithOrder,
@@ -11,7 +11,7 @@ import {
 } from '../../types/payment.types';
 
 @Injectable()
-export class TransactionDatabaseRepository extends BasePrismaRepository implements TransactionRepository {
+export class TransactionDatabaseRepository extends BasePrismaRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }
@@ -155,9 +155,29 @@ export class TransactionDatabaseRepository extends BasePrismaRepository implemen
 
   async upsertTransaction(data: UpsertTransactionData): RepositoryResponse<void> {
     return this.safeRun(async () => {
-      await this.prisma.transaction.upsert({
+      const claimed = await this.prisma.transaction.updateMany({
+        where: { orderId: data.orderId, status: 'PENDING' },
+        data: {
+          externalId: data.externalId,
+          idempotencyKey: data.idempotencyKey,
+          checkoutUrl: data.checkoutUrl ?? undefined,
+          checkoutExpiresAt: data.checkoutExpiresAt ?? undefined,
+        },
+      });
+      if (claimed.count > 0) return;
+
+      const settled = await this.prisma.transaction.findUnique({
         where: { orderId: data.orderId },
-        create: {
+        select: { status: true },
+      });
+      if (settled) {
+        throw new ConflictError(
+          `Transação do pedido ${data.orderId} está em ${settled.status} e não pode voltar para PENDING`,
+        );
+      }
+
+      await this.prisma.transaction.create({
+        data: {
           order: { connect: { id: data.orderId } },
           externalId: data.externalId,
           amount: data.amount,
@@ -169,12 +189,6 @@ export class TransactionDatabaseRepository extends BasePrismaRepository implemen
           idempotencyKey: data.idempotencyKey,
           checkoutUrl: data.checkoutUrl,
           checkoutExpiresAt: data.checkoutExpiresAt,
-        },
-        update: {
-          externalId: data.externalId,
-          status: 'PENDING',
-          checkoutUrl: data.checkoutUrl ?? undefined,
-          checkoutExpiresAt: data.checkoutExpiresAt ?? undefined,
         },
       });
     }, 'Failed to upsert transaction');

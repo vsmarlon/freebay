@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentIntentUseCase } from './create-payment-intent.usecase';
-import { OrderRepository } from '../../orders/domain/repositories/order.repository';
-import { UserRepository } from '../../auth/domain/repositories/user.repository';
-import { TransactionRepository } from '../domain/repositories/transaction.repository';
-import { PaymentProvider } from '../domain/providers/payment-provider.interface';
+import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
+import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
+import { StripeProvider } from '../providers/stripe-provider';
 import { NotFoundError, BadRequestError, PaymentProviderError } from '@/shared/core/errors';
 import { right, left } from '@/shared/core/either';
 
@@ -12,7 +12,7 @@ describe('CreatePaymentIntentUseCase', () => {
   let mockOrderRepository: { findById: jest.Mock };
   let mockUserRepository: { findPaymentInfo: jest.Mock };
   let mockTransactionRepository: {
-    findByDerivedKey: jest.Mock;
+    findByOrderId: jest.Mock;
     upsertTransaction: jest.Mock;
   };
   let mockPaymentProvider: { createPaymentIntent: jest.Mock };
@@ -35,7 +35,7 @@ describe('CreatePaymentIntentUseCase', () => {
       ),
     };
     mockTransactionRepository = {
-      findByDerivedKey: jest.fn().mockResolvedValue(right(null)),
+      findByOrderId: jest.fn().mockResolvedValue(right(null)),
       upsertTransaction: jest.fn().mockResolvedValue(right(undefined)),
     };
     mockPaymentProvider = {
@@ -50,14 +50,14 @@ describe('CreatePaymentIntentUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePaymentIntentUseCase,
-        { provide: OrderRepository, useValue: mockOrderRepository },
-        { provide: UserRepository, useValue: mockUserRepository },
-        { provide: TransactionRepository, useValue: mockTransactionRepository },
-        { provide: PaymentProvider, useValue: mockPaymentProvider },
+        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: TransactionDatabaseRepository, useValue: mockTransactionRepository },
+        { provide: StripeProvider, useValue: mockPaymentProvider },
       ],
     }).compile();
 
-    sut = module.get<CreatePaymentIntentUseCase>(CreatePaymentIntentUseCase);
+    sut = module.get(CreatePaymentIntentUseCase);
   });
 
   it('should be defined', () => {
@@ -106,7 +106,7 @@ describe('CreatePaymentIntentUseCase', () => {
 
   it('should return error if a Checkout Session (cs_) is already active', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
-    mockTransactionRepository.findByDerivedKey = jest.fn().mockResolvedValue(
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({
         id: 'tx-existing',
         orderId: 'order-123',
@@ -133,7 +133,7 @@ describe('CreatePaymentIntentUseCase', () => {
 
   it('should return error if order is already paid', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
-    mockTransactionRepository.findByDerivedKey = jest.fn().mockResolvedValue(
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({
         id: 'tx-paid',
         orderId: 'order-123',
@@ -216,7 +216,7 @@ describe('CreatePaymentIntentUseCase', () => {
 
   it('should return "Order is not payable" for a FAILED transaction', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
-    mockTransactionRepository.findByDerivedKey = jest.fn().mockResolvedValue(
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({
         id: 'tx-failed',
         orderId: 'order-123',
@@ -252,5 +252,30 @@ describe('CreatePaymentIntentUseCase', () => {
 
     expect(result.isLeft()).toBe(true);
     expect(mockTransactionRepository.upsertTransaction).not.toHaveBeenCalled();
+  });
+
+  it('refuses to pay an order that is no longer PENDING', async () => {
+    mockOrderRepository.findById = jest
+      .fn()
+      .mockResolvedValue(right({ ...mockOrder, status: 'CANCELLED' }));
+
+    const result = await sut.execute({ orderId: 'order-123', userId: 'user-buyer' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentIntent).not.toHaveBeenCalled();
+    expect(mockTransactionRepository.upsertTransaction).not.toHaveBeenCalled();
+  });
+
+  it('looks the transaction up by order, so the other rail cannot hide a paid row', async () => {
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
+    mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
+      right({ id: 'tx-paid', status: 'PAID', externalId: 'cs_paid_session' }),
+    );
+
+    const result = await sut.execute({ orderId: 'order-123', userId: 'user-buyer' });
+
+    expect(mockTransactionRepository.findByOrderId).toHaveBeenCalledWith('order-123');
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentIntent).not.toHaveBeenCalled();
   });
 });
