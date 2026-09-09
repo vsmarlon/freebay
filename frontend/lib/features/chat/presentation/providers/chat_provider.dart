@@ -19,10 +19,7 @@ final chatsProvider = FutureProvider<List<ChatEntity>>((ref) async {
   final repository = ref.watch(chatRepositoryProvider);
   final result = await repository.getChats();
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (chats) => chats,
-  );
+  return result.fold((failure) => throw failure, (chats) => chats);
 });
 
 final archivedChatsProvider = FutureProvider.autoDispose<List<ChatEntity>>((
@@ -31,10 +28,7 @@ final archivedChatsProvider = FutureProvider.autoDispose<List<ChatEntity>>((
   final repository = ref.watch(chatRepositoryProvider);
   final result = await repository.getArchivedChats();
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (chats) => chats,
-  );
+  return result.fold((failure) => throw failure, (chats) => chats);
 });
 
 class ChatListController extends Notifier<AsyncValue<List<ChatEntity>>> {

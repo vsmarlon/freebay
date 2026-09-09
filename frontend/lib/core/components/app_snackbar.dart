@@ -3,16 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/providers/last_error_provider.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
-import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/errors/error_messages.dart';
 
 enum AppSnackbarType { success, error, warning, info }
 
 class AppSnackbar {
-  static void show(
-    BuildContext context, {
+  static SnackBar _build({
     required String message,
-    AppSnackbarType type = AppSnackbarType.info,
-    Duration duration = const Duration(seconds: 3),
+    required AppSnackbarType type,
+    required Duration duration,
+    SnackBarAction? action,
   }) {
     final color = switch (type) {
       AppSnackbarType.success => AppColors.success,
@@ -28,28 +28,37 @@ class AppSnackbar {
       AppSnackbarType.info => Icons.info_outline,
     };
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.white,
-                ),
-              ),
+    return SnackBar(
+      content: Row(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.white),
             ),
-          ],
-        ),
-        backgroundColor: AppColors.darkGray,
-        behavior: SnackBarBehavior.floating,
-        duration: duration,
-        margin: const EdgeInsets.all(16),
+          ),
+        ],
       ),
+      action: action,
+      backgroundColor: AppColors.darkGray,
+      behavior: SnackBarBehavior.floating,
+      duration: duration,
+      margin: const EdgeInsets.all(16),
+    );
+  }
+
+  static void show(
+    BuildContext context, {
+    required String message,
+    AppSnackbarType type = AppSnackbarType.info,
+    Duration duration = const Duration(seconds: 3),
+  }) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      _build(message: message, type: type, duration: duration),
     );
   }
 
@@ -61,13 +70,39 @@ class AppSnackbar {
     _recordError(context, message);
   }
 
-  static void handleFailure(BuildContext context, dynamic failure) {
-    final message = failure is Failure
-        ? failure.message
-        : failure is String
-        ? failure
-        : failure?.toString() ?? 'Ocorreu um erro inesperado';
-    error(context, message);
+  /// Renders the generic copy for [failure]. Never surfaces raw exception text:
+  /// anything that is not a [Failure] falls back to [kGenericErrorMessage].
+  static void handleFailure(BuildContext context, Object? failure) =>
+      error(context, userMessageOf(failure));
+
+  /// Optimistic destructive action: the UI removes the item immediately and
+  /// [onCommit] only fires once the snackbar closes without UNDO being tapped.
+  static void undoable(
+    BuildContext context, {
+    required String message,
+    required VoidCallback onUndo,
+    required VoidCallback onCommit,
+    Duration duration = const Duration(seconds: 4),
+  }) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger
+        .showSnackBar(
+          _build(
+            message: message,
+            type: AppSnackbarType.info,
+            duration: duration,
+            action: SnackBarAction(
+              label: 'DESFAZER',
+              textColor: AppColors.onPrimaryContainer,
+              onPressed: onUndo,
+            ),
+          ),
+        )
+        .closed
+        .then((reason) {
+          if (reason != SnackBarClosedReason.action) onCommit();
+        });
   }
 
   static void _recordError(BuildContext context, String message) {

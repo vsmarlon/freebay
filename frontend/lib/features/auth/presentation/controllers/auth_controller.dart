@@ -22,6 +22,11 @@ import 'package:freebay/features/notifications/presentation/providers/notificati
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/shared/config/app_config.dart';
+import 'package:freebay/shared/services/error_reporter.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+
+const String _googleGenericError =
+    'Não foi possível entrar com o Google. Tente novamente.';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
@@ -196,8 +201,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     );
 
     result.fold(
-      (failure) =>
-          state = AsyncValue.error(failure.message, StackTrace.current),
+      (failure) => state = AsyncValue.error(failure, StackTrace.current),
       (user) {
         state = AsyncValue.data(user);
         routerRefreshNotifier.value++;
@@ -222,8 +226,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     );
 
     result.fold(
-      (failure) =>
-          state = AsyncValue.error(failure.message, StackTrace.current),
+      (failure) => state = AsyncValue.error(failure, StackTrace.current),
       (user) {
         state = AsyncValue.data(user);
         routerRefreshNotifier.value++;
@@ -248,8 +251,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     final result = await ref.read(authRepositoryProvider).logout();
 
     result.fold(
-      (failure) =>
-          state = AsyncValue.error(failure.message, StackTrace.current),
+      (failure) => state = AsyncValue.error(failure, StackTrace.current),
       (_) {
         _invalidateUserProviders();
         state = const AsyncValue.data(null);
@@ -314,11 +316,12 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
     try {
       final serverClientId = AppConfig.googleServerClientId;
       if (serverClientId.isEmpty) {
-        debugPrint(
-          '[GoogleSignIn] Erro: GOOGLE_SERVER_CLIENT_ID não configurado no ambiente.',
+        ErrorReporter.report(
+          'google-signin',
+          StateError('GOOGLE_SERVER_CLIENT_ID ausente'),
         );
         state = AsyncValue.error(
-          'Google Sign-In não configurado: GOOGLE_SERVER_CLIENT_ID não fornecido.',
+          const ServerFailure(_googleGenericError),
           StackTrace.current,
         );
         return;
@@ -326,66 +329,48 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
 
       await _ensureGoogleSignInInitialized();
 
-      debugPrint('[GoogleSignIn] Abrindo seletor de contas do Google...');
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
-
-      debugPrint(
-        '[GoogleSignIn] Conta selecionada: ${googleUser.email}. Obtendo credenciais...',
-      );
-      final GoogleSignInAuthentication auth = googleUser.authentication;
-      final String? idToken = auth.idToken;
+      final String? idToken = googleUser.authentication.idToken;
 
       if (idToken == null || idToken.isEmpty) {
-        debugPrint('[GoogleSignIn] ID Token ausente ou nulo.');
+        ErrorReporter.report(
+          'google-signin',
+          StateError('idToken ausente — serverClientId != Web Client ID?'),
+        );
         state = AsyncValue.error(
-          'Token Google não retornado pelo provedor. Verifique se o serverClientId corresponde ao Web Client ID do Google Cloud Console.',
+          const ServerFailure(_googleGenericError),
           StackTrace.current,
         );
         return;
       }
 
-      debugPrint(
-        '[GoogleSignIn] Token obtido. Autenticando com o backend FreeBay...',
-      );
       final result = await ref.read(googleAuthUsecaseProvider)(idToken);
       result.fold(
-        (failure) {
-          debugPrint('[GoogleSignIn] Falha no backend: ${failure.message}');
-          state = AsyncValue.error(failure.message, StackTrace.current);
-        },
+        (failure) => state = AsyncValue.error(failure, StackTrace.current),
         (user) {
-          debugPrint(
-            '[GoogleSignIn] Sucesso! Usuário: ${user.displayName} (@${user.username})',
-          );
           state = AsyncValue.data(user);
           routerRefreshNotifier.value++;
         },
       );
-    } on GoogleSignInException catch (e) {
+    } on GoogleSignInException catch (e, stack) {
       debugPrint(
-        '[GoogleSignIn] GoogleSignInException: code=${e.code}, description=${e.description}',
+        '[GoogleSignIn] code=${e.code.name} description=${e.description}',
       );
       if (e.code == GoogleSignInExceptionCode.canceled ||
           e.code == GoogleSignInExceptionCode.interrupted) {
         state = const AsyncValue.data(null);
         return;
       }
+      ErrorReporter.report('google-signin', e, stack);
       state = AsyncValue.error(
-        'Não foi possível concluir o login com o Google (${e.description ?? e.code.name}). Tente novamente.',
+        const ServerFailure(_googleGenericError),
         StackTrace.current,
       );
     } catch (e, stack) {
-      debugPrint('[GoogleSignIn] Erro inesperado: $e\n$stack');
-      final errStr = e.toString().toLowerCase();
-      if (errStr.contains('cancel') ||
-          errStr.contains('dismiss') ||
-          errStr.contains('interrupted')) {
-        state = const AsyncValue.data(null);
-        return;
-      }
+      ErrorReporter.report('google-signin', e, stack);
       state = AsyncValue.error(
-        'Falha ao autenticar com o Google: $e',
+        const ServerFailure(_googleGenericError),
         StackTrace.current,
       );
     }
@@ -407,8 +392,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
       ),
     );
     result.fold(
-      (failure) =>
-          this.state = AsyncValue.error(failure.message, StackTrace.current),
+      (failure) => this.state = AsyncValue.error(failure, StackTrace.current),
       (user) {
         this.state = AsyncValue.data(user);
         routerRefreshNotifier.value++;

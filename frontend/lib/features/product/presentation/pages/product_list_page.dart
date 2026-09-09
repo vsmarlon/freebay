@@ -124,7 +124,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                         ),
                         error: (err, _) => Padding(
                           padding: const EdgeInsets.all(16),
-                          child: Text('Erro ao carregar categorias: $err'),
+                          child: Text(userMessageOf(err)),
                         ),
                       ),
                     Expanded(

@@ -87,32 +87,6 @@ export class SendMessageDTO {
   readonly viewOnce?: boolean;
 }
 
-export class MessageResponse {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly id: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly conversationId: string;
-
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  readonly senderId: string;
-
-  @ApiProperty({ example: 'Olá, ainda tem disponível?' })
-  readonly content: string | null;
-
-  @ApiProperty({ example: 'TEXT' })
-  readonly type: string;
-
-  @ApiProperty({ example: null, nullable: true })
-  readonly readAt: Date | null;
-
-  @ApiProperty({ example: null, nullable: true })
-  readonly deliveredAt: Date | null;
-
-  @ApiProperty({ example: '2026-06-17T12:00:00.000Z' })
-  readonly createdAt: Date;
-}
-
 export class StartConversationOutput {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   readonly conversationId: string;

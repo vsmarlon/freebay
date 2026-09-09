@@ -34,10 +34,7 @@ import { HealthModule } from './modules/health/health.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [
-        `.env.${process.env.NODE_ENV || 'development'}`,
-        '.env',
-      ],
+      envFilePath: ['.env'],
     }),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],

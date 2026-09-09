@@ -10,10 +10,7 @@ import 'package:freebay/core/router/navigation_tracker.dart';
 final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
   final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getLikedPosts();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (posts) => posts,
-  );
+  return result.fold((failure) => throw failure, (posts) => posts);
 });
 
 class LikedPostsPage extends ConsumerWidget {

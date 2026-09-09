@@ -55,10 +55,7 @@ final profileFutureProvider = FutureProvider.family<UserEntity, String>((
   ref.watch(authControllerProvider);
   final result = await ref.read(profileRepositoryProvider).getProfile(userId);
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (user) => user,
-  );
+  return result.fold((failure) => throw failure, (user) => user);
 });
 
 final profileStatsProvider = FutureProvider<UserStatsEntity>((ref) async {
@@ -66,8 +63,5 @@ final profileStatsProvider = FutureProvider<UserStatsEntity>((ref) async {
   final repository = ref.watch(profileRepositoryProvider);
   final result = await repository.getProfileStats();
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (stats) => stats,
-  );
+  return result.fold((failure) => throw failure, (stats) => stats);
 });

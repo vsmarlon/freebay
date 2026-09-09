@@ -67,12 +67,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = exception.statusCode;
       code = exception.code;
       message = exception.message;
-      this.logger.warn(`[APP] ${request.method} ${request.url} - ${code}: ${message}`);
+      const detail = exception.detail ? ` (${exception.detail})` : '';
+      this.logger.warn(`[APP] ${request.method} ${request.url} - ${code}: ${message}${detail}`);
       if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
         captureError(exception, { requestId, path: request.url, code });
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
       this.logger.error(
         `[UNHANDLED] ${request.method} ${request.url} - ${exception.message}`,
         exception.stack,

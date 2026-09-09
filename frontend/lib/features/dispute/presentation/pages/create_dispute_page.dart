@@ -121,11 +121,7 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
         );
         context.pop();
       } else {
-        final errorMsg =
-            response.data?['error']?['message'] ?? 'Erro ao abrir disputa';
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMsg)));
+        AppSnackbar.error(context, 'Não foi possível abrir a disputa.');
       }
     } catch (e) {
       if (!mounted) return;

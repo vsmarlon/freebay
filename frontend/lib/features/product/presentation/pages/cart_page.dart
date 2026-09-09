@@ -184,9 +184,23 @@ class _CartPageState extends ConsumerState<CartPage> {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.close, size: 18),
-                                onPressed: () => ref
-                                    .read(cartProvider.notifier)
-                                    .removeFromCart(item.productId),
+                                onPressed: () async {
+                                  final notifier = ref.read(
+                                    cartProvider.notifier,
+                                  );
+                                  final quantity = item.quantity;
+                                  await notifier.removeFromCart(item.productId);
+                                  if (!context.mounted) return;
+                                  AppSnackbar.undoable(
+                                    context,
+                                    message: 'Item removido do carrinho.',
+                                    onUndo: () => notifier.addToCart(
+                                      item.productId,
+                                      quantity: quantity,
+                                    ),
+                                    onCommit: () {},
+                                  );
+                                },
                               ),
                             ],
                           ),

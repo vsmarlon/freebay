@@ -283,7 +283,7 @@ class _ForwardMessageSheetState extends ConsumerState<ForwardMessageSheet> {
               ),
               error: (e, _) => Center(
                 child: Text(
-                  'Erro ao carregar conversas: $e',
+                  userMessageOf(e),
                   style: const TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     color: AppColors.error,

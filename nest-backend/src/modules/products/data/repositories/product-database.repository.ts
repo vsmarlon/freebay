@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { left, right } from '@/shared/core/either';
@@ -7,6 +7,8 @@ import { ProductDetailPayload, ProductListPayload, FindManyParams, ProductSort, 
 
 @Injectable()
 export class ProductDatabaseRepository {
+  private readonly logger = new Logger(ProductDatabaseRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string) {
@@ -20,7 +22,8 @@ export class ProductDatabaseRepository {
       }
       return right(product as ProductDetailPayload | null);
     } catch (e) {
-      return left(new DatabaseError((e as Error).message));
+      this.logger.error('Erro ao buscar produto', e instanceof Error ? e.stack : e);
+      return left(new DatabaseError('Erro ao buscar produto'));
     }
   }
 
@@ -33,7 +36,8 @@ export class ProductDatabaseRepository {
       });
       return right(products as ProductListPayload[]);
     } catch (e) {
-      return left(new DatabaseError((e as Error).message));
+      this.logger.error('Erro ao buscar produtos do vendedor', e instanceof Error ? e.stack : e);
+      return left(new DatabaseError('Erro ao buscar produtos do vendedor'));
     }
   }
 
@@ -68,7 +72,8 @@ export class ProductDatabaseRepository {
       });
       return right(products as ProductListPayload[]);
     } catch (e) {
-      return left(new DatabaseError((e as Error).message));
+      this.logger.error('Erro ao listar produtos', e instanceof Error ? e.stack : e);
+      return left(new DatabaseError('Erro ao listar produtos'));
     }
   }
 
@@ -139,7 +144,8 @@ export class ProductDatabaseRepository {
       const product = await this.prisma.product.create({ data, include: PRODUCT_DETAIL_INCLUDE });
       return right(product as ProductDetailPayload);
     } catch (e) {
-      return left(new DatabaseError((e as Error).message));
+      this.logger.error('Erro ao criar produto', e instanceof Error ? e.stack : e);
+      return left(new DatabaseError('Erro ao criar produto'));
     }
   }
 
@@ -152,7 +158,8 @@ export class ProductDatabaseRepository {
       });
       return right(product as ProductDetailPayload);
     } catch (e) {
-      return left(new DatabaseError((e as Error).message));
+      this.logger.error('Erro ao atualizar produto', e instanceof Error ? e.stack : e);
+      return left(new DatabaseError('Erro ao atualizar produto'));
     }
   }
 
@@ -164,7 +171,8 @@ export class ProductDatabaseRepository {
       });
       return right(void 0);
     } catch (e) {
-      return left(new DatabaseError((e as Error).message));
+      this.logger.error('Erro ao remover produto', e instanceof Error ? e.stack : e);
+      return left(new DatabaseError('Erro ao remover produto'));
     }
   }
 

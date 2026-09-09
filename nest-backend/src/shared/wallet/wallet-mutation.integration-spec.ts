@@ -53,6 +53,34 @@ describe('applyWalletDelta Integration', () => {
 
   it('keeps the ledger equal to the balance under concurrent credits', async () => {
     const user = await userFactory.create();
+    const concurrency = Number(process.env.WALLET_CONCURRENCY ?? 20);
+    const credits = Array.from({ length: concurrency }, () =>
+      prisma.$transaction((tx) =>
+        applyWalletDelta(
+          tx,
+          user.id,
+          { availableBalance: 500 },
+          { reason: WalletEntryReason.SALE_RELEASED },
+        ),
+      ),
+    );
+
+    await Promise.all(credits);
+
+    const walletCount = await prisma.wallet.count({ where: { userId: user.id } });
+    const { available } = await balances(user.id);
+    const sum = await prisma.walletEntry.aggregate({
+      where: { userId: user.id, kind: 'AVAILABLE' },
+      _sum: { amount: true },
+    });
+
+    expect(walletCount).toBe(1);
+    expect(available).toBe(concurrency * 500);
+    expect(sum._sum.amount).toBe(available);
+  });
+
+  it('keeps concurrent credits safe when the wallet already exists', async () => {
+    const user = await userFactory.createWithWallet();
     const credits = Array.from({ length: 20 }, () =>
       prisma.$transaction((tx) =>
         applyWalletDelta(
@@ -67,13 +95,7 @@ describe('applyWalletDelta Integration', () => {
     await Promise.all(credits);
 
     const { available } = await balances(user.id);
-    const sum = await prisma.walletEntry.aggregate({
-      where: { userId: user.id, kind: 'AVAILABLE' },
-      _sum: { amount: true },
-    });
-
     expect(available).toBe(10000);
-    expect(sum._sum.amount).toBe(available);
   });
 
   it('rolls the ledger entry back when the surrounding transaction fails', async () => {

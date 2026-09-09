@@ -150,8 +150,5 @@ final storiesProvider = FutureProvider<StoriesResponse>((ref) async {
   final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getStories();
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (stories) => stories,
-  );
+  return result.fold((failure) => throw failure, (stories) => stories);
 });

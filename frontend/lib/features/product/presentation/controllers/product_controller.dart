@@ -30,10 +30,7 @@ final createProductUsecaseProvider = Provider(
 final myProductsProvider = FutureProvider<List<ProductEntity>>((ref) async {
   final repository = ref.watch(productRepositoryProvider);
   final result = await repository.getMyProducts();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (products) => products,
-  );
+  return result.fold((failure) => throw failure, (products) => products);
 });
 
 // Single product provider
@@ -42,10 +39,7 @@ final productByIdProvider = FutureProvider.autoDispose
       final repository = ref.watch(productRepositoryProvider);
       final result = await repository.getProductById(productId);
 
-      return result.fold(
-        (failure) => throw Exception(failure.message),
-        (product) => product,
-      );
+      return result.fold((failure) => throw failure, (product) => product);
     });
 
 class ProductsFeedState {
@@ -202,10 +196,7 @@ final categoriesProvider = FutureProvider<List<CategoryEntity>>((ref) async {
   final repository = ref.watch(categoryRepositoryProvider);
   final result = await repository.getCategories();
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (categories) => categories,
-  );
+  return result.fold((failure) => throw failure, (categories) => categories);
 });
 
 // Flat list of categories for filter chips (includes children)

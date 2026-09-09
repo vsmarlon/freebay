@@ -15,12 +15,16 @@ not committed — for authed flows **register a fresh account in-app** (Flow A c
 
 ## 2. Point the app at your machine
 Physical device and emulator cannot reach `localhost` — it means the phone itself.
+Default dev URL is `http://localhost:3000`, which works over USB/emulator via:
 ```
-LAN:      flutter run --dart-define=API_BASE_URL=http://<YOUR_LAN_IP>:3000
-Emulator: flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
+adb reverse tcp:3000 tcp:3000
+fvm flutter run
 ```
-Debug fallback if unset is a hardcoded `http://192.168.1.2:3000` (`lib/shared/config/app_config.dart`)
-— override it. `kReleaseMode` throws if `API_BASE_URL` is missing.
+Only Wi-Fi debugging (no USB) needs the machine's current LAN IP:
+```
+flutter run --dart-define=API_BASE_URL=http://<YOUR_LAN_IP>:3000
+```
+`kReleaseMode` throws if `API_BASE_URL` is missing.
 
 ## 3. Build → install → launch
 ```

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/router/route_helpers.dart';
 import 'package:freebay/features/profile/presentation/pages/blocked_users_page.dart';
@@ -83,18 +84,22 @@ final List<RouteBase> profileRoutes = [
     ),
   ),
   appCupertinoRoute(AppRoutes.createReview, (context, state) {
-    final extra = state.extra as Map<String, dynamic>?;
-    if (extra == null) {
-      return const Scaffold(
-        body: Center(child: Text('Error: Missing review details.')),
+    if (state.extra case {
+      'orderId': final String orderId,
+      'reviewedId': final String reviewedId,
+      'reviewedName': final String reviewedName,
+      'reviewType': final String reviewType,
+    }) {
+      return CreateReviewPage(
+        orderId: orderId,
+        reviewedId: reviewedId,
+        reviewedName: reviewedName,
+        reviewedAvatarUrl: (state.extra as Map)['reviewedAvatarUrl'] as String?,
+        reviewType: reviewType,
       );
     }
-    return CreateReviewPage(
-      orderId: extra['orderId'] as String,
-      reviewedId: extra['reviewedId'] as String,
-      reviewedName: extra['reviewedName'] as String,
-      reviewedAvatarUrl: extra['reviewedAvatarUrl'] as String?,
-      reviewType: extra['reviewType'] as String,
+    return Scaffold(
+      body: EmptyState.error(message: 'Não foi possível abrir esta avaliação.'),
     );
   }),
 ];

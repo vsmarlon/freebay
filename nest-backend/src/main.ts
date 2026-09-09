@@ -10,10 +10,20 @@ import { createValidationPipe } from './shared/http/validation-pipe.factory';
 import { setupSwagger } from './shared/swagger/swagger.setup';
 import { AppLogger } from './shared/observability/app-logger';
 import { requestContextMiddleware } from './shared/observability/request-context';
-import { initSentry } from './shared/observability/sentry';
+import { initSentry, captureError } from './shared/observability/sentry';
 
 async function bootstrap() {
   initSentry();
+
+  const processLogger = new AppLogger('Process');
+  process.on('unhandledRejection', (reason) => {
+    processLogger.error(`Unhandled rejection: ${String(reason)}`);
+    captureError(reason, { scope: 'unhandledRejection' });
+  });
+  process.on('uncaughtException', (error) => {
+    processLogger.error(`Uncaught exception: ${error.message}`, error.stack);
+    captureError(error, { scope: 'uncaughtException' });
+  });
 
   const app = await NestFactory.create(AppModule, {
     cors: {

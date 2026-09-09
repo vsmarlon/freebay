@@ -14,7 +14,7 @@ final followersProvider = FutureProvider.family<List<FollowerEntity>, String>((
 ) async {
   final repository = ref.watch(profileRepositoryProvider);
   final result = await repository.getFollowers(userId);
-  return result.fold((f) => throw Exception(f.message), (list) => list);
+  return result.fold((f) => throw f, (list) => list);
 });
 
 class FollowersPage extends ConsumerWidget {

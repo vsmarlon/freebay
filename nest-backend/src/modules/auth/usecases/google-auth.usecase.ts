@@ -5,6 +5,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidGoogleTokenError, UnverifiedGoogleEmailError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
+import { normalizeEmail } from '../utils/normalize-email';
 
 interface GooglePayload {
   sub: string;
@@ -12,6 +13,18 @@ interface GooglePayload {
   name?: string;
   picture?: string;
   email_verified?: boolean;
+}
+
+function decodeUnverifiedAudience(idToken: string): string {
+  try {
+    const segment = idToken.split('.')[1] ?? '';
+    const payload = JSON.parse(
+      Buffer.from(segment, 'base64url').toString('utf8'),
+    ) as { aud?: unknown; azp?: unknown };
+    return `aud=${String(payload.aud)} azp=${String(payload.azp)}`;
+  } catch {
+    return 'aud=<indecifrável>';
+  }
 }
 
 @Injectable()
@@ -51,7 +64,9 @@ export class GoogleAuthUseCase {
       payload = ticket.getPayload() as GooglePayload;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Falha na validação do token Google: ${message}`);
+      this.logger.error(
+        `Falha na validação do token Google: ${message} (${decodeUnverifiedAudience(idToken)} <> [${this.audiences.join(', ')}])`,
+      );
       return left(new InvalidGoogleTokenError('Token Google inválido ou expirado'));
     }
 
@@ -60,6 +75,7 @@ export class GoogleAuthUseCase {
       return left(new InvalidGoogleTokenError('Token Google sem email associado'));
     }
 
+    const email = normalizeEmail(payload.email);
     // 1. Usuário Google já registrado anteriormente
     const byGoogleId = await this.userRepository.findByGoogleId(payload.sub);
     if (byGoogleId.isLeft()) return left(byGoogleId.value);
@@ -69,7 +85,7 @@ export class GoogleAuthUseCase {
     }
 
     // 2. Usuário com mesmo e-mail já existe — vincular conta Google
-    const byEmail = await this.userRepository.findByEmail(payload.email);
+    const byEmail = await this.userRepository.findByEmail(email);
     if (byEmail.isLeft()) return left(byEmail.value);
     if (byEmail.value) {
       if (payload.email_verified !== true) {
@@ -95,7 +111,7 @@ export class GoogleAuthUseCase {
     const created = await this.userRepository.create({
       displayName: payload.name ?? payload.email.split('@')[0],
       username: null,
-      email: payload.email,
+       email,
       passwordHash: null,
       googleId: payload.sub,
       emailVerified: payload.email_verified === true,

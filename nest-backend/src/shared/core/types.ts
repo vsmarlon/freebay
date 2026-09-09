@@ -11,6 +11,7 @@ export interface JwtPayload {
   type?: JwtTokenType;
   jti?: string;
   iat?: number;
+  issuedAtMs?: number;
   exp?: number;
 }
 

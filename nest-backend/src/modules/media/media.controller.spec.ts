@@ -16,6 +16,13 @@ class MockJwtGuard implements CanActivate {
 const EXISTING = '11111111-2222-4333-8444-555555555555.jpg';
 const VIEWER = 'viewer-user-id';
 
+const drain = (stream: NodeJS.ReadableStream): Promise<void> =>
+  new Promise<void>((resolve, reject) => {
+    stream.once('end', resolve);
+    stream.once('error', reject);
+    stream.resume();
+  });
+
 describe('MediaController', () => {
   let sut: MediaController;
   let mediaAccess: { canRead: jest.Mock };
@@ -48,9 +55,7 @@ describe('MediaController', () => {
     expect(result).toBeInstanceOf(StreamableFile);
     expect(result.options.type).toBe('image/jpeg');
 
-    const stream = result.getStream();
-    stream.on('error', () => {});
-    stream.destroy();
+    await drain(result.getStream());
   });
 
   it('404s for a caller the access service refuses', async () => {
@@ -59,7 +64,8 @@ describe('MediaController', () => {
   });
 
   it('authorizes against the requesting user, not just the filename', async () => {
-    await sut.serve(VIEWER, 'chat', EXISTING);
+    const result = await sut.serve(VIEWER, 'chat', EXISTING);
+    await drain(result.getStream());
     expect(mediaAccess.canRead).toHaveBeenCalledWith(VIEWER, 'chat', EXISTING);
   });
 

@@ -13,7 +13,7 @@ export function createValidationPipe(): ValidationPipe {
       }));
       return new BadRequestException({
         code: 'VALIDATION_ERROR',
-        message: `Validation failed for ${errors.map((e) => e.property).join(', ')}`,
+        message: 'Dados inválidos.',
         errors: formatted,
       });
     },

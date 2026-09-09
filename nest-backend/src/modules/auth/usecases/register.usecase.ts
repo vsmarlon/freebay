@@ -5,13 +5,15 @@ import { AppError, EmailAlreadyExistsError, UsernameAlreadyExistsError } from '@
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RegisterDTO } from '../dtos/auth.dto';
 import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
+import { normalizeEmail } from '../utils/normalize-email';
 
 @Injectable()
 export class RegisterUseCase {
   constructor(private readonly userRepository: UserDatabaseRepository) {}
 
   async execute(input: RegisterDTO): Promise<Either<AppError, AuthResponse>> {
-    const existingResult = await this.userRepository.findByEmail(input.email);
+    const email = normalizeEmail(input.email);
+    const existingResult = await this.userRepository.findByEmail(email);
     if (existingResult.isLeft()) return left(existingResult.value);
     if (existingResult.value) {
       return left(new EmailAlreadyExistsError());
@@ -28,7 +30,7 @@ export class RegisterUseCase {
     const createResult = await this.userRepository.create({
       displayName: input.displayName,
       username: input.username,
-      email: input.email,
+      email,
       passwordHash,
       emailVerified: false,
       cpfHash: null,

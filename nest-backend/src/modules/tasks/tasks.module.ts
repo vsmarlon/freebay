@@ -9,6 +9,8 @@ import { EscrowReleaseTask } from './escrow-release.task';
 import { AccountDeletionTask } from './account-deletion.task';
 import { CheckoutExpiryTask } from './checkout-expiry.task';
 import { DisputeResolutionExecutionService } from '../disputes/services/dispute-resolution-execution.service';
+import { MagicLinkDatabaseRepository } from '../auth/data/repositories/magic-link-database.repository';
+import { MagicLinkCleanupTask } from './magic-link-cleanup.task';
 
 @Module({
   imports: [ScheduleModule.forRoot(), PaymentsModule, UsersModule],
@@ -20,6 +22,8 @@ import { DisputeResolutionExecutionService } from '../disputes/services/dispute-
     AccountDeletionTask,
     CheckoutExpiryTask,
     DisputeResolutionExecutionService,
+    MagicLinkDatabaseRepository,
+    MagicLinkCleanupTask,
   ],
 })
 export class TasksModule {}

@@ -1,62 +1,26 @@
-import '../tokens/app_depth.dart';
 import 'package:flutter/material.dart';
 import '../tokens/app_colors.dart';
+import '../tokens/app_depth.dart';
 import '../tokens/app_typography.dart';
 import '../tokens/theme_extension.dart';
 
 class BrutalistLogo extends StatelessWidget {
   final double fontSize;
   final bool showTagline;
-  final bool showBadge;
   final String? customTagline;
 
   const BrutalistLogo({
     super.key,
     this.fontSize = 44.0,
     this.showTagline = true,
-    this.showBadge = true,
     this.customTagline,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (showBadge) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.primaryContainer.withAlpha(40)
-                  : AppColors.primaryContainer.withAlpha(25),
-              border: Border.all(color: AppColors.primaryContainer, width: 1.5),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(width: 6, height: 6, color: AppColors.success),
-                const SizedBox(width: 6),
-                Text(
-                  'DECENTRALIZED COMMERCE',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: isDark
-                        ? AppColors.onPrimaryContainer
-                        : AppColors.primaryContainer,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-
         RichText(
           textAlign: TextAlign.center,
           text: TextSpan(

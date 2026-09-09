@@ -431,18 +431,39 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
                 onClose: () => setState(() => _isSelecting = false),
                 onCopy: _copySelectedMessages,
                 onForward: _forwardSelectedMessages,
-                onDelete: () async {
-                  final repo = ref.read(chatRepositoryProvider);
-                  for (final id in _selectedMessageIds) {
-                    await repo.deleteMessage(widget.chatId, id);
-                  }
+                onDelete: () {
+                  final ids = Set<String>.from(_selectedMessageIds);
+                  final removed = _messages
+                      .where((m) => ids.contains(m.id))
+                      .toList();
+                  final indexes = {
+                    for (final m in removed) m.id: _messages.indexOf(m),
+                  };
                   setState(() {
-                    _messages.removeWhere(
-                      (m) => _selectedMessageIds.contains(m.id),
-                    );
+                    _messages.removeWhere((m) => ids.contains(m.id));
                     _selectedMessageIds.clear();
                     _isSelecting = false;
                   });
+                  AppSnackbar.undoable(
+                    context,
+                    message: ids.length == 1
+                        ? 'Mensagem apagada.'
+                        : '${ids.length} mensagens apagadas.',
+                    onUndo: () => setState(() {
+                      for (final m in removed) {
+                        _messages.insert(
+                          indexes[m.id]!.clamp(0, _messages.length),
+                          m,
+                        );
+                      }
+                    }),
+                    onCommit: () async {
+                      final repo = ref.read(chatRepositoryProvider);
+                      for (final id in ids) {
+                        await repo.deleteMessage(widget.chatId, id);
+                      }
+                    },
+                  );
                 },
                 onStar: () {},
                 onShare: () {},

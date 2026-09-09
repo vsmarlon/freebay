@@ -12,10 +12,7 @@ final userStoriesProvider = FutureProvider.family<List<StoryEntity>, String>((
 ) async {
   final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getUserStories(userId);
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (stories) => stories,
-  );
+  return result.fold((failure) => throw failure, (stories) => stories);
 });
 
 class MyStoriesPage extends ConsumerWidget {
@@ -211,11 +208,19 @@ class MyStoriesPage extends ConsumerWidget {
             ),
           ),
           InkWell(
-            onTap: () async {
+            onTap: () {
               Navigator.pop(context);
-              final repository = ref.read(socialRepositoryProvider);
-              await repository.deleteStory(story.id);
-              ref.invalidate(userStoriesProvider(userId));
+              AppSnackbar.undoable(
+                context,
+                message: 'Story apagado.',
+                onUndo: () {},
+                onCommit: () async {
+                  await ref
+                      .read(socialRepositoryProvider)
+                      .deleteStory(story.id);
+                  ref.invalidate(userStoriesProvider(userId));
+                },
+              );
             },
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),

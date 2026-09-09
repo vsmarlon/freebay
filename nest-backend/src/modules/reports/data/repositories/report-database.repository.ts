@@ -63,23 +63,4 @@ export class ReportDatabaseRepository extends BasePrismaRepository {
       return this.prisma.report.create({ data: prismaData });
     }, 'Erro ao criar denúncia');
   }
-
-  async findAllReports(where?: Prisma.ReportWhereInput): RepositoryResponse<Report[]> {
-    return this.safeRun(() => this.prisma.report.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    }), 'Erro ao listar denúncias');
-  }
-
-  async findReportById(id: string): RepositoryResponse<Report | null> {
-    return this.safeRun(() => this.prisma.report.findUnique({ where: { id } }), 'Erro ao buscar denúncia');
-  }
-
-  async updateReport(id: string, data: Prisma.ReportUpdateInput): RepositoryResponse<Report> {
-    return this.safeRun(() => this.prisma.report.update({ where: { id }, data }), 'Erro ao atualizar denúncia');
-  }
-
-  async updateUser(id: string, data: Prisma.UserUpdateInput): RepositoryResponse<User> {
-    return this.safeRun(() => this.prisma.user.update({ where: { id }, data }), 'Erro ao atualizar usuário');
-  }
 }

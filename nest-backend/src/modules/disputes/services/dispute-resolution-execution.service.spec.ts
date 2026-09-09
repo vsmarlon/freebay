@@ -15,7 +15,8 @@ describe('DisputeResolutionExecutionService', () => {
       order: { updateMany: jest.fn().mockResolvedValue({ count: claimedCount }) },
       wallet: {
         findUnique: jest.fn().mockResolvedValue(walletExists ? { userId: 'seller-1' } : null),
-        upsert: jest.fn().mockResolvedValue({}),
+        createMany: jest.fn().mockResolvedValue({ count: 1 }),
+        update: jest.fn().mockResolvedValue({}),
       },
       walletEntry: { createMany: jest.fn().mockResolvedValue({ count: 1 }) },
     });
@@ -66,30 +67,28 @@ describe('DisputeResolutionExecutionService', () => {
         where: { id: 'order-1', escrowStatus: 'HELD' },
         data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
       });
-      expect(tx.wallet.upsert).toHaveBeenCalledWith({
+      expect(tx.wallet.update).toHaveBeenCalledWith({
         where: { userId: 'buyer-1' },
-        create: { user: { connect: { id: 'buyer-1' } }, availableBalance: 10000 },
-        update: { availableBalance: { increment: 10000 } },
+        data: { availableBalance: { increment: 10000 } },
       });
-      expect(tx.wallet.upsert).toHaveBeenCalledWith({
+      expect(tx.wallet.update).toHaveBeenCalledWith({
         where: { userId: 'seller-1' },
-        create: { user: { connect: { id: 'seller-1' } }, pendingBalance: -9000 },
-        update: { pendingBalance: { increment: -9000 } },
+        data: { pendingBalance: { increment: -9000 } },
       });
     });
 
-    it('creates the buyer wallet when the refund lands on a user who never had one', async () => {
+    it('credits the buyer when the refund lands on a user without a wallet', async () => {
       const tx = buildTx();
       (tx.wallet.findUnique as jest.Mock).mockResolvedValue({ userId: 'seller-1' });
 
       await sut.resolveInFavorOfBuyer(tx, buildDispute());
 
-      const buyerCall = (tx.wallet.upsert as jest.Mock).mock.calls.find(
+      const buyerCall = tx.wallet.update.mock.calls.find(
         ([arg]) => arg.where.userId === 'buyer-1',
       );
-      expect(buyerCall[0].create).toEqual({
-        user: { connect: { id: 'buyer-1' } },
-        availableBalance: 10000,
+      expect(buyerCall?.[0]).toEqual({
+        where: { userId: 'buyer-1' },
+        data: { availableBalance: { increment: 10000 } },
       });
     });
 
@@ -104,7 +103,7 @@ describe('DisputeResolutionExecutionService', () => {
 
       await sut.resolveInFavorOfBuyer(tx, buildDispute());
 
-      expect(tx.wallet.upsert).not.toHaveBeenCalled();
+      expect(tx.wallet.update).not.toHaveBeenCalled();
     });
   });
 
@@ -118,15 +117,9 @@ describe('DisputeResolutionExecutionService', () => {
         where: { id: 'order-1', escrowStatus: 'HELD' },
         data: { status: 'COMPLETED', escrowStatus: 'RELEASED' },
       });
-      expect(tx.wallet.upsert).toHaveBeenCalledWith({
+      expect(tx.wallet.update).toHaveBeenCalledWith({
         where: { userId: 'seller-1' },
-        create: {
-          user: { connect: { id: 'seller-1' } },
-          availableBalance: 9000,
-          pendingBalance: -9000,
-          totalEarned: 9000,
-        },
-        update: {
+        data: {
           availableBalance: { increment: 9000 },
           pendingBalance: { increment: -9000 },
           totalEarned: { increment: 9000 },
@@ -145,7 +138,7 @@ describe('DisputeResolutionExecutionService', () => {
 
       await sut.resolveInFavorOfSeller(tx, buildDispute());
 
-      expect(tx.wallet.upsert).not.toHaveBeenCalled();
+      expect(tx.wallet.update).not.toHaveBeenCalled();
     });
   });
 });

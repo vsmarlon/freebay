@@ -1,3 +1,5 @@
+import 'package:freebay/shared/services/error_reporter.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/data/repositories/notification_repository.dart';
@@ -35,7 +37,8 @@ class Notifications extends _$Notifications {
       _hasMore = page.hasMore;
       state = AsyncValue.data(page.items);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      ErrorReporter.report('notifications', e, st);
+      state = AsyncValue.error(const UnknownFailure(), st);
     }
   }
 

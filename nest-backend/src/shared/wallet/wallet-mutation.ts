@@ -43,13 +43,14 @@ export async function applyWalletDelta(
     }
   }
 
-  await tx.wallet.upsert({
+  await tx.wallet.createMany({
+    data: { userId },
+    skipDuplicates: true,
+  });
+
+  await tx.wallet.update({
     where: { userId },
-    create: {
-      user: { connect: { id: userId } },
-      ...Object.fromEntries(applied.map((field) => [field, delta[field] as number])),
-    },
-    update: Object.fromEntries(
+    data: Object.fromEntries(
       applied.map((field) => [field, { increment: delta[field] as number }]),
     ),
   });

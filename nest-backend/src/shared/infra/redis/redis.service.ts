@@ -27,6 +27,10 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  async setIfAbsent(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    return (await this.redis.set(key, value, 'EX', ttlSeconds, 'NX')) === 'OK';
+  }
+
   async get(key: string): Promise<string | null> {
     return this.redis.get(key);
   }
@@ -38,6 +42,12 @@ export class RedisService implements OnModuleDestroy {
   async exists(key: string): Promise<boolean> {
     const result = await this.redis.exists(key);
     return result === 1;
+  }
+
+  async incrementWithExpiry(key: string, ttlSeconds: number): Promise<number> {
+    const result = await this.redis.multi().incr(key).expire(key, ttlSeconds).exec();
+    const increment = result?.[0]?.[1];
+    return typeof increment === 'number' ? increment : Number(increment ?? 0);
   }
 
   async ping(): Promise<string> {

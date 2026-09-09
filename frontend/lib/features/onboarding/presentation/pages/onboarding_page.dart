@@ -77,15 +77,6 @@ class OnboardingPage extends ConsumerStatefulWidget {
 class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pageController = PageController();
   int _index = 0;
-  double _currentPage = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController.addListener(() {
-      setState(() => _currentPage = _pageController.page ?? 0);
-    });
-  }
 
   @override
   void dispose() {
@@ -149,9 +140,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     HapticFeedback.selectionClick();
                     setState(() => _index = i);
                   },
-                  itemBuilder: (context, i) => _SlideView(
-                    slide: _slides[i],
-                    pageOffset: i - _currentPage,
+                  itemBuilder: (context, i) => AnimatedBuilder(
+                    animation: _pageController,
+                    builder: (context, _) => _SlideView(
+                      slide: _slides[i],
+                      pageOffset:
+                          i -
+                          (_pageController.hasClients
+                              ? (_pageController.page ?? _index.toDouble())
+                              : _index.toDouble()),
+                    ),
                   ),
                 ),
               ),

@@ -61,24 +61,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String? _errorMessage;
   bool _rememberMe = false;
 
   @override
-  void initState() {
-    super.initState();
-    _emailController.addListener(_clearError);
-    _passwordController.addListener(_clearError);
-  }
-
-  void _clearError() {
-    if (_errorMessage != null) setState(() => _errorMessage = null);
-  }
-
-  @override
   void dispose() {
-    _emailController.removeListener(_clearError);
-    _passwordController.removeListener(_clearError);
     _anim.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -87,7 +73,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
-      setState(() => _errorMessage = null);
       await ref
           .read(authControllerProvider.notifier)
           .login(
@@ -127,11 +112,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         },
         error: (err, _) {
           HapticFeedback.vibrate();
-          final msg = err is String
-              ? err
-              : 'Credenciais inválidas ou erro de conexão. Tente novamente.';
-          setState(() => _errorMessage = msg);
-          AppSnackbar.error(context, msg);
+          AppSnackbar.handleFailure(context, err);
         },
       );
     });
@@ -198,7 +179,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         AuthStagger.fromAnimations(
                           opacity: _logoFade,
                           slide: _logoSlide,
-                          child: const BrutalistLogo(fontSize: 46),
+                          child: const BrutalistLogo(
+                            fontSize: 46,
+                            showTagline: false,
+                          ),
                         ),
                         Spacing.vXl,
                         FadeTransition(
@@ -300,13 +284,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             ],
                           ),
                         ),
-                        if (_errorMessage != null) ...[
-                          Spacing.vSm,
-                          EmptyState.error(
-                            message: _errorMessage!,
-                            onRetry: () => setState(() => _errorMessage = null),
-                          ),
-                        ],
                         Spacing.vMd,
                         FadeTransition(
                           opacity: _btnFade,

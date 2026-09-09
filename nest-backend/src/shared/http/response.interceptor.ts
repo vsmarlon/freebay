@@ -20,8 +20,7 @@ export class EitherInterceptor<T> implements NestInterceptor<T, T> {
               if (error instanceof AppError) {
                 subscriber.error(error);
               } else {
-                const err = error as { message?: string };
-                subscriber.error(new InternalServerError(err?.message ?? 'Erro desconhecido'));
+                subscriber.error(new InternalServerError());
               }
               return;
             }

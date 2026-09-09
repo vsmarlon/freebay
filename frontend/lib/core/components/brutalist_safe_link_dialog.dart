@@ -42,7 +42,7 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
-        AppSnackbar.error(context, 'Erro ao abrir link: $e');
+        AppSnackbar.error(context, 'Não foi possível abrir o link.');
       }
     }
   }

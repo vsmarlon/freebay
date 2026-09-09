@@ -1,11 +1,45 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Resend } from 'resend';
+
+export type MagicLinkSendResult = { id: string };
 
 @Injectable()
 export class ResendService {
   private readonly logger = new Logger(ResendService.name);
 
   constructor(private config: ConfigService) {}
+
+  async sendMagicLink(email: string, token: string, locale: 'pt-BR' | 'en', credentialId: string): Promise<MagicLinkSendResult | null> {
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    const fromEmail = this.config.get<string>('RESEND_FROM_EMAIL') || this.config.get<string>('EMAIL_FROM') || 'FreeBay <onboarding@resend.dev>';
+    const appUrl = this.config.get<string>('WEB_APP_URL', this.config.get<string>('APP_URL', 'http://localhost:3000'));
+    const confirmationUrl = `${appUrl}/auth/magic-link/confirm?token=${encodeURIComponent(token)}`;
+    if (!apiKey) {
+      this.logger.warn('Magic-link email not sent: RESEND_API_KEY is not configured');
+      return null;
+    }
+
+    const portuguese = locale === 'pt-BR';
+    const subject = portuguese ? 'Seu acesso ao FreeBay' : 'Your FreeBay sign-in link';
+    const title = portuguese ? 'ENTRAR NO FREEBAY' : 'SIGN IN TO FREEBAY';
+    const body = portuguese
+      ? 'Use o botão abaixo para entrar com segurança. Este link expira em 10 minutos.'
+      : 'Use the button below to sign in securely. This link expires in 10 minutes.';
+    const resend = new Resend(apiKey);
+    const { data, error } = await resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject,
+        text: `${title}\n\n${body}\n${confirmationUrl}`,
+        html: `<p><strong>${title}</strong></p><p>${body}</p><p><a href="${confirmationUrl}">${confirmationUrl}</a></p>`,
+      }, { idempotencyKey: `magic-link/${credentialId}` });
+    if (error || !data?.id) {
+      this.logger.error('Magic-link email was not accepted by Resend');
+      return null;
+    }
+    return { id: data.id };
+  }
 
   async sendRecoveryCode(email: string, code: string): Promise<string | null> {
     const apiKey = this.config.get<string>('RESEND_API_KEY');

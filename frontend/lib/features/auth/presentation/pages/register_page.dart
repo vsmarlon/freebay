@@ -22,7 +22,6 @@ class RegisterPage extends HookConsumerWidget {
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
     final formKey = useMemoized(GlobalKey<FormState>.new);
-    final errorMessage = useState<String?>(null);
     final authState = ref.watch(authControllerProvider);
 
     final animController = useAnimationController(duration: AppMotion.enter);
@@ -30,37 +29,6 @@ class RegisterPage extends HookConsumerWidget {
       animController.forward();
       return null;
     }, const []);
-
-    useEffect(
-      () {
-        void clearError() {
-          if (errorMessage.value != null) {
-            errorMessage.value = null;
-          }
-        }
-
-        nameController.addListener(clearError);
-        usernameController.addListener(clearError);
-        emailController.addListener(clearError);
-        passwordController.addListener(clearError);
-        confirmPasswordController.addListener(clearError);
-
-        return () {
-          nameController.removeListener(clearError);
-          usernameController.removeListener(clearError);
-          emailController.removeListener(clearError);
-          passwordController.removeListener(clearError);
-          confirmPasswordController.removeListener(clearError);
-        };
-      },
-      [
-        nameController,
-        usernameController,
-        emailController,
-        passwordController,
-        confirmPasswordController,
-      ],
-    );
 
     ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
       next.whenOrNull(
@@ -79,11 +47,7 @@ class RegisterPage extends HookConsumerWidget {
         },
         error: (err, _) {
           HapticFeedback.vibrate();
-          final friendlyError = err is String
-              ? err
-              : 'Erro ao criar conta. Verifique os dados e tente novamente.';
-          errorMessage.value = friendlyError;
-          AppSnackbar.error(context, friendlyError);
+          AppSnackbar.handleFailure(context, err);
         },
       );
     });
@@ -248,13 +212,6 @@ class RegisterPage extends HookConsumerWidget {
                             begin: 0.4,
                             end: 0.63,
                           ),
-                          if (errorMessage.value != null) ...[
-                            Spacing.vSm,
-                            EmptyState.error(
-                              message: errorMessage.value!,
-                              onRetry: () => errorMessage.value = null,
-                            ),
-                          ],
                           Spacing.vLg,
                           AuthStagger(
                             child: AppButton(
@@ -263,7 +220,6 @@ class RegisterPage extends HookConsumerWidget {
                               isLoading: authState.isLoading,
                               onPressed: () {
                                 if (formKey.currentState?.validate() ?? false) {
-                                  errorMessage.value = null;
                                   ref
                                       .read(authControllerProvider.notifier)
                                       .register(

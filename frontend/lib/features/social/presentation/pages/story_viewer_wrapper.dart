@@ -53,7 +53,8 @@ class StoryViewerWrapper extends ConsumerWidget {
           ],
         ),
       ),
-      error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
+      error: (err, _) =>
+          Scaffold(body: EmptyState.error(message: userMessageOf(err))),
     );
   }
 }

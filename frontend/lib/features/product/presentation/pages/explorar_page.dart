@@ -190,7 +190,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
             ),
             error: (err, _) => Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('Erro ao carregar categorias: $err'),
+              child: Text(userMessageOf(err)),
             ),
           ),
         ],
@@ -210,7 +210,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
 
     if (feedState.error != null && feedState.products.isEmpty) {
       return EmptyState.error(
-        message: 'Erro ao carregar\n${feedState.error}',
+        message: feedState.error ?? kGenericErrorMessage,
         onRetry: () => ref.read(productsFeedProvider(params).notifier).load(),
       );
     }

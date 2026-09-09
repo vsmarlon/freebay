@@ -14,10 +14,7 @@ final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
 ) async {
   final usecase = ref.watch(getUserReviewsUsecaseProvider);
   final result = await usecase(GetUserReviewsParams(userId: userId));
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (response) => response,
-  );
+  return result.fold((failure) => throw failure, (response) => response);
 });
 
 class UserReviewsPage extends ConsumerStatefulWidget {

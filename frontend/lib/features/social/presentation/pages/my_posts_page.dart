@@ -13,10 +13,7 @@ final userPostsProvider = FutureProvider.family<List<PostEntity>, String>((
 ) async {
   final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getPostsByUser(userId);
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (posts) => posts,
-  );
+  return result.fold((failure) => throw failure, (posts) => posts);
 });
 
 class MyPostsPage extends ConsumerWidget {

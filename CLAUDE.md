@@ -21,14 +21,17 @@ npx jest src/modules/auth/usecases/register.usecase.spec.ts
 # Single test by name
 npx jest --testNamePattern "should return error" src/modules/auth/usecases/register.usecase.spec.ts
 
-npm run test:integration  # syncs .env.test DB schema, then runs jest.config.integration.js
+npm run test:integration  # applies committed migrations, then runs jest.config.integration.js
 npm run prisma:generate   # regenerate client after schema changes
-npm run prisma:migrate    # create + apply a dev migration
+npm run prisma:migrate    # create + apply a dev migration on a disposable DB
+npx prisma migrate deploy # apply committed migrations once
 npm run prisma:studio     # open DB GUI
 npm run lint               # eslint --fix available via lint:fix
 ```
 
-Seed data: `db/seeds/001_seed_dev.sql` (run manually against your dev DB; no npm script wraps it).
+Seed data: `nest-backend/prisma/seed.ts` (development/disposable databases only).
+It requires an explicit `DATABASE_URL`, `ALLOW_DATABASE_SEED=true`, and an
+operator-supplied `SEED_USER_PASSWORD`; `SEED_ADMIN_PASSWORD` is optional.
 
 ### Frontend (`cd frontend`)
 
@@ -234,12 +237,12 @@ The seed populates: demo users, categories, sample products, and social posts fo
 Integration tests live alongside unit specs (`*.spec.ts`) but run under a separate Jest config (`jest.config.integration.js`) against `.env.test`:
 
 ```bash
-npm run test:integration   # syncs schema + runs integration suite
+npm run test:integration   # applies migrations + runs integration suite
 npm run test:integration:watch
 npm run test:integration:cov
 ```
 
-The `.env.test` database is synced via the guarded `npm run prisma:test:sync` before each run. Integration tests are **not** included in plain `npm test`. They require explicitly configured native or external PostgreSQL + Redis; local Docker is not required.
+The `.env.test` database is brought up to date with `prisma migrate deploy` before each run. Integration tests are **not** included in plain `npm test`. They require explicitly configured native or external PostgreSQL + Redis; local Docker is not required.
 
 ### Swagger UI
 

@@ -31,7 +31,11 @@ export class JwtTokenValidatorService {
 
     if (payload.userId && payload.iat) {
       const invalidBefore = await this.redisService.get(`${SESSION_INVALID_BEFORE_PREFIX}${payload.userId}`);
-      if (invalidBefore && payload.iat < Number(invalidBefore)) {
+      const invalidBeforeMs = invalidBefore ? Number(invalidBefore) : undefined;
+      const issuedBeforeRevocation = invalidBeforeMs !== undefined && payload.issuedAtMs !== undefined
+        ? payload.issuedAtMs < invalidBeforeMs
+        : invalidBeforeMs !== undefined && payload.iat < Math.floor(invalidBeforeMs / 1000);
+      if (issuedBeforeRevocation) {
         throw new UnauthorizedException('Sessão expirada');
       }
     }

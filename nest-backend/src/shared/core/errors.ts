@@ -4,6 +4,7 @@ export class AppError extends Error {
     public readonly code: string,
     message: string,
     public readonly statusCode: number = 400,
+    public readonly detail?: string,
   ) {
     super(message);
     this.message = message;
@@ -50,8 +51,13 @@ export class ForbiddenError extends AppError {
 }
 
 export class InvalidOrderStateError extends AppError {
-  constructor(expected: string, current: string) {
-    super('INVALID_ORDER_STATE', `Pedido deveria estar ${expected}, mas está ${current}`, 422);
+  constructor(expected: string, current?: string) {
+    super(
+      'INVALID_ORDER_STATE',
+      'Este pedido não permite essa ação agora',
+      422,
+      `expected=${expected} current=${current ?? 'n/a'}`,
+    );
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:freebay/shared/errors/error_messages.dart';
 
 abstract class Failure {
   final String message;
@@ -83,29 +84,28 @@ Failure mapDioExceptionToFailure(DioException e) {
       final statusCode = e.response?.statusCode;
       final responseData = e.response?.data;
 
-      // Try to extract error message from API response
-      String? apiMessage;
-      if (responseData is Map) {
-        apiMessage =
-            responseData['error']?['message'] as String? ??
-            responseData['message'] as String?;
-      }
+      final mapped = switch (responseData) {
+        {'error': {'code': final String code}} => messageForCode(code),
+        _ => null,
+      };
 
       switch (statusCode) {
         case 400:
-          return ValidationFailure(apiMessage ?? 'Dados inválidos.');
+          return ValidationFailure(mapped ?? 'Dados inválidos.');
         case 401:
           return UnauthorizedFailure(
-            apiMessage ?? 'Sessão expirada. Faça login novamente.',
+            mapped ?? 'Sessão expirada. Faça login novamente.',
           );
         case 403:
-          return const ServerFailure('Você não tem permissão para esta ação.');
+          return ServerFailure(
+            mapped ?? 'Você não tem permissão para esta ação.',
+          );
         case 404:
-          return NotFoundFailure(apiMessage ?? 'Recurso não encontrado.');
+          return NotFoundFailure(mapped ?? 'Recurso não encontrado.');
         case 409:
-          return ServerFailure(apiMessage ?? 'Conflito de dados.');
+          return ServerFailure(mapped ?? 'Não foi possível concluir.');
         case 422:
-          return ValidationFailure(apiMessage ?? 'Dados inválidos.');
+          return ValidationFailure(mapped ?? 'Dados inválidos.');
         case 429:
           return const ServerFailure('Muitas tentativas. Aguarde um momento.');
         case 500:
@@ -116,7 +116,7 @@ Failure mapDioExceptionToFailure(DioException e) {
           );
         default:
           return ServerFailure(
-            apiMessage ?? 'Erro ao se comunicar com o servidor.',
+            mapped ?? 'Erro ao se comunicar com o servidor.',
           );
       }
 

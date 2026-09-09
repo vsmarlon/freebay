@@ -56,7 +56,6 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   final _nameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _cityController = TextEditingController();
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -78,7 +77,6 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
 
   Future<void> _handleComplete() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() => _errorMessage = null);
 
     await ref
         .read(authControllerProvider.notifier)
@@ -104,11 +102,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
         },
         error: (err, _) {
           HapticFeedback.vibrate();
-          final msg = err is String
-              ? err
-              : 'Erro ao completar perfil. Tente novamente.';
-          setState(() => _errorMessage = msg);
-          AppSnackbar.error(context, msg);
+          AppSnackbar.handleFailure(context, err);
         },
       );
     });
@@ -236,13 +230,6 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             ),
                           ),
                         ),
-                        if (_errorMessage != null) ...[
-                          Spacing.vSm,
-                          EmptyState.error(
-                            message: _errorMessage!,
-                            onRetry: () => setState(() => _errorMessage = null),
-                          ),
-                        ],
                         Spacing.vLg,
                         FadeTransition(
                           opacity: _btnFade,

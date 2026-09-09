@@ -3,8 +3,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { randomUUID } from 'crypto';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
 import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
@@ -31,8 +29,12 @@ import {
 } from '@/shared/core/errors';
 import { isLeft } from '@/shared/core/either';
 import { UserDatabaseRepository } from './data/repositories/user-database.repository';
-import { RedisService } from '@/shared/infra/redis/redis.service';
 import { JwtPayload, JwtTokenType } from '@/shared/core/types';
+import { RequestMagicLinkInput, RequestMagicLinkUseCase } from './usecases/request-magic-link.usecase';
+import { ConsumeMagicLinkUseCase } from './usecases/consume-magic-link.usecase';
+import { RefreshWebSessionUseCase } from './usecases/refresh-web-session.usecase';
+import { LogoutWebSessionUseCase } from './usecases/logout-web-session.usecase';
+import { SessionTokenService } from './services/session-token.service';
 
 @Injectable()
 export class AuthService {
@@ -50,8 +52,11 @@ export class AuthService {
     private readonly completeProfileUseCase: CompleteProfileUseCase,
     private readonly userRepository: UserDatabaseRepository,
     private readonly jwtService: JwtService,
-    private readonly config: ConfigService,
-    private readonly redisService: RedisService,
+    private readonly sessionTokens: SessionTokenService,
+    private readonly requestMagicLinkUseCase: RequestMagicLinkUseCase,
+    private readonly consumeMagicLinkUseCase: ConsumeMagicLinkUseCase,
+    private readonly refreshWebSessionUseCase: RefreshWebSessionUseCase,
+    private readonly logoutWebSessionUseCase: LogoutWebSessionUseCase,
   ) {}
 
   async register(input: RegisterDTO) {
@@ -61,7 +66,7 @@ export class AuthService {
 
       const { user } = result.value;
       this._assertNotSuspended(user);
-      const tokens = this._generateSessionTokens(user.id, user.role);
+      const tokens = this.sessionTokens.generate(user.id, user.role);
       return { user, ...tokens };
     } catch (err) {
       if (err instanceof AppError) throw err;
@@ -77,7 +82,7 @@ export class AuthService {
 
       const { user } = result.value;
       this._assertNotSuspended(user);
-      const tokens = this._generateSessionTokens(user.id, user.role);
+      const tokens = this.sessionTokens.generate(user.id, user.role);
       return { user, ...tokens };
     } catch (err) {
       if (err instanceof AppError) throw err;
@@ -103,18 +108,13 @@ export class AuthService {
 
       this._assertNotSuspended(existingUser.value);
 
-      await this.blacklistToken(user.jti, user.exp);
+      if (!user.jti || !user.exp || !await this.sessionTokens.claimRefresh(user.jti, user.exp)) {
+        throw new InvalidTokenError('Sessão já renovada');
+      }
+      await this.sessionTokens.revoke(user.jti, user.exp);
+      const generated = this.sessionTokens.generate(existingUser.value.id, existingUser.value.role);
 
-      const token = this.jwtService.sign(
-        { userId: existingUser.value.id, role: existingUser.value.role, type: JwtTokenType.ACCESS, jti: randomUUID() } as JwtPayload,
-        { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
-      );
-      const refreshToken = this.jwtService.sign(
-        { userId: existingUser.value.id, role: existingUser.value.role, type: JwtTokenType.REFRESH, jti: randomUUID() } as JwtPayload,
-        { expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') },
-      );
-
-      return { token, refreshToken };
+      return { token: generated.token, refreshToken: generated.refreshToken };
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
@@ -128,14 +128,14 @@ export class AuthService {
     biometricTokenPayload?: { jti?: string; exp?: number },
   ) {
     try {
-      await this.blacklistToken(user.jti, user.exp);
+      await this.sessionTokens.revoke(user.jti, user.exp);
 
       if (refreshTokenPayload) {
-        await this.blacklistToken(refreshTokenPayload.jti, refreshTokenPayload.exp);
+        await this.sessionTokens.revoke(refreshTokenPayload.jti, refreshTokenPayload.exp);
       }
 
       if (biometricTokenPayload) {
-        await this.blacklistToken(biometricTokenPayload.jti, biometricTokenPayload.exp);
+        await this.sessionTokens.revoke(biometricTokenPayload.jti, biometricTokenPayload.exp);
       }
 
       return { message: 'Logout realizado' };
@@ -212,10 +212,10 @@ export class AuthService {
 
       const { user } = result.value;
       this._assertNotSuspended(user);
-      const tokens = this._generateSessionTokens(user.id, user.role);
+      const tokens = this.sessionTokens.generate(user.id, user.role);
 
       // Rotate: blacklist the old biometric token now that a new one is issued
-      await this.blacklistToken(oldJti, oldExp);
+      await this.sessionTokens.revoke(oldJti, oldExp);
 
       return { user, ...tokens };
     } catch (err) {
@@ -227,7 +227,7 @@ export class AuthService {
 
   async revokeBiometricToken(jti?: string, exp?: number) {
     try {
-      await this.blacklistToken(jti, exp);
+      await this.sessionTokens.revoke(jti, exp);
       return { message: 'Token biométrico revogado' };
     } catch (err) {
       if (err instanceof AppError) throw err;
@@ -243,7 +243,7 @@ export class AuthService {
 
       const { user } = result.value;
       this._assertNotSuspended(user);
-      const tokens = this._generateSessionTokens(user.id, user.role);
+      const tokens = this.sessionTokens.generate(user.id, user.role);
       return { user, ...tokens };
     } catch (err) {
       if (err instanceof AppError) throw err;
@@ -264,12 +264,30 @@ export class AuthService {
     }
   }
 
-  private async blacklistToken(jti?: string, exp?: number) {
-    if (!jti || !exp) return;
-    const ttl = exp - Math.floor(Date.now() / 1000);
-    if (ttl > 0) {
-      await this.redisService.add(`blacklist:${jti}`, '1', ttl);
-    }
+  async requestMagicLink(input: RequestMagicLinkInput) {
+    const result = await this.requestMagicLinkUseCase.execute(input);
+    if (result.isLeft()) throw result.value;
+    return result.value;
+  }
+
+  async consumeMagicLink(input: import('./dtos/magic-link.dto').ConsumeMagicLinkDTO) {
+    const result = await this.consumeMagicLinkUseCase.execute(input);
+    if (result.isLeft()) throw result.value;
+    this._assertNotSuspended(result.value.user);
+    const tokens = this.sessionTokens.generate(result.value.user.id, result.value.user.role);
+    return { user: result.value.user, tokens };
+  }
+
+  async refreshWebSession(user: JwtPayload) {
+    const result = await this.refreshWebSessionUseCase.execute(user);
+    if (result.isLeft()) throw result.value;
+    return result.value;
+  }
+
+  async logoutWebSession(payloads: Array<JwtPayload | undefined>) {
+    const result = await this.logoutWebSessionUseCase.execute(payloads);
+    if (result.isLeft()) throw result.value;
+    return result.value;
   }
 
   private _assertNotSuspended(user: { suspendedAt?: Date | null; suspensionReason?: string | null }) {
@@ -278,24 +296,4 @@ export class AuthService {
     }
   }
 
-  private _generateSessionTokens(userId: string, role: string) {
-    const accessJti = randomUUID();
-    const refreshJti = randomUUID();
-    const biometricJti = randomUUID();
-
-    const token = this.jwtService.sign(
-      { userId, role, type: JwtTokenType.ACCESS, jti: accessJti } as JwtPayload,
-      { expiresIn: this.config.get('JWT_EXPIRES_IN', '15m') },
-    );
-    const refreshToken = this.jwtService.sign(
-      { userId, role, type: JwtTokenType.REFRESH, jti: refreshJti } as JwtPayload,
-      { expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') },
-    );
-    const biometricToken = this.jwtService.sign(
-      { userId, role, type: JwtTokenType.BIOMETRIC, jti: biometricJti } as JwtPayload,
-      { expiresIn: this.config.get('JWT_BIOMETRIC_EXPIRES_IN', '7d') },
-    );
-
-    return { token, refreshToken, biometricToken };
-  }
 }

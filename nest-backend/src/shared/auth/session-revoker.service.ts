@@ -11,7 +11,7 @@ export class SessionRevokerService {
   async revokeAllSessions(userId: string): Promise<void> {
     await this.redisService.add(
       `${SESSION_INVALID_BEFORE_PREFIX}${userId}`,
-      Math.floor(Date.now() / 1000).toString(),
+      Date.now().toString(),
       SESSION_INVALID_BEFORE_TTL_SECONDS,
     );
   }

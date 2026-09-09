@@ -40,7 +40,7 @@ class LoggingInterceptor extends Interceptor {
       debugPrint('[HTTP ERROR TYPE] ${err.type}');
       if (err.type == DioExceptionType.connectionError) {
         debugPrint(
-          '[HTTP ERROR HINT] If you are on a physical device, do not use localhost. Run with --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
+          '[HTTP ERROR HINT] No route to backend. USB/emulador: adb reverse tcp:3000 tcp:3000. Wi-Fi: --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
         );
       }
       if (err.response?.data != null) {

@@ -62,7 +62,7 @@ export function wait(ms: number): Promise<void> {
 export async function cleanDatabase(prisma: PrismaClient): Promise<void> {
   assertSafeTestEnvironment();
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE
-    "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",
+    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",
     "ConversationPreference", "DirectMessage", "DirectConversation",
     "ChatMessage", "ReviewImage", "Review", "Dispute",
     "WalletEntry", "ConnectAccount", "PaymentGroup", "Transaction", "Order",

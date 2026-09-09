@@ -10,6 +10,7 @@ import {
   toUserSearchResult,
   toUserSuggestionResult,
 } from '../../types/user.types';
+import { normalizeEmail } from '../../utils/normalize-email';
 
 /// Over-fetch mutual-follow candidates so the in-memory ranking has room to sort.
 const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
@@ -29,7 +30,7 @@ export class UserDatabaseRepository extends BasePrismaRepository {
 
   async findByEmail(email: string): RepositoryResponse<User | null> {
     return this.safeRun(
-      () => this.prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } }),
+      () => this.prisma.user.findUnique({ where: { email: normalizeEmail(email) } }),
       'Erro ao buscar usuário por email',
     );
   }

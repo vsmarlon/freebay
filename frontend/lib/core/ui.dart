@@ -1,5 +1,8 @@
 export 'package:freebay_design_system/freebay_design_system.dart';
 
+export 'package:freebay/shared/errors/error_messages.dart';
+export 'package:freebay/shared/errors/failures/failures.dart';
+
 export 'components/app_card.dart';
 export 'components/app_dialog.dart';
 export 'components/app_error_widget.dart';

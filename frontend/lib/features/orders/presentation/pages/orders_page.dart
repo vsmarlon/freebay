@@ -121,8 +121,7 @@ class _OrdersTab extends ConsumerWidget {
           ? () => ref.read(salesListProvider.notifier).refresh()
           : () => ref.read(purchasesListProvider.notifier).refresh();
       return EmptyState.error(
-        message:
-            'Erro ao carregar ${isSeller ? 'vendas' : 'compras'}: ${state.error}',
+        message: state.error ?? kGenericErrorMessage,
         onRetry: refresh,
       );
     }

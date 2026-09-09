@@ -202,6 +202,9 @@ model User {
   resolvedDisputes        Dispute[]                @relation("ResolvedDisputes")
   fcmToken                String?
   notificationPrefs       Json?                    @default("{\"orders\":true,\"follows\":true,\"messages\":true,\"disputes\":true}")
+  webConsentGrantedAt     DateTime?
+  webConsentIp            String?
+  webConsentUserAgent     String?
 
   @@index([email])
   @@index([createdAt])
@@ -227,6 +230,28 @@ model PasswordRecoveryCode {
   @@index([userId, expiresAt])
   @@index([userId, usedAt, expiresAt])
   @@index([codeHash])
+}
+
+model WebMagicLink {
+  id              String    @id @default(uuid())
+  email           String
+  tokenHash       String    @unique
+  consentGranted  Boolean
+  consentAt       DateTime?
+  requestedAt     DateTime  @default(now())
+  expiresAt       DateTime
+  consumedAt      DateTime?
+  activatedAt     DateTime?
+  sendAcceptedAt  DateTime?
+  resendMessageId String?
+  requestedIp     String?
+  userAgent       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([email, requestedAt])
+  @@index([email, consumedAt, expiresAt])
+  @@index([expiresAt])
 }
 
 model PhoneVerificationCode {

@@ -71,9 +71,9 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao comentar: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível comentar.')),
+        );
       }
     } finally {
       if (mounted) {

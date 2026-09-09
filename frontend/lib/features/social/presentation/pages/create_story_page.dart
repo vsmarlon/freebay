@@ -81,9 +81,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
         _isTakingPicture = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao tirar foto: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível usar a câmera.')),
+        );
       }
     }
   }
@@ -130,9 +130,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro ao enviar story: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível enviar o story.')),
+        );
       }
     } finally {
       if (mounted) {

@@ -60,68 +60,79 @@ class _WalletCardState extends State<WalletCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(gradient: AppColors.brutalistGradient),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: context.borderColor,
+            width: AppDepth.borderThin,
+          ),
+          boxShadow: AppDepth.hard(context.borderColor),
+        ),
+        child: BrutalistBackground(
+          forceDark: true,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'SALDO TOTAL',
+                      style: TextStyle(
+                        fontFamily: AppTypography.fontFamily,
+                        color: AppColors.onPrimary.withValues(alpha: 0.70),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _toggleHidden,
+                      child: Icon(
+                        _valuesHidden
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: AppColors.onPrimary.withValues(alpha: 0.70),
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+                Spacing.vSm,
                 Text(
-                  'SALDO TOTAL',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    color: AppColors.onPrimary.withValues(alpha: 0.70),
-                    fontSize: 10,
+                  _masked(total),
+                  style: const TextStyle(
+                    fontFamily: AppTypography.headlineFontFamily,
+                    color: AppColors.onPrimary,
+                    fontSize: 40,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.0,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                GestureDetector(
-                  onTap: _toggleHidden,
-                  child: Icon(
-                    _valuesHidden
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: AppColors.onPrimary.withValues(alpha: 0.70),
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-            Spacing.vSm,
-            Text(
-              _masked(total),
-              style: const TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                color: AppColors.onPrimary,
-                fontSize: 40,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildBalanceItem(
-                    'DISPONÍVEL',
-                    _masked(available),
-                    solid: true,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildBalanceItem(
-                    'PENDENTE',
-                    _masked(pending),
-                    solid: false,
-                  ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildBalanceItem(
+                        'DISPONÍVEL',
+                        _masked(available),
+                        solid: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildBalanceItem(
+                        'PENDENTE',
+                        _masked(pending),
+                        solid: false,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

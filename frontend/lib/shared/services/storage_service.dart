@@ -10,6 +10,7 @@ class StorageService {
   static const _biometricTokenKey = 'biometric_token';
   static const _rememberMeKey = 'remember_me';
   static const _hasSeenOnboardingKey = 'has_seen_onboarding';
+  static const _lastActiveAtKey = 'last_active_at';
 
   static SharedPreferences? _prefs;
   static String? _tokenCache;
@@ -76,6 +77,20 @@ class StorageService {
 
   static bool hasSeenOnboardingSync() {
     return _prefs?.getBool(_hasSeenOnboardingKey) ?? false;
+  }
+
+  static DateTime? lastActiveAtSync() {
+    final millis = _prefs?.getInt(_lastActiveAtKey);
+    if (millis == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(millis);
+  }
+
+  static void touchLastActiveAt() {
+    _prefs?.setInt(_lastActiveAtKey, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  static Future<void> clearLastActiveAt() async {
+    await _prefs?.remove(_lastActiveAtKey);
   }
 
   static Future<bool> getHasSeenOnboarding() async {

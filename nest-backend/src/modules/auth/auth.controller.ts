@@ -5,6 +5,8 @@ import {
   HttpStatus,
   Request,
   UnauthorizedException,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
@@ -32,6 +34,11 @@ import {
 import { AuthUser, JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
 import { AllowTokenTypes } from './guards/token-types.decorator';
+import { WebCookieAuth } from './guards/web-cookie-auth.decorator';
+import { WebOriginGuard } from './guards/web-origin.guard';
+import { RequestMagicLinkDTO, ConsumeMagicLinkDTO } from './dtos/magic-link.dto';
+import { getWebSessionCookie, WEB_REFRESH_COOKIE } from './utils/web-session-cookies';
+import type { Request as ExpressRequest, Response } from 'express';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -111,6 +118,59 @@ export class AuthController {
     return this.authService.refresh(user);
   }
 
+  @PostPublic('web/magic-link/request', {
+    summary: 'Request web magic link',
+    bodyType: RequestMagicLinkDTO,
+    httpCode: HttpStatus.OK,
+  })
+  @UseGuards(WebOriginGuard)
+  async requestWebMagicLink(@Request() req: ExpressRequest, @Body() body: RequestMagicLinkDTO) {
+    return this.authService.requestMagicLink({
+      ...body,
+      ip: req.ip ?? 'unknown',
+      userAgent: req.headers['user-agent'],
+    });
+  }
+
+  @PostPublic('web/magic-link/consume', {
+    summary: 'Consume web magic link',
+    bodyType: ConsumeMagicLinkDTO,
+    httpCode: HttpStatus.OK,
+  })
+  @UseGuards(WebOriginGuard)
+  async consumeWebMagicLink(@Body() body: ConsumeMagicLinkDTO, @Res({ passthrough: true }) response: Response) {
+    const result = await this.authService.consumeMagicLink(body);
+    this.setSessionCookies(response, result.tokens.token, result.tokens.refreshToken);
+    return { user: result.user };
+  }
+
+  @PostAuth('web/session/refresh', {
+    summary: 'Refresh web session',
+    httpCode: HttpStatus.OK,
+  })
+  @AllowTokenTypes(JwtTokenType.REFRESH)
+  @WebCookieAuth()
+  @UseGuards(WebOriginGuard)
+  async refreshWebSession(@CurrentUser() user: AuthUser, @Res({ passthrough: true }) response: Response) {
+    const tokens = await this.authService.refreshWebSession(user);
+    this.setSessionCookies(response, tokens.token, tokens.refreshToken);
+    return { refreshed: true };
+  }
+
+  @PostAuth('web/session/logout', {
+    summary: 'Logout web session',
+    responseType: MessageResponse,
+  })
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  @WebCookieAuth()
+  @UseGuards(WebOriginGuard)
+  async logoutWebSession(@Request() req: ExpressRequest & { user: AuthUser }, @Res({ passthrough: true }) response: Response) {
+    const refreshPayload = this._ownedPayload(getWebSessionCookie(req.headers.cookie, WEB_REFRESH_COOKIE), JwtTokenType.REFRESH, req.user.userId);
+    const result = await this.authService.logoutWebSession([req.user, refreshPayload]);
+    this.clearSessionCookies(response);
+    return result;
+  }
+
   @PostAuth('logout', {
     summary: 'Logout',
     description: 'Blacklists current JWT tokens',
@@ -150,6 +210,24 @@ export class AuthController {
       if (payload?.type === type && payload.userId === userId) return payload;
     } catch { void 0; }
     return undefined;
+  }
+
+  private setSessionCookies(response: Response, access: string, refresh: string): void {
+    const secure = this.configService.get('NODE_ENV') === 'production';
+    const flags = `HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax`;
+    response.setHeader('Set-Cookie', [
+      `freebay_access=${encodeURIComponent(access)}; Path=/; Max-Age=900; ${flags}`,
+      `freebay_refresh=${encodeURIComponent(refresh)}; Path=/auth/web/session; Max-Age=604800; ${flags}`,
+    ]);
+  }
+
+  private clearSessionCookies(response: Response): void {
+    const secure = this.configService.get('NODE_ENV') === 'production';
+    const flags = `HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax`;
+    response.setHeader('Set-Cookie', [
+      `freebay_access=; Path=/; Max-Age=0; ${flags}`,
+      `freebay_refresh=; Path=/auth/web/session; Max-Age=0; ${flags}`,
+    ]);
   }
 
   @PostPublic('forgot-password', {

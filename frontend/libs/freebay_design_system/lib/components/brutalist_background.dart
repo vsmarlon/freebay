@@ -1,32 +1,94 @@
-import '../tokens/app_colors.dart';
-import '../tokens/app_motion.dart';
-import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+
+import '../tokens/app_colors.dart';
+
+/// Controls how [BrutalistBackground] renders.
+enum BrutalistBackgroundMode {
+  /// Full animated aurora shader (auth/splash screens).
+  animated,
+
+  /// Static tonal gradient — zero GPU cost, suitable for inner app screens.
+  staticGradient,
+}
 
 class BrutalistBackground extends StatefulWidget {
   final Widget child;
   final bool? forceDark;
+  final BrutalistBackgroundMode mode;
 
-  const BrutalistBackground({required this.child, this.forceDark, super.key});
+  const BrutalistBackground({
+    required this.child,
+    this.forceDark,
+    this.mode = BrutalistBackgroundMode.animated,
+    super.key,
+  });
 
   @override
   State<BrutalistBackground> createState() => _BrutalistBackgroundState();
 }
 
 class _BrutalistBackgroundState extends State<BrutalistBackground>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static ui.FragmentProgram? _program;
+  static bool _programFailed = false;
+
+  ui.FragmentShader? _shader;
+  Ticker? _ticker;
+  final ValueNotifier<double> _seconds = ValueNotifier(0);
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: AppMotion.ambient)
-      ..repeat(reverse: true);
+    WidgetsBinding.instance.addObserver(this);
+    if (widget.mode == BrutalistBackgroundMode.animated) {
+      _loadProgram();
+    }
+  }
+
+  Future<void> _loadProgram() async {
+    if (_programFailed) return;
+    if (_program == null) {
+      try {
+        _program = await ui.FragmentProgram.fromAsset(
+          'packages/freebay_design_system/shaders/aurora.frag',
+        );
+      } catch (_) {
+        _programFailed = true;
+        if (mounted) setState(() {});
+        return;
+      }
+    }
+    if (!mounted) return;
+    _shader = _program!.fragmentShader();
+    _ticker = createTicker((elapsed) {
+      _seconds.value = elapsed.inMilliseconds / 1000.0;
+    })..start();
+    setState(() {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_ticker == null) return;
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _ticker!.muted = false;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        _ticker!.muted = true;
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    _ticker?.dispose();
+    _shader?.dispose();
+    _seconds.dispose();
     super.dispose();
   }
 
@@ -39,84 +101,87 @@ class _BrutalistBackgroundState extends State<BrutalistBackground>
       children: [
         Positioned.fill(
           child: RepaintBoundary(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return CustomPaint(
-                  painter: _AuroraBackgroundPainter(
-                    animationValue: _controller.value,
-                    isDark: isDark,
-                  ),
-                );
-              },
-            ),
+            child: _buildBackground(isDark),
           ),
         ),
         widget.child,
       ],
     );
   }
+
+  Widget _buildBackground(bool isDark) {
+    // Static mode or shader not yet loaded — zero GPU cost
+    if (widget.mode == BrutalistBackgroundMode.staticGradient ||
+        _shader == null) {
+      return _StaticBackground(isDark: isDark);
+    }
+
+    return CustomPaint(
+      size: Size.infinite,
+      painter: _AuroraShaderPainter(
+        shader: _shader!,
+        seconds: _seconds,
+        isDark: isDark,
+      ),
+    );
+  }
 }
 
-class _AuroraBackgroundPainter extends CustomPainter {
-  final double animationValue;
+class _StaticBackground extends StatelessWidget {
+  const _StaticBackground({required this.isDark});
+
   final bool isDark;
 
-  _AuroraBackgroundPainter({
-    required this.animationValue,
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [
+                  AppColors.surfaceContainerLowestDark,
+                  AppColors.surfaceDark,
+                  AppColors.surfaceContainerLowDark,
+                ]
+              : const [
+                  AppColors.surfaceContainerLowest,
+                  AppColors.surface,
+                  AppColors.surfaceContainerLow,
+                ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AuroraShaderPainter extends CustomPainter {
+  _AuroraShaderPainter({
+    required this.shader,
+    required ValueNotifier<double> seconds,
     required this.isDark,
-  });
+  })  : _seconds = seconds,
+        super(repaint: seconds);
+
+  final ui.FragmentShader shader;
+  final ValueNotifier<double> _seconds;
+  final bool isDark;
+
+  static final Paint _shaderPaint = Paint();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Rect rect = Offset.zero & size;
-    final Paint basePaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: isDark
-            ? const [
-                AppColors.surfaceContainerLowestDark,
-                AppColors.surfaceDark,
-                AppColors.surfaceContainerLowDark,
-                AppColors.surfaceContainerLowestDark,
-              ]
-            : const [
-                AppColors.surfaceContainerLowest,
-                AppColors.surface,
-                AppColors.surfaceContainerLow,
-                AppColors.surfaceContainerLowest,
-              ],
-        stops: const [0.0, 0.3, 0.7, 1.0],
-      ).createShader(rect);
-
-    canvas.drawRect(rect, basePaint);
-
-    final double moveX1 = math.sin(animationValue * math.pi * 2) * 40;
-    final double moveY1 = math.cos(animationValue * math.pi * 2) * 30;
-
-    final Offset center1 = Offset(
-      size.width * 0.8 + moveX1,
-      size.height * 0.2 + moveY1,
-    );
-    final Paint paint1 = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              AppColors.primaryContainer.withValues(
-                alpha: isDark ? 0.45 : 0.15,
-              ),
-              AppColors.primaryContainer.withValues(alpha: 0.0),
-            ],
-          ).createShader(
-            Rect.fromCircle(center: center1, radius: size.width * 0.7),
-          );
-    canvas.drawCircle(center1, size.width * 0.7, paint1);
+    shader
+      ..setFloat(0, size.width)
+      ..setFloat(1, size.height)
+      ..setFloat(2, _seconds.value)
+      ..setFloat(3, isDark ? 1.0 : 0.0);
+    _shaderPaint.shader = shader;
+    canvas.drawRect(Offset.zero & size, _shaderPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _AuroraBackgroundPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue ||
-        oldDelegate.isDark != isDark;
-  }
+  bool shouldRepaint(covariant _AuroraShaderPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }

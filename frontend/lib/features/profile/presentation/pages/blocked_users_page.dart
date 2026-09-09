@@ -13,10 +13,7 @@ final blockServiceProvider = Provider<BlockService>((ref) {
 final blockedUsersProvider = FutureProvider<BlockListResponse>((ref) async {
   final service = ref.watch(blockServiceProvider);
   final result = await service.getBlockedUsers();
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (response) => response,
-  );
+  return result.fold((failure) => throw failure, (response) => response);
 });
 
 class BlockedUsersPage extends ConsumerWidget {
