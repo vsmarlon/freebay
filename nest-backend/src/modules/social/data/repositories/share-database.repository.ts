@@ -3,7 +3,8 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse } from '@/shared/core/either';
-import { POST_INCLUDE_FULL, ShareWithPost } from '../../types/social.types';
+import { postIncludeForViewer, ShareWithPost, MutationState } from '../../types/social.types';
+import { normalizePost } from './post-database.repository';
 
 @Injectable()
 export class PrismaShareRepository extends BasePrismaRepository {
@@ -31,7 +32,22 @@ export class PrismaShareRepository extends BasePrismaRepository {
     }, 'Erro ao remover compartilhamento');
   }
 
-  async findPostsRepostedByUser(userId: string, params: { limit?: number; cursor?: string }): RepositoryResponse<ShareWithPost[]> {
+  async setPostShare(userId: string, postId: string, active: boolean): RepositoryResponse<MutationState> {
+    return this.safeRun(() => this.prisma.$transaction(async (tx) => {
+      const existing = await tx.share.findUnique({ where: { userId_postId: { userId, postId } } });
+      if (active && !existing) {
+        await tx.share.create({ data: { userId, postId } });
+        await tx.post.update({ where: { id: postId }, data: { sharesCount: { increment: 1 } } });
+      } else if (!active && existing) {
+        await tx.share.delete({ where: { userId_postId: { userId, postId } } });
+        await tx.post.updateMany({ where: { id: postId, sharesCount: { gt: 0 } }, data: { sharesCount: { decrement: 1 } } });
+      }
+      const post = await tx.post.findUnique({ where: { id: postId }, select: { sharesCount: true } });
+      return { active, count: post?.sharesCount ?? 0 };
+    }), 'Erro ao atualizar compartilhamento');
+  }
+
+  async findPostsRepostedByUser(userId: string, params: { viewerId?: string; limit?: number; cursor?: string }): RepositoryResponse<ShareWithPost[]> {
     return this.safeRun(async () => {
       const shares = await this.prisma.share.findMany({
         where: { userId },
@@ -39,11 +55,14 @@ export class PrismaShareRepository extends BasePrismaRepository {
         take: params.limit ?? 20,
         ...(params.cursor ? { skip: 1, cursor: { id: params.cursor } } : {}),
         include: {
-          post: { include: POST_INCLUDE_FULL },
+          post: { include: postIncludeForViewer(params.viewerId) },
           user: { select: { id: true, displayName: true, avatarUrl: true } },
         },
       });
-      return shares as ShareWithPost[];
+      return shares.map((share) => ({
+        ...share,
+        post: normalizePost(share.post),
+      }));
     }, 'Erro ao buscar reposts');
   }
 

@@ -117,7 +117,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
     final posts = feedState.posts;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: AppRefreshIndicator(

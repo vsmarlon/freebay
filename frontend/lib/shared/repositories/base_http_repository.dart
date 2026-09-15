@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/either/either.dart';
@@ -53,7 +54,7 @@ abstract class BaseHttpRepository {
   /// Core template execution wrapper.
   Future<Either<Failure, T>> safeCall<T>(
     Future<Response> Function() request, {
-    required Either<Failure, T> Function(Response response) onSuccess,
+    required FutureOr<Either<Failure, T>> Function(Response response) onSuccess,
     String? debugLabel,
   }) async {
     try {

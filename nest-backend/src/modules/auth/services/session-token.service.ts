@@ -18,8 +18,11 @@ export class SessionTokenService {
     return {
       token: this.sign(userId, role, JwtTokenType.ACCESS, this.config.get('JWT_EXPIRES_IN', '15m')),
       refreshToken: this.sign(userId, role, JwtTokenType.REFRESH, this.config.get('JWT_REFRESH_EXPIRES_IN', '7d')),
-      biometricToken: this.sign(userId, role, JwtTokenType.BIOMETRIC, this.config.get('JWT_BIOMETRIC_EXPIRES_IN', '7d')),
     };
+  }
+
+  generateBiometric(userId: string, role: string) {
+    return this.sign(userId, role, JwtTokenType.BIOMETRIC, this.config.get('JWT_BIOMETRIC_EXPIRES_IN', '7d'));
   }
 
   async revoke(jti?: string, exp?: number): Promise<void> {
@@ -31,6 +34,16 @@ export class SessionTokenService {
   async claimRefresh(jti: string, exp: number): Promise<boolean> {
     const ttl = exp - Math.floor(Date.now() / 1000);
     return ttl > 0 && this.redisService.setIfAbsent(`refresh-claimed:${jti}`, '1', ttl);
+  }
+
+  async claimBiometric(jti: string, exp: number): Promise<boolean> {
+    const ttl = exp - Math.floor(Date.now() / 1000);
+    return ttl > 0 && this.redisService.setIfAbsent(`biometric-claimed:${jti}`, '1', ttl);
+  }
+
+  async claimBiometricEnrollment(jti: string, exp?: number): Promise<boolean> {
+    const ttl = Math.max(1, (exp ?? Math.floor(Date.now() / 1000) + 300) - Math.floor(Date.now() / 1000));
+    return this.redisService.setIfAbsent(`biometric-enrollment-claimed:${jti}`, '1', ttl);
   }
 
   private sign(userId: string, role: string, type: JwtTokenType, expiresIn: string) {

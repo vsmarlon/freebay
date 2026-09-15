@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
@@ -53,7 +53,7 @@ export class OpenDisputeUseCase {
       expiresAt,
     });
 
-    if (isLeft(disputeResult)) return left(disputeResult.value);
+    if (disputeResult.isLeft()) return left(disputeResult.value);
     const dispute = disputeResult.value;
 
     await this.prisma.order.update({

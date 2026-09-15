@@ -78,9 +78,9 @@ abstract class OrderEntity with _$OrderEntity {
     required String buyerId,
     required String sellerId,
     required String productId,
-    @Default(0) int amount,
-    @Default(0) int platformFee,
-    @Default(0) int sellerAmount,
+    required int amount,
+    required int platformFee,
+    required int sellerAmount,
     @JsonKey(fromJson: _orderStatusFromJson) required OrderStatus status,
     @JsonKey(fromJson: _escrowStatusFromJson)
     required EscrowStatus escrowStatus,

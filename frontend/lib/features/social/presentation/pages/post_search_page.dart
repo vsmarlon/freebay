@@ -4,7 +4,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/post_search_provider.dart';
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class PostSearchPage extends ConsumerStatefulWidget {
   const PostSearchPage({super.key});
@@ -48,77 +49,81 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
     final searchState = ref.watch(postSearchProvider);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          const PageHeader(text: 'BUSCAR POSTS'),
-          BrutalistBreadcrumb(
-            items: [
-              BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
-              const BreadcrumbItem(label: 'Buscar'),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar posts...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref
-                              .read(postSearchProvider.notifier)
-                              .search(
-                                query: '',
-                                filter: _selectedFilter,
-                                refresh: true,
-                              );
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: context.bgColor,
-                border: const OutlineInputBorder(borderSide: BorderSide.none),
-              ),
-              onChanged: _onSearchDebounced,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'Todos',
-                  isSelected: _selectedFilter == 'all',
-                  onSelected: () => _onFilterChanged('all'),
-                ),
-                Spacing.hSm,
-                _FilterChip(
-                  label: 'Seguindo',
-                  isSelected: _selectedFilter == 'following',
-                  onSelected: () => _onFilterChanged('following'),
-                ),
-                Spacing.hSm,
-                _FilterChip(
-                  label: 'Seguidores',
-                  isSelected: _selectedFilter == 'followers',
-                  onSelected: () => _onFilterChanged('followers'),
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            const PageHeader(text: 'BUSCAR POSTS'),
+            BrutalistBreadcrumb(
+              items: [
+                BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
+                const BreadcrumbItem(label: 'Buscar'),
               ],
             ),
-          ),
-          Spacing.vMd,
-          Expanded(child: _buildContent(searchState)),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar posts...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            ref
+                                .read(postSearchProvider.notifier)
+                                .search(
+                                  query: '',
+                                  filter: _selectedFilter,
+                                  refresh: true,
+                                );
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: context.bgColor,
+                  border: const OutlineInputBorder(borderSide: BorderSide.none),
+                ),
+                onChanged: _onSearchDebounced,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  _FilterChip(
+                    label: 'Todos',
+                    isSelected: _selectedFilter == 'all',
+                    onSelected: () => _onFilterChanged('all'),
+                  ),
+                  Spacing.hSm,
+                  _FilterChip(
+                    label: 'Seguindo',
+                    isSelected: _selectedFilter == 'following',
+                    onSelected: () => _onFilterChanged('following'),
+                  ),
+                  Spacing.hSm,
+                  _FilterChip(
+                    label: 'Seguidores',
+                    isSelected: _selectedFilter == 'followers',
+                    onSelected: () => _onFilterChanged('followers'),
+                  ),
+                ],
+              ),
+            ),
+            Spacing.vMd,
+            Expanded(
+              child: _buildContent(searchState, ref.watch(likesProvider)),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildContent(PostSearchState state) {
+  Widget _buildContent(PostSearchState state, LikesState likesState) {
     if (state.posts.isEmpty && !state.isLoading) {
       return const EmptyState(
         icon: Icons.search_off,
@@ -157,8 +162,10 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
             }
 
             final post = state.posts[index];
-            final likesCount = post.isLiked ? post.likesCount : post.likesCount;
-            final isLiked = post.isLiked;
+            final isLiked =
+                likesState.getLikedOverride(post.id) ?? post.isLiked;
+            final likesCount =
+                likesState.getCountOverride(post.id) ?? post.likesCount;
             return SocialPost(
               userId: post.user.id,
               userName: post.user.displayName ?? 'Unknown',
@@ -171,25 +178,19 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
               isLiked: isLiked,
               createdAt: post.createdAt,
               price: post.product?.price.toDouble(),
-              onTap: () => context.push('/post/${post.id}'),
-              onUserTap: () => context.push('/user/${post.user.id}'),
+              isSelling: post.type == 'PRODUCT',
+              onTap: () => context.push(AppRoutes.postPath(post.id)),
+              onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
               onLike: () async {
-                final repo = ref.read(socialRepositoryProvider);
-                if (post.isLiked) {
-                  await repo.unlikePost(post.id);
-                } else {
-                  await repo.likePost(post.id);
-                }
-                ref
-                    .read(postSearchProvider.notifier)
-                    .search(
-                      query: state.query,
-                      filter: state.filter,
-                      refresh: true,
+                return ref
+                    .read(likesProvider.notifier)
+                    .toggleLike(
+                      post.id,
+                      initialIsLiked: post.isLiked,
+                      initialCount: post.likesCount,
                     );
-                return true;
               },
-              onComment: () => context.push('/post/${post.id}'),
+              onComment: () => context.push(AppRoutes.postPath(post.id)),
             );
           },
         ),

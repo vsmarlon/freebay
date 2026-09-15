@@ -75,7 +75,7 @@ class _AppTextFieldState extends State<AppTextField> {
       builtSuffix = IconButton(
         icon: Icon(
           _obscureText ? Icons.visibility_off : Icons.visibility,
-          color: AppColors.mediumGray,
+          color: context.textSecondary,
         ),
         onPressed: () {
           setState(() {
@@ -104,26 +104,26 @@ class _AppTextFieldState extends State<AppTextField> {
       decoration: InputDecoration(
         labelText: widget.label?.isNotEmpty == true ? widget.label : null,
         labelStyle: widget.label?.isNotEmpty == true
-            ? const TextStyle(
+            ? TextStyle(
                 fontFamily: AppTypography.fontFamily,
                 fontWeight: FontWeight.w500,
-                color: AppColors.mediumGray,
+                color: context.textSecondary,
               )
             : null,
         hintText: widget.hint,
         hintStyle: AppTypography.bodyMedium.copyWith(
-          color: AppColors.mediumGray,
+          color: context.textSecondary,
         ),
         errorText: widget.errorText,
         filled: false,
         contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
         prefixIcon: widget.prefixIcon != null
-            ? Icon(widget.prefixIcon, color: AppColors.mediumGray)
+            ? Icon(widget.prefixIcon, color: context.textSecondary)
             : null,
         suffixIcon: builtSuffix,
         border: const UnderlineInputBorder(),
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.mediumGray),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: context.borderSoftColor),
         ),
         focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: AppColors.primaryContainer, width: 2.0),

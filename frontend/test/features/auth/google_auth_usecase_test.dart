@@ -39,7 +39,7 @@ void main() {
   );
 
   test(
-    'should return UserEntity when repository googleAuth succeeds',
+    'returns UserEntity when repository googleAuth succeeds',
     () async {
       fakeAuthRepository.result = const Right(tUser);
 
@@ -51,7 +51,7 @@ void main() {
     },
   );
 
-  test('should return Failure when repository googleAuth fails', () async {
+  test('returns Failure when repository googleAuth fails', () async {
     const tFailure = ServerFailure('Token Google inválido');
     fakeAuthRepository.result = const Left(tFailure);
 

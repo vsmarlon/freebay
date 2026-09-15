@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { PrismaReviewRepository } from '@/modules/reviews/data/repositories/review-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -31,7 +31,7 @@ export class GetUserReviewsUseCase {
       type,
     });
 
-    if (isLeft(result)) {
+    if (result.isLeft()) {
       return left(result.value);
     }
 

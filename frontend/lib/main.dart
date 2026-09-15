@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/router/app_router.dart';
+import 'core/router/app_routes.dart';
 import 'core/providers/theme_provider.dart';
 import 'shared/config/app_config.dart';
 import 'shared/services/http_client.dart';
@@ -108,23 +109,62 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
   }
 
   void _expireSession() {
+    HttpClient.suspendRefresh();
     if (_expiring) return;
     _expiring = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      ref.read(authControllerProvider.notifier).forceLogout();
-      await StorageService.clearLastActiveAt();
-      appRouter.go('/login');
+    unawaited(_showExpiredSession());
+  }
+
+  Future<void> _showExpiredSession() async {
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+      final interrupted = appRouter.routeInformationProvider.value.uri
+          .toString();
+      final biometricAvailable = await _biometricLoginAvailable();
       final context = appRouter.configuration.navigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        await AppDialog.showError<void>(
-          context: context,
-          title: 'Sessão expirada',
-          subtitle: 'Por segurança, entre novamente para continuar.',
-          okText: 'Fazer login',
-        );
+      if (context == null || !context.mounted) {
+        await ref.read(authControllerProvider.notifier).expireSession();
+        return;
       }
+
+      final dialog = AppDialog.showError<void>(
+        context: context,
+        title: 'Sessão expirada',
+        subtitle: 'Por segurança, entre novamente para continuar.',
+        okText: biometricAvailable ? 'Usar biometria' : 'Fazer login',
+        onOk: () => _reauthenticateAfterExpiry(interrupted, biometricAvailable),
+        dismissText: 'Continuar como convidado',
+        onDismiss: () => appRouter.go(AppRoutes.feed),
+        barrierDismissible: false,
+        preventBack: true,
+      );
+
+      await ref.read(authControllerProvider.notifier).expireSession();
+      await StorageService.clearLastActiveAt();
+      await dialog;
+    } finally {
       _expiring = false;
-    });
+    }
+  }
+
+  Future<bool> _biometricLoginAvailable() async {
+    final service = ref.read(biometryServiceProvider);
+    return await service.isAvailable() &&
+        await service.isEnabled() &&
+        await service.hasCredentials();
+  }
+
+  Future<void> _reauthenticateAfterExpiry(
+    String interrupted,
+    bool biometricAvailable,
+  ) async {
+    if (biometricAvailable &&
+        await ref.read(authControllerProvider.notifier).loginWithBiometrics()) {
+      appRouter.go(resolvePostAuthDestination(interrupted));
+      return;
+    }
+    final destination = resolvePostAuthDestination(interrupted);
+    appRouter.go('${AppRoutes.login}?from=${Uri.encodeComponent(destination)}');
   }
 
   Future<void> _registerPushToken() async {

@@ -113,7 +113,7 @@ class _BrutalistHighlightedTextState extends State<BrutalistHighlightedText> {
     if (text.isEmpty) return const [];
 
     final pattern = RegExp(
-      r'(https?:\/\/[^\s]+|www\.[^\s]+)|(@[a-zA-Z0-9_\.]+)|(#[a-zA-Z0-9_\u00C0-\u00FF]+)',
+      r'(https?:\/\/[^\s]+|www\.[^\s]+)|(@[a-zA-Z0-9_]{3,20})(?!\w)|(#[a-zA-Z0-9_\u00C0-\u00FF]+)',
       caseSensitive: false,
     );
 

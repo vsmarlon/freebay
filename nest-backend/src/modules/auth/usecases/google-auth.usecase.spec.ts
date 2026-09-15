@@ -54,11 +54,7 @@ describe('GoogleAuthUseCase', () => {
     sut = module.get(GoogleAuthUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should authenticate an existing Google user by googleId', async () => {
+  it('authenticates an existing Google user by googleId', async () => {
     mockVerifyIdToken.mockResolvedValue({
       getPayload: () => ({
         sub: 'google-sub-123',
@@ -104,7 +100,7 @@ describe('GoogleAuthUseCase', () => {
     }
   });
 
-  it('should link Google account when user exists with matching email', async () => {
+  it('links Google account when user exists with matching email', async () => {
     mockVerifyIdToken.mockResolvedValue({
       getPayload: () => ({
         sub: 'google-sub-456',
@@ -158,7 +154,7 @@ describe('GoogleAuthUseCase', () => {
     });
   });
 
-  it('should create a new user with username: null when user does not exist', async () => {
+  it('creates a new user with username: null when user does not exist', async () => {
     mockVerifyIdToken.mockResolvedValue({
       getPayload: () => ({
         sub: 'google-sub-789',
@@ -209,6 +205,7 @@ describe('GoogleAuthUseCase', () => {
       username: null,
       email: 'newuser@gmail.com',
       googleId: 'google-sub-789',
+      wallet: { create: {} },
     }));
   });
 
@@ -262,7 +259,7 @@ describe('GoogleAuthUseCase', () => {
     );
   });
 
-  it('should return error when Google token is invalid', async () => {
+  it('returns error when Google token is invalid', async () => {
     mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'));
 
     const result = await sut.execute('invalid-token');

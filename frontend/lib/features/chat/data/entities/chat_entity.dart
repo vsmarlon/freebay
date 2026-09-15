@@ -8,11 +8,18 @@ import 'package:freebay/features/chat/data/entities/order_info.dart';
 part 'chat_entity.freezed.dart';
 part 'chat_entity.g.dart';
 
-ChatThreadType _threadTypeFromJson(String? value) =>
-    value == 'ORDER' ? ChatThreadType.order : ChatThreadType.direct;
+@freezed
+abstract class ChatProductInfo with _$ChatProductInfo {
+  const factory ChatProductInfo({
+    required String id,
+    required String title,
+    String? imageUrl,
+    @Default('') String status,
+  }) = _ChatProductInfo;
 
-String _threadTypeToJson(ChatThreadType type) =>
-    type == ChatThreadType.order ? 'ORDER' : 'DIRECT';
+  factory ChatProductInfo.fromJson(Map<String, dynamic> json) =>
+      _$ChatProductInfoFromJson(json);
+}
 
 @freezed
 abstract class ChatEntity with _$ChatEntity {
@@ -20,13 +27,13 @@ abstract class ChatEntity with _$ChatEntity {
 
   const factory ChatEntity({
     required String id,
-    @JsonKey(fromJson: _threadTypeFromJson, toJson: _threadTypeToJson)
     required ChatThreadType threadType,
     required UserEntity otherUser,
     @JsonKey(name: 'lastMessage') LastMessageInfo? lastMessageInfo,
     required DateTime createdAt,
     ConversationPreference? preference,
     OrderInfo? orderInfo,
+    ChatProductInfo? product,
     @Default(0) int unreadCount,
   }) = _ChatEntity;
 
@@ -41,4 +48,5 @@ abstract class ChatEntity with _$ChatEntity {
   bool get unread => unreadCount > 0;
   bool get isArchived => preference?.isArchived ?? false;
   String? get orderStatus => orderInfo?.status;
+  String? get productTitle => product?.title ?? orderInfo?.productTitle;
 }

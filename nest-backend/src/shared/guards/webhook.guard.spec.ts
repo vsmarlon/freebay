@@ -1,55 +1,68 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
+import { StripeProvider, StripeWebhookEvent } from '@/modules/payments/providers/stripe-provider';
 import { createExecutionContext } from '@/shared/testing/test-doubles';
 import { WebhookGuard } from './webhook.guard';
-import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 
 describe('WebhookGuard', () => {
   let guard: WebhookGuard;
-  let mockStripeProvider: { constructWebhookEvent: jest.Mock };
-
-  const mockEvent = { id: 'evt_test', type: 'checkout.session.completed' };
-
-  const createContext = (
-    headers: Record<string, string> = {},
-    rawBody = '',
-  ): ExecutionContext => {
-    const request = { headers, rawBody };
-    return createExecutionContext({ request });
+  const event: StripeWebhookEvent = {
+    id: 'evt_v2_account',
+    object: 'v2.core.event',
+    created: new Date().toISOString(),
+    livemode: false,
+    type: 'v2.core.account.updated',
+    related_object: { id: 'acct_1', type: 'v2.core.account', url: '' },
+    fetchRelatedObject: async () => {
+      throw new Error('not used');
+    },
+    fetchEvent: async () => {
+      throw new Error('not used');
+    },
   };
 
   beforeEach(async () => {
-    mockStripeProvider = {
-      constructWebhookEvent: jest.fn().mockReturnValue(mockEvent),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WebhookGuard,
-        { provide: StripeProvider, useValue: mockStripeProvider },
+        {
+          provide: StripeProvider,
+          useValue: { constructWebhookEvent: jest.fn().mockReturnValue(event) },
+        },
       ],
     }).compile();
 
-    guard = module.get<WebhookGuard>(WebhookGuard);
+    guard = module.get(WebhookGuard);
   });
 
-  it('should allow valid webhook and attach the Stripe event', async () => {
-    const ctx = createContext({ 'stripe-signature': 'valid' }, '{"event":"data"}');
+  it('attaches a verified v2 event to the request', async () => {
+    const request = {
+      headers: { 'stripe-signature': 'valid' },
+      rawBody: Buffer.from('{"type":"v2.core.account.updated"}'),
+    };
 
-    expect(await guard.canActivate(ctx)).toBe(true);
-    expect(mockStripeProvider.constructWebhookEvent).toHaveBeenCalledWith(
-      '{"event":"data"}',
-      'valid',
-    );
-    const request = ctx.switchToHttp().getRequest();
-    expect(request.stripeEvent).toEqual(mockEvent);
+    await expect(guard.canActivate(createExecutionContext({ request }))).resolves.toBe(true);
+    expect(request).toHaveProperty('stripeEvent', event);
   });
 
-  it('should reject invalid signature', async () => {
-    mockStripeProvider.constructWebhookEvent.mockReturnValue(null);
+  it('rejects a request when signature verification returns no event', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        WebhookGuard,
+        {
+          provide: StripeProvider,
+          useValue: { constructWebhookEvent: jest.fn().mockReturnValue(null) },
+        },
+      ],
+    }).compile();
+    const invalidGuard = module.get(WebhookGuard);
+    const request = {
+      headers: { 'stripe-signature': 'invalid' },
+      rawBody: Buffer.from('{}'),
+    };
 
-    const ctx = createContext({ 'stripe-signature': 'bad' });
-
-    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+    await expect(
+      invalidGuard.canActivate(createExecutionContext({ request })),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

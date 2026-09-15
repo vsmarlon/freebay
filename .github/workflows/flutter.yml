@@ -47,6 +47,9 @@ jobs:
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed lib test libs/freebay_design_system/lib
 
+      - name: No raw route literals (use AppRoutes)
+        run: "! grep -rnE \"(context|appRouter)\\.(go|push|pushReplacement|replace)\\([[:space:]]*['\\\"]\\/\" lib --include=*.dart"
+
       - name: Run static analysis
         run: flutter analyze --fatal-infos lib test libs/freebay_design_system/lib
 

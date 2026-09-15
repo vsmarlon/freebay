@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { StripeProvider } from '../providers/stripe-provider';
 import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
@@ -14,35 +14,23 @@ export class GetConnectStatusUseCase {
 
   async execute(userId: string): Promise<Either<AppError, ConnectStatusOutput>> {
     const stored = await this.connectRepo.findByUserId(userId);
-    if (isLeft(stored)) return left(stored.value);
+    if (stored.isLeft()) return left(stored.value);
 
     if (!stored.value) {
       return right({
-        onboarded: false,
-        transfersEnabled: false,
-        payoutsEnabled: false,
+        status: 'onboarding-required',
         requirementsDue: [],
       });
     }
 
     const snapshot = await this.stripe.refreshConnectAccount(stored.value.stripeAccountId);
-    if (isLeft(snapshot)) {
-      return right({
-        onboarded: stored.value.detailsSubmitted,
-        transfersEnabled: stored.value.transfersEnabled,
-        payoutsEnabled: stored.value.payoutsEnabled,
-        requirementsDue: stored.value.requirementsDue,
-      });
+    if (snapshot.isLeft()) {
+      return left(snapshot.value);
     }
 
     const saved = await this.connectRepo.upsertFromSnapshot(userId, snapshot.value);
-    if (isLeft(saved)) return left(saved.value);
+    if (saved.isLeft()) return left(saved.value);
 
-    return right({
-      onboarded: saved.value.detailsSubmitted,
-      transfersEnabled: saved.value.transfersEnabled,
-      payoutsEnabled: saved.value.payoutsEnabled,
-      requirementsDue: saved.value.requirementsDue,
-    });
+    return right({ status: snapshot.value.status, requirementsDue: snapshot.value.requirementsDue });
   }
 }

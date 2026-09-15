@@ -7,6 +7,10 @@ import {
   ArrayNotEmpty,
   ArrayMaxSize,
   Matches,
+  IsIn,
+  IsInt,
+  Max,
+  Min,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
@@ -43,6 +47,11 @@ export class StartConversationDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
   readonly targetUserId: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', required: false })
+  @IsOptional()
+  @IsUUID()
+  readonly productId?: string;
 }
 
 export class SendMessageDTO {
@@ -57,10 +66,10 @@ export class SendMessageDTO {
   @IsOptional()
   readonly clientMessageId?: string;
 
-  @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'AUDIO', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
-  @IsString()
+  @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'AUDIO', 'VIDEO', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
+  @IsIn(['TEXT', 'IMAGE', 'GIF', 'AUDIO', 'VIDEO', 'LOCATION', 'PRODUCT_CARD'])
   @IsOptional()
-  readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'LOCATION' | 'PRODUCT_CARD';
+  readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'VIDEO' | 'LOCATION' | 'PRODUCT_CARD';
 
   @ApiProperty({
     example: '/media/chat/550e8400-e29b-41d4-a716-446655440000.jpg',
@@ -81,6 +90,13 @@ export class SendMessageDTO {
   @IsOptional()
   readonly metadata?: Record<string, unknown>;
 
+  @ApiProperty({ required: false, description: 'Audio duration in milliseconds' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(60000)
+  readonly durationMs?: number;
+
   @ApiProperty({ required: false, description: 'Message self-destructs after being seen' })
   @IsBoolean()
   @IsOptional()
@@ -93,6 +109,22 @@ export class StartConversationOutput {
 
   @ApiProperty({ example: 'PENDING' })
   readonly status: string;
+  readonly threadType: 'DIRECT';
+  readonly otherUser: ConversationCounterpartSummary;
+  readonly product: ProductConversationSummary | null;
+}
+
+export interface ConversationCounterpartSummary {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface ProductConversationSummary {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+  status: string;
 }
 
 export class AcceptConversationOutput {
@@ -105,11 +137,12 @@ export interface SendMessageInput {
   conversationId: string;
   clientMessageId?: string;
   content?: string;
-  type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'LOCATION' | 'PRODUCT_CARD';
+  type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'VIDEO' | 'LOCATION' | 'PRODUCT_CARD';
   attachmentUrl?: string;
   replyToId?: string;
   metadata?: Record<string, unknown>;
   viewOnce?: boolean;
+  durationMs?: number;
 }
 
 export interface SendMessageOutput {
@@ -189,6 +222,7 @@ export interface GetFilteredMessagesResult {
 export interface StartConversationInput {
   initiatorId: string;
   targetUserId: string;
+  productId?: string;
 }
 
 export interface AcceptConversationInput {
@@ -208,12 +242,19 @@ export interface ConversationPreferenceSummary {
   backgroundUrl: string | null;
 }
 
+export interface ConversationOtherUserSummary {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
 export interface GetMessagesResult {
   messages: GetMessagesOutput[];
   hasMore: boolean;
   nextCursor: string | null;
   threadType: ChatThreadType;
   otherUserId: string;
+  otherUser: ConversationOtherUserSummary;
   preference: ConversationPreferenceSummary | null;
 }
 
@@ -228,4 +269,3 @@ export interface ForwardMessagesOutput {
   forwardedCount: number;
   messages: SendMessageOutput[];
 }
-

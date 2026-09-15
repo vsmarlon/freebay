@@ -45,11 +45,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       return const GuestProfileView();
     }
 
-    final profileAsync = ref.watch(profileFutureProvider('me'));
+    final userId = authState.value!.id;
+    final profileAsync = ref.watch(profileFutureProvider(userId));
     final statsAsync = ref.watch(profileStatsProvider);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           PageHeader(
@@ -76,7 +77,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 final u = profileUser;
                 return AppRefreshIndicator(
                   onRefresh: () async =>
-                      ref.refresh(profileFutureProvider('me').future),
+                      ref.refresh(profileFutureProvider(userId).future),
                   child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [

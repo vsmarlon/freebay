@@ -15,6 +15,8 @@ import 'package:freebay/core/router/routes/order_routes.dart';
 import 'package:freebay/core/router/routes/support_routes.dart';
 
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/shared/services/storage_service.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/product/presentation/pages/explorar_page.dart';
 import 'package:freebay/features/product/presentation/pages/product_list_page.dart';
@@ -66,6 +68,14 @@ final Set<String> _authScreenPaths = {
   AppRoutes.completeProfile,
 };
 
+bool hasSeenWelcome(UserEntity user) {
+  try {
+    return StorageService.hasSeenWelcomeSetupSync(user.id);
+  } catch (_) {
+    return true;
+  }
+}
+
 String resolvePostAuthDestination(String? from) {
   if (from == null || from.isEmpty) return AppRoutes.feed;
   final decoded = Uri.decodeComponent(from);
@@ -89,9 +99,12 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: AppRoutes.splash,
   refreshListenable: routerRefreshNotifier,
-  errorBuilder: (context, state) => Scaffold(
-    body: EmptyState.error(message: 'Não foi possível abrir esta tela.'),
-  ),
+  errorBuilder: (context, state) {
+    debugPrint('[GoRouter] Error navigating to ${state.uri}: ${state.error}');
+    return Scaffold(
+      body: EmptyState.error(message: 'Não foi possível abrir esta tela.'),
+    );
+  },
   redirect: (context, state) {
     final container = ProviderScope.containerOf(context, listen: false);
     final isInitialLoading = container.read(isInitialAuthLoadingProvider);
@@ -110,6 +123,9 @@ final GoRouter appRouter = GoRouter(
       if (state.matchedLocation == AppRoutes.splash) {
         final hasSeen = container.read(hasSeenOnboardingProvider);
         return hasSeen ? AppRoutes.login : AppRoutes.onboarding;
+      }
+      if (state.matchedLocation == AppRoutes.completeProfile) {
+        return AppRoutes.login;
       }
       final isPublic =
           _publicRoutes.any((p) => state.matchedLocation == p) ||
@@ -131,11 +147,24 @@ final GoRouter appRouter = GoRouter(
         state.matchedLocation == AppRoutes.onboarding;
 
     final needsProfile = user.username == null;
-    if (needsProfile && state.matchedLocation != AppRoutes.completeProfile) {
-      return AppRoutes.completeProfile;
+    if (needsProfile) {
+      return state.matchedLocation == AppRoutes.completeProfile
+          ? null
+          : AppRoutes.completeProfile;
     }
-    if (!needsProfile && state.matchedLocation == AppRoutes.completeProfile) {
+    if (state.matchedLocation == AppRoutes.completeProfile) {
       return AppRoutes.feed;
+    }
+
+    final welcomeDone = hasSeenWelcome(user);
+    if (state.matchedLocation == AppRoutes.welcome) {
+      if (welcomeDone) {
+        return resolvePostAuthDestination(state.uri.queryParameters['from']);
+      }
+      return null;
+    }
+    if (!welcomeDone) {
+      return AppRoutes.welcome;
     }
 
     if (isAuthScreen) {

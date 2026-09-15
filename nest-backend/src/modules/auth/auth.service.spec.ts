@@ -20,6 +20,46 @@ import { LogoutWebSessionUseCase } from './usecases/logout-web-session.usecase';
 import { AuthService } from './auth.service';
 
 describe('AuthService legacy refresh', () => {
+  it('claims biometric replay exactly once without a post-claim revoke', async () => {
+    let claimed = false;
+    const sessions = {
+      generate: jest.fn().mockReturnValue({ token: 'access', refreshToken: 'refresh' }),
+      generateBiometric: jest.fn().mockReturnValue('biometric'),
+      revoke: jest.fn(),
+      claimBiometric: jest.fn().mockImplementation(async () => {
+        if (claimed) return false;
+        claimed = true;
+        return true;
+      }),
+    };
+    const biometric = {
+      execute: jest.fn().mockResolvedValue(right({
+        user: { id: 'u1', role: 'USER' },
+        jti: 'j1',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      })),
+    };
+    const module = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        { provide: UserDatabaseRepository, useValue: {} },
+        { provide: SessionTokenService, useValue: sessions },
+        ...[RegisterUseCase, LoginUseCase, RequestPasswordRecoveryUseCase, VerifyPasswordRecoveryCodeUseCase, ResetPasswordUseCase, CheckUsernameAvailabilityUseCase, GoogleAuthUseCase, CompleteProfileUseCase, RequestMagicLinkUseCase, ConsumeMagicLinkUseCase, RefreshWebSessionUseCase, LogoutWebSessionUseCase].map((token) => ({ provide: token, useValue: {} })),
+        { provide: BiometricLoginUseCase, useValue: biometric },
+        { provide: JwtService, useValue: {} },
+      ],
+    }).compile();
+
+    const results = await Promise.allSettled([
+      module.get(AuthService).biometricLogin('claimed-token'),
+      module.get(AuthService).biometricLogin('claimed-token'),
+    ]);
+
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(sessions.claimBiometric).toHaveBeenCalledTimes(2);
+    expect(sessions.revoke).not.toHaveBeenCalled();
+  });
+
   it('allows exactly one concurrent rotation for the same refresh token', async () => {
     let claimed = false;
     const users = { findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: 'USER', suspendedAt: null })) };

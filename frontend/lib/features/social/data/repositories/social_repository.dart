@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'package:path/path.dart' as path;
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
@@ -10,6 +12,18 @@ import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/entities/user_post_entry.dart';
 import 'package:freebay/features/social/data/entities/feed_page_result.dart';
 import 'package:freebay/features/social/data/entities/user_search_page_result.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
+
+class PostMutationState {
+  final bool active;
+  final int count;
+  const PostMutationState({required this.active, required this.count});
+}
+
+class SaveMutationState {
+  final bool active;
+  const SaveMutationState({required this.active});
+}
 
 class SocialRepository extends BaseHttpRepository {
   SocialRepository({super.client});
@@ -75,12 +89,30 @@ class SocialRepository extends BaseHttpRepository {
     }
   }
 
-  Future<Either<Failure, void>> likePost(String postId) => safeVoid(
-    () => client.post('/social/posts/$postId/like', data: {'_': true}),
-  );
+  Future<Either<Failure, PostMutationState>> likePost(String postId) =>
+      _postMutation('/social/posts/$postId/like');
 
-  Future<Either<Failure, void>> unlikePost(String postId) =>
-      safeVoid(() => client.patch('/social/posts/$postId/unlike'));
+  Future<Either<Failure, PostMutationState>> unlikePost(String postId) =>
+      _postMutation('/social/posts/$postId/unlike', patch: true);
+
+  Future<Either<Failure, PostMutationState>> _postMutation(
+    String path, {
+    bool patch = false,
+  }) => safeCall<PostMutationState>(
+    () => client.request(
+      path,
+      options: Options(method: patch ? 'PATCH' : 'POST'),
+    ),
+    onSuccess: (response) {
+      final data = response.data['data'] as Map;
+      return Right(
+        PostMutationState(
+          active: data['active'] == true,
+          count: data['count'] as int? ?? 0,
+        ),
+      );
+    },
+  );
 
   Future<Either<Failure, void>> deletePost(String postId) =>
       safeVoid(() => client.patch('/social/posts/$postId/delete'));
@@ -106,22 +138,45 @@ class SocialRepository extends BaseHttpRepository {
   }) => safeGetList<CommentEntity>(
     '/social/posts/$postId/comments',
     queryParameters: {'limit': limit, 'cursor': ?cursor},
-    listKey: 'data.comments',
+    listKey: 'data',
     fromJson: CommentEntity.fromJson,
   );
 
-  Future<Either<Failure, void>> likeComment(String commentId) => safeVoid(
-    () => client.post('/social/comments/$commentId/like', data: {'_': true}),
-  );
+  Future<Either<Failure, void>> likeComment(String commentId) async {
+    final res = await safeVoid(
+      () => client.post('/social/comments/$commentId/like', data: {'_': true}),
+    );
+    return _absorbIdempotentConflict(res);
+  }
 
-  Future<Either<Failure, void>> unlikeComment(String commentId) =>
-      safeVoid(() => client.patch('/social/comments/$commentId/unlike'));
+  Future<Either<Failure, void>> unlikeComment(String commentId) async {
+    final res = await safeVoid(
+      () => client.patch('/social/comments/$commentId/unlike'),
+    );
+    return _absorbIdempotentConflict(res);
+  }
 
-  Future<Either<Failure, void>> repost(String postId) =>
-      safeVoid(() => client.post('/social/posts/$postId/share'));
+  Either<Failure, void> _absorbIdempotentConflict(
+    Either<Failure, void> result,
+  ) {
+    return result.fold((failure) {
+      final msg = failure.message.toLowerCase();
+      if (msg.contains('already') ||
+          msg.contains('not liked') ||
+          msg.contains('já curtiu') ||
+          msg.contains('não curtiu') ||
+          msg.contains('já está curtido')) {
+        return const Right(null);
+      }
+      return Left(failure);
+    }, Right.new);
+  }
 
-  Future<Either<Failure, void>> unrepost(String postId) =>
-      safeVoid(() => client.patch('/social/posts/$postId/unshare'));
+  Future<Either<Failure, PostMutationState>> repost(String postId) =>
+      _postMutation('/social/posts/$postId/share');
+
+  Future<Either<Failure, PostMutationState>> unrepost(String postId) =>
+      _postMutation('/social/posts/$postId/unshare', patch: true);
 
   Future<Either<Failure, void>> sharePost(String postId, String? content) =>
       safeVoid(
@@ -137,27 +192,71 @@ class SocialRepository extends BaseHttpRepository {
         extractKey: 'data',
         customMapper: (data) {
           final map = data as Map<String, dynamic>;
-          final stories =
-              (map['stories'] as List?)
-                  ?.whereType<Map>()
-                  .map(
-                    (j) => StoryEntity.fromJson(Map<String, dynamic>.from(j)),
-                  )
-                  .toList() ??
+          final groups =
+              (map['stories'] as List?)?.whereType<Map>().map((json) {
+                final group = Map<String, dynamic>.from(json);
+                final user = StoryUserEntity.fromJson(
+                  Map<String, dynamic>.from(group['user'] as Map),
+                );
+                final items =
+                    (group['stories'] as List?)?.whereType<Map>().map((item) {
+                      final value = Map<String, dynamic>.from(item);
+                      return StoryGroupItem(
+                        id: value['id'] as String,
+                        imageUrl: value['imageUrl'] as String,
+                        createdAt: DateTime.parse(value['createdAt'] as String),
+                        expiresAt: DateTime.parse(value['expiresAt'] as String),
+                        mediaType: value['mediaType'] as String? ?? 'IMAGE',
+                        caption: value['caption'] as String?,
+                        textBlocks: value['textBlocks'] is List
+                            ? (value['textBlocks'] as List)
+                                  .whereType<Map>()
+                                  .map(
+                                    (item) => StoryTextBlockEntity.fromJson(
+                                      Map<String, dynamic>.from(item),
+                                    ),
+                                  )
+                                  .toList()
+                            : null,
+                      );
+                    }).toList() ??
+                    [];
+                return StoryGroupEntity(user: user, stories: items);
+              }).toList() ??
               [];
           return StoriesResponse(
-            stories: stories,
+            groups: groups,
             userHasStory: map['userHasStory'] as bool? ?? false,
           );
         },
       );
 
-  Future<Either<Failure, StoryEntity>> createStory(String imagePath) async {
+  Future<Either<Failure, StoryEntity>> createStory(
+    String imagePath, {
+    String? caption,
+    List<StoryTextBlockEntity> textBlocks = const [],
+  }) async {
     try {
+      final isVideo = [
+        '.mp4',
+        '.mov',
+        '.webm',
+      ].any(imagePath.toLowerCase().endsWith);
       final data = FormData.fromMap({
-        'image': await ImageUploadService.compressedMultipartFile(
-          imagePath,
-          filename: 'story.jpg',
+        'image': isVideo
+            ? await MultipartFile.fromFile(
+                imagePath,
+                filename: 'story${path.extension(imagePath).toLowerCase()}',
+                contentType: DioMediaType.parse(_videoMime(imagePath)),
+              )
+            : await ImageUploadService.compressedMultipartFile(
+                imagePath,
+                filename: 'story.jpg',
+              ),
+        if (caption != null && caption.trim().isNotEmpty)
+          'caption': caption.trim(),
+        'textBlocks': jsonEncode(
+          textBlocks.map((block) => block.toJson()).toList(),
         ),
       });
       return safePost<StoryEntity>(
@@ -169,6 +268,17 @@ class SocialRepository extends BaseHttpRepository {
       );
     } catch (_) {
       return const Left(ServerFailure('Erro ao processar imagem'));
+    }
+  }
+
+  String _videoMime(String imagePath) {
+    switch (path.extension(imagePath).toLowerCase()) {
+      case '.mov':
+        return 'video/quicktime';
+      case '.webm':
+        return 'video/webm';
+      default:
+        return 'video/mp4';
     }
   }
 
@@ -236,26 +346,39 @@ class SocialRepository extends BaseHttpRepository {
       if (query != null && query.isNotEmpty) 'q': query,
       'cursor': ?cursor,
     },
-    listKey: 'data.posts',
+    listKey: 'data',
     fromJson: PostEntity.fromJson,
   );
 
-  Future<Either<Failure, List<PostEntity>>> getPostsByUser(
+  Future<Either<Failure, CursorPage<PostEntity>>> getPostsByUser(
     String userId, {
     int limit = 20,
     String? cursor,
-  }) => safeGet<List<PostEntity>>(
+  }) => safePage<PostEntity>(
     '/social/posts/user/$userId',
+    (json) => json.containsKey('post')
+        ? UserPostEntry.fromJson(json).toPostEntity()
+        : PostEntity.fromJson(json),
+    limit: limit,
+    cursor: cursor,
+  );
+
+  Future<Either<Failure, List<UserPostEntry>>> getRepostsByUser(
+    String userId, {
+    int limit = 20,
+    String? cursor,
+  }) => safeGet<List<UserPostEntry>>(
+    '/social/posts/user/$userId/reposts',
     queryParameters: {'limit': limit, 'cursor': ?cursor},
-    extractKey: 'data.posts',
+    extractKey: 'data',
     customMapper: (raw) {
-      if (raw is! List) return <PostEntity>[];
-      return raw.map((json) {
-        if (json is Map<String, dynamic> && json.containsKey('post')) {
-          return UserPostEntry.fromJson(json).toPostEntity();
-        }
-        return PostEntity.fromJson(Map<String, dynamic>.from(json as Map));
-      }).toList();
+      if (raw is! List) return <UserPostEntry>[];
+      return raw
+          .whereType<Map>()
+          .map(
+            (json) => UserPostEntry.fromJson(Map<String, dynamic>.from(json)),
+          )
+          .toList();
     },
   );
 
@@ -265,21 +388,58 @@ class SocialRepository extends BaseHttpRepository {
   }) => safeGetList<PostEntity>(
     '/social/posts/liked',
     queryParameters: {'limit': limit, 'cursor': ?cursor},
-    listKey: 'data.posts',
+    listKey: 'data',
     fromJson: PostEntity.fromJson,
   );
 
-  Future<Either<Failure, void>> savePost(String postId) => safeVoid(
-    () => client.post('/social/posts/$postId/save', data: {'_': true}),
+  Future<Either<Failure, SaveMutationState>> savePost(String postId) =>
+      _saveMutation('/social/posts/$postId/save');
+
+  Future<Either<Failure, SaveMutationState>> unsavePost(String postId) =>
+      _saveMutation('/social/posts/$postId/unsave', patch: true);
+
+  Future<Either<Failure, SaveMutationState>> _saveMutation(
+    String path, {
+    bool patch = false,
+  }) => safeCall<SaveMutationState>(
+    () => client.request(
+      path,
+      options: Options(method: patch ? 'PATCH' : 'POST'),
+    ),
+    onSuccess: (response) => Right(
+      SaveMutationState(
+        active: (response.data['data'] as Map)['active'] == true,
+      ),
+    ),
   );
 
-  Future<Either<Failure, void>> unsavePost(String postId) =>
-      safeVoid(() => client.patch('/social/posts/$postId/unsave'));
+  Future<Either<Failure, CursorPage<PostEntity>>> getSavedPosts({
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final result = await safePage<PostEntity>(
+      '/social/posts/saved',
+      PostEntity.fromJson,
+      limit: limit,
+      cursor: cursor,
+      itemsKey: 'posts',
+    );
+    return result.fold(
+      Left.new,
+      (page) => Right(
+        CursorPage(
+          items: {for (final post in page.items) post.id: post}.values.toList(),
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+        ),
+      ),
+    );
+  }
 
   Future<Either<Failure, List<StoryEntity>>> getUserStories(String userId) =>
       safeGetList<StoryEntity>(
         '/stories/user/$userId',
-        listKey: 'data.stories',
+        listKey: 'data',
         fromJson: StoryEntity.fromJson,
       );
 }

@@ -1,6 +1,6 @@
 ---
 name: freebay-mobile-mcp
-description: Guide and operational directives for using mobile-mcp to automate, interact with, and verify FreeBay mobile app flows on Android and iOS devices.
+description: Use whenever an agent uses any mobile-mcp tool in the FreeBay repo for Android/iOS interaction, testing, reproduction, debugging, validation, or screen recording; orchestrates the app flow and may be reached by other FreeBay skills and agents.
 ---
 
 # FreeBay Mobile MCP Automation & Testing Skill
@@ -9,12 +9,17 @@ This skill defines the standard procedures for running end-to-end and explorator
 
 ---
 
+## Mandatory execution protocol
+
+Before acting: load `freebay-app-flows`, read `docs/DEVICE_TESTING.md`, discover the device and its foreground app, and establish the expected result plus pass/fail rule. Use app package `com.freebay.app`; choose authentication from the real state (reuse the session, use Google only when explicitly requested, otherwise register a fresh account as documented). After every screen change, inspect elements and use only current visible labels or inspected coordinates/refs—never guess refs. Capture the expected-state screenshot, device logs, and crashes; a mock or unit test alone never proves a mobile bug is fixed.
+
 ## 📱 Mobile MCP Tool Reference
 
 | Tool Name | Purpose in FreeBay Testing |
 |---|---|
 | `mobile_list_available_devices` | Discover connected Android/iOS devices and active emulators. |
-| `mobile_launch_app` | Launch FreeBay. appId `com.freebay.app` (unified). See `docs/DEVICE_TESTING.md` for setup. |
+| `mobile_get_foreground_app` | Confirm the app currently in the foreground. |
+| `mobile_launch_app` | Launch FreeBay with `packageName: com.freebay.app`. See `docs/DEVICE_TESTING.md` for setup. |
 | `mobile_terminate_app` | Kill app process for cold boot testing. |
 | `mobile_list_elements_on_screen` | Inspect accessibility tree, widget IDs, text labels, and bounding boxes. |
 | `mobile_click_on_screen_at_coordinates` | Tap buttons, inputs, tabs, and interactive brutalist cards. |
@@ -24,6 +29,7 @@ This skill defines the standard procedures for running end-to-end and explorator
 | `mobile_swipe_on_screen` | Infinite scroll on feed/catalog, carousel paging, pull-to-refresh. |
 | `mobile_press_button` | Send system keys (BACK, HOME, ENTER). |
 | `mobile_take_screenshot` | Capture screen state for visual regression verification. |
+| `mobile_get_device_logs` | Capture device logs for diagnosis and evidence. |
 | `mobile_list_crashes` / `mobile_get_crash` | Diagnose unexpected app exits and exceptions. |
 
 ---
@@ -41,7 +47,7 @@ graph TD
     Feed --> Explore[Product Catalog & Search]
     Explore --> Product[Product Detail & Cart]
     Product --> Checkout[Checkout & PaymentSheet]
-    Auth --> Wallet[Wallet & PIX Withdrawals]
+    Auth --> Wallet[Wallet & Stripe Payouts]
     Auth --> Chat[Real-time Direct & Order Chat]
     Auth --> Profile[Profile, Bio & Dark Theme]
     Checkout --> Disputes[Dispute Resolution]
@@ -69,7 +75,7 @@ graph TD
 
 ### 5. Wallet & Financial Escrow Flow
 - **Balances**: Navigate to `/wallet` -> verify `Saldo Disponível` and `Saldo Pendente (Escrow)`.
-- **PIX Withdrawal**: Tap "Sacar" -> enter amount and PIX Key -> submit -> verify balance deduction.
+- **Stripe Payouts**: Open wallet -> verify balance/ledger -> tap "CONFIGURAR RECEBIMENTOS" or "ABRIR PAINEL DE PAGAMENTOS" -> verify Stripe onboarding/dashboard.
 
 ### 6. Profile, Settings & Digital Brutalist UI
 - **Theme Toggle**: Settings -> toggle Dark Mode -> take screenshot -> verify pure black `#000000` / `#0A0A0A` background and `#8A1083` accent.
@@ -85,19 +91,21 @@ graph TD
    ```
 2. **Launch FreeBay**:
    ```json
-   { "ServerName": "mobile-mcp", "ToolName": "mobile_launch_app", "Arguments": { "appId": "com.freebay.app" } }
+   { "ServerName": "mobile-mcp", "ToolName": "mobile_launch_app", "Arguments": { "packageName": "com.freebay.app" } }
    ```
-3. **Inspect UI Hierarchy & Locate Target Coordinates**:
+3. **Inspect UI Hierarchy & Locate Target Coordinates** (repeat after every screen change):
    ```json
    { "ServerName": "mobile-mcp", "ToolName": "mobile_list_elements_on_screen", "Arguments": {} }
    ```
 4. **Interact & Assert**:
-   - Tap elements using exact center coordinates `(x, y)`
+   - Tap only inspected elements using their current refs or exact center coordinates `(x, y)`
    - Type text into active fields
    - Take screenshots for evidence
 5. **Verify No Crashes**:
    ```json
    { "ServerName": "mobile-mcp", "ToolName": "mobile_list_crashes", "Arguments": {} }
    ```
+
+   Also capture device logs with `mobile_get_device_logs`; a non-empty crash result fails the flow.
 
 ---

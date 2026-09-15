@@ -6,9 +6,12 @@ import { ResolveReportUseCase } from './usecases/resolve-report.usecase';
 import { SuspendUserUseCase } from './usecases/suspend-user.usecase';
 import { RemoveContentUseCase } from './usecases/remove-content.usecase';
 import { ListModerationActionsUseCase } from './usecases/list-moderation-actions.usecase';
+import { PaymentsModule } from '../payments/payments.module';
+import { ListTransferFailuresUseCase } from './usecases/list-transfer-failures.usecase';
 
 @Module({
   controllers: [AdminController],
+  imports: [PaymentsModule],
   providers: [
     ModerationDatabaseRepository,
     ListReportsUseCase,
@@ -16,6 +19,7 @@ import { ListModerationActionsUseCase } from './usecases/list-moderation-actions
     SuspendUserUseCase,
     RemoveContentUseCase,
     ListModerationActionsUseCase,
+    ListTransferFailuresUseCase,
   ],
 })
 export class AdminModule {}

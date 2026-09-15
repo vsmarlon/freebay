@@ -6,6 +6,7 @@ class AppRoutes {
   static const String recoverPassword = '/recover-password';
   static const String resetPassword = '/reset-password';
   static const String onboarding = '/onboarding';
+  static const String welcome = '/welcome';
   static const String createPost = '/create-post';
   static const String postDetails = '/post/:id';
   static const String postSearch = '/posts/search';
@@ -52,4 +53,32 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String reviews = '/reviews';
   static const String wildCard = '/:path(.*)';
+  static const String imageEditor = '/image-editor';
+
+  // ── Parameterized builders: always navigate through these, never by
+  // hand-writing a '/path/$id' literal at the call site. ──
+
+  static String postPath(String id) => '/post/$id';
+  static String productPath(String id) => '/products/$id';
+  static String productEditPath(String id) => '/products/$id/edit';
+  static String userPath(String id) => '/user/$id';
+  static String userReviewsPath(String id) => '/user/$id/reviews';
+  static String orderPath(String id) => '/orders/$id';
+  static String chatPath(String id) => '/chat/$id';
+  static String chatNewWith(String targetUserId, String productId) =>
+      '$chatNew?targetUserId=${Uri.encodeComponent(targetUserId)}&productId=${Uri.encodeComponent(productId)}';
+  static String chatDetailsPath(String id) => '/chat/$id/details';
+  static String disputePath(String id) => '/disputes/$id';
+  static String createDisputePath(String orderId) =>
+      '/disputes/create/$orderId';
+
+  static String followersWith(String userId) =>
+      '$profileFollowers?userId=${Uri.encodeComponent(userId)}';
+  static String followingWith(String userId) =>
+      '$profileFollowing?userId=${Uri.encodeComponent(userId)}';
+  static String storyAt(int index) => '$story?index=$index';
+  static String peopleSearchWith(String query) =>
+      '$peopleSearch?q=${Uri.encodeComponent(query)}';
+  static String postSearchWith(String query) =>
+      '$postSearch?q=${Uri.encodeComponent(query)}';
 }

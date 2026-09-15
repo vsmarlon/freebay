@@ -40,7 +40,7 @@ describe('GetNotificationsUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should return notifications for user', async () => {
+  it('returns notifications for user', async () => {
     mockNotificationRepository.findByUserId.mockResolvedValue(
       right({ items: mockNotifications, hasMore: false, nextCursor: null }),
     );
@@ -54,7 +54,7 @@ describe('GetNotificationsUseCase', () => {
     }
   });
 
-  it('should pass the page query straight through to the repository', async () => {
+  it('passes the page query straight through to the repository', async () => {
     mockNotificationRepository.findByUserId.mockResolvedValue(
       right({ items: [mockNotifications[0]], hasMore: true, nextCursor: 'abc' }),
     );

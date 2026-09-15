@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/utils/date_utils.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/product_card_bubble.dart';
 import 'package:freebay/features/chat/presentation/widgets/offer_message_bubble.dart';
 import 'reply_preview_banner.dart';
 import 'reaction_bar.dart';
 import 'image_message_bubble.dart';
+import 'audio_message_bubble.dart';
+import 'video_message_bubble.dart';
 import 'link_preview_card.dart';
 import 'location_message_bubble.dart';
 
@@ -27,6 +30,7 @@ class MessageBubble extends StatelessWidget {
   final String? currentUserId;
   final String? otherUserName;
   final VoidCallback? onViewOnceReveal;
+  final bool isStarred;
 
   const MessageBubble({
     super.key,
@@ -44,6 +48,7 @@ class MessageBubble extends StatelessWidget {
     this.currentUserId,
     this.otherUserName,
     this.onViewOnceReveal,
+    this.isStarred = false,
   });
 
   bool get _isRead => message.readAt != null;
@@ -57,7 +62,7 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeStr = DateFormat('HH:mm').format(message.createdAt);
+    final timeStr = formatMessageTime(message.createdAt);
 
     return Padding(
       padding: EdgeInsets.only(bottom: isConsecutive ? 2 : 8),
@@ -68,7 +73,6 @@ class MessageBubble extends StatelessWidget {
         children: [
           Dismissible(
             key: ValueKey(message.id),
-            direction: DismissDirection.startToEnd,
             confirmDismiss: (_) async {
               onSwipeToReply?.call();
               return false;
@@ -76,6 +80,16 @@ class MessageBubble extends StatelessWidget {
             background: Container(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(left: 12),
+              color: AppColors.primaryContainer.withValues(alpha: 0.15),
+              child: const Icon(
+                Icons.reply,
+                color: AppColors.primaryContainer,
+                size: 20,
+              ),
+            ),
+            secondaryBackground: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 12),
               color: AppColors.primaryContainer.withValues(alpha: 0.15),
               child: const Icon(
                 Icons.reply,
@@ -128,6 +142,14 @@ class MessageBubble extends StatelessWidget {
                     ? MainAxisAlignment.end
                     : MainAxisAlignment.start,
                 children: [
+                  if (isStarred) ...[
+                    const Icon(
+                      Icons.star,
+                      size: 11,
+                      color: AppColors.primaryContainer,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   Text(
                     timeStr,
                     style: TextStyle(
@@ -338,6 +360,15 @@ class MessageBubble extends StatelessWidget {
       case 'IMAGE':
       case 'GIF':
         return ImageMessageBubble(imageUrl: message.attachmentUrl, isMe: isMe);
+      case 'VIDEO':
+        return VideoMessageBubble(videoUrl: message.attachmentUrl, isMe: isMe);
+      case 'AUDIO':
+        final rawDuration = message.metadata?['durationMs'];
+        return AudioMessageBubble(
+          audioUrl: message.attachmentUrl,
+          isMe: isMe,
+          durationMs: rawDuration is int ? rawDuration : null,
+        );
       case 'LOCATION':
         return LocationMessageBubble(metadata: message.metadata, isMe: isMe);
       case 'PRODUCT_CARD':
@@ -351,33 +382,7 @@ class MessageBubble extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (message.content != null && message.content!.isNotEmpty)
-              BrutalistHighlightedText(
-                text: message.content!,
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 14,
-                  color: isMe ? AppColors.onPrimary : (context.textPrimary),
-                ),
-                linkColor: isMe
-                    ? AppColors.onPrimary
-                    : (context.colors.primary),
-                mentionColor: isMe
-                    ? AppColors.onPrimary
-                    : (context.colors.primary),
-                hashtagColor: isMe
-                    ? AppColors.onPrimary
-                    : (context.colors.primary),
-                onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
-                onMentionTap: (mention) {
-                  final username = mention.replaceFirst('@', '');
-                  context.push(
-                    '/people/search?q=${Uri.encodeComponent(username)}',
-                  );
-                },
-                onHashtagTap: (tag) {
-                  context.push('/posts/search?q=${Uri.encodeComponent(tag)}');
-                },
-              ),
+              _ExpandableTextMessage(text: message.content!, isMe: isMe),
             // Link preview below text
             if (message.metadata != null) ...[
               const SizedBox(height: 6),
@@ -416,6 +421,82 @@ class _ReadStatusIcon extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [Icon(Icons.done, size: 14, color: context.textSecondary)],
+    );
+  }
+}
+
+class _ExpandableTextMessage extends StatefulWidget {
+  final String text;
+  final bool isMe;
+
+  const _ExpandableTextMessage({required this.text, required this.isMe});
+
+  @override
+  State<_ExpandableTextMessage> createState() => _ExpandableTextMessageState();
+}
+
+class _ExpandableTextMessageState extends State<_ExpandableTextMessage> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool shouldTruncate =
+        widget.text.length > 300 || widget.text.split('\n').length > 12;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        BrutalistHighlightedText(
+          text: widget.text,
+          maxLines: (_isExpanded || !shouldTruncate) ? null : 12,
+          overflow: (_isExpanded || !shouldTruncate)
+              ? TextOverflow.clip
+              : TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: AppTypography.fontFamily,
+            fontSize: 14,
+            color: widget.isMe ? AppColors.onPrimary : (context.textPrimary),
+          ),
+          linkColor: widget.isMe
+              ? AppColors.onPrimary
+              : (context.colors.primary),
+          mentionColor: widget.isMe
+              ? AppColors.onPrimary
+              : (context.colors.primary),
+          hashtagColor: widget.isMe
+              ? AppColors.onPrimary
+              : (context.colors.primary),
+          onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
+          onMentionTap: (mention) {
+            final username = mention.replaceFirst('@', '');
+            context.push(AppRoutes.peopleSearchWith(username));
+          },
+          onHashtagTap: (tag) {
+            context.push(AppRoutes.postSearchWith(tag));
+          },
+        ),
+        if (shouldTruncate)
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Text(
+                _isExpanded ? 'Ver menos' : 'Ver mais',
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: context.textSecondary,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

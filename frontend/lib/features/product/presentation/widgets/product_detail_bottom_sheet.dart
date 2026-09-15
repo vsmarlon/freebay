@@ -34,7 +34,7 @@ class _ProductDetailBottomSheetState
         border: Border(
           top: BorderSide(
             color: isDark
-                ? AppColors.mediumGray.withAlpha(50)
+                ? context.textSecondary.withAlpha(50)
                 : AppColors.lightGray,
           ),
         ),
@@ -98,11 +98,11 @@ class _ProductDetailBottomSheetState
                             ? (isDark
                                   ? AppColors.surfaceContainerDark
                                   : AppColors.lightGray)
-                            : AppColors.mediumGray.withAlpha(50),
+                            : context.textSecondary.withAlpha(50),
                         border: Border.all(
                           color: canAdd
                               ? (context.textPrimary)
-                              : AppColors.mediumGray.withAlpha(50),
+                              : context.textSecondary.withAlpha(50),
                         ),
                       ),
                       child: Center(
@@ -115,7 +115,7 @@ class _ProductDetailBottomSheetState
                                 ? (isDark
                                       ? AppColors.white
                                       : AppColors.onSurface)
-                                : AppColors.mediumGray,
+                                : context.textSecondary,
                           ),
                         ),
                       ),
@@ -207,14 +207,14 @@ class _QuantityButton extends StatelessWidget {
           color: context.surfaceColor,
           border: Border.all(
             color: isDark
-                ? AppColors.mediumGray.withAlpha(100)
-                : AppColors.mediumGray.withAlpha(50),
+                ? context.textSecondary.withAlpha(100)
+                : context.textSecondary.withAlpha(50),
           ),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: onTap != null ? (context.textPrimary) : AppColors.mediumGray,
+          color: onTap != null ? (context.textPrimary) : context.textSecondary,
         ),
       ),
     );

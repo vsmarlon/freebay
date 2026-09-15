@@ -5,31 +5,38 @@ import 'package:freebay/features/chat/presentation/pages/new_chat_page.dart';
 import 'package:freebay/features/chat/presentation/pages/archived_chats_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
 import 'package:freebay/features/chat/presentation/pages/conversation_details_page.dart';
-import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/presentation/pages/image_editor_page.dart';
+import 'dart:typed_data';
 
 final List<RouteBase> chatRoutes = [
-  appCupertinoRoute(AppRoutes.chatNew, (context, state) => const NewChatPage()),
+  appCupertinoRoute(AppRoutes.imageEditor, (context, state) {
+    final extra = state.extra as Map<String, dynamic>;
+    return ImageEditorPage(
+      initialImageBytes: extra['imageBytes'] as Uint8List,
+      purpose: extra['purpose'] as ImageEditorPurpose,
+      onComplete:
+          extra['onComplete'] as Future<bool> Function(ImageEditorResult),
+    );
+  }),
+  appCupertinoRoute(
+    AppRoutes.chatNew,
+    (context, state) => NewChatPage(
+      targetUserId: state.uri.queryParameters['targetUserId'],
+      productId: state.uri.queryParameters['productId'],
+    ),
+  ),
   appCupertinoRoute(
     AppRoutes.chatArchived,
     (context, state) => const ArchivedChatsPage(),
   ),
-  appCupertinoRoute(AppRoutes.chatConversation, (context, state) {
-    final extra = state.extra as Map<String, dynamic>?;
-    return ChatConversationPage(
-      chatId: state.pathParameters['chatId']!,
-      orderName: extra?['orderName'] ?? 'Conversa',
-      orderAvatarUrl: extra?['orderAvatarUrl'],
-      chatType: extra?['chatType'] ?? 'order',
-    );
-  }),
-  appCupertinoRoute(AppRoutes.chatDetails, (context, state) {
-    final extra = state.extra as Map<String, dynamic>?;
-    return ConversationDetailsPage(
-      chatId: state.pathParameters['chatId']!,
-      name: extra?['name'] ?? 'Conversa',
-      avatarUrl: extra?['avatarUrl'],
-      messages:
-          (extra?['messages'] as List<dynamic>?)?.cast<MessageEntity>() ?? [],
-    );
-  }),
+  appCupertinoRoute(
+    AppRoutes.chatConversation,
+    (context, state) =>
+        ChatConversationPage(chatId: state.pathParameters['chatId']!),
+  ),
+  appCupertinoRoute(
+    AppRoutes.chatDetails,
+    (context, state) =>
+        ConversationDetailsPage(chatId: state.pathParameters['chatId']!),
+  ),
 ];

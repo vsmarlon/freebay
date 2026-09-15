@@ -3,6 +3,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:video_player/video_player.dart';
+import 'package:freebay/features/social/presentation/widgets/story_canvas.dart';
 
 class StoryViewerPage extends ConsumerStatefulWidget {
   final List<StoryEntity> stories;
@@ -39,6 +41,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
   void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
+      _isPaused = false;
     });
     _markStoryViewed(widget.stories[index].id);
   }
@@ -98,7 +101,21 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
               itemCount: widget.stories.length,
               itemBuilder: (context, index) {
                 final story = widget.stories[index];
-                return _StoryPage(story: story, isPaused: _isPaused);
+                return _StoryPage(
+                  key: ValueKey(story.id),
+                  story: story,
+                  isPaused: _isPaused,
+                  onComplete: () {
+                    if (index < widget.stories.length - 1) {
+                      _pageController.nextPage(
+                        duration: AppMotion.base,
+                        curve: AppMotion.baseCurve,
+                      );
+                    } else if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                );
               },
             ),
             _buildProgressBars(),
@@ -217,8 +234,14 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
 class _StoryPage extends StatefulWidget {
   final StoryEntity story;
   final bool isPaused;
+  final VoidCallback onComplete;
 
-  const _StoryPage({required this.story, required this.isPaused});
+  const _StoryPage({
+    super.key,
+    required this.story,
+    required this.isPaused,
+    required this.onComplete,
+  });
 
   @override
   State<_StoryPage> createState() => _StoryPageState();
@@ -227,6 +250,8 @@ class _StoryPage extends StatefulWidget {
 class _StoryPageState extends State<_StoryPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
+  VideoPlayerController? _videoController;
+  bool _completed = false;
 
   @override
   void initState() {
@@ -236,15 +261,49 @@ class _StoryPageState extends State<_StoryPage>
       duration: const Duration(seconds: 5),
     );
 
+    if (widget.story.mediaType == 'VIDEO') {
+      _videoController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.story.imageUrl),
+      );
+      _initializeVideo();
+    }
+
     if (!widget.isPaused) {
       _animationController.forward();
     }
 
     _animationController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        // Animation completed - handled by PageView
+        if (!_completed) {
+          _completed = true;
+          widget.onComplete();
+        }
       }
     });
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      await _videoController!.initialize();
+      if (!mounted) return;
+      _animationController.duration = _videoController!.value.duration;
+      setState(() {});
+      _videoController?.addListener(_videoProgress);
+      if (!widget.isPaused) await _videoController?.play();
+    } catch (_) {
+      if (mounted) setState(() {});
+    }
+  }
+
+  void _videoProgress() {
+    final controller = _videoController;
+    if (controller == null || !controller.value.isInitialized) return;
+    if (!_completed &&
+        controller.value.position >= controller.value.duration &&
+        mounted) {
+      _completed = true;
+      widget.onComplete();
+    }
   }
 
   @override
@@ -253,8 +312,10 @@ class _StoryPageState extends State<_StoryPage>
     if (widget.isPaused != oldWidget.isPaused) {
       if (widget.isPaused) {
         _animationController.stop();
+        _videoController?.pause();
       } else {
         _animationController.forward();
+        _videoController?.play();
       }
     }
   }
@@ -262,6 +323,8 @@ class _StoryPageState extends State<_StoryPage>
   @override
   void dispose() {
     _animationController.dispose();
+    _videoController?.removeListener(_videoProgress);
+    _videoController?.dispose();
     super.dispose();
   }
 
@@ -269,21 +332,42 @@ class _StoryPageState extends State<_StoryPage>
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.onSurface,
-      child: Center(
-        child: Image.network(
-          widget.story.imageUrl,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => Center(
-            child: Icon(
-              Icons.broken_image,
-              color: AppColors.onPrimary.withAlpha(138),
-              size: 64,
+      child: StoryCanvas(
+        blocks: widget.story.textBlocks ?? const [],
+        background: Stack(
+          children: [
+            Center(
+              child: widget.story.mediaType == 'VIDEO'
+                  ? _videoController?.value.isInitialized == true
+                        ? AspectRatio(
+                            aspectRatio: _videoController!.value.aspectRatio,
+                            child: VideoPlayer(_videoController!),
+                          )
+                        : const CircularProgressIndicator(color: Colors.white)
+                  : Image.network(
+                      widget.story.imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: AppColors.onPrimary.withAlpha(138),
+                          size: 64,
+                        ),
+                      ),
+                    ),
             ),
-          ),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(color: AppColors.surfaceDark);
-          },
+            if (widget.story.caption?.isNotEmpty == true)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 72,
+                child: Text(
+                  widget.story.caption!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+          ],
         ),
       ),
     );

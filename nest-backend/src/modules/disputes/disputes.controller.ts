@@ -8,7 +8,6 @@ import { ResolveDisputeUseCase } from './usecases/resolve-dispute.usecase';
 import { GetUserDisputesUseCase } from './usecases/get-user-disputes.usecase';
 import { WithdrawDisputeUseCase } from './usecases/withdraw-dispute.usecase';
 import { OpenDisputeDTO, ResolveDisputeDTO, OpenDisputeOutput } from './dtos/dispute.dto';
-import { isLeft } from '@/shared/core/either';
 import { Prisma } from '@prisma/client';
 
 @ApiTags('Disputes')
@@ -42,7 +41,7 @@ export class DisputesController {
   @GetAuth('Get user disputes')
   async findAll(@CurrentUserId() userId: string) {
     const result = await this.getUserDisputesUseCase.execute(userId);
-    if (isLeft(result)) return result;
+    if (result.isLeft()) return result;
     return { disputes: result.value };
   }
 
@@ -53,7 +52,7 @@ export class DisputesController {
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
     const result = await this.getDisputeUseCase.execute(id, userId);
-    if (isLeft(result)) return result;
+    if (result.isLeft()) return result;
     return { dispute: result.value };
   }
 

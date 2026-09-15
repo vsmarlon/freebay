@@ -58,11 +58,9 @@ Key decisions inside that flow:
 
 ## Consequences
 
-- **Deployment path is `prisma migrate deploy`**, not `prisma db push`. The baseline migration
-  (`0_init`) represents the existing schema, and `prisma migrate status` must be checked before
-  deployment. The new migration (`20260805000000_payment_intent_columns`) adds the `idempotencyKey`
-  / `checkoutUrl` / `checkoutExpiresAt` columns with `IF NOT EXISTS` guards so it is replay-safe on a
-  DB that already has them.
+- Before the first production release, schema changes use the repository's schema-sync-only workflow
+  (`prisma db push`); production initialization must establish the production migration process
+  separately before deployment.
 - The webhook whitelist now covers five events; the controller extracts `orderId` from
   `event.data.object.metadata` for all of them (PaymentIntents carry `metadata.orderId` the same way
   Checkout Sessions do) and drops the old `sessionId`/`paymentStatus` payload fields — the usecase never

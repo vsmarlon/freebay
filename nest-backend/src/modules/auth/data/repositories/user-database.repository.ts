@@ -115,7 +115,7 @@ export class UserDatabaseRepository extends BasePrismaRepository {
           END,
           "followersCount" DESC,
           u.id ASC
-        LIMIT ${limit} OFFSET ${offset}
+         LIMIT ${limit + 1} OFFSET ${offset}
       `);
 
       return rows.map((r) =>
@@ -180,30 +180,13 @@ export class UserDatabaseRepository extends BasePrismaRepository {
         .sort((a, b) =>
           b.mutualCount !== a.mutualCount
             ? b.mutualCount - a.mutualCount
-            : b.followersCount - a.followersCount,
+             : b.followersCount !== a.followersCount
+               ? b.followersCount - a.followersCount
+               : a.id.localeCompare(b.id),
         )
-        .slice(0, limit);
+        .slice(0, limit + 1);
 
-      if (ranked.length >= limit) return ranked;
-
-      const alreadySuggested = new Set(ranked.map((u) => u.id));
-      const popular = await this.prisma.user.findMany({
-        where: {
-          id: { not: userId, notIn: [...alreadySuggested] },
-          NOT: { followers: { some: { followerId: userId } } },
-          ...notBlocked,
-        },
-        take: limit - ranked.length,
-        orderBy: { followers: { _count: 'desc' } },
-        select: baseSelect,
-      });
-
-      return [
-        ...ranked,
-        ...popular.map((u) =>
-          toUserSuggestionResult(u, u._count.followers, u._count.following, 0),
-        ),
-      ];
+      return ranked;
     }, 'Erro ao buscar sugestões');
   }
 

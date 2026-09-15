@@ -5,6 +5,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
@@ -169,24 +170,24 @@ class _NotificationTile extends ConsumerWidget {
     switch (notification.type) {
       case 'ORDER':
         if (notification.orderId != null) {
-          context.push('/orders/${notification.orderId}');
+          context.push(AppRoutes.orderPath(notification.orderId!));
         }
         break;
       case 'FOLLOW':
         if (notification.senderId != null) {
-          context.push('/user/${notification.senderId}');
+          context.push(AppRoutes.userPath(notification.senderId!));
         }
         break;
       case 'MESSAGE':
         if (notification.conversationId != null) {
-          context.push('/chat/${notification.conversationId}');
+          context.push(AppRoutes.chatPath(notification.conversationId!));
         } else if (notification.orderId != null) {
-          context.push('/chat/${notification.orderId}');
+          context.push(AppRoutes.chatPath(notification.orderId!));
         }
         break;
       case 'DISPUTE':
         if (notification.orderId != null) {
-          context.push('/orders/${notification.orderId}');
+          context.push(AppRoutes.orderPath(notification.orderId!));
         }
         break;
     }

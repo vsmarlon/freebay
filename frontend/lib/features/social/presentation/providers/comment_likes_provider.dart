@@ -9,11 +9,10 @@ part 'comment_likes_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class CommentLikes extends _$CommentLikes {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   CommentLikesState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     return const CommentLikesState();
   }
 

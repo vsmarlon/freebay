@@ -18,7 +18,7 @@ import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
-import { USERNAME_REGEX } from '@/modules/auth/dtos/auth.dto';
+import { USERNAME_REGEX, DISPLAY_NAME_REGEX } from '@/modules/auth/dtos/auth.dto';
 
 @ValidatorConstraint({ name: 'cpfOrCnpj', async: false })
 export class IsCpfOrCnpjConstraint implements ValidatorConstraintInterface {
@@ -37,6 +37,9 @@ export class UpdateProfileDTO {
   @IsString()
   @MinLength(2)
   @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX, {
+    message: 'Nome de exibição deve conter apenas letras, números e espaços, sem caracteres especiais',
+  })
   @SanitizeText()
   readonly displayName?: string;
 

@@ -1,9 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, CanActivate, ExecutionContext } from '@nestjs/common';
-import { rmSync } from 'fs';
-import { join } from 'path';
-import { UploadController, isValidContext } from './upload.controller';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { Test, TestingModule } from "@nestjs/testing";
+import {
+  BadRequestException,
+  CanActivate,
+  ExecutionContext,
+} from "@nestjs/common";
+import { rmSync } from "fs";
+import { join } from "path";
+import { UploadController, isValidContext } from "./upload.controller";
+import { JwtAuthGuard } from "@/modules/auth/guards/jwt-auth.guard";
 
 class MockJwtGuard implements CanActivate {
   canActivate(_context: ExecutionContext): boolean {
@@ -11,7 +15,7 @@ class MockJwtGuard implements CanActivate {
   }
 }
 
-describe('UploadController', () => {
+describe("UploadController", () => {
   let sut: UploadController;
 
   beforeEach(async () => {
@@ -24,64 +28,84 @@ describe('UploadController', () => {
     sut = module.get<UploadController>(UploadController);
   });
 
-  it('stores a chat attachment privately, never under the public /uploads root', () => {
+  it("stores a chat attachment privately, never under the public /uploads root", () => {
     const file = {
-      mimetype: 'image/jpeg',
-      buffer: Buffer.from('img'),
+      mimetype: "image/jpeg",
+      buffer: Buffer.from([0xff, 0xd8, 0xff]),
       size: 3,
     } as Express.Multer.File;
 
-    const result = sut.upload(file, 'chat');
+    const result = sut.upload(file, "chat");
 
-    expect(result.url).toMatch(
-      /^\/media\/chat\/[0-9a-f-]{36}\.jpg$/,
+    expect(result.url).toMatch(/^\/media\/chat\/[0-9a-f-]{36}\.jpg$/);
+    rmSync(
+      join(process.cwd(), result.url.replace("/media/", "private-uploads/")),
     );
-    rmSync(join(process.cwd(), result.url.replace('/media/', 'private-uploads/')));
   });
 
-  it('stores a public context under /uploads', () => {
+  it("stores a MOV video attachment privately", () => {
     const file = {
-      mimetype: 'image/jpeg',
-      buffer: Buffer.from('img'),
+      mimetype: "video/quicktime",
+      buffer: Buffer.from([
+        0, 0, 0, 12, 0x66, 0x74, 0x79, 0x70, 0x71, 0x74, 0x20, 0x20,
+      ]),
+      size: 12,
+    } as Express.Multer.File;
+
+    const result = sut.upload(file, "chat");
+
+    expect(result.url).toMatch(/^\/media\/chat\/[0-9a-f-]{36}\.mov$/);
+    rmSync(
+      join(process.cwd(), result.url.replace("/media/", "private-uploads/")),
+    );
+  });
+
+  it("stores a public context under /uploads", () => {
+    const file = {
+      mimetype: "image/jpeg",
+      buffer: Buffer.from([0xff, 0xd8, 0xff]),
       size: 3,
     } as Express.Multer.File;
 
-    const result = sut.upload(file, 'avatar');
+    const result = sut.upload(file, "avatar");
 
     expect(result.url).toMatch(/^\/uploads\/avatar\/[0-9a-f-]{36}\.jpg$/);
-    rmSync(join(process.cwd(), result.url.replace('/uploads/', 'uploads/')));
+    rmSync(join(process.cwd(), result.url.replace("/uploads/", "uploads/")));
   });
 
-  it('throws BadRequestException when no file', () => {
-    expect(() => sut.upload(undefined, 'chat')).toThrow(BadRequestException);
+  it("throws BadRequestException when no file", () => {
+    expect(() => sut.upload(undefined, "chat")).toThrow(BadRequestException);
   });
 
-  it('throws BadRequestException for invalid context', () => {
-    const file = { filename: 'abc.jpg' } as Express.Multer.File;
-    expect(() => sut.upload(file, 'invalid')).toThrow(BadRequestException);
+  it("throws BadRequestException for invalid context", () => {
+    const file = { filename: "abc.jpg" } as Express.Multer.File;
+    expect(() => sut.upload(file, "invalid")).toThrow(BadRequestException);
   });
 
-  it('throws BadRequestException for path-traversal context', () => {
-    const file = { filename: 'abc.jpg' } as Express.Multer.File;
-    expect(() => sut.upload(file, '../../etc')).toThrow(BadRequestException);
+  it("throws BadRequestException for path-traversal context", () => {
+    const file = { filename: "abc.jpg" } as Express.Multer.File;
+    expect(() => sut.upload(file, "../../etc")).toThrow(BadRequestException);
   });
 
-  describe('isValidContext', () => {
-    it.each(['chat', 'background', 'post', 'avatar'])('accepts %s', (context) => {
-      expect(isValidContext(context)).toBe(true);
-    });
+  describe("isValidContext", () => {
+    it.each(["chat", "background", "post", "avatar"])(
+      "accepts %s",
+      (context) => {
+        expect(isValidContext(context)).toBe(true);
+      },
+    );
 
     it.each([
-      '../../etc',
-      '..',
-      'chat/../../etc',
-      '/absolute',
-      'misc',
-      '',
+      "../../etc",
+      "..",
+      "chat/../../etc",
+      "/absolute",
+      "misc",
+      "",
       undefined,
       null,
       123,
-    ])('rejects %p', (context) => {
+    ])("rejects %p", (context) => {
       expect(isValidContext(context)).toBe(false);
     });
   });

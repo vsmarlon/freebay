@@ -56,6 +56,9 @@ void main() {
     expect(userMessageOf(Exception(leak)), kGenericErrorMessage);
     expect(userMessageOf(leak), kGenericErrorMessage);
     expect(userMessageOf(null), kGenericErrorMessage);
-    expect(userMessageOf(const NetworkFailure()), 'Sem conexão com a internet.');
+    expect(
+      userMessageOf(const NetworkFailure()),
+      'Sem conexão com a internet.',
+    );
   });
 }

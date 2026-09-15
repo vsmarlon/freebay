@@ -27,7 +27,6 @@ import {
   UnauthorizedError,
   UserNotFoundError,
 } from '@/shared/core/errors';
-import { isLeft } from '@/shared/core/either';
 import { UserDatabaseRepository } from './data/repositories/user-database.repository';
 import { JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { RequestMagicLinkInput, RequestMagicLinkUseCase } from './usecases/request-magic-link.usecase';
@@ -102,7 +101,7 @@ export class AuthService {
       }
 
       const existingUser = await this.userRepository.findById(user.userId);
-      if (isLeft(existingUser) || !existingUser.value) {
+      if (existingUser.isLeft() || !existingUser.value) {
         throw new UserNotFoundError('Usuário não encontrado');
       }
 
@@ -196,28 +195,22 @@ export class AuthService {
 
   async biometricLogin(biometricToken: string) {
     try {
-      // Decode the incoming token to extract JTI for rotation (blacklist old token)
-      let oldJti: string | undefined;
-      let oldExp: number | undefined;
-      try {
-        const decoded = this.jwtService.decode<JwtPayload>(biometricToken);
-        if (decoded?.type === JwtTokenType.BIOMETRIC) {
-          oldJti = decoded.jti;
-          oldExp = decoded.exp;
-        }
-      } catch { void 0; }
-
       const result = await this.biometricLoginUseCase.execute(biometricToken);
       if (result.isLeft()) throw result.value;
 
-      const { user } = result.value;
+      const { user, jti, exp } = result.value;
       this._assertNotSuspended(user);
       const tokens = this.sessionTokens.generate(user.id, user.role);
+      const replacementBiometricToken = this.sessionTokens.generateBiometric(user.id, user.role);
+      if (!await this.sessionTokens.claimBiometric(jti, exp)) {
+        throw new UnauthorizedError('Token biométrico inválido ou já utilizado');
+      }
 
-      // Rotate: blacklist the old biometric token now that a new one is issued
-      await this.sessionTokens.revoke(oldJti, oldExp);
-
-      return { user, ...tokens };
+      return {
+        user,
+        ...tokens,
+        biometricToken: replacementBiometricToken,
+      };
     } catch (err) {
       if (err instanceof AppError) throw err;
       this.logger.error(err);
@@ -262,6 +255,25 @@ export class AuthService {
       this.logger.error(err);
       throw new InternalServerError('Erro interno ao completar perfil');
     }
+  }
+
+  async enrollBiometricToken(user: JwtPayload) {
+    const now = Math.floor(Date.now() / 1000);
+    if (
+      !user.userId ||
+      !user.role ||
+      user.type !== JwtTokenType.ACCESS ||
+      !user.jti ||
+      user.iat === undefined ||
+      user.iat > now ||
+      now - user.iat > 300
+    ) {
+      throw new UnauthorizedError('Autenticação recente necessária');
+    }
+    if (!await this.sessionTokens.claimBiometricEnrollment(user.jti, user.exp)) {
+      throw new UnauthorizedError('Sessão já utilizada para habilitar biometria');
+    }
+    return { biometricToken: this.sessionTokens.generateBiometric(user.userId, user.role) };
   }
 
   async requestMagicLink(input: RequestMagicLinkInput) {

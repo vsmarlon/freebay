@@ -1,4 +1,4 @@
-.PHONY: help lint analyze format design-check test test-unit test-integration
+.PHONY: help lint analyze format design-check routes-check test test-unit test-integration
 
 BACKEND_DIR  := nest-backend
 FRONTEND_DIR := frontend
@@ -11,6 +11,7 @@ help:
 	@echo "  make analyze           Flutter static analysis (zero issues)"
 	@echo "  make format            Dart format gate (frontend and design system)"
 	@echo "  make design-check      Design system rules (see frontend/DESIGN.md)"
+	@echo "  make routes-check      No raw route literals (navigate via AppRoutes)"
 	@echo "  make test              Run everything (lint + analyze + unit + integration)"
 	@echo "  make test-unit         TypeScript + Jest + Flutter unit tests"
 	@echo "  make test-integration  Backend integration tests (needs configured native PostgreSQL + Redis; database freebay_test_db)"
@@ -40,7 +41,16 @@ design-check:
 		|| (echo "" && echo "Banned pattern above. See frontend/DESIGN.md." && exit 1)
 	@echo "OK"
 
-test: lint analyze format design-check test-unit test-integration
+routes-check:
+	@echo ""
+	@echo "=== Route literal rules (navigate via AppRoutes) ==="
+	@cd $(FRONTEND_DIR) && ! grep -rnE \
+		"(context|appRouter)\.(go|push|pushReplacement|replace)\([[:space:]]*['\"]/" \
+		lib --include=*.dart \
+		|| (echo "" && echo "Raw route literal above. Navigate via AppRoutes (see AGENTS.md)." && exit 1)
+	@echo "OK"
+
+test: lint analyze format design-check routes-check test-unit test-integration
 	@echo ""
 	@echo "✓ All checks passed"
 

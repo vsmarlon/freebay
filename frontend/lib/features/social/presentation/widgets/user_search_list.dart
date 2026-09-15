@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -12,8 +13,6 @@ class UserSearchList extends StatelessWidget {
   final List<UserSearchEntity> users;
   final bool isLoading;
   final VoidCallback? onLoadMore;
-  final Function(String userId)? onFollow;
-  final Function(String userId)? onUnfollow;
   final bool shrinkWrap;
 
   const UserSearchList({
@@ -21,8 +20,6 @@ class UserSearchList extends StatelessWidget {
     required this.users,
     this.isLoading = false,
     this.onLoadMore,
-    this.onFollow,
-    this.onUnfollow,
     this.shrinkWrap = false,
   });
 
@@ -61,42 +58,28 @@ class UserSearchList extends StatelessWidget {
           }
 
           final user = users[index];
-          return _UserSearchItem(
-            user: user,
-            onFollow: onFollow,
-            onUnfollow: onUnfollow,
-          );
+          return _UserSearchItem(user: user);
         },
       ),
     );
   }
 }
 
-class _UserSearchItem extends ConsumerStatefulWidget {
+class _UserSearchItem extends ConsumerWidget {
   final UserSearchEntity user;
-  final Function(String userId)? onFollow;
-  final Function(String userId)? onUnfollow;
 
-  const _UserSearchItem({required this.user, this.onFollow, this.onUnfollow});
+  const _UserSearchItem({required this.user});
 
   @override
-  ConsumerState<_UserSearchItem> createState() => _UserSearchItemState();
-}
-
-class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
-  bool _isLoading = false;
-  bool? _isFollowingOverride;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(authControllerProvider).value;
-    final isOwnCard = currentUser != null && currentUser.id == widget.user.id;
-    final followStatus = ref.watch(followStatusProvider(widget.user.id));
-    final isFollowing =
-        _isFollowingOverride ?? (followStatus.value?.isFollowing ?? false);
+    final isOwnCard = currentUser != null && currentUser.id == user.id;
+    final followStatus = ref.watch(followStatusProvider(user.id));
+    final isFollowing = followStatus.value?.isFollowing ?? false;
+    final isBusy = ref.watch(followsInFlightProvider).contains(user.id);
 
     return InkWell(
-      onTap: () => context.push('/user/${widget.user.id}'),
+      onTap: () => context.push(AppRoutes.userPath(user.id)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
@@ -105,18 +88,18 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                image: widget.user.avatarUrl != null
+                image: user.avatarUrl != null
                     ? DecorationImage(
-                        image: NetworkImage(widget.user.avatarUrl!),
+                        image: NetworkImage(user.avatarUrl!),
                         fit: BoxFit.cover,
                       )
                     : null,
                 color: context.surfaceMidColor,
               ),
-              child: widget.user.avatarUrl == null
+              child: user.avatarUrl == null
                   ? Center(
                       child: Text(
-                        widget.user.displayName[0].toUpperCase(),
+                        user.displayName[0].toUpperCase(),
                         style: const TextStyle(fontSize: 20),
                       ),
                     )
@@ -131,7 +114,7 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
                     children: [
                       Flexible(
                         child: Text(
-                          widget.user.displayName,
+                          user.displayName,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: context.textPrimary,
@@ -139,7 +122,7 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (widget.user.isVerified) ...[
+                      if (user.isVerified) ...[
                         Spacing.hXs,
                         const Icon(
                           Icons.verified,
@@ -149,10 +132,9 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
                       ],
                     ],
                   ),
-                  if (widget.user.username != null &&
-                      widget.user.username!.isNotEmpty)
+                  if (user.username != null && user.username!.isNotEmpty)
                     Text(
-                      '@${widget.user.username}',
+                      '@${user.username}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.mediumGray,
@@ -160,9 +142,9 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  if (widget.user.bio != null && widget.user.bio!.isNotEmpty)
+                  if (user.bio != null && user.bio!.isNotEmpty)
                     Text(
-                      widget.user.bio!,
+                      user.bio!,
                       style: const TextStyle(
                         fontSize: 13,
                         color: AppColors.mediumGray,
@@ -172,7 +154,7 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
                     ),
                   Spacing.vXs,
                   Text(
-                    '${widget.user.followersCount} seguidores',
+                    '${user.followersCount} seguidores',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.mediumGray,
@@ -183,7 +165,8 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
             ),
             if (!isOwnCard) ...[
               Spacing.hSm,
-              followStatus.isLoading && _isFollowingOverride == null
+              followStatus.isLoading &&
+                      !ref.watch(followStateProvider).containsKey(user.id)
                   ? const ShimmerBlock(width: 80, height: 32)
                   : AppButton(
                       label: isFollowing ? 'Seguindo' : 'Seguir',
@@ -191,20 +174,14 @@ class _UserSearchItemState extends ConsumerState<_UserSearchItem> {
                           ? AppButtonVariant.ghost
                           : AppButtonVariant.primary,
                       size: AppButtonSize.compact,
-                      isLoading: _isLoading,
-                      onPressed: () async {
-                        setState(() => _isLoading = true);
-                        if (isFollowing) {
-                          await widget.onUnfollow?.call(widget.user.id);
-                        } else {
-                          await widget.onFollow?.call(widget.user.id);
-                        }
-                        ref.invalidate(followStatusProvider(widget.user.id));
-                        setState(() {
-                          _isFollowingOverride = !isFollowing;
-                          _isLoading = false;
-                        });
-                      },
+                      isLoading: isBusy,
+                      onPressed: () => ref
+                          .read(followStateProvider.notifier)
+                          .toggleFollow(
+                            user.id,
+                            fallbackFollowersCount: user.followersCount,
+                            fallbackFollowingCount: user.followingCount,
+                          ),
                     ),
             ],
           ],

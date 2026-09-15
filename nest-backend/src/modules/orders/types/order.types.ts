@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
-import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
+import { OrderStatus, Prisma } from "@prisma/client";
+import { USER_SELECT_MINIMAL } from "@/shared/utils/prisma-selects";
 
 export const ORDER_INCLUDE_FULL = {
   product: { include: { images: true } },
@@ -11,16 +11,53 @@ export const ORDER_INCLUDE_PRODUCT = {
   product: { include: { images: true } },
 } satisfies Prisma.OrderInclude;
 
-export type OrderFullPayload = Prisma.OrderGetPayload<{ include: typeof ORDER_INCLUDE_FULL }>;
-export type OrderProductPayload = Prisma.OrderGetPayload<{ include: typeof ORDER_INCLUDE_PRODUCT }>;
+export const ORDER_SELECT_CREATE = {
+  id: true,
+  buyerId: true,
+  sellerId: true,
+  productId: true,
+  amount: true,
+  platformFee: true,
+  sellerAmount: true,
+  status: true,
+  escrowStatus: true,
+  createdAt: true,
+} satisfies Prisma.OrderSelect;
+
+export type OrderFullPayload = Prisma.OrderGetPayload<{
+  include: typeof ORDER_INCLUDE_FULL;
+}>;
+export type OrderProductPayload = Prisma.OrderGetPayload<{
+  include: typeof ORDER_INCLUDE_PRODUCT;
+}>;
+export type CreateOrderPayload = Prisma.OrderGetPayload<{
+  select: typeof ORDER_SELECT_CREATE;
+}>;
+
+export const SALES_ORDER_STATUSES = [
+  "PENDING",
+  "CONFIRMED",
+  "SHIPPED",
+  "DELIVERED",
+  "DISPUTED",
+  "COMPLETED",
+  "CANCELLED",
+] as const satisfies readonly OrderStatus[];
+
+export type SalesOrderStatus = (typeof SALES_ORDER_STATUSES)[number];
+
+export interface SalesOrderCursor {
+  scope: "seller-sales";
+  sellerId: string;
+  status: SalesOrderStatus | null;
+  createdAt: Date;
+  id: string;
+}
 
 export interface CreateOrderTxData {
   buyerId: string;
-  sellerId: string;
   productId: string;
-  amount: number;
-  platformFee: number;
-  sellerAmount: number;
+  platformFeePercent?: number;
 }
 
 export interface ConfirmDeliveryData {
@@ -38,6 +75,12 @@ export interface CancelOrderTxData {
   orderQuantity: number;
   sellerId: string;
   sellerAmount: number;
+}
+
+export interface RefundOrderTxData extends CancelOrderTxData {
+  status: OrderStatus;
+  escrowStatus: "HELD" | "RELEASED";
+  transferId: string | null;
 }
 
 export interface ProductForOrder {

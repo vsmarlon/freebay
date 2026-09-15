@@ -27,7 +27,7 @@ describe('DeleteProductUseCase', () => {
     useCase = module.get(DeleteProductUseCase);
   });
 
-  it('should return NotFoundError if product does not exist', async () => {
+  it('returns NotFoundError if product does not exist', async () => {
     mockProductRepo.findById.mockResolvedValue(right(null));
 
     const result = await useCase.execute({ productId: 'prod-1', userId: 'user-1' });
@@ -36,7 +36,7 @@ describe('DeleteProductUseCase', () => {
     expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return ForbiddenError if user is not the seller', async () => {
+  it('returns ForbiddenError if user is not the seller', async () => {
     mockProductRepo.findById.mockResolvedValue(
       right({ id: 'prod-1', sellerId: 'other-seller' }),
     );
@@ -47,7 +47,7 @@ describe('DeleteProductUseCase', () => {
     expect(result.value).toBeInstanceOf(ForbiddenError);
   });
 
-  it('should soft delete product successfully if user is seller', async () => {
+  it('soft-deletes product successfully if user is seller', async () => {
     mockProductRepo.findById.mockResolvedValue(
       right({ id: 'prod-1', sellerId: 'user-1' }),
     );
@@ -59,7 +59,7 @@ describe('DeleteProductUseCase', () => {
     expect(mockProductRepo.delete).toHaveBeenCalledWith('prod-1');
   });
 
-  it('should return error if repository delete fails', async () => {
+  it('returns error if repository delete fails', async () => {
     mockProductRepo.findById.mockResolvedValue(
       right({ id: 'prod-1', sellerId: 'user-1' }),
     );

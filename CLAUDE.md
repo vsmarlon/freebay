@@ -23,8 +23,8 @@ npx jest --testNamePattern "should return error" src/modules/auth/usecases/regis
 
 npm run test:integration  # applies committed migrations, then runs jest.config.integration.js
 npm run prisma:generate   # regenerate client after schema changes
-npm run prisma:migrate    # create + apply a dev migration on a disposable DB
-npx prisma migrate deploy # apply committed migrations once
+npm run db:sync           # push schema and regenerate Prisma client
+npm run db:seed           # run the idempotent development seed
 npm run prisma:studio     # open DB GUI
 npm run lint               # eslint --fix available via lint:fix
 ```
@@ -223,26 +223,26 @@ Mappers handle null/default values and ensure response shape consistency. They a
 
 ### Running seeds
 
-Seed data is at `db/seeds/001_seed_dev.sql` — raw SQL for Prisma/PostgreSQL. Run manually:
+Seed data is at `nest-backend/prisma/seed.ts`. Run through Prisma:
 
 ```bash
-# Using psql or any Postgres client against your dev DB
-psql -h localhost -U postgres -d freebay -f db/seeds/001_seed_dev.sql
+npm run db:sync
+npm run db:seed
 ```
 
-The seed populates: demo users, categories, sample products, and social posts for local development. There is no npm script wrapping it — run it directly.
+The seed populates: demo users, categories, sample products, and social posts for local development.
 
 ### Integration tests
 
 Integration tests live alongside unit specs (`*.spec.ts`) but run under a separate Jest config (`jest.config.integration.js`) against `.env.test`:
 
 ```bash
-npm run test:integration   # applies migrations + runs integration suite
+npm run test:integration   # guarded schema push + runs integration suite
 npm run test:integration:watch
 npm run test:integration:cov
 ```
 
-The `.env.test` database is brought up to date with `prisma migrate deploy` before each run. Integration tests are **not** included in plain `npm test`. They require explicitly configured native or external PostgreSQL + Redis; local Docker is not required.
+The `.env.test` database is brought up to date with the guarded Prisma schema push before each run. Integration tests are **not** included in plain `npm test`. They require explicitly configured native or external PostgreSQL + Redis; local Docker is not required.
 
 ### Swagger UI
 
@@ -258,7 +258,7 @@ All endpoints are documented with `@ApiDoc()` (a composite decorator from `share
 
 ## Frontend Architecture (`frontend/`)
 
-Flutter app using **Riverpod** for state, **Dio** for HTTP, **go_router** for navigation. Each feature follows full Clean Architecture, not just data→presentation:
+Flutter app using **Riverpod** for state, **Dio** for HTTP, **go_router** for navigation. `setState` is local ephemeral UI only; shared state lives in Riverpod providers. Each feature follows full Clean Architecture, not just data→presentation:
 
 ```
 lib/
@@ -326,8 +326,7 @@ Dark mode required on all screens. `make design-check` enforces the banned patte
 ## Database
 
 Prisma schema (`nest-backend/prisma/schema.prisma`) is the source of truth. After any schema edit:
-1. `npm run prisma:migrate` — creates and applies migration
-2. `npm run prisma:generate` — regenerates the Prisma client
+This pre-production project has no migration workflow before first production release. Update `nest-backend/prisma/seed.ts` if needed, then run `npm run db:sync` and `npm run db:seed`.
 
 Payment provider: **Stripe** (Checkout Sessions — PIX auto-offered for Brazilian customers, credit card otherwise). Webhook events: `checkout.session.completed` / `checkout.session.expired`. The `PaymentProvider` Prisma enum uses `STRIPE`. Escrow flow: `EscrowStatus` `HELD → RELEASED | REFUNDED`. Order lifecycle: `PENDING → CONFIRMED → SHIPPED → DELIVERED → DISPUTED → COMPLETED | CANCELLED`. Migration plan: see `docs/plans/2026-08-04-stripe-migration.md`. Mobile single-product checkout uses Stripe **PaymentSheet** (PaymentIntent, `POST /payments/payment-intent/:orderId`); web and cart keep Checkout Sessions (branched on `kIsWeb` in `payment_page.dart`). Webhook events: `checkout.session.completed` / `checkout.session.expired` / `payment_intent.succeeded` / `payment_intent.canceled` / `payment_intent.payment_failed`. See `nest-backend/src/modules/payments/docs/adr/0001-payment-sheet-migration.md`.
 

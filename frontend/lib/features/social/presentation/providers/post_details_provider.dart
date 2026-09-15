@@ -50,13 +50,13 @@ class PostDetailsState {
 
 @riverpod
 class PostDetails extends _$PostDetails {
-  late final GetPostDetailsUseCase _getPostDetails;
-  late final GetPostCommentsUseCase _getPostComments;
+  GetPostDetailsUseCase get _getPostDetails =>
+      ref.read(getPostDetailsUseCaseProvider);
+  GetPostCommentsUseCase get _getPostComments =>
+      ref.read(getPostCommentsUseCaseProvider);
 
   @override
   PostDetailsState build(String postId) {
-    _getPostDetails = ref.watch(getPostDetailsUseCaseProvider);
-    _getPostComments = ref.watch(getPostCommentsUseCaseProvider);
     Future.microtask(_loadData);
     return PostDetailsState();
   }
@@ -65,7 +65,9 @@ class PostDetails extends _$PostDetails {
     state = state.copyWith(isLoading: true, clearError: true);
 
     final postResult = await _getPostDetails(postId);
+    if (!ref.mounted) return;
     final commentsResult = await _getPostComments(postId);
+    if (!ref.mounted) return;
 
     PostEntity? post;
     String? errorMessage;
@@ -92,10 +94,23 @@ class PostDetails extends _$PostDetails {
     await _loadData();
   }
 
+  /// Increment or decrement the post commentsCount locally so UI reflects instantly.
+  void incrementCommentCount([int delta = 1]) {
+    if (state.post != null) {
+      final current = state.post!.commentsCount;
+      state = state.copyWith(
+        post: state.post!.copyWith(
+          commentsCount: (current + delta).clamp(0, 999999999),
+        ),
+      );
+    }
+  }
+
   /// Silently re-fetches only comments without showing a loading state.
   /// Used after posting a comment so the list updates without flashing.
   Future<void> refreshComments() async {
     final commentsResult = await _getPostComments(postId);
+    if (!ref.mounted) return;
     commentsResult.fold(
       (_) {}, // silently ignore errors — existing comments stay visible
       (data) => state = state.copyWith(comments: data),

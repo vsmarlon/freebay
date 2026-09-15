@@ -8,12 +8,12 @@ class AppColors {
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color onPrimaryContainer = Color(0xFFFF9DEE);
 
-  static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
-  static const Color surface = Color(0xFFF9F9F9);
-  static const Color surfaceContainerLow = Color(0xFFF3F3F3);
-  static const Color surfaceContainer = Color(0xFFEEEEEE);
-  static const Color surfaceContainerHigh = Color(0xFFE8E8E8);
-  static const Color surfaceContainerHighest = Color(0xFFE2E2E2);
+  static const Color surfaceContainerLowest = Color(0xFFFFFEF8);
+  static const Color surface = Color(0xFFFCF9EE);
+  static const Color surfaceContainerLow = Color(0xFFF7F3E7);
+  static const Color surfaceContainer = Color(0xFFF1ECDE);
+  static const Color surfaceContainerHigh = Color(0xFFEAE4D5);
+  static const Color surfaceContainerHighest = Color(0xFFE3DCCB);
 
   static const Color surfaceContainerLowestDark = Color(0xFF0A0A0A);
   static const Color surfaceDark = Color(0xFF121212);
@@ -22,21 +22,21 @@ class AppColors {
   static const Color surfaceContainerHighDark = Color(0xFF2E2E2E);
   static const Color surfaceContainerHighestDark = Color(0xFF383838);
 
-  static const Color onSurface = Color(0xFF1B1B1B);
-  static const Color onSurfaceVariant = Color(0xFF5F5F5F);
+  static const Color onSurface = Color(0xFF11100E);
+  static const Color onSurfaceVariant = Color(0xFF403C34);
   static const Color onSurfaceDark = Color(0xFFF1F1F1);
   static const Color onSurfaceVariantDark = Color(0xFFA0A0A0);
 
   static const Color inverseSurface = Color(0xFF303030);
   static const Color inverseOnSurface = Color(0xFFF1F1F1);
 
-  static const Color outline = Color(0xFF1B1B1B);
-  static const Color outlineVariant = Color(0xFFC9C9C9);
+  static const Color outline = onSurface;
+  static const Color outlineVariant = Color(0xFFC9C1B2);
   static const Color outlineDark = Color(0xFFF1F1F1);
   static const Color outlineVariantDark = Color(0xFF3A3A3A);
 
   static const Color secondary = Color(0xFF5E5E5E);
-  static const Color secondaryContainer = Color(0xFFE2E2E2);
+  static const Color secondaryContainer = surfaceContainerHighest;
   static const Color tertiary = Color(0xFF343637);
   static const Color tertiaryContainer = Color(0xFF4B4D4D);
 
@@ -50,7 +50,7 @@ class AppColors {
   static const Color black = Color(0xFF111111);
   static const Color darkGray = Color(0xFF1F1F1F);
   static const Color mediumGray = Color(0xFF6E6E6E);
-  static const Color lightGray = Color(0xFFF3F3F3);
+  static const Color lightGray = surfaceContainerLow;
   static const Color backgroundLight = surface;
   static const Color backgroundDark = surfaceDark;
 

@@ -7,6 +7,7 @@ import 'package:freebay/features/reviews/domain/usecases/get_user_reviews_usecas
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
   ref,
@@ -75,26 +76,28 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     return Scaffold(
-      backgroundColor: context.surfaceMidColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'AVALIAÇÕES',
-            subtitle: widget.userName,
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'AVALIAÇÕES',
+              subtitle: widget.userName,
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          BrutalistBreadcrumb(items: context.breadcrumbs),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refresh,
-              color: AppColors.primaryContainer,
-              child: _buildContent(isDark),
+            BrutalistBreadcrumb(items: context.breadcrumbs),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                color: AppColors.primaryContainer,
+                child: _buildContent(isDark),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -167,7 +170,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
             review: review,
             onTapUser: () {
               if (review.reviewer != null) {
-                context.push('/user/${review.reviewer!.id}');
+                context.push(AppRoutes.userPath(review.reviewer!.id));
               }
             },
           ),

@@ -1,5 +1,6 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
@@ -11,21 +12,37 @@ import 'package:freebay/features/profile/data/entities/block_responses.dart';
 class ChatRepository extends BaseHttpRepository {
   ChatRepository({super.client});
 
-  Future<Either<Failure, List<ChatEntity>>> getChats({String? query}) =>
-      safeGetList<ChatEntity>(
-        query != null && query.isNotEmpty
-            ? '/chat/conversations?q=${Uri.encodeQueryComponent(query)}'
-            : '/chat/conversations',
-        listKey: 'data.conversations',
-        fromJson: ChatEntity.fromJson,
-      );
+  Future<Either<Failure, CursorPage<ChatEntity>>> getChats({
+    String? query,
+    String? cursor,
+    int? limit,
+  }) => safePage<ChatEntity>(
+    '/chat/conversations',
+    ChatEntity.fromJson,
+    cursor: cursor,
+    limit: limit,
+    queryParameters: {'q': ?query?.isNotEmpty == true ? query : null},
+  );
 
-  Future<Either<Failure, List<ChatEntity>>> getArchivedChats() =>
-      safeGetList<ChatEntity>(
-        '/chat/archived',
-        listKey: 'data.conversations',
-        fromJson: ChatEntity.fromJson,
-      );
+  Future<Either<Failure, CursorPage<ChatEntity>>> getArchivedChats({
+    String? cursor,
+    int limit = 50,
+  }) => safePage<ChatEntity>(
+    '/chat/archived',
+    ChatEntity.fromJson,
+    cursor: cursor,
+    limit: limit,
+  );
+
+  Future<Either<Failure, String>> startDirectConversation(
+    String targetUserId, {
+    String? productId,
+  }) => safePost<String>(
+    '/chat/conversations',
+    data: {'targetUserId': targetUserId, 'productId': ?productId},
+    extractKey: 'data.conversationId',
+    customMapper: (id) => id as String,
+  );
 
   Future<
     Either<
@@ -35,7 +52,9 @@ class ChatRepository extends BaseHttpRepository {
         bool hasMore,
         String? nextCursor,
         String threadType,
-        String? otherUserId,
+        String otherUserId,
+        String otherUserName,
+        String? otherUserAvatarUrl,
         ConversationPreference? preference,
       })
     >
@@ -47,16 +66,38 @@ class ChatRepository extends BaseHttpRepository {
           queryParameters: {'cursor': ?cursor, 'limit': ?limit},
         ),
         onSuccess: (response) {
-          final data = response.data['data'] as Map<String, dynamic>? ?? {};
-          final rawMessages = (data['messages'] as List<dynamic>?) ?? [];
+          final data = response.data['data'];
+          if (data is! Map<String, dynamic>) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final rawOtherUser = data['otherUser'];
+          if (rawOtherUser is! Map) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final otherUser = Map<String, dynamic>.from(rawOtherUser);
+          final otherUserId = otherUser['id'];
+          if (otherUserId is! String) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final displayName = otherUser['displayName'];
+          final otherUserName =
+              displayName is String && displayName.trim().isNotEmpty
+              ? displayName
+              : 'Usuário';
+          final rawMessages = (data['messages'] as List?) ?? const [];
           final messages = rawMessages
-              .map((m) => MessageEntity.fromJson(m as Map<String, dynamic>))
+              .whereType<Map>()
+              .map((m) => MessageEntity.fromJson(Map<String, dynamic>.from(m)))
               .toList();
-          final threadType = (data['threadType'] as String?) ?? 'DIRECT';
-          final otherUserId = data['otherUserId'] as String?;
-          final rawPref = data['preference'] as Map<String, dynamic>?;
-          final preference = rawPref != null
-              ? ConversationPreference.fromJson(rawPref)
+          final threadType = data['threadType'];
+          if (threadType is! String) {
+            return const Left(ServerFailure('Resposta inválida do servidor.'));
+          }
+          final rawPref = data['preference'];
+          final preference = rawPref is Map
+              ? ConversationPreference.fromJson(
+                  Map<String, dynamic>.from(rawPref),
+                )
               : null;
 
           return Right((
@@ -65,6 +106,8 @@ class ChatRepository extends BaseHttpRepository {
             nextCursor: data['nextCursor'] as String?,
             threadType: threadType,
             otherUserId: otherUserId,
+            otherUserName: otherUserName,
+            otherUserAvatarUrl: otherUser['avatarUrl'] as String?,
             preference: preference,
           ));
         },
@@ -119,7 +162,7 @@ class ChatRepository extends BaseHttpRepository {
   ) => safePatch<ConversationPreference>(
     '/chat/conversations/$id/theme',
     data: {'theme': theme},
-    extractKey: 'data.preference',
+    extractKey: 'data',
     fromJson: ConversationPreference.fromJson,
   );
 
@@ -130,26 +173,30 @@ class ChatRepository extends BaseHttpRepository {
   ) => safePatch<ConversationPreference>(
     '/chat/conversations/$id/background',
     data: {'backgroundUrl': base64DataUri},
-    extractKey: 'data.preference',
+    extractKey: 'data',
     fromJson: ConversationPreference.fromJson,
   );
 
   Future<Either<Failure, MessageEntity>> sendRichMessage({
     required String conversationId,
+    String? clientMessageId,
     String? content,
     String type = 'TEXT',
     String? attachmentUrl,
     String? replyToId,
     Map<String, dynamic>? metadata,
     bool viewOnce = false,
+    int? durationMs,
   }) => safePost<MessageEntity>(
     '/chat/conversations/$conversationId/messages',
     data: {
       'type': type,
+      'clientMessageId': ?clientMessageId,
       'content': ?content,
       'attachmentUrl': ?attachmentUrl,
       'replyToId': ?replyToId,
       'metadata': ?metadata,
+      'durationMs': ?durationMs,
       if (viewOnce) 'viewOnce': true,
     },
     extractKey: 'data',
@@ -163,6 +210,22 @@ class ChatRepository extends BaseHttpRepository {
     () => client.patch(
       '/chat/conversations/$conversationId/messages/$messageId/delete',
     ),
+  );
+
+  Future<Either<Failure, bool>> toggleStar(
+    String conversationId,
+    String messageId,
+  ) => safePost<bool>(
+    '/chat/conversations/$conversationId/messages/$messageId/star',
+    extractKey: 'data.starred',
+    customMapper: (starred) => starred == true,
+  );
+
+  Future<Either<Failure, List<MessageEntity>>> getStarredMessages(
+    String conversationId,
+  ) => safeGetList<MessageEntity>(
+    '/chat/conversations/$conversationId/starred',
+    fromJson: MessageEntity.fromJson,
   );
 
   Future<Either<Failure, List<MessageReactionEntity>>> reactToMessage(

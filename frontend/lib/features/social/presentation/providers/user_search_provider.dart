@@ -40,11 +40,10 @@ class UserSearchState {
 
 @Riverpod(keepAlive: true)
 class UserSearch extends _$UserSearch {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   UserSearchState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     return const UserSearchState();
   }
 
@@ -107,11 +106,10 @@ class SuggestionsState {
 /// Only invalidated explicitly after a follow/unfollow action via [ref.invalidate].
 @Riverpod(keepAlive: true)
 class Suggestions extends _$Suggestions {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   SuggestionsState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     // Load once on first creation; subsequent tab switches reuse cached state.
     Future.microtask(loadSuggestions);
     return const SuggestionsState();

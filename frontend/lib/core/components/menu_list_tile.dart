@@ -42,11 +42,7 @@ class MenuListTile extends StatelessWidget {
         ),
         trailing:
             trailing ??
-            const Icon(
-              Icons.chevron_right,
-              color: AppColors.mediumGray,
-              size: 20,
-            ),
+            Icon(Icons.chevron_right, color: context.textSecondary, size: 20),
         onTap: onTap,
       ),
     );

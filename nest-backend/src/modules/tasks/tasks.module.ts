@@ -11,6 +11,7 @@ import { CheckoutExpiryTask } from './checkout-expiry.task';
 import { DisputeResolutionExecutionService } from '../disputes/services/dispute-resolution-execution.service';
 import { MagicLinkDatabaseRepository } from '../auth/data/repositories/magic-link-database.repository';
 import { MagicLinkCleanupTask } from './magic-link-cleanup.task';
+import { TransferReconciliationTask } from './transfer-reconciliation.task';
 
 @Module({
   imports: [ScheduleModule.forRoot(), PaymentsModule, UsersModule],
@@ -24,6 +25,7 @@ import { MagicLinkCleanupTask } from './magic-link-cleanup.task';
     DisputeResolutionExecutionService,
     MagicLinkDatabaseRepository,
     MagicLinkCleanupTask,
+    TransferReconciliationTask,
   ],
 })
 export class TasksModule {}

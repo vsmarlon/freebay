@@ -50,12 +50,12 @@ parent.
 
 | Role | Light | Dark | Getter |
 |---|---|---|---|
-| Lowest | `#FFFFFF` | `#0A0A0A` | `colors.surfaceContainerLowest` |
-| Base canvas | `#F9F9F9` | `#121212` | `context.bgColor` |
-| Card / tile | `#F3F3F3` | `#1C1C1C` | `context.surfaceColor` |
-| Elevated | `#EEEEEE` | `#242424` | `context.surfaceMidColor` |
-| High | `#E8E8E8` | `#2E2E2E` | `context.surfaceHighColor` |
-| Highest | `#E2E2E2` | `#383838` | `colors.surfaceContainerHighest` |
+| Lowest | `#FFFEF8` | `#0A0A0A` | `colors.surfaceContainerLowest` |
+| Base canvas | `#FCF9EE` | `#121212` | `context.bgColor` |
+| Card / tile | `#F7F3E7` | `#1C1C1C` | `context.surfaceColor` |
+| Elevated | `#F1ECDE` | `#242424` | `context.surfaceMidColor` |
+| High | `#EAE4D5` | `#2E2E2E` | `context.surfaceHighColor` |
+| Highest | `#E3DCCB` | `#383838` | `colors.surfaceContainerHighest` |
 
 The dark ladder is neutral on purpose. Any hue in the greys competes with the
 magenta and makes it read as decoration rather than signal.
@@ -64,10 +64,10 @@ magenta and makes it read as decoration rather than signal.
 
 | Role | Light | Dark | Getter |
 |---|---|---|---|
-| Primary text | `#1B1B1B` | `#F1F1F1` | `context.textPrimary` |
-| Muted text | `#5F5F5F` | `#A0A0A0` | `context.textSecondary` |
-| Hard border | `#1B1B1B` | `#F1F1F1` | `context.borderColor` |
-| Soft border | `#C9C9C9` | `#3A3A3A` | `context.borderSoftColor` |
+| Primary text | `#11100E` | `#F1F1F1` | `context.textPrimary` |
+| Muted text | `#403C34` | `#A0A0A0` | `context.textSecondary` |
+| Hard border | `#11100E` | `#F1F1F1` | `context.borderColor` |
+| Soft border | `#C9C1B2` | `#3A3A3A` | `context.borderSoftColor` |
 
 The hard border is ink, not grey. A brutalist outline that apologises is just a box.
 
@@ -122,6 +122,19 @@ which step of the scale you meant.
 
 Body copy wraps below 80 characters. ALL CAPS is the nav and label vernacular
 (`EXPLORAR`, `CONFIRMAR ENTREGA`); do not extend it to sentences.
+
+Secondary copy sitting directly on the backdrop (empty states, hints) uses
+`context.textSecondary` — never a hardcoded `mediumGray`/`outline`, which
+loses contrast in one of the two modes. `EmptyState` already follows this.
+
+## Background
+
+Every screen shows the aurora. Pushed pages wrap `body:` in `AppBackground`
+(with a transparent `Scaffold`); tab pages stay transparent and inherit the
+shell's. `AppBackground` honors the user's "Fundo animado" setting: animated
+shader when on, one frozen aurora frame (`staticAurora`) when off. Flat
+`bgColor` scaffolds covering the aurora are a bug — as is navigating anywhere
+with a raw string literal (see `AppRoutes`; enforced by `make routes-check`).
 
 ## Motion
 

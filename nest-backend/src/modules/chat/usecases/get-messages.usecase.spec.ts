@@ -11,6 +11,7 @@ const mockRepo = {
   markMessagesRead: jest.fn(),
   findChatMessagesByOrder: jest.fn(),
   markChatMessagesRead: jest.fn(),
+  findUserById: jest.fn(),
 };
 
 const mockPreferenceRepo = {
@@ -40,10 +41,13 @@ describe('GetMessagesUseCase', () => {
     jest.clearAllMocks();
     mockRepo.markMessagesRead.mockResolvedValue(right(undefined));
     mockRepo.markChatMessagesRead.mockResolvedValue(right(undefined));
+    mockRepo.findUserById.mockImplementation((id: string) =>
+      Promise.resolve(right({ id, displayName: 'Other', avatarUrl: null })),
+    );
     mockPreferenceRepo.findByAnyId.mockResolvedValue(right(null));
   });
 
-  it('should return error if thread cannot be resolved', async () => {
+  it('returns error if thread cannot be resolved', async () => {
     mockThreadAccess.resolveThread.mockResolvedValue(left(new NotFoundError('Conversa')));
 
     const result = await sut.execute('conv-1', 'user-1');
@@ -52,7 +56,7 @@ describe('GetMessagesUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return error if user is not a participant', async () => {
+  it('returns error if user is not a participant', async () => {
     mockThreadAccess.resolveThread.mockResolvedValue(
       left(new ForbiddenError('Você não é participante desta conversa')),
     );
@@ -63,7 +67,7 @@ describe('GetMessagesUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(ForbiddenError);
   });
 
-  it('should return direct messages and mark unread as read', async () => {
+  it('returns direct messages and marks unread as read', async () => {
     const now = new Date();
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
@@ -93,6 +97,7 @@ describe('GetMessagesUseCase', () => {
     if (result.isRight()) {
       expect(result.value.threadType).toBe('DIRECT');
       expect(result.value.otherUserId).toBe('user-2');
+      expect(result.value.otherUser).toEqual({ id: 'user-2', displayName: 'Other', avatarUrl: null });
       expect(result.value.messages).toHaveLength(1);
       expect(result.value.messages[0].content).toBe('Hello');
       expect(result.value.hasMore).toBe(false);
@@ -101,7 +106,7 @@ describe('GetMessagesUseCase', () => {
     expect(mockRepo.markMessagesRead).toHaveBeenCalledWith('conv-1', 'user-1');
   });
 
-  it('should read order threads from ChatMessage', async () => {
+  it('reads order threads from ChatMessage', async () => {
     const now = new Date();
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ orderId: 'order-1', otherUserId: 'seller-1', orderStatus: 'CONFIRMED' }),
@@ -136,7 +141,7 @@ describe('GetMessagesUseCase', () => {
     expect(mockRepo.findMessagesByConversation).not.toHaveBeenCalled();
   });
 
-  it('should hydrate replyTo and hide content of a deleted original', async () => {
+  it('hydrates replyTo and hides content of a deleted original', async () => {
     const now = new Date();
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
@@ -177,7 +182,7 @@ describe('GetMessagesUseCase', () => {
     }
   });
 
-  it('should return the conversation preference', async () => {
+  it('returns the conversation preference', async () => {
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );

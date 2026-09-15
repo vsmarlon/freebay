@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
   PhoneCodeAlreadyUsedError,
@@ -28,7 +28,7 @@ export class VerifyPhoneUseCase {
 
   async execute(input: VerifyPhoneInput): Promise<Either<AppError, UserResponse>> {
     const verificationResult = await this.phoneVerificationRepository.findLatestByUserId(input.userId);
-    if (isLeft(verificationResult)) return left(verificationResult.value);
+    if (verificationResult.isLeft()) return left(verificationResult.value);
     const verification = verificationResult.value;
 
     if (!verification) {
@@ -54,13 +54,13 @@ export class VerifyPhoneUseCase {
     }
 
     const markUsedResult = await this.phoneVerificationRepository.markUsed(verification.id);
-    if (isLeft(markUsedResult)) return left(markUsedResult.value);
+    if (markUsedResult.isLeft()) return left(markUsedResult.value);
 
     const updateResult = await this.userRepository.update(input.userId, {
       phoneVerified: true,
       isVerified: true,
     });
-    if (isLeft(updateResult)) return left(updateResult.value);
+    if (updateResult.isLeft()) return left(updateResult.value);
 
     const [postsCount, productsCount, activeStory] = await Promise.all([
       this.prisma.post.count({ where: { userId: input.userId } }),

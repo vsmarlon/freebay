@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { isLeft } from '@/shared/core/either';
 import { CreateReportUseCase } from './usecases/create-report.usecase';
 import { CreateReportDTO } from './dtos/report.dto';
 
@@ -12,7 +11,7 @@ export class ReportsService {
       reporterId,
       ...body,
     });
-    if (isLeft(result)) {
+    if (result.isLeft()) {
       throw result.value;
     }
     return result.value;

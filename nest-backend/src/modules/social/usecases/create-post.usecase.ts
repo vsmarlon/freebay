@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
@@ -19,7 +19,7 @@ export class CreatePostUseCase {
       type: input.type,
       user: { connect: { id: input.userId } },
     });
-    if (isLeft(result)) return left(result.value);
+    if (result.isLeft()) return left(result.value);
 
     const post = result.value;
 
@@ -28,10 +28,10 @@ export class CreatePostUseCase {
       if (uniqueIds.length > 0) {
         await this.postRepository.createMentions(post.id, uniqueIds);
 
-        const authorName = post.user?.displayName ?? 'Alguém';
+        const authorHandle = post.user?.username ?? post.user?.displayName ?? 'alguem';
         for (const mentionedId of uniqueIds) {
           this.notificationService
-            .notifyMention(mentionedId, `@${authorName} te mencionou em uma publicação`, post.id)
+            .notifyMention(mentionedId, `@${authorHandle} te mencionou em uma publicação`, post.id)
             .catch(() => {});
         }
       }

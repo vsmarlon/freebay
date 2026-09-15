@@ -94,4 +94,63 @@ describe('MediaController', () => {
     await expect(sut.serve(VIEWER, 'chat', '.env')).rejects.toThrow(NotFoundException);
     expect(mediaAccess.canRead).not.toHaveBeenCalled();
   });
+
+  it('handles RFC 7233 range requests with HTTP 206 and Content-Range', async () => {
+    const headers: Record<string, string> = {};
+    let status = 200;
+    const req = { headers: { range: 'bytes=1-3' } };
+    const res = {
+      setHeader(name: string, value: string) {
+        headers[name] = value;
+      },
+      status(code: number) {
+        status = code;
+      },
+    };
+
+    const result = await sut.serve(VIEWER, 'chat', EXISTING, req, res);
+    expect(status).toBe(206);
+    expect(headers['Accept-Ranges']).toBe('bytes');
+    expect(headers['Content-Range']).toBe('bytes 1-3/5');
+    expect(headers['Content-Length']).toBe('3');
+    expect(result.options.length).toBe(3);
+
+    await drain(result.getStream());
+  });
+
+  it('returns HTTP 416 for an unsatisfiable range request', async () => {
+    const headers: Record<string, string> = {};
+    let status = 200;
+    const req = { headers: { range: 'bytes=10-20' } };
+    const res = {
+      setHeader(name: string, value: string) {
+        headers[name] = value;
+      },
+      status(code: number) {
+        status = code;
+      },
+    };
+
+    const result = await sut.serve(VIEWER, 'chat', EXISTING, req, res);
+    expect(status).toBe(416);
+    expect(headers['Content-Range']).toBe('bytes */5');
+
+    await drain(result.getStream());
+  });
+
+  it('sets Accept-Ranges and Content-Length on full file responses', async () => {
+    const headers: Record<string, string> = {};
+    const res = {
+      setHeader(name: string, value: string) {
+        headers[name] = value;
+      },
+    };
+
+    const result = await sut.serve(VIEWER, 'chat', EXISTING, undefined, res);
+    expect(headers['Accept-Ranges']).toBe('bytes');
+    expect(headers['Content-Length']).toBe('5');
+    expect(result.options.length).toBe(5);
+
+    await drain(result.getStream());
+  });
 });

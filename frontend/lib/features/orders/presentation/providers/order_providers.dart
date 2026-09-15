@@ -182,7 +182,10 @@ class SalesList extends _$SalesList {
     );
 
     final result = await ref.read(getMySalesUsecaseProvider)(
-      GetMySalesParams(cursor: refresh ? null : state.nextCursor),
+      GetMySalesParams(
+        cursor: refresh ? null : state.nextCursor,
+        status: state.selectedStatus?.toApiString(),
+      ),
     );
     result.fold(
       (failure) => state = state.copyWith(
@@ -192,14 +195,29 @@ class SalesList extends _$SalesList {
         nextCursor: state.nextCursor,
       ),
       (page) => state = SalesListState(
-        orders: refresh ? page.items : [...state.orders, ...page.items],
+        orders: refresh ? page.items : _appendUnique(state.orders, page.items),
         nextCursor: page.nextCursor,
         hasMore: page.hasMore,
+        selectedStatus: state.selectedStatus,
       ),
     );
   }
 
-  Future<void> loadMore() => loadSales();
+  Future<void> loadMore() => state.hasMore ? loadSales() : Future.value();
 
   Future<void> refresh() => loadSales(refresh: true);
+
+  Future<void> changeStatus(OrderStatus? status) async {
+    if (state.selectedStatus == status) return;
+    state = SalesListState(selectedStatus: status);
+    await loadSales();
+  }
+
+  List<OrderEntity> _appendUnique(
+    List<OrderEntity> current,
+    List<OrderEntity> next,
+  ) {
+    final ids = current.map((order) => order.id).toSet();
+    return [...current, ...next.where((order) => ids.add(order.id))];
+  }
 }

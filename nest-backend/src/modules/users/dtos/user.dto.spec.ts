@@ -36,4 +36,24 @@ describe('UpdateProfileDTO', () => {
     const urlError = errors.find((e) => e.property === 'avatarUrl');
     expect(urlError).toBeDefined();
   });
+
+  it('rejects hacky display names containing special characters in UpdateProfileDTO', async () => {
+    const hackyNames = ['#$!%^@*()*#$,./\\', 'John#Doe', 'Tom & Jerry', '<script>'];
+    for (const name of hackyNames) {
+      const dto = plainToClass(UpdateProfileDTO, { displayName: name });
+      const errors = await validate(dto);
+      const nameError = errors.find((e) => e.property === 'displayName');
+      expect(nameError).toBeDefined();
+    }
+  });
+
+  it('accepts valid display names with accents in UpdateProfileDTO', async () => {
+    const validNames = ['João Silva', 'Maria-Eduarda', "D'Angelo", 'Dr. Smith'];
+    for (const name of validNames) {
+      const dto = plainToClass(UpdateProfileDTO, { displayName: name });
+      const errors = await validate(dto);
+      const nameError = errors.find((e) => e.property === 'displayName');
+      expect(nameError).toBeUndefined();
+    }
+  });
 });

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 
@@ -46,7 +47,7 @@ class StoriesRow extends ConsumerWidget {
               final current = ref.read(storiesProvider).value?.stories ?? [];
               if (current.isNotEmpty) {
                 final storyIndex = current.indexWhere((s) => s.id == story.id);
-                context.push('/story?index=$storyIndex');
+                context.push(AppRoutes.storyAt(storyIndex));
               }
             },
           );
@@ -66,7 +67,7 @@ class _AddStoryItem extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
-          context.push('/create-story');
+          context.push(AppRoutes.createStory);
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,

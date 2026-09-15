@@ -25,89 +25,95 @@ class BlockedUsersPage extends ConsumerWidget {
     final blockedUsersAsync = ref.watch(blockedUsersProvider);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'USUÁRIOS BLOQUEADOS',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'USUÁRIOS BLOQUEADOS',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
+              breadcrumbs: context.breadcrumbs,
             ),
-            breadcrumbs: context.breadcrumbs,
-          ),
-          Expanded(
-            child: blockedUsersAsync.when(
-              data: (response) {
-                return response.users.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.block_outlined,
-                              size: 64,
-                              color: isDark
-                                  ? AppColors.mediumGray
-                                  : AppColors.mediumGray,
-                            ),
-                            Spacing.vMd,
-                            Text(
-                              'Você não bloqueou nenhum usuário',
-                              style: TextStyle(
-                                fontSize: 16,
+            Expanded(
+              child: blockedUsersAsync.when(
+                data: (response) {
+                  return response.users.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.block_outlined,
+                                size: 64,
                                 color: isDark
-                                    ? AppColors.mediumGray
-                                    : AppColors.mediumGray,
+                                    ? context.textSecondary
+                                    : context.textSecondary,
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          ref.invalidate(blockedUsersProvider);
-                        },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: response.users.length,
-                          itemBuilder: (context, index) {
-                            final user = response.users[index];
-                            return _BlockedUserTile(
-                              user: user,
-                              isDark: isDark,
-                              onUnblock: () async {
-                                final service = ref.read(blockServiceProvider);
-                                final result = await service.unblock(user.id);
-                                result.fold(
-                                  (failure) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(failure.message),
-                                        backgroundColor: AppColors.error,
-                                      ),
-                                    );
-                                  },
-                                  (_) {
-                                    ref.invalidate(blockedUsersProvider);
-                                  },
-                                );
-                              },
-                            );
+                              Spacing.vMd,
+                              Text(
+                                'Você não bloqueou nenhum usuário',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isDark
+                                      ? context.textSecondary
+                                      : context.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            ref.invalidate(blockedUsersProvider);
                           },
-                        ),
-                      );
-              },
-              loading: () =>
-                  const Center(child: ShimmerBlock(width: 20, height: 20)),
-              error: (err, stack) => EmptyState.error(
-                message:
-                    'Não foi possível carregar a lista. Verifique sua conexão.',
-                onRetry: () => ref.invalidate(blockedUsersProvider),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: response.users.length,
+                            itemBuilder: (context, index) {
+                              final user = response.users[index];
+                              return _BlockedUserTile(
+                                user: user,
+                                isDark: isDark,
+                                onUnblock: () async {
+                                  final service = ref.read(
+                                    blockServiceProvider,
+                                  );
+                                  final result = await service.unblock(user.id);
+                                  result.fold(
+                                    (failure) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(failure.message),
+                                          backgroundColor: AppColors.error,
+                                        ),
+                                      );
+                                    },
+                                    (_) {
+                                      ref.invalidate(blockedUsersProvider);
+                                    },
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        );
+                },
+                loading: () =>
+                    const Center(child: ShimmerBlock(width: 20, height: 20)),
+                error: (err, stack) => EmptyState.error(
+                  message:
+                      'Não foi possível carregar a lista. Verifique sua conexão.',
+                  onRetry: () => ref.invalidate(blockedUsersProvider),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

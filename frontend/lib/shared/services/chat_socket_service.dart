@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:freebay/shared/config/app_config.dart';
@@ -102,21 +103,35 @@ class ChatSocketService {
         }
       })
       ..on('new_message', (data) {
-        if (data is Map<String, dynamic>) {
-          _messageController.add(data);
-          _eventsController.add(NewMessageEvent(MessageEntity.fromJson(data)));
+        if (data is Map) {
+          final payload = Map<String, dynamic>.from(data);
+          _messageController.add(payload);
+          try {
+            _eventsController.add(
+              NewMessageEvent(MessageEntity.fromJson(payload)),
+            );
+          } catch (e) {
+            debugPrint('[chat-socket] dropped malformed new_message: $e');
+          }
         }
       })
       ..on('reaction_updated', (data) {
-        if (data is Map<String, dynamic>) {
-          final messageId = data['messageId'] as String? ?? '';
+        if (data is Map) {
+          final payload = Map<String, dynamic>.from(data);
+          final messageId = payload['messageId'] as String? ?? '';
           final reactions =
-              (data['reactions'] as List?)
-                  ?.map(
-                    (e) => MessageReactionEntity.fromJson(
-                      e as Map<String, dynamic>,
-                    ),
-                  )
+              (payload['reactions'] as List?)
+                  ?.whereType<Map>()
+                  .map((e) {
+                    try {
+                      return MessageReactionEntity.fromJson(
+                        Map<String, dynamic>.from(e),
+                      );
+                    } catch (_) {
+                      return null;
+                    }
+                  })
+                  .whereType<MessageReactionEntity>()
                   .toList() ??
               [];
           _eventsController.add(ReactionUpdatedEvent(messageId, reactions));

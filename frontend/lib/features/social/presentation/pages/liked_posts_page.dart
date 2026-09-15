@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
@@ -109,7 +110,7 @@ class LikedPostsPage extends ConsumerWidget {
     final imageUrl = post.imageUrl;
 
     return GestureDetector(
-      onTap: () => context.push('/post/${post.id}'),
+      onTap: () => context.push(AppRoutes.postPath(post.id)),
       child: Container(
         decoration: BoxDecoration(
           color: context.bgColor,

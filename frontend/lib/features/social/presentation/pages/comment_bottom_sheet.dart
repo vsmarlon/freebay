@@ -87,73 +87,78 @@ class _CommentBottomSheetState extends ConsumerState<CommentBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: BoxDecoration(color: context.surfaceMidColor),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    color: context.bgColor,
-                    child: const Icon(Icons.person, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _commentController,
-                      decoration: InputDecoration(
-                        hintText: 'Adicione um comentário...',
-                        border: const OutlineInputBorder(
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: isDark
-                            ? AppColors.backgroundDark
-                            : AppColors.lightGray,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                      maxLines: 3,
-                      minLines: 1,
-                    ),
-                  ),
-                  Spacing.hSm,
-                  BrutalistIconButton(
-                    icon: Icons.send,
-                    onTap: _submitComment,
-                    size: 44,
-                    iconSize: 24,
-                    iconColor: AppColors.onPrimary,
-                    gradient: AppColors.brutalistGradient,
-                    isLoading: _isLoading,
-                  ),
-                ],
-              ),
-            ),
-            if (_commentCount > 0)
+    return RepaintBoundary(
+      child: Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        decoration: BoxDecoration(color: context.surfaceMidColor),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  '$_commentCount comentários',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: context.textPrimary,
-                  ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      color: context.bgColor,
+                      child: const Icon(Icons.person, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: InputDecoration(
+                          hintText: 'Adicione um comentário...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.zero,
+                            borderSide: BorderSide(
+                              color: context.borderSoftColor,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: isDark
+                              ? AppColors.backgroundDark
+                              : context.surfaceMidColor,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                        maxLines: 3,
+                        minLines: 1,
+                      ),
+                    ),
+                    Spacing.hSm,
+                    BrutalistIconButton(
+                      icon: Icons.send,
+                      onTap: _submitComment,
+                      size: 44,
+                      iconSize: 24,
+                      iconColor: AppColors.onPrimary,
+                      gradient: AppColors.brutalistGradient,
+                      isLoading: _isLoading,
+                    ),
+                  ],
                 ),
               ),
-            Spacing.vMd,
-          ],
+              if (_commentCount > 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    '$_commentCount comentários',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: context.textPrimary,
+                    ),
+                  ),
+                ),
+              Spacing.vMd,
+            ],
+          ),
         ),
       ),
     );

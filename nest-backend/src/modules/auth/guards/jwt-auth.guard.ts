@@ -27,10 +27,6 @@ export class JwtAuthGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    if (isPublic) {
-      return true;
-    }
-
     const request = context.switchToHttp().getRequest<Request>();
     const allowedTokenTypes = this.reflector.getAllAndOverride<Array<JwtTokenType>>(
       ALLOWED_TOKEN_TYPES_KEY,
@@ -44,6 +40,9 @@ export class JwtAuthGuard implements CanActivate {
       ? this.extractTokenFromCookies(request, allowedTokenTypes)
       : this.extractTokenFromHeader(request);
 
+    if (!token && isPublic) {
+      return true;
+    }
     if (!token) {
       throw new UnauthorizedException('Token não fornecido');
     }

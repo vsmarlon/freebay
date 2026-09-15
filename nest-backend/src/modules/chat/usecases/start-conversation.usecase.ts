@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { StartConversationOutput } from '../dtos/chat.dto';
+import { toStartConversationOutput } from '../mappers/conversation.mapper';
 
 @Injectable()
 export class StartConversationUseCase {
@@ -12,14 +13,23 @@ export class StartConversationUseCase {
     private readonly blockRepository: PrismaBlockRepository,
   ) {}
 
-  async execute(initiatorId: string, targetUserId: string): Promise<Either<AppError, StartConversationOutput>> {
+  async execute(initiatorId: string, targetUserId: string, productId?: string): Promise<Either<AppError, StartConversationOutput>> {
     if (initiatorId === targetUserId) {
       return left(new BadRequestError('Cannot start conversation with yourself'));
     }
 
     const userResult = await this.conversationRepository.findUserById(targetUserId);
-    if (isLeft(userResult)) return left(userResult.value);
+    if (userResult.isLeft()) return left(userResult.value);
     if (!userResult.value) return left(new NotFoundError('User'));
+
+    if (productId) {
+      const productResult = await this.conversationRepository.findProductSummary(productId);
+      if (productResult.isLeft()) return left(productResult.value);
+      if (!productResult.value) return left(new NotFoundError('Product'));
+      if (productResult.value.sellerId !== targetUserId) {
+        return left(new BadRequestError('Product does not belong to target user'));
+      }
+    }
 
     const [isBlockedResult, isBlockedByOtherResult] = await Promise.all([
       this.blockRepository.isBlocked(initiatorId, targetUserId),
@@ -30,24 +40,32 @@ export class StartConversationUseCase {
     if (isBlockedResult.value) return left(new ForbiddenError('Você bloqueou este usuário'));
     if (isBlockedByOtherResult.value) return left(new ForbiddenError('Você foi bloqueado por este usuário'));
 
-    const existingResult = await this.conversationRepository.findDirectConversationBetweenUsers(initiatorId, targetUserId);
-    if (isLeft(existingResult)) return left(existingResult.value);
+    const [user1Id, user2Id] = initiatorId < targetUserId
+      ? [initiatorId, targetUserId]
+      : [targetUserId, initiatorId];
+
+    const existingResult = productId
+      ? await this.conversationRepository.findProductConversationBetweenUsers(user1Id, user2Id, productId)
+      : await this.conversationRepository.findDirectConversationBetweenUsers(user1Id, user2Id);
+    if (existingResult.isLeft()) return left(existingResult.value);
     if (existingResult.value) {
-      return right({ conversationId: existingResult.value.id, status: existingResult.value.status });
+      return right(toStartConversationOutput(existingResult.value, userResult.value));
     }
 
     const followResult = await this.conversationRepository.findFollow(initiatorId, targetUserId);
-    if (isLeft(followResult)) return left(followResult.value);
+    if (followResult.isLeft()) return left(followResult.value);
 
     const status = followResult.value ? 'ACTIVE' : 'PENDING';
 
     const createResult = await this.conversationRepository.createDirectConversation({
-      user1: { connect: { id: initiatorId } },
-      user2: { connect: { id: targetUserId } },
+      user1: { connect: { id: user1Id } },
+      user2: { connect: { id: user2Id } },
+      ...(productId ? { product: { connect: { id: productId } } } : {}),
+      scopeKey: productId ? `PRODUCT:${productId}` : 'DIRECT',
       status,
     });
-    if (isLeft(createResult)) return left(createResult.value);
+    if (createResult.isLeft()) return left(createResult.value);
 
-    return right({ conversationId: createResult.value.id, status });
+    return right(toStartConversationOutput(createResult.value, userResult.value));
   }
 }

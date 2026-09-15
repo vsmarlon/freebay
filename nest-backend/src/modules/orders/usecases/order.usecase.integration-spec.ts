@@ -3,7 +3,6 @@ import { CreateOrderUseCase } from './create-order.usecase';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
-import { isLeft, isRight } from '@/shared/core/either';
 import { CreateOrderInput } from '../dtos/order.dto';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
@@ -30,7 +29,7 @@ describe('CreateOrderUseCase Integration', () => {
   });
 
   describe('Business Rules', () => {
-    it('should create order with correct 10% platform fee split', async () => {
+    it('creates order with correct 10% platform fee split', async () => {
       // Arrange - Product price: R$100.00 (10000 cents)
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
@@ -48,10 +47,18 @@ describe('CreateOrderUseCase Integration', () => {
       const result = await sut.execute(input);
 
       // Assert
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const order = result.value;
+        expect(order.buyerId).toBe(buyer.id);
+        expect(order.sellerId).toBe(seller.id);
+        expect(order.productId).toBe(product.id);
         expect(order.amount).toBe(10000);
+        expect(order.platformFee).toBe(1000);
+        expect(order.sellerAmount).toBe(9000);
+        expect(order.status).toBe('PENDING');
+        expect(order.escrowStatus).toBe('HELD');
+        expect(order.createdAt).toBeInstanceOf(Date);
 
         // Verify splits in database
         const dbOrder = await prisma.order.findUnique({
@@ -64,7 +71,40 @@ describe('CreateOrderUseCase Integration', () => {
       }
     });
 
-    it('should handle fractional cents correctly', async () => {
+    it('derives seller and money fields from the current product, not the request', async () => {
+      const buyer = await userFactory.create();
+      const actualSeller = await userFactory.create();
+      const requestSeller = await userFactory.create();
+      const product = await productFactory.create(actualSeller.id, { price: 1055 });
+
+      const result = await sut.execute({
+        buyerId: buyer.id,
+        sellerId: requestSeller.id,
+        productId: product.id,
+        amount: 1,
+        platformFeePercent: 10,
+      });
+
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value.sellerId).toBe(actualSeller.id);
+        expect(result.value.amount).toBe(1055);
+        expect(result.value.platformFee).toBe(106);
+        expect(result.value.sellerAmount).toBe(949);
+
+        const dbOrder = await prisma.order.findUnique({
+          where: { id: result.value.id },
+        });
+        expect(dbOrder).toMatchObject({
+          sellerId: actualSeller.id,
+          amount: 1055,
+          platformFee: 106,
+          sellerAmount: 949,
+        });
+      }
+    });
+
+    it('handles fractional cents correctly', async () => {
       // Arrange - Product price: R$10.55 (1055 cents)
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
@@ -82,8 +122,8 @@ describe('CreateOrderUseCase Integration', () => {
       const result = await sut.execute(input);
 
       // Assert
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const dbOrder = await prisma.order.findUnique({
           where: { id: result.value.id },
         });
@@ -95,7 +135,7 @@ describe('CreateOrderUseCase Integration', () => {
       }
     });
 
-    it('should reject order if product does not exist', async () => {
+    it('rejects order if product does not exist', async () => {
       // Arrange
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
@@ -112,14 +152,14 @@ describe('CreateOrderUseCase Integration', () => {
       const result = await sut.execute(input);
 
       // Assert
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('NOT_FOUND');
         expect(result.value.message).toContain('Produto');
       }
     });
 
-    it('should reject order if product is already sold', async () => {
+    it('rejects order if product is already sold', async () => {
       // Arrange
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
@@ -137,14 +177,14 @@ describe('CreateOrderUseCase Integration', () => {
       const result = await sut.execute(input);
 
       // Assert
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
         expect(result.value.message).toContain('não está mais disponível');
       }
     });
 
-    it('should reject order if buyer is the seller', async () => {
+    it('rejects order if buyer is the seller', async () => {
       // Arrange
       const user = await userFactory.create();
       const product = await productFactory.create(user.id);
@@ -161,14 +201,14 @@ describe('CreateOrderUseCase Integration', () => {
       const result = await sut.execute(input);
 
       // Assert
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
         expect(result.value.message).toContain('Cannot buy your own product');
       }
     });
 
-    it('should set order status to PENDING and escrow to HELD', async () => {
+    it('sets order status to PENDING and escrow to HELD', async () => {
       // Arrange
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
@@ -186,8 +226,8 @@ describe('CreateOrderUseCase Integration', () => {
       const result = await sut.execute(input);
 
       // Assert
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const dbOrder = await prisma.order.findUnique({
           where: { id: result.value.id },
         });
@@ -197,7 +237,7 @@ describe('CreateOrderUseCase Integration', () => {
       }
     });
 
-    it('should reserve product as PAUSED after order creation (not SOLD until payment confirms)', async () => {
+    it('reserves product as PAUSED after order creation (not SOLD until payment confirms)', async () => {
       // Arrange
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
@@ -217,7 +257,7 @@ describe('CreateOrderUseCase Integration', () => {
       const result = await sut.execute(input);
 
       // Assert
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const updatedProduct = await prisma.product.findUnique({
         where: { id: product.id },
@@ -226,7 +266,31 @@ describe('CreateOrderUseCase Integration', () => {
       expect(updatedProduct?.status).toBe('PAUSED');
     });
 
-    it('should create orders for different products', async () => {
+    it('rolls back the reservation when order creation fails', async () => {
+      const seller = await userFactory.create();
+      const product = await productFactory.create(seller.id);
+
+      const result = await sut.execute({
+        buyerId: '00000000-0000-0000-0000-000000000000',
+        sellerId: seller.id,
+        productId: product.id,
+        amount: product.price,
+        platformFeePercent: 10,
+      });
+
+      expect(result.isLeft()).toBe(true);
+      const unchangedProduct = await prisma.product.findUnique({
+        where: { id: product.id },
+      });
+      const orders = await prisma.order.findMany({
+        where: { productId: product.id },
+      });
+      expect(unchangedProduct?.status).toBe('ACTIVE');
+      expect(unchangedProduct?.soldCount).toBe(product.soldCount);
+      expect(orders).toHaveLength(0);
+    });
+
+    it('creates orders for different products', async () => {
       // Arrange
       const buyer = await userFactory.create();
       const seller1 = await userFactory.create();
@@ -252,8 +316,8 @@ describe('CreateOrderUseCase Integration', () => {
       });
 
       // Assert
-      expect(isRight(result1)).toBe(true);
-      expect(isRight(result2)).toBe(true);
+      expect(result1.isRight()).toBe(true);
+      expect(result2.isRight()).toBe(true);
 
       const orders = await prisma.order.findMany({
         where: { buyerId: buyer.id },
@@ -266,7 +330,7 @@ describe('CreateOrderUseCase Integration', () => {
   });
 
   describe('Platform Fee Calculation Edge Cases', () => {
-    it('should handle very small amounts (R$0.01)', async () => {
+    it('handles very small amounts (R$0.01)', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id, { price: 1 });
@@ -279,8 +343,8 @@ describe('CreateOrderUseCase Integration', () => {
         platformFeePercent: 10,
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const dbOrder = await prisma.order.findUnique({
           where: { id: result.value.id },
         });
@@ -291,7 +355,7 @@ describe('CreateOrderUseCase Integration', () => {
       }
     });
 
-    it('should handle large amounts (R$10,000.00)', async () => {
+    it('handles large amounts (R$10,000.00)', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id, { price: 1000000 }); // R$10,000.00
@@ -304,8 +368,8 @@ describe('CreateOrderUseCase Integration', () => {
         platformFeePercent: 10,
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const dbOrder = await prisma.order.findUnique({
           where: { id: result.value.id },
         });

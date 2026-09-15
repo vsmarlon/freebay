@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/components/user_avatar.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class UserListTileItem {
   final String id;
@@ -35,7 +36,7 @@ class UserListTile extends StatelessWidget {
         border: Border.all(color: context.borderColor, width: 1.5),
       ),
       child: InkWell(
-        onTap: () => context.push('/user/${user.id}'),
+        onTap: () => context.push(AppRoutes.userPath(user.id)),
         child: Row(
           children: [
             UserAvatar(imageUrl: user.avatarUrl),

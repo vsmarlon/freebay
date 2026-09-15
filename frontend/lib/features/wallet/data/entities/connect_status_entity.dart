@@ -2,17 +2,24 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'connect_status_entity.g.dart';
 
+enum ConnectStatus {
+  @JsonValue('onboarding-required')
+  onboardingRequired,
+  @JsonValue('requirements-due')
+  requirementsDue,
+  @JsonValue('restricted')
+  restricted,
+  @JsonValue('transfer-ready')
+  transferReady,
+}
+
 @JsonSerializable()
 class ConnectStatusEntity {
-  final bool onboarded;
-  final bool transfersEnabled;
-  final bool payoutsEnabled;
+  final ConnectStatus status;
   final List<String> requirementsDue;
 
   const ConnectStatusEntity({
-    required this.onboarded,
-    required this.transfersEnabled,
-    required this.payoutsEnabled,
+    required this.status,
     this.requirementsDue = const [],
   });
 
@@ -21,5 +28,5 @@ class ConnectStatusEntity {
 
   Map<String, dynamic> toJson() => _$ConnectStatusEntityToJson(this);
 
-  bool get canReceive => onboarded && transfersEnabled;
+  bool get canReceive => status == ConnectStatus.transferReady;
 }

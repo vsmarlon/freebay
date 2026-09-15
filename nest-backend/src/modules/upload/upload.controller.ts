@@ -47,7 +47,7 @@ export class UploadController {
   ): { url: string } {
     if (!file) {
       throw new BadRequestException(
-        'Arquivo ausente ou formato não suportado (aceitos: JPEG, PNG, GIF, WebP, MP3, M4A, AAC, OGG, WAV, MP4)',
+        'Arquivo ausente ou formato não suportado (aceitos: JPEG, PNG, GIF, WebP, MP3, M4A, AAC, OGG, WAV, MP4, MOV, WebM)',
       );
     }
     if (!isValidContext(context)) {

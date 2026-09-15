@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
@@ -24,6 +25,12 @@ class ProfileHeader extends ConsumerWidget {
     final isDark = context.isDark;
     final currentUser = ref.watch(authControllerProvider).value;
     final isOwnProfile = currentUser != null && currentUser.id == user.id;
+    final effectiveFollowersCount = followersCount > 0
+        ? followersCount
+        : user.followersCount;
+    final effectiveFollowingCount = followingCount > 0
+        ? followingCount
+        : user.followingCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,10 +125,10 @@ class ProfileHeader extends ConsumerWidget {
                 Spacing.vXs,
                 Text(
                   '@${user.username}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 13,
-                    color: AppColors.mediumGray,
+                    color: context.textSecondary,
                   ),
                 ),
               ],
@@ -140,18 +147,18 @@ class ProfileHeader extends ConsumerWidget {
                 Spacing.vXs,
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.location_on,
                       size: 14,
-                      color: AppColors.mediumGray,
+                      color: context.textSecondary,
                     ),
                     Spacing.hXs,
                     Text(
                       user.city!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 13,
-                        color: AppColors.mediumGray,
+                        color: context.textSecondary,
                       ),
                     ),
                   ],
@@ -169,18 +176,16 @@ class ProfileHeader extends ConsumerWidget {
                     size: 18,
                   ),
                   StatColumn(
-                    value: '$followersCount',
+                    value: '$effectiveFollowersCount',
                     label: 'seguidores',
                     size: 18,
-                    onTap: () =>
-                        context.push('/profile/followers?userId=${user.id}'),
+                    onTap: () => context.push(AppRoutes.followersWith(user.id)),
                   ),
                   StatColumn(
-                    value: '$followingCount',
+                    value: '$effectiveFollowingCount',
                     label: 'seguindo',
                     size: 18,
-                    onTap: () =>
-                        context.push('/profile/following?userId=${user.id}'),
+                    onTap: () => context.push(AppRoutes.followingWith(user.id)),
                   ),
                 ],
               ),
@@ -190,7 +195,7 @@ class ProfileHeader extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: InkWell(
-                    onTap: () => context.push('/profile/edit'),
+                    onTap: () => context.push(AppRoutes.profileEdit),
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
@@ -316,13 +321,13 @@ class _AvatarWithStoryRing extends ConsumerWidget {
                 child: const Icon(Icons.add, color: AppColors.white),
               ),
               title: const Text('Criar história'),
-              subtitle: const Text(
+              subtitle: Text(
                 'Compartilhe uma foto ou vídeo',
-                style: TextStyle(color: AppColors.mediumGray),
+                style: TextStyle(color: context.textSecondary),
               ),
               onTap: () {
                 Navigator.pop(sheetContext);
-                context.push('/create-story');
+                context.push(AppRoutes.createStory);
               },
             ),
             if (user.hasActiveStory)
@@ -341,7 +346,7 @@ class _AvatarWithStoryRing extends ConsumerWidget {
                 title: const Text('Ver minhas histórias'),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  context.push('/profile/stories');
+                  context.push(AppRoutes.profileStories);
                 },
               ),
             Spacing.vMd,

@@ -8,9 +8,7 @@ part of 'connect_status_entity.dart';
 
 ConnectStatusEntity _$ConnectStatusEntityFromJson(Map<String, dynamic> json) =>
     ConnectStatusEntity(
-      onboarded: json['onboarded'] as bool,
-      transfersEnabled: json['transfersEnabled'] as bool,
-      payoutsEnabled: json['payoutsEnabled'] as bool,
+      status: $enumDecode(_$ConnectStatusEnumMap, json['status']),
       requirementsDue:
           (json['requirementsDue'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -21,8 +19,13 @@ ConnectStatusEntity _$ConnectStatusEntityFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$ConnectStatusEntityToJson(
   ConnectStatusEntity instance,
 ) => <String, dynamic>{
-  'onboarded': instance.onboarded,
-  'transfersEnabled': instance.transfersEnabled,
-  'payoutsEnabled': instance.payoutsEnabled,
+  'status': _$ConnectStatusEnumMap[instance.status]!,
   'requirementsDue': instance.requirementsDue,
+};
+
+const _$ConnectStatusEnumMap = {
+  ConnectStatus.onboardingRequired: 'onboarding-required',
+  ConnectStatus.requirementsDue: 'requirements-due',
+  ConnectStatus.restricted: 'restricted',
+  ConnectStatus.transferReady: 'transfer-ready',
 };

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
@@ -34,15 +35,15 @@ class RegisterPage extends HookConsumerWidget {
       next.whenOrNull(
         data: (user) async {
           if (user == null || !context.mounted) return;
+          // ponytail: GoRouter redirect owns → /complete-profile; a second
+          // context.go here races with the redirect into the error screen.
           if (ref
               .read(authControllerProvider.notifier)
               .needsProfileCompletion(user)) {
-            context.go('/complete-profile');
             return;
           }
-          await BrutalistBiometricModal.show(context, ref);
           if (context.mounted) {
-            context.go('/feed');
+            context.go(AppRoutes.feed);
           }
         },
         error: (err, _) {
@@ -53,7 +54,7 @@ class RegisterPage extends HookConsumerWidget {
     });
 
     return Scaffold(
-      body: BrutalistBackground(
+      body: AppBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -127,6 +128,9 @@ class RegisterPage extends HookConsumerWidget {
                                 }
                                 if (v.trim().length < 2) {
                                   return 'Nome muito curto';
+                                }
+                                if (!ValueUtils.validateDisplayName(v)) {
+                                  return 'Nome contém caracteres inválidos';
                                 }
                                 return null;
                               },

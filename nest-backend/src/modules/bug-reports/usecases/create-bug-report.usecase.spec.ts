@@ -23,7 +23,7 @@ describe('CreateBugReportUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should create a bug report successfully', async () => {
+  it('creates a bug report successfully', async () => {
     const bugReport = {
       id: 'bug-1',
       userId: 'user-1',
@@ -38,16 +38,16 @@ describe('CreateBugReportUseCase', () => {
     const result = await sut.execute({ userId: 'user-1', description: 'App crashes' });
 
     expect(result.isRight()).toBe(true);
-    if (result.isRight()) expect(result.value).toEqual(bugReport);
+    expect(result.value).toEqual(bugReport);
     expect(mockRepo.create).toHaveBeenCalledWith({ userId: 'user-1', description: 'App crashes' });
   });
 
-  it('should return error when repository fails', async () => {
+  it('returns error when repository fails', async () => {
     mockRepo.create.mockResolvedValue(left(new DatabaseError('Erro ao registrar relatório de bug')));
 
     const result = await sut.execute({ userId: 'user-1', description: 'App crashes' });
 
     expect(result.isLeft()).toBe(true);
-    if (result.isLeft()) expect(result.value).toBeInstanceOf(DatabaseError);
+    expect(result.value).toBeInstanceOf(DatabaseError);
   });
 });

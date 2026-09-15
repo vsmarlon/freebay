@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { NotificationDatabaseRepository } from '../data/repositories/notification-database.repository';
 
@@ -9,7 +9,7 @@ export class MarkAsReadUseCase {
 
   async execute(notificationId: string, userId: string): Promise<Either<AppError, void>> {
     const findResult = await this.notificationRepository.findById(notificationId);
-    if (isLeft(findResult)) return left(findResult.value);
+    if (findResult.isLeft()) return left(findResult.value);
 
     const notification = findResult.value;
     if (!notification) {
@@ -21,7 +21,7 @@ export class MarkAsReadUseCase {
     }
 
     const markResult = await this.notificationRepository.markAsRead(notificationId);
-    if (isLeft(markResult)) return left(markResult.value);
+    if (markResult.isLeft()) return left(markResult.value);
 
     return right(undefined);
   }

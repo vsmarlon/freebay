@@ -103,56 +103,25 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                         decoration: BoxDecoration(
                           color: isNew
                               ? AppColors.primaryContainer
-                              : (context.colors.inverseSurface),
+                              : context.textPrimary,
                           border: Border.all(
-                            color: context.textPrimary,
+                            color: isNew
+                                ? AppColors.primaryContainer
+                                : context.textPrimary,
                             width: 1.2,
                           ),
                         ),
                         child: Text(
                           isNew ? 'NOVO' : 'USADO',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 9,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.5,
-                            color: AppColors.white,
+                            color: isNew
+                                ? AppColors.white
+                                : context.surfaceColor,
                           ),
-                        ),
-                      ),
-                    ),
-
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withAlpha(isDark ? 40 : 30),
-                          border: Border.all(color: AppColors.success),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.bolt,
-                              size: 10,
-                              color: AppColors.success,
-                            ),
-                            SizedBox(width: 2),
-                            Text(
-                              '0% TAXA',
-                              style: TextStyle(
-                                fontFamily: AppTypography.headlineFontFamily,
-                                fontSize: 8,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ],
                         ),
                       ),
                     ),
@@ -175,9 +144,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                           color: context.textPrimary,
                           height: 1.2,
                         ),
-                        maxLines: widget.variant == AppCardVariant.compact
-                            ? 1
-                            : 2,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),

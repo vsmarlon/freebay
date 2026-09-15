@@ -26,17 +26,21 @@ describe('GetUnifiedConversationsUseCase', () => {
     mockRepo.countUnreadChatMessages.mockResolvedValue(right({}));
   });
 
-  it('should return empty array when user has no conversations', async () => {
+  it('returns empty array when user has no conversations', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([]));
     mockRepo.findOrdersByUser.mockResolvedValue(right([]));
     mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-1');
     expect(result.isRight()).toBe(true);
-    if (result.isRight()) expect(result.value).toEqual([]);
+    if (result.isRight()) {
+      expect(result.value.items).toEqual([]);
+      expect(result.value.hasMore).toBe(false);
+      expect(result.value.nextCursor).toBeNull();
+    }
   });
 
-  it('should return direct conversations mapped correctly', async () => {
+  it('returns direct conversations mapped correctly', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
@@ -58,14 +62,14 @@ describe('GetUnifiedConversationsUseCase', () => {
     const result = await sut.execute('user-1');
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value).toHaveLength(1);
-      expect(result.value[0].id).toBe('dc-1');
-      expect(result.value[0].threadType).toBe('DIRECT');
-      expect(result.value[0].otherUser.displayName).toBe('Alice');
+      expect(result.value.items).toHaveLength(1);
+      expect(result.value.items[0].id).toBe('dc-1');
+      expect(result.value.items[0].threadType).toBe('DIRECT');
+      expect(result.value.items[0].otherUser.displayName).toBe('Alice');
     }
   });
 
-  it('should return order conversations mapped correctly', async () => {
+  it('returns order conversations mapped correctly', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([]));
     mockRepo.findOrdersByUser.mockResolvedValue(right([
       {
@@ -88,14 +92,14 @@ describe('GetUnifiedConversationsUseCase', () => {
     const result = await sut.execute('user-2');
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value).toHaveLength(1);
-      expect(result.value[0].id).toBe('order-1');
-      expect(result.value[0].threadType).toBe('ORDER');
-      expect(result.value[0].otherUser.displayName).toBe('Me');
+      expect(result.value.items).toHaveLength(1);
+      expect(result.value.items[0].id).toBe('order-1');
+      expect(result.value.items[0].threadType).toBe('ORDER');
+      expect(result.value.items[0].otherUser.displayName).toBe('Me');
     }
   });
 
-  it('should return both direct and order conversations', async () => {
+  it('returns both direct and order conversations', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
@@ -127,10 +131,10 @@ describe('GetUnifiedConversationsUseCase', () => {
 
     const result = await sut.execute('user-1');
     expect(result.isRight()).toBe(true);
-    if (result.isRight()) expect(result.value).toHaveLength(2);
+    if (result.isRight()) expect(result.value.items).toHaveLength(2);
   });
 
-  it('should filter by archived flag', async () => {
+  it('filters by archived flag', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
@@ -151,14 +155,14 @@ describe('GetUnifiedConversationsUseCase', () => {
 
     const normal = await sut.execute('user-1');
     expect(normal.isRight()).toBe(true);
-    if (normal.isRight()) expect(normal.value).toHaveLength(0);
+    if (normal.isRight()) expect(normal.value.items).toHaveLength(0);
 
     const archived = await sut.execute('user-1', undefined, true);
     expect(archived.isRight()).toBe(true);
-    if (archived.isRight()) expect(archived.value).toHaveLength(1);
+    if (archived.isRight()) expect(archived.value.items).toHaveLength(1);
   });
 
-  it('should filter by search query', async () => {
+  it('filters by search query', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
         id: 'dc-1',
@@ -193,15 +197,63 @@ describe('GetUnifiedConversationsUseCase', () => {
     const result = await sut.execute('user-1', 'ali');
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value).toHaveLength(1);
-      expect(result.value[0].otherUser.displayName).toBe('Alice');
+      expect(result.value.items).toHaveLength(1);
+      expect(result.value.items[0].otherUser.displayName).toBe('Alice');
     }
 
     const result2 = await sut.execute('user-1', 'tomorrow');
     expect(result2.isRight()).toBe(true);
     if (result2.isRight()) {
-      expect(result2.value).toHaveLength(1);
-      expect(result2.value[0].otherUser.displayName).toBe('Alice');
+      expect(result2.value.items).toHaveLength(1);
+      expect(result2.value.items[0].otherUser.displayName).toBe('Alice');
     }
+  });
+
+  it('paginates with opaque offset cursors', async () => {
+    const convos = Array.from({ length: 25 }, (_, i) => ({
+      id: `dc-${i}`,
+      user1Id: 'user-1',
+      user2Id: `user-${i + 2}`,
+      status: 'ACTIVE',
+      lastMessageAt: new Date(Date.UTC(2026, 5, 20 + (i % 9), i % 24)),
+      createdAt: new Date('2026-06-01'),
+      user1: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
+      user2: { id: `user-${i + 2}`, displayName: `User ${i}`, avatarUrl: null, isVerified: false },
+      messages: [],
+    }));
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right(convos));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
+
+    const page1 = await sut.execute('user-1', undefined, false, { limit: 20 });
+    expect(page1.isRight()).toBe(true);
+    if (page1.isRight()) {
+      expect(page1.value.items).toHaveLength(20);
+      expect(page1.value.hasMore).toBe(true);
+      expect(page1.value.nextCursor).not.toBeNull();
+
+      const page2 = await sut.execute('user-1', undefined, false, {
+        limit: 20,
+        cursor: page1.value.nextCursor ?? undefined,
+      });
+      expect(page2.isRight()).toBe(true);
+      if (page2.isRight()) {
+        expect(page2.value.items).toHaveLength(5);
+        expect(page2.value.hasMore).toBe(false);
+        expect(page2.value.nextCursor).toBeNull();
+        const ids1 = new Set(page1.value.items.map(c => c.id));
+        for (const c of page2.value.items) expect(ids1.has(c.id)).toBe(false);
+      }
+    }
+  });
+
+  it('falls back to the first page on a malformed cursor', async () => {
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([]));
+    mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
+
+    const result = await sut.execute('user-1', undefined, false, { cursor: '!!!' });
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) expect(result.value.items).toEqual([]);
   });
 });

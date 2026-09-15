@@ -23,7 +23,7 @@ describe('RegisterFcmTokenUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should register FCM token successfully', async () => {
+  it('registers FCM token successfully', async () => {
     const result = await sut.execute('user-123', 'fcm-token-123');
 
     expect(result.isRight()).toBe(true);

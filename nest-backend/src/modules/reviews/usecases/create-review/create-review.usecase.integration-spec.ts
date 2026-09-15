@@ -4,7 +4,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { prisma } from '../../../../../test/setup-integration';
 import { UserFactory, ProductFactory, OrderFactory } from '../../../../../test/factories';
 import { createMockConfigService } from '../../../../../test/utils/test-helpers';
-import { isLeft, isRight } from '@/shared/core/either';
+;
 import { ReviewType } from '@prisma/client';
 
 describe('CreateReviewUseCase Integration', () => {
@@ -26,7 +26,7 @@ describe('CreateReviewUseCase Integration', () => {
   });
 
   describe('Business Rules', () => {
-    it('should create buyer review for seller on completed order', async () => {
+    it('creates buyer review for seller on completed order', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -41,8 +41,8 @@ describe('CreateReviewUseCase Integration', () => {
         comment: 'Excelente vendedor!',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const review = result.value;
         expect(review.reviewerId).toBe(buyer.id);
         expect(review.reviewedId).toBe(seller.id);
@@ -53,7 +53,7 @@ describe('CreateReviewUseCase Integration', () => {
       }
     });
 
-    it('should create seller review for buyer on completed order', async () => {
+    it('creates seller review for buyer on completed order', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -68,15 +68,15 @@ describe('CreateReviewUseCase Integration', () => {
         comment: 'Comprador pontual',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const review = result.value;
         expect(review.type).toBe(ReviewType.SELLER_REVIEWING_BUYER);
         expect(review.score).toBe(4);
       }
     });
 
-    it('should update user reputation after creating review', async () => {
+    it('updates user reputation after creating review', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -90,7 +90,7 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const updatedSeller = await prisma.user.findUnique({
         where: { id: seller.id },
@@ -100,7 +100,7 @@ describe('CreateReviewUseCase Integration', () => {
       expect(updatedSeller?.totalReviews).toBe(1);
     });
 
-    it('should calculate correct average reputation with multiple reviews', async () => {
+    it('calculates correct average reputation with multiple reviews', async () => {
       const seller = await userFactory.create();
       const buyer1 = await userFactory.create();
       const buyer2 = await userFactory.create();
@@ -146,7 +146,7 @@ describe('CreateReviewUseCase Integration', () => {
       expect(updatedSeller?.totalReviews).toBe(3);
     });
 
-    it('should reject review if order does not exist', async () => {
+    it('rejects review if order does not exist', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
 
@@ -158,14 +158,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('NOT_FOUND');
         expect(result.value.message).toContain('Order');
       }
     });
 
-    it('should reject review if order is not completed', async () => {
+    it('rejects review if order is not completed', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -179,14 +179,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('INVALID_ORDER_STATE');
         expect(result.value.message).toContain('completo');
       }
     });
 
-    it('should reject duplicate review for same order and type', async () => {
+    it('rejects duplicate review for same order and type', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -208,14 +208,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 4,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('DUPLICATE_REVIEW');
         expect(result.value.message).toContain('já avaliou');
       }
     });
 
-    it('should allow both buyer and seller to review same order', async () => {
+    it('allows both buyer and seller to review same order', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -237,8 +237,8 @@ describe('CreateReviewUseCase Integration', () => {
         score: 4,
       });
 
-      expect(isRight(result1)).toBe(true);
-      expect(isRight(result2)).toBe(true);
+      expect(result1.isRight()).toBe(true);
+      expect(result2.isRight()).toBe(true);
 
       const reviews = await prisma.review.findMany({
         where: { orderId: order.id },
@@ -247,7 +247,7 @@ describe('CreateReviewUseCase Integration', () => {
       expect(reviews).toHaveLength(2);
     });
 
-    it('should reject review with invalid score', async () => {
+    it('rejects review with invalid score', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -261,13 +261,13 @@ describe('CreateReviewUseCase Integration', () => {
         score: 0,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
       }
     });
 
-    it('should allow review without comment', async () => {
+    it('allows review without comment', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -281,14 +281,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const review = result.value;
         expect(review.comment).toBeNull();
       }
     });
 
-    it('should reject review if reviewer is not part of order', async () => {
+    it('rejects review if reviewer is not part of order', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const stranger = await userFactory.create();
@@ -303,14 +303,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('UNAUTHORIZED');
         expect(result.value.message).toContain('não faz parte');
       }
     });
 
-    it('should reject review with comment exceeding 500 characters', async () => {
+    it('rejects review with comment exceeding 500 characters', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -326,14 +326,14 @@ describe('CreateReviewUseCase Integration', () => {
         comment: longComment,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
         expect(result.value.message).toContain('500 caracteres');
       }
     });
 
-    it('should reject if buyer tries to review with wrong reviewedId', async () => {
+    it('rejects if buyer tries to review with wrong reviewedId', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const otherUser = await userFactory.create();
@@ -348,14 +348,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
         expect(result.value.message).toContain('vendedor');
       }
     });
 
-    it('should reject if seller tries to use BUYER_REVIEWING_SELLER type', async () => {
+    it('rejects if seller tries to use BUYER_REVIEWING_SELLER type', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -369,14 +369,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
         expect(result.value.message).toContain('comprador pode avaliar o vendedor');
       }
     });
 
-    it('should reject if seller tries to review with wrong reviewedId', async () => {
+    it('rejects if seller tries to review with wrong reviewedId', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const otherUser = await userFactory.create();
@@ -391,14 +391,14 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
         expect(result.value.message).toContain('comprador');
       }
     });
 
-    it('should reject if buyer tries to use SELLER_REVIEWING_BUYER type', async () => {
+    it('rejects if buyer tries to use SELLER_REVIEWING_BUYER type', async () => {
       const buyer = await userFactory.create();
       const seller = await userFactory.create();
       const product = await productFactory.create(seller.id);
@@ -412,8 +412,8 @@ describe('CreateReviewUseCase Integration', () => {
         score: 5,
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('BAD_REQUEST');
         expect(result.value.message).toContain('vendedor pode avaliar o comprador');
       }

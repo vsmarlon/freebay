@@ -49,7 +49,7 @@ describe('ForwardMessagesUseCase', () => {
     mockBlockRepository.isBlocked.mockResolvedValue(right(false));
   });
 
-  it('should return error when no message IDs provided', async () => {
+  it('returns error when no message IDs provided', async () => {
     const result = await sut.execute({
       userId: 'user-1',
       messageIds: [],
@@ -60,7 +60,7 @@ describe('ForwardMessagesUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
-  it('should return error when no target conversation IDs provided', async () => {
+  it('returns error when no target conversation IDs provided', async () => {
     const result = await sut.execute({
       userId: 'user-1',
       messageIds: ['msg-1'],
@@ -71,7 +71,7 @@ describe('ForwardMessagesUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
-  it('should return error when source messages not found', async () => {
+  it('returns error when source messages not found', async () => {
     mockPrisma.directMessage.findMany.mockResolvedValue([]);
     mockPrisma.chatMessage.findMany.mockResolvedValue([]);
 
@@ -85,7 +85,7 @@ describe('ForwardMessagesUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return error if recipient has blocked user', async () => {
+  it('returns error if recipient has blocked user', async () => {
     mockPrisma.directMessage.findMany.mockResolvedValue([
       { id: 'msg-1', content: 'Hey', type: 'TEXT', attachmentUrl: null, metadata: null, sender: { displayName: 'John' } },
     ]);
@@ -103,7 +103,7 @@ describe('ForwardMessagesUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(ForbiddenError);
   });
 
-  it('should successfully forward messages to target direct conversations', async () => {
+  it('successfully forwards messages to target direct conversations', async () => {
     mockPrisma.directMessage.findMany.mockResolvedValue([
       { id: 'msg-1', content: 'Hello World', type: 'TEXT', attachmentUrl: null, metadata: null, sender: { displayName: 'John' } },
     ]);

@@ -2,29 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/bug_report/presentation/widgets/bug_report_sheet.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
+import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 
 class FeedDrawer extends ConsumerWidget {
   const FeedDrawer({super.key});
 
-  void _closeDrawer(BuildContext context) {
-    final scaffold = Scaffold.maybeOf(context);
+  void _afterDrawer(
+    BuildContext drawerContext,
+    void Function(BuildContext rootContext, GoRouter router) action,
+  ) {
+    final navigator = Navigator.of(drawerContext, rootNavigator: true);
+    final router = GoRouter.of(drawerContext);
+    final scaffold = Scaffold.maybeOf(drawerContext);
     if (scaffold?.isDrawerOpen ?? false) {
       scaffold!.closeDrawer();
     }
-  }
-
-  void _goProfile(BuildContext context) {
-    _closeDrawer(context);
-    context.go('/profile');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigator.mounted) action(navigator.context, router);
+    });
   }
 
   void _confirmLogout(BuildContext context, WidgetRef ref) {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final router = GoRouter.of(context);
     AppDialog.show(
-      context: context,
+      context: navigator.context,
       icon: Icons.logout,
       iconColor: AppColors.error,
       title: 'Sair da conta?',
@@ -32,10 +39,12 @@ class FeedDrawer extends ConsumerWidget {
       dismissText: 'Cancelar',
       okText: 'Sair',
       isError: true,
-      onOk: () {
-        _closeDrawer(context);
-        ref.read(authControllerProvider.notifier).logout();
-        context.go('/login');
+      onOk: () async {
+        if (ref.read(authControllerProvider).isLoading) return;
+        final scaffold = Scaffold.maybeOf(context);
+        if (scaffold?.isDrawerOpen ?? false) scaffold!.closeDrawer();
+        await ref.read(authControllerProvider.notifier).logout();
+        if (navigator.mounted) router.go(AppRoutes.login);
       },
     );
   }
@@ -45,161 +54,190 @@ class FeedDrawer extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
     final user = authState.value;
     final bio = user?.bio;
+    final stats = ref.watch(profileStatsProvider).value;
 
-    return Drawer(
-      elevation: 0,
-      width: MediaQuery.of(context).size.width * 0.78,
-      backgroundColor: context.bgColor,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            right: BorderSide(
-              color: AppColors.primaryContainer.withAlpha(120),
-              width: 2.0,
+    return RepaintBoundary(
+      child: Drawer(
+        elevation: 0,
+        width: MediaQuery.of(context).size.width * 0.78,
+        backgroundColor: Colors.transparent,
+        child: AppBackground(
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                right: BorderSide(
+                  color: AppColors.primaryContainer.withAlpha(120),
+                  width: 2.0,
+                ),
+              ),
             ),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: [
-                    RepaintBoundary(
-                      child: _Header(
-                        name: user?.displayName ?? 'Usuário',
-                        avatarUrl: user?.avatarUrl,
-                        isVerified: user?.isVerified ?? false,
-                        onTap: () => _goProfile(context),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      children: [
+                        RepaintBoundary(
+                          child: _Header(
+                            name: user?.displayName ?? 'Usuário',
+                            avatarUrl: user?.avatarUrl,
+                            isVerified: user?.isVerified ?? false,
+                            onTap: () => _afterDrawer(
+                              context,
+                              (rootContext, router) =>
+                                  router.go(AppRoutes.profile),
+                            ),
+                          ),
+                        ),
+                        RepaintBoundary(
+                          child: _StatsStrip(
+                            followers:
+                                stats?.followersCount ??
+                                user?.followersCount ??
+                                0,
+                            following:
+                                stats?.followingCount ??
+                                user?.followingCount ??
+                                0,
+                            sales: stats?.salesCount ?? user?.salesCount ?? 0,
+                            reputation: user?.reputationScore ?? 0,
+                            onFollowers: () {
+                              _afterDrawer(
+                                context,
+                                (rootContext, router) => router.push(
+                                  AppRoutes.followersWith(user?.id ?? ''),
+                                ),
+                              );
+                            },
+                            onFollowing: () {
+                              _afterDrawer(
+                                context,
+                                (rootContext, router) => router.push(
+                                  AppRoutes.followingWith(user?.id ?? ''),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        if (bio != null && bio.isNotEmpty) _BioBlock(bio: bio),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              MenuListTile(
+                                icon: Icons.grid_view,
+                                label: 'Meus posts',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.profilePosts),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.shopping_bag_outlined,
+                                label: 'Meus anúncios',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.profileProducts),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.bookmark_outline,
+                                label: 'Salvos',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.profileSaved),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.shopping_cart_outlined,
+                                label: 'Carrinho',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.cart),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.receipt_long_outlined,
+                                label: 'Meus pedidos',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.orders),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.account_balance_wallet_outlined,
+                                label: 'Carteira e custódia',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.wallet),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.notifications_outlined,
+                                label: 'Notificações',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.notifications),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.settings_outlined,
+                                label: 'Configurações',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      showProfileSettingsSheet(rootContext),
+                                ),
+                              ),
+                              MenuListTile(
+                                icon: Icons.help_outline,
+                                label: 'Ajuda e suporte',
+                                onTap: () => _afterDrawer(
+                                  context,
+                                  (rootContext, router) =>
+                                      router.push(AppRoutes.faq),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  RepaintBoundary(
+                    child: _Footer(
+                      isDark: ref.watch(isDarkModeProvider),
+                      onToggleTheme: () =>
+                          ref.read(themeModeProvider.notifier).toggleTheme(),
+                      onSettings: () => _afterDrawer(
+                        context,
+                        (rootContext, router) =>
+                            showProfileSettingsSheet(rootContext),
+                      ),
+                      onLogout: () => _confirmLogout(context, ref),
+                      onReportBug: () => _afterDrawer(
+                        context,
+                        (rootContext, router) =>
+                            showBugReportSheet(rootContext),
                       ),
                     ),
-                    RepaintBoundary(
-                      child: _StatsStrip(
-                        followers: user?.followersCount ?? 0,
-                        following: user?.followingCount ?? 0,
-                        sales: user?.salesCount ?? 0,
-                        reputation: user?.reputationScore ?? 0,
-                        onFollowers: () {
-                          _closeDrawer(context);
-                          context.push('/profile/followers');
-                        },
-                        onFollowing: () {
-                          _closeDrawer(context);
-                          context.push('/profile/following');
-                        },
-                      ),
-                    ),
-                    if (bio != null && bio.isNotEmpty) _BioBlock(bio: bio),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          MenuListTile(
-                            icon: Icons.grid_view,
-                            label: 'Meus posts',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/profile/posts');
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.shopping_bag_outlined,
-                            label: 'Meus anúncios',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/profile/products');
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.bookmark_outline,
-                            label: 'Salvos',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/profile/saved');
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.shopping_cart_outlined,
-                            label: 'Carrinho',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/cart');
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.receipt_long_outlined,
-                            label: 'Meus pedidos',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/orders');
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.account_balance_wallet_outlined,
-                            label: 'Carteira e custódia',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/wallet');
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.notifications_outlined,
-                            label: 'Notificações',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/notifications');
-                            },
-                          ),
-                          Container(
-                            height: 1,
-                            color: context.borderColor.withAlpha(40),
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                          MenuListTile(
-                            icon: Icons.settings_outlined,
-                            label: 'Configurações',
-                            onTap: () {
-                              _closeDrawer(context);
-                              showProfileSettingsSheet(context);
-                            },
-                          ),
-                          MenuListTile(
-                            icon: Icons.help_outline,
-                            label: 'Ajuda e suporte',
-                            onTap: () {
-                              _closeDrawer(context);
-                              context.push('/faq');
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              RepaintBoundary(
-                child: _Footer(
-                  isDark: ref.watch(isDarkModeProvider),
-                  onToggleTheme: () =>
-                      ref.read(themeModeProvider.notifier).toggleTheme(),
-                  onSettings: () {
-                    _closeDrawer(context);
-                    showProfileSettingsSheet(context);
-                  },
-                  onLogout: () => _confirmLogout(context, ref),
-                  onReportBug: () {
-                    _closeDrawer(context);
-                    showBugReportSheet(context);
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

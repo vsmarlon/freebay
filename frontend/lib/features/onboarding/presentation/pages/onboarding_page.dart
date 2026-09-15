@@ -34,7 +34,7 @@ const _slides = [
     body:
         'Descubra produtos incríveis direto do feed social, acompanhe seus criadores favoritos e anuncie em segundos.',
     highlights: [
-      '0% TAXA DE ANÚNCIO',
+      'ANUNCIE SEUS PRODUTOS',
       'FEED PERSONALIZADO',
       'ALCANCE LOCAL & GLOBAL',
     ],
@@ -99,7 +99,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     final isLast = _index == _slides.length - 1;
 
     return Scaffold(
-      body: BrutalistBackground(
+      body: AppBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -159,7 +159,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 child: ClipRRect(
                   child: LinearProgressIndicator(
                     value: (_index + 1) / _slides.length,
-                    backgroundColor: Colors.white.withAlpha(30),
+                    backgroundColor: context.borderSoftColor,
                     valueColor: const AlwaysStoppedAnimation(
                       AppColors.primaryContainer,
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
@@ -74,7 +75,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (success) {
-        context.go('/login');
+        context.go(AppRoutes.login);
       } else {
         setState(() {
           _errorMessage = 'Código inválido ou expirado. Tente novamente.';
@@ -85,7 +86,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BrutalistBackground(
+    return AppBackground(
       child: SafeArea(
         child: Column(
           children: [

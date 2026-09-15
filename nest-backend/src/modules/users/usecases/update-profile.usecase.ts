@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { UserResponse, toUserResponse } from '../mappers/user.mapper';
@@ -16,14 +16,14 @@ export class UpdateProfileUseCase {
 
     if (input.username) {
       const existingResult = await this.userRepository.findByUsername(input.username);
-      if (isLeft(existingResult)) return left(existingResult.value);
+      if (existingResult.isLeft()) return left(existingResult.value);
       if (existingResult.value && existingResult.value.id !== userId) {
         return left(new UsernameAlreadyExistsError());
       }
     }
 
     const userResult = await this.userRepository.update(userId, updateData);
-    if (isLeft(userResult)) {
+    if (userResult.isLeft()) {
       return left(userResult.value);
     }
     if (!userResult.value) {

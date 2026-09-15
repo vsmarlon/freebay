@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
   BadRequestError,
@@ -27,7 +27,7 @@ export class SuspendUserUseCase {
     }
 
     const existsResult = await this.moderationRepository.userExists(input.targetUserId);
-    if (isLeft(existsResult)) return left(existsResult.value);
+    if (existsResult.isLeft()) return left(existsResult.value);
     if (!existsResult.value) return left(new UserNotFoundError());
 
     const suspensionResult = await this.moderationRepository.setUserSuspension(
@@ -37,7 +37,7 @@ export class SuspendUserUseCase {
         suspensionReason: input.suspend ? (input.reason ?? null) : null,
       },
     );
-    if (isLeft(suspensionResult)) return left(suspensionResult.value);
+    if (suspensionResult.isLeft()) return left(suspensionResult.value);
     if (suspensionResult.value.count === 0) {
       return left(
         new ConflictError(
@@ -57,7 +57,7 @@ export class SuspendUserUseCase {
       action: input.suspend ? 'USER_SUSPENDED' : 'USER_UNSUSPENDED',
       reason: input.reason ?? null,
     });
-    if (isLeft(actionResult)) return left(actionResult.value);
+    if (actionResult.isLeft()) return left(actionResult.value);
 
     return right(undefined);
   }

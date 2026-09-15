@@ -13,6 +13,7 @@ export interface PaymentSessionParams {
   customerName?: string;
   customerTaxId?: string;
   idempotencyKey?: string;
+  transferGroup?: string;
   lineItems?: PaymentLineItem[];
   successUrl: string;
   cancelUrl: string;
@@ -31,6 +32,7 @@ export interface PaymentIntentParams {
   currency: string;
   receiptEmail?: string;
   idempotencyKey?: string;
+  transferGroup?: string;
 }
 
 export interface PaymentIntentResult {

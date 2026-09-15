@@ -32,7 +32,7 @@ describe('DisputeCleanupTask', () => {
     jest.clearAllMocks();
   });
 
-  it('should delegate seller-favor wallet/order mutation to DisputeResolutionExecutionService', async () => {
+  it('delegates seller-favor wallet/order mutation to DisputeResolutionExecutionService', async () => {
     const dispute = { id: 'dispute-1', order: { id: 'order-1', sellerId: 'seller-1', sellerAmount: 9000 } };
     mockPrisma.dispute.findMany.mockResolvedValue([dispute]);
     mockPrisma.$transaction.mockImplementation(async (cb) => {
@@ -55,7 +55,7 @@ describe('DisputeCleanupTask', () => {
     );
   });
 
-  it('should do nothing when no expired disputes', async () => {
+  it('does nothing when no expired disputes', async () => {
     mockPrisma.dispute.findMany.mockResolvedValue([]);
     await sut.cleanupExpiredDisputes();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();

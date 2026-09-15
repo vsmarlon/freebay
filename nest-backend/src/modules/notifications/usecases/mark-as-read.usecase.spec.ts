@@ -28,7 +28,7 @@ describe('MarkAsReadUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should mark notification as read', async () => {
+  it('marks notification as read', async () => {
     mockNotificationRepository.findById.mockResolvedValue(
       right({ id: 'notif-1', userId: 'user-123' }),
     );
@@ -42,7 +42,7 @@ describe('MarkAsReadUseCase', () => {
     expect(mockNotificationRepository.markAsRead).toHaveBeenCalledWith('notif-1');
   });
 
-  it('should return NotFoundError when notification not found', async () => {
+  it('returns NotFoundError when notification not found', async () => {
     mockNotificationRepository.findById.mockResolvedValue(right(null));
 
     const result = await sut.execute('nonexistent', 'user-123');
@@ -53,7 +53,7 @@ describe('MarkAsReadUseCase', () => {
     }
   });
 
-  it('should return ForbiddenError when user does not own notification', async () => {
+  it('returns ForbiddenError when user does not own notification', async () => {
     mockNotificationRepository.findById.mockResolvedValue(
       right({ id: 'notif-1', userId: 'other-user' }),
     );

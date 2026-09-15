@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { UpdateFcmTokenInput } from '../dtos/user.dto';
@@ -22,7 +22,7 @@ export class UpdateFcmTokenUseCase {
     }
 
     const userResult = await this.userRepository.update(input.userId, updateData);
-    if (isLeft(userResult)) {
+    if (userResult.isLeft()) {
       return left(userResult.value);
     }
 

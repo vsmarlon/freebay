@@ -26,7 +26,7 @@ class ReputationStars extends StatelessWidget {
           allowHalfRating: true,
           itemSize: size,
           ignoreGestures: true,
-          unratedColor: AppColors.mediumGray.withAlpha(128),
+          unratedColor: context.textSecondary.withAlpha(128),
           itemBuilder: (context, _) =>
               const Icon(Icons.star, color: AppColors.warning),
           onRatingUpdate: (_) {},
@@ -37,7 +37,7 @@ class ReputationStars extends StatelessWidget {
             '($reviewCount)',
             style: TextStyle(
               fontSize: size * 0.75,
-              color: AppColors.mediumGray,
+              color: context.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),

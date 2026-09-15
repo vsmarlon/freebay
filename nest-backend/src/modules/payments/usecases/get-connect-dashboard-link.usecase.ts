@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError, NotFoundError } from '@/shared/core/errors';
 import { StripeProvider } from '../providers/stripe-provider';
 import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
 
@@ -13,14 +13,10 @@ export class GetConnectDashboardLinkUseCase {
 
   async execute(userId: string): Promise<Either<AppError, { dashboardUrl: string }>> {
     const stored = await this.connectRepo.findByUserId(userId);
-    if (isLeft(stored)) return left(stored.value);
+    if (stored.isLeft()) return left(stored.value);
     if (!stored.value) return left(new NotFoundError('Connect account'));
-    if (!stored.value.detailsSubmitted) {
-      return left(new BadRequestError('Conclua o cadastro de recebimentos antes de abrir o painel'));
-    }
-
     const link = await this.stripe.createDashboardLink(stored.value.stripeAccountId);
-    if (isLeft(link)) return left(link.value);
+    if (link.isLeft()) return left(link.value);
 
     return right({ dashboardUrl: link.value });
   }

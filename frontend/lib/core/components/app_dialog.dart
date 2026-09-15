@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,11 +12,12 @@ class AppDialog extends StatelessWidget {
   final String? subtitle;
   final String? dismissText;
   final String? okText;
-  final VoidCallback? onDismiss;
-  final VoidCallback? onOk;
+  final FutureOr<void> Function()? onDismiss;
+  final FutureOr<void> Function()? onOk;
   final bool isError;
   final bool isSuccess;
   final bool showCloseButton;
+  final bool preventBack;
   final List<Widget>? customActions;
 
   const AppDialog({
@@ -32,6 +34,7 @@ class AppDialog extends StatelessWidget {
     this.isError = false,
     this.isSuccess = false,
     this.showCloseButton = false,
+    this.preventBack = false,
     this.customActions,
   });
 
@@ -44,13 +47,14 @@ class AppDialog extends StatelessWidget {
     String? subtitle,
     String? dismissText,
     String? okText,
-    VoidCallback? onDismiss,
-    VoidCallback? onOk,
+    FutureOr<void> Function()? onDismiss,
+    FutureOr<void> Function()? onOk,
     bool isError = false,
     bool isSuccess = false,
     bool showCloseButton = false,
     List<Widget>? customActions,
     bool barrierDismissible = true,
+    bool preventBack = false,
   }) {
     return showGeneralDialog<T>(
       context: context,
@@ -72,6 +76,7 @@ class AppDialog extends StatelessWidget {
           isError: isError,
           isSuccess: isSuccess,
           showCloseButton: showCloseButton,
+          preventBack: preventBack,
           customActions: customActions,
         );
       },
@@ -99,7 +104,11 @@ class AppDialog extends StatelessWidget {
     required String title,
     String? subtitle,
     String okText = 'Entendi',
-    VoidCallback? onOk,
+    FutureOr<void> Function()? onOk,
+    String? dismissText,
+    FutureOr<void> Function()? onDismiss,
+    bool barrierDismissible = true,
+    bool preventBack = false,
   }) {
     return show<T>(
       context: context,
@@ -107,6 +116,10 @@ class AppDialog extends StatelessWidget {
       subtitle: subtitle,
       okText: okText,
       onOk: onOk,
+      dismissText: dismissText,
+      onDismiss: onDismiss,
+      barrierDismissible: barrierDismissible,
+      preventBack: preventBack,
       isError: true,
       icon: Icons.error_outline,
       iconColor: AppColors.error,
@@ -138,40 +151,43 @@ class AppDialog extends StatelessWidget {
     final backgroundColor = context.surfaceColor;
     final borderColor = AppColors.onSurface;
 
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 32),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              border: Border.all(color: borderColor, width: 2),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildTopBorder(),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (showCloseButton) _buildCloseButton(context),
-                      if (icon != null) ...[_buildIcon(isDark), Spacing.vMd],
-                      _buildTitle(context),
-                      if (subtitle != null) ...[
-                        Spacing.vSm,
-                        _buildSubtitle(isDark),
+    return PopScope(
+      canPop: !preventBack,
+      child: Center(
+        child: Material(
+          color: Colors.transparent,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                border: Border.all(color: borderColor, width: 2),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildTopBorder(),
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showCloseButton) _buildCloseButton(context),
+                        if (icon != null) ...[_buildIcon(isDark), Spacing.vMd],
+                        _buildTitle(context),
+                        if (subtitle != null) ...[
+                          Spacing.vSm,
+                          _buildSubtitle(isDark),
+                        ],
+                        Spacing.vLg,
+                        _buildActions(context, isDark),
                       ],
-                      Spacing.vLg,
-                      _buildActions(context, isDark),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -250,35 +266,33 @@ class AppDialog extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Row(
+    // ponytail: stacked full-width on purpose — side-by-side Expanded buttons
+    // end up with different heights when one label wraps to two lines.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (hasDismiss) ...[
-          Expanded(
-            child: _buildButton(
-              context: context,
-              text: dismissText!,
-              onPressed: () {
-                Navigator.of(context).pop();
-                onDismiss?.call();
-              },
-              isPrimary: false,
-            ),
+          _buildButton(
+            context: context,
+            text: dismissText!,
+            onPressed: () {
+              return onDismiss?.call();
+            },
+            isPrimary: false,
           ),
-          if (hasOk) const SizedBox(width: 12),
+          if (hasOk) const SizedBox(height: 12),
         ],
         if (hasOk)
-          Expanded(
-            child: _buildButton(
-              context: context,
-              text: okText!,
-              onPressed: () {
-                Navigator.of(context).pop();
-                onOk?.call();
-              },
-              isPrimary: true,
-              isError: isError,
-              isSuccess: isSuccess,
-            ),
+          _buildButton(
+            context: context,
+            text: okText!,
+            onPressed: () {
+              return onOk?.call();
+            },
+            isPrimary: true,
+            isError: isError,
+            isSuccess: isSuccess,
           ),
       ],
     );
@@ -287,7 +301,7 @@ class AppDialog extends StatelessWidget {
   Widget _buildButton({
     required BuildContext context,
     required String text,
-    required VoidCallback onPressed,
+    required FutureOr<void> Function() onPressed,
     required bool isPrimary,
     bool isError = false,
     bool isSuccess = false,
@@ -315,9 +329,10 @@ class AppDialog extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         HapticFeedback.lightImpact();
-        onPressed();
+        await onPressed();
+        if (context.mounted) Navigator.of(context).pop();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),

@@ -85,7 +85,7 @@ class BrutalistSheetScaffold extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: dragHandleColor ?? AppColors.mediumGray.withAlpha(77),
+                  color: dragHandleColor ?? context.textSecondary.withAlpha(77),
                 ),
               ),
             ),

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { PrismaFollowRepository } from '../data/repositories/follow-database.repository';
@@ -21,7 +21,7 @@ export class FollowUserUseCase {
     }
 
     const targetResult = await this.userRepository.findById(input.followingId);
-    if (isLeft(targetResult)) {
+    if (targetResult.isLeft()) {
       return left(targetResult.value);
     }
     if (!targetResult.value) {
@@ -32,7 +32,7 @@ export class FollowUserUseCase {
     if (followResult.isLeft()) return left(followResult.value);
 
     const followerResult = await this.userRepository.findById(input.followerId);
-    if (!isLeft(followerResult) && followerResult.value) {
+    if (!followerResult.isLeft() && followerResult.value) {
       await this.notificationService.notifyNewFollower(input.followingId, followerResult.value.displayName);
     }
 

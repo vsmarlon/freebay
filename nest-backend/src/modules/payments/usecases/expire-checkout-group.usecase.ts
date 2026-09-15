@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
@@ -27,11 +27,11 @@ export class ExpireCheckoutGroupUseCase {
     let ordersReclaimed = 0;
 
     const groupIdsResult = await this.paymentGroupRepo.findExpiredGroupIds(now);
-    if (isLeft(groupIdsResult)) return left(groupIdsResult.value);
+    if (groupIdsResult.isLeft()) return left(groupIdsResult.value);
 
     for (const groupId of groupIdsResult.value) {
       const groupResult = await this.paymentGroupRepo.findById(groupId);
-      if (isLeft(groupResult) || !groupResult.value) {
+      if (groupResult.isLeft() || !groupResult.value) {
         this.logger.error(`Failed to load expired payment group ${groupId}`);
         continue;
       }
@@ -45,7 +45,7 @@ export class ExpireCheckoutGroupUseCase {
           let count = 0;
           for (const order of group.orders) {
             const failed = await this.transactionRepo.markAsFailed(order.transactionId, tx);
-            if (isLeft(failed)) throw new Error(failed.value.message);
+            if (failed.isLeft()) throw new Error(failed.value.message);
             if (failed.value.count === 0) continue;
 
             await this.orderRepo.cancel(order.orderId, tx);
@@ -67,13 +67,13 @@ export class ExpireCheckoutGroupUseCase {
     }
 
     const soloResult = await this.transactionRepo.findExpiredPending(now);
-    if (isLeft(soloResult)) return left(soloResult.value);
+    if (soloResult.isLeft()) return left(soloResult.value);
 
     for (const transaction of soloResult.value) {
       try {
         const reclaimed = await this.prisma.$transaction(async (tx) => {
           const failed = await this.transactionRepo.markAsFailed(transaction.id, tx);
-          if (isLeft(failed)) throw new Error(failed.value.message);
+          if (failed.isLeft()) throw new Error(failed.value.message);
           if (failed.value.count === 0) return 0;
 
           await this.orderRepo.cancel(transaction.orderId, tx);

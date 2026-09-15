@@ -8,13 +8,19 @@ class AppLink {
       case 'wallet':
         return AppRoutes.wallet;
       case 'chat':
-        return _withId(AppRoutes.chat, data['conversationId'], '/chat');
+        return data['conversationId']?.toString().isNotEmpty == true
+            ? AppRoutes.chatPath(data['conversationId'].toString())
+            : AppRoutes.chat;
       case 'profile':
         return AppRoutes.profile;
       case 'orders':
-        return _withId(AppRoutes.orders, data['orderId'], '/orders');
+        return data['orderId']?.toString().isNotEmpty == true
+            ? AppRoutes.orderPath(data['orderId'].toString())
+            : AppRoutes.orders;
       case 'disputes':
-        return _withId(AppRoutes.disputes, data['disputeId'], '/disputes');
+        return data['disputeId']?.toString().isNotEmpty == true
+            ? AppRoutes.disputePath(data['disputeId'].toString())
+            : AppRoutes.disputes;
       default:
         return AppRoutes.notifications;
     }
@@ -35,30 +41,30 @@ class AppLink {
         return '${AppRoutes.resetPassword}$query';
       case 'products':
         return segments.length > 1
-            ? '/products/${segments[1]}'
+            ? AppRoutes.productPath(segments[1])
             : AppRoutes.explore;
       case 'post':
-        return segments.length > 1 ? '/post/${segments[1]}' : AppRoutes.feed;
+        return segments.length > 1
+            ? AppRoutes.postPath(segments[1])
+            : AppRoutes.feed;
       case 'user':
-        return segments.length > 1 ? '/user/${segments[1]}' : AppRoutes.profile;
+        return segments.length > 1
+            ? AppRoutes.userPath(segments[1])
+            : AppRoutes.profile;
       case 'orders':
         return segments.length > 1
-            ? '/orders/${segments[1]}'
+            ? AppRoutes.orderPath(segments[1])
             : AppRoutes.orders;
       case 'chat':
-        return segments.length > 1 ? '/chat/${segments[1]}' : AppRoutes.chat;
+        return segments.length > 1
+            ? AppRoutes.chatPath(segments[1])
+            : AppRoutes.chat;
       case 'disputes':
         return segments.length > 1
-            ? '/disputes/${segments[1]}'
+            ? AppRoutes.disputePath(segments[1])
             : AppRoutes.disputes;
       default:
         return null;
     }
-  }
-
-  static String _withId(String fallback, Object? id, String prefix) {
-    final value = id?.toString();
-    if (value == null || value.isEmpty) return fallback;
-    return '$prefix/$value';
   }
 }

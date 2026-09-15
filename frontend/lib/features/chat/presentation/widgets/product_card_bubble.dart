@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 /// Renders a PRODUCT_CARD message bubble inside the chat.
 ///
@@ -31,7 +32,7 @@ class ProductCardBubble extends StatelessWidget {
 
     return GestureDetector(
       onTap: productId.isNotEmpty
-          ? () => context.push('/products/$productId')
+          ? () => context.push(AppRoutes.productPath(productId))
           : null,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 240),
@@ -57,11 +58,11 @@ class ProductCardBubble extends StatelessWidget {
                     errorBuilder: (_, _, _) => Container(
                       height: 150,
                       color: context.surfaceMidColor,
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.image_outlined,
                           size: 32,
-                          color: AppColors.mediumGray,
+                          color: context.textSecondary,
                         ),
                       ),
                     ),

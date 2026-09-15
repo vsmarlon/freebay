@@ -134,145 +134,150 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final profileAsync = ref.watch(profileFutureProvider('me'));
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'EDITAR PERFIL',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
-            ),
-            actions: [
-              InkWell(
-                onTap: _isLoading ? null : _saveProfile,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: _isLoading
-                      ? const ShimmerBlock(width: 80, height: 80)
-                      : const Text(
-                          'Salvar',
-                          style: TextStyle(
-                            color: AppColors.primaryContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'EDITAR PERFIL',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
               ),
-            ],
-            breadcrumbs: context.breadcrumbs,
-          ),
-          Expanded(
-            child: profileAsync.when(
-              data: (_) => SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Spacing.vMd,
-                      AppTextField(
-                        controller: _displayNameController,
-                        label: 'Nome',
-                        hint: 'Seu nome',
-                        maxLength: 50,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Nome é obrigatório';
-                          }
-                          if (value.trim().length < 2) {
-                            return 'Nome deve ter pelo menos 2 caracteres';
-                          }
-                          return null;
-                        },
-                      ),
-                      Spacing.vLg,
-                      UsernameField(
-                        controller: _usernameController,
-                        initialUsername: _originalUsername,
-                      ),
-                      Spacing.vLg,
-                      AppTextField(
-                        controller: _bioController,
-                        label: 'Bio',
-                        hint: 'Conte um pouco sobre você',
-                        maxLines: 3,
-                        maxLength: 150,
-                      ),
-                      Spacing.vLg,
-                      AppTextField(
-                        controller: _cityController,
-                        label: 'Cidade',
-                        hint: 'Sua cidade',
-                      ),
-                      Spacing.vLg,
-                      AppTextField(
-                        controller: _stateController,
-                        label: 'Estado',
-                        hint: 'Seu estado',
-                      ),
-                      Spacing.vLg,
-                      AppTextField(
-                        controller: _cpfController,
-                        label: 'CPF / CNPJ',
-                        hint:
-                            'Digite seu CPF (11 dígitos) ou CNPJ (14 dígitos)',
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'[\d\-./*]'),
+              actions: [
+                InkWell(
+                  onTap: _isLoading ? null : _saveProfile,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: _isLoading
+                        ? const ShimmerBlock(width: 80, height: 80)
+                        : const Text(
+                            'Salvar',
+                            style: TextStyle(
+                              color: AppColors.primaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          LengthLimitingTextInputFormatter(18),
-                        ],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return null;
-                          if (value == _originalMaskedCpf) return null;
+                  ),
+                ),
+              ],
+              breadcrumbs: context.breadcrumbs,
+            ),
+            Expanded(
+              child: profileAsync.when(
+                data: (_) => SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Spacing.vMd,
+                        AppTextField(
+                          controller: _displayNameController,
+                          label: 'Nome',
+                          hint: 'Seu nome',
+                          maxLength: 50,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Nome é obrigatório';
+                            }
+                            if (value.trim().length < 2) {
+                              return 'Nome deve ter pelo menos 2 caracteres';
+                            }
+                            if (!ValueUtils.validateDisplayName(value)) {
+                              return 'Nome contém caracteres inválidos';
+                            }
+                            return null;
+                          },
+                        ),
+                        Spacing.vLg,
+                        UsernameField(
+                          controller: _usernameController,
+                          initialUsername: _originalUsername,
+                        ),
+                        Spacing.vLg,
+                        AppTextField(
+                          controller: _bioController,
+                          label: 'Bio',
+                          hint: 'Conte um pouco sobre você',
+                          maxLines: 3,
+                          maxLength: 150,
+                        ),
+                        Spacing.vLg,
+                        AppTextField(
+                          controller: _cityController,
+                          label: 'Cidade',
+                          hint: 'Sua cidade',
+                        ),
+                        Spacing.vLg,
+                        AppTextField(
+                          controller: _stateController,
+                          label: 'Estado',
+                          hint: 'Seu estado',
+                        ),
+                        Spacing.vLg,
+                        AppTextField(
+                          controller: _cpfController,
+                          label: 'CPF / CNPJ',
+                          hint:
+                              'Digite seu CPF (11 dígitos) ou CNPJ (14 dígitos)',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[\d\-./*]'),
+                            ),
+                            LengthLimitingTextInputFormatter(18),
+                          ],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) return null;
+                            if (value == _originalMaskedCpf) return null;
 
-                          final digits = value.replaceAll(RegExp(r'\D'), '');
-                          if (digits.length == 11) {
-                            if (!ValueUtils.validateCPF(digits)) {
-                              return 'CPF inválido';
+                            final digits = value.replaceAll(RegExp(r'\D'), '');
+                            if (digits.length == 11) {
+                              if (!ValueUtils.validateCPF(digits)) {
+                                return 'CPF inválido';
+                              }
+                            } else if (digits.length == 14) {
+                              if (!ValueUtils.validateCNPJ(digits)) {
+                                return 'CNPJ inválido';
+                              }
+                            } else {
+                              return 'CPF deve ter 11 dígitos, CNPJ 14 dígitos';
                             }
-                          } else if (digits.length == 14) {
-                            if (!ValueUtils.validateCNPJ(digits)) {
-                              return 'CNPJ inválido';
-                            }
-                          } else {
-                            return 'CPF deve ter 11 dígitos, CNPJ 14 dígitos';
-                          }
-                          return null;
-                        },
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                loading: () =>
+                    const Center(child: ShimmerBlock(width: 20, height: 20)),
+                error: (err, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: AppColors.error,
+                      ),
+                      Spacing.vMd,
+                      Text(
+                        'Erro ao carregar perfil',
+                        style: TextStyle(color: context.textPrimary),
                       ),
                     ],
                   ),
                 ),
               ),
-              loading: () =>
-                  const Center(child: ShimmerBlock(width: 20, height: 20)),
-              error: (err, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: AppColors.error,
-                    ),
-                    Spacing.vMd,
-                    Text(
-                      'Erro ao carregar perfil',
-                      style: TextStyle(color: context.textPrimary),
-                    ),
-                  ],
-                ),
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

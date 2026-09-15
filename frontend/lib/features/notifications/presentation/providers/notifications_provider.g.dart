@@ -43,7 +43,7 @@ final class NotificationsProvider
   }
 }
 
-String _$notificationsHash() => r'4a0bb907ee5c95bb5653c6a1135e073748b343fc';
+String _$notificationsHash() => r'6534a7bccedbbbb4a7e2bb12a643a96d96b6e746';
 
 abstract class _$Notifications
     extends $Notifier<AsyncValue<List<NotificationEntity>>> {

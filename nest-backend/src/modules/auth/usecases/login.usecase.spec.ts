@@ -18,11 +18,7 @@ describe('LoginUseCase', () => {
     sut = new LoginUseCase(mockUserRepository as UserDatabaseRepository);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should return error if user not found', async () => {
+  it('returns error if user not found', async () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right(null));
 
     const input = { email: 'notfound@example.com', password: 'password123' };
@@ -34,7 +30,7 @@ describe('LoginUseCase', () => {
     }
   });
 
-  it('should return error if password does not match', async () => {
+  it('returns error if password does not match', async () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'user-123',
       email: 'john@example.com',
@@ -52,7 +48,7 @@ describe('LoginUseCase', () => {
     }
   });
 
-  it('should return user data on successful login', async () => {
+  it('returns user data on successful login', async () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'user-123',
       email: 'john@example.com',

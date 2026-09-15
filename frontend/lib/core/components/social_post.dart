@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/components/post_actions.dart';
+import 'package:freebay/core/components/app_image_viewer.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/utils/time_utils.dart';
@@ -9,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/components/brutalist_highlighted_text.dart';
 import 'package:freebay/core/components/brutalist_safe_link_dialog.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class SocialPost extends StatefulWidget {
   final String userId;
@@ -31,6 +33,7 @@ class SocialPost extends StatefulWidget {
   final VoidCallback? onUserTap;
 
   final double? price;
+  final bool isSelling;
   final String? userRole;
   final bool isVerified;
   final DateTime? createdAt;
@@ -56,6 +59,7 @@ class SocialPost extends StatefulWidget {
     this.onTap,
     this.onUserTap,
     this.price,
+    this.isSelling = false,
     this.userRole,
     this.isVerified = false,
     this.createdAt,
@@ -119,32 +123,19 @@ class _SocialPostState extends State<SocialPost> {
             ),
           );
         },
-        onShareAsPost: () {
-          Navigator.pop(context);
-          widget.onShare?.call();
-        },
+        onShareAsPost: widget.onShare == null
+            ? null
+            : () {
+                Navigator.pop(context);
+                widget.onShare?.call();
+              },
       ),
     );
   }
 
   void _openFullScreenImage() {
     if (widget.imageUrl == null || widget.imageUrl!.isEmpty) return;
-
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: AppColors.onSurface.withValues(alpha: 0.87),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return PostFullScreenImage(
-            imageUrl: widget.imageUrl!,
-            onClose: () => Navigator.of(context).pop(),
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
-    );
+    showAppImageViewer(context, widget.imageUrl!);
   }
 
   @override
@@ -167,7 +158,7 @@ class _SocialPostState extends State<SocialPost> {
           color: context.surfaceColor,
           border: Border.all(color: context.borderColor, width: 2),
         ),
-        child: hasImage
+        child: hasImage || widget.isSelling
             ? _buildProductLayout(context)
             : _buildTextLayout(context),
       ),
@@ -199,23 +190,33 @@ class _SocialPostState extends State<SocialPost> {
                       : Matrix4.identity(),
                   child: Container(
                     color: context.surfaceMidColor,
-                    child: CachedNetworkImage(
-                      imageUrl: widget.imageUrl!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      memCacheWidth: 1080,
-                      placeholder: (context, url) =>
-                          Container(color: context.surfaceMidColor),
-                      errorWidget: (context, error, stackTrace) => Container(
-                        color: context.surfaceMidColor,
-                        child: Icon(
-                          Icons.image,
-                          color: context.textSecondary,
-                          size: 48,
-                        ),
-                      ),
-                    ),
+                    child: widget.imageUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: widget.imageUrl!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            memCacheWidth: 1080,
+                            placeholder: (context, url) =>
+                                Container(color: context.surfaceMidColor),
+                            errorWidget: (context, error, stackTrace) =>
+                                Container(
+                                  color: context.surfaceMidColor,
+                                  child: Icon(
+                                    Icons.image,
+                                    color: context.textSecondary,
+                                    size: 48,
+                                  ),
+                                ),
+                          )
+                        : Center(
+                            child: Text(
+                              'VENDA',
+                              style: AppTypography.h2.copyWith(
+                                color: context.textSecondary,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -283,10 +284,10 @@ class _SocialPostState extends State<SocialPost> {
             onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
             onMentionTap: (mention) {
               final username = mention.replaceFirst('@', '');
-              context.push('/people/search?q=${Uri.encodeComponent(username)}');
+              context.push(AppRoutes.peopleSearchWith(username));
             },
             onHashtagTap: (tag) {
-              context.push('/posts/search?q=${Uri.encodeComponent(tag)}');
+              context.push(AppRoutes.postSearchWith(tag));
             },
           ),
         ),
@@ -390,7 +391,7 @@ class _SocialPostState extends State<SocialPost> {
               ],
             ),
           ),
-          _PostTypePill(isProduct: widget.price != null && widget.price! > 0),
+          _PostTypePill(isProduct: widget.isSelling),
         ],
       ),
     );
@@ -412,10 +413,10 @@ class _SocialPostState extends State<SocialPost> {
             onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
             onMentionTap: (mention) {
               final username = mention.replaceFirst('@', '');
-              context.push('/people/search?q=${Uri.encodeComponent(username)}');
+              context.push(AppRoutes.peopleSearchWith(username));
             },
             onHashtagTap: (tag) {
-              context.push('/posts/search?q=${Uri.encodeComponent(tag)}');
+              context.push(AppRoutes.postSearchWith(tag));
             },
           ),
         ),

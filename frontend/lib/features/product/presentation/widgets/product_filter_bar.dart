@@ -5,7 +5,7 @@ import 'package:freebay/features/product/domain/product_filters.dart';
 
 const _priceDivisions = 50;
 
-class ProductFilterBar extends StatelessWidget {
+class ProductFilterBar extends StatefulWidget {
   final ProductSort sort;
   final ProductCondition? condition;
   final RangeValues? priceRange;
@@ -24,10 +24,33 @@ class ProductFilterBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final range =
-        priceRange ?? const RangeValues(0, ProductFilterLimits.maxPriceReais);
+  State<ProductFilterBar> createState() => _ProductFilterBarState();
+}
 
+class _ProductFilterBarState extends State<ProductFilterBar> {
+  late RangeValues _draftRange;
+
+  RangeValues get _fullRange =>
+      const RangeValues(0, ProductFilterLimits.maxPriceReais);
+
+  RangeValues get _appliedRange => widget.priceRange ?? _fullRange;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftRange = _appliedRange;
+  }
+
+  @override
+  void didUpdateWidget(ProductFilterBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.priceRange != oldWidget.priceRange) {
+      _draftRange = _appliedRange;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       color: context.isDark
@@ -46,8 +69,8 @@ class ProductFilterBar extends StatelessWidget {
                 for (final option in ProductSort.values) ...[
                   BrutalistFilterChip(
                     label: option.label,
-                    selected: sort == option,
-                    onTap: () => onSortChanged(option),
+                    selected: widget.sort == option,
+                    onTap: () => widget.onSortChanged(option),
                   ),
                   Spacing.hSm,
                 ],
@@ -61,15 +84,15 @@ class ProductFilterBar extends StatelessWidget {
             children: [
               BrutalistFilterChip(
                 label: 'Todos',
-                selected: condition == null,
-                onTap: () => onConditionChanged(null),
+                selected: widget.condition == null,
+                onTap: () => widget.onConditionChanged(null),
               ),
               Spacing.hSm,
               for (final option in ProductCondition.values) ...[
                 BrutalistFilterChip(
                   label: option.label,
-                  selected: condition == option,
-                  onTap: () => onConditionChanged(option),
+                  selected: widget.condition == option,
+                  onTap: () => widget.onConditionChanged(option),
                 ),
                 Spacing.hSm,
               ],
@@ -81,9 +104,9 @@ class ProductFilterBar extends StatelessWidget {
             children: [
               const EyebrowLabel('Preço'),
               Text(
-                '${CurrencyUtils.formatReais(range.start)} — '
-                '${CurrencyUtils.formatReais(range.end)}'
-                '${range.end >= ProductFilterLimits.maxPriceReais ? '+' : ''}',
+                '${CurrencyUtils.formatReais(_draftRange.start)} — '
+                '${CurrencyUtils.formatReais(_draftRange.end)}'
+                '${_draftRange.end >= ProductFilterLimits.maxPriceReais ? '+' : ''}',
                 style: TextStyle(
                   fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 13,
@@ -94,21 +117,45 @@ class ProductFilterBar extends StatelessWidget {
             ],
           ),
           RangeSlider(
-            values: range,
+            values: _draftRange,
             max: ProductFilterLimits.maxPriceReais,
             divisions: _priceDivisions,
             activeColor: AppColors.primaryContainer,
-            inactiveColor: AppColors.mediumGray,
+            inactiveColor: context.textSecondary,
             labels: RangeLabels(
-              CurrencyUtils.formatReais(range.start),
-              CurrencyUtils.formatReais(range.end),
+              CurrencyUtils.formatReais(_draftRange.start),
+              CurrencyUtils.formatReais(_draftRange.end),
             ),
             onChanged: (value) {
-              final isFullRange =
-                  value.start == 0 &&
-                  value.end >= ProductFilterLimits.maxPriceReais;
-              onPriceRangeChanged(isFullRange ? null : value);
+              setState(() => _draftRange = value);
             },
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Cancelar',
+                  variant: AppButtonVariant.secondary,
+                  size: AppButtonSize.compact,
+                  onPressed: () => setState(() => _draftRange = _appliedRange),
+                ),
+              ),
+              Spacing.hSm,
+              Expanded(
+                child: AppButton(
+                  label: 'Aplicar',
+                  size: AppButtonSize.compact,
+                  onPressed: () {
+                    final isFullRange =
+                        _draftRange.start == 0 &&
+                        _draftRange.end >= ProductFilterLimits.maxPriceReais;
+                    widget.onPriceRangeChanged(
+                      isFullRange ? null : _draftRange,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),

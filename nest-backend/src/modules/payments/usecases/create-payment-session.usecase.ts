@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
   NotFoundError,
@@ -28,7 +28,7 @@ export class CreatePaymentSessionUseCase {
     input: CreatePaymentSessionInput,
   ): Promise<Either<AppError, CreatePaymentSessionOutput>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
-    if (isLeft(orderResult)) return left(orderResult.value);
+    if (orderResult.isLeft()) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
 
     const order = orderResult.value;
@@ -41,11 +41,11 @@ export class CreatePaymentSessionUseCase {
     }
 
     const userResult = await this.userRepository.findPaymentInfo(input.userId);
-    if (isLeft(userResult)) return left(userResult.value);
+    if (userResult.isLeft()) return left(userResult.value);
 
     const user = userResult.value ?? { displayName: '', email: '', cpf: null };
     const customerName = input.customerName ?? user.displayName;
-    const customerEmail = input.customerEmail ?? user.email;
+    const customerEmail = input.customerEmail?.trim() || user.email?.trim() || undefined;
     const customerTaxId = input.customerTaxId ?? user.cpf;
 
     if (!customerTaxId) {
@@ -57,7 +57,7 @@ export class CreatePaymentSessionUseCase {
     const derivedKey = `session:${input.orderId}`;
 
     const existingResult = await this.transactionRepository.findByOrderId(input.orderId);
-    if (isLeft(existingResult)) return left(existingResult.value);
+    if (existingResult.isLeft()) return left(existingResult.value);
 
     const existingTx = existingResult.value;
 
@@ -90,6 +90,7 @@ export class CreatePaymentSessionUseCase {
       customerName,
       customerTaxId,
       idempotencyKey: derivedKey,
+      transferGroup: `freebay:order:${input.orderId}`,
       successUrl: `${process.env.APP_URL}/payments/success?orderId=${input.orderId}`,
       cancelUrl: `${process.env.APP_URL}/payments/cancel?orderId=${input.orderId}`,
     };
@@ -113,7 +114,7 @@ export class CreatePaymentSessionUseCase {
       checkoutUrl: session.checkoutUrl,
       checkoutExpiresAt: session.expiresAt,
     });
-    if (isLeft(upsertResult)) return left(upsertResult.value);
+    if (upsertResult.isLeft()) return left(upsertResult.value);
 
     return right({
       stripeSessionId: session.stripeSessionId,

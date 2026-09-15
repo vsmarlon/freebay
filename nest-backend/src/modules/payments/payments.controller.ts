@@ -15,11 +15,12 @@ import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.u
 import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
 import { ProcessGroupWebhookUseCase } from './usecases/process-group-webhook.usecase';
-import { ProcessRefundUseCase } from './usecases/process-refund.usecase';
+import { isFullRefund, ProcessRefundUseCase } from './usecases/process-refund.usecase';
 import { StartConnectOnboardingUseCase } from './usecases/start-connect-onboarding.usecase';
 import { GetConnectStatusUseCase } from './usecases/get-connect-status.usecase';
 import { GetConnectDashboardLinkUseCase } from './usecases/get-connect-dashboard-link.usecase';
 import { SyncConnectAccountUseCase } from './usecases/sync-connect-account.usecase';
+import { RecoverDisputeTransferUseCase } from './usecases/recover-dispute-transfer.usecase';
 import {
   ConnectStatusOutput,
   ConnectOnboardingOutput,
@@ -28,9 +29,13 @@ import {
 import { CreatePaymentSessionOutput, CreatePaymentIntentOutput } from './dtos/payment.dto';
 import { right } from '@/shared/core/either';
 import { setContextUserId } from '@/shared/observability/request-context';
+import {
+  StripeWebhookEvent,
+  VerifiedV2AccountWebhookEvent,
+} from './providers/stripe-provider';
 
 interface WebhookRequest {
-  stripeEvent?: Stripe.Event;
+  stripeEvent?: StripeWebhookEvent;
 }
 
 const WHITELIST_EVENTS = [
@@ -42,10 +47,35 @@ const WHITELIST_EVENTS = [
   'payment_intent.canceled',
   'payment_intent.payment_failed',
   'account.updated',
+  'v2.core.account.updated',
+  'v2.core.account.closed',
+  'v2.core.account[configuration.recipient].updated',
+  'v2.core.account[configuration.recipient].capability_status_updated',
+  'v2.core.account[requirements].updated',
+  'v2.core.account[future_requirements].updated',
   'charge.refunded',
   'charge.dispute.created',
   'charge.dispute.closed',
 ];
+
+const V2_ACCOUNT_EVENTS = new Set([
+  'v2.core.account.updated',
+  'v2.core.account.closed',
+  'v2.core.account[configuration.recipient].updated',
+  'v2.core.account[configuration.recipient].capability_status_updated',
+  'v2.core.account[requirements].updated',
+  'v2.core.account[future_requirements].updated',
+]);
+
+function isV2AccountEvent(
+  event: StripeWebhookEvent,
+): event is VerifiedV2AccountWebhookEvent {
+  return (
+    V2_ACCOUNT_EVENTS.has(event.type) &&
+    'related_object' in event &&
+    event.related_object?.type === 'v2.core.account'
+  );
+}
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -62,6 +92,7 @@ export class PaymentsController {
     private readonly getConnectStatusUseCase: GetConnectStatusUseCase,
     private readonly getConnectDashboardLinkUseCase: GetConnectDashboardLinkUseCase,
     private readonly syncConnectAccountUseCase: SyncConnectAccountUseCase,
+    private readonly recoverDisputeTransferUseCase: RecoverDisputeTransferUseCase,
   ) {}
 
   @PostAuth('connect/onboarding', {
@@ -147,21 +178,40 @@ export class PaymentsController {
       return right(undefined);
     }
 
-    if (event.type === 'account.updated' || event.type.startsWith('v2.core.account')) {
+    if (isV2AccountEvent(event)) {
+      return this.syncConnectAccountUseCase.execute(event.related_object.id);
+    }
+
+    if (V2_ACCOUNT_EVENTS.has(event.type)) return right(undefined);
+
+    if (event.type === 'account.updated') {
       const accountId =
         event.account ?? (event.data.object as { id?: string }).id ?? undefined;
       if (!accountId) return right(undefined);
       return this.syncConnectAccountUseCase.execute(accountId);
     }
 
+    if (!('data' in event)) return right(undefined);
+
     if (event.type.startsWith('charge.')) {
       const charge = event.data.object as Stripe.Charge | Stripe.Dispute;
       const chargeId =
         'charge' in charge && typeof charge.charge === 'string' ? charge.charge : charge.id;
       if (event.type === 'charge.refunded') {
-        return this.processRefundUseCase.execute(chargeId);
+        const refund = charge as Stripe.Charge;
+        if (!isFullRefund(refund)) {
+          this.logger.warn(
+            `Ignoring partial Stripe refund event ${event.id} for charge ${chargeId}`,
+          );
+          return right(undefined);
+        }
+        return this.processRefundUseCase.execute(chargeId, true);
       }
-      this.logger.warn(`Dispute event ${event.type} received for charge ${chargeId}`);
+      const dispute = charge as Stripe.Dispute;
+      if (event.type === 'charge.dispute.created' || dispute.status === 'lost') {
+        return this.recoverDisputeTransferUseCase.execute(chargeId);
+      }
+      this.logger.log(`Dispute event ${event.type} for charge ${chargeId} does not require transfer recovery`);
       return right(undefined);
     }
 

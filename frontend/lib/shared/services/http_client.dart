@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/config/app_config.dart';
+import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 
@@ -11,9 +10,6 @@ class LoggingInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (kDebugMode) {
       debugPrint('[HTTP] ${options.method} ${options.uri}');
-      if (options.data != null) {
-        debugPrint('[BODY] ${_prettyJson(options.data)}');
-      }
     }
     handler.next(options);
   }
@@ -24,9 +20,6 @@ class LoggingInterceptor extends Interceptor {
       debugPrint(
         '[HTTP] ${response.statusCode} ${response.requestOptions.uri}',
       );
-      if (response.data != null) {
-        debugPrint('[BODY] ${_prettyJson(response.data)}');
-      }
     }
     handler.next(response);
   }
@@ -43,42 +36,8 @@ class LoggingInterceptor extends Interceptor {
           '[HTTP ERROR HINT] No route to backend. USB/emulador: adb reverse tcp:3000 tcp:3000. Wi-Fi: --dart-define=API_BASE_URL=http://YOUR_LAN_IP:3000',
         );
       }
-      if (err.response?.data != null) {
-        debugPrint('[ERROR_BODY] ${_prettyJson(err.response?.data)}');
-      }
     }
     handler.next(err);
-  }
-
-  dynamic _sanitizeData(dynamic data, [int depth = 0]) {
-    if (depth > 4) return '[NESTED]';
-    if (data is Map) {
-      return data.map(
-        (key, value) => MapEntry(key, _sanitizeData(value, depth + 1)),
-      );
-    } else if (data is List) {
-      if (data.length > 20) {
-        return '[List of ${data.length} items]';
-      }
-      return data.map((item) => _sanitizeData(item, depth + 1)).toList();
-    } else if (data is String) {
-      if (data.startsWith('data:image/')) {
-        return '[IMAGE_DATA_URI, length: ${data.length}]';
-      }
-      if (data.length > 500) {
-        return '${data.substring(0, 100)}... [TRUNCATED, length: ${data.length}]';
-      }
-    }
-    return data;
-  }
-
-  String _prettyJson(dynamic json) {
-    try {
-      final sanitized = _sanitizeData(json);
-      return jsonEncode(sanitized);
-    } catch (_) {
-      return json.toString();
-    }
   }
 }
 
@@ -86,6 +45,28 @@ class LoggingInterceptor extends Interceptor {
 class HttpClient {
   static Dio? _instance;
   static VoidCallback? onAuthLost;
+  static _RefreshFlight? _refreshFlight;
+  static int _sessionGeneration = 0;
+  static bool _refreshSuspended = false;
+  static const _originGenerationKey = 'auth_origin_generation';
+  static const _authRetryKey = 'auth_retry';
+  static const preserveCapturedAuthKey = 'preserve_captured_auth';
+  static const capturedAuthTokenKey = 'captured_auth_token';
+  static const disableRefreshKey = 'disable_refresh';
+
+  static void invalidateSession() {
+    suspendRefresh();
+  }
+
+  static void suspendRefresh() {
+    _sessionGeneration++;
+    _refreshSuspended = true;
+  }
+
+  static void establishSession() {
+    _sessionGeneration++;
+    _refreshSuspended = false;
+  }
 
   static Dio get instance {
     _instance ??= _createDio();
@@ -123,17 +104,45 @@ class HttpClient {
     dio.interceptors.add(
       QueuedInterceptorsWrapper(
         onRequest: (options, handler) async {
+          final captured = options.extra[_originGenerationKey];
+          final generation = captured is int ? captured : _sessionGeneration;
+          options.extra[_originGenerationKey] = generation;
           final token = await StorageService.getToken();
-          if (token != null) {
+          if (options.extra[_authRetryKey] == true && !_isCurrent(generation)) {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.cancel,
+              ),
+            );
+          }
+          final capturedAuth = options.extra[capturedAuthTokenKey];
+          if (options.extra[preserveCapturedAuthKey] == true &&
+              capturedAuth is String) {
+            options.headers['Authorization'] = 'Bearer $capturedAuth';
+          } else if (_isCurrent(generation) &&
+              options.extra[_originGenerationKey] == generation &&
+              token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
         },
         onError: (error, handler) async {
+          final captured = error.requestOptions.extra[_originGenerationKey];
+          final generation = captured is int ? captured : _sessionGeneration;
+
+          if (error.requestOptions.extra[disableRefreshKey] == true) {
+            return handler.next(error);
+          }
+
           if (error.response?.statusCode == 404 &&
               error.requestOptions.path.contains('/users/me')) {
-            await StorageService.clearTokens();
-            onAuthLost?.call();
+            await _notifyAuthLostIfCurrent(generation);
+            return handler.next(error);
+          }
+
+          if (error.response?.statusCode == 401 &&
+              error.requestOptions.path.contains('/auth/biometric-login')) {
             return handler.next(error);
           }
 
@@ -141,37 +150,39 @@ class HttpClient {
               !error.requestOptions.path.contains('/auth/refresh') &&
               !error.requestOptions.path.contains('/auth/login')) {
             final refreshToken = await StorageService.getRefreshToken();
+            if (!_isCurrent(generation)) {
+              return handler.next(error);
+            }
             if (refreshToken != null) {
-              try {
-                final refreshDio = Dio(
-                  BaseOptions(
-                    baseUrl: dio.options.baseUrl,
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer $refreshToken',
-                    },
-                  ),
-                );
-                final response = await refreshDio.post('/auth/refresh');
-                final data = response.data['data'];
-                final newToken = data['token'] as String;
-                final newRefreshToken = data['refreshToken'] as String;
-                await StorageService.saveToken(newToken);
-                await StorageService.saveRefreshToken(newRefreshToken);
+              final refreshed = await _refreshSession(
+                dio,
+                refreshToken,
+                generation,
+              );
+              if (!_isCurrent(generation) || refreshed == null) {
+                return handler.next(error);
+              }
 
-                // Retry original request with new token
-                final opts = error.requestOptions;
-                opts.headers['Authorization'] = 'Bearer $newToken';
+              final opts = error.requestOptions;
+              if (!_isCurrent(generation) ||
+                  opts.extra[_originGenerationKey] != generation) {
+                return handler.next(error);
+              }
+              opts.headers['Authorization'] = 'Bearer ${refreshed.token}';
+              opts.extra[_authRetryKey] = true;
+              try {
                 final retryResponse = await dio.fetch(opts);
+                if (!_isCurrent(generation) ||
+                    opts.extra[_originGenerationKey] != generation) {
+                  return handler.next(error);
+                }
                 return handler.resolve(retryResponse);
               } catch (_) {
-                await StorageService.clearTokens();
-                onAuthLost?.call();
+                await _notifyAuthLostIfCurrent(generation);
                 return handler.next(error);
               }
             }
-            await StorageService.clearTokens();
-            onAuthLost?.call();
+            await _notifyAuthLostIfCurrent(generation);
           }
           handler.next(error);
         },
@@ -180,6 +191,78 @@ class HttpClient {
 
     return dio;
   }
+
+  static Future<_TokenPair?> _refreshSession(
+    Dio dio,
+    String refreshToken,
+    int generation,
+  ) {
+    if (_refreshSuspended || generation != _sessionGeneration) {
+      return Future.value();
+    }
+    final current = _refreshFlight;
+    if (current != null &&
+        current.generation == generation &&
+        current.refreshToken == refreshToken) {
+      return current.future;
+    }
+    final future = _performRefresh(dio, refreshToken, generation);
+    final flight = _RefreshFlight(generation, refreshToken, future);
+    _refreshFlight = flight;
+    return future.whenComplete(() {
+      if (identical(_refreshFlight, flight)) {
+        _refreshFlight = null;
+      }
+    });
+  }
+
+  static Future<_TokenPair?> _performRefresh(
+    Dio dio,
+    String refreshToken,
+    int generation,
+  ) async {
+    try {
+      final refreshDio = Dio(
+        BaseOptions(
+          baseUrl: dio.options.baseUrl,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $refreshToken',
+          },
+        ),
+      );
+      final response = await refreshDio.post('/auth/refresh');
+      final data = response.data['data'];
+      final pair = _TokenPair(
+        data['token'] as String,
+        data['refreshToken'] as String,
+      );
+      if (!_isCurrent(generation)) return null;
+      await StorageService.saveTokenPair(pair.token, pair.refreshToken);
+      if (!_isCurrent(generation)) {
+        await StorageService.clearTokenIf(pair.token);
+        await StorageService.clearRefreshTokenIf(pair.refreshToken);
+        return null;
+      }
+      return pair;
+    } catch (_) {
+      await _notifyAuthLostIfCurrent(generation);
+      return null;
+    }
+  }
+
+  static Future<void> _notifyAuthLostIfCurrent(int expectedGeneration) async {
+    await AuthSessionCoordinator.serialize(() async {
+      if (!_isCurrent(expectedGeneration)) return;
+      _sessionGeneration++;
+      _refreshSuspended = true;
+      await StorageService.clearTokens();
+      onAuthLost?.call();
+    });
+  }
+
+  static bool _isCurrent(int generation) =>
+      generation == _sessionGeneration && !_refreshSuspended;
 
   Future<Response> get(
     String path, {
@@ -250,4 +333,19 @@ class HttpClient {
       options: options,
     );
   }
+}
+
+class _TokenPair {
+  final String token;
+  final String refreshToken;
+
+  const _TokenPair(this.token, this.refreshToken);
+}
+
+class _RefreshFlight {
+  final int generation;
+  final String refreshToken;
+  final Future<_TokenPair?> future;
+
+  const _RefreshFlight(this.generation, this.refreshToken, this.future);
 }

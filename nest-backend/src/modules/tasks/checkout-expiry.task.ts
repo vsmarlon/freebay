@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { isLeft } from '@/shared/core/either';
 import { ExpireCheckoutGroupUseCase } from '@/modules/payments/usecases/expire-checkout-group.usecase';
 
 @Injectable()
@@ -12,7 +11,7 @@ export class CheckoutExpiryTask {
   @Cron(CronExpression.EVERY_10_MINUTES)
   async reclaimAbandonedCheckouts() {
     const result = await this.expireCheckoutGroupUseCase.execute();
-    if (isLeft(result)) {
+    if (result.isLeft()) {
       this.logger.error(`Failed to reclaim abandoned checkouts: ${result.value.message}`);
     }
   }

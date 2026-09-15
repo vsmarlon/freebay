@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class DisputeListPage extends ConsumerStatefulWidget {
   const DisputeListPage({super.key});
@@ -99,18 +100,30 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
                 'Disputa #${dispute.id.split('-').first}',
                 style: AppTypography.bodyMedium,
               ),
-              subtitle: Text(
-                dispute.status.label,
-                style: AppTypography.bodySmall.copyWith(
+              subtitle: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   color: dispute.isOpen
                       ? AppColors.warning
                       : dispute.isResolved
                       ? AppColors.success
-                      : AppColors.onSurfaceVariant,
+                      : context.textSecondary,
+                  child: Text(
+                    dispute.status.label,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/disputes/${dispute.id}'),
+              onTap: () => context.push(AppRoutes.disputePath(dispute.id)),
             ),
           );
         },

@@ -77,7 +77,7 @@ export class CartDatabaseRepository extends BasePrismaRepository {
   async getUserCart(userId: string): RepositoryResponse<CartItemPayload[]> {
     return this.safeRun(async () => {
       const items = await this.prisma.cartItem.findMany({
-        where: { userId, product: { status: 'ACTIVE', deletedAt: null } },
+        where: { userId },
         orderBy: { createdAt: 'desc' },
         include: CART_ITEM_INCLUDE,
       });

@@ -33,6 +33,7 @@ class PostDetailsController {
       },
       (_) {
         textController.clear();
+        _ref.read(postDetailsProvider(postId).notifier).incrementCommentCount();
         _ref.read(postDetailsProvider(postId).notifier).refreshComments();
         _ref.read(feedProvider.notifier).updatePostCommentCount(postId, 1);
         return true;

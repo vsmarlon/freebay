@@ -95,9 +95,9 @@ class _WhoReactedSheetState extends State<WhoReactedSheet> {
                     width: 36,
                     height: 36,
                     color: AppColors.surfaceContainerHighest,
-                    child: const Icon(
+                    child: Icon(
                       Icons.person,
-                      color: AppColors.mediumGray,
+                      color: context.textSecondary,
                       size: 20,
                     ),
                   ),

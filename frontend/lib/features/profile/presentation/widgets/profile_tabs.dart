@@ -2,20 +2,124 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/profile/presentation/providers/user_reposts_provider.dart';
+import 'package:freebay/features/social/data/entities/user_post_entry.dart';
 
-class ProfileTabs extends ConsumerWidget {
+class ProfileTabs extends ConsumerStatefulWidget {
   final UserEntity user;
 
   const ProfileTabs({super.key, required this.user});
 
   @override
+  ConsumerState<ProfileTabs> createState() => _ProfileTabsState();
+}
+
+class _ProfileTabsState extends ConsumerState<ProfileTabs> {
+  int _selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = const ['POSTS', 'REPOSTS'];
+    return Column(
+      children: [
+        Row(
+          children: List.generate(labels.length, (index) {
+            final selected = _selectedIndex == index;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _selectedIndex = index),
+                child: Container(
+                  color: selected ? context.surfaceColor : context.bgColor,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    labels[index],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: selected
+                          ? AppColors.primaryContainer
+                          : context.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+        IndexedStack(
+          index: _selectedIndex,
+          children: [
+            _PostsTab(userId: widget.user.id),
+            _RepostsTab(userId: widget.user.id),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _RepostsTab extends ConsumerWidget {
+  final String userId;
+
+  const _RepostsTab({required this.userId});
+
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return _PostsTab(userId: user.id);
+    final reposts = ref.watch(userRepostsProvider(userId));
+    return reposts.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.all(32),
+        child: ShimmerBlock(height: 120),
+      ),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(32),
+        child: Text('Não foi possível carregar os reposts: $error'),
+      ),
+      data: (entries) => entries.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.all(32),
+              child: Text('Nenhum repost ainda'),
+            )
+          : GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entries.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 2,
+                crossAxisSpacing: 2,
+              ),
+              itemBuilder: (context, index) =>
+                  _RepostGridTile(entry: entries[index]),
+            ),
+    );
+  }
+}
+
+class _RepostGridTile extends StatelessWidget {
+  final UserPostEntry entry;
+
+  const _RepostGridTile({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _PostGridTile(post: entry.toPostEntity()),
+        const Positioned(
+          right: 4,
+          bottom: 4,
+          child: Icon(Icons.repeat, color: AppColors.onPrimary, size: 18),
+        ),
+      ],
+    );
   }
 }
 
@@ -87,7 +191,7 @@ class _PostsTab extends ConsumerWidget {
                 AppButton(
                   label: 'Criar post',
                   size: AppButtonSize.compact,
-                  onPressed: () => context.push('/create-story'),
+                  onPressed: () => context.push(AppRoutes.createStory),
                 ),
               ],
             ],
@@ -125,7 +229,7 @@ class _PostGridTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/post/${post.id}'),
+      onTap: () => context.push(AppRoutes.postPath(post.id)),
       child: Container(
         decoration: const BoxDecoration(color: AppColors.surfaceContainer),
         child: post.imageUrl != null

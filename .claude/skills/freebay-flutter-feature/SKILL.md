@@ -60,6 +60,8 @@ abstract class MyEntityRepository {
 
 ### 3. Concrete repository (`data/repositories/`)
 
+> **Rule**: Frontend repositories **MUST ONLY call HTTP endpoints** (via `HttpClient` / Dio). They never access databases directly.
+
 Use the shared `http_client` from `shared/services/http_client.dart` (Dio-based):
 
 ```dart

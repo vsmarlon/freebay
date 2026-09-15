@@ -2,11 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError } from '@/shared/core/errors';
+import { AccountSuspendedError, AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { LoginResponse, toLoginResponse } from '../mappers/auth.mapper';
 import { AuthUser, JwtTokenType } from '@/shared/core/types';
+
+export type BiometricLoginOutput = {
+  user: LoginResponse['user'];
+  jti: string;
+  exp: number;
+};
 
 @Injectable()
 export class BiometricLoginUseCase {
@@ -17,7 +23,7 @@ export class BiometricLoginUseCase {
     private readonly redisService: RedisService,
   ) {}
 
-  async execute(biometricToken: string): Promise<Either<AppError, LoginResponse>> {
+  async execute(biometricToken: string): Promise<Either<AppError, BiometricLoginOutput>> {
     // 1. Verify JWT signature + expiry
     let payload: AuthUser;
     try {
@@ -34,11 +40,14 @@ export class BiometricLoginUseCase {
     }
 
     // 3. Check Redis blacklist (revoked / already rotated)
-    if (payload.jti) {
-      const blacklisted = await this.redisService.get(`blacklist:${payload.jti}`);
-      if (blacklisted) {
-        return left(new InvalidCredentialsError());
-      }
+    if (!payload.jti || !payload.exp) return left(new InvalidCredentialsError());
+    const blacklisted = await this.redisService.get(`blacklist:${payload.jti}`);
+    if (blacklisted) {
+      return left(new InvalidCredentialsError());
+    }
+    const claimed = await this.redisService.get(`biometric-claimed:${payload.jti}`);
+    if (claimed) {
+      return left(new InvalidCredentialsError());
     }
 
     // 4. Check global invalidation cutoff (e.g. password reset)
@@ -57,7 +66,10 @@ export class BiometricLoginUseCase {
     if (!user) {
       return left(new NotFoundError('Usuário'));
     }
+    if (user.suspendedAt) {
+      return left(new AccountSuspendedError(user.suspensionReason));
+    }
 
-    return right(toLoginResponse(user));
+    return right({ user: toLoginResponse(user).user, jti: payload.jti, exp: payload.exp });
   }
 }

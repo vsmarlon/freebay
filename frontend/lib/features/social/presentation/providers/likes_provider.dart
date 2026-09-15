@@ -1,6 +1,6 @@
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
-import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
@@ -9,13 +9,18 @@ part 'likes_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Likes extends _$Likes {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   LikesState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     return const LikesState();
   }
+
+  bool isPostLiked(String postId, {bool initial = false}) =>
+      state.getLikedOverride(postId) ?? initial;
+
+  int postLikesCount(String postId, {int initial = 0}) =>
+      state.getCountOverride(postId) ?? initial;
 
   Future<bool> toggleLike(
     String postId, {
@@ -26,12 +31,17 @@ class Likes extends _$Likes {
     final currentCount = state.countOverrides[postId] ?? initialCount;
 
     final newIsLiked = !currentLiked;
-    final newCount = newIsLiked ? currentCount + 1 : currentCount - 1;
+    final newCount = newIsLiked
+        ? currentCount + 1
+        : (currentCount > 0 ? currentCount - 1 : 0);
 
     state = state.copyWith(
       likedOverrides: {...state.likedOverrides, postId: newIsLiked},
       countOverrides: {...state.countOverrides, postId: newCount},
     );
+    ref
+        .read(feedProvider.notifier)
+        .updatePostLike(postId, newIsLiked, newCount);
 
     try {
       final result = newIsLiked
@@ -43,14 +53,35 @@ class Likes extends _$Likes {
           likedOverrides: {...state.likedOverrides, postId: currentLiked},
           countOverrides: {...state.countOverrides, postId: currentCount},
         );
+        ref
+            .read(feedProvider.notifier)
+            .updatePostLike(postId, currentLiked, currentCount);
         return false;
       }
-      return true;
+      return result.fold((_) => false, (authoritative) {
+        state = state.copyWith(
+          likedOverrides: {
+            ...state.likedOverrides,
+            postId: authoritative.active,
+          },
+          countOverrides: {
+            ...state.countOverrides,
+            postId: authoritative.count,
+          },
+        );
+        ref
+            .read(feedProvider.notifier)
+            .updatePostLike(postId, authoritative.active, authoritative.count);
+        return true;
+      });
     } catch (e) {
       state = state.copyWith(
         likedOverrides: {...state.likedOverrides, postId: currentLiked},
         countOverrides: {...state.countOverrides, postId: currentCount},
       );
+      ref
+          .read(feedProvider.notifier)
+          .updatePostLike(postId, currentLiked, currentCount);
       return false;
     }
   }

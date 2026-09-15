@@ -5,7 +5,6 @@ import { right } from '@/shared/core/either';
 
 const mockRepo = {
   findDirectConversationsByUser: jest.fn(),
-  markMessagesDelivered: jest.fn().mockResolvedValue(right(undefined)),
 };
 
 describe('GetConversationsUseCase', () => {
@@ -23,14 +22,14 @@ describe('GetConversationsUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should return empty list when no conversations', async () => {
+  it('returns empty list when no conversations', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([]));
     const result = await sut.execute('user-1');
     expect(result.isRight()).toBe(true);
     if (result.isRight()) expect(result.value).toEqual([]);
   });
 
-  it('should return conversations with correct otherUser', async () => {
+  it('returns conversations with correct otherUser', async () => {
     const now = new Date();
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {
@@ -51,7 +50,7 @@ describe('GetConversationsUseCase', () => {
     }
   });
 
-  it('should pick user1 as otherUser when user-1 is not a participant', async () => {
+  it('picks user1 as otherUser when user-1 is not a participant', async () => {
     const now = new Date();
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
       {

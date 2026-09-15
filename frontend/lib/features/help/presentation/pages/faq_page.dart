@@ -82,7 +82,7 @@ class FaqPage extends StatelessWidget {
         {
           'q': 'Como solicitar um saque Pix?',
           'a':
-              'Na sua Carteira, clique em "Solicitar Saque", insira o valor desejado (mínimo de R\$ 5,00) e confirme sua chave Pix cadastrada. O processamento é realizado em instantes.',
+              'Na sua Carteira, clique em "Solicitar Saque", insira o valor desejado (mínimo de R\$ 5,00) e confirme sua chave Pix cadastrada. O processamento depende da confirmação do provedor.',
         },
       ],
     },
@@ -116,48 +116,50 @@ class FaqPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'FAQ / AJUDA',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'FAQ / AJUDA',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-              itemCount: _sections.length,
-              itemBuilder: (context, sIndex) {
-                final sec = _sections[sIndex];
-                final items = sec['items'] as List<Map<String, String>>;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16, bottom: 8),
-                      child: Text(
-                        sec['title'] as String,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: context.textSecondary,
-                          letterSpacing: 1,
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                itemCount: _sections.length,
+                itemBuilder: (context, sIndex) {
+                  final sec = _sections[sIndex];
+                  final items = sec['items'] as List<Map<String, String>>;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 8),
+                        child: Text(
+                          sec['title'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: context.textSecondary,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
-                    ),
-                    ...items.map(
-                      (item) =>
-                          _FaqTile(question: item['q']!, answer: item['a']!),
-                    ),
-                  ],
-                );
-              },
+                      ...items.map(
+                        (item) =>
+                            _FaqTile(question: item['q']!, answer: item['a']!),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

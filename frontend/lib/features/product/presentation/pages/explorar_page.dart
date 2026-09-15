@@ -6,11 +6,11 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/presentation/widgets/product_results_grid.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
 import 'package:freebay/features/product/presentation/widgets/product_filter_bar.dart';
-import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class ExplorarPage extends ConsumerStatefulWidget {
   const ExplorarPage({super.key});
@@ -22,7 +22,6 @@ class ExplorarPage extends ConsumerStatefulWidget {
 class _ExplorarPageState extends ConsumerState<ExplorarPage>
     with AutomaticKeepAliveClientMixin {
   final _searchController = TextEditingController();
-  bool _showFilters = false;
   Timer? _debounceTimer;
 
   @override
@@ -47,78 +46,115 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
     ref.read(searchQueryProvider.notifier).state = _searchController.text;
   }
 
+  void _openFilters() {
+    final sort = ref.read(productSortProvider);
+    final condition = ref.read(productConditionProvider);
+    final priceRange = ref.read(productPriceRangeProvider);
+    showBrutalistSheet(
+      context: context,
+      title: 'FILTROS',
+      builder: (_) => ProductFilterBar(
+        sort: sort,
+        condition: condition,
+        priceRange: priceRange,
+        onSortChanged: (value) =>
+            ref.read(productSortProvider.notifier).state = value,
+        onConditionChanged: (value) =>
+            ref.read(productConditionProvider.notifier).state = value,
+        onPriceRangeChanged: (value) =>
+            ref.read(productPriceRangeProvider.notifier).state = value,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final hasActiveFilters =
+        ref.watch(productSortProvider) != ProductSort.recent ||
+        ref.watch(productConditionProvider) != null ||
+        ref.watch(productPriceRangeProvider) != null;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           PageHeader(
             text: 'EXPLORAR',
             actions: [
-              IconButton(
-                icon: Icon(
-                  _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                  color: context.isDark
-                      ? AppColors.white
-                      : AppColors.primaryContainer,
-                ),
-                onPressed: () => setState(() => _showFilters = !_showFilters),
+              Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.filter_list,
+                      color: context.isDark
+                          ? AppColors.white
+                          : AppColors.primaryContainer,
+                    ),
+                    onPressed: _openFilters,
+                  ),
+                  if (hasActiveFilters)
+                    const Positioned(
+                      right: 10,
+                      top: 10,
+                      child: SizedBox(
+                        width: 8,
+                        height: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               IconButton(
                 icon: const Icon(
                   Icons.add_box_outlined,
                   color: AppColors.primaryContainer,
                 ),
-                onPressed: () => context.push('/products/create'),
+                onPressed: () => context.push(AppRoutes.createProduct),
               ),
             ],
           ),
-          Expanded(
-            child: NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                SliverAppBar(
-                  automaticallyImplyLeading: false,
-                  primary: false,
-                  floating: true,
-                  snap: true,
-                  elevation: 0,
-                  backgroundColor: context.surfaceColor,
-                  surfaceTintColor: Colors.transparent,
-                  toolbarHeight: 72,
-                  titleSpacing: 0,
-                  title: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: AppTextField(
-                      controller: _searchController,
-                      label: '',
-                      hint: 'Buscar produtos...',
-                      prefixIcon: Icons.search,
-                      onFieldSubmitted: (_) => _onSearch(),
-                      onChanged: _onSearchDebounced,
-                    ),
-                  ),
-                ),
-              ],
-              body: _buildProdutosTab(selectedCategory, categoriesAsync),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: AppTextField(
+              controller: _searchController,
+              label: '',
+              hint: 'Buscar produtos...',
+              prefixIcon: Icons.search,
+              onFieldSubmitted: (_) => _onSearch(),
+              onChanged: _onSearchDebounced,
             ),
           ),
+          categoriesAsync.when(
+            data: (categories) {
+              if (categories.isEmpty) return const SizedBox.shrink();
+              return CategoryFilterPanel(
+                categories: categories,
+                selectedCategory: selectedCategory,
+                onCategorySelected: (id) =>
+                    ref.read(selectedCategoryProvider.notifier).state = id,
+              );
+            },
+            loading: () =>
+                const SizedBox(height: 52, child: ShimmerBlock(height: 36)),
+            error: (err, _) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text(userMessageOf(err)),
+            ),
+          ),
+          Expanded(child: _buildProdutosTab(selectedCategory)),
         ],
       ),
     );
   }
 
-  Widget _buildProdutosTab(
-    String? selectedCategory,
-    AsyncValue<List<CategoryEntity>> categoriesAsync,
-  ) {
+  Widget _buildProdutosTab(String? selectedCategory) {
     final searchQuery = ref.watch(searchQueryProvider);
     final sort = ref.watch(productSortProvider);
     final condition = ref.watch(productConditionProvider);
@@ -144,59 +180,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
         condition != null ||
         priceRange != null;
 
-    return Column(
-      children: [
-        if (_showFilters) ...[
-          ProductFilterBar(
-            sort: sort,
-            condition: condition,
-            priceRange: priceRange,
-            onSortChanged: (value) =>
-                ref.read(productSortProvider.notifier).state = value,
-            onConditionChanged: (value) =>
-                ref.read(productConditionProvider.notifier).state = value,
-            onPriceRangeChanged: (value) =>
-                ref.read(productPriceRangeProvider.notifier).state = value,
-          ),
-          categoriesAsync.when(
-            data: (categories) {
-              if (categories.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.category_outlined,
-                  title: 'NENHUMA CATEGORIA',
-                  subtitle: 'Nenhuma categoria disponível',
-                );
-              }
-              return CategoryFilterPanel(
-                categories: categories,
-                selectedCategory: selectedCategory,
-                onCategorySelected: (id) =>
-                    ref.read(selectedCategoryProvider.notifier).state = id,
-              );
-            },
-            loading: () => Padding(
-              padding: const EdgeInsets.all(16),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.7,
-                ),
-                itemCount: 6,
-                itemBuilder: (_, _) => const AppCard.skeleton(),
-                physics: const NeverScrollableScrollPhysics(),
-              ),
-            ),
-            error: (err, _) => Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(userMessageOf(err)),
-            ),
-          ),
-        ],
-        Expanded(child: _buildResults(params, feedState, hasActiveFilters)),
-      ],
-    );
+    return _buildResults(params, feedState, hasActiveFilters);
   }
 
   Widget _buildResults(

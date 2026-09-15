@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
@@ -28,7 +29,7 @@ class MyProductsPage extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: Icon(Icons.add, color: context.textPrimary),
-                onPressed: () => context.push('/products/create'),
+                onPressed: () => context.push(AppRoutes.createProduct),
               ),
             ],
           ),
@@ -48,7 +49,7 @@ class MyProductsPage extends ConsumerWidget {
                                 label: 'Criar an\u00fancio',
                                 icon: Icons.add,
                                 onPressed: () =>
-                                    context.push('/products/create'),
+                                    context.push(AppRoutes.createProduct),
                               ),
                             )
                           : RefreshIndicator(
@@ -123,7 +124,7 @@ class MyProductsPage extends ConsumerWidget {
     final price = product.price > 0 ? product.price / 100 : 0.0;
 
     return GestureDetector(
-      onTap: () => context.push('/products/${product.id}'),
+      onTap: () => context.push(AppRoutes.productPath(product.id)),
       child: Container(
         decoration: BoxDecoration(
           color: context.bgColor,
@@ -197,7 +198,8 @@ class MyProductsPage extends ConsumerWidget {
                   ),
                   Spacing.vSm,
                   InkWell(
-                    onTap: () => context.push('/products/${product.id}/edit'),
+                    onTap: () =>
+                        context.push(AppRoutes.productEditPath(product.id)),
                     child: Container(
                       width: double.infinity,
                       height: 36,

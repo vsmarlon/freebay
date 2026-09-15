@@ -24,137 +24,148 @@ class ChatListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final productTitle = chat.productTitle;
     Widget tile = Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 4,
-              color: chat.unread
-                  ? AppColors.primaryContainer
-                  : Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.bgColor,
+            border: Border(
+              left: BorderSide(
+                color: chat.unread
+                    ? AppColors.primaryContainer
+                    : Colors.transparent,
+                width: 4,
+              ),
+              top: BorderSide(color: context.borderColor),
+              right: BorderSide(color: context.borderColor),
+              bottom: BorderSide(color: context.borderColor),
             ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.bgColor,
-                  border: Border.all(color: context.borderColor),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Row(
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _buildAvatar(context),
+              Spacing.hMd,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildAvatar(context),
-                    Spacing.hMd,
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  chat.otherName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily:
-                                        AppTypography.headlineFontFamily,
-                                    fontWeight: chat.unread
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
-                                    color: isDark
-                                        ? AppColors.white
-                                        : AppColors.onSurface,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                              Spacing.hXs,
-                              Text(
-                                TimeUtils.timeAgoCompact(chat.timestamp),
-                                style: TextStyle(
-                                  fontFamily: AppTypography.fontFamily,
-                                  fontSize: 12,
-                                  fontWeight: chat.unread
-                                      ? FontWeight.w700
-                                      : FontWeight.normal,
-                                  color: chat.unread
-                                      ? AppColors.primaryContainer
-                                      : AppColors.mediumGray,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Spacing.vXs,
-                          if (chat.threadType == ChatThreadType.order) ...[
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 4),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            chat.otherName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AppTypography.headlineFontFamily,
+                              fontWeight: chat.unread
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
                               color: isDark
-                                  ? AppColors.surfaceContainerLowDark
-                                  : AppColors.surfaceContainerHighest,
-                              child: const Text(
-                                'PEDIDO',
-                                style: TextStyle(
-                                  fontFamily: AppTypography.fontFamily,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.4,
-                                  color: AppColors.primaryContainer,
-                                ),
-                              ),
+                                  ? AppColors.white
+                                  : AppColors.onSurface,
+                              fontSize: 15,
                             ),
-                          ],
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  chat.lastMessage ?? '',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily: AppTypography.fontFamily,
-                                    color: chat.unread
-                                        ? (isDark
-                                              ? AppColors.white
-                                              : AppColors.darkGray)
-                                        : AppColors.mediumGray,
-                                    fontWeight: chat.unread
-                                        ? FontWeight.w500
-                                        : FontWeight.normal,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                              if (!canSwipe) ...[
-                                Spacing.hXs,
-                                const Tooltip(
-                                  message:
-                                      'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
-                                  child: Icon(
-                                    Icons.lock_outline,
-                                    size: 16,
-                                    color: AppColors.mediumGray,
-                                  ),
-                                ),
-                              ],
-                            ],
+                          ),
+                        ),
+                        Spacing.hXs,
+                        Text(
+                          TimeUtils.timeAgoCompact(chat.timestamp),
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 12,
+                            fontWeight: chat.unread
+                                ? FontWeight.w700
+                                : FontWeight.normal,
+                            color: chat.unread
+                                ? AppColors.primaryContainer
+                                : context.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Spacing.vXs,
+                    if (chat.threadType == ChatThreadType.order) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        color: isDark
+                            ? AppColors.surfaceContainerLowDark
+                            : AppColors.surfaceContainerHighest,
+                        child: const Text(
+                          'PEDIDO',
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
+                            color: AppColors.primaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (productTitle != null && productTitle.isNotEmpty) ...[
+                      Text(
+                        productTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: AppTypography.fontFamily,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.textPrimary,
+                        ),
+                      ),
+                      Spacing.vXs,
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            chat.lastMessage ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AppTypography.fontFamily,
+                              color: chat.unread
+                                  ? (isDark
+                                        ? AppColors.white
+                                        : AppColors.darkGray)
+                                  : context.textSecondary,
+                              fontWeight: chat.unread
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        if (!canSwipe) ...[
+                          Spacing.hXs,
+                          Tooltip(
+                            message:
+                                'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
+                            child: Icon(
+                              Icons.lock_outline,
+                              size: 16,
+                              color: context.textSecondary,
+                            ),
                           ),
                         ],
-                      ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -184,20 +195,12 @@ class ChatListTile extends StatelessWidget {
       );
     }
 
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: AppMotion.base,
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(30 * (1 - value), 0),
-          child: Opacity(opacity: value, child: child),
-        );
-      },
-      child: tile,
-    );
+    return tile;
   }
 
   Widget _buildAvatar(BuildContext context) {
+    final avatarUrl = chat.otherAvatarUrl;
+    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -205,30 +208,37 @@ class ChatListTile extends StatelessWidget {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            image: chat.otherAvatarUrl != null
+            image: hasAvatar
                 ? DecorationImage(
-                    image: NetworkImage(chat.otherAvatarUrl!),
+                    image: NetworkImage(avatarUrl),
                     fit: BoxFit.cover,
                   )
                 : null,
             color: isDark
-                ? AppColors.mediumGray.withAlpha(51)
+                ? context.textSecondary.withAlpha(51)
                 : AppColors.lightGray,
           ),
-          child: chat.otherAvatarUrl == null
-              ? Icon(Icons.person, color: context.textPrimary)
-              : null,
+          child: hasAvatar
+              ? null
+              : Icon(Icons.person, color: context.textPrimary),
         ),
         if (chat.unread)
           Positioned(
             right: -2,
             top: -2,
             child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: AppColors.success,
-                border: Border.all(color: context.bgColor, width: 2),
+              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              color: AppColors.primaryContainer,
+              child: Text(
+                '${chat.unreadCount}',
+                style: const TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onPrimary,
+                ),
               ),
             ),
           ),
@@ -258,8 +268,8 @@ class ChatListLoadingTile extends StatelessWidget {
               width: 52,
               height: 52,
               color: isDark
-                  ? AppColors.mediumGray.withAlpha(51)
-                  : AppColors.lightGray,
+                  ? context.textSecondary.withAlpha(51)
+                  : context.surfaceMidColor,
             ),
             Spacing.hMd,
             Expanded(
@@ -270,16 +280,16 @@ class ChatListLoadingTile extends StatelessWidget {
                     height: 14,
                     width: 100,
                     color: isDark
-                        ? AppColors.mediumGray.withAlpha(51)
-                        : AppColors.lightGray,
+                        ? context.textSecondary.withAlpha(51)
+                        : context.surfaceMidColor,
                   ),
                   Spacing.vSm,
                   Container(
                     height: 12,
                     width: 150,
                     color: isDark
-                        ? AppColors.mediumGray.withAlpha(51)
-                        : AppColors.lightGray,
+                        ? context.textSecondary.withAlpha(51)
+                        : context.surfaceMidColor,
                   ),
                 ],
               ),

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
 import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
 
@@ -118,12 +117,6 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
               .read(userSearchProvider.notifier)
               .search(query: _searchController.text);
         }
-      },
-      onFollow: (userId) async {
-        await ref.read(socialRepositoryProvider).followUser(userId);
-      },
-      onUnfollow: (userId) async {
-        await ref.read(socialRepositoryProvider).unfollowUser(userId);
       },
     );
   }

@@ -190,7 +190,7 @@ final class SalesListProvider
   }
 }
 
-String _$salesListHash() => r'd8fc2d046dccd8dc3c2f8b34cb7ffbe0fccaf116';
+String _$salesListHash() => r'a77242b2f3c83d3c91574bed2fab3819414d58d3';
 
 abstract class _$SalesList extends $Notifier<SalesListState> {
   SalesListState build();

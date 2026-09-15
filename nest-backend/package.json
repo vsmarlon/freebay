@@ -16,8 +16,9 @@
     "test:safety": "node --test scripts/safe-prisma-db-push.test.js",
     "test:all": "npm test && npm run test:integration",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
+    "db:sync": "prisma db push && prisma generate",
+    "db:seed": "prisma db seed",
+    "db:setup": "npm run db:sync && npm run db:seed",
     "prisma:studio": "prisma studio",
     "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings 0",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
@@ -120,8 +121,5 @@
     "transformIgnorePatterns": [
       "node_modules/(?!(uuid)/)"
     ]
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
   }
 }

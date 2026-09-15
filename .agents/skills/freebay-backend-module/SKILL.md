@@ -76,13 +76,17 @@ export class GetMyEntityUseCase {
 
 ### 3. Repository (`domain/repositories/` & `data/repositories/`)
 
-Define the abstract class in `domain/repositories/`, and the concrete implementation in `data/repositories/`.
+Define the abstract class in `domain/repositories/` (implementing `Repository` and returning `RepositoryResponse<T, F = Failure>`), and the concrete implementation in `data/repositories/`.
+
+> **Rule**: Backend repositories **MUST ONLY call the database** (via Prisma or transactions). They never call external HTTP endpoints.
 
 ```typescript
 // domain/repositories/my-entity.repository.ts
-export abstract class MyEntityRepository {
-  abstract findById(id: string): Promise<MyEntity | null>;
-  abstract create(data: Prisma.MyEntityCreateInput): Promise<MyEntity>;
+import { Repository, RepositoryResponse } from '@/shared/core/either';
+
+export abstract class MyEntityRepository implements Repository {
+  abstract findById(id: string): RepositoryResponse<MyEntity | null>;
+  abstract create(data: Prisma.MyEntityCreateInput): RepositoryResponse<MyEntity>;
 }
 
 // data/repositories/my-entity-database.repository.ts

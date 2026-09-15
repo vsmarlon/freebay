@@ -86,6 +86,23 @@ enum TransactionStatus {
   FAILED
 }
 
+enum TransferDeliveryState {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  RETRYABLE
+  TERMINAL
+}
+
+enum ReversalState {
+  NOT_REQUIRED
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  RETRYABLE
+  TERMINAL
+}
+
 enum DisputeStatus {
   OPEN
   AWAITING_SELLER
@@ -191,6 +208,7 @@ model User {
   directMessages          DirectMessage[]
   conversationPreferences ConversationPreference[]
   messageReactions        MessageReaction[]
+  starredMessages         StarredMessage[]
   notifications           Notification[]
   postMentions            PostMention[]            @relation("PostMentions")
   commentMentions         CommentMention[]         @relation("CommentMentions")
@@ -230,6 +248,11 @@ model PasswordRecoveryCode {
   @@index([userId, expiresAt])
   @@index([userId, usedAt, expiresAt])
   @@index([codeHash])
+}
+
+enum StoryMediaType {
+  IMAGE
+  VIDEO
 }
 
 model WebMagicLink {
@@ -313,6 +336,7 @@ model Product {
   orders    Order[]
   favorites Favorite[]
   cartItems CartItem[]
+  directConversations DirectConversation[]
 
   @@index([sellerId, createdAt])
   @@index([status])
@@ -519,6 +543,17 @@ model Transaction {
   paidAt            DateTime?
   releasedAt        DateTime?
   paymentGroupId    String?
+  transferState     TransferDeliveryState @default(PENDING)
+  transferAttempts  Int                   @default(0)
+  transferProcessingAt DateTime?
+  transferIdempotencyKey String            @unique @default(uuid())
+  transferLastError String?
+  reversalState     ReversalState         @default(NOT_REQUIRED)
+  reversalAttempts  Int                   @default(0)
+  reversalProcessingAt DateTime?
+  reversalIdempotencyKey String            @unique @default(uuid())
+  reversalId        String?
+  reversalLastError String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
@@ -529,6 +564,8 @@ model Transaction {
   @@index([idempotencyKey])
   @@index([paymentGroupId])
   @@index([status, checkoutExpiresAt])
+  @@index([transferState, transferProcessingAt])
+  @@index([reversalState, reversalProcessingAt])
 }
 
 enum PaymentGroupStatus {
@@ -675,11 +712,12 @@ model ChatMessage {
   order                  Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sender                 User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
   replyTo                ChatMessage?      @relation("CmReplies", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies                ChatMessage[]     @relation("CmReplies")
+  replies                ChatMessage[]       @relation("CmReplies")
   reactions              MessageReaction[]
+  starredBy              StarredMessage[]
   reportedChatMsgReports Report[]          @relation("ReportedChatMsgReports")
 
-  @@unique([orderId, clientMessageId])
+  @@unique([orderId, senderId, clientMessageId])
   @@index([orderId, createdAt])
   @@index([attachmentUrl])
 }
@@ -718,6 +756,9 @@ model Story {
   id        String    @id @default(uuid())
   userId    String
   imageUrl  String
+  mediaType StoryMediaType @default(IMAGE)
+  caption   String?
+  textBlocks Json?
   expiresAt DateTime
   createdAt DateTime  @default(now())
   deletedAt DateTime?
@@ -758,11 +799,11 @@ model Block {
 enum MessageType {
   TEXT
   IMAGE
+  AUDIO
   VIDEO
   GIF
-  AUDIO
-  PRODUCT_CARD
   LOCATION
+  PRODUCT_CARD
 }
 
 model MessageReaction {
@@ -783,21 +824,43 @@ model MessageReaction {
   @@index([chatMessageId])
 }
 
+model StarredMessage {
+  id              String   @id @default(uuid())
+  userId          String
+  directMessageId String?
+  chatMessageId   String?
+  createdAt       DateTime @default(now())
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  directMessage DirectMessage? @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+  chatMessage   ChatMessage?   @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, directMessageId])
+  @@unique([userId, chatMessageId])
+  @@index([userId])
+  @@index([directMessageId])
+  @@index([chatMessageId])
+}
+
 model DirectConversation {
   id            String             @id @default(uuid())
   user1Id       String
   user2Id       String
+  productId     String?
+  scopeKey      String             @default("DIRECT")
   status        ConversationStatus @default(PENDING)
   lastMessageAt DateTime           @default(now())
   createdAt     DateTime           @default(now())
 
-  user1                     User                     @relation("User1Convos", fields: [user1Id], references: [id])
-  user2                     User                     @relation("User2Convos", fields: [user2Id], references: [id])
+  user1                     User                     @relation("User1Convos", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2                     User                     @relation("User2Convos", fields: [user2Id], references: [id], onDelete: Cascade)
+  product                   Product?                @relation(fields: [productId], references: [id], onDelete: Restrict)
   messages                  DirectMessage[]
   preferences               ConversationPreference[]
   reportedDirectConvReports Report[]                 @relation("ReportedDirectConvReports")
 
-  @@unique([user1Id, user2Id])
+  @@unique([user1Id, user2Id, scopeKey])
+  @@index([productId])
   @@index([user2Id])
   @@index([user1Id, lastMessageAt])
   @@index([user2Id, lastMessageAt])
@@ -822,11 +885,12 @@ model DirectMessage {
   conversation             DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender                   User               @relation(fields: [senderId], references: [id], onDelete: Cascade)
   replyTo                  DirectMessage?     @relation("DmReplies", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies                  DirectMessage[]    @relation("DmReplies")
-  reactions                MessageReaction[]
+  replies                DirectMessage[]     @relation("DmReplies")
+  reactions              MessageReaction[]
+  starredBy              StarredMessage[]
   reportedDirectMsgReports Report[]           @relation("ReportedDirectMsgReports")
 
-  @@unique([conversationId, clientMessageId])
+  @@unique([conversationId, senderId, clientMessageId])
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@index([attachmentUrl])

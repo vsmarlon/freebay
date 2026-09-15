@@ -2,61 +2,107 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 
-class ArchivedChatsPage extends ConsumerWidget {
+class ArchivedChatsPage extends ConsumerStatefulWidget {
   const ArchivedChatsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ArchivedChatsPage> createState() => _ArchivedChatsPageState();
+}
+
+class _ArchivedChatsPageState extends ConsumerState<ArchivedChatsPage> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 400) {
+      ref.read(archivedChatListProvider.notifier).fetchMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'ARQUIVADAS',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'ARQUIVADAS',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: ref
-                .watch(archivedChatsProvider)
-                .when(
-                  data: (chats) {
-                    if (chats.isEmpty) {
-                      return const EmptyState(
-                        icon: Icons.archive_outlined,
-                        title: 'NENHUMA CONVERSA ARQUIVADA',
-                        subtitle:
-                            'Arraste uma conversa para a esquerda para arquivar.',
+            Expanded(
+              child: ref
+                  .watch(archivedChatListProvider)
+                  .when(
+                    data: (chats) {
+                      final loadingMore = ref.watch(
+                        archivedChatListLoadingMoreProvider,
                       );
-                    }
-                    return RefreshIndicator(
-                      onRefresh: () async =>
-                          ref.invalidate(archivedChatsProvider),
-                      child: ListView.builder(
-                        itemCount: chats.length,
-                        itemBuilder: (context, index) => _buildArchivedItem(
-                          context,
-                          isDark,
-                          chats[index],
-                          ref,
+                      if (chats.isEmpty) {
+                        return const EmptyState(
+                          icon: Icons.archive_outlined,
+                          title: 'NENHUMA CONVERSA ARQUIVADA',
+                          subtitle:
+                              'Arraste uma conversa para a esquerda para arquivar.',
+                        );
+                      }
+                      return RefreshIndicator(
+                        onRefresh: () async =>
+                            ref.invalidate(archivedChatListProvider),
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: chats.length + (loadingMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == chats.length) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
+                                child: ShimmerBlock(height: 72),
+                              );
+                            }
+                            return _buildArchivedItem(
+                              context,
+                              isDark,
+                              chats[index],
+                              ref,
+                            );
+                          },
                         ),
-                      ),
-                    );
-                  },
-                  loading: () => _buildLoadingChat(context),
-                  error: (_, _) => const Center(
-                    child: Text('Erro ao carregar conversas arquivadas'),
+                      );
+                    },
+                    loading: () => _buildLoadingChat(context),
+                    error: (_, _) => const Center(
+                      child: Text('Erro ao carregar conversas arquivadas'),
+                    ),
                   ),
-                ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -92,6 +138,8 @@ class ArchivedChatsPage extends ConsumerWidget {
     ChatEntity chat,
     WidgetRef ref,
   ) {
+    final avatarUrl = chat.otherAvatarUrl;
+    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Container(
@@ -99,8 +147,8 @@ class ArchivedChatsPage extends ConsumerWidget {
           color: context.bgColor,
           border: Border.all(
             color: isDark
-                ? AppColors.mediumGray.withAlpha(76)
-                : AppColors.mediumGray.withAlpha(102),
+                ? context.textSecondary.withAlpha(76)
+                : context.textSecondary.withAlpha(102),
           ),
         ),
         child: ListTile(
@@ -112,19 +160,19 @@ class ArchivedChatsPage extends ConsumerWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              image: chat.otherAvatarUrl != null
+              image: hasAvatar
                   ? DecorationImage(
-                      image: NetworkImage(chat.otherAvatarUrl!),
+                      image: NetworkImage(avatarUrl),
                       fit: BoxFit.cover,
                     )
                   : null,
               color: isDark
-                  ? AppColors.mediumGray.withAlpha(51)
+                  ? context.textSecondary.withAlpha(51)
                   : AppColors.lightGray,
             ),
-            child: chat.otherAvatarUrl == null
-                ? Icon(Icons.person, color: context.textPrimary)
-                : null,
+            child: hasAvatar
+                ? null
+                : Icon(Icons.person, color: context.textPrimary),
           ),
           title: Text(
             chat.otherName,
@@ -138,19 +186,20 @@ class ArchivedChatsPage extends ConsumerWidget {
             chat.lastMessage ?? '',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.mediumGray, fontSize: 13),
+            style: TextStyle(color: context.textSecondary, fontSize: 13),
           ),
           trailing: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () {
-                ref
+              onTap: () async {
+                final result = await ref
                     .read(chatRepositoryProvider)
-                    .archiveChat(chat.id, chat.threadType, false)
-                    .then((_) {
-                      ref.invalidate(archivedChatsProvider);
-                      ref.invalidate(chatsProvider);
-                    });
+                    .archiveChat(chat.id, chat.threadType, false);
+                result.fold((_) {}, (_) {
+                  ref.invalidate(archivedChatListProvider);
+                  ref.invalidate(chatsProvider);
+                  ref.invalidate(liveChatListProvider);
+                });
               },
               child: Container(
                 width: 40,
@@ -167,14 +216,7 @@ class ArchivedChatsPage extends ConsumerWidget {
             ),
           ),
           onTap: () {
-            context.push(
-              '/chat/${chat.id}',
-              extra: {
-                'orderName': chat.otherName,
-                'orderAvatarUrl': chat.otherAvatarUrl,
-                'chatType': chat.threadType.name,
-              },
-            );
+            context.push(AppRoutes.chatPath(chat.id));
           },
         ),
       ),

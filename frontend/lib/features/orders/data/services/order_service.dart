@@ -10,7 +10,7 @@ class OrderService extends BaseHttpRepository {
   Future<Either<Failure, OrderEntity>> getOrder(String orderId) =>
       safeGet<OrderEntity>(
         '/orders/$orderId',
-        extractKey: 'data',
+        extractKey: 'data.order',
         fromJson: OrderEntity.fromJson,
       );
 

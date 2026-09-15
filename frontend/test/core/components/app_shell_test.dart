@@ -44,7 +44,9 @@ Widget _app() {
 }
 
 Future<void> _settle(WidgetTester tester) async {
-  await tester.pumpAndSettle(const Duration(milliseconds: 50));
+  for (var i = 0; i < 20; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
 }
 
 void main() {

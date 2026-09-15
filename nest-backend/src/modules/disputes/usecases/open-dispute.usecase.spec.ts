@@ -59,7 +59,7 @@ describe('OpenDisputeUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should open a dispute successfully', async () => {
+  it('opens a dispute successfully', async () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
     mockDisputeRepo.create.mockResolvedValue(right(mockDispute));
     mockPrisma.order.update.mockResolvedValue({ ...mockOrder, status: 'DISPUTED' });
@@ -73,7 +73,7 @@ describe('OpenDisputeUseCase', () => {
     expect(result.isRight()).toBe(true);
   });
 
-  it('should return NotFoundError when order not found', async () => {
+  it('returns NotFoundError when order not found', async () => {
     mockPrisma.order.findUnique.mockResolvedValue(null);
 
     const result = await sut.execute({
@@ -88,7 +88,7 @@ describe('OpenDisputeUseCase', () => {
     }
   });
 
-  it('should return UnauthorizedError when user is not participant', async () => {
+  it('returns UnauthorizedError when user is not participant', async () => {
     mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
     const result = await sut.execute({
@@ -103,7 +103,7 @@ describe('OpenDisputeUseCase', () => {
     }
   });
 
-  it('should return BadRequestError when dispute already exists', async () => {
+  it('returns BadRequestError when dispute already exists', async () => {
     mockPrisma.order.findUnique.mockResolvedValue({ ...mockOrder, dispute: mockDispute });
 
     const result = await sut.execute({
@@ -118,7 +118,7 @@ describe('OpenDisputeUseCase', () => {
     }
   });
 
-  it('should reject when more than 48 hours have passed since deliveryConfirmedAt', async () => {
+  it('rejects when more than 48 hours have passed since deliveryConfirmedAt', async () => {
     const now = new Date('2026-01-03T00:00:00.000Z');
     const deliveryConfirmedAt = new Date(now.getTime() - 49 * 60 * 60 * 1000);
     mockPrisma.order.findUnique.mockResolvedValue({ ...mockOrder, deliveryConfirmedAt });
@@ -135,7 +135,7 @@ describe('OpenDisputeUseCase', () => {
     expect(mockDisputeRepo.create).not.toHaveBeenCalled();
   });
 
-  it('should fall back to order.createdAt when deliveryConfirmedAt is null, and still apply the 48h window', async () => {
+  it('falls back to order.createdAt when deliveryConfirmedAt is null, and still applies the 48h window', async () => {
     const now = new Date('2026-01-03T00:00:00.000Z');
     const createdAt = new Date(now.getTime() - 49 * 60 * 60 * 1000);
     mockPrisma.order.findUnique.mockResolvedValue({ ...mockOrder, deliveryConfirmedAt: null, createdAt });

@@ -6,12 +6,14 @@ import {
   Logger,
   RawBodyRequest,
 } from '@nestjs/common';
-import Stripe from 'stripe';
-import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
+import {
+  StripeProvider,
+  StripeWebhookEvent,
+} from '@/modules/payments/providers/stripe-provider';
 import { Request } from 'express';
 
 type WebhookRequest = RawBodyRequest<Request> & {
-  stripeEvent?: Stripe.Event;
+  stripeEvent?: StripeWebhookEvent;
 };
 
 @Injectable()

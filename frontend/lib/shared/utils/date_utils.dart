@@ -1,24 +1,30 @@
 import 'package:intl/intl.dart';
 
-/// Returns true if [a] and [b] are on the same calendar day.
+DateTime parseServerDateTime(String value) => DateTime.parse(value).toLocal();
+
+/// Returns true if [a] and [b] are on the same calendar day (local time).
 bool isSameDay(DateTime a, DateTime b) {
-  return a.year == b.year && a.month == b.month && a.day == b.day;
+  final la = a.toLocal();
+  final lb = b.toLocal();
+  return la.year == lb.year && la.month == lb.month && la.day == lb.day;
 }
 
-/// Chat timestamp: "14:30"
+/// Chat timestamp: "14:30" (local time — entities keep UTC instants).
 String formatMessageTime(DateTime date) {
-  return DateFormat('HH:mm').format(date);
+  return DateFormat('HH:mm').format(date.toLocal());
 }
 
-/// Date separator: "HOJE", "ONTEM", or "23 DE JUL 2026"
+/// Date separator: "HOJE", "ONTEM", or "23 DE JUL 2026" (local time).
 String formatDateSeparator(DateTime date, {DateTime? now}) {
+  date = date.toLocal();
   final n = now ?? DateTime.now();
   final today = DateTime(n.year, n.month, n.day);
   final target = DateTime(date.year, date.month, date.day);
 
   if (target == today) return 'HOJE';
   if (target == today.subtract(const Duration(days: 1))) return 'ONTEM';
-  return DateFormat("d 'DE' MMM yyyy", 'pt_BR').format(date).toUpperCase();
+  final month = DateUtilsCustom._monthsShort[date.month - 1].toUpperCase();
+  return '${date.day} DE $month ${date.year}';
 }
 
 /// WhatsApp-style grouped timestamp:

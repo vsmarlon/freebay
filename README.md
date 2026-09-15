@@ -391,9 +391,9 @@ npm install
 # JWT_SECRET=...
 # REDIS_HOST=localhost
 
-# 3. Gerar Prisma client e rodar migrations
-npm run prisma:generate
-npm run prisma:migrate
+# 3. Sincronizar o schema Prisma e executar o seed idempotente
+npm run db:sync
+npm run db:seed
 
 # 4. Iniciar em modo desenvolvimento
 npm run start:dev

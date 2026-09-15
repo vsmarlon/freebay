@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
@@ -101,27 +102,29 @@ class ProductDetailPage extends ConsumerWidget {
               borderColor: context.borderColor,
             ),
             actions: [
-              IconButton(
-                icon: Icon(
-                  isFavorited ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorited ? AppColors.error : context.textPrimary,
-                ),
-                onPressed: () async {
+              BrutalistIconButton(
+                icon: isFavorited ? Icons.favorite : Icons.favorite_border,
+                iconColor: isFavorited ? AppColors.error : context.textPrimary,
+                borderColor: context.borderColor,
+                onTap: () async {
                   await ref
                       .read(favoritesProvider.notifier)
                       .toggleFavorite(product.id);
                   ref.invalidate(isFavoritedProvider(product.id));
                 },
               ),
-              IconButton(
-                icon: Icon(Icons.share, color: context.textPrimary),
-                onPressed: () => SharePlus.instance.share(
+              const SizedBox(width: 8),
+              BrutalistIconButton(
+                icon: Icons.share,
+                borderColor: context.borderColor,
+                onTap: () => SharePlus.instance.share(
                   ShareParams(
                     text:
                         'Confira: ${product.title}\nhttps://freebay.app/products/${product.id}',
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
             ],
           ),
           SliverToBoxAdapter(
@@ -270,7 +273,10 @@ class ProductDetailPage extends ConsumerWidget {
                         if (product.seller != null)
                           TextButton.icon(
                             onPressed: () => context.push(
-                              '/chat/new?userId=${product.seller!.id}',
+                              AppRoutes.chatNewWith(
+                                product.seller!.id,
+                                product.id,
+                              ),
                             ),
                             icon: const Icon(
                               Icons.chat_bubble_outline,

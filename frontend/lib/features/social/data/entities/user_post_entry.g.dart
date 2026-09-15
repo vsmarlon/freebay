@@ -9,6 +9,7 @@ part of 'user_post_entry.dart';
 UserPostEntry _$UserPostEntryFromJson(Map<String, dynamic> json) =>
     UserPostEntry(
       post: PostEntity.fromJson(json['post'] as Map<String, dynamic>),
+      repostId: json['repostId'] as String?,
       repostedAt: json['repostedAt'] == null
           ? null
           : DateTime.parse(json['repostedAt'] as String),
@@ -22,6 +23,7 @@ UserPostEntry _$UserPostEntryFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$UserPostEntryToJson(UserPostEntry instance) =>
     <String, dynamic>{
       'post': instance.post.toJson(),
+      'repostId': instance.repostId,
       'repostedAt': instance.repostedAt?.toIso8601String(),
       'repostedBy': instance.repostedBy?.toJson(),
       'isReposted': instance.isReposted,

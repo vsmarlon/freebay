@@ -74,137 +74,142 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'AVALIAR',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'AVALIAR',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
+              breadcrumbs: context.breadcrumbs,
             ),
-            breadcrumbs: context.breadcrumbs,
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: context.surfaceColor,
-                      border: Border.all(color: context.borderColor, width: 2),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: context.surfaceColor,
+                        border: Border.all(
+                          color: context.borderColor,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          UserAvatar(imageUrl: widget.reviewedAvatarUrl),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.reviewedName,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  widget.reviewType == 'SELLER_REVIEW'
+                                      ? 'Vendedor'
+                                      : 'Comprador',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: context.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        UserAvatar(imageUrl: widget.reviewedAvatarUrl),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.reviewedName,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: context.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                widget.reviewType == 'SELLER_REVIEW'
-                                    ? 'Vendedor'
-                                    : 'Comprador',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: context.textSecondary,
-                                ),
-                              ),
-                            ],
+                    Spacing.vLg,
+                    Text(
+                      'SUA NOTA',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                        color: context.textPrimary,
+                      ),
+                    ),
+                    Spacing.vSm,
+                    Center(
+                      child: StarRatingInput(
+                        value: _score,
+                        onChanged: (val) => setState(() => _score = val),
+                      ),
+                    ),
+                    Spacing.vLg,
+                    Text(
+                      'COMENTÁRIO (OPCIONAL)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                        color: context.textPrimary,
+                      ),
+                    ),
+                    Spacing.vSm,
+                    TextField(
+                      controller: _commentController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Conte como foi sua experiência...',
+                        hintStyle: TextStyle(color: context.textSecondary),
+                        filled: true,
+                        fillColor: context.surfaceColor,
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: context.borderColor,
+                            width: 2,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  Spacing.vLg,
-                  Text(
-                    'SUA NOTA',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  Spacing.vSm,
-                  Center(
-                    child: StarRatingInput(
-                      value: _score,
-                      onChanged: (val) => setState(() => _score = val),
-                    ),
-                  ),
-                  Spacing.vLg,
-                  Text(
-                    'COMENTÁRIO (OPCIONAL)',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  Spacing.vSm,
-                  TextField(
-                    controller: _commentController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: 'Conte como foi sua experiência...',
-                      hintStyle: TextStyle(color: context.textSecondary),
-                      filled: true,
-                      fillColor: context.surfaceColor,
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: context.borderColor,
-                          width: 2,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: context.borderColor,
-                          width: 2,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: context.borderColor,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Spacing.vLg,
-                  Text(
-                    'FOTOS (OPCIONAL)',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                      color: context.textPrimary,
+                    Spacing.vLg,
+                    Text(
+                      'FOTOS (OPCIONAL)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                        color: context.textPrimary,
+                      ),
                     ),
-                  ),
-                  Spacing.vSm,
-                  ImagePickerGrid(
-                    images: _selectedImages,
-                    onImagesChanged: (imgs) =>
-                        setState(() => _selectedImages = imgs),
-                  ),
-                  Spacing.vXl,
-                  AppButton(
-                    label: 'ENVIAR AVALIAÇÃO',
-                    isLoading: _isSubmitting,
-                    onPressed: _submit,
-                  ),
-                ],
+                    Spacing.vSm,
+                    ImagePickerGrid(
+                      images: _selectedImages,
+                      onImagesChanged: (imgs) =>
+                          setState(() => _selectedImages = imgs),
+                    ),
+                    Spacing.vXl,
+                    AppButton(
+                      label: 'ENVIAR AVALIAÇÃO',
+                      isLoading: _isSubmitting,
+                      onPressed: _submit,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

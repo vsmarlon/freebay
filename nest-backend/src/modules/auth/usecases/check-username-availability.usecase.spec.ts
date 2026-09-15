@@ -15,11 +15,7 @@ describe('CheckUsernameAvailabilityUseCase', () => {
     sut = new CheckUsernameAvailabilityUseCase(mockUserRepository as UserDatabaseRepository);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should return available: true when username is not taken', async () => {
+  it('returns available: true when username is not taken', async () => {
     mockUserRepository.findByUsername = jest.fn().mockResolvedValue(right(null));
 
     const result = await sut.execute({ username: 'valid_user' });
@@ -31,7 +27,7 @@ describe('CheckUsernameAvailabilityUseCase', () => {
     expect(mockUserRepository.findByUsername).toHaveBeenCalledWith('valid_user');
   });
 
-  it('should return available: false when username is already taken', async () => {
+  it('returns available: false when username is already taken', async () => {
     mockUserRepository.findByUsername = jest.fn().mockResolvedValue(
       right({
         id: 'existing-id',
@@ -48,7 +44,7 @@ describe('CheckUsernameAvailabilityUseCase', () => {
     }
   });
 
-  it('should normalize username (lowercase & trimmed) before querying repository', async () => {
+  it('normalizes username (lowercase & trimmed) before querying repository', async () => {
     mockUserRepository.findByUsername = jest.fn().mockResolvedValue(right(null));
 
     const result = await sut.execute({ username: '  Valid_User  ' });
@@ -60,7 +56,7 @@ describe('CheckUsernameAvailabilityUseCase', () => {
     expect(mockUserRepository.findByUsername).toHaveBeenCalledWith('valid_user');
   });
 
-  it('should return available: false for invalid username formats without querying repository', async () => {
+  it('returns available: false for invalid username formats without querying repository', async () => {
     const invalidUsernames = [
       '',
       'ab', // < 3 chars
@@ -82,7 +78,7 @@ describe('CheckUsernameAvailabilityUseCase', () => {
     expect(mockUserRepository.findByUsername).not.toHaveBeenCalled();
   });
 
-  it('should return Left(AppError) when repository fails with a DB error', async () => {
+  it('returns Left(AppError) when repository fails with a DB error', async () => {
     mockUserRepository.findByUsername = jest
       .fn()
       .mockResolvedValue(left(new DatabaseError('Erro ao buscar usuário por username')));

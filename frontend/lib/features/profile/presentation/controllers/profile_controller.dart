@@ -4,6 +4,7 @@ import 'package:freebay/features/profile/data/repositories/profile_repository.da
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/profile/presentation/controllers/states/user_posts_state.dart';
 
@@ -27,16 +28,20 @@ class UserPosts extends _$UserPosts {
       cursor: state.cursor,
       limit: 15,
     );
+    if (!ref.mounted) return;
 
-    result.fold((failure) => state = state.copyWith(isLoading: false), (
-      newPosts,
-    ) {
-      final allPosts = [...state.posts, ...newPosts];
+    result.fold((failure) => state = state.copyWith(isLoading: false), (page) {
+      final postsById = <String, PostEntity>{
+        for (final post in state.posts) post.id: post,
+      };
+      for (final post in page.items) {
+        postsById[post.id] = post;
+      }
       state = state.copyWith(
-        posts: allPosts,
+        posts: postsById.values.toList(),
         isLoading: false,
-        hasMore: newPosts.length >= 15,
-        cursor: newPosts.isNotEmpty ? newPosts.last.id : state.cursor,
+        hasMore: page.hasMore,
+        cursor: page.nextCursor,
       );
     });
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
@@ -11,7 +12,7 @@ class GuestProfileView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           PageHeader(
@@ -77,7 +78,7 @@ class GuestProfileView extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: InkWell(
-                        onTap: () => context.push('/register'),
+                        onTap: () => context.push(AppRoutes.register),
                         child: Container(
                           height: 52,
                           decoration: BoxDecoration(

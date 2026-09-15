@@ -1,12 +1,65 @@
+import { Prisma } from "@prisma/client";
+import { IsOptional, IsString, MaxLength } from "class-validator";
+
+export const STORY_TEXT_STYLES = [
+  "classic",
+  "strong",
+  "editorial",
+  "compact",
+] as const;
+
+export type StoryTextStyle = (typeof STORY_TEXT_STYLES)[number];
+
+export class CreateStoryMultipartDTO {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  caption?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100_000)
+  textBlocks?: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStoryTextStyle(value: unknown): value is StoryTextStyle {
+  return (
+    typeof value === "string" &&
+    STORY_TEXT_STYLES.some((style) => style === value)
+  );
+}
+
+export interface StoryTextBlock {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+  color: number;
+  style: StoryTextStyle;
+  zIndex: number;
+}
+
 export interface CreateStoryInput {
   userId: string;
   imageUrl: string;
+  mediaType?: "IMAGE" | "VIDEO";
+  caption?: string;
+  textBlocks?: Prisma.InputJsonValue;
 }
 
 export interface CreateStoryOutput {
   id: string;
   userId: string;
   imageUrl: string;
+  mediaType: "IMAGE" | "VIDEO";
+  caption: string | null;
+  textBlocks: StoryTextBlock[];
   expiresAt: Date;
   createdAt: Date;
   user: {
@@ -22,8 +75,113 @@ export interface GroupedStory {
   stories: {
     id: string;
     imageUrl: string;
+    mediaType: "IMAGE" | "VIDEO";
+    caption: string | null;
+    textBlocks: StoryTextBlock[];
     createdAt: Date;
     expiresAt: Date;
     viewsCount: number;
   }[];
+}
+
+export function parseStoryTextBlocks(
+  value: unknown,
+): { value: StoryTextBlock[] } | { error: string } {
+  let parsed: unknown = value;
+  if (typeof value === "string") {
+    if (value.length > 100_000) {
+      return { error: "textBlocks excede o tamanho máximo permitido" };
+    }
+    try {
+      parsed = JSON.parse(value) as unknown;
+    } catch {
+      return { error: "textBlocks deve ser um JSON válido" };
+    }
+  }
+  if (parsed === undefined || parsed === null || parsed === "") {
+    return { value: [] };
+  }
+  if (!Array.isArray(parsed) || parsed.length > 10) {
+    return { error: "textBlocks deve ser uma lista com no máximo 10 itens" };
+  }
+
+  const ids = new Set<string>();
+  const blocks: StoryTextBlock[] = [];
+  for (const item of parsed) {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+      return { error: "Cada bloco de texto deve ser um objeto" };
+    }
+    if (!isRecord(item)) {
+      return { error: "Cada bloco de texto deve ser um objeto" };
+    }
+    const block = item;
+    const id = typeof block.id === "string" ? block.id.trim() : "";
+    const text = typeof block.text === "string" ? block.text.trim() : "";
+    if (!id || ids.has(id))
+      return { error: "IDs de texto devem ser únicos e não vazios" };
+    if (text.length < 1 || text.length > 200)
+      return { error: "Cada texto deve ter entre 1 e 200 caracteres" };
+    ids.add(id);
+
+    const numeric = (key: string): number | null => {
+      const candidate = block[key];
+      return typeof candidate === "number" && Number.isFinite(candidate)
+        ? candidate
+        : null;
+    };
+    const x = numeric("x");
+    const y = numeric("y");
+    const scale = numeric("scale");
+    const rotation = numeric("rotation");
+    const color = numeric("color");
+    const zIndex = numeric("zIndex");
+    const style = typeof block.style === "string" ? block.style : "";
+    if (x === null || x < 0 || x > 1 || y === null || y < 0 || y > 1) {
+      return { error: "A posição do texto deve estar entre 0 e 1" };
+    }
+    if (
+      scale === null ||
+      scale < 0.5 ||
+      scale > 3 ||
+      rotation === null ||
+      rotation < -Math.PI ||
+      rotation > Math.PI
+    ) {
+      return { error: "Escala ou rotação do texto inválida" };
+    }
+    if (
+      color === null ||
+      !Number.isInteger(color) ||
+      color < 0 ||
+      color > 0xffffffff
+    ) {
+      return { error: "A cor do texto deve ser um ARGB válido" };
+    }
+    if (!isStoryTextStyle(style)) {
+      return { error: "Estilo de texto não suportado" };
+    }
+    if (zIndex === null || !Number.isInteger(zIndex)) {
+      return { error: "A ordem dos textos deve ser um inteiro" };
+    }
+    blocks.push({
+      id,
+      text,
+      x,
+      y,
+      scale,
+      rotation,
+      color,
+      style,
+      zIndex,
+    });
+  }
+  const zIndexes = new Set(blocks.map((block) => block.zIndex));
+  if (zIndexes.size !== blocks.length)
+    return { error: "A ordem dos textos deve ser única" };
+  return { value: blocks.sort((a, b) => a.zIndex - b.zIndex) };
+}
+
+export function canonicalStoryTextBlocks(value: unknown): StoryTextBlock[] {
+  const parsed = parseStoryTextBlocks(value);
+  return "value" in parsed ? parsed.value : [];
 }

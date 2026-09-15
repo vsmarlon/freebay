@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
@@ -27,7 +27,7 @@ class SuggestionsSection extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             state.error!,
-            style: const TextStyle(fontSize: 13, color: AppColors.mediumGray),
+            style: TextStyle(fontSize: 13, color: context.textSecondary),
           ),
         ),
       );
@@ -53,15 +53,7 @@ class SuggestionsSection extends ConsumerWidget {
             if (i == state.users.length) {
               return _buildSeeMoreCard(context, ref, state.isLoading);
             }
-            return _CompactSuggestionCard(
-              user: state.users[i],
-              onFollow: (userId) async {
-                await ref.read(socialRepositoryProvider).followUser(userId);
-              },
-              onUnfollow: (userId) async {
-                await ref.read(socialRepositoryProvider).unfollowUser(userId);
-              },
-            );
+            return _CompactSuggestionCard(user: state.users[i]);
           },
         ),
       ),
@@ -146,39 +138,23 @@ class SuggestionsSection extends ConsumerWidget {
   }
 }
 
-class _CompactSuggestionCard extends ConsumerStatefulWidget {
+class _CompactSuggestionCard extends ConsumerWidget {
   final UserSearchEntity user;
-  final Function(String userId) onFollow;
-  final Function(String userId) onUnfollow;
 
-  const _CompactSuggestionCard({
-    required this.user,
-    required this.onFollow,
-    required this.onUnfollow,
-  });
+  const _CompactSuggestionCard({required this.user});
 
   @override
-  ConsumerState<_CompactSuggestionCard> createState() =>
-      _CompactSuggestionCardState();
-}
-
-class _CompactSuggestionCardState
-    extends ConsumerState<_CompactSuggestionCard> {
-  bool _isLoading = false;
-  bool? _isFollowingOverride;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(authControllerProvider).value;
-    final isOwnCard = currentUser != null && currentUser.id == widget.user.id;
-    final followStatus = ref.watch(followStatusProvider(widget.user.id));
-    final isFollowing =
-        _isFollowingOverride ?? (followStatus.value?.isFollowing ?? false);
+    final isOwnCard = currentUser != null && currentUser.id == user.id;
+    final followStatus = ref.watch(followStatusProvider(user.id));
+    final isFollowing = followStatus.value?.isFollowing ?? false;
+    final isBusy = ref.watch(followsInFlightProvider).contains(user.id);
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
-        onTap: () => context.push('/user/${widget.user.id}'),
+        onTap: () => context.push(AppRoutes.userPath(user.id)),
         child: Container(
           width: 100,
           decoration: BoxDecoration(
@@ -193,18 +169,18 @@ class _CompactSuggestionCardState
                 height: 48,
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.outlineVariant),
-                  image: widget.user.avatarUrl != null
+                  image: user.avatarUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(widget.user.avatarUrl!),
+                          image: NetworkImage(user.avatarUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,
                   color: context.surfaceMidColor,
                 ),
-                child: widget.user.avatarUrl == null
+                child: user.avatarUrl == null
                     ? Center(
                         child: Text(
-                          widget.user.displayName[0].toUpperCase(),
+                          user.displayName[0].toUpperCase(),
                           style: const TextStyle(fontSize: 18),
                         ),
                       )
@@ -215,7 +191,7 @@ class _CompactSuggestionCardState
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Text(
-                  widget.user.displayName,
+                  user.displayName,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -231,7 +207,9 @@ class _CompactSuggestionCardState
               if (!isOwnCard)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-                  child: followStatus.isLoading && _isFollowingOverride == null
+                  child:
+                      followStatus.isLoading &&
+                          !ref.watch(followStateProvider).containsKey(user.id)
                       ? const ShimmerBlock(width: 80, height: 32)
                       : AppButton(
                           label: isFollowing ? 'Seguindo' : 'Seguir',
@@ -239,22 +217,14 @@ class _CompactSuggestionCardState
                               ? AppButtonVariant.ghost
                               : AppButtonVariant.primary,
                           size: AppButtonSize.compact,
-                          isLoading: _isLoading,
-                          onPressed: () async {
-                            setState(() => _isLoading = true);
-                            if (isFollowing) {
-                              await widget.onUnfollow(widget.user.id);
-                            } else {
-                              await widget.onFollow(widget.user.id);
-                            }
-                            ref.invalidate(
-                              followStatusProvider(widget.user.id),
-                            );
-                            setState(() {
-                              _isFollowingOverride = !isFollowing;
-                              _isLoading = false;
-                            });
-                          },
+                          isLoading: isBusy,
+                          onPressed: () => ref
+                              .read(followStateProvider.notifier)
+                              .toggleFollow(
+                                user.id,
+                                fallbackFollowersCount: user.followersCount,
+                                fallbackFollowingCount: user.followingCount,
+                              ),
                         ),
                 ),
               if (isOwnCard) const SizedBox(height: 10),

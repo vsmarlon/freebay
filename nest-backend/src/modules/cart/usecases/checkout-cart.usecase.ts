@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { splitAmount } from '@/shared/core/platform-fee';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -41,13 +41,13 @@ export class CheckoutCartUseCase {
     const mode: CheckoutMode = input.mode ?? 'session';
 
     const cpfResult = await this.cartRepository.findUserCpf(input.userId);
-    if (isLeft(cpfResult)) return left(cpfResult.value);
+    if (cpfResult.isLeft()) return left(cpfResult.value);
     if (mode === 'session' && !cpfResult.value) {
       return left(new BadRequestError('Adicione seu CPF no perfil antes de realizar uma compra'));
     }
 
     const cartResult = await this.cartRepository.getUserCart(input.userId);
-    if (isLeft(cartResult)) return left(cartResult.value);
+    if (cartResult.isLeft()) return left(cartResult.value);
 
     const cartItems = cartResult.value;
     if (cartItems.length === 0) {
@@ -87,7 +87,7 @@ export class CheckoutCartUseCase {
     const idempotencyKey = this.buildIdempotencyKey(input.userId, planned, mode);
 
     const existingResult = await this.paymentGroupRepository.findByIdempotencyKey(idempotencyKey);
-    if (isLeft(existingResult)) return left(existingResult.value);
+    if (existingResult.isLeft()) return left(existingResult.value);
 
     const existing = existingResult.value;
     if (existing && this.isReusable(existing)) {
@@ -121,9 +121,6 @@ export class CheckoutCartUseCase {
           tx,
         );
 
-        const clearResult = await this.cartRepository.clear(input.userId, tx);
-        if (isLeft(clearResult)) throw clearResult.value;
-
         return { groupId: group.id, reserved };
       });
 
@@ -131,11 +128,11 @@ export class CheckoutCartUseCase {
       orderIds = created.reserved;
     } catch (error) {
       if (error instanceof AppError) return left(error);
-      if ((error as Error).message === PRODUCT_UNAVAILABLE) {
+      if (error instanceof Error && error.message === PRODUCT_UNAVAILABLE) {
         return left(new BadRequestError('Um ou mais produtos não estão mais disponíveis'));
       }
       this.logger.error(
-        `Cart checkout transaction failed for user ${input.userId}: ${(error as Error).message}`,
+        `Cart checkout transaction failed for user ${input.userId}: ${error instanceof Error ? error.message : String(error)}`,
       );
       return left(new DatabaseError('Erro ao criar pedidos do carrinho'));
     }
@@ -145,18 +142,51 @@ export class CheckoutCartUseCase {
         ? await this.createSession(groupId, input.userId, totalAmount, planned, cpfResult.value)
         : await this.createIntent(groupId, input.userId, totalAmount);
 
-    if (isLeft(paymentResult)) {
+    if (paymentResult.isLeft()) {
       await this.compensate(groupId, orderIds);
       return left(paymentResult.value);
     }
 
-    const attachResult = await this.paymentGroupRepository.attachPayment({
-      groupId,
-      ...paymentResult.value.attach,
-    });
-    if (isLeft(attachResult)) {
-      await this.compensate(groupId, orderIds);
-      return left(attachResult.value);
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const attachResult = await this.paymentGroupRepository.attachPayment(
+          { groupId, ...paymentResult.value.attach },
+          tx,
+        );
+        if (attachResult.isLeft()) throw attachResult.value;
+
+        const clearResult = await this.cartRepository.clear(input.userId, tx);
+        if (clearResult.isLeft()) throw clearResult.value;
+      });
+    } catch (error) {
+      const payment = paymentResult.value.attach;
+      const cancellation = await this.paymentProvider.cancelPendingPayment(
+        'stripeSessionId' in payment
+          ? {
+              stripeSessionId: payment.stripeSessionId,
+              idempotencyKey: `group-cancel:${groupId}`,
+            }
+          : 'stripePaymentIntentId' in payment
+            ? {
+                stripePaymentIntentId: payment.stripePaymentIntentId,
+                idempotencyKey: `group-cancel:${groupId}`,
+              }
+          : {
+              idempotencyKey: `group-cancel:${groupId}`,
+            },
+      );
+      if (cancellation.isRight()) {
+        await this.compensate(groupId, orderIds);
+      } else {
+        this.logger.error(
+          `Payment group ${groupId} remains pending for webhook or expiry reconciliation`,
+        );
+      }
+      if (error instanceof AppError) return left(error);
+      this.logger.error(
+        `Cart checkout finalization failed for user ${input.userId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return left(new DatabaseError('Erro ao finalizar pagamento do carrinho'));
     }
 
     return right({
@@ -196,7 +226,7 @@ export class CheckoutCartUseCase {
     >
   > {
     const userResult = await this.userRepository.findPaymentInfo(userId);
-    if (isLeft(userResult)) return left(userResult.value);
+    if (userResult.isLeft()) return left(userResult.value);
     const user = userResult.value ?? { displayName: '', email: '', cpf: null };
 
     const lineItems: PaymentLineItem[] = planned.map((item) => ({
@@ -217,7 +247,7 @@ export class CheckoutCartUseCase {
       successUrl: `${process.env.APP_URL}/payments/success?paymentGroupId=${groupId}`,
       cancelUrl: `${process.env.APP_URL}/payments/cancel?paymentGroupId=${groupId}`,
     });
-    if (isLeft(sessionResult)) {
+    if (sessionResult.isLeft()) {
       this.logger.error(`Cart payment session failed: ${sessionResult.value.message}`);
       return left(sessionResult.value);
     }
@@ -249,7 +279,7 @@ export class CheckoutCartUseCase {
     >
   > {
     const userResult = await this.userRepository.findPaymentInfo(userId);
-    if (isLeft(userResult)) return left(userResult.value);
+    if (userResult.isLeft()) return left(userResult.value);
     const user = userResult.value ?? { displayName: '', email: '', cpf: null };
 
     const intentResult = await this.paymentProvider.createPaymentIntent({
@@ -259,7 +289,7 @@ export class CheckoutCartUseCase {
       receiptEmail: user.email ?? undefined,
       idempotencyKey: `group-pi:${groupId}`,
     });
-    if (isLeft(intentResult)) {
+    if (intentResult.isLeft()) {
       this.logger.error(`Cart payment intent failed: ${intentResult.value.message}`);
       return left(intentResult.value);
     }
@@ -285,7 +315,7 @@ export class CheckoutCartUseCase {
       });
     } catch (error) {
       this.logger.error(
-        `Failed to compensate cart checkout group ${groupId}: ${(error as Error).message}. The checkout expiry job will reclaim it.`,
+        `Failed to compensate cart checkout group ${groupId}: ${error instanceof Error ? error.message : String(error)}. The checkout expiry job will reclaim it.`,
       );
     }
   }

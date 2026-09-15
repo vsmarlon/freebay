@@ -24,7 +24,7 @@ describe('DeletePostUseCase', () => {
     useCase = module.get(DeletePostUseCase);
   });
 
-  it('should return NotFoundError if post is not found', async () => {
+  it('returns NotFoundError if post is not found', async () => {
     mockPostRepo.findById.mockResolvedValue(right(null));
 
     const result = await useCase.execute({ postId: 'post-1', userId: 'user-1' });
@@ -33,7 +33,7 @@ describe('DeletePostUseCase', () => {
     expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return ForbiddenError if user is not author', async () => {
+  it('returns ForbiddenError if user is not author', async () => {
     mockPostRepo.findById.mockResolvedValue(
       right({ id: 'post-1', userId: 'other-user' }),
     );
@@ -44,7 +44,7 @@ describe('DeletePostUseCase', () => {
     expect(result.value).toBeInstanceOf(ForbiddenError);
   });
 
-  it('should soft delete post successfully', async () => {
+  it('soft-deletes post successfully', async () => {
     mockPostRepo.findById.mockResolvedValue(
       right({ id: 'post-1', userId: 'user-1' }),
     );

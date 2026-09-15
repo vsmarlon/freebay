@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { Either, left, right } from '@/shared/core/either';
+import { AppError, NotFoundError } from '@/shared/core/errors';
 import { CursorPage, FIRST_PAGE, PageQuery } from '@/shared/core/pagination';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
@@ -26,7 +26,7 @@ export class GetMessagesUseCase {
     query: PageQuery = FIRST_PAGE,
   ): Promise<Either<AppError, GetMessagesResult>> {
     const resolved = await this.threadAccess.resolveThread(userId, conversationId);
-    if (isLeft(resolved)) return left(resolved.value);
+    if (resolved.isLeft()) return left(resolved.value);
 
     const { orderId, directConversationId, otherUserId } = resolved.value;
     const isOrderThread = Boolean(orderId);
@@ -36,10 +36,10 @@ export class GetMessagesUseCase {
 
     if (isOrderThread) {
       const msgsResult = await this.conversationRepository.findChatMessagesByOrder(orderId!, query);
-      if (isLeft(msgsResult)) return left(msgsResult.value);
+      if (msgsResult.isLeft()) return left(msgsResult.value);
 
       const readResult = await this.conversationRepository.markChatMessagesRead(orderId!, userId);
-      if (isLeft(readResult)) return left(readResult.value);
+      if (readResult.isLeft()) return left(readResult.value);
 
       page = msgsResult.value;
     } else {
@@ -47,10 +47,10 @@ export class GetMessagesUseCase {
         directConversationId!,
         query,
       );
-      if (isLeft(msgsResult)) return left(msgsResult.value);
+      if (msgsResult.isLeft()) return left(msgsResult.value);
 
       const readResult = await this.conversationRepository.markMessagesRead(directConversationId!, userId);
-      if (isLeft(readResult)) return left(readResult.value);
+      if (readResult.isLeft()) return left(readResult.value);
 
       page = msgsResult.value;
     }
@@ -61,8 +61,13 @@ export class GetMessagesUseCase {
     );
 
     const preferenceResult = await this.preferenceRepository.findByAnyId(userId, conversationId);
-    if (isLeft(preferenceResult)) return left(preferenceResult.value);
+    if (preferenceResult.isLeft()) return left(preferenceResult.value);
     const preference = preferenceResult.value;
+
+    const otherUserResult = await this.conversationRepository.findUserById(otherUserId);
+    if (otherUserResult.isLeft()) return left(otherUserResult.value);
+    const otherUser = otherUserResult.value;
+    if (!otherUser) return left(new NotFoundError('User'));
 
     return right({
       messages,
@@ -70,6 +75,11 @@ export class GetMessagesUseCase {
       nextCursor: page.nextCursor,
       threadType: isOrderThread ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
       otherUserId,
+      otherUser: {
+        id: otherUser.id,
+        displayName: otherUser.displayName,
+        avatarUrl: otherUser.avatarUrl,
+      },
       preference: preference
         ? {
             isArchived: preference.isArchived,

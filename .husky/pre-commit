@@ -1,1 +1,11 @@
 npx lint-staged
+
+# Block raw route literals in navigation calls — use AppRoutes (see AGENTS.md).
+staged_dart=$(git diff --cached --name-only --diff-filter=ACM | grep '^frontend/.*\.dart$' || true)
+if [ -n "$staged_dart" ]; then
+  if echo "$staged_dart" | xargs grep -nE '(context|appRouter)\.(go|push|pushReplacement|replace)\([[:space:]]*['\''"]/'; then
+    echo ''
+    echo 'Raw route literal above. Navigate via AppRoutes (see AGENTS.md).'
+    exit 1
+  fi
+fi

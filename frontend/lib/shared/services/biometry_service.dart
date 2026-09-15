@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:freebay/shared/services/storage_service.dart';
 
 const String _biometryEnabledKey = 'biometry_enabled';
 const String _biometryPromptedKey = 'biometry_prompted';
@@ -16,7 +17,10 @@ class BiometryService {
     try {
       final canCheckBiometrics = await _localAuth.canCheckBiometrics;
       final isDeviceSupported = await _localAuth.isDeviceSupported();
-      return canCheckBiometrics && isDeviceSupported;
+      final enrolledBiometrics = await _localAuth.getAvailableBiometrics();
+      return canCheckBiometrics &&
+          isDeviceSupported &&
+          enrolledBiometrics.isNotEmpty;
     } on PlatformException {
       return false;
     }
@@ -101,13 +105,18 @@ class BiometryService {
   // here to check if it exists alongside the enabled flag.
 
   Future<bool> hasCredentials() async {
-    final token = await _secureStorage.read(key: 'biometric_token');
+    final token = await StorageService.getBiometricToken();
     return token != null && token.isNotEmpty;
   }
 
   Future<void> clearCredentials() async {
     await setEnabled(false);
-    await _secureStorage.delete(key: 'biometric_token');
+    await StorageService.clearBiometricToken();
+  }
+
+  Future<void> clearState() async {
+    await clearCredentials();
+    await setHasPrompted(false);
   }
 }
 

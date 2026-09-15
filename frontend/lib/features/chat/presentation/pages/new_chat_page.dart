@@ -1,285 +1,350 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
+import 'package:freebay/features/profile/data/entities/follower_entity.dart';
+import 'package:freebay/features/profile/data/entities/block_responses.dart';
+import 'package:freebay/features/profile/presentation/pages/blocked_users_page.dart';
+import 'package:freebay/features/profile/presentation/providers/follow_list_provider.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
-import 'package:freebay/shared/services/http_client.dart';
 
-class NewChatPage extends ConsumerStatefulWidget {
-  const NewChatPage({super.key});
+/// New-conversation picker. Every list comes from a provider — following via
+/// [followingProvider], suggestions via [suggestionsProvider], blocked ids
+/// via [blockedUsersProvider], search via [userSearchProvider]. The search
+/// field and debounce timer are the only local state (hooks, no setState).
+class NewChatPage extends HookConsumerWidget {
+  final String? targetUserId;
+  final String? productId;
 
-  @override
-  ConsumerState<NewChatPage> createState() => _NewChatPageState();
-}
-
-class _NewChatPageState extends ConsumerState<NewChatPage> {
-  final _searchController = TextEditingController();
-  List<UserSearchEntity> _following = [];
-  List<UserSearchEntity> _suggestions = [];
-  Set<String> _blockedUserIds = {};
-  bool _isLoadingFollowing = true;
-  bool _isLoadingSuggestions = true;
-  Timer? _debounceTimer;
+  const NewChatPage({super.key, this.targetUserId, this.productId});
 
   @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _debounceTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _loadData() async {
-    await Future.wait([
-      _loadFollowing(),
-      _loadSuggestions(),
-      _loadBlockedUsers(),
-    ]);
-  }
-
-  Future<void> _loadBlockedUsers() async {
-    try {
-      final response = await HttpClient.instance.get('/users/blocked');
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        final users = (data['users'] as List?) ?? [];
-        setState(() {
-          _blockedUserIds = users.map((u) => u['id'] as String).toSet();
-        });
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _loadFollowing() async {
-    setState(() => _isLoadingFollowing = true);
-    try {
-      final userId = ref.read(authControllerProvider).value?.id;
-      if (userId == null) {
-        setState(() => _isLoadingFollowing = false);
-        return;
-      }
-      final response = await HttpClient.instance.get(
-        '/users/$userId/following',
-      );
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        final users =
-            (data['users'] as List?)
-                ?.map(
-                  (json) =>
-                      UserSearchEntity.fromJson(json as Map<String, dynamic>),
-                )
-                .toList() ??
-            [];
-        setState(() {
-          _following = users;
-          _isLoadingFollowing = false;
-        });
-      } else {
-        setState(() => _isLoadingFollowing = false);
-      }
-    } catch (_) {
-      setState(() => _isLoadingFollowing = false);
-    }
-  }
-
-  Future<void> _loadSuggestions() async {
-    setState(() => _isLoadingSuggestions = true);
-    try {
-      final response = await HttpClient.instance.get('/users/suggestions');
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        final users =
-            (data['users'] as List?)
-                ?.map(
-                  (json) =>
-                      UserSearchEntity.fromJson(json as Map<String, dynamic>),
-                )
-                .toList() ??
-            [];
-        setState(() {
-          _suggestions = users;
-          _isLoadingSuggestions = false;
-        });
-      } else {
-        setState(() => _isLoadingSuggestions = false);
-      }
-    } catch (_) {
-      setState(() => _isLoadingSuggestions = false);
-    }
-  }
-
-  void _onSearchDebounced(String query) {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      ref.read(userSearchProvider.notifier).search(query: query, refresh: true);
-    });
-  }
-
-  Future<void> _startConversation(
-    String userId,
-    String userName,
-    String? avatarUrl,
-  ) async {
-    try {
-      final response = await HttpClient.instance.post(
-        '/chat/conversations',
-        data: {'targetUserId': userId},
-      );
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        final conversationId = data['conversationId'] as String;
-        if (mounted) {
-          context.push(
-            '/chat/$conversationId',
-            extra: {
-              'oderName': userName,
-              'oderAvatarUrl': avatarUrl,
-              'chatType': 'direct',
-            },
-          );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final searchController = useTextEditingController();
+    final draftController = useTextEditingController(
+      text: targetUserId != null && productId != null
+          ? 'Oi, ainda está disponível?'
+          : null,
+    );
+    final clientMessageId = useRef<String?>(null);
+    final attemptedDraft = useRef<String?>(null);
+    final isSending = useState(false);
+    useListenable(searchController);
+    useListenable(draftController);
+    useEffect(() {
+      void onDraftChanged() {
+        if (clientMessageId.value != null &&
+            attemptedDraft.value != draftController.text) {
+          clientMessageId.value = null;
+          attemptedDraft.value = null;
         }
       }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao iniciar conversa')),
+
+      draftController.addListener(onDraftChanged);
+      return () => draftController.removeListener(onDraftChanged);
+    }, [draftController]);
+    final debounce = useRef<Timer?>(null);
+    useEffect(
+      () =>
+          () => debounce.value?.cancel(),
+      const [],
+    );
+
+    final isProductContext = targetUserId != null && productId != null;
+    final userId = ref.watch(authControllerProvider).value?.id;
+    final followingAsync = isProductContext
+        ? const AsyncValue<List<FollowerEntity>>.data([])
+        : userId == null
+        ? const AsyncValue<List<FollowerEntity>>.data([])
+        : ref.watch(followingProvider(userId));
+    final suggestions = isProductContext
+        ? const SuggestionsState()
+        : ref.watch(suggestionsProvider);
+    final blockedAsync = isProductContext
+        ? const AsyncValue<BlockListResponse>.data(
+            BlockListResponse(limit: 0, offset: 0),
+          )
+        : ref.watch(blockedUsersProvider);
+    final searchState = isProductContext
+        ? const UserSearchState()
+        : ref.watch(userSearchProvider);
+
+    final blockedIds = blockedAsync.value?.users.map((u) => u.id).toSet() ?? {};
+    List<UserSearchEntity> filterBlocked(List<UserSearchEntity> users) =>
+        users.where((u) => !blockedIds.contains(u.id)).toList();
+
+    final following = (followingAsync.value ?? [])
+        .map(
+          (f) => UserSearchEntity(
+            id: f.id,
+            displayName: f.displayName,
+            avatarUrl: f.avatarUrl,
+            isVerified: f.isVerified,
+            bio: f.bio,
+          ),
+        )
+        .toList();
+
+    void onSearchChanged(String query) {
+      debounce.value?.cancel();
+      debounce.value = Timer(const Duration(milliseconds: 300), () {
+        ref
+            .read(userSearchProvider.notifier)
+            .search(query: query, refresh: true);
+      });
+    }
+
+    Future<void> startConversation(String targetId) async {
+      final result = await ref
+          .read(chatRepositoryProvider)
+          .startDirectConversation(targetId);
+      if (!context.mounted) return;
+      final conversationId = result.rightOrNull;
+      if (conversationId == null) {
+        AppSnackbar.error(
+          context,
+          result.leftOrNull?.message ?? 'Erro ao iniciar conversa',
         );
+        return;
+      }
+      await ref.read(liveChatListProvider.notifier).refreshRecent();
+      ref.invalidate(chatsProvider);
+      if (!context.mounted) return;
+      context.push(AppRoutes.chatPath(conversationId));
+    }
+
+    Future<void> sendProductMessage() async {
+      if (targetUserId == null || productId == null || isSending.value) return;
+      final message = draftController.text.trim();
+      if (message.isEmpty) return;
+
+      isSending.value = true;
+      clientMessageId.value ??=
+          'new-chat-${DateTime.now().microsecondsSinceEpoch}';
+      final messageClientId = clientMessageId.value;
+      attemptedDraft.value = draftController.text;
+      try {
+        final conversationResult = await ref
+            .read(chatRepositoryProvider)
+            .startDirectConversation(targetUserId!, productId: productId);
+        if (!context.mounted) return;
+        await conversationResult.fold(
+          (failure) async => AppSnackbar.error(context, failure.message),
+          (conversationId) async {
+            final messageResult = await ref
+                .read(chatRepositoryProvider)
+                .sendMessage(
+                  conversationId,
+                  message,
+                  clientMessageId: messageClientId,
+                );
+            if (!context.mounted) return;
+            final failure = messageResult.leftOrNull;
+            if (failure != null) {
+              AppSnackbar.error(context, failure.message);
+              return;
+            }
+            await ref.read(liveChatListProvider.notifier).refreshRecent();
+            ref.invalidate(chatsProvider);
+            if (!context.mounted) return;
+            context.push(AppRoutes.chatPath(conversationId));
+          },
+        );
+      } finally {
+        if (context.mounted) isSending.value = false;
       }
     }
-  }
 
-  List<UserSearchEntity> _filterBlocked(List<UserSearchEntity> users) {
-    return users.where((u) => !_blockedUserIds.contains(u.id)).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     final isDark = context.isDark;
-    final searchState = ref.watch(userSearchProvider);
+    final isSearching = searchController.text.isNotEmpty;
+
+    if (targetUserId != null && productId != null) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AppBackground(
+          child: Column(
+            children: [
+              PageHeader(
+                text: 'FALAR SOBRE PRODUTO',
+                leading: BrutalistIconButton(
+                  icon: Icons.arrow_back,
+                  onTap: () {
+                    if (context.canPop()) context.pop();
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Mensagem para o vendedor',
+                      style: TextStyle(color: context.textSecondary),
+                    ),
+                    Spacing.vSm,
+                    AppTextField(controller: draftController, maxLines: 5),
+                    Spacing.vMd,
+                    AppButton(
+                      label: 'ENVIAR MENSAGEM',
+                      onPressed: draftController.text.trim().isEmpty
+                          ? null
+                          : sendProductMessage,
+                      isLoading: isSending.value,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'NOVA CONVERSA',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'NOVA CONVERSA',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Buscar usuários...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                ref.read(userSearchProvider.notifier).clear();
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: isDark
-                          ? AppColors.surfaceDark
-                          : AppColors.white,
-                      border: const OutlineInputBorder(
-                        borderSide: BorderSide.none,
+            Expanded(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar usuários...',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: isSearching
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  searchController.clear();
+                                  ref.read(userSearchProvider.notifier).clear();
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.white,
+                        border: const OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                        ),
                       ),
+                      onChanged: onSearchChanged,
                     ),
-                    onChanged: _onSearchDebounced,
                   ),
-                ),
-                Expanded(
-                  child: _searchController.text.isNotEmpty
-                      ? _buildSearchResults(searchState, isDark)
-                      : _buildFollowingAndSuggestions(isDark),
-                ),
-              ],
+                  Expanded(
+                    child: isSearching
+                        ? _buildSearchResults(
+                            context,
+                            filterBlocked(searchState.users),
+                            searchState.isLoading,
+                            startConversation,
+                          )
+                        : _buildFollowingAndSuggestions(
+                            context,
+                            filterBlocked(following),
+                            followingAsync.isLoading,
+                            filterBlocked(suggestions.users),
+                            suggestions.isLoading,
+                            startConversation,
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSearchResults(UserSearchState state, bool isDark) {
-    if (state.users.isEmpty && !state.isLoading) {
+  Widget _buildSearchResults(
+    BuildContext context,
+    List<UserSearchEntity> users,
+    bool isLoading,
+    Future<void> Function(String) startConversation,
+  ) {
+    if (users.isEmpty && !isLoading) {
       return const EmptyState(
         icon: Icons.person_search,
         title: 'NENHUM USUÁRIO',
         subtitle: 'Tente buscar por outro nome.',
       );
     }
-    final filtered = _filterBlocked(state.users);
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: filtered.length + (state.isLoading ? 1 : 0),
+      itemCount: users.length + (isLoading ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == filtered.length) return const ShimmerBlock(height: 72);
-        final user = filtered[index];
-        return _buildUserTile(user, isDark);
+        if (index == users.length) return const ShimmerBlock(height: 72);
+        final user = users[index];
+        return _buildUserTile(context, user, () => startConversation(user.id));
       },
     );
   }
 
-  Widget _buildFollowingAndSuggestions(bool isDark) {
-    final filteredFollowing = _filterBlocked(_following);
-    final filteredSuggestions = _filterBlocked(_suggestions);
-
+  Widget _buildFollowingAndSuggestions(
+    BuildContext context,
+    List<UserSearchEntity> following,
+    bool isLoadingFollowing,
+    List<UserSearchEntity> suggestions,
+    bool isLoadingSuggestions,
+    Future<void> Function(String) startConversation,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (_isLoadingFollowing || filteredFollowing.isNotEmpty) ...[
-          _buildSectionTitle('Quem você segue', isDark),
-          if (_isLoadingFollowing)
+        if (isLoadingFollowing || following.isNotEmpty) ...[
+          _buildSectionTitle(context, 'Quem você segue'),
+          if (isLoadingFollowing)
             const ShimmerBlock(width: 20, height: 20)
-          else if (filteredFollowing.isEmpty)
+          else if (following.isEmpty)
             const EmptyState(
               icon: Icons.people_outline,
               title: 'NENHUM SEGUIDO',
               subtitle: 'Você ainda não segue ninguém.',
             )
           else
-            ...filteredFollowing.map((u) => _buildUserTile(u, isDark)),
+            for (final u in following)
+              _buildUserTile(context, u, () => startConversation(u.id)),
           Spacing.vLg,
         ],
-        if (_isLoadingSuggestions || filteredSuggestions.isNotEmpty) ...[
-          _buildSectionTitle('Sugestões', isDark),
-          if (_isLoadingSuggestions)
+        if (isLoadingSuggestions || suggestions.isNotEmpty) ...[
+          _buildSectionTitle(context, 'Sugestões'),
+          if (isLoadingSuggestions)
             const ShimmerBlock(width: 20, height: 20)
-          else if (filteredSuggestions.isEmpty)
+          else if (suggestions.isEmpty)
             const EmptyState(
               icon: Icons.explore_outlined,
               title: 'NENHUMA SUGESTÃO',
               subtitle: 'No momento não há sugestões de usuários.',
             )
           else
-            ...filteredSuggestions.map((u) => _buildUserTile(u, isDark)),
+            for (final u in suggestions)
+              _buildUserTile(context, u, () => startConversation(u.id)),
         ],
       ],
     );
   }
 
-  Widget _buildSectionTitle(String title, bool isDark) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -293,7 +358,11 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
     );
   }
 
-  Widget _buildUserTile(UserSearchEntity user, bool isDark) {
+  Widget _buildUserTile(
+    BuildContext context,
+    UserSearchEntity user,
+    VoidCallback onTap,
+  ) {
     return ListTile(
       leading: Container(
         width: 48,
@@ -339,12 +408,13 @@ class _NewChatPageState extends ConsumerState<NewChatPage> {
           ],
         ],
       ),
-      subtitle: Text(
-        '${user.followersCount} seguidores',
-        style: const TextStyle(color: AppColors.mediumGray, fontSize: 12),
-      ),
-      onTap: () =>
-          _startConversation(user.id, user.displayName, user.avatarUrl),
+      subtitle: user.followersCount > 0
+          ? Text(
+              '${user.followersCount} seguidores',
+              style: TextStyle(color: context.textSecondary, fontSize: 12),
+            )
+          : null,
+      onTap: onTap,
     );
   }
 }

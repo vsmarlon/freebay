@@ -13,6 +13,293 @@ part of 'story_entity.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
+mixin _$StoryTextBlockEntity {
+
+ String get id; String get text; double get x; double get y; double get scale; double get rotation; int get color; StoryTextStyle get style; int get zIndex;
+/// Create a copy of StoryTextBlockEntity
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$StoryTextBlockEntityCopyWith<StoryTextBlockEntity> get copyWith => _$StoryTextBlockEntityCopyWithImpl<StoryTextBlockEntity>(this as StoryTextBlockEntity, _$identity);
+
+  /// Serializes this StoryTextBlockEntity to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is StoryTextBlockEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.x, x) || other.x == x)&&(identical(other.y, y) || other.y == y)&&(identical(other.scale, scale) || other.scale == scale)&&(identical(other.rotation, rotation) || other.rotation == rotation)&&(identical(other.color, color) || other.color == color)&&(identical(other.style, style) || other.style == style)&&(identical(other.zIndex, zIndex) || other.zIndex == zIndex));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,text,x,y,scale,rotation,color,style,zIndex);
+
+@override
+String toString() {
+  return 'StoryTextBlockEntity(id: $id, text: $text, x: $x, y: $y, scale: $scale, rotation: $rotation, color: $color, style: $style, zIndex: $zIndex)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $StoryTextBlockEntityCopyWith<$Res>  {
+  factory $StoryTextBlockEntityCopyWith(StoryTextBlockEntity value, $Res Function(StoryTextBlockEntity) _then) = _$StoryTextBlockEntityCopyWithImpl;
+@useResult
+$Res call({
+ String id, String text, double x, double y, double scale, double rotation, int color, StoryTextStyle style, int zIndex
+});
+
+
+
+
+}
+/// @nodoc
+class _$StoryTextBlockEntityCopyWithImpl<$Res>
+    implements $StoryTextBlockEntityCopyWith<$Res> {
+  _$StoryTextBlockEntityCopyWithImpl(this._self, this._then);
+
+  final StoryTextBlockEntity _self;
+  final $Res Function(StoryTextBlockEntity) _then;
+
+/// Create a copy of StoryTextBlockEntity
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? text = null,Object? x = null,Object? y = null,Object? scale = null,Object? rotation = null,Object? color = null,Object? style = null,Object? zIndex = null,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
+as String,x: null == x ? _self.x : x // ignore: cast_nullable_to_non_nullable
+as double,y: null == y ? _self.y : y // ignore: cast_nullable_to_non_nullable
+as double,scale: null == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
+as double,rotation: null == rotation ? _self.rotation : rotation // ignore: cast_nullable_to_non_nullable
+as double,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as int,style: null == style ? _self.style : style // ignore: cast_nullable_to_non_nullable
+as StoryTextStyle,zIndex: null == zIndex ? _self.zIndex : zIndex // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [StoryTextBlockEntity].
+extension StoryTextBlockEntityPatterns on StoryTextBlockEntity {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _StoryTextBlockEntity value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _StoryTextBlockEntity() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _StoryTextBlockEntity value)  $default,){
+final _that = this;
+switch (_that) {
+case _StoryTextBlockEntity():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _StoryTextBlockEntity value)?  $default,){
+final _that = this;
+switch (_that) {
+case _StoryTextBlockEntity() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String text,  double x,  double y,  double scale,  double rotation,  int color,  StoryTextStyle style,  int zIndex)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _StoryTextBlockEntity() when $default != null:
+return $default(_that.id,_that.text,_that.x,_that.y,_that.scale,_that.rotation,_that.color,_that.style,_that.zIndex);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String text,  double x,  double y,  double scale,  double rotation,  int color,  StoryTextStyle style,  int zIndex)  $default,) {final _that = this;
+switch (_that) {
+case _StoryTextBlockEntity():
+return $default(_that.id,_that.text,_that.x,_that.y,_that.scale,_that.rotation,_that.color,_that.style,_that.zIndex);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String text,  double x,  double y,  double scale,  double rotation,  int color,  StoryTextStyle style,  int zIndex)?  $default,) {final _that = this;
+switch (_that) {
+case _StoryTextBlockEntity() when $default != null:
+return $default(_that.id,_that.text,_that.x,_that.y,_that.scale,_that.rotation,_that.color,_that.style,_that.zIndex);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _StoryTextBlockEntity implements StoryTextBlockEntity {
+  const _StoryTextBlockEntity({required this.id, required this.text, required this.x, required this.y, required this.scale, required this.rotation, required this.color, required this.style, required this.zIndex});
+  factory _StoryTextBlockEntity.fromJson(Map<String, dynamic> json) => _$StoryTextBlockEntityFromJson(json);
+
+@override final  String id;
+@override final  String text;
+@override final  double x;
+@override final  double y;
+@override final  double scale;
+@override final  double rotation;
+@override final  int color;
+@override final  StoryTextStyle style;
+@override final  int zIndex;
+
+/// Create a copy of StoryTextBlockEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$StoryTextBlockEntityCopyWith<_StoryTextBlockEntity> get copyWith => __$StoryTextBlockEntityCopyWithImpl<_StoryTextBlockEntity>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$StoryTextBlockEntityToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StoryTextBlockEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.text, text) || other.text == text)&&(identical(other.x, x) || other.x == x)&&(identical(other.y, y) || other.y == y)&&(identical(other.scale, scale) || other.scale == scale)&&(identical(other.rotation, rotation) || other.rotation == rotation)&&(identical(other.color, color) || other.color == color)&&(identical(other.style, style) || other.style == style)&&(identical(other.zIndex, zIndex) || other.zIndex == zIndex));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,text,x,y,scale,rotation,color,style,zIndex);
+
+@override
+String toString() {
+  return 'StoryTextBlockEntity(id: $id, text: $text, x: $x, y: $y, scale: $scale, rotation: $rotation, color: $color, style: $style, zIndex: $zIndex)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$StoryTextBlockEntityCopyWith<$Res> implements $StoryTextBlockEntityCopyWith<$Res> {
+  factory _$StoryTextBlockEntityCopyWith(_StoryTextBlockEntity value, $Res Function(_StoryTextBlockEntity) _then) = __$StoryTextBlockEntityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String text, double x, double y, double scale, double rotation, int color, StoryTextStyle style, int zIndex
+});
+
+
+
+
+}
+/// @nodoc
+class __$StoryTextBlockEntityCopyWithImpl<$Res>
+    implements _$StoryTextBlockEntityCopyWith<$Res> {
+  __$StoryTextBlockEntityCopyWithImpl(this._self, this._then);
+
+  final _StoryTextBlockEntity _self;
+  final $Res Function(_StoryTextBlockEntity) _then;
+
+/// Create a copy of StoryTextBlockEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? text = null,Object? x = null,Object? y = null,Object? scale = null,Object? rotation = null,Object? color = null,Object? style = null,Object? zIndex = null,}) {
+  return _then(_StoryTextBlockEntity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
+as String,x: null == x ? _self.x : x // ignore: cast_nullable_to_non_nullable
+as double,y: null == y ? _self.y : y // ignore: cast_nullable_to_non_nullable
+as double,scale: null == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
+as double,rotation: null == rotation ? _self.rotation : rotation // ignore: cast_nullable_to_non_nullable
+as double,color: null == color ? _self.color : color // ignore: cast_nullable_to_non_nullable
+as int,style: null == style ? _self.style : style // ignore: cast_nullable_to_non_nullable
+as StoryTextStyle,zIndex: null == zIndex ? _self.zIndex : zIndex // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$StoryUserEntity {
 
  String get id; String get displayName; String? get avatarUrl; bool get isVerified;
@@ -287,7 +574,7 @@ as bool,
 /// @nodoc
 mixin _$StoryEntity {
 
- String get id; String get userId; String get imageUrl; DateTime get expiresAt; DateTime get createdAt; StoryUserEntity get user; bool get isViewed;
+ String get id; String get userId; String get imageUrl; String get mediaType; String? get caption; List<StoryTextBlockEntity>? get textBlocks; DateTime get expiresAt; DateTime get createdAt; StoryUserEntity get user; bool get isViewed;
 /// Create a copy of StoryEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -300,16 +587,16 @@ $StoryEntityCopyWith<StoryEntity> get copyWith => _$StoryEntityCopyWithImpl<Stor
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.mediaType, mediaType) || other.mediaType == mediaType)&&(identical(other.caption, caption) || other.caption == caption)&&const DeepCollectionEquality().equals(other.textBlocks, textBlocks)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,expiresAt,createdAt,user,isViewed);
+int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,mediaType,caption,const DeepCollectionEquality().hash(textBlocks),expiresAt,createdAt,user,isViewed);
 
 @override
 String toString() {
-  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
+  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, mediaType: $mediaType, caption: $caption, textBlocks: $textBlocks, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
 }
 
 
@@ -320,7 +607,7 @@ abstract mixin class $StoryEntityCopyWith<$Res>  {
   factory $StoryEntityCopyWith(StoryEntity value, $Res Function(StoryEntity) _then) = _$StoryEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String imageUrl, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
+ String id, String userId, String imageUrl, String mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
 });
 
 
@@ -337,12 +624,15 @@ class _$StoryEntityCopyWithImpl<$Res>
 
 /// Create a copy of StoryEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? mediaType = null,Object? caption = freezed,Object? textBlocks = freezed,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,imageUrl: null == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
-as String,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
+as String,mediaType: null == mediaType ? _self.mediaType : mediaType // ignore: cast_nullable_to_non_nullable
+as String,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
+as String?,textBlocks: freezed == textBlocks ? _self.textBlocks : textBlocks // ignore: cast_nullable_to_non_nullable
+as List<StoryTextBlockEntity>?,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as StoryUserEntity,isViewed: null == isViewed ? _self.isViewed : isViewed // ignore: cast_nullable_to_non_nullable
@@ -440,10 +730,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  String mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _StoryEntity() when $default != null:
-return $default(_that.id,_that.userId,_that.imageUrl,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
+return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
   return orElse();
 
 }
@@ -461,10 +751,10 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.expiresAt,_that.creat
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  String mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)  $default,) {final _that = this;
 switch (_that) {
 case _StoryEntity():
-return $default(_that.id,_that.userId,_that.imageUrl,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
+return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -481,10 +771,10 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.expiresAt,_that.creat
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String imageUrl,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String imageUrl,  String mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,) {final _that = this;
 switch (_that) {
 case _StoryEntity() when $default != null:
-return $default(_that.id,_that.userId,_that.imageUrl,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
+return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
   return null;
 
 }
@@ -496,12 +786,23 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.expiresAt,_that.creat
 @JsonSerializable()
 
 class _StoryEntity extends StoryEntity {
-  const _StoryEntity({required this.id, required this.userId, required this.imageUrl, required this.expiresAt, required this.createdAt, required this.user, this.isViewed = false}): super._();
+  const _StoryEntity({required this.id, required this.userId, required this.imageUrl, this.mediaType = 'IMAGE', this.caption, final  List<StoryTextBlockEntity>? textBlocks, required this.expiresAt, required this.createdAt, required this.user, this.isViewed = false}): _textBlocks = textBlocks,super._();
   factory _StoryEntity.fromJson(Map<String, dynamic> json) => _$StoryEntityFromJson(json);
 
 @override final  String id;
 @override final  String userId;
 @override final  String imageUrl;
+@override@JsonKey() final  String mediaType;
+@override final  String? caption;
+ final  List<StoryTextBlockEntity>? _textBlocks;
+@override List<StoryTextBlockEntity>? get textBlocks {
+  final value = _textBlocks;
+  if (value == null) return null;
+  if (_textBlocks is EqualUnmodifiableListView) return _textBlocks;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
 @override final  DateTime expiresAt;
 @override final  DateTime createdAt;
 @override final  StoryUserEntity user;
@@ -520,16 +821,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.mediaType, mediaType) || other.mediaType == mediaType)&&(identical(other.caption, caption) || other.caption == caption)&&const DeepCollectionEquality().equals(other._textBlocks, _textBlocks)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,expiresAt,createdAt,user,isViewed);
+int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,mediaType,caption,const DeepCollectionEquality().hash(_textBlocks),expiresAt,createdAt,user,isViewed);
 
 @override
 String toString() {
-  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
+  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, mediaType: $mediaType, caption: $caption, textBlocks: $textBlocks, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
 }
 
 
@@ -540,7 +841,7 @@ abstract mixin class _$StoryEntityCopyWith<$Res> implements $StoryEntityCopyWith
   factory _$StoryEntityCopyWith(_StoryEntity value, $Res Function(_StoryEntity) _then) = __$StoryEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String imageUrl, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
+ String id, String userId, String imageUrl, String mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
 });
 
 
@@ -557,12 +858,15 @@ class __$StoryEntityCopyWithImpl<$Res>
 
 /// Create a copy of StoryEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? mediaType = null,Object? caption = freezed,Object? textBlocks = freezed,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
   return _then(_StoryEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,imageUrl: null == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
-as String,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
+as String,mediaType: null == mediaType ? _self.mediaType : mediaType // ignore: cast_nullable_to_non_nullable
+as String,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
+as String?,textBlocks: freezed == textBlocks ? _self._textBlocks : textBlocks // ignore: cast_nullable_to_non_nullable
+as List<StoryTextBlockEntity>?,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,user: null == user ? _self.user : user // ignore: cast_nullable_to_non_nullable
 as StoryUserEntity,isViewed: null == isViewed ? _self.isViewed : isViewed // ignore: cast_nullable_to_non_nullable

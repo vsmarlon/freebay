@@ -530,16 +530,16 @@ return $default(_that.id,_that.buyerId,_that.sellerId,_that.productId,_that.amou
 @JsonSerializable()
 
 class _OrderEntity extends OrderEntity {
-  const _OrderEntity({required this.id, required this.buyerId, required this.sellerId, required this.productId, this.amount = 0, this.platformFee = 0, this.sellerAmount = 0, @JsonKey(fromJson: _orderStatusFromJson) required this.status, @JsonKey(fromJson: _escrowStatusFromJson) required this.escrowStatus, required this.createdAt, this.deliveryConfirmedAt, this.product, this.buyer, this.seller}): super._();
+  const _OrderEntity({required this.id, required this.buyerId, required this.sellerId, required this.productId, required this.amount, required this.platformFee, required this.sellerAmount, @JsonKey(fromJson: _orderStatusFromJson) required this.status, @JsonKey(fromJson: _escrowStatusFromJson) required this.escrowStatus, required this.createdAt, this.deliveryConfirmedAt, this.product, this.buyer, this.seller}): super._();
   factory _OrderEntity.fromJson(Map<String, dynamic> json) => _$OrderEntityFromJson(json);
 
 @override final  String id;
 @override final  String buyerId;
 @override final  String sellerId;
 @override final  String productId;
-@override@JsonKey() final  int amount;
-@override@JsonKey() final  int platformFee;
-@override@JsonKey() final  int sellerAmount;
+@override final  int amount;
+@override final  int platformFee;
+@override final  int sellerAmount;
 @override@JsonKey(fromJson: _orderStatusFromJson) final  OrderStatus status;
 @override@JsonKey(fromJson: _escrowStatusFromJson) final  EscrowStatus escrowStatus;
 @override final  DateTime createdAt;

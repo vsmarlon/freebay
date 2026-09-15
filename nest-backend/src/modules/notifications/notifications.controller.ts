@@ -15,7 +15,7 @@ import { MarkAllAsReadUseCase } from './usecases/mark-all-as-read.usecase';
 import { RegisterFcmTokenUseCase } from './usecases/register-fcm-token.usecase';
 import { RegisterFcmTokenDTO, NotificationResponse } from './dtos/notification.dto';
 import { NotificationDatabaseRepository } from './data/repositories/notification-database.repository';
-import { isLeft } from '@/shared/core/either';
+;
 
 @ApiTags('Notifications')
 @Controller('notifications')
@@ -43,7 +43,7 @@ export class NotificationsController {
   })
   async countUnread(@CurrentUserId() userId: string) {
     const result = await this.notificationRepository.countUnread(userId);
-    if (isLeft(result)) return result;
+    if (result.isLeft()) return result;
     return { count: result.value };
   }
 

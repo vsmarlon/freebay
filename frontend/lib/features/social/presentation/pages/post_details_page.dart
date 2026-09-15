@@ -15,6 +15,7 @@ import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:go_router/go_router.dart';
 import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -78,9 +79,11 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
 
   void _setReplyTo(CommentEntity comment) {
     setState(() => _replyToId = comment.id);
-    // Seed only the reply controller, leaving the main input untouched.
-    final username = comment.user?.displayName ?? 'usuário';
-    _replyController.text = '@$username ';
+    // Seed only the reply controller with the user's handle.
+    final handle = comment.user?.username;
+    _replyController.text = (handle != null && handle.isNotEmpty)
+        ? '@$handle '
+        : '';
     _replyController.selection = TextSelection.fromPosition(
       TextPosition(offset: _replyController.text.length),
     );
@@ -109,13 +112,15 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     final state = ref.watch(postDetailsProvider(widget.postId));
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          const PageHeader(text: 'POST'),
-          BrutalistBreadcrumb(items: context.breadcrumbs),
-          Expanded(child: _buildBody(context, state)),
-        ],
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            const PageHeader(text: 'POST'),
+            BrutalistBreadcrumb(items: context.breadcrumbs),
+            Expanded(child: _buildBody(context, state)),
+          ],
+        ),
       ),
     );
   }
@@ -217,7 +222,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               isReposted: isReposted,
               isVerified: post.user.isVerified,
               createdAt: post.createdAt,
-              onUserTap: () => context.push('/user/${post.user.id}'),
+              onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
               onLike: () async {
                 final user = ref.read(authControllerProvider).value;
                 if (user == null) {
@@ -405,7 +410,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                 );
           },
           onUserTap: comment.user != null
-              ? () => context.push('/user/${comment.user!.id}')
+              ? () => context.push(AppRoutes.userPath(comment.user!.id))
               : null,
         ),
         if (isReplying)

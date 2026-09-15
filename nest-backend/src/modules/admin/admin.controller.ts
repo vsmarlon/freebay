@@ -13,6 +13,7 @@ import { ResolveReportUseCase } from './usecases/resolve-report.usecase';
 import { SuspendUserUseCase } from './usecases/suspend-user.usecase';
 import { RemoveContentUseCase } from './usecases/remove-content.usecase';
 import { ListModerationActionsUseCase } from './usecases/list-moderation-actions.usecase';
+import { ListTransferFailuresUseCase } from './usecases/list-transfer-failures.usecase';
 import {
   AdminReportQueryDTO,
   ModerationReasonDTO,
@@ -30,6 +31,7 @@ export class AdminController {
     private readonly suspendUserUseCase: SuspendUserUseCase,
     private readonly removeContentUseCase: RemoveContentUseCase,
     private readonly listModerationActionsUseCase: ListModerationActionsUseCase,
+    private readonly listTransferFailuresUseCase: ListTransferFailuresUseCase,
   ) {}
 
   @GetAdmin('reports', {
@@ -174,5 +176,12 @@ export class AdminController {
       cursor: query.cursor,
       limit: query.limit,
     });
+  }
+
+  @GetAdmin('transfer-failures', {
+    summary: 'List Connect transfer and reversal failures',
+  })
+  async listTransferFailures(@Query() query: CursorQueryDTO) {
+    return this.listTransferFailuresUseCase.execute({ cursor: query.cursor, limit: query.limit });
   }
 }

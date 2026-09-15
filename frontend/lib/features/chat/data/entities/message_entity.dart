@@ -39,6 +39,13 @@ abstract class MessageEntity with _$MessageEntity {
         return 'Imagem';
       case 'VIDEO':
         return 'Vídeo';
+      case 'AUDIO':
+        final ms = metadata?['durationMs'];
+        if (ms is int && ms > 0) {
+          final totalSec = ms ~/ 1000;
+          return 'Áudio ${totalSec ~/ 60}:${(totalSec % 60).toString().padLeft(2, '0')}';
+        }
+        return 'Áudio';
       case 'LOCATION':
         return 'Localização';
       case 'PRODUCT_CARD':

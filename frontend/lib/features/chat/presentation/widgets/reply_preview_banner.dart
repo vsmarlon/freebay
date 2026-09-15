@@ -38,8 +38,9 @@ class ReplyPreviewBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDeleted = replyTo == null;
-    final displayText = isDeleted ? 'Mensagem apagada' : replyTo!.previewText;
+    final reply = replyTo;
+    final isDeleted = reply == null;
+    final displayText = reply == null ? 'Mensagem apagada' : reply.previewText;
 
     final banner = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

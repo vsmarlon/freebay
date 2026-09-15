@@ -9,11 +9,10 @@ part 'saves_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Saves extends _$Saves {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   SavesState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     return const SavesState();
   }
 
@@ -29,11 +28,22 @@ class Saves extends _$Saves {
         ? await _repository.unsavePost(postId)
         : await _repository.savePost(postId);
 
-    return result.fold((_) {
-      state = state.copyWith(
-        savedOverrides: {...state.savedOverrides, postId: currentSaved},
-      );
-      return false;
-    }, (_) => true);
+    return result.fold(
+      (_) {
+        state = state.copyWith(
+          savedOverrides: {...state.savedOverrides, postId: currentSaved},
+        );
+        return false;
+      },
+      (authoritative) {
+        state = state.copyWith(
+          savedOverrides: {
+            ...state.savedOverrides,
+            postId: authoritative.active,
+          },
+        );
+        return true;
+      },
+    );
   }
 }

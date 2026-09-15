@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { FavoriteDatabaseRepository } from '../data/repositories/favorite-database.repository';
 
@@ -9,7 +9,7 @@ export class ToggleFavoriteUseCase {
 
   async execute(userId: string, productId: string): Promise<Either<AppError, void>> {
     const productResult = await this.favoriteRepository.findProductById(productId);
-    if (isLeft(productResult)) {
+    if (productResult.isLeft()) {
       return left(productResult.value);
     }
     if (!productResult.value || productResult.value.status !== 'ACTIVE') {
@@ -21,20 +21,20 @@ export class ToggleFavoriteUseCase {
     }
 
     const existingResult = await this.favoriteRepository.findByUserAndProduct(userId, productId);
-    if (isLeft(existingResult)) {
+    if (existingResult.isLeft()) {
       return left(existingResult.value);
     }
 
     if (existingResult.value) {
       const deleteResult = await this.favoriteRepository.delete(userId, productId);
-      if (isLeft(deleteResult)) {
+      if (deleteResult.isLeft()) {
         return left(deleteResult.value);
       }
       return right(undefined);
     }
 
     const createResult = await this.favoriteRepository.create(userId, productId);
-    if (isLeft(createResult)) {
+    if (createResult.isLeft()) {
       return left(createResult.value);
     }
 

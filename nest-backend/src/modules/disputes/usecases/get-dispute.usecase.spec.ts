@@ -37,7 +37,7 @@ describe('GetDisputeUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should return dispute when found', async () => {
+  it('returns dispute when found', async () => {
     mockDisputeRepo.findByIdWithDetails.mockResolvedValue(right(mockDispute));
 
     const result = await sut.execute('dispute-123', 'buyer-123');
@@ -45,7 +45,7 @@ describe('GetDisputeUseCase', () => {
     expect(result.isRight()).toBe(true);
   });
 
-  it('should return NotFoundError when dispute not found', async () => {
+  it('returns NotFoundError when dispute not found', async () => {
     mockDisputeRepo.findByIdWithDetails.mockResolvedValue(right(null));
 
     const result = await sut.execute('nonexistent', 'buyer-123');
@@ -56,7 +56,7 @@ describe('GetDisputeUseCase', () => {
     }
   });
 
-  it('should return UnauthorizedError when user is not a participant', async () => {
+  it('returns UnauthorizedError when user is not a participant', async () => {
     mockDisputeRepo.findByIdWithDetails.mockResolvedValue(right(mockDispute));
 
     const result = await sut.execute('dispute-123', 'stranger-123');

@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { Effect, Layer, TestClock, Clock, TestContext } from 'effect';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory, OrderFactory } from '../../../../test/factories';
-import { isLeft, isRight } from '@/shared/core/either';
+;
 import { BadRequestError, UnauthorizedError, NotFoundError } from '@/shared/core/errors';
 import { OpenDisputeUseCase } from './open-dispute.usecase';
 import { ResolveDisputeUseCase } from './resolve-dispute.usecase';
@@ -97,7 +97,7 @@ describe('Disputes Effect Integration', () => {
       );
     }
 
-    it('should succeed 47h59m after delivery', async () => {
+    it('succeeds 47h59m after delivery', async () => {
       const program = Effect.gen(function* () {
         const { db, buyer, product } = yield* seed();
         const deliveryTime = new Date(Date.now() - (47 * ONE_HOUR_MS + 59 * 60 * 1000));
@@ -118,7 +118,7 @@ describe('Disputes Effect Integration', () => {
           ),
         );
 
-        expect(isRight(result)).toBe(true);
+        expect(result.isRight()).toBe(true);
         expect(notifications.length).toBe(3);
         expect(notifications.filter(n => n.method === 'notifyDispute').length).toBe(1);
         expect(notifications.filter(n => n.method === 'notifyOrderStatus').length).toBe(2);
@@ -126,7 +126,7 @@ describe('Disputes Effect Integration', () => {
       await run(program);
     });
 
-    it('should reject 48h01m after delivery', async () => {
+    it('rejects 48h01m after delivery', async () => {
       const program = Effect.gen(function* () {
         const { db, buyer, product } = yield* seed();
         const deliveryTime = new Date(Date.now() - (48 * ONE_HOUR_MS + ONE_HOUR_MS));
@@ -147,8 +147,8 @@ describe('Disputes Effect Integration', () => {
           ),
         );
 
-        expect(isLeft(result)).toBe(true);
-        if (isLeft(result)) {
+        expect(result.isLeft()).toBe(true);
+        if (result.isLeft()) {
           expect(result.value).toBeInstanceOf(BadRequestError);
         }
 
@@ -160,7 +160,7 @@ describe('Disputes Effect Integration', () => {
       await run(program);
     });
 
-    it('should reject non-participant', async () => {
+    it('rejects non-participant', async () => {
       const program = Effect.gen(function* () {
         const { db, buyer, product } = yield* seed();
         const stranger = yield* Effect.promise(() => userFactory.create());
@@ -178,8 +178,8 @@ describe('Disputes Effect Integration', () => {
           uc.execute({ orderId: order.id, userId: stranger.id, reason: 'Hacker' }),
         );
 
-        expect(isLeft(result)).toBe(true);
-        if (isLeft(result)) {
+        expect(result.isLeft()).toBe(true);
+        if (result.isLeft()) {
           expect(result.value).toBeInstanceOf(UnauthorizedError);
         }
       });
@@ -232,7 +232,7 @@ describe('Disputes Effect Integration', () => {
       ]);
     }
 
-    it('should resolve in seller favor and update wallet', async () => {
+    it('resolves in seller favor and updates wallet', async () => {
       const { seller, dispute } = await seed();
       const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
@@ -240,7 +240,7 @@ describe('Disputes Effect Integration', () => {
         winner: 'SELLER',
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const wallet = await prisma.wallet.findUnique({ where: { userId: seller.id } });
       expect(wallet?.availableBalance).toBe(2000 + 9000);
@@ -248,7 +248,7 @@ describe('Disputes Effect Integration', () => {
       expect(wallet?.totalEarned).toBe(9000);
     });
 
-    it('should resolve in buyer favor and refund wallet', async () => {
+    it('resolves in buyer favor and refunds wallet', async () => {
       const { buyer, dispute } = await seed();
       const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
@@ -256,7 +256,7 @@ describe('Disputes Effect Integration', () => {
         winner: 'BUYER',
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const wallet = await prisma.wallet.findUnique({ where: { userId: buyer.id } });
       expect(wallet?.availableBalance).toBe(5000 + 10000);
@@ -266,7 +266,7 @@ describe('Disputes Effect Integration', () => {
       expect(dbOrder?.escrowStatus).toBe('REFUNDED');
     });
 
-    it('should reject resolving an already-resolved dispute (BUG FIX)', async () => {
+    it('rejects resolving an already-resolved dispute', async () => {
       const { seller, dispute } = await seed();
       const uc = await makeUsecase();
 
@@ -275,7 +275,7 @@ describe('Disputes Effect Integration', () => {
         resolution: 'Seller wins',
         winner: 'SELLER',
       });
-      expect(isRight(first)).toBe(true);
+      expect(first.isRight()).toBe(true);
 
       const second = await uc.execute({
         disputeId: dispute.id,
@@ -283,8 +283,8 @@ describe('Disputes Effect Integration', () => {
         winner: 'SELLER',
       });
 
-      expect(isLeft(second)).toBe(true);
-      if (isLeft(second)) {
+      expect(second.isLeft()).toBe(true);
+      if (second.isLeft()) {
         expect(second.value).toBeInstanceOf(BadRequestError);
       }
 
@@ -293,7 +293,7 @@ describe('Disputes Effect Integration', () => {
       expect(wallet?.pendingBalance).toBe(0);
     });
 
-    it('should reject resolving a withdrawn (CANCELLED) dispute', async () => {
+    it('rejects resolving a withdrawn (CANCELLED) dispute', async () => {
       const { seller, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'CANCELLED' } });
 
@@ -303,8 +303,8 @@ describe('Disputes Effect Integration', () => {
         winner: 'SELLER',
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
 
@@ -339,7 +339,7 @@ describe('Disputes Effect Integration', () => {
       return buildUsecase(SubmitEvidenceUseCase);
     }
 
-    it('should set AWAITING_SELLER when buyer submits', async () => {
+    it('sets AWAITING_SELLER when buyer submits', async () => {
       const { dispute } = await seed();
       const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
@@ -347,14 +347,14 @@ describe('Disputes Effect Integration', () => {
         evidence: { message: 'Buyer evidence' },
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const db = await prisma.dispute.findUnique({ where: { id: dispute.id } });
       expect(db?.status).toBe('AWAITING_SELLER');
       expect(db?.buyerEvidence).toEqual({ message: 'Buyer evidence' });
     });
 
-    it('should set AWAITING_BUYER when seller submits', async () => {
+    it('sets AWAITING_BUYER when seller submits', async () => {
       const { dispute, seller } = await seed();
       const result = await (await makeUsecase()).execute({
         disputeId: dispute.id,
@@ -362,14 +362,14 @@ describe('Disputes Effect Integration', () => {
         evidence: { message: 'Seller evidence' },
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const db = await prisma.dispute.findUnique({ where: { id: dispute.id } });
       expect(db?.status).toBe('AWAITING_BUYER');
       expect(db?.sellerEvidence).toEqual({ message: 'Seller evidence' });
     });
 
-    it('should reject non-participant', async () => {
+    it('rejects non-participant', async () => {
       const { dispute } = await seed();
       const stranger = await userFactory.create();
       const result = await (await makeUsecase()).execute({
@@ -378,13 +378,13 @@ describe('Disputes Effect Integration', () => {
         evidence: { message: 'Hacker' },
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(UnauthorizedError);
       }
     });
 
-    it('should reject evidence after dispute is resolved', async () => {
+    it('rejects evidence after dispute is resolved', async () => {
       const { dispute } = await seed();
       await prisma.dispute.update({
         where: { id: dispute.id },
@@ -397,10 +397,10 @@ describe('Disputes Effect Integration', () => {
         evidence: { message: 'Too late' },
       });
 
-      expect(isLeft(result)).toBe(true);
+      expect(result.isLeft()).toBe(true);
     });
 
-    it('should reject evidence after dispute is withdrawn (CANCELLED)', async () => {
+    it('rejects evidence after dispute is withdrawn (CANCELLED)', async () => {
       const { dispute } = await seed();
       await prisma.dispute.update({
         where: { id: dispute.id },
@@ -413,15 +413,15 @@ describe('Disputes Effect Integration', () => {
         evidence: { message: 'Too late' },
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
     });
   });
 
   describe('DisputeCleanupTask — auto-expiry', () => {
-    it('should auto-resolve expired dispute in seller favor', async () => {
+    it('auto-resolves expired dispute in seller favor', async () => {
       const buyer = await userFactory.createWithWallet({}, { availableBalance: 5000 });
       const seller = await userFactory.createWithWallet({}, { pendingBalance: 9000, availableBalance: 2000 });
       const product = await productFactory.create(seller.id, { price: 10000 });
@@ -462,7 +462,7 @@ describe('Disputes Effect Integration', () => {
       expect(buyerWallet?.availableBalance).toBe(5000);
     });
 
-    it('should not touch non-expired disputes', async () => {
+    it('does not touch non-expired disputes', async () => {
       const buyer = await userFactory.createWithWallet();
       const seller = await userFactory.createWithWallet();
       const product = await productFactory.create(seller.id);
@@ -515,12 +515,12 @@ describe('Disputes Effect Integration', () => {
       return buildUsecase(WithdrawDisputeUseCase);
     }
 
-    it('should withdraw dispute, cancel it, and restore order to DELIVERED with escrow HELD', async () => {
+    it('withdraws dispute, cancels it, and restores order to DELIVERED with escrow HELD', async () => {
       const { buyer, order, dispute } = await seed();
 
       const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
 
       const dbDispute = await prisma.dispute.findUnique({ where: { id: dispute.id } });
       expect(dbDispute?.status).toBe('CANCELLED');
@@ -530,48 +530,48 @@ describe('Disputes Effect Integration', () => {
       expect(dbOrder?.escrowStatus).toBe('HELD');
     });
 
-    it('should return UnauthorizedError when userId is not the dispute opener', async () => {
+    it('returns UnauthorizedError when userId is not the dispute opener', async () => {
       const { seller, dispute } = await seed();
 
       const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: seller.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(UnauthorizedError);
       }
     });
 
-    it('should return BadRequestError when dispute is already RESOLVED', async () => {
+    it('returns BadRequestError when dispute is already RESOLVED', async () => {
       const { buyer, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'RESOLVED' } });
 
       const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
     });
 
-    it('should return BadRequestError when dispute is already CANCELLED (double-withdraw guard)', async () => {
+    it('returns BadRequestError when dispute is already CANCELLED (double-withdraw guard)', async () => {
       const { buyer, dispute } = await seed();
       await prisma.dispute.update({ where: { id: dispute.id }, data: { status: 'CANCELLED' } });
 
       const result = await (await makeUsecase()).execute({ disputeId: dispute.id, userId: buyer.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(BadRequestError);
       }
     });
 
-    it('should return NotFoundError when dispute does not exist', async () => {
+    it('returns NotFoundError when dispute does not exist', async () => {
       const { buyer } = await seed();
 
       const result = await (await makeUsecase()).execute({ disputeId: 'does-not-exist', userId: buyer.id });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value).toBeInstanceOf(NotFoundError);
       }
     });

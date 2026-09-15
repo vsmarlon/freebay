@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, isLeft, left, right } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { CursorPage, PageQuery } from '@/shared/core/pagination';
 import { Notification } from '@prisma/client';
@@ -14,7 +14,7 @@ export class GetNotificationsUseCase {
     page: PageQuery,
   ): Promise<Either<AppError, CursorPage<Notification>>> {
     const result = await this.notificationRepository.findByUserId(userId, page);
-    if (isLeft(result)) return left(result.value);
+    if (result.isLeft()) return left(result.value);
     return right(result.value);
   }
 }

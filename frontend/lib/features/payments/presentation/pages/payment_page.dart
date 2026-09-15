@@ -5,11 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/utils/value_utils.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
-import 'package:freebay/features/payments/data/entities/payment_entity.dart';
-import 'package:freebay/features/payments/domain/usecases/create_payment_session_usecase.dart';
-import 'package:freebay/features/payments/domain/usecases/create_payment_intent_usecase.dart';
 import 'package:freebay/features/payments/presentation/providers/payment_providers.dart';
 import 'package:freebay/features/payments/presentation/widgets/payment_view.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
@@ -27,12 +24,38 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   final _nameController = TextEditingController();
   final _taxIdController = TextEditingController();
   final _emailController = TextEditingController();
+  String? _userId;
 
-  bool _isSubmitting = false;
-  bool _didPrefill = false;
-  String? _createdOrderId;
-  PaymentEntity? _payment;
-  String? _paymentIntentClientSecret;
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual<AsyncValue<UserEntity?>>(authControllerProvider, (
+      _,
+      next,
+    ) {
+      _initializeForUser(next.value);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _initializeForUser(ref.read(authControllerProvider).value);
+    });
+  }
+
+  void _initializeForUser(UserEntity? user) {
+    if (!mounted || user?.id == _userId) return;
+
+    _userId = user?.id;
+    ref.read(paymentCheckoutProvider.notifier).reset();
+    _nameController.clear();
+    _emailController.clear();
+    _taxIdController.clear();
+
+    if (user == null) return;
+    _nameController.text = user.displayNameOrDefault;
+    _emailController.text = user.email ?? '';
+    if (kIsWeb && (user.cpf?.isNotEmpty ?? false)) {
+      _taxIdController.text = user.cpf!;
+    }
+  }
 
   @override
   void dispose() {
@@ -46,45 +69,38 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   Widget build(BuildContext context) {
     final query = GoRouterState.of(context).uri.queryParameters;
     final productId = query['productId'];
-    final user = ref.watch(authControllerProvider).value;
-
-    if (!_didPrefill && user != null) {
-      _nameController.text = user.displayNameOrDefault;
-      _emailController.text = user.email ?? '';
-      if (kIsWeb && (user.cpf?.isNotEmpty ?? false)) {
-        _taxIdController.text = user.cpf!;
-      }
-      _didPrefill = true;
-    }
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'PAGAMENTO',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'PAGAMENTO',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: productId == null
-                ? Center(
-                    child: Text(
-                      'Produto não informado.',
-                      style: TextStyle(color: context.textPrimary),
-                    ),
-                  )
-                : _buildProductCheckout(context, productId),
-          ),
-        ],
+            Expanded(
+              child: productId == null
+                  ? Center(
+                      child: Text(
+                        'Produto não informado.',
+                        style: TextStyle(color: context.textPrimary),
+                      ),
+                    )
+                  : _buildProductCheckout(context, productId),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildProductCheckout(BuildContext context, String productId) {
     final productAsync = ref.watch(productByIdProvider(productId));
+    final checkout = ref.watch(paymentCheckoutProvider);
 
     return productAsync.when(
       loading: () => const SkeletonPage(
@@ -104,20 +120,24 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         ),
       ),
       data: (product) {
-        if (_payment != null || _paymentIntentClientSecret != null) {
+        if (checkout.hasResult) {
           return PaymentView(
             product: product,
-            payment: _payment,
-            paymentIntentClientSecret: _paymentIntentClientSecret,
-            createdOrderId: _createdOrderId,
+            payment: checkout.payment,
+            paymentIntentClientSecret: checkout.paymentIntentClientSecret,
+            createdOrderId: checkout.createdOrderId,
           );
         }
-        return _buildForm(context, product);
+        return _buildForm(context, product, checkout.isSubmitting);
       },
     );
   }
 
-  Widget _buildForm(BuildContext context, ProductEntity product) {
+  Widget _buildForm(
+    BuildContext context,
+    ProductEntity product,
+    bool isSubmitting,
+  ) {
     final isDark = context.isDark;
 
     return ListView(
@@ -203,7 +223,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               AppButton(
                 label: 'PAGAR COM STRIPE',
                 icon: Icons.payment,
-                isLoading: _isSubmitting,
+                isLoading: isSubmitting,
                 onPressed: () => _submit(product),
               ),
             ],
@@ -217,52 +237,17 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    setState(() => _isSubmitting = true);
-
-    try {
-      final orderResult = await ref
-          .read(orderRepositoryProvider)
-          .createOrder(product.id);
-      if (orderResult.isLeft) {
-        if (mounted) {
-          AppSnackbar.error(
-            context,
-            orderResult.leftOrNull?.message ?? 'Erro ao criar pedido.',
-          );
-        }
-        setState(() => _isSubmitting = false);
-        return;
-      }
-      final order = orderResult.rightOrNull!;
-      _createdOrderId = order.id;
-
-      if (kIsWeb) {
-        final sessionResult =
-            await ref.read(createPaymentSessionUsecaseProvider)(
-              CreatePaymentSessionParams(
-                orderId: order.id,
-                customerName: _nameController.text.trim(),
-                customerTaxId: _taxIdController.text.trim(),
-                customerEmail: _emailController.text.trim(),
-              ),
-            );
-        sessionResult.fold(
-          (f) => AppSnackbar.error(context, f.message),
-          (p) => setState(() => _payment = p),
+    final error = await ref
+        .read(paymentCheckoutProvider.notifier)
+        .submit(
+          productId: product.id,
+          customerName: _nameController.text.trim(),
+          customerTaxId: _taxIdController.text.trim(),
+          customerEmail: _emailController.text.trim(),
+          isWeb: kIsWeb,
         );
-      } else {
-        final intentResult = await ref.read(createPaymentIntentUsecaseProvider)(
-          CreatePaymentIntentParams(orderId: order.id),
-        );
-        intentResult.fold(
-          (f) => AppSnackbar.error(context, f.message),
-          (intent) => setState(
-            () => _paymentIntentClientSecret = intent.paymentIntentClientSecret,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+    if (error != null && mounted) {
+      AppSnackbar.error(context, error);
     }
   }
 }

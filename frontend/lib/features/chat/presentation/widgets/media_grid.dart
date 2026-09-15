@@ -164,9 +164,9 @@ class _MediaTile extends StatelessWidget {
           },
           errorBuilder: (context, error, stackTrace) => Container(
             color: context.surfaceMidColor,
-            child: const Icon(
+            child: Icon(
               Icons.broken_image_outlined,
-              color: AppColors.mediumGray,
+              color: context.textSecondary,
               size: 24,
             ),
           ),
@@ -195,9 +195,9 @@ class _FullscreenImageDialog extends StatelessWidget {
                   imageUrl,
                   headers: mediaAuthHeaders(imageUrl),
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
+                  errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.broken_image_outlined,
-                    color: AppColors.mediumGray,
+                    color: context.textSecondary,
                     size: 48,
                   ),
                 ),

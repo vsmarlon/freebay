@@ -1,5 +1,9 @@
-import { IsUUID } from 'class-validator';
+import { IsIn, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { EscrowStatus, OrderStatus } from '@prisma/client';
+import { Type } from 'class-transformer';
+import { CursorQueryDTO } from '@/shared/dtos/pagination.dto';
+import { SALES_ORDER_STATUSES, SalesOrderStatus } from '../types/order.types';
 
 export class CreateOrderDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -9,10 +13,18 @@ export class CreateOrderDTO {
 
 export interface CreateOrderInput {
   buyerId: string;
-  sellerId: string;
   productId: string;
-  amount: number;
   platformFeePercent: number;
+  sellerId?: string;
+  amount?: number;
+}
+
+export class SalesOrdersQueryDTO extends CursorQueryDTO {
+  @ApiProperty({ enum: SALES_ORDER_STATUSES, required: false })
+  @IsOptional()
+  @IsIn([...SALES_ORDER_STATUSES])
+  @Type(() => String)
+  readonly status?: SalesOrderStatus;
 }
 
 export interface CreateOrderOutput {
@@ -21,7 +33,10 @@ export interface CreateOrderOutput {
   sellerId: string;
   productId: string;
   amount: number;
-  status: string;
+  platformFee: number;
+  sellerAmount: number;
+  status: OrderStatus;
+  escrowStatus: EscrowStatus;
   createdAt: Date;
 }
 

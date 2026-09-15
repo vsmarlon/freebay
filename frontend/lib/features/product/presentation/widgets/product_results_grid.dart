@@ -2,6 +2,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 const _crossAxisCount = 2;
 const _childAspectRatio = 0.68;
@@ -68,7 +69,7 @@ class ProductResultsGrid extends StatelessWidget {
               priceInCents: product.price,
               condition: product.condition,
               variant: AppCardVariant.compact,
-              onTap: () => context.push('/products/${product.id}'),
+              onTap: () => context.push(AppRoutes.productPath(product.id)),
             ),
           );
         },

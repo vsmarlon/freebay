@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { UserResponse, toUserResponse } from '../mappers/user.mapper';
@@ -11,7 +11,7 @@ export class GetProfileUseCase {
 
   async execute(input: GetProfileInput): Promise<Either<AppError, UserResponse>> {
     const userResult = await this.userRepository.findById(input.userId);
-    if (isLeft(userResult)) {
+    if (userResult.isLeft()) {
       return left(userResult.value);
     }
     if (!userResult.value) {
@@ -19,7 +19,7 @@ export class GetProfileUseCase {
     }
 
     const countsResult = await this.userRepository.getProfileCounts(input.userId);
-    if (isLeft(countsResult)) {
+    if (countsResult.isLeft()) {
       return left(countsResult.value);
     }
 

@@ -6,12 +6,12 @@ import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
 
 describe('DeleteCommentUseCase', () => {
   let useCase: DeleteCommentUseCase;
-  let mockCommentRepo: { findById: jest.Mock; softDelete: jest.Mock };
+  let mockCommentRepo: { findById: jest.Mock; softDeleteWithCount: jest.Mock };
 
   beforeEach(async () => {
     mockCommentRepo = {
       findById: jest.fn(),
-      softDelete: jest.fn(),
+      softDeleteWithCount: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -24,7 +24,7 @@ describe('DeleteCommentUseCase', () => {
     useCase = module.get(DeleteCommentUseCase);
   });
 
-  it('should return NotFoundError if comment not found', async () => {
+  it('returns NotFoundError if comment not found', async () => {
     mockCommentRepo.findById.mockResolvedValue(right(null));
 
     const result = await useCase.execute({ commentId: 'c-1', userId: 'user-1' });
@@ -33,9 +33,9 @@ describe('DeleteCommentUseCase', () => {
     expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return ForbiddenError if user is not author', async () => {
+  it('returns ForbiddenError if user is not author', async () => {
     mockCommentRepo.findById.mockResolvedValue(
-      right({ id: 'c-1', userId: 'other-user' }),
+      right({ id: 'c-1', userId: 'other-user', postId: 'post-1' }),
     );
 
     const result = await useCase.execute({ commentId: 'c-1', userId: 'user-1' });
@@ -44,15 +44,28 @@ describe('DeleteCommentUseCase', () => {
     expect(result.value).toBeInstanceOf(ForbiddenError);
   });
 
-  it('should soft delete comment successfully', async () => {
+  it('soft-deletes comment and decrements post commentsCount successfully', async () => {
     mockCommentRepo.findById.mockResolvedValue(
-      right({ id: 'c-1', userId: 'user-1' }),
+      right({ id: 'c-1', userId: 'user-1', postId: 'post-1' }),
     );
-    mockCommentRepo.softDelete.mockResolvedValue(right(undefined));
+    mockCommentRepo.softDeleteWithCount.mockResolvedValue(right(true));
 
     const result = await useCase.execute({ commentId: 'c-1', userId: 'user-1' });
 
     expect(result.isRight()).toBe(true);
-    expect(mockCommentRepo.softDelete).toHaveBeenCalledWith('c-1');
+    expect(mockCommentRepo.softDeleteWithCount).toHaveBeenCalledWith('c-1');
+  });
+
+  it('does not decrement again when the comment was already deleted', async () => {
+    mockCommentRepo.findById.mockResolvedValueOnce(
+      right({ id: 'c-1', userId: 'user-1', postId: 'post-1' }),
+    ).mockResolvedValueOnce(right(null));
+    mockCommentRepo.softDeleteWithCount.mockResolvedValue(right(true));
+
+    await useCase.execute({ commentId: 'c-1', userId: 'user-1' });
+    const result = await useCase.execute({ commentId: 'c-1', userId: 'user-1' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockCommentRepo.softDeleteWithCount).toHaveBeenCalledTimes(1);
   });
 });

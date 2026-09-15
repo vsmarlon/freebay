@@ -7,6 +7,7 @@ part 'user_post_entry.g.dart';
 @JsonSerializable()
 class UserPostEntry {
   final PostEntity post;
+  final String? repostId;
   final DateTime? repostedAt;
   final UserEntity? repostedBy;
   final bool isReposted;
@@ -14,6 +15,7 @@ class UserPostEntry {
 
   const UserPostEntry({
     required this.post,
+    this.repostId,
     this.repostedAt,
     this.repostedBy,
     this.isReposted = false,

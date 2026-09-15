@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
@@ -62,7 +62,7 @@ export class ForwardMessagesUseCase {
         input.userId,
         sourceMsg.sourceThreadId,
       );
-      if (isLeft(sourceThread)) {
+      if (sourceThread.isLeft()) {
         return left(new ForbiddenError('Você não participa da conversa de origem'));
       }
 
@@ -85,7 +85,7 @@ export class ForwardMessagesUseCase {
 
     for (const targetConvId of input.targetConversationIds) {
       const threadRes = await this.threadAccess.resolveThread(input.userId, targetConvId);
-      if (isLeft(threadRes)) {
+      if (threadRes.isLeft()) {
         return left(threadRes.value);
       }
 
@@ -112,7 +112,7 @@ export class ForwardMessagesUseCase {
             viewOnce: false,
           }, true);
 
-          if (isLeft(createRes)) return left(createRes.value);
+          if (createRes.isLeft()) return left(createRes.value);
 
           await this.conversationRepository.updateDirectConversation(thread.directConversationId, {
             lastMessageAt: new Date(),
@@ -143,7 +143,7 @@ export class ForwardMessagesUseCase {
             viewOnce: false,
           }, true);
 
-          if (isLeft(createRes)) return left(createRes.value);
+          if (createRes.isLeft()) return left(createRes.value);
 
           const msg = createRes.value;
           createdOutputs.push({

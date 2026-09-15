@@ -70,14 +70,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
             borderColor: context.borderColor,
           ),
           Spacing.hSm,
-          ViewOnceToggle(
-            enabled: widget.viewOnceEnabled,
-            onTap: () => widget.onViewOnceToggled(!widget.viewOnceEnabled),
-          ),
-          Spacing.hSm,
           Expanded(
             child: Container(
-              height: 48,
+              constraints: const BoxConstraints(minHeight: 48, maxHeight: 144),
               decoration: BoxDecoration(
                 color: context.isDark
                     ? Colors.white.withAlpha(13)
@@ -89,6 +84,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   Expanded(
                     child: TextField(
                       controller: widget.controller,
+                      maxLines: 6,
+                      minLines: 1,
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 14,
@@ -105,10 +102,15 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
-                          vertical: 14,
+                          vertical: 12,
                         ),
                       ),
                     ),
+                  ),
+                  ViewOnceToggle(
+                    enabled: widget.viewOnceEnabled,
+                    onTap: () =>
+                        widget.onViewOnceToggled(!widget.viewOnceEnabled),
                   ),
                   if (widget.isSending)
                     Padding(

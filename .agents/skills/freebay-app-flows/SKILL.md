@@ -207,10 +207,9 @@ stateDiagram-v2
 ### 5.1 Financial Ledger Architecture
 - **Currencies**: All monetary values stored in **Cents (`Int`)** (e.g. `1000` = R$ 10,00).
 - **Balances**:
-  - `availableBalance` (Int): Ready for withdrawal or in-app purchase.
+  - `availableBalance` (Int): Available balance shown in the wallet.
   - `pendingBalance` (Int): Held in escrow for active sales until buyer confirms delivery.
-  - `totalWithdrawn` (Int): Historical aggregate of completed cashouts.
-- **Withdrawals**: PIX Key (CPF, Email, Phone, EVP) validation via `cpf.utils.ts` and NestJS `WithdrawUseCase`.
+- **Ledger**: Statement rows show the financial reason for each balance movement.
 
 ### 5.2 Wallet & Escrow Sequence Diagram
 
@@ -243,12 +242,16 @@ sequenceDiagram
         Backend->>DB: order.status = DISPUTED, escrow.status = HELD (Frozen)
     end
     
-    Note over Seller,App: Seller requests withdrawal
-    Seller->>App: Input PIX Key & Amount
-    App->>Backend: POST /wallet/withdraw { amount, pixKey, pixKeyType }
-    Backend->>DB: Validate availableBalance >= amount
-    Backend->>DB: tx: deduct availableBalance, create Withdrawal record (PENDING)
-    Backend->>App: Return updated WalletEntity
+    Note over Seller,App: Seller reviews balances and ledger
+    Seller->>App: Open Wallet
+    App->>Backend: Load balances and ledger entries
+    Backend->>App: Return available/pending balances and statement rows
+    Seller->>App: Tap "CONFIGURAR RECEBIMENTOS"
+    App->>Stripe: Open hosted onboarding
+    Stripe->>App: Return to Wallet after onboarding
+    Seller->>App: Tap "ABRIR PAINEL DE PAGAMENTOS"
+    App->>Stripe: Open Express dashboard
+    Stripe->>Seller: Pays out on its own schedule
 ```
 
 ---
@@ -459,7 +462,7 @@ stateDiagram-v2
 | `/complete-profile` | `CompleteProfilePage` | Auth Required | Google Sign-in handle setup |
 | `/feed` | `FeedPage` (Tab 0) | Public/Guest OK | Social posts & stories |
 | `/explore` | `ExplorarPage` (Tab 1) | Public/Guest OK | Product discovery & search |
-| `/wallet` | `WalletPage` (Tab 2) | Auth Required | Balances & withdrawals |
+| `/wallet` | `WalletPage` (Tab 2) | Auth Required | Balances, ledger & Stripe payouts |
 | `/chat` | `ChatListPage` (Tab 3) | Auth Required | DMs & Order chats |
 | `/profile` | `ProfilePage` (Tab 4) | Public/Guest OK | User profile & listings |
 | `/checkout` | `CheckoutPage` | Non-Guest Only | Order placement & payment |

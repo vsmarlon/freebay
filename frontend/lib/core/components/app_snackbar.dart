@@ -54,19 +54,29 @@ class AppSnackbar {
     required String message,
     AppSnackbarType type = AppSnackbarType.info,
     Duration duration = const Duration(seconds: 3),
+    SnackBarAction? action,
   }) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
-      _build(message: message, type: type, duration: duration),
+      _build(message: message, type: type, duration: duration, action: action),
     );
   }
 
   static void success(BuildContext context, String message) =>
       show(context, message: message, type: AppSnackbarType.success);
 
-  static void error(BuildContext context, String message) {
-    show(context, message: message, type: AppSnackbarType.error);
+  static void error(
+    BuildContext context,
+    String message, {
+    SnackBarAction? action,
+  }) {
+    show(
+      context,
+      message: message,
+      type: AppSnackbarType.error,
+      action: action,
+    );
     _recordError(context, message);
   }
 

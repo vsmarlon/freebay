@@ -106,6 +106,19 @@ class ValueUtils {
     return RegExp(r'^[a-z0-9_]{3,20}$').hasMatch(username);
   }
 
+  static final _displayNameRegex = RegExp(
+    r"^[a-zA-ZÀ-ÿ0-9]+(([-']|\. ?| )[a-zA-ZÀ-ÿ0-9]+)*$",
+  );
+
+  /// Validates display name: 2-50 chars, letters (including accents), numbers,
+  /// single internal spaces, hyphens, periods, and apostrophes.
+  /// Rejects special/hacky characters (#$!%^@*()*#$,./\, &, etc.) and consecutive spaces.
+  static bool validateDisplayName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.length < 2 || trimmed.length > 50) return false;
+    return _displayNameRegex.hasMatch(trimmed);
+  }
+
   /// Truncates string to a maximum length with an optional suffix
   static String truncate(String text, int maxLength, {String suffix = '...'}) {
     if (text.length <= maxLength) return text;

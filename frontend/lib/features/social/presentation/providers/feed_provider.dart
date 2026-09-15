@@ -10,6 +10,20 @@ export 'package:freebay/features/social/presentation/providers/social_provider_s
 
 part 'feed_provider.g.dart';
 
+final userStoriesProvider = FutureProvider.family<List<StoryEntity>, String>((
+  ref,
+  userId,
+) async {
+  final repository = ref.watch(socialRepositoryProvider);
+  final result = await repository.getUserStories(userId);
+  return result.fold((failure) => throw failure, (stories) => stories);
+});
+
+void invalidateStoryConsumers(WidgetRef ref, String userId) {
+  ref.invalidate(storiesProvider);
+  ref.invalidate(userStoriesProvider(userId));
+}
+
 enum FeedType { explore, following }
 
 enum FeedContentFilter { all, socialOnly, sellingOnly }
@@ -47,12 +61,12 @@ class FeedContentFilterSetting extends _$FeedContentFilterSetting {
 
 @Riverpod(keepAlive: true)
 class Feed extends _$Feed {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
   int _currentRequestId = 0;
+  String _scope = 'explore:all';
 
   @override
   FeedState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     return const FeedState();
   }
 
@@ -61,7 +75,12 @@ class Feed extends _$Feed {
     String feedType = 'explore',
     String contentFilter = 'all',
   }) async {
-    if (state.isLoading) return;
+    final scope = '$feedType:$contentFilter';
+    if (scope != _scope) {
+      _scope = scope;
+      state = const FeedState();
+    }
+    if (state.isLoading && !refresh) return;
     if (!refresh && !state.hasMore) return;
 
     final isFollowing = feedType == 'following';
@@ -85,19 +104,31 @@ class Feed extends _$Feed {
       contentFilter: contentFilter,
     );
 
-    if (requestId != _currentRequestId) return;
+    if (requestId != _currentRequestId || scope != _scope) return;
 
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
       (page) => state = state.copyWith(
-        posts: refresh ? page.posts : [...state.posts, ...page.posts],
+        posts: refresh
+            ? {for (final post in page.posts) post.id: post}.values.toList()
+            : {
+                for (final post in [...state.posts, ...page.posts])
+                  post.id: post,
+              }.values.toList(),
         isLoading: false,
         hasMore: page.hasMore,
         cursor: page.nextCursor ?? state.cursor,
         offset: page.nextOffset ?? state.offset,
       ),
     );
+  }
+
+  void resetFollowing() {
+    if (_scope.startsWith('following:')) {
+      _currentRequestId++;
+      state = const FeedState();
+    }
   }
 
   Future<void> refresh({

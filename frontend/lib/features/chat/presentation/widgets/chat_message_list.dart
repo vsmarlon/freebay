@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
@@ -15,6 +16,7 @@ class ChatMessageList extends StatelessWidget {
   final Map<String, GlobalKey> messageKeys;
   final String? highlightedMessageId;
   final double replyHighlightAlpha;
+  final Set<String> starredIds;
 
   // Selection
   final bool isSelecting;
@@ -40,6 +42,7 @@ class ChatMessageList extends StatelessWidget {
     required this.messageKeys,
     required this.highlightedMessageId,
     this.replyHighlightAlpha = 0.18,
+    this.starredIds = const {},
     required this.isSelecting,
     required this.selectedMessageIds,
     required this.onToggleSelection,
@@ -72,7 +75,7 @@ class ChatMessageList extends StatelessWidget {
             ? messages[index - 1].senderId == currentUserId
             : false;
         final isConsecutive = isMe == prevIsMe;
-        final messageKey = messageKeys.putIfAbsent(msgEntity.id, GlobalKey.new);
+        final messageKey = messageKeys[msgEntity.id];
 
         // Date separator when day changes
         final showDateSep =
@@ -95,65 +98,107 @@ class ChatMessageList extends StatelessWidget {
                 onTap: isSelecting
                     ? () => onToggleSelection(msgEntity.id)
                     : null,
-                child: Stack(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: isMe
+                      ? MainAxisAlignment.end
+                      : MainAxisAlignment.start,
                   children: [
-                    MessageBubble(
-                      message: msgEntity,
-                      isMe: isMe,
-                      isDark: isDark,
-                      isConsecutive: isConsecutive,
-                      showTimestamp: showTime,
-                      accentColor: accentColor,
-                      currentUserId: currentUserId,
-                      otherUserName: otherUserName,
-                      onReplyTap: !isSelecting && msgEntity.replyToId != null
-                          ? () => onReplyTap(msgEntity.replyToId!)
-                          : null,
-                      onLongPressMessage: isSelecting
-                          ? null
-                          : () => onEnterSelectionMode(msgEntity.id),
-                      onSwipeToReply: () => onSwipeToReply(msgEntity),
-                      onReactionTap: isSelecting
-                          ? null
-                          : (emoji) => onReactionTap(msgEntity.id, emoji),
-                      onReactionLongPress: isSelecting
-                          ? null
-                          : (emoji, details) =>
-                                onReactionLongPress(msgEntity, emoji),
-                      onViewOnceReveal:
-                          !isSelecting &&
-                              msgEntity.viewOnce &&
-                              msgEntity.readAt == null
-                          ? () => onViewOnceReveal(msgEntity.id)
-                          : null,
-                    ),
-                    // Selection checkbox overlay
-                    if (isSelecting)
-                      Positioned(
-                        top: 8,
-                        left: isMe ? null : 0,
-                        right: isMe ? 0 : null,
-                        child: IgnorePointer(
-                          child: AnimatedContainer(
-                            duration: AppMotion.base,
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: selectedMessageIds.contains(msgEntity.id)
-                                  ? AppColors.primaryContainer
-                                  : Colors.transparent,
-                              border: Border.all(
-                                color: AppColors.primaryContainer,
-                                width: 2,
+                    if (!isMe)
+                      AnimatedContainer(
+                        duration: AppMotion.base,
+                        width: isSelecting ? 36 : 0,
+                        alignment: Alignment.centerLeft,
+                        child: ClipRect(
+                          child: IgnorePointer(
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              margin: const EdgeInsets.only(top: 8, right: 8),
+                              decoration: BoxDecoration(
+                                color: selectedMessageIds.contains(msgEntity.id)
+                                    ? AppColors.primaryContainer
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: AppColors.primaryContainer,
+                                  width: 2,
+                                ),
                               ),
+                              child: selectedMessageIds.contains(msgEntity.id)
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: AppColors.onPrimary,
+                                      size: 12,
+                                    )
+                                  : null,
                             ),
-                            child: selectedMessageIds.contains(msgEntity.id)
-                                ? const Icon(
-                                    Icons.check,
-                                    color: AppColors.onPrimary,
-                                    size: 12,
-                                  )
-                                : null,
+                          ),
+                        ),
+                      ),
+                    Flexible(
+                      child: MessageBubble(
+                        message: msgEntity,
+                        isMe: isMe,
+                        isDark: isDark,
+                        isConsecutive: isConsecutive,
+                        showTimestamp: showTime,
+                        accentColor: accentColor,
+                        isStarred: starredIds.contains(msgEntity.id),
+                        currentUserId: currentUserId,
+                        otherUserName: otherUserName,
+                        onReplyTap: !isSelecting && msgEntity.replyToId != null
+                            ? () => onReplyTap(msgEntity.replyToId!)
+                            : null,
+                        onLongPressMessage: isSelecting
+                            ? null
+                            : () {
+                                HapticFeedback.mediumImpact();
+                                onEnterSelectionMode(msgEntity.id);
+                              },
+                        onSwipeToReply: () => onSwipeToReply(msgEntity),
+                        onReactionTap: isSelecting
+                            ? null
+                            : (emoji) => onReactionTap(msgEntity.id, emoji),
+                        onReactionLongPress: isSelecting
+                            ? null
+                            : (emoji, details) =>
+                                  onReactionLongPress(msgEntity, emoji),
+                        onViewOnceReveal:
+                            !isSelecting &&
+                                msgEntity.viewOnce &&
+                                msgEntity.readAt == null
+                            ? () => onViewOnceReveal(msgEntity.id)
+                            : null,
+                      ),
+                    ),
+                    if (isMe)
+                      AnimatedContainer(
+                        duration: AppMotion.base,
+                        width: isSelecting ? 36 : 0,
+                        alignment: Alignment.centerRight,
+                        child: ClipRect(
+                          child: IgnorePointer(
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              margin: const EdgeInsets.only(top: 8, left: 8),
+                              decoration: BoxDecoration(
+                                color: selectedMessageIds.contains(msgEntity.id)
+                                    ? AppColors.primaryContainer
+                                    : Colors.transparent,
+                                border: Border.all(
+                                  color: AppColors.primaryContainer,
+                                  width: 2,
+                                ),
+                              ),
+                              child: selectedMessageIds.contains(msgEntity.id)
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: AppColors.onPrimary,
+                                      size: 12,
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
                       ),

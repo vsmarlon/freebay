@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { left, right, isLeft } from '@/shared/core/either';
+import { left, right } from '@/shared/core/either';
 import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { PrismaShareRepository } from '../data/repositories/share-database.repository';
 import { SearchPostsQuery } from '../types/social.types';
@@ -13,7 +13,7 @@ export class SearchPostsUseCase {
 
   async execute(query: SearchPostsQuery) {
     const result = await this.postRepository.searchPosts(query);
-    if (isLeft(result)) return left(result.value);
+    if (result.isLeft()) return left(result.value);
 
     const posts = result.value;
     if (!query.userId) return right(posts);
@@ -21,7 +21,7 @@ export class SearchPostsUseCase {
     const repostedMap: Record<string, boolean> = {};
     for (const post of posts) {
       const existsResult = await this.shareRepository.exists(query.userId, post.id);
-      if (isLeft(existsResult)) continue;
+      if (existsResult.isLeft()) continue;
       repostedMap[post.id] = existsResult.value;
     }
 

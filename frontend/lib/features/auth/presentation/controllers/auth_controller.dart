@@ -23,6 +23,8 @@ import 'package:freebay/features/chat/presentation/providers/chat_provider.dart'
 import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/shared/services/error_reporter.dart';
+import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
 const String _googleGenericError =
@@ -124,42 +126,54 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   }
 
   Future<void> _initAuth() async {
+    if (!ref.mounted) return;
     state = const AsyncValue.loading();
     ref.read(isInitialAuthLoadingProvider.notifier).set(true);
 
     try {
       final hasSeenOnboarding = StorageService.hasSeenOnboardingSync();
+      if (!ref.mounted) return;
       ref.read(hasSeenOnboardingProvider.notifier).set(hasSeenOnboarding);
 
       final rememberMe = await StorageService.getRememberMe();
+      if (!ref.mounted) return;
       if (!rememberMe) {
         await StorageService.clearTokens();
+        if (!ref.mounted) return;
         state = const AsyncValue.data(null);
         return;
       }
 
       final token = await StorageService.getToken();
+      if (!ref.mounted) return;
       if (token == null) {
         await _tryBiometricLogin();
         return;
       }
 
       final result = await ref.read(getCurrentUserUsecaseProvider)();
+      if (!ref.mounted) return;
       await result.fold(
         (failure) async {
           await StorageService.clearTokens();
+          if (!ref.mounted) return;
           state = const AsyncValue.data(null);
         },
         (user) async {
+          if (!ref.mounted) return;
+          await AuthSessionCoordinator.establishSession();
           state = AsyncValue.data(user);
         },
       );
     } catch (_) {
       await StorageService.clearTokens();
+      if (!ref.mounted) return;
       state = const AsyncValue.data(null);
     } finally {
-      ref.read(isInitialAuthLoadingProvider.notifier).set(false);
-      routerRefreshNotifier.value++;
+      if (ref.mounted) {
+        ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+        routerRefreshNotifier.value++;
+      }
     }
   }
 
@@ -167,6 +181,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   /// On any failure/cancellation, state becomes null (login page shown).
   Future<void> _tryBiometricLogin() async {
     final result = await ref.read(biometricLoginUsecaseProvider)();
+    if (!ref.mounted) return;
     result.fold(
       (failure) {
         state = const AsyncValue.data(null);
@@ -202,9 +217,27 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
 
     result.fold(
       (failure) => state = AsyncValue.error(failure, StackTrace.current),
+      (user) async {
+        await _clearBiometryIfAccountSwitch(user);
+        state = AsyncValue.data(user);
+        routerRefreshNotifier.value++;
+      },
+    );
+  }
+
+  Future<bool> loginWithBiometrics() async {
+    state = const AsyncValue.loading();
+    final result = await ref.read(biometricLoginUsecaseProvider)();
+    if (!ref.mounted) return false;
+    return result.fold(
+      (failure) {
+        state = const AsyncValue.data(null);
+        return false;
+      },
       (user) {
         state = AsyncValue.data(user);
         routerRefreshNotifier.value++;
+        return true;
       },
     );
   }
@@ -227,7 +260,8 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
 
     result.fold(
       (failure) => state = AsyncValue.error(failure, StackTrace.current),
-      (user) {
+      (user) async {
+        await _clearBiometryIfAccountSwitch(user);
         state = AsyncValue.data(user);
         routerRefreshNotifier.value++;
       },
@@ -235,7 +269,12 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   }
 
   void _invalidateUserProviders() {
+    ref.read(walletProvider.notifier).reset();
+    ref.read(walletHistoryProvider.notifier).reset();
+    ref.read(connectStatusProvider.notifier).reset();
     ref.invalidate(walletProvider);
+    ref.invalidate(walletHistoryProvider);
+    ref.invalidate(connectStatusProvider);
     ref.invalidate(cartProvider);
     ref.invalidate(disputeListProvider);
     ref.invalidate(purchasesListProvider);
@@ -247,17 +286,16 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   }
 
   Future<void> logout() async {
+    HttpClient.suspendRefresh();
+    final rememberMe = await StorageService.getRememberMe();
+    if (!ref.mounted) return;
     state = const AsyncValue.loading();
     final result = await ref.read(authRepositoryProvider).logout();
 
-    result.fold(
-      (failure) => state = AsyncValue.error(failure, StackTrace.current),
-      (_) {
-        _invalidateUserProviders();
-        state = const AsyncValue.data(null);
-        routerRefreshNotifier.value++;
-      },
-    );
+    await result.fold((failure) async {
+      await _clearLocalAuthState(clearSavedEmail: !rememberMe);
+      ErrorReporter.report('logout', failure);
+    }, (_) async => _clearLocalAuthState(clearSavedEmail: !rememberMe));
   }
 
   Future<bool> requestPasswordRecovery(String email) async {
@@ -288,15 +326,52 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   Future<void> tryRefreshSession() async {
     state = const AsyncValue.loading();
     final result = await ref.read(getCurrentUserUsecaseProvider)();
-    result.fold((_) => state = const AsyncValue.data(null), (user) {
-      state = AsyncValue.data(user);
-      routerRefreshNotifier.value++;
-    });
+    await result.fold(
+      (failure) async {
+        await StorageService.clearTokens();
+        state = const AsyncValue.data(null);
+      },
+      (user) async {
+        state = AsyncValue.data(user);
+        routerRefreshNotifier.value++;
+      },
+    );
   }
 
   Future<void> forceLogout() async {
-    await StorageService.clearBiometricToken();
-    await StorageService.clearTokens();
+    await _clearLocalAuthState();
+  }
+
+  Future<void> _clearBiometryIfAccountSwitch(UserEntity user) async {
+    final ownerId = await StorageService.getBiometricOwner();
+    if (ownerId != null && ownerId != user.id) {
+      await BiometryService().clearState();
+    }
+  }
+
+  Future<void> expireSession() async {
+    HttpClient.suspendRefresh();
+    await _clearLocalAuthState(clearBiometric: false);
+  }
+
+  Future<void> _clearLocalAuthState({
+    bool clearBiometric = true,
+    bool clearSavedEmail = false,
+  }) async {
+    HttpClient.suspendRefresh();
+    if (clearBiometric) {
+      try {
+        await BiometryService().clearState();
+      } catch (_) {}
+    }
+    try {
+      await StorageService.clearTokens();
+    } catch (_) {}
+    if (clearSavedEmail) {
+      try {
+        await StorageService.clearEmail();
+      } catch (_) {}
+    }
     _invalidateUserProviders();
     state = const AsyncValue.data(null);
     routerRefreshNotifier.value++;
@@ -312,6 +387,7 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
   }
 
   Future<void> googleLogin() async {
+    AuthSessionCoordinator.beginAuthentication();
     state = const AsyncValue.loading();
     try {
       final serverClientId = AppConfig.googleServerClientId;
@@ -348,7 +424,8 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>> {
       final result = await ref.read(googleAuthUsecaseProvider)(idToken);
       result.fold(
         (failure) => state = AsyncValue.error(failure, StackTrace.current),
-        (user) {
+        (user) async {
+          await _clearBiometryIfAccountSwitch(user);
           state = AsyncValue.data(user);
           routerRefreshNotifier.value++;
         },

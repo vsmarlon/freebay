@@ -26,6 +26,7 @@ const mockPaymentGroupRepository = {
 const mockPaymentProvider = {
   createPaymentSession: jest.fn(),
   createPaymentIntent: jest.fn(),
+  cancelPendingPayment: jest.fn(),
 };
 
 const mockUserRepository = {
@@ -92,6 +93,7 @@ describe('CheckoutCartUseCase', () => {
     mockPaymentProvider.createPaymentIntent.mockResolvedValue(
       right({ paymentIntentId: 'pi_1', clientSecret: 'pi_1_secret' }),
     );
+    mockPaymentProvider.cancelPendingPayment.mockResolvedValue(right(undefined));
     mockPrisma.$transaction.mockImplementation((callback: (tx: unknown) => unknown) =>
       Promise.resolve(callback({})),
     );
@@ -199,10 +201,13 @@ describe('CheckoutCartUseCase', () => {
     expect(mockPaymentGroupRepository.create.mock.calls[0][0].amount).toBe(25000);
   });
 
-  it('deve limpar o carrinho dentro da mesma transação da reserva', async () => {
+  it('deve limpar o carrinho somente depois de vincular o pagamento', async () => {
     await sut.execute({ userId: 'buyer-1' });
 
     expect(mockCartRepository.clear).toHaveBeenCalledWith('buyer-1', {});
+    expect(mockPaymentGroupRepository.attachPayment.mock.invocationCallOrder[0]).toBeLessThan(
+      mockCartRepository.clear.mock.invocationCallOrder[0],
+    );
   });
 
   it('deve compensar todas as reservas quando a criação do pagamento na Stripe falha', async () => {
@@ -226,6 +231,38 @@ describe('CheckoutCartUseCase', () => {
     expect(mockCartRepository.restoreOrderReservation).toHaveBeenCalledWith('order-1', 'p1', {});
     expect(mockCartRepository.restoreOrderReservation).toHaveBeenCalledWith('order-2', 'p2', {});
     expect(mockPaymentGroupRepository.markTerminal).toHaveBeenCalledWith('group-1', 'FAILED', {});
+    expect(mockCartRepository.clear).not.toHaveBeenCalled();
+  });
+
+  it('deve cancelar o pagamento externo antes de compensar uma falha de finalização', async () => {
+    mockPaymentGroupRepository.attachPayment.mockResolvedValue(
+      left(new DatabaseError('attach failed')),
+    );
+
+    const result = await sut.execute({ userId: 'buyer-1' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.cancelPendingPayment).toHaveBeenCalledWith({
+      stripeSessionId: 'cs_1',
+      idempotencyKey: 'group-cancel:group-1',
+    });
+    expect(mockCartRepository.restoreOrderReservation).toHaveBeenCalled();
+    expect(mockPaymentGroupRepository.markTerminal).toHaveBeenCalled();
+  });
+
+  it('deve manter o grupo pendente quando o pagamento externo não pode ser cancelado', async () => {
+    mockPaymentGroupRepository.attachPayment.mockResolvedValue(
+      left(new DatabaseError('attach failed')),
+    );
+    mockPaymentProvider.cancelPendingPayment.mockResolvedValue(
+      left(new DatabaseError('cancellation uncertain')),
+    );
+
+    const result = await sut.execute({ userId: 'buyer-1' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockCartRepository.restoreOrderReservation).not.toHaveBeenCalled();
+    expect(mockPaymentGroupRepository.markTerminal).not.toHaveBeenCalled();
   });
 
   it('deve devolver o grupo existente sem criar reservas quando a mesma chave de idempotência já tem um grupo pendente', async () => {

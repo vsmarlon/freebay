@@ -36,7 +36,7 @@ class CommentInput extends StatelessWidget {
             focusNode: focusNode,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.mediumGray),
+              hintStyle: TextStyle(color: context.textSecondary),
               border: const OutlineInputBorder(borderSide: BorderSide.none),
               filled: true,
               fillColor: context.surfaceMidColor,

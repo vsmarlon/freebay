@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
@@ -25,7 +25,7 @@ export class GetConversationMediaUseCase {
     input: GetFilteredMessagesInput,
   ): Promise<Either<AppError, GetFilteredMessagesResult>> {
     const resolved = await this.threadAccess.resolveThread(input.userId, input.conversationId);
-    if (isLeft(resolved)) return left(resolved.value);
+    if (resolved.isLeft()) return left(resolved.value);
 
     const { orderId, directConversationId } = resolved.value;
     const isOrderThread = Boolean(orderId);
@@ -41,7 +41,7 @@ export class GetConversationMediaUseCase {
         limit,
         input.cursor,
       );
-      if (isLeft(result)) return left(result.value);
+      if (result.isLeft()) return left(result.value);
       allMessages = result.value;
     } else {
       const result = await this.conversationRepository.findDirectMessagesByType(
@@ -50,7 +50,7 @@ export class GetConversationMediaUseCase {
         limit,
         input.cursor,
       );
-      if (isLeft(result)) return left(result.value);
+      if (result.isLeft()) return left(result.value);
       allMessages = result.value;
     }
 

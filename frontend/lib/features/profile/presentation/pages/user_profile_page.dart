@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
@@ -22,56 +23,58 @@ class UserProfilePage extends ConsumerWidget {
     final profileAsync = ref.watch(profileFutureProvider(userId));
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'PERFIL',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'PERFIL',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: profileAsync.when(
-              data: (profileUser) =>
-                  _buildProfileContent(context, ref, isDark, profileUser),
-              loading: () =>
-                  const Center(child: ShimmerBlock(width: 60, height: 60)),
-              error: (error, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: AppColors.error,
-                    ),
-                    Spacing.vMd,
-                    Text(
-                      'Erro ao carregar perfil',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
+            Expanded(
+              child: profileAsync.when(
+                data: (profileUser) =>
+                    _buildProfileContent(context, ref, isDark, profileUser),
+                loading: () =>
+                    const Center(child: ShimmerBlock(width: 60, height: 60)),
+                error: (error, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppColors.error,
                       ),
-                    ),
-                    Spacing.vSm,
-                    Text(
-                      'Não foi possível carregar as informações do usuário. Tente novamente.',
-                      style: TextStyle(
-                        color: isDark
-                            ? AppColors.mediumGray
-                            : AppColors.mediumGray,
+                      Spacing.vMd,
+                      Text(
+                        'Erro ao carregar perfil',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: context.textPrimary,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      Spacing.vSm,
+                      Text(
+                        'Não foi possível carregar as informações do usuário. Tente novamente.',
+                        style: TextStyle(
+                          color: isDark
+                              ? context.textSecondary
+                              : context.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -99,11 +102,19 @@ class UserProfilePage extends ConsumerWidget {
             followStatusAsync.when(
               data: (status) => ProfileHeader(
                 user: user,
-                followersCount: status?.followersCount ?? 0,
-                followingCount: status?.followingCount ?? 0,
+                followersCount: status?.followersCount ?? user.followersCount,
+                followingCount: status?.followingCount ?? user.followingCount,
               ),
-              loading: () => ProfileHeader(user: user),
-              error: (_, _) => ProfileHeader(user: user),
+              loading: () => ProfileHeader(
+                user: user,
+                followersCount: user.followersCount,
+                followingCount: user.followingCount,
+              ),
+              error: (_, _) => ProfileHeader(
+                user: user,
+                followersCount: user.followersCount,
+                followingCount: user.followingCount,
+              ),
             ),
             Spacing.vLg,
             if (!isOwnProfile && currentUser != null)
@@ -120,39 +131,13 @@ class UserProfilePage extends ConsumerWidget {
                           ? AppButtonVariant.ghost
                           : AppButtonVariant.primary,
                       onPressed: () async {
-                        final service = ref.read(followServiceProvider);
-                        final cache = ref.read(followStatusCacheProvider);
-
-                        // Optimistically update UI
-                        final isCurrentlyFollowing =
-                            status?.isFollowing ?? false;
-
-                        if (isCurrentlyFollowing) {
-                          // Unfollow
-                          final result = await service.unfollow(user.id);
-                          if (result.isRight) {
-                            cache.invalidate(user.id);
-                            ref.invalidate(followStatusProvider(user.id));
-                          }
-                        } else {
-                          // Follow
-                          final result = await service.follow(user.id);
-                          if (result.isRight) {
-                            cache.invalidate(user.id);
-                            ref.invalidate(followStatusProvider(user.id));
-                          } else {
-                            // Handle "Already following" case gracefully
-                            result.fold((failure) {
-                              // If already following, just refresh the status
-                              if (failure.message.contains(
-                                'Already following',
-                              )) {
-                                cache.invalidate(user.id);
-                                ref.invalidate(followStatusProvider(user.id));
-                              }
-                            }, (_) {});
-                          }
-                        }
+                        await ref
+                            .read(followStateProvider.notifier)
+                            .toggleFollow(
+                              user.id,
+                              fallbackFollowersCount: user.followersCount,
+                              fallbackFollowingCount: user.followingCount,
+                            );
                       },
                     ),
                   ),
@@ -172,7 +157,7 @@ class UserProfilePage extends ConsumerWidget {
               Center(
                 child: GestureDetector(
                   onTap: () => context.push(
-                    '/user/${user.id}/reviews?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
+                    '${AppRoutes.userReviewsPath(user.id)}?name=${Uri.encodeComponent(user.displayNameOrDefault)}',
                   ),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -229,8 +214,8 @@ class UserProfilePage extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 14,
                       color: isDark
-                          ? AppColors.mediumGray
-                          : AppColors.mediumGray,
+                          ? context.textSecondary
+                          : context.textSecondary,
                     ),
                   ),
                 ),
@@ -283,7 +268,7 @@ class UserProfilePage extends ConsumerWidget {
             const SizedBox(width: 12),
             AppButton(
               label: 'Cadastrar',
-              onPressed: () => context.push('/register'),
+              onPressed: () => context.push(AppRoutes.register),
             ),
           ],
         ),

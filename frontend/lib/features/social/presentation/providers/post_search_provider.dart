@@ -47,11 +47,10 @@ class PostSearchState {
 
 @Riverpod(keepAlive: true)
 class PostSearch extends _$PostSearch {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   PostSearchState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     return const PostSearchState();
   }
 

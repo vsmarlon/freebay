@@ -71,9 +71,9 @@ class EmptyState extends StatelessWidget {
               height: 80,
               decoration: BoxDecoration(
                 color: context.surfaceMidColor,
-                border: Border.all(color: AppColors.outline, width: 2),
+                border: Border.all(color: context.textSecondary, width: 2),
               ),
-              child: Icon(icon, size: 40, color: AppColors.outline),
+              child: Icon(icon, size: 40, color: context.textSecondary),
             ),
             Spacing.vLg,
             Text(
@@ -91,10 +91,10 @@ class EmptyState extends StatelessWidget {
               Spacing.vSm,
               Text(
                 subtitle!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 14,
-                  color: AppColors.outline,
+                  color: context.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),

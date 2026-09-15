@@ -115,7 +115,7 @@ describe('Users UseCases', () => {
   });
 
   describe('GetProfileUseCase', () => {
-    it('should return user profile when found', async () => {
+    it('returns user profile when found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
 
       const result = await getProfileUseCase.execute({ userId: 'user-123' });
@@ -127,7 +127,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return NotFoundError when user not found', async () => {
+    it('returns NotFoundError when user not found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(null));
 
       const result = await getProfileUseCase.execute({ userId: 'nonexistent' });
@@ -140,7 +140,7 @@ describe('Users UseCases', () => {
   });
 
   describe('GetUserStatsUseCase', () => {
-    it('should return user stats', async () => {
+    it('returns user stats', async () => {
       mockOrderRepository.countBySellerId.mockResolvedValue(right(5));
       mockOrderRepository.countByBuyerId.mockResolvedValue(right(3));
       mockFollowRepository.getFollowersCount.mockResolvedValue(right(100));
@@ -159,7 +159,7 @@ describe('Users UseCases', () => {
   });
 
   describe('UpdateProfileUseCase', () => {
-    it('should update and return user profile', async () => {
+    it('updates and returns user profile', async () => {
       const updatedUser = { ...mockUser, displayName: 'Updated Name' };
       mockUserRepository.update.mockResolvedValue(right(updatedUser));
 
@@ -171,7 +171,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return NotFoundError when user not found', async () => {
+    it('returns NotFoundError when user not found', async () => {
       mockUserRepository.update.mockResolvedValue(right(null));
 
       const result = await updateProfileUseCase.execute({ userId: 'nonexistent', displayName: 'New Name' });
@@ -184,7 +184,7 @@ describe('Users UseCases', () => {
   });
 
   describe('FollowUserUseCase', () => {
-    it('should follow user successfully', async () => {
+    it('follows user successfully', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockFollowRepository.follow.mockResolvedValue(right(undefined));
       mockFollowRepository.getFollowersCount.mockResolvedValue(right(101));
@@ -202,7 +202,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return BadRequestError when trying to follow self', async () => {
+    it('returns BadRequestError when trying to follow self', async () => {
       const result = await followUserUseCase.execute({
         followerId: 'same-user',
         followingId: 'same-user',
@@ -214,7 +214,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return NotFoundError when target user not found', async () => {
+    it('returns NotFoundError when target user not found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(null));
 
       const result = await followUserUseCase.execute({
@@ -228,7 +228,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return BadRequestError when already following', async () => {
+    it('returns BadRequestError when already following', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockFollowRepository.follow.mockResolvedValue(left(new BadRequestError('Already following')));
 
@@ -269,7 +269,7 @@ describe('Users UseCases', () => {
   });
 
   describe('UnfollowUserUseCase', () => {
-    it('should unfollow user successfully', async () => {
+    it('unfollows user successfully', async () => {
       mockFollowRepository.unfollow.mockResolvedValue(right(undefined));
       mockFollowRepository.getFollowersCount.mockResolvedValue(right(99));
       mockFollowRepository.getFollowingCount.mockResolvedValue(right(49));
@@ -285,7 +285,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return BadRequestError when not following', async () => {
+    it('returns BadRequestError when not following', async () => {
       mockFollowRepository.unfollow.mockResolvedValue(left(new BadRequestError('Not following')));
 
       const result = await unfollowUserUseCase.execute({
@@ -301,7 +301,7 @@ describe('Users UseCases', () => {
   });
 
   describe('BlockUserUseCase', () => {
-    it('should block user successfully', async () => {
+    it('blocks user successfully', async () => {
       mockUserRepository.findById.mockResolvedValue(right(mockUser));
       mockBlockRepository.block.mockResolvedValue(right(undefined));
 
@@ -316,7 +316,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return BadRequestError when trying to block self', async () => {
+    it('returns BadRequestError when trying to block self', async () => {
       const result = await blockUserUseCase.execute({
         blockerId: 'same-user',
         blockedId: 'same-user',
@@ -328,7 +328,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return NotFoundError when target user not found', async () => {
+    it('returns NotFoundError when target user not found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(null));
 
       const result = await blockUserUseCase.execute({
@@ -344,7 +344,7 @@ describe('Users UseCases', () => {
   });
 
   describe('UnblockUserUseCase', () => {
-    it('should unblock user successfully', async () => {
+    it('unblocks user successfully', async () => {
       mockBlockRepository.unblock.mockResolvedValue(right(undefined));
 
       const result = await unblockUserUseCase.execute({
@@ -358,7 +358,7 @@ describe('Users UseCases', () => {
       }
     });
 
-    it('should return BadRequestError when user not blocked', async () => {
+    it('returns BadRequestError when user not blocked', async () => {
       mockBlockRepository.unblock.mockResolvedValue(left(new BadRequestError('Not blocked')));
 
       const result = await unblockUserUseCase.execute({
@@ -374,7 +374,7 @@ describe('Users UseCases', () => {
   });
 
   describe('SearchUsersUseCase', () => {
-    it('should return search results', async () => {
+    it('returns search results', async () => {
       const searchResults = [
         { id: 'user-1', displayName: 'John', username: 'john', avatarUrl: null, bio: null, isVerified: false, reputationScore: 0, totalReviews: 0, followersCount: 10, followingCount: 5 },
       ];
@@ -391,7 +391,7 @@ describe('Users UseCases', () => {
   });
 
   describe('GetSuggestionsUseCase', () => {
-    it('should return suggestion results', async () => {
+    it('returns suggestion results', async () => {
       const suggestions = [
         { id: 'user-2', displayName: 'Jane', username: 'jane', avatarUrl: null, bio: null, isVerified: true, reputationScore: 4.8, totalReviews: 15, followersCount: 100, followingCount: 50, mutualCount: 5 },
       ];

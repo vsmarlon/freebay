@@ -145,8 +145,8 @@ class _ForwardMessageSheetState extends ConsumerState<ForwardMessageSheet> {
           // Conversation list
           Expanded(
             child: chatsAsync.when(
-              data: (chats) {
-                final filtered = chats.where((c) {
+              data: (page) {
+                final filtered = page.items.where((c) {
                   if (_searchQuery.isEmpty) return true;
                   return c.otherName.toLowerCase().contains(_searchQuery);
                 }).toList();

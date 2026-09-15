@@ -1,4 +1,5 @@
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -11,8 +12,9 @@ import 'package:freebay/features/social/presentation/providers/reposts_provider.
 
 class FeedPostItem extends ConsumerStatefulWidget {
   final PostEntity post;
+  final VoidCallback? onUnsaved;
 
-  const FeedPostItem({super.key, required this.post});
+  const FeedPostItem({super.key, required this.post, this.onUnsaved});
 
   @override
   ConsumerState<FeedPostItem> createState() => _FeedPostItemState();
@@ -60,8 +62,9 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
           isVerified: post.user.isVerified,
           createdAt: post.createdAt,
           price: price,
-          onTap: () => context.push('/post/${post.id}'),
-          onUserTap: () => context.push('/user/${post.user.id}'),
+          isSelling: post.type == 'PRODUCT',
+          onTap: () => context.push(AppRoutes.postPath(post.id)),
+          onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
           onSave: () async {
             final user = ref.read(authControllerProvider).value;
             if (user == null) {
@@ -70,9 +73,11 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               }
               return false;
             }
-            return ref
+            final success = await ref
                 .read(savesProvider.notifier)
                 .toggleSave(post.id, initialIsSaved: post.isSaved);
+            if (success && post.isSaved) widget.onUnsaved?.call();
+            return success;
           },
           onLike: () async {
             final user = ref.read(authControllerProvider).value;
@@ -128,8 +133,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
             }
             return success;
           },
-          onComment: () => context.push('/post/${post.id}'),
-          onShare: () {},
+          onComment: () => context.push(AppRoutes.postPath(post.id)),
         ),
       ),
     );

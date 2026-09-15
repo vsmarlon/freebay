@@ -23,8 +23,11 @@ import { SetConversationThemeUseCase } from './usecases/set-conversation-theme.u
 import { SetConversationBackgroundUseCase } from './usecases/set-conversation-background.usecase';
 import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
 import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
+import { ToggleStarUseCase } from './usecases/toggle-star.usecase';
+import { GetStarredMessagesUseCase } from './usecases/get-starred-messages.usecase';
 import { VerifyUrlSafetyUseCase } from './usecases/verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './usecases/forward-messages.usecase';
+import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { ChatGateway } from './chat.gateway';
 
 @ApiTags('Chat')
@@ -44,14 +47,31 @@ export class ChatController {
     private readonly setBackgroundUseCase: SetConversationBackgroundUseCase,
     private readonly deleteMessageUseCase: DeleteMessageUseCase,
     private readonly toggleReactionUseCase: ToggleReactionUseCase,
+    private readonly toggleStarUseCase: ToggleStarUseCase,
+    private readonly getStarredMessagesUseCase: GetStarredMessagesUseCase,
     private readonly verifyUrlSafetyUseCase: VerifyUrlSafetyUseCase,
     private readonly forwardMessagesUseCase: ForwardMessagesUseCase,
+    private readonly markAsReadUseCase: MarkAsReadUseCase,
     private readonly chatGateway: ChatGateway,
   ) {}
 
-  @GetAuth('conversations', 'Get all conversations (direct + order)')
-  async getConversations(@CurrentUserId() userId: string, @Query('q') query?: string) {
-    return this.getUnifiedConversations.execute(userId, query);
+  @GetAuth('conversations', {
+    summary: 'Get all conversations (direct + order)',
+    queries: [
+      ...PAGINATION_QUERIES,
+      { name: 'q', description: 'Search by contact name or message text' },
+    ],
+  })
+  async getConversations(
+    @CurrentUserId() userId: string,
+    @Query('q') query?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.getUnifiedConversations.execute(userId, query, false, {
+      cursor,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @GetAuth('direct', 'Get only direct conversations')
@@ -59,14 +79,24 @@ export class ChatController {
     return this.getConversationsUseCase.execute(userId);
   }
 
-  @GetAuth('archived', 'Get archived conversations')
-  async getArchivedConversations(@CurrentUserId() userId: string) {
-    return this.getUnifiedConversations.execute(userId, undefined, true);
+  @GetAuth('archived', {
+    summary: 'Get archived conversations',
+    queries: PAGINATION_QUERIES,
+  })
+  async getArchivedConversations(
+    @CurrentUserId() userId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.getUnifiedConversations.execute(userId, undefined, true, {
+      cursor,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @PostAuth('conversations', { summary: 'Start a conversation', bodyType: StartConversationDTO, responseStatus: 201, httpCode: HttpStatus.CREATED })
   async startConversation(@CurrentUserId() userId: string, @Body() body: StartConversationDTO) {
-    return this.startConversationUseCase.execute(userId, body.targetUserId);
+    return this.startConversationUseCase.execute(userId, body.targetUserId, body.productId);
   }
 
   @PostAuth('conversations/:id/accept', { summary: 'Accept conversation', params: [{ name: 'id', description: 'Conversation UUID' }] })
@@ -118,6 +148,7 @@ export class ChatController {
       replyToId: body.replyToId,
       metadata: body.metadata,
       viewOnce: body.viewOnce,
+      durationMs: body.durationMs,
     });
     if (result.isRight()) {
       this.chatGateway.broadcastNewMessage(id, result.value);
@@ -133,6 +164,17 @@ export class ChatController {
   @PatchAuth('conversations/:id/delete', { summary: 'Soft-delete a conversation', params: [{ name: 'id', description: 'Conversation UUID' }] })
   async deleteConversation(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
     return this.deleteConversationUseCase.execute(userId, id);
+  }
+
+  @PatchAuth('conversations/:id/read', {
+    summary: 'Mark conversation messages as read',
+    params: [{ name: 'id', description: 'Conversation UUID' }],
+  })
+  async markAsRead(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.markAsReadUseCase.execute(id, userId);
   }
 
   @PatchAuth('conversations/:id/theme', { summary: 'Set conversation theme', params: [{ name: 'id', description: 'Conversation UUID' }] })
@@ -185,6 +227,36 @@ export class ChatController {
     });
   }
 
+  @PostAuth('conversations/:convId/messages/:msgId/star', {
+    summary: 'Star or unstar a message',
+    params: [
+      { name: 'convId', description: 'Conversation UUID' },
+      { name: 'msgId', description: 'Message UUID' },
+    ],
+  })
+  async toggleStar(
+    @Param('convId', ParseUUIDPipe) convId: string,
+    @Param('msgId', ParseUUIDPipe) msgId: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.toggleStarUseCase.execute({
+      userId,
+      messageId: msgId,
+      conversationId: convId,
+    });
+  }
+
+  @GetAuth('conversations/:id/starred', {
+    summary: 'Get starred messages in a conversation',
+    params: [{ name: 'id', description: 'Conversation UUID' }],
+  })
+  async getStarredMessages(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.getStarredMessagesUseCase.execute(id, userId);
+  }
+
   @PostAuth('security/verify-url', { summary: 'Verify safety of external URL', bodyType: VerifyUrlDTO })
   async verifyUrl(@Body() body: VerifyUrlDTO) {
     return this.verifyUrlSafetyUseCase.execute(body.url);
@@ -200,4 +272,3 @@ export class ChatController {
     });
   }
 }
-

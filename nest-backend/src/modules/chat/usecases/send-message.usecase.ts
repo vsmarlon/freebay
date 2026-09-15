@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
@@ -7,6 +7,37 @@ import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { SendMessageInput, SendMessageOutput } from '../dtos/chat.dto';
 import { Prisma, DirectMessage, ChatMessage, MessageType, ChatThreadType } from '@prisma/client';
+
+type CanonicalLocationMetadata = {
+  latitude: number;
+  longitude: number;
+  accuracyMeters: number;
+  capturedAt: string;
+  address?: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const readCanonicalLocationMetadata = (value: unknown): CanonicalLocationMetadata | null => {
+  if (!isRecord(value)) return null;
+  const keys = new Set(['latitude', 'longitude', 'accuracyMeters', 'capturedAt', 'address']);
+  if (Object.keys(value).some((key) => !keys.has(key))) return null;
+  if (
+    typeof value.latitude !== 'number' ||
+    typeof value.longitude !== 'number' ||
+    typeof value.accuracyMeters !== 'number' ||
+    typeof value.capturedAt !== 'string'
+  ) return null;
+  if (value.address != null && typeof value.address !== 'string') return null;
+  return {
+    latitude: value.latitude,
+    longitude: value.longitude,
+    accuracyMeters: value.accuracyMeters,
+    capturedAt: value.capturedAt,
+    ...(typeof value.address === 'string' ? { address: value.address } : {}),
+  };
+};
 
 @Injectable()
 export class SendMessageUseCase {
@@ -19,14 +50,14 @@ export class SendMessageUseCase {
 
   async execute(input: SendMessageInput): Promise<Either<AppError, SendMessageOutput>> {
     const resolved = await this.threadAccess.resolveThread(input.senderId, input.conversationId);
-    if (isLeft(resolved)) return left(resolved.value);
+    if (resolved.isLeft()) return left(resolved.value);
 
     if (resolved.value.orderId) {
       return this.sendOrderMessage(input, resolved.value.orderId, resolved.value.otherUserId);
     }
 
     const conversationResult = await this.conversationRepository.findDirectConversationById(input.conversationId);
-    if (isLeft(conversationResult)) return left(conversationResult.value);
+    if (conversationResult.isLeft()) return left(conversationResult.value);
     const conversation = conversationResult.value;
 
     if (!conversation) return left(new NotFoundError('Conversation'));
@@ -45,10 +76,22 @@ export class SendMessageUseCase {
 
     const messageType = (input.type ?? 'TEXT') as MessageType;
 
+    const locationMetadata = this.validateLocationMetadata(messageType, input.metadata);
+    if (locationMetadata.isLeft()) return left(locationMetadata.value);
+    const existingLocation = await this.findDelayedLocationRetry(
+      messageType,
+      locationMetadata.value,
+      input.conversationId,
+      input.senderId,
+      false,
+      input.clientMessageId,
+    );
+    if (existingLocation) return existingLocation;
+
     const productCardError = this.assertProductCardMetadata(messageType, input);
     if (productCardError) return left(productCardError);
 
-    const metadata = await this.buildMetadata(messageType, input);
+    const metadata = await this.buildMetadata(messageType, input, locationMetadata.value);
 
     const replyScope = await this.assertReplyInThread(
       input.replyToId,
@@ -68,12 +111,12 @@ export class SendMessageUseCase {
       replyTo: input.replyToId ? { connect: { id: input.replyToId } } : undefined,
       viewOnce: input.viewOnce ?? false,
     }, true);
-    if (isLeft(messageResult)) return left(messageResult.value);
+    if (messageResult.isLeft()) return left(messageResult.value);
 
     const updateResult = await this.conversationRepository.updateDirectConversation(input.conversationId, {
       lastMessageAt: new Date(),
     });
-    if (isLeft(updateResult)) return left(updateResult.value);
+    if (updateResult.isLeft()) return left(updateResult.value);
 
     const msg = messageResult.value as DirectMessage;
     return right({
@@ -101,10 +144,22 @@ export class SendMessageUseCase {
 
     const messageType = (input.type ?? 'TEXT') as MessageType;
 
+    const locationMetadata = this.validateLocationMetadata(messageType, input.metadata);
+    if (locationMetadata.isLeft()) return left(locationMetadata.value);
+    const existingLocation = await this.findDelayedLocationRetry(
+      messageType,
+      locationMetadata.value,
+      orderId,
+      input.senderId,
+      true,
+      input.clientMessageId,
+    );
+    if (existingLocation) return existingLocation;
+
     const productCardError = this.assertProductCardMetadata(messageType, input);
     if (productCardError) return left(productCardError);
 
-    const metadata = await this.buildMetadata(messageType, input);
+    const metadata = await this.buildMetadata(messageType, input, locationMetadata.value);
 
     const replyScope = await this.assertReplyInThread(
       input.replyToId,
@@ -124,7 +179,7 @@ export class SendMessageUseCase {
       replyTo: input.replyToId ? { connect: { id: input.replyToId } } : undefined,
       viewOnce: input.viewOnce ?? false,
     }, true);
-    if (isLeft(messageResult)) return left(messageResult.value);
+    if (messageResult.isLeft()) return left(messageResult.value);
 
     const msg = messageResult.value as ChatMessage;
     return right({
@@ -153,7 +208,7 @@ export class SendMessageUseCase {
       threadId,
       model,
     );
-    if (isLeft(belongs)) return belongs.value;
+    if (belongs.isLeft()) return belongs.value;
     if (!belongs.value) return new NotFoundError('Mensagem referenciada');
     return null;
   }
@@ -179,16 +234,152 @@ export class SendMessageUseCase {
     return null;
   }
 
+  private async findDelayedLocationRetry(
+    messageType: MessageType,
+    metadata: Record<string, unknown> | null,
+    threadId: string,
+    senderId: string,
+    isOrder: boolean,
+    clientMessageId?: string,
+  ): Promise<Either<AppError, SendMessageOutput> | null> {
+    if (
+      messageType !== 'LOCATION' ||
+      !metadata ||
+      typeof metadata.capturedAt !== 'string'
+    ) return null;
+
+    const capturedAt = new Date(metadata.capturedAt);
+    const now = Date.now();
+    const isFresh = capturedAt.getTime() >= now - 5 * 60 * 1000 &&
+        capturedAt.getTime() <= now + 60 * 1000;
+    if (isFresh) return null;
+    if (!clientMessageId) return left(new BadRequestError('Data da localização expirada'));
+
+    const existing = isOrder
+        ? await this.conversationRepository.findChatMessageByClientId(
+            threadId,
+            senderId,
+            clientMessageId,
+          )
+        : await this.conversationRepository.findDirectMessageByClientId(
+            threadId,
+            senderId,
+            clientMessageId,
+          );
+    if (existing.isLeft()) return left(existing.value);
+    if (!existing.value) return left(new BadRequestError('Data da localização expirada'));
+    const existingMetadata = readCanonicalLocationMetadata(existing.value.metadata);
+    const metadataMatches = existing.value.type === 'LOCATION' &&
+      existingMetadata !== null &&
+      existingMetadata.latitude === metadata.latitude &&
+      existingMetadata.longitude === metadata.longitude &&
+      existingMetadata.accuracyMeters === metadata.accuracyMeters &&
+      existingMetadata.capturedAt === metadata.capturedAt &&
+      (existingMetadata.address ?? null) === (metadata.address ?? null);
+    if (!metadataMatches) {
+      return left(new BadRequestError('Conflito de idempotência da localização'));
+    }
+    return right(this.toMessageOutput(existing.value, threadId));
+  }
+
+  private toMessageOutput(
+    message: DirectMessage | ChatMessage,
+    conversationId: string,
+  ): SendMessageOutput {
+    return {
+      id: message.id,
+      conversationId,
+      senderId: message.senderId,
+      clientMessageId: message.clientMessageId ?? null,
+      content: message.content ?? null,
+      type: message.type,
+      attachmentUrl: message.attachmentUrl ?? null,
+      metadata: (message.metadata as Record<string, unknown>) ?? null,
+      replyToId: message.replyToId ?? null,
+      viewOnce: message.viewOnce,
+      createdAt: message.createdAt,
+    };
+  }
+
+  private validateLocationMetadata(
+    messageType: MessageType,
+    metadata: Record<string, unknown> | undefined,
+  ): Either<AppError, Record<string, unknown> | null> {
+    if (messageType !== 'LOCATION') return right(null);
+    if (!metadata) return left(new BadRequestError('Metadados de localização são obrigatórios'));
+
+    const allowedKeys = new Set(['latitude', 'longitude', 'accuracyMeters', 'capturedAt', 'address']);
+    if (Object.keys(metadata).some((key) => !allowedKeys.has(key))) {
+      return left(new BadRequestError('Metadados de localização inválidos'));
+    }
+
+    const latitude = metadata.latitude;
+    const longitude = metadata.longitude;
+    const accuracyMeters = metadata.accuracyMeters;
+    const capturedAt = metadata.capturedAt;
+    const isFiniteNumber = (value: unknown): value is number =>
+      typeof value === 'number' && Number.isFinite(value);
+
+    if (!isFiniteNumber(latitude) || latitude < -90 || latitude > 90) {
+      return left(new BadRequestError('Latitude inválida'));
+    }
+    if (!isFiniteNumber(longitude) || longitude < -180 || longitude > 180) {
+      return left(new BadRequestError('Longitude inválida'));
+    }
+    if (!isFiniteNumber(accuracyMeters) || accuracyMeters < 0 || accuracyMeters > 100_000) {
+      return left(new BadRequestError('Precisão da localização inválida'));
+    }
+    const canonicalTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+    const parsedTimestamp = typeof capturedAt === 'string' ? new Date(capturedAt) : null;
+    if (
+      typeof capturedAt !== 'string' ||
+      !canonicalTimestamp.test(capturedAt) ||
+      parsedTimestamp === null ||
+      !Number.isFinite(parsedTimestamp.getTime()) ||
+      parsedTimestamp.toISOString() !== capturedAt
+    ) {
+      return left(new BadRequestError('Data da localização inválida'));
+    }
+    if (
+      metadata.address != null &&
+      (typeof metadata.address !== 'string' ||
+        metadata.address.trim().length === 0 ||
+        metadata.address.length > 500)
+    ) {
+      return left(new BadRequestError('Endereço da localização inválido'));
+    }
+    return right({
+      latitude,
+      longitude,
+      accuracyMeters,
+      capturedAt,
+      ...(typeof metadata.address === 'string'
+        ? { address: metadata.address.trim() }
+        : {}),
+    });
+  }
+
   private async buildMetadata(
     messageType: MessageType,
     input: SendMessageInput,
+    validatedLocationMetadata: Record<string, unknown> | null,
   ): Promise<Record<string, unknown> | null> {
-    if (messageType !== 'TEXT' || !input.content) return input.metadata ?? null;
+    let base: Record<string, unknown> | null = messageType === 'LOCATION'
+      ? validatedLocationMetadata
+      : input.metadata ?? null;
 
-    const url = this.ogScraper.extractFirstUrl(input.content);
-    if (!url) return input.metadata ?? null;
+    if (messageType === 'TEXT' && input.content) {
+      const url = this.ogScraper.extractFirstUrl(input.content);
+      if (url) {
+        const og = await this.ogScraper.scrape(url);
+        base = og ? { ...og } : base;
+      }
+    }
 
-    const og = await this.ogScraper.scrape(url);
-    return og ? { ...og } : input.metadata ?? null;
+    if (input.durationMs != null && messageType !== 'LOCATION') {
+      base = { ...(base ?? {}), durationMs: input.durationMs };
+    }
+
+    return base;
   }
 }

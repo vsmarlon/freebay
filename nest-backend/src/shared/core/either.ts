@@ -1,42 +1,50 @@
-import type { Failure } from './errors';
+import { Failure } from '../errors/failures/failures';
 
-export type Either<L, R> = Left<L> | Right<R>;
+export type EitherPromise<L, R> = Promise<Either<L, R>>;
+export type Either<L, R> = Left<L, R> | Right<L, R>;
 
-export class Left<L> {
-  readonly _tag = 'left' as const;
-  constructor(readonly value: L) {}
+export class Left<L, R = never> {
+  readonly value: L;
 
-  isLeft(): this is Left<L> {
+  constructor(value: L) {
+    this.value = value;
+  }
+
+  isLeft(): this is Left<L, R> {
     return true;
   }
 
-  isRight(): this is Right<never> {
+  isRight(): this is Right<L, R> {
     return false;
   }
 }
 
-export class Right<R> {
-  readonly _tag = 'right' as const;
-  constructor(readonly value: R) {}
+export class Right<L = never, R = unknown> {
+  readonly value: R;
 
-  isLeft(): this is Left<never> {
+  constructor(value: R) {
+    this.value = value;
+  }
+
+  isLeft(): this is Left<L, R> {
     return false;
   }
 
-  isRight(): this is Right<R> {
+  isRight(): this is Right<L, R> {
     return true;
   }
 }
 
-export const left = <L, R = never>(value: L): Either<L, R> => new Left(value);
-export const right = <R, L = never>(value: R): Either<L, R> => new Right(value);
+export const left = <L, R = never>(l: L): Either<L, R> => {
+  return new Left<L, R>(l);
+};
 
-export const isLeft = <L, R>(either: Either<L, R>): either is Left<L> =>
-  either._tag === 'left';
+export const right = <L = never, R = unknown>(r: R): Either<L, R> => {
+  return new Right<L, R>(r);
+};
 
-export const isRight = <L, R>(either: Either<L, R>): either is Right<R> =>
-  either._tag === 'right';
+export interface Repository {}
 
-export type RepositoryResponse<T> = Promise<Either<Failure, T>>;
-export type UsecaseResponse<T> = Promise<Either<Failure, T>>;
-export type EntityResponse<T> = Either<Failure, T>;
+export type RepositoryResponse<T, F = Failure> = Promise<Either<F, T>>;
+export type UsecaseResponse<T, F = Failure> = Promise<Either<F, T>>;
+export type EntityResponse<T, F = Failure> = Either<F, T>;

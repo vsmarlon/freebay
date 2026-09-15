@@ -9,11 +9,10 @@ part 'reposts_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Reposts extends _$Reposts {
-  late final SocialRepository _repository;
+  SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   RepostsState build() {
-    _repository = ref.watch(socialRepositoryProvider);
     return const RepostsState();
   }
 
@@ -27,7 +26,9 @@ class Reposts extends _$Reposts {
     final currentCount = state.countOverrides[postId] ?? initialCount;
 
     final newIsReposted = !currentReposted;
-    final newCount = newIsReposted ? currentCount + 1 : currentCount - 1;
+    final newCount = newIsReposted
+        ? currentCount + 1
+        : (currentCount > 0 ? currentCount - 1 : 0);
 
     state = state.copyWith(
       repostedOverrides: {...state.repostedOverrides, postId: newIsReposted},
@@ -49,7 +50,19 @@ class Reposts extends _$Reposts {
         );
         return false;
       }
-      return true;
+      return result.fold((_) => false, (authoritative) {
+        state = state.copyWith(
+          repostedOverrides: {
+            ...state.repostedOverrides,
+            postId: authoritative.active,
+          },
+          countOverrides: {
+            ...state.countOverrides,
+            postId: authoritative.count,
+          },
+        );
+        return true;
+      });
     } catch (e) {
       state = state.copyWith(
         repostedOverrides: {

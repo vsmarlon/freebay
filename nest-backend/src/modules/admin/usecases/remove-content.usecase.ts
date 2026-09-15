@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ModerationActionType } from '@prisma/client';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { RepositoryResponse } from '@/shared/core/either';
 import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
@@ -30,7 +30,7 @@ export class RemoveContentUseCase {
     reason?: string;
   }): Promise<Either<AppError, void>> {
     const removeResult = await this.remove(input.targetType, input.targetId);
-    if (isLeft(removeResult)) return left(removeResult.value);
+    if (removeResult.isLeft()) return left(removeResult.value);
     if (removeResult.value.count === 0) {
       return left(new NotFoundError(LABEL_BY_TYPE[input.targetType]));
     }
@@ -42,7 +42,7 @@ export class RemoveContentUseCase {
       action: ACTION_BY_TYPE[input.targetType],
       reason: input.reason ?? null,
     });
-    if (isLeft(actionResult)) return left(actionResult.value);
+    if (actionResult.isLeft()) return left(actionResult.value);
 
     return right(undefined);
   }

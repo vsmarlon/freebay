@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
@@ -64,7 +64,7 @@ export class ProcessGroupWebhookUseCase {
     }
 
     const groupResult = await this.paymentGroupRepo.findById(groupId);
-    if (isLeft(groupResult)) return left(new DatabaseError('Failed to load payment group'));
+    if (groupResult.isLeft()) return left(new DatabaseError('Failed to load payment group'));
 
     const group = groupResult.value;
     if (!group) {
@@ -99,7 +99,7 @@ export class ProcessGroupWebhookUseCase {
 
         for (const order of group.orders) {
           const paid = await this.transactionRepo.markAsPaid(order.transactionId, chargeId, tx);
-          if (isLeft(paid)) throw new Error(paid.value.message);
+          if (paid.isLeft()) throw new Error(paid.value.message);
           if (paid.value.count === 0) continue;
 
           await this.productRepo.updateInventoryOnSale(order.productId, tx);
@@ -145,7 +145,7 @@ export class ProcessGroupWebhookUseCase {
 
         for (const order of group.orders) {
           const failed = await this.transactionRepo.markAsFailed(order.transactionId, tx);
-          if (isLeft(failed)) throw new Error(failed.value.message);
+          if (failed.isLeft()) throw new Error(failed.value.message);
           if (failed.value.count === 0) continue;
 
           await this.orderRepo.cancel(order.orderId, tx);

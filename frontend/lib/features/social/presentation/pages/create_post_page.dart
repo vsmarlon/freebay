@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/chat/presentation/pages/image_editor_page.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -37,7 +40,30 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       imageQuality: 80,
     );
     if (pickedFile != null && mounted) {
-      setState(() => _selectedImagePath = pickedFile.path);
+      final bytes = await pickedFile.readAsBytes();
+      if (!mounted) return;
+      await context.push(
+        AppRoutes.imageEditor,
+        extra: {
+          'imageBytes': bytes,
+          'purpose': ImageEditorPurpose.post,
+          'onComplete': (ImageEditorResult result) async {
+            final editedFile = File(
+              '${Directory.systemTemp.path}${Platform.pathSeparator}freebay_post_${DateTime.now().microsecondsSinceEpoch}.png',
+            );
+            await editedFile.writeAsBytes(result.imageBytes, flush: true);
+            if (mounted) {
+              setState(() => _selectedImagePath = editedFile.path);
+              final caption = result.caption?.trim();
+              if (caption?.isNotEmpty == true &&
+                  _contentController.text.trim().isEmpty) {
+                _contentController.text = caption!;
+              }
+            }
+            return true;
+          },
+        },
+      );
     }
   }
 
@@ -71,6 +97,10 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       post,
     ) {
       ref.read(feedProvider.notifier).addPost(post);
+      final currentUser = ref.read(authControllerProvider).value;
+      if (currentUser != null) {
+        ref.invalidate(userPostsProvider(currentUser.id));
+      }
       context.pop();
     });
   }
@@ -80,168 +110,174 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     final user = ref.watch(authControllerProvider).value;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'NOVA PUBLICAÇÃO',
-            leading: GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  border: Border.all(color: context.borderColor, width: 2),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'NOVA PUBLICAÇÃO',
+              leading: GestureDetector(
+                onTap: () => context.pop(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: context.borderColor, width: 2),
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: context.textPrimary,
+                    size: 20,
+                  ),
                 ),
-                child: Icon(Icons.close, color: context.textPrimary, size: 20),
               ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: AppButton(
+                    label: 'PUBLICAR',
+                    size: AppButtonSize.compact,
+                    onPressed: _isLoading ? null : _createPost,
+                    isLoading: _isLoading,
+                  ),
+                ),
+              ],
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: AppButton(
-                  label: 'PUBLICAR',
-                  size: AppButtonSize.compact,
-                  onPressed: _isLoading ? null : _createPost,
-                  isLoading: _isLoading,
-                ),
-              ),
-            ],
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      UserAvatar(imageUrl: user?.avatarUrl),
-                      Spacing.hSm,
-                      Text(
-                        user?.displayNameOrDefault ?? 'Meu perfil',
-                        style: TextStyle(
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontWeight: FontWeight.w700,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Spacing.vMd,
-                  Container(
-                    color: context.surfaceColor,
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _contentController,
-                      maxLines: null,
-                      minLines: 5,
-                      style: TextStyle(color: context.textPrimary),
-                      decoration: InputDecoration(
-                        hintText:
-                            'Compartilhe uma atualização, ideia ou bastidor…',
-                        hintStyle: TextStyle(color: context.textSecondary),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                  Spacing.vSm,
-                  Container(
-                    color: context.surfaceColor,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    child: Row(
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Icon(
-                          Icons.alternate_email,
-                          size: 18,
-                          color: context.textSecondary,
-                        ),
+                        UserAvatar(imageUrl: user?.avatarUrl),
                         Spacing.hSm,
-                        Expanded(
-                          child: TextField(
-                            controller: _mentionController,
-                            style: TextStyle(
-                              color: context.textPrimary,
-                              fontSize: 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Mencionar usuário (opcional)',
-                              hintStyle: TextStyle(
-                                color: context.textSecondary,
-                                fontSize: 14,
-                              ),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
+                        Text(
+                          user?.displayNameOrDefault ?? 'Meu perfil',
+                          style: TextStyle(
+                            fontFamily: AppTypography.headlineFontFamily,
+                            fontWeight: FontWeight.w700,
+                            color: context.textPrimary,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  if (_selectedImagePath != null) ...[
                     Spacing.vMd,
-                    Stack(
-                      children: [
-                        Image.file(
-                          File(_selectedImagePath!),
-                          width: double.infinity,
-                          height: 200,
-                          fit: BoxFit.cover,
+                    Container(
+                      color: context.surfaceColor,
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: _contentController,
+                        maxLines: null,
+                        minLines: 5,
+                        style: TextStyle(color: context.textPrimary),
+                        decoration: InputDecoration(
+                          hintText:
+                              'Compartilhe uma atualização, ideia ou bastidor…',
+                          hintStyle: TextStyle(color: context.textSecondary),
+                          border: InputBorder.none,
                         ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedImagePath = null),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              color: Colors.black.withAlpha(180),
-                              child: const Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 18,
+                      ),
+                    ),
+                    Spacing.vSm,
+                    Container(
+                      color: context.surfaceColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.alternate_email,
+                            size: 18,
+                            color: context.textSecondary,
+                          ),
+                          Spacing.hSm,
+                          Expanded(
+                            child: TextField(
+                              controller: _mentionController,
+                              style: TextStyle(
+                                color: context.textPrimary,
+                                fontSize: 14,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Mencionar usuário (opcional)',
+                                hintStyle: TextStyle(
+                                  color: context.textSecondary,
+                                  fontSize: 14,
+                                ),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
                               ),
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_selectedImagePath != null) ...[
+                      Spacing.vMd,
+                      Stack(
+                        children: [
+                          Image.file(
+                            File(_selectedImagePath!),
+                            width: double.infinity,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedImagePath = null),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                color: Colors.black.withAlpha(180),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    Spacing.vMd,
+                    Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => _pickImage(ImageSource.gallery),
+                          icon: const Icon(
+                            Icons.photo_library_outlined,
+                            size: 18,
+                          ),
+                          label: const Text('Galeria'),
+                          style: OutlinedButton.styleFrom(
+                            shape: const RoundedRectangleBorder(),
+                          ),
+                        ),
+                        Spacing.hSm,
+                        OutlinedButton.icon(
+                          onPressed: () => _pickImage(ImageSource.camera),
+                          icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                          label: const Text('Câmera'),
+                          style: OutlinedButton.styleFrom(
+                            shape: const RoundedRectangleBorder(),
                           ),
                         ),
                       ],
                     ),
                   ],
-                  Spacing.vMd,
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () => _pickImage(ImageSource.gallery),
-                        icon: const Icon(
-                          Icons.photo_library_outlined,
-                          size: 18,
-                        ),
-                        label: const Text('Galeria'),
-                        style: OutlinedButton.styleFrom(
-                          shape: const RoundedRectangleBorder(),
-                        ),
-                      ),
-                      Spacing.hSm,
-                      OutlinedButton.icon(
-                        onPressed: () => _pickImage(ImageSource.camera),
-                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                        label: const Text('Câmera'),
-                        style: OutlinedButton.styleFrom(
-                          shape: const RoundedRectangleBorder(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

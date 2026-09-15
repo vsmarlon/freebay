@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class CreateComposerSheet extends StatelessWidget {
   const CreateComposerSheet({super.key});
@@ -16,7 +17,7 @@ class CreateComposerSheet extends StatelessWidget {
           subtitle: 'Publicações, opiniões e interações para o feed.',
           onTap: () {
             Navigator.of(context).pop();
-            context.push('/create-post');
+            context.push(AppRoutes.createPost);
           },
         ),
         _CreateComposerOption(
@@ -25,7 +26,7 @@ class CreateComposerSheet extends StatelessWidget {
           subtitle: 'Item para catálogo com preço, categoria e imagem.',
           onTap: () {
             Navigator.of(context).pop();
-            context.push('/products/create');
+            context.push(AppRoutes.createProduct);
           },
         ),
       ],

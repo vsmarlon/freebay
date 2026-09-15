@@ -127,6 +127,7 @@ export class GoogleAuthUseCase {
       role: 'USER',
       reputationScore: 0,
       totalReviews: 0,
+      wallet: { create: {} },
     });
     if (created.isLeft()) {
       this.logger.error(`Erro ao criar novo usuário no banco: ${created.value.message}`);

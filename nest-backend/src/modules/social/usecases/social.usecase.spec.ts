@@ -52,11 +52,7 @@ describe('CreatePostUseCase', () => {
     sut = module.get(CreatePostUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should create a regular post', async () => {
+  it('creates a regular post', async () => {
     const input = {
       userId: 'user-123',
       content: 'Test content',
@@ -73,7 +69,7 @@ describe('CreatePostUseCase', () => {
     expect(mockPostRepository.create).toHaveBeenCalled();
   });
 
-  it('should create a post with image', async () => {
+  it('creates a post with image', async () => {
     const input = {
       userId: 'user-123',
       imageUrl: 'http://example.com/image.jpg',
@@ -89,7 +85,7 @@ describe('CreatePostUseCase', () => {
     }
   });
 
-  it('should create PostMention rows for each mentionId', async () => {
+  it('creates PostMention rows for each mentionId', async () => {
     const input = {
       userId: 'user-123',
       content: 'Hey @friend!',
@@ -108,7 +104,7 @@ describe('CreatePostUseCase', () => {
     );
   });
 
-  it('should filter out author own userId from mentionIds', async () => {
+  it('filters out author own userId from mentionIds', async () => {
     const input = {
       userId: 'user-123',
       content: 'Hey self!',
@@ -122,7 +118,7 @@ describe('CreatePostUseCase', () => {
     expect(mockPostRepository.createMentions).toHaveBeenCalledWith('post-123', ['friend-user-id']);
   });
 
-  it('should not create mentions when mentionIds is empty', async () => {
+  it('does not create mentions when mentionIds is empty', async () => {
     const input = {
       userId: 'user-123',
       content: 'No mentions',
@@ -165,27 +161,24 @@ describe('LikePostUseCase', () => {
     sut = module.get(LikePostUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should like a post when it exists', async () => {
+  it('likes a post when it exists', async () => {
     mockPostRepository.findById.mockResolvedValue(right({
       id: 'post-123',
-      content: 'Test',
+       content: 'Test',
+       likesCount: 0,
     }));
 
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value).toBeUndefined();
+      expect(result.value).toEqual({ active: true, count: 1 });
     }
     expect(mockLikeRepository.createLike).toHaveBeenCalled();
     expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { increment: 1 } });
   });
 
-  it('should return error if post not found', async () => {
+  it('returns error if post not found', async () => {
     mockPostRepository.findById.mockResolvedValue(right(null));
 
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
@@ -223,16 +216,12 @@ describe('UnlikePostUseCase', () => {
     sut = module.get(UnlikePostUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should unlike a post', async () => {
+  it('unlikes a post', async () => {
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value).toBeUndefined();
+      expect(result.value).toEqual({ active: false, count: 0 });
     }
     expect(mockLikeRepository.deletePostLikeByUser).toHaveBeenCalledWith('user-123', 'post-123');
     expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { decrement: 1 } });
@@ -241,13 +230,12 @@ describe('UnlikePostUseCase', () => {
 
 describe('CommentUseCase', () => {
   let sut: CommentUseCase;
-  let mockCommentRepository: { create: jest.Mock; createMentions: jest.Mock };
-  let mockPostRepository: { update: jest.Mock };
+  let mockCommentRepository: { createWithCount: jest.Mock; createMentions: jest.Mock };
   let mockNotificationService: { notifyMention: jest.Mock };
 
   beforeEach(async () => {
     mockCommentRepository = {
-      create: jest.fn().mockResolvedValue(right({
+      createWithCount: jest.fn().mockResolvedValue(right({
         id: 'comment-123',
         content: 'Test comment',
         postId: 'post-123',
@@ -255,10 +243,6 @@ describe('CommentUseCase', () => {
         createdAt: new Date(),
       })),
       createMentions: jest.fn().mockResolvedValue(right(undefined)),
-    };
-
-    mockPostRepository = {
-      update: jest.fn().mockResolvedValue(right({})),
     };
 
     mockNotificationService = {
@@ -269,7 +253,6 @@ describe('CommentUseCase', () => {
       providers: [
         CommentUseCase,
         { provide: PrismaCommentRepository, useValue: mockCommentRepository },
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
         { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
@@ -277,11 +260,7 @@ describe('CommentUseCase', () => {
     sut = module.get(CommentUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should create a comment', async () => {
+  it('creates a comment', async () => {
     const input = {
       userId: 'user-123',
       postId: 'post-123',
@@ -296,10 +275,13 @@ describe('CommentUseCase', () => {
       expect(result.value.postId).toBe('post-123');
       expect(result.value.userId).toBe('user-123');
     }
-    expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { commentsCount: { increment: 1 } });
+    expect(mockCommentRepository.createWithCount).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'Great post!' }),
+      'post-123',
+    );
   });
 
-  it('should create CommentMention rows for each mentionId', async () => {
+  it('creates CommentMention rows for each mentionId', async () => {
     const input = {
       userId: 'user-123',
       postId: 'post-123',
@@ -318,7 +300,7 @@ describe('CommentUseCase', () => {
     );
   });
 
-  it('should filter out author own userId from comment mentionIds', async () => {
+  it('filters out author own userId from comment mentionIds', async () => {
     const input = {
       userId: 'user-123',
       postId: 'post-123',

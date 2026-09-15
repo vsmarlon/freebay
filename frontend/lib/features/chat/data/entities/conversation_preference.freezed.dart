@@ -216,11 +216,11 @@ return $default(_that.id,_that.userId,_that.orderId,_that.directConversationId,_
 @JsonSerializable()
 
 class _ConversationPreference implements ConversationPreference {
-  const _ConversationPreference({required this.id, required this.userId, this.orderId, this.directConversationId, this.isArchived = false, this.isDeleted = false, this.theme = 'DEFAULT', this.backgroundUrl});
+  const _ConversationPreference({this.id = '', this.userId = '', this.orderId, this.directConversationId, this.isArchived = false, this.isDeleted = false, this.theme = 'DEFAULT', this.backgroundUrl});
   factory _ConversationPreference.fromJson(Map<String, dynamic> json) => _$ConversationPreferenceFromJson(json);
 
-@override final  String id;
-@override final  String userId;
+@override@JsonKey() final  String id;
+@override@JsonKey() final  String userId;
 @override final  String? orderId;
 @override final  String? directConversationId;
 @override@JsonKey() final  bool isArchived;

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -7,9 +6,11 @@ import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
+import 'package:freebay/core/components/app_background.dart';
 import 'package:freebay/core/components/brutalist_fab.dart';
 import 'package:freebay/core/components/app_shell_scaffold_key.dart';
 import 'package:freebay/core/components/hide_on_scroll.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
 
 const double kNavBarContentHeight = 64;
@@ -36,6 +37,7 @@ class _AppShellState extends State<AppShell>
   late final HideOnScrollController _navHide;
   late final PageController _pageController;
   double _overscrolledLeft = 0;
+  final Set<int> _visitedTabs = {0};
 
   @override
   void initState() {
@@ -82,6 +84,7 @@ class _AppShellState extends State<AppShell>
   void _onDestinationSelected(int index) {
     if (index < 0 || index >= widget.branches.length) return;
     HapticFeedback.lightImpact();
+    _visitedTabs.add(index);
 
     if (index == widget.navigationShell.currentIndex) {
       widget.navigationShell.goBranch(index, initialLocation: true);
@@ -101,6 +104,7 @@ class _AppShellState extends State<AppShell>
 
   void _onPageChanged(int index) {
     if (index == widget.navigationShell.currentIndex) return;
+    _visitedTabs.add(index);
     widget.navigationShell.goBranch(index);
   }
 
@@ -125,9 +129,9 @@ class _AppShellState extends State<AppShell>
   Widget? _fabFor(BuildContext context, int selectedIndex) {
     switch (selectedIndex) {
       case 1:
-        return BrutalistFab(onTap: () => context.push('/products/create'));
+        return BrutalistFab(onTap: () => context.push(AppRoutes.createProduct));
       case 3:
-        return BrutalistFab(onTap: () => context.push('/chat/new'));
+        return BrutalistFab(onTap: () => context.push(AppRoutes.chatNew));
       default:
         return null;
     }
@@ -136,6 +140,7 @@ class _AppShellState extends State<AppShell>
   @override
   Widget build(BuildContext context) {
     final selectedIndex = widget.navigationShell.currentIndex;
+    final shellIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
 
     return Consumer(
       builder: (context, ref, _) {
@@ -156,49 +161,67 @@ class _AppShellState extends State<AppShell>
         final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
         return Scaffold(
+          backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: false,
           key: appShellScaffoldKey,
           drawer: const FeedDrawer(),
           drawerEnableOpenDragGesture: selectedIndex == 0,
           drawerEdgeDragWidth: 32,
           drawerScrimColor: Colors.black54,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: _handleShellScroll,
-                  child: MediaQuery(
-                    data: MediaQuery.of(context).copyWith(
-                      padding: MediaQuery.of(context).padding.copyWith(
-                        bottom: isKeyboardOpen ? 0 : navBarHeight,
+          body: AppBackground(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: _handleShellScroll,
+                    child: MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        padding: MediaQuery.of(context).padding.copyWith(
+                          bottom: isKeyboardOpen ? 0 : navBarHeight,
+                        ),
+                      ),
+                      child: PageView(
+                        controller: _pageController,
+                        onPageChanged: _onPageChanged,
+                        physics: const ClampingScrollPhysics(),
+                        // The custom PageView must mute kept-alive branches,
+                        // including when a root route covers the entire shell.
+                        children: [
+                          for (final (index, branch) in widget.branches.indexed)
+                            RepaintBoundary(
+                              child: Offstage(
+                                offstage: !_visitedTabs.contains(index),
+                                child: TickerMode(
+                                  enabled:
+                                      shellIsCurrent && index == selectedIndex,
+                                  child: branch,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    child: PageView(
-                      controller: _pageController,
-                      onPageChanged: _onPageChanged,
-                      physics: const ClampingScrollPhysics(),
-                      children: widget.branches,
-                    ),
                   ),
                 ),
-              ),
-              if (fab != null && !isKeyboardOpen)
-                Positioned(right: 16, bottom: navBarHeight + 16, child: fab),
-              if (!isKeyboardOpen)
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 8,
-                  child: ScrollAwareBar(
-                    animation: _navHide.animation,
-                    height: navBarHeight,
-                    edge: ScrollBarEdge.bottom,
-                    child: _BrutalistNavBar(
-                      selectedIndex: selectedIndex,
-                      onDestinationSelected: _onDestinationSelected,
+                if (fab != null && !isKeyboardOpen)
+                  Positioned(right: 16, bottom: navBarHeight + 16, child: fab),
+                if (!isKeyboardOpen)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 8,
+                    child: ScrollAwareBar(
+                      animation: _navHide.animation,
+                      height: navBarHeight,
+                      edge: ScrollBarEdge.bottom,
+                      child: _BrutalistNavBar(
+                        selectedIndex: selectedIndex,
+                        onDestinationSelected: _onDestinationSelected,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -217,68 +240,54 @@ class _BrutalistNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
-
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceDark.withAlpha(220)
-                : AppColors.white.withAlpha(230),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withAlpha(30)
-                  : Colors.black.withAlpha(20),
-              width: 1.5,
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: SizedBox(
-              height: 64,
-              child: Row(
-                children: [
-                  _NavItem(
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home,
-                    label: 'FREEBAY!',
-                    isSelected: selectedIndex == 0,
-                    onTap: () => onDestinationSelected(0),
-                  ),
-                  _NavItem(
-                    icon: Icons.search,
-                    selectedIcon: Icons.search,
-                    label: 'EXPLORAR',
-                    isSelected: selectedIndex == 1,
-                    onTap: () => onDestinationSelected(1),
-                  ),
-                  _NavItem(
-                    icon: Icons.account_balance_wallet_outlined,
-                    selectedIcon: Icons.account_balance_wallet,
-                    label: 'CARTEIRA',
-                    isSelected: selectedIndex == 2,
-                    onTap: () => onDestinationSelected(2),
-                    isWallet: true,
-                  ),
-                  _NavItem(
-                    icon: Icons.chat_bubble_outline,
-                    selectedIcon: Icons.chat_bubble,
-                    label: 'MENSAGENS',
-                    isSelected: selectedIndex == 3,
-                    onTap: () => onDestinationSelected(3),
-                  ),
-                  _NavItem(
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person,
-                    label: 'PERFIL',
-                    isSelected: selectedIndex == 4,
-                    onTap: () => onDestinationSelected(4),
-                  ),
-                ],
+    return Container(
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        border: Border.all(color: context.borderColor, width: 1.5),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              _NavItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home,
+                label: 'FREEBAY!',
+                isSelected: selectedIndex == 0,
+                onTap: () => onDestinationSelected(0),
               ),
-            ),
+              _NavItem(
+                icon: Icons.search,
+                selectedIcon: Icons.search,
+                label: 'EXPLORAR',
+                isSelected: selectedIndex == 1,
+                onTap: () => onDestinationSelected(1),
+              ),
+              _NavItem(
+                icon: Icons.account_balance_wallet_outlined,
+                selectedIcon: Icons.account_balance_wallet,
+                label: 'CARTEIRA',
+                isSelected: selectedIndex == 2,
+                onTap: () => onDestinationSelected(2),
+                isWallet: true,
+              ),
+              _NavItem(
+                icon: Icons.chat_bubble_outline,
+                selectedIcon: Icons.chat_bubble,
+                label: 'MENSAGENS',
+                isSelected: selectedIndex == 3,
+                onTap: () => onDestinationSelected(3),
+              ),
+              _NavItem(
+                icon: Icons.person_outline,
+                selectedIcon: Icons.person,
+                label: 'PERFIL',
+                isSelected: selectedIndex == 4,
+                onTap: () => onDestinationSelected(4),
+              ),
+            ],
           ),
         ),
       ),

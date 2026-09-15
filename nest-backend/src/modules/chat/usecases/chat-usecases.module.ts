@@ -17,12 +17,16 @@ import { OgScraperService } from '../services/og-scraper.service';
 import { UrlSafetyService } from '../services/url-safety.service';
 import { DeleteMessageUseCase } from './delete-message.usecase';
 import { ToggleReactionUseCase } from './toggle-reaction.usecase';
+import { ToggleStarUseCase } from './toggle-star.usecase';
+import { GetStarredMessagesUseCase } from './get-starred-messages.usecase';
 import { GetConversationMediaUseCase } from './get-conversation-media.usecase';
 import { VerifyUrlSafetyUseCase } from './verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './forward-messages.usecase';
+import { MarkAsReadUseCase } from './mark-as-read.usecase';
 
 @Module({
   providers: [
+    MarkAsReadUseCase,
     ConversationDatabaseRepository,
     PrismaConversationPreferenceRepository,
     ChatThreadAccessService,
@@ -41,11 +45,14 @@ import { ForwardMessagesUseCase } from './forward-messages.usecase';
     UrlSafetyService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
+    ToggleStarUseCase,
+    GetStarredMessagesUseCase,
     GetConversationMediaUseCase,
     VerifyUrlSafetyUseCase,
     ForwardMessagesUseCase,
   ],
   exports: [
+    MarkAsReadUseCase,
     ConversationDatabaseRepository,
     ChatThreadAccessService,
     PrismaBlockRepository,
@@ -63,6 +70,8 @@ import { ForwardMessagesUseCase } from './forward-messages.usecase';
     UrlSafetyService,
     DeleteMessageUseCase,
     ToggleReactionUseCase,
+    ToggleStarUseCase,
+    GetStarredMessagesUseCase,
     GetConversationMediaUseCase,
     VerifyUrlSafetyUseCase,
     ForwardMessagesUseCase,

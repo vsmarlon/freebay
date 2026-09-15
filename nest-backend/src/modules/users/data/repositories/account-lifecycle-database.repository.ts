@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus, DisputeStatus, Prisma } from '@prisma/client';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse } from '@/shared/core/either';
 import {
   AccountDeletionBlockers,
@@ -26,6 +27,10 @@ const OPEN_DISPUTE_STATUSES: DisputeStatus[] = [
 export class AccountLifecycleDatabaseRepository
   extends BasePrismaRepository
 {
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
+
   async findDeletionBlockers(userId: string): RepositoryResponse<AccountDeletionBlockers> {
     return this.safeRun(async () => {
       const [openOrdersAsBuyer, openOrdersAsSeller, openDisputes, wallet] = await Promise.all([

@@ -21,7 +21,7 @@ export class DeleteCommentUseCase {
       return left(new ForbiddenError('Você não tem permissão para excluir este comentário'));
     }
 
-    const deleteResult = await this.commentRepository.softDelete(input.commentId);
+    const deleteResult = await this.commentRepository.softDeleteWithCount(input.commentId);
     if (deleteResult.isLeft()) return left(deleteResult.value);
 
     return right(undefined);

@@ -24,6 +24,7 @@ import { UserDatabaseRepository } from '../auth/data/repositories/user-database.
 import { WebhookGuard } from '@/shared/guards/webhook.guard';
 import { WebhookDedupeInterceptor } from '@/shared/interceptors/webhook-dedupe.interceptor';
 import { RedisService } from '@/shared/infra/redis/redis.service';
+import { RecoverDisputeTransferUseCase } from './usecases/recover-dispute-transfer.usecase';
 
 @Module({
   imports: [ConfigModule],
@@ -52,6 +53,7 @@ import { RedisService } from '@/shared/infra/redis/redis.service';
     WebhookGuard,
     WebhookDedupeInterceptor,
     RedisService,
+    RecoverDisputeTransferUseCase,
   ],
   exports: [
     StripeProvider,
@@ -59,6 +61,8 @@ import { RedisService } from '@/shared/infra/redis/redis.service';
     SellerPayoutService,
     ConnectAccountDatabaseRepository,
     PaymentGroupDatabaseRepository,
+    TransactionDatabaseRepository,
+    RecoverDisputeTransferUseCase,
     ExpireCheckoutGroupUseCase,
     UserDatabaseRepository,
   ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/core/components/app_background.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -67,7 +68,7 @@ class _WalletCardState extends State<WalletCard> {
           ),
           boxShadow: AppDepth.hard(context.borderColor),
         ),
-        child: BrutalistBackground(
+        child: AppBackground(
           forceDark: true,
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -176,10 +177,10 @@ class _WalletCardState extends State<WalletCard> {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: AppColors.mediumGray,
+              color: context.textSecondary,
             ),
           ],
         ),

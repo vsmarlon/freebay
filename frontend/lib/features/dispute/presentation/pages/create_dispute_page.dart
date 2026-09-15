@@ -27,71 +27,73 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'ABRIR DISPUTA',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'ABRIR DISPUTA',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  BrutalistBreadcrumb(items: context.breadcrumbs),
-                  Spacing.vMd,
-                  const Text('Descreva o problema', style: AppTypography.h3),
-                  Spacing.vSm,
-                  const Text(
-                    'Explique detalhadamente o que houve de errado com o pedido',
-                    style: AppTypography.bodySmall,
-                  ),
-                  Spacing.vMd,
-                  BrutalistBox(
-                    child: TextField(
-                      controller: _reasonController,
-                      maxLines: 6,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Ex: Produto diferente do anunciado, não recebi o produto...',
-                        border: InputBorder.none,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BrutalistBreadcrumb(items: context.breadcrumbs),
+                    Spacing.vMd,
+                    const Text('Descreva o problema', style: AppTypography.h3),
+                    Spacing.vSm,
+                    const Text(
+                      'Explique detalhadamente o que houve de errado com o pedido',
+                      style: AppTypography.bodySmall,
+                    ),
+                    Spacing.vMd,
+                    BrutalistBox(
+                      child: TextField(
+                        controller: _reasonController,
+                        maxLines: 6,
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Ex: Produto diferente do anunciado, não recebi o produto...',
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
-                  ),
-                  Spacing.vLg,
-                  SizedBox(
-                    width: double.infinity,
-                    child: Container(
-                      color: AppColors.error,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _isSubmitting ? null : _createDispute,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            child: Center(
-                              child: _isSubmitting
-                                  ? const ShimmerBlock(width: 20, height: 20)
-                                  : const Text(
-                                      'Abrir Disputa',
-                                      style: AppTypography.button,
-                                    ),
+                    Spacing.vLg,
+                    SizedBox(
+                      width: double.infinity,
+                      child: Container(
+                        color: AppColors.error,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _isSubmitting ? null : _createDispute,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: _isSubmitting
+                                    ? const ShimmerBlock(width: 20, height: 20)
+                                    : const Text(
+                                        'Abrir Disputa',
+                                        style: AppTypography.button,
+                                      ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

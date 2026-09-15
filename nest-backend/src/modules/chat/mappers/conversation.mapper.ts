@@ -1,5 +1,6 @@
-import { Prisma, ConversationPreference } from '@prisma/client';
+import { Prisma, ConversationPreference, User } from '@prisma/client';
 import { USER_SELECT_BASIC, USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
+import { ConversationCounterpartSummary, ProductConversationSummary, StartConversationOutput } from '../dtos/chat.dto';
 
 // ─── Prisma Typed Includes & Payloads ──────────────────────────────────────────
 
@@ -7,6 +8,14 @@ export const directConversationWithDetailsValidator = Prisma.validator<Prisma.Di
   include: {
     user1: { select: USER_SELECT_BASIC },
     user2: { select: USER_SELECT_BASIC },
+    product: {
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        images: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 },
+      },
+    },
     messages: {
       take: 1,
       select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
@@ -21,6 +30,53 @@ export const directConversationWithDetailsValidator = Prisma.validator<Prisma.Di
 });
 
 export type DirectConversationWithDetails = Prisma.DirectConversationGetPayload<typeof directConversationWithDetailsValidator>;
+
+export const productConversationSummaryValidator = Prisma.validator<Prisma.ProductDefaultArgs>()({
+  select: {
+    id: true,
+    title: true,
+    sellerId: true,
+    status: true,
+    images: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 },
+  },
+});
+
+export type ProductConversationSummaryRecord = Prisma.ProductGetPayload<typeof productConversationSummaryValidator>;
+
+export function toProductConversationSummary(
+  product: ProductConversationSummaryRecord,
+): ProductConversationSummary {
+  return {
+    id: product.id,
+    title: product.title,
+    imageUrl: product.images[0]?.url ?? null,
+    status: product.status,
+  };
+}
+
+export type ConversationStartRecord = {
+  conversationId: string;
+  status: string;
+  threadType: 'DIRECT';
+  product: ProductConversationSummary | null;
+};
+
+export function toCounterpartSummary(user: Pick<User, 'id' | 'displayName' | 'avatarUrl'>): ConversationCounterpartSummary {
+  return { id: user.id, displayName: user.displayName, avatarUrl: user.avatarUrl };
+}
+
+export function toStartConversationOutput(
+  conversation: ConversationStartRecord,
+  user: Pick<User, 'id' | 'displayName' | 'avatarUrl'>,
+): StartConversationOutput {
+  return {
+    conversationId: conversation.conversationId,
+    status: conversation.status,
+    threadType: 'DIRECT',
+    otherUser: toCounterpartSummary(user),
+    product: conversation.product,
+  };
+}
 
 export const orderWithChatValidator = Prisma.validator<Prisma.OrderDefaultArgs>()({
   include: {
@@ -126,6 +182,12 @@ export interface UnifiedConversationResponse {
     productTitle: string;
     status: string;
   };
+  product?: {
+    id: string;
+    title: string;
+    imageUrl: string | null;
+    status: string;
+  };
   lastMessage: {
     content: string;
     createdAt: string;
@@ -178,6 +240,14 @@ export class ConversationMapper {
         avatarUrl: otherUser.avatarUrl,
         isVerified: otherUser.isVerified,
       },
+      ...(conv.product ? {
+        product: {
+          id: conv.product.id,
+          title: conv.product.title,
+          imageUrl: conv.product.images[0]?.url ?? null,
+          status: conv.product.status,
+        },
+      } : {}),
       lastMessage: lastMsg ? {
         content: lastMsg.content ?? '',
         createdAt: lastMsg.createdAt.toISOString(),

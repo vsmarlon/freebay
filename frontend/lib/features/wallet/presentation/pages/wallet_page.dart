@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/wallet/data/entities/connect_status_entity.dart';
-import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
+import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart'
+    hide ConnectStatus;
 import 'package:freebay/core/utils/currency_utils.dart';
 
 class WalletPage extends ConsumerStatefulWidget {
@@ -21,22 +24,32 @@ class _WalletPageState extends ConsumerState<WalletPage>
   @override
   bool get wantKeepAlive => true;
 
+  String? _walletUserId;
+
   @override
   void initState() {
     super.initState();
-    final wallet = ref.read(walletProvider);
-    final history = ref.read(walletHistoryProvider);
-    if (wallet.hasValue || wallet.isLoading || history.isLoading) return;
-
     Future.microtask(() {
-      if (!mounted) return;
-      final user = ref.read(authControllerProvider).value;
-      if (user != null) {
-        ref.read(walletProvider.notifier).loadWallet();
-        ref.read(walletHistoryProvider.notifier).load();
-        ref.read(connectStatusProvider.notifier).load();
-      }
+      if (mounted) _syncWalletSession(ref.read(authControllerProvider));
     });
+  }
+
+  void _syncWalletSession(AsyncValue<UserEntity?> next) {
+    final user = next.value;
+    if (user == null) {
+      if (next.hasValue && _walletUserId != null) {
+        _walletUserId = null;
+        ref.read(walletProvider.notifier).reset();
+        ref.read(walletHistoryProvider.notifier).reset();
+        ref.read(connectStatusProvider.notifier).reset();
+      }
+      return;
+    }
+    if (_walletUserId == user.id) return;
+    _walletUserId = user.id;
+    ref.read(walletProvider.notifier).loadWallet(user.id);
+    ref.read(walletHistoryProvider.notifier).load(user.id);
+    ref.read(connectStatusProvider.notifier).load(user.id);
   }
 
   @override
@@ -47,20 +60,28 @@ class _WalletPageState extends ConsumerState<WalletPage>
     final historyState = ref.watch(walletHistoryProvider);
     final connectState = ref.watch(connectStatusProvider);
 
+    ref.listen<AsyncValue<UserEntity?>>(
+      authControllerProvider,
+      (_, next) => _syncWalletSession(next),
+    );
+
     if (user == null) {
       return Scaffold(
-        body: GuestGateView(
-          icon: Icons.account_balance_wallet_outlined,
-          title: 'CARTEIRA & CUSTÓDIA',
-          description:
-              'Gerencie seu saldo, realize saques instantâneos via PIX e negocie com garantia de custódia protegida.',
-          benefits: const [
-            '0% de taxa sobre compras e vendas',
-            'Saques rápidos via PIX',
-            'Custódia segura até a entrega do produto',
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            const PageHeader(text: 'CARTEIRA'),
+            Expanded(
+              child: GuestGateView(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'CARTEIRA',
+                description:
+                    'Acompanhe seu saldo e configure seus recebimentos.',
+                onLoginPressed: () => context.push(loginPathFrom(context)),
+                onRegisterPressed: () => context.push(AppRoutes.register),
+              ),
+            ),
           ],
-          onLoginPressed: () => context.push(loginPathFrom(context)),
-          onRegisterPressed: () => context.push('/register'),
         ),
       );
     }
@@ -69,7 +90,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
     final pendingBalance = walletState.value?.pendingBalance ?? 0;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           PageHeader(
@@ -77,12 +98,17 @@ class _WalletPageState extends ConsumerState<WalletPage>
             actions: [
               IconButton(
                 icon: Icon(Icons.help_outline, color: context.textPrimary),
-                onPressed: () => context.push('/faq'),
+                onPressed: () => context.push(AppRoutes.faq),
               ),
             ],
           ),
           Expanded(
-            child: walletState.isLoading
+            child: walletState.hasError
+                ? _WalletErrorState(
+                    message: walletState.error.toString(),
+                    onRetry: () => _loadWallet(user.id),
+                  )
+                : walletState.isLoading
                 ? const SkeletonPage(
                     child: Column(
                       children: [
@@ -95,9 +121,19 @@ class _WalletPageState extends ConsumerState<WalletPage>
                   )
                 : AppRefreshIndicator(
                     onRefresh: () async {
-                      ref.read(walletProvider.notifier).loadWallet();
-                      ref.read(connectStatusProvider.notifier).load();
-                      await ref.read(walletHistoryProvider.notifier).load();
+                      final currentUser = ref
+                          .read(authControllerProvider)
+                          .value;
+                      if (currentUser == null) return;
+                      ref
+                          .read(walletProvider.notifier)
+                          .loadWallet(currentUser.id);
+                      ref
+                          .read(connectStatusProvider.notifier)
+                          .load(currentUser.id);
+                      await ref
+                          .read(walletHistoryProvider.notifier)
+                          .load(currentUser.id);
                     },
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -126,7 +162,14 @@ class _WalletPageState extends ConsumerState<WalletPage>
                             ),
                           ),
                           Spacing.vSm,
-                          if (historyState.transactions.isEmpty)
+                          if (historyState.error != null)
+                            _WalletHistoryError(
+                              message: historyState.error!,
+                              onRetry: () => ref
+                                  .read(walletHistoryProvider.notifier)
+                                  .load(user.id),
+                            )
+                          else if (historyState.transactions.isEmpty)
                             const EmptyState(
                               icon: Icons.receipt_long_outlined,
                               title: 'SEM TRANSAÇÕES',
@@ -211,6 +254,12 @@ class _WalletPageState extends ConsumerState<WalletPage>
     );
   }
 
+  void _loadWallet(String userId) {
+    ref.read(walletProvider.notifier).loadWallet(userId);
+    ref.read(walletHistoryProvider.notifier).load(userId);
+    ref.read(connectStatusProvider.notifier).load(userId);
+  }
+
   Future<void> _startOnboarding() async {
     final result = await ref
         .read(walletRepositoryProvider)
@@ -242,8 +291,58 @@ class _WalletPageState extends ConsumerState<WalletPage>
       return;
     }
     if (mounted) {
-      ref.read(connectStatusProvider.notifier).load();
+      final user = ref.read(authControllerProvider).value;
+      if (user != null) {
+        ref.read(connectStatusProvider.notifier).load(user.id);
+      }
     }
+  }
+}
+
+class _WalletErrorState extends StatelessWidget {
+  const _WalletErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            Spacing.vMd,
+            AppButton(label: 'TENTAR NOVAMENTE', onPressed: onRetry),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletHistoryError extends StatelessWidget {
+  const _WalletHistoryError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(message, style: TextStyle(color: context.textSecondary)),
+        Spacing.vSm,
+        AppButton(
+          label: 'TENTAR NOVAMENTE',
+          variant: AppButtonVariant.secondary,
+          onPressed: onRetry,
+        ),
+      ],
+    );
   }
 }
 
@@ -267,30 +366,42 @@ class _PayoutSection extends StatelessWidget {
     }
 
     final current = status;
-    if (current == null || !current.canReceive) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            current == null || !current.onboarded
-                ? 'Cadastre seus dados de recebimento para receber suas vendas.'
-                : 'Seu cadastro de recebimentos está em análise pelo Stripe.',
-            style: TextStyle(fontSize: 13, color: context.textSecondary),
-          ),
+    final effectiveStatus = current?.status ?? ConnectStatus.onboardingRequired;
+    final onboarding = effectiveStatus == ConnectStatus.onboardingRequired;
+    final copy = switch (effectiveStatus) {
+      ConnectStatus.onboardingRequired =>
+        'Cadastre seus dados de recebimento para receber suas vendas.',
+      ConnectStatus.requirementsDue =>
+        'Há informações pendentes para liberar o recebimento das vendas.',
+      ConnectStatus.restricted =>
+        'O Stripe restringiu seus recebimentos. Abra o painel para corrigir o cadastro.',
+      ConnectStatus.transferReady =>
+        'Recebimentos habilitados. O saldo permanece na carteira até a transferência.',
+    };
+    final action = onboarding ? onStartOnboarding : onOpenDashboard;
+    final label = onboarding
+        ? 'CONFIGURAR RECEBIMENTOS'
+        : effectiveStatus == ConnectStatus.transferReady
+        ? 'ABRIR PAINEL DE PAGAMENTOS'
+        : 'CORRIGIR CADASTRO NO STRIPE';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          copy,
+          style: TextStyle(fontSize: 13, color: context.textSecondary),
+        ),
+        if (current?.requirementsDue.isNotEmpty ?? false) ...[
           Spacing.vSm,
-          AppButton(
-            label: current == null || !current.onboarded
-                ? 'CONFIGURAR RECEBIMENTOS'
-                : 'CONTINUAR CADASTRO',
-            onPressed: onStartOnboarding,
+          Text(
+            'PENDÊNCIAS: ${current!.requirementsDue.join(', ')}',
+            style: TextStyle(fontSize: 12, color: context.textSecondary),
           ),
         ],
-      );
-    }
-
-    return AppButton(
-      label: 'ABRIR PAINEL DE PAGAMENTOS',
-      onPressed: onOpenDashboard,
+        Spacing.vSm,
+        AppButton(label: label, onPressed: action),
+      ],
     );
   }
 }

@@ -104,6 +104,9 @@ class NotificationService {
     }
   }
 
+  /// Public opt-in used by the post-login welcome setup.
+  Future<void> requestPermissions() => _requestPermissions();
+
   Future<void> _requestPermissions() async {
     final fm = _firebaseMessaging;
     if (fm == null) return;

@@ -11,6 +11,9 @@ class ChatHeader extends StatelessWidget {
   final VoidCallback? onInfo;
   final bool isOnline;
   final DateTime? lastSeenAt;
+  final bool isLoading;
+  final bool hasError;
+  final VoidCallback? onRetry;
 
   const ChatHeader({
     super.key,
@@ -23,6 +26,9 @@ class ChatHeader extends StatelessWidget {
     this.onInfo,
     this.isOnline = false,
     this.lastSeenAt,
+    this.isLoading = false,
+    this.hasError = false,
+    this.onRetry,
   });
 
   String get _statusLabel {
@@ -68,29 +74,53 @@ class ChatHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontFamily: AppTypography.headlineFontFamily,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    fontStyle: FontStyle.italic,
-                    color: context.textPrimary,
+                if (isLoading)
+                  Container(
+                    height: 16,
+                    width: 140,
+                    color: context.surfaceMidColor,
+                  )
+                else
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontFamily: AppTypography.headlineFontFamily,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: FontStyle.italic,
+                      color: context.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
                 const SizedBox(height: 2),
-                Text(
-                  _statusLabel,
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                    color: isOnline ? AppColors.success : AppColors.outline,
+                if (hasError)
+                  GestureDetector(
+                    onTap: onRetry,
+                    child: const Text(
+                      'ERRO AO CARREGAR • TOCAR PARA TENTAR DE NOVO',
+                      style: TextStyle(
+                        fontFamily: AppTypography.fontFamily,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  )
+                else if (!isLoading)
+                  Text(
+                    _statusLabel,
+                    style: TextStyle(
+                      fontFamily: AppTypography.fontFamily,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                      color: isOnline
+                          ? AppColors.success
+                          : context.textSecondary,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

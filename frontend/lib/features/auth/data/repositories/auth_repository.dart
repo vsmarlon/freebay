@@ -1,33 +1,54 @@
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/biometry_service.dart';
+import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
 class AuthRepository extends BaseHttpRepository {
   AuthRepository({super.client});
 
   Future<Either<Failure, void>> logout() async {
+    String? accessToken;
+    String? refreshToken;
+    String? biometricToken;
+    HttpClient.suspendRefresh();
     try {
-      final refreshToken = await StorageService.getRefreshToken();
-      final biometricToken = await StorageService.getBiometricToken();
+      accessToken = await StorageService.getToken();
+      refreshToken = await StorageService.getRefreshToken();
+      biometricToken = await StorageService.getBiometricToken();
 
-      await safeVoid(
+      final result = await safeVoid(
         () => client.post(
           '/auth/logout',
           data: {
             'refreshToken': ?refreshToken,
             'biometricToken': ?biometricToken,
           },
+          options: Options(
+            extra: {
+              HttpClient.preserveCapturedAuthKey: true,
+              HttpClient.capturedAuthTokenKey: accessToken,
+              HttpClient.disableRefreshKey: true,
+            },
+          ),
         ),
         debugLabel: 'AUTH logout',
       );
 
-      await StorageService.clearBiometricToken();
-      await StorageService.clearTokens();
-      return const Right(null);
+      return result;
     } catch (_) {
       return const Left(CacheFailure('Erro ao limpar tokens de acesso.'));
+    } finally {
+      try {
+        await BiometryService().clearState();
+      } catch (_) {}
+      try {
+        await StorageService.clearTokens();
+      } catch (_) {}
     }
   }
 
@@ -47,24 +68,27 @@ class AuthRepository extends BaseHttpRepository {
     String password,
     bool rememberMe,
   ) async {
+    AuthSessionCoordinator.beginAuthentication();
     return safeCall<UserEntity>(
       () => client.post(
         '/auth/login',
         data: {'email': email, 'password': password},
       ),
       debugLabel: 'AUTH login',
-      onSuccess: (response) {
+      onSuccess: (response) async {
         final data = response.data?['data'];
         if (data == null) {
           return const Left(InvalidCredentialsFailure());
         }
-        StorageService.saveToken(data['token']);
-        StorageService.saveRefreshToken(data['refreshToken']);
-        if (data['biometricToken'] != null) {
-          StorageService.saveBiometricToken(data['biometricToken']);
-        }
-        StorageService.saveRememberMe(rememberMe);
-        return Right(UserEntity.fromJson(data['user']));
+        await AuthSessionCoordinator.installTokensAndEstablish(
+          () =>
+              StorageService.saveTokenPair(data['token'], data['refreshToken']),
+        );
+        await StorageService.saveEmail(email);
+        await StorageService.saveRememberMe(rememberMe);
+        final user = UserEntity.fromJson(data['user']);
+        if (user.email != null) await StorageService.saveEmail(user.email!);
+        return Right(user);
       },
     );
   }
@@ -81,7 +105,8 @@ class AuthRepository extends BaseHttpRepository {
     String displayName,
     String username,
   ) async {
-    return safeCall<UserEntity>(
+    AuthSessionCoordinator.beginAuthentication();
+    final result = await safeCall<UserEntity>(
       () => client.post(
         '/auth/register',
         data: {
@@ -92,21 +117,22 @@ class AuthRepository extends BaseHttpRepository {
         },
       ),
       debugLabel: 'AUTH register',
-      onSuccess: (response) {
+      onSuccess: (response) async {
         final data = response.data?['data'];
         if (data == null) {
           return const Left(ServerFailure('Falha ao registrar usuário.'));
         }
-        StorageService.saveToken(data['token']);
-        if (data['refreshToken'] != null) {
-          StorageService.saveRefreshToken(data['refreshToken']);
-        }
-        if (data['biometricToken'] != null) {
-          StorageService.saveBiometricToken(data['biometricToken']);
-        }
-        return Right(UserEntity.fromJson(data['user']));
+        await AuthSessionCoordinator.installTokensAndEstablish(
+          () =>
+              StorageService.saveTokenPair(data['token'], data['refreshToken']),
+        );
+        final user = UserEntity.fromJson(data['user']);
+        if (user.email != null) await StorageService.saveEmail(user.email!);
+        return Right(user);
       },
     );
+    if (result.isRight) await StorageService.saveRememberMe(false);
+    return result;
   }
 
   Future<Either<Failure, bool>> checkUsernameAvailable(String username) =>
@@ -145,23 +171,26 @@ class AuthRepository extends BaseHttpRepository {
   Future<Either<Failure, UserEntity>> biometricLogin(
     String biometricToken,
   ) async {
+    AuthSessionCoordinator.beginAuthentication();
     return safeCall<UserEntity>(
       () => client.post(
         '/auth/biometric-login',
         data: {'biometricToken': biometricToken},
       ),
       debugLabel: 'AUTH biometric',
-      onSuccess: (response) {
+      onSuccess: (response) async {
         final data = response.data?['data'];
         if (data == null) {
           return const Left(InvalidCredentialsFailure());
         }
-        StorageService.saveToken(data['token']);
-        StorageService.saveRefreshToken(data['refreshToken']);
-        if (data['biometricToken'] != null) {
-          StorageService.saveBiometricToken(data['biometricToken']);
-        }
-        return Right(UserEntity.fromJson(data['user']));
+        await AuthSessionCoordinator.installTokensAndEstablish(
+          () =>
+              StorageService.saveTokenPair(data['token'], data['refreshToken']),
+        );
+        await StorageService.saveBiometricToken(data['biometricToken']);
+        final user = UserEntity.fromJson(data['user']);
+        if (user.email != null) await StorageService.saveEmail(user.email!);
+        return Right(user);
       },
     );
   }
@@ -178,22 +207,30 @@ class AuthRepository extends BaseHttpRepository {
     );
   }
 
+  Future<Either<Failure, String>> enrollBiometricToken() => safePost<String>(
+    '/auth/biometric-token/enroll',
+    customMapper: (data) => data['biometricToken'] as String,
+    debugLabel: 'AUTH enroll biometric',
+  );
+
   Future<Either<Failure, UserEntity>> googleAuth(String idToken) async {
+    AuthSessionCoordinator.beginAuthentication();
     return safeCall<UserEntity>(
       () => client.post('/auth/google', data: {'idToken': idToken}),
       debugLabel: 'AUTH google',
-      onSuccess: (response) {
+      onSuccess: (response) async {
         final data = response.data?['data'];
         if (data == null) {
           return const Left(ServerFailure('Falha ao autenticar com Google.'));
         }
-        StorageService.saveToken(data['token']);
-        StorageService.saveRefreshToken(data['refreshToken']);
-        if (data['biometricToken'] != null) {
-          StorageService.saveBiometricToken(data['biometricToken']);
-        }
-        StorageService.saveRememberMe(true);
-        return Right(UserEntity.fromJson(data['user']));
+        await AuthSessionCoordinator.installTokensAndEstablish(
+          () =>
+              StorageService.saveTokenPair(data['token'], data['refreshToken']),
+        );
+        await StorageService.saveRememberMe(true);
+        final user = UserEntity.fromJson(data['user']);
+        if (user.email != null) await StorageService.saveEmail(user.email!);
+        return Right(user);
       },
     );
   }

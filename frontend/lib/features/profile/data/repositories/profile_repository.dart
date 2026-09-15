@@ -5,7 +5,7 @@ import 'package:freebay/shared/repositories/base_http_repository.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
-import 'package:freebay/features/profile/data/entities/follower_entity.dart';
+import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 
 class ProfileRepository extends BaseHttpRepository {
   ProfileRepository({super.client});
@@ -24,19 +24,27 @@ class ProfileRepository extends BaseHttpRepository {
         fromJson: UserStatsEntity.fromJson,
       );
 
-  Future<Either<Failure, List<FollowerEntity>>> getFollowers(String userId) =>
-      safeGetList<FollowerEntity>(
-        '/users/$userId/followers',
-        listKey: 'data.users',
-        fromJson: FollowerEntity.fromJson,
-      );
+  Future<Either<Failure, FollowListResponse>> getFollowers(
+    String userId, {
+    int limit = 20,
+    int offset = 0,
+  }) => safeGet<FollowListResponse>(
+    '/users/$userId/followers',
+    queryParameters: {'limit': limit, 'offset': offset},
+    extractKey: 'data',
+    fromJson: FollowListResponse.fromJson,
+  );
 
-  Future<Either<Failure, List<FollowerEntity>>> getFollowing(String userId) =>
-      safeGetList<FollowerEntity>(
-        '/users/$userId/following',
-        listKey: 'data.users',
-        fromJson: FollowerEntity.fromJson,
-      );
+  Future<Either<Failure, FollowListResponse>> getFollowing(
+    String userId, {
+    int limit = 20,
+    int offset = 0,
+  }) => safeGet<FollowListResponse>(
+    '/users/$userId/following',
+    queryParameters: {'limit': limit, 'offset': offset},
+    extractKey: 'data',
+    fromJson: FollowListResponse.fromJson,
+  );
 
   Future<Either<Failure, UserEntity>> updateAvatar(String imagePath) async {
     try {

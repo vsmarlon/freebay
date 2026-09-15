@@ -15,6 +15,7 @@ type JsonRequest = {
   body?: object;
   cookie?: string;
   origin?: string;
+  authorization?: string;
 };
 
 type JsonResponse = {
@@ -43,17 +44,19 @@ describe('AuthController web session endpoints', () => {
     consumeMagicLink: jest.Mock;
     refreshWebSession: jest.Mock;
     logoutWebSession: jest.Mock;
+    enrollBiometricToken: jest.Mock;
   };
   let jwtService: { verify: jest.Mock };
   let tokenValidator: { verifyAndValidate: jest.Mock };
 
-  const post = async ({ method, path, body, cookie, origin }: JsonRequest): Promise<JsonResponse> => {
+  const post = async ({ method, path, body, cookie, origin, authorization }: JsonRequest): Promise<JsonResponse> => {
     const address = app.getHttpServer().address();
     if (address === null || typeof address === 'string') throw new Error('Test server did not bind to a port');
     const result = new Promise<JsonResponse>((resolve, reject) => {
       const request = httpRequest({ hostname: '127.0.0.1', port: address.port, path, method, headers: {
          'Content-Type': 'application/json',
-         ...(origin ? { Origin: origin } : {}),
+          ...(origin ? { Origin: origin } : {}),
+          ...(authorization ? { Authorization: authorization } : {}),
         ...(cookie ? { Cookie: cookie } : {}),
       } }, (response) => {
         void readResponse(response).then(resolve, reject);
@@ -73,6 +76,7 @@ describe('AuthController web session endpoints', () => {
       }),
       refreshWebSession: jest.fn().mockResolvedValue({ token: 'rotated/access', refreshToken: 'rotated/refresh' }),
       logoutWebSession: jest.fn().mockResolvedValue({ message: 'Logout realizado' }),
+      enrollBiometricToken: jest.fn().mockResolvedValue({ biometricToken: 'enrolled-token' }),
     };
     jwtService = { verify: jest.fn().mockReturnValue({
       userId: 'user-1', role: 'USER', type: JwtTokenType.REFRESH, jti: 'refresh-jti', exp: 500,
@@ -105,6 +109,19 @@ describe('AuthController web session endpoints', () => {
     expect(JSON.parse(response.body)).toEqual({ sent: true });
     expect(JSON.parse(response.body)).not.toHaveProperty('user');
     expect(JSON.parse(response.body)).not.toHaveProperty('account');
+  });
+
+  it('enrolls a biometric token from the authenticated access-token user', async () => {
+    const response = await post({
+      method: 'POST',
+      path: '/auth/biometric-token/enroll',
+      authorization: 'Bearer access-token',
+      body: { userId: 'attacker-controlled' },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(JSON.parse(response.body)).toEqual({ biometricToken: 'enrolled-token' });
+    expect(authService.enrollBiometricToken).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }));
   });
 
   it.each([undefined, 'https://evil.example.com'])('rejects magic-link requests without a trusted Origin (%s)', async (origin) => {

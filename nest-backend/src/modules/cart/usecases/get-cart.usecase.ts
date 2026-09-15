@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 
@@ -11,7 +11,7 @@ export class GetCartUseCase {
 
   async execute(userId: string): Promise<Either<AppError, GetCartOutput>> {
     const result = await this.cartRepository.getUserCart(userId);
-    if (isLeft(result)) return left(result.value);
+    if (result.isLeft()) return left(result.value);
 
     const items = result.value.map((item) => ({
       id: item.id,

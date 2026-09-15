@@ -38,11 +38,7 @@ describe('RegisterUseCase', () => {
     sut = new RegisterUseCase(mockUserRepository as UserDatabaseRepository);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should register a new user', async () => {
+  it('registers a new user', async () => {
     const input = {
       displayName: 'John Doe',
       username: 'john_doe',
@@ -58,7 +54,7 @@ describe('RegisterUseCase', () => {
     }
   });
 
-  it('should return error if email already exists', async () => {
+  it('returns error if email already exists', async () => {
     mockUserRepository.findByEmail = jest.fn().mockResolvedValue(right({
       id: 'existing-user',
       email: 'john@example.com',
@@ -81,7 +77,7 @@ describe('RegisterUseCase', () => {
     }
   });
 
-  it('should return error if username already exists', async () => {
+  it('returns error if username already exists', async () => {
     mockUserRepository.findByUsername = jest.fn().mockResolvedValue(right({
       id: 'existing-user',
       email: 'someone-else@example.com',
@@ -105,7 +101,7 @@ describe('RegisterUseCase', () => {
     }
   });
 
-  it('should create user with optional city and state', async () => {
+  it('creates user with optional city and state', async () => {
     const input = {
       displayName: 'John Doe',
       username: 'john_doe',
@@ -126,7 +122,7 @@ describe('RegisterUseCase', () => {
     );
   });
 
-  it('should hash password with bcrypt', async () => {
+  it('hashes password with bcrypt', async () => {
     const input = {
       displayName: 'John Doe',
       username: 'john_doe',

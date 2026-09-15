@@ -66,106 +66,101 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
     final headerHeight = MediaQuery.of(context).padding.top + 66;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(top: headerHeight),
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _headerHide.handleNotification,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: AppTextField(
-                        controller: _searchController,
-                        label: '',
-                        hint: 'Buscar produtos...',
-                        prefixIcon: Icons.search,
-                        onFieldSubmitted: (_) => _onSearch(),
-                        onChanged: _onSearchDebounced,
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: EdgeInsets.only(top: headerHeight),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _headerHide.handleNotification,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: AppTextField(
+                          controller: _searchController,
+                          label: '',
+                          hint: 'Buscar produtos...',
+                          prefixIcon: Icons.search,
+                          onFieldSubmitted: (_) => _onSearch(),
+                          onChanged: _onSearchDebounced,
+                        ),
                       ),
-                    ),
-                    if (_showFilters)
-                      categoriesAsync.when(
-                        data: (categories) {
-                          if (categories.isEmpty) {
-                            return const EmptyState(
-                              icon: Icons.category_outlined,
-                              title: 'SEM CATEGORIAS',
-                              subtitle: 'Nenhuma categoria disponível',
+                      if (_showFilters)
+                        categoriesAsync.when(
+                          data: (categories) {
+                            if (categories.isEmpty) {
+                              return const EmptyState(
+                                icon: Icons.category_outlined,
+                                title: 'SEM CATEGORIAS',
+                                subtitle: 'Nenhuma categoria disponível',
+                              );
+                            }
+                            return CategoryFilterPanel(
+                              categories: categories,
+                              selectedCategory: selectedCategory,
+                              onCategorySelected: (id) =>
+                                  ref
+                                          .read(
+                                            selectedCategoryProvider.notifier,
+                                          )
+                                          .state =
+                                      id,
                             );
-                          }
-                          return CategoryFilterPanel(
-                            categories: categories,
-                            selectedCategory: selectedCategory,
-                            onCategorySelected: (id) =>
-                                ref
-                                        .read(selectedCategoryProvider.notifier)
-                                        .state =
-                                    id,
-                          );
-                        },
-                        loading: () => Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 0.7,
-                                ),
-                            itemCount: 6,
-                            itemBuilder: (_, _) => const AppCard.skeleton(),
-                            physics: const NeverScrollableScrollPhysics(),
+                          },
+                          loading: () => const SizedBox(
+                            height: 52,
+                            child: ShimmerBlock(height: 36),
+                          ),
+                          error: (err, _) => Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(userMessageOf(err)),
                           ),
                         ),
-                        error: (err, _) => Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(userMessageOf(err)),
+                      Expanded(
+                        child: _buildProducts(
+                          params,
+                          feedState,
+                          searchQuery,
+                          selectedCategory,
                         ),
                       ),
-                    Expanded(
-                      child: _buildProducts(
-                        params,
-                        feedState,
-                        searchQuery,
-                        selectedCategory,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: ScrollAwareBar(
+                animation: _headerHide.animation,
+                height: headerHeight,
+                edge: ScrollBarEdge.top,
+                child: PageHeader(
+                  text: 'EXPLORAR',
+                  actions: [
+                    IconButton(
+                      icon: Icon(
+                        _showFilters
+                            ? Icons.filter_list_off
+                            : Icons.filter_list,
+                        color: context.isDark
+                            ? AppColors.white
+                            : AppColors.primaryContainer,
                       ),
+                      onPressed: () =>
+                          setState(() => _showFilters = !_showFilters),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            child: ScrollAwareBar(
-              animation: _headerHide.animation,
-              height: headerHeight,
-              edge: ScrollBarEdge.top,
-              child: PageHeader(
-                text: 'EXPLORAR',
-                actions: [
-                  IconButton(
-                    icon: Icon(
-                      _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                      color: context.isDark
-                          ? AppColors.white
-                          : AppColors.primaryContainer,
-                    ),
-                    onPressed: () =>
-                        setState(() => _showFilters = !_showFilters),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

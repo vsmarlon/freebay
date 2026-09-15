@@ -61,11 +61,7 @@ describe('CreatePaymentSessionUseCase', () => {
     sut = module.get(CreatePaymentSessionUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should return error if order not found', async () => {
+  it('returns error if order not found', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(left(new NotFoundError('Order')));
 
     const result = await sut.execute({
@@ -77,7 +73,7 @@ describe('CreatePaymentSessionUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return error if user is not the buyer', async () => {
+  it('returns error if user is not the buyer', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
 
     const result = await sut.execute({
@@ -89,7 +85,7 @@ describe('CreatePaymentSessionUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
-  it('should return error if user has no CPF', async () => {
+  it('returns error if user has no CPF', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockUserRepository.findPaymentInfo = jest.fn().mockResolvedValue(
       right({ displayName: 'John', email: 'john@example.com', cpf: null }),
@@ -107,7 +103,7 @@ describe('CreatePaymentSessionUseCase', () => {
     }
   });
 
-  it('should create payment session successfully', async () => {
+  it('creates payment session successfully', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
 
     const result = await sut.execute({
@@ -131,7 +127,40 @@ describe('CreatePaymentSessionUseCase', () => {
     );
   });
 
-  it('should handle payment provider failure', async () => {
+  it.each([undefined, '', '   '])(
+    'uses the authenticated email when customerEmail is %p',
+    async (customerEmail) => {
+      mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
+
+      const result = await sut.execute({
+        orderId: 'order-123',
+        userId: 'user-buyer',
+        customerEmail,
+      });
+
+      expect(result.isRight()).toBe(true);
+      expect(mockPaymentProvider.createPaymentSession).toHaveBeenCalledWith(
+        expect.objectContaining({ customerEmail: 'john@example.com' }),
+      );
+    },
+  );
+
+  it('trims a non-empty customer email before sending it to the provider', async () => {
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
+
+    const result = await sut.execute({
+      orderId: 'order-123',
+      userId: 'user-buyer',
+      customerEmail: '  buyer@example.com  ',
+    });
+
+    expect(result.isRight()).toBe(true);
+    expect(mockPaymentProvider.createPaymentSession).toHaveBeenCalledWith(
+      expect.objectContaining({ customerEmail: 'buyer@example.com' }),
+    );
+  });
+
+  it('handles payment provider failure', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockPaymentProvider.createPaymentSession = jest.fn().mockResolvedValue(
       left(new PaymentProviderError('Provider error', 500)),
@@ -146,7 +175,7 @@ describe('CreatePaymentSessionUseCase', () => {
     if (result.isLeft()) expect(result.value.code).toBe('PAYMENT_PROVIDER_ERROR');
   });
 
-  it('should return existing transaction for duplicate idempotency key', async () => {
+  it('returns existing transaction for duplicate idempotency key', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({

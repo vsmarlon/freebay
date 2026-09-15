@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProcessWebhookUseCase } from './process-webhook.usecase';
-import { right, isRight, isLeft } from '@/shared/core/either';
+import { right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
@@ -98,13 +98,13 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it.each(['checkout.session.completed', 'payment_intent.succeeded'])(
-    'should skip duplicate completion when transaction is already PAID for %s',
+    'skips duplicate completion when transaction is already PAID for %s',
     async (event) => {
       mockTransactionRepo.findByOrderId.mockResolvedValue(right(paidTransaction));
 
       const result = await sut.execute({ event, data: { orderId: 'o1' } });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
       expect(mockPrisma.$transaction).not.toHaveBeenCalled();
       expect(mockTransactionRepo.markAsPaid).not.toHaveBeenCalled();
       expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
@@ -113,13 +113,13 @@ describe('ProcessWebhookUseCase', () => {
   );
 
   it.each(['checkout.session.expired', 'payment_intent.canceled'])(
-    'should mark failed, cancel order and restore inventory for %s',
+    'marks failed, cancels order and restores inventory for %s',
     async (event) => {
       mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
 
       const result = await sut.execute({ event, data: { orderId: 'o1' } });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
       expect(mockTransactionRepo.markAsFailed).toHaveBeenCalledWith('tx-pending', tx);
       expect(mockOrderRepo.cancel).toHaveBeenCalledWith('o1', tx);
       expect(mockProductRepo.restoreInventoryOnExpiry).toHaveBeenCalledWith('p1', 3, tx);
@@ -128,7 +128,7 @@ describe('ProcessWebhookUseCase', () => {
     },
   );
 
-  it('should not mutate anything for payment_intent.payment_failed', async () => {
+  it('does not mutate anything for payment_intent.payment_failed', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
 
     const result = await sut.execute({
@@ -136,29 +136,29 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsFailed).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsPaid).not.toHaveBeenCalled();
   });
 
-  it('should not query or mutate for unknown events even with an orderId', async () => {
+  it('does not query or mutate for unknown events even with an orderId', async () => {
     const result = await sut.execute({ event: 'charge.refunded', data: { orderId: 'o1' } });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockTransactionRepo.findByOrderId).not.toHaveBeenCalled();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should not query or mutate when orderId is missing', async () => {
+  it('does not query or mutate when orderId is missing', async () => {
     const result = await sut.execute({ event: 'payment_intent.succeeded', data: {} });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockTransactionRepo.findByOrderId).not.toHaveBeenCalled();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it('should not mutate anything when no transaction exists for the order', async () => {
+  it('does not mutate anything when no transaction exists for the order', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(null));
 
     const result = await sut.execute({
@@ -166,12 +166,12 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
   });
 
-  it('should surface a DatabaseError when the completion transaction fails', async () => {
+  it('surfaces a DatabaseError when the completion transaction fails', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
     mockPrisma.$transaction.mockRejectedValue(new Error('db exploded'));
 
@@ -180,12 +180,12 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) expect(result.value).toBeInstanceOf(DatabaseError);
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) expect(result.value).toBeInstanceOf(DatabaseError);
     expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
   });
 
-  it('should mark paid, confirm order, credit wallet and notify on completion', async () => {
+  it('marks paid, confirms order, credits wallet and notifies on completion', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
 
     const result = await sut.execute({
@@ -193,7 +193,7 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockProductRepo.updateInventoryOnSale).toHaveBeenCalledWith('p1', tx);
     expect(mockTransactionRepo.markAsPaid).toHaveBeenCalledWith('tx-pending', null, tx);
     expect(mockOrderRepo.confirm).toHaveBeenCalledWith('o1', tx);
@@ -203,7 +203,7 @@ describe('ProcessWebhookUseCase', () => {
     expect(mockTransactionRepo.markAsFailed).not.toHaveBeenCalled();
   });
 
-  it('should process the first completion and skip the duplicate on the second call', async () => {
+  it('processes the first completion and skips the duplicate on the second call', async () => {
     mockTransactionRepo.findByOrderId
       .mockResolvedValueOnce(right(pendingTransaction))
       .mockResolvedValueOnce(right(paidTransaction));
@@ -217,15 +217,15 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(first)).toBe(true);
-    expect(isRight(second)).toBe(true);
+    expect(first.isRight()).toBe(true);
+    expect(second.isRight()).toBe(true);
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     expect(mockTransactionRepo.markAsPaid).toHaveBeenCalledTimes(1);
     expect(mockNotificationService.notifyPayment).toHaveBeenCalledTimes(1);
     expect(mockNotificationService.notifyOrderStatus).toHaveBeenCalledTimes(1);
   });
 
-  it('should roll back and credit nothing when the paid transition loses the race', async () => {
+  it('rolls back and credits nothing when the paid transition loses the race', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
     mockTransactionRepo.markAsPaid.mockResolvedValue(right({ count: 0 }));
 
@@ -234,7 +234,7 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     expect(mockProductRepo.updateInventoryOnSale).not.toHaveBeenCalled();
     expect(mockOrderRepo.confirm).not.toHaveBeenCalled();
@@ -243,7 +243,7 @@ describe('ProcessWebhookUseCase', () => {
     expect(mockNotificationService.notifyOrderStatus).not.toHaveBeenCalled();
   });
 
-  it('should never credit a FAILED transaction that receives a success event', async () => {
+  it('never credits a FAILED transaction that receives a success event', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(failedTransaction));
 
     const result = await sut.execute({
@@ -251,7 +251,7 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsPaid).not.toHaveBeenCalled();
     expect(mockOrderRepo.confirm).not.toHaveBeenCalled();
@@ -259,7 +259,7 @@ describe('ProcessWebhookUseCase', () => {
     expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
   });
 
-  it('should not cancel the order when the failed transition loses the race', async () => {
+  it('does not cancel the order when the failed transition loses the race', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
     mockTransactionRepo.markAsFailed.mockResolvedValue(right({ count: 0 }));
 
@@ -268,13 +268,13 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
     expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
     expect(mockProductRepo.restoreInventoryOnExpiry).not.toHaveBeenCalled();
   });
 
-  it('should never cancel a PAID order when a late expiry event arrives', async () => {
+  it('never cancels a PAID order when a late expiry event arrives', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(right(paidTransaction));
 
     const result = await sut.execute({
@@ -282,7 +282,7 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
     expect(mockTransactionRepo.markAsFailed).not.toHaveBeenCalled();
     expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
@@ -295,7 +295,7 @@ describe('ProcessWebhookUseCase', () => {
 
     const result = await sut.execute({ event: 'checkout.session.expired', data: { orderId: 'o1' } });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
     expect(mockProductRepo.restoreInventoryOnExpiry).not.toHaveBeenCalled();
   });
@@ -310,7 +310,7 @@ describe('ProcessWebhookUseCase', () => {
       data: { orderId: 'o1', providerObjectId: 'cs_stale' },
     });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockOrderRepo.cancel).not.toHaveBeenCalled();
   });
 
@@ -320,7 +320,7 @@ describe('ProcessWebhookUseCase', () => {
 
     const result = await sut.execute({ event: 'payment_intent.succeeded', data: { orderId: 'o1' } });
 
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
     expect(mockWalletRepo.creditPending).not.toHaveBeenCalled();
     expect(mockNotificationService.notifyPayment).not.toHaveBeenCalled();
   });

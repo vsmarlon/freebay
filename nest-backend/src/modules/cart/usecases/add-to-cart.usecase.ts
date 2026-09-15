@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 
@@ -13,7 +13,7 @@ export class AddToCartUseCase {
     const quantity = Math.min(Math.max(input.quantity, 1), 10);
 
     const productResult = await this.cartRepository.findProductById(input.productId);
-    if (isLeft(productResult)) return left(productResult.value);
+    if (productResult.isLeft()) return left(productResult.value);
     if (!productResult.value || productResult.value.status !== 'ACTIVE') {
       return left(new NotFoundError('Produto'));
     }
@@ -22,7 +22,7 @@ export class AddToCartUseCase {
     }
 
     const itemResult = await this.cartRepository.addOrIncrement(input.userId, input.productId, quantity);
-    if (isLeft(itemResult)) return left(itemResult.value);
+    if (itemResult.isLeft()) return left(itemResult.value);
 
     return right({ item: itemResult.value });
   }

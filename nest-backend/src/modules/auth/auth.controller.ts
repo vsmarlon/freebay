@@ -22,6 +22,7 @@ import {
   TokenRefreshResponse,
   MessageResponse,
   BiometricSessionResponse,
+  BiometricEnrollmentResponse,
 } from './dtos/auth-response.class';
 import {
   GetPublic,
@@ -271,6 +272,16 @@ export class AuthController {
   })
   async biometricLogin(@Body() body: BiometricLoginDTO) {
     return this.authService.biometricLogin(body.biometricToken);
+  }
+
+  @PostAuth('biometric-token/enroll', {
+    summary: 'Enroll biometric login',
+    description: 'Issues a biometric token for the authenticated account.',
+    responseType: BiometricEnrollmentResponse,
+  })
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  async enrollBiometricToken(@CurrentUser() user: AuthUser) {
+    return this.authService.enrollBiometricToken(user);
   }
 
   @PatchAuth('biometric-token/revoke', {

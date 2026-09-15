@@ -18,11 +18,13 @@ import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { Condition } from '@prisma/client';
 import { PRODUCT_SORTS, ProductSort } from '../types/product.types';
 
+export const PRODUCT_TITLE_MAX_LENGTH = 100;
+
 export class CreateProductDTO {
   @ApiProperty({ example: 'iPhone 12', minLength: 3, maxLength: 100 })
   @IsString()
   @MinLength(3)
-  @MaxLength(100)
+  @MaxLength(PRODUCT_TITLE_MAX_LENGTH)
   @SanitizeText()
   readonly title: string;
 
@@ -117,7 +119,7 @@ export class UpdateProductDTO {
   @IsOptional()
   @IsString()
   @MinLength(3)
-  @MaxLength(100)
+  @MaxLength(PRODUCT_TITLE_MAX_LENGTH)
   @SanitizeText()
   readonly title?: string;
 

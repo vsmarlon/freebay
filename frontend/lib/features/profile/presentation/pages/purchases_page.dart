@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class PurchasesPage extends ConsumerStatefulWidget {
   const PurchasesPage({super.key});
@@ -47,62 +48,65 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
     final state = ref.watch(purchasesListProvider);
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'COMPRAS',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'COMPRAS',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: state.isLoading && state.orders.isEmpty
-                ? const SkeletonPage(
-                    child: Column(
-                      children: [
-                        SizedBox(height: 16),
-                        ShimmerBlock(height: 90),
-                        SizedBox(height: 12),
-                        ShimmerBlock(height: 90),
-                        SizedBox(height: 12),
-                        ShimmerBlock(height: 90),
-                      ],
+            Expanded(
+              child: state.isLoading && state.orders.isEmpty
+                  ? const SkeletonPage(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 16),
+                          ShimmerBlock(height: 90),
+                          SizedBox(height: 12),
+                          ShimmerBlock(height: 90),
+                          SizedBox(height: 12),
+                          ShimmerBlock(height: 90),
+                        ],
+                      ),
+                    )
+                  : state.error != null && state.orders.isEmpty
+                  ? EmptyState.error(
+                      message: state.error,
+                      onRetry: () =>
+                          ref.read(purchasesListProvider.notifier).refresh(),
+                    )
+                  : state.orders.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.shopping_bag_outlined,
+                      title: 'NENHUMA COMPRA AINDA',
+                      subtitle: 'Suas compras aparecerão aqui.',
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () =>
+                          ref.read(purchasesListProvider.notifier).refresh(),
+                      child: ListView.separated(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount:
+                            state.orders.length + (state.hasMore ? 1 : 0),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          if (index == state.orders.length) {
+                            return const ShimmerBlock(height: 80);
+                          }
+                          final order = state.orders[index];
+                          return _buildOrderCard(context, order);
+                        },
+                      ),
                     ),
-                  )
-                : state.error != null && state.orders.isEmpty
-                ? EmptyState.error(
-                    message: state.error,
-                    onRetry: () =>
-                        ref.read(purchasesListProvider.notifier).refresh(),
-                  )
-                : state.orders.isEmpty
-                ? const EmptyState(
-                    icon: Icons.shopping_bag_outlined,
-                    title: 'NENHUMA COMPRA AINDA',
-                    subtitle: 'Suas compras aparecerão aqui.',
-                  )
-                : RefreshIndicator(
-                    onRefresh: () =>
-                        ref.read(purchasesListProvider.notifier).refresh(),
-                    child: ListView.separated(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: state.orders.length + (state.hasMore ? 1 : 0),
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        if (index == state.orders.length) {
-                          return const ShimmerBlock(height: 80);
-                        }
-                        final order = state.orders[index];
-                        return _buildOrderCard(context, order);
-                      },
-                    ),
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -110,7 +114,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
   Widget _buildOrderCard(BuildContext context, OrderEntity order) {
     final product = order.product;
     return InkWell(
-      onTap: () => context.push('/orders/${order.id}'),
+      onTap: () => context.push(AppRoutes.orderPath(order.id)),
       child: Container(
         padding: const EdgeInsets.all(12),
         color: context.surfaceColor,

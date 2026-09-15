@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
@@ -73,7 +73,7 @@ export class ProcessWebhookUseCase {
     data: WebhookDataPayload,
   ): Promise<Either<DatabaseError, void>> {
     const transactionResult = await this.transactionRepo.findByOrderId(orderId);
-    if (isLeft(transactionResult)) return left(transactionResult.value);
+    if (transactionResult.isLeft()) return left(transactionResult.value);
 
     const transaction = transactionResult.value;
     if (!transaction) {
@@ -106,10 +106,10 @@ export class ProcessWebhookUseCase {
     try {
       await this.prisma.$transaction(async (tx) => {
         const paid = await this.transactionRepo.markAsPaid(transaction.id, data.chargeId ?? null, tx);
-        if (isLeft(paid)) throw new Error(paid.value.message);
+        if (paid.isLeft()) throw new Error(paid.value.message);
         if (paid.value.count === 0) throw new Error(WEBHOOK_RACE_SKIP);
         const confirmed = await this.orderRepo.confirm(transaction.orderId, tx);
-        if (isLeft(confirmed)) throw new Error(confirmed.value.message);
+        if (confirmed.isLeft()) throw new Error(confirmed.value.message);
         if (!confirmed.value) throw new Error(WEBHOOK_ORDER_NOT_PENDING);
         await this.productRepo.updateInventoryOnSale(transaction.order.productId, tx);
         await this.walletRepo.creditPending(
@@ -156,7 +156,7 @@ export class ProcessWebhookUseCase {
     data: WebhookDataPayload,
   ): Promise<Either<DatabaseError, void>> {
     const transactionResult = await this.transactionRepo.findByOrderId(orderId);
-    if (isLeft(transactionResult)) return left(transactionResult.value);
+    if (transactionResult.isLeft()) return left(transactionResult.value);
 
     const transaction = transactionResult.value;
     if (!transaction) {
@@ -191,7 +191,7 @@ export class ProcessWebhookUseCase {
     try {
       await this.prisma.$transaction(async (tx) => {
         const failed = await this.transactionRepo.markAsFailed(transaction.id, tx);
-        if (isLeft(failed)) throw new Error(failed.value.message);
+        if (failed.isLeft()) throw new Error(failed.value.message);
         if (failed.value.count === 0) throw new Error(WEBHOOK_RACE_SKIP);
         await this.orderRepo.cancel(transaction.orderId, tx);
         await this.productRepo.restoreInventoryOnExpiry(transaction.order.productId, transaction.order.quantity, tx);

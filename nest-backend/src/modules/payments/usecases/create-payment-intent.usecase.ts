@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
   NotFoundError,
@@ -28,7 +28,7 @@ export class CreatePaymentIntentUseCase {
     input: CreatePaymentIntentInput,
   ): Promise<Either<AppError, CreatePaymentIntentOutput>> {
     const orderResult = await this.orderRepository.findById(input.orderId);
-    if (isLeft(orderResult)) return left(orderResult.value);
+    if (orderResult.isLeft()) return left(orderResult.value);
     if (!orderResult.value) return left(new NotFoundError('Order'));
 
     const order = orderResult.value;
@@ -41,14 +41,14 @@ export class CreatePaymentIntentUseCase {
     }
 
     const userResult = await this.userRepository.findPaymentInfo(input.userId);
-    if (isLeft(userResult)) return left(userResult.value);
+    if (userResult.isLeft()) return left(userResult.value);
 
     const user = userResult.value ?? { displayName: '', email: '', cpf: null };
 
     const idempotencyKey = `pi:${input.orderId}`;
 
     const existingResult = await this.transactionRepository.findByOrderId(input.orderId);
-    if (isLeft(existingResult)) return left(existingResult.value);
+    if (existingResult.isLeft()) return left(existingResult.value);
 
     const existing = existingResult.value;
 
@@ -80,6 +80,7 @@ export class CreatePaymentIntentUseCase {
       currency: 'brl',
       receiptEmail: user.email ?? undefined,
       idempotencyKey,
+      transferGroup: `freebay:order:${input.orderId}`,
     };
 
     const paymentIntentResult = await this.paymentProvider.createPaymentIntent(params);
@@ -99,7 +100,7 @@ export class CreatePaymentIntentUseCase {
       paymentMethod: 'CREDIT_CARD',
       idempotencyKey,
     });
-    if (isLeft(upsertResult)) return left(upsertResult.value);
+    if (upsertResult.isLeft()) return left(upsertResult.value);
 
     return right({
       paymentIntentClientSecret: pi.clientSecret,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
 class SplashPage extends StatefulWidget {
@@ -88,7 +89,7 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surfaceContainerLowestDark,
-      body: BrutalistBackground(
+      body: AppBackground(
         forceDark: true,
         child: SafeArea(
           child: Column(
@@ -157,7 +158,11 @@ class _SplashPageState extends State<SplashPage>
                               HapticFeedback.mediumImpact();
                               final hasSeen =
                                   StorageService.hasSeenOnboardingSync();
-                              context.go(hasSeen ? '/login' : '/onboarding');
+                              context.go(
+                                hasSeen
+                                    ? AppRoutes.login
+                                    : AppRoutes.onboarding,
+                              );
                             },
                           ),
                         ),

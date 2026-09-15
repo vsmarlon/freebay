@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
@@ -83,8 +84,8 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
               child: TabBarView(
                 controller: _tabController,
                 children: const [
-                  _OrdersTab(isSeller: false),
-                  _OrdersTab(isSeller: true),
+                  OrdersTab(isSeller: false),
+                  OrdersTab(isSeller: true),
                 ],
               ),
             ),
@@ -95,19 +96,61 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
   }
 }
 
-class _OrdersTab extends ConsumerWidget {
+class OrdersTab extends ConsumerWidget {
   final bool isSeller;
 
-  const _OrdersTab({required this.isSeller});
+  const OrdersTab({super.key, required this.isSeller});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // The generated providers expose distinct state classes with the same UI shape.
-    final dynamic state = isSeller
-        ? ref.watch(salesListProvider)
-        : ref.watch(purchasesListProvider);
+    if (isSeller) {
+      final state = ref.watch(salesListProvider);
+      return Column(
+        children: [
+          SalesStatusFilters(
+            selected: state.selectedStatus,
+            onChanged: (status) =>
+                ref.read(salesListProvider.notifier).changeStatus(status),
+          ),
+          Expanded(
+            child: _buildState(
+              context,
+              ref,
+              isSeller: true,
+              isLoading: state.isLoading,
+              isLoadingMore: state.isLoadingMore,
+              hasMore: state.hasMore,
+              orders: state.orders,
+              error: state.error,
+            ),
+          ),
+        ],
+      );
+    }
+    final state = ref.watch(purchasesListProvider);
+    return _buildState(
+      context,
+      ref,
+      isSeller: false,
+      isLoading: state.isLoading,
+      isLoadingMore: state.isLoadingMore,
+      hasMore: state.hasMore,
+      orders: state.orders,
+      error: state.error,
+    );
+  }
 
-    if (state.isLoading && state.orders.isEmpty) {
+  Widget _buildState(
+    BuildContext context,
+    WidgetRef ref, {
+    required bool isSeller,
+    required bool isLoading,
+    bool isLoadingMore = false,
+    bool hasMore = false,
+    required List<OrderEntity> orders,
+    required String? error,
+  }) {
+    if (isLoading && orders.isEmpty) {
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: 4,
@@ -116,17 +159,14 @@ class _OrdersTab extends ConsumerWidget {
       );
     }
 
-    if (state.error != null && state.orders.isEmpty) {
+    if (error != null && orders.isEmpty) {
       final refresh = isSeller
           ? () => ref.read(salesListProvider.notifier).refresh()
           : () => ref.read(purchasesListProvider.notifier).refresh();
-      return EmptyState.error(
-        message: state.error ?? kGenericErrorMessage,
-        onRetry: refresh,
-      );
+      return EmptyState.error(message: error, onRetry: refresh);
     }
 
-    if (state.orders.isEmpty) {
+    if (orders.isEmpty) {
       return EmptyState(
         icon: Icons.shopping_bag_outlined,
         title: isSeller ? 'NENHUMA VENDA' : 'NENHUMA COMPRA',
@@ -137,8 +177,9 @@ class _OrdersTab extends ConsumerWidget {
           label: isSeller ? 'CRIAR ANÚNCIO' : 'EXPLORAR PRODUTOS',
           icon: isSeller ? Icons.add_circle_outline : Icons.explore_outlined,
           size: AppButtonSize.compact,
-          onPressed: () =>
-              context.go(isSeller ? '/products/create' : '/explore'),
+          onPressed: () => isSeller
+              ? context.push(AppRoutes.createProduct)
+              : context.go(AppRoutes.explore),
         ),
       );
     }
@@ -148,13 +189,115 @@ class _OrdersTab extends ConsumerWidget {
       onRefresh: () => isSeller
           ? ref.read(salesListProvider.notifier).refresh()
           : ref.read(purchasesListProvider.notifier).refresh(),
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: state.orders.length,
-        separatorBuilder: (context, index) => Spacing.vSm,
-        itemBuilder: (context, index) {
-          return _OrderCard(order: state.orders[index], isSeller: isSeller);
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.metrics.extentAfter < 240 &&
+              hasMore &&
+              !isLoadingMore) {
+            if (isSeller) {
+              ref.read(salesListProvider.notifier).loadMore();
+            } else {
+              ref.read(purchasesListProvider.notifier).loadMore();
+            }
+          }
+          return false;
         },
+        child: ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount:
+              orders.length +
+              (isLoadingMore ? 1 : 0) +
+              (error != null ? 1 : 0) +
+              (!hasMore && error == null && !isLoadingMore ? 1 : 0),
+          separatorBuilder: (context, index) => Spacing.vSm,
+          itemBuilder: (context, index) {
+            if (index == orders.length) {
+              if (error != null) {
+                final retry = isSeller
+                    ? () => ref.read(salesListProvider.notifier).loadMore()
+                    : () => ref.read(purchasesListProvider.notifier).loadMore();
+                return Container(
+                  color: context.surfaceMidColor,
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      Text(error, style: TextStyle(color: context.textPrimary)),
+                      Spacing.vSm,
+                      AppButton(
+                        label: 'TENTAR NOVAMENTE',
+                        size: AppButtonSize.compact,
+                        onPressed: retry,
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (!hasMore) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: Text('FIM DA LISTA')),
+                );
+              }
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: ShimmerBlock(height: 48)),
+              );
+            }
+            return _OrderCard(order: orders[index], isSeller: isSeller);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class SalesStatusFilters extends StatelessWidget {
+  final OrderStatus? selected;
+  final ValueChanged<OrderStatus?> onChanged;
+
+  const SalesStatusFilters({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: context.surfaceMidColor,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            Semantics(
+              container: true,
+              button: true,
+              selected: selected == null,
+              label: 'Todos os status',
+              child: BrutalistFilterChip(
+                label: 'TODOS',
+                selected: selected == null,
+                onTap: () => onChanged(null),
+              ),
+            ),
+            Spacing.hSm,
+            for (final status in OrderStatus.values) ...[
+              Semantics(
+                container: true,
+                button: true,
+                selected: selected == status,
+                label: status.label,
+                child: BrutalistFilterChip(
+                  label: status.label.toUpperCase(),
+                  selected: selected == status,
+                  onTap: () => onChanged(status),
+                ),
+              ),
+              Spacing.hSm,
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -194,7 +337,7 @@ class _OrderCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        context.push('/orders/${order.id}');
+        context.push(AppRoutes.orderPath(order.id));
       },
       child: Container(
         decoration: BoxDecoration(

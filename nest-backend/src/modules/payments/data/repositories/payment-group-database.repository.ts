@@ -98,10 +98,13 @@ export class PaymentGroupDatabaseRepository
     }, 'Erro ao buscar pagamento do carrinho');
   }
 
-  async attachPayment(data: AttachGroupPaymentInput): RepositoryResponse<void> {
+  async attachPayment(
+    data: AttachGroupPaymentInput,
+    tx?: Prisma.TransactionClient,
+  ): RepositoryResponse<void> {
     return this.safeRun(async () => {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.paymentGroup.update({
+      const attach = async (client: Prisma.TransactionClient) => {
+        await client.paymentGroup.update({
           where: { id: data.groupId },
           data: {
             stripePaymentIntentId: data.stripePaymentIntentId ?? undefined,
@@ -113,7 +116,7 @@ export class PaymentGroupDatabaseRepository
         });
 
         const externalId = data.stripePaymentIntentId ?? data.stripeSessionId;
-        await tx.transaction.updateMany({
+        await client.transaction.updateMany({
           where: { paymentGroupId: data.groupId },
           data: {
             externalId: externalId ?? undefined,
@@ -121,7 +124,12 @@ export class PaymentGroupDatabaseRepository
             checkoutExpiresAt: data.expiresAt ?? undefined,
           },
         });
-      });
+      };
+      if (tx) {
+        await attach(tx);
+      } else {
+        await this.prisma.$transaction(attach);
+      }
     }, 'Erro ao vincular pagamento ao carrinho');
   }
 

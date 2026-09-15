@@ -4,12 +4,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
 export const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+export const DISPLAY_NAME_REGEX = /^[a-zA-ZÀ-ÿ0-9]+(([-']|\. ?| )[a-zA-ZÀ-ÿ0-9]+)*$/;
 
 export class RegisterDTO {
   @ApiProperty({ example: 'John Doe', minLength: 2, maxLength: 50 })
   @IsString()
   @MinLength(2)
   @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX, {
+    message: 'Nome de exibição deve conter apenas letras, números e espaços, sem caracteres especiais',
+  })
   @SanitizeText()
   readonly displayName: string;
 
@@ -53,8 +57,9 @@ export class LoginDTO {
 }
 
 export class BiometricLoginDTO {
-  @ApiProperty({ description: 'Backend-issued biometric token (JWT type: biometric)' })
+  @ApiProperty({ description: 'Backend-issued biometric token (JWT type: biometric)', maxLength: 2048 })
   @IsString()
+  @MaxLength(2048)
   readonly biometricToken: string;
 }
 
@@ -76,6 +81,9 @@ export class CompleteProfileDTO {
   @IsString()
   @MinLength(2)
   @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX, {
+    message: 'Nome de exibição deve conter apenas letras, números e espaços, sem caracteres especiais',
+  })
   @SanitizeText()
   readonly displayName?: string;
 

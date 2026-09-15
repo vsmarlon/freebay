@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { PrismaSavedPostRepository } from '../data/repositories/saved-post-database.repository';
@@ -11,18 +11,13 @@ export class SavePostUseCase {
     private readonly savedPostRepository: PrismaSavedPostRepository,
   ) {}
 
-  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, void>> {
+  async execute(input: { userId: string; postId: string }): Promise<Either<AppError, { active: boolean }>> {
     const postResult = await this.postRepository.findById(input.postId);
-    if (isLeft(postResult)) return left(postResult.value);
+    if (postResult.isLeft()) return left(postResult.value);
     if (!postResult.value) return left(new NotFoundError('Post'));
 
-    const existingResult = await this.savedPostRepository.findByUserAndPost(input.userId, input.postId);
-    if (isLeft(existingResult)) return left(existingResult.value);
-    if (existingResult.value) return right(undefined);
-
-    const saveResult = await this.savedPostRepository.save(input.userId, input.postId);
-    if (isLeft(saveResult)) return left(saveResult.value);
-
-    return right(undefined);
+    const result = await this.savedPostRepository.setSaved(input.userId, input.postId, true);
+    if (result.isLeft()) return left(result.value);
+    return right(result.value);
   }
 }

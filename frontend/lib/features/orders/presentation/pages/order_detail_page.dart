@@ -11,6 +11,7 @@ import 'package:freebay/features/orders/presentation/widgets/escrow_status_card.
 import 'package:freebay/features/orders/presentation/widgets/order_actions.dart';
 import 'package:freebay/features/orders/presentation/widgets/brutalist_confirm_dialog.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/core/router/app_routes.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -39,18 +40,20 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         : widget.orderId;
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'PEDIDO #$shortId',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'PEDIDO #$shortId',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(child: _buildContent(state, currentUserId)),
-        ],
+            Expanded(child: _buildContent(state, currentUserId)),
+          ],
+        ),
       ),
     );
   }
@@ -215,7 +218,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           if (participant != null)
             IconButton(
               icon: Icon(Icons.chevron_right, color: context.textSecondary),
-              onPressed: () => context.push('/user/${participant.id}'),
+              onPressed: () => context.push(AppRoutes.userPath(participant.id)),
             ),
         ],
       ),
@@ -286,7 +289,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     if (reviewType == null) return;
     final user = isBuyer ? order.seller : order.buyer;
     context.push(
-      '/reviews/create',
+      AppRoutes.createReview,
       extra: {
         'orderId': widget.orderId,
         'reviewedId': isBuyer ? order.sellerId : order.buyerId,
@@ -299,7 +302,6 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
   Future<void> _handleChat(OrderEntity order, bool isBuyer) async {
     final targetId = isBuyer ? order.sellerId : order.buyerId;
-    final targetUser = isBuyer ? order.seller : order.buyer;
     try {
       final res = await HttpClient.instance.post(
         '/chat/conversations',
@@ -307,15 +309,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       );
       final conversationId = res.data['data']['conversationId'] as String;
       if (!mounted) return;
-      context.push(
-        '/chat/$conversationId',
-        extra: {
-          'orderName': targetUser?.displayNameOrDefault ?? 'Chat',
-          'orderAvatarUrl': targetUser?.avatarUrl,
-          'chatType': 'direct',
-        },
-      );
-    } catch (_) {}
+      context.push(AppRoutes.chatPath(conversationId));
+    } catch (e) {
+      if (mounted) AppSnackbar.error(context, userMessageOf(e));
+    }
   }
 
   void _handleDispute(OrderEntity order) {

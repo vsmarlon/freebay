@@ -48,14 +48,20 @@ npm run test:integration
 npm run lint
 npm run lint:fix
 
-# Prisma schema sync & migrations
+# Prisma schema sync (no migration workflow before first production release)
+# Schema changes edit nest-backend/prisma/schema.prisma, run db:sync, update
+# prisma/seed.ts, then run db:seed. Never create/run migrations or add prisma/migrations.
 npm run prisma:generate     # regenerate client after schema changes
-npm run prisma:migrate      # create & apply local dev migration
+npm run db:sync             # push schema and regenerate Prisma client
+npm run db:seed             # run the idempotent development seed
+npm run db:setup            # sync schema and seed
 npm run prisma:studio       # open Prisma database GUI
 
 # Production build test
 npm run build
 ```
+
+The seed is development-only demo data; production initialization must replace demo accounts and data with an explicit production process.
 
 ### 2. Frontend (`cd frontend`)
 
@@ -106,7 +112,7 @@ All agents must follow the conventions defined in the corresponding skill before
 | **[`freebay-design-system`](./.agents/skills/freebay-design-system/SKILL.md)** | Flutter "Digital Brutalist" UI: strict 0px border radius, no drop shadows (tonal layering only), no divider lines, Space Grotesk / Inter fonts, `#8A1083` magenta accent, role-based motion tokens, theme-driven dark mode, and widget primitives. Points at `frontend/DESIGN.md` for token values. | [`.agents/skills/freebay-design-system/SKILL.md`](./.agents/skills/freebay-design-system/SKILL.md) |
 | **[`freebay-flutter-feature`](./.agents/skills/freebay-flutter-feature/SKILL.md)** | Frontend Flutter Clean Architecture: `data/domain/presentation` layers, Riverpod state management, Dio HTTP client, `safeCall` error wrapper, GoRouter route definitions, and widget tests. | [`.agents/skills/freebay-flutter-feature/SKILL.md`](./.agents/skills/freebay-flutter-feature/SKILL.md) |
 | **[`freebay-backend-module`](./.agents/skills/freebay-backend-module/SKILL.md)** | NestJS Backend vertical slices: `dtos/` with `class-validator` + `@ApiDoc`, single-class `usecases/` returning `Either<AppError, Output>`, `domain/repositories/` abstract interfaces, `data/repositories/` concrete Prisma repos, mappers, and colocated `*.spec.ts` tests. | [`.agents/skills/freebay-backend-module/SKILL.md`](./.agents/skills/freebay-backend-module/SKILL.md) |
-| **[`freebay-data-model`](./.agents/skills/freebay-data-model/SKILL.md)** | PostgreSQL / Prisma schema conventions: strict monetary **cents-as-Int** (`price Int // em centavos`), real enums over strings, mandatory `onDelete` cascading rules, foreign key indexing, and migration workflows. | [`.agents/skills/freebay-data-model/SKILL.md`](./.agents/skills/freebay-data-model/SKILL.md) |
+| **[`freebay-data-model`](./.agents/skills/freebay-data-model/SKILL.md)** | PostgreSQL / Prisma schema conventions: strict monetary **cents-as-Int** (`price Int // em centavos`), real enums over strings, mandatory `onDelete` cascading rules, foreign key indexing, and schema-sync-only development workflow. | [`.agents/skills/freebay-data-model/SKILL.md`](./.agents/skills/freebay-data-model/SKILL.md) |
 | **[`freebay-system-design`](./.agents/skills/freebay-system-design/SKILL.md)** | End-to-end system design: C2C escrow lifecycle, Socket.IO `/chat` gateway, Stripe PaymentSheet & Checkout Sessions, Redis token blacklist, background cron tasks, and security isolation. | [`.agents/skills/freebay-system-design/SKILL.md`](./.agents/skills/freebay-system-design/SKILL.md) |
 | **[`freebay-mobile-mcp`](./.agents/skills/freebay-mobile-mcp/SKILL.md)** | Mobile MCP device automation, UI inspection, end-to-end test execution, screenshot verification, and physical/virtual Android/iOS device interactions. | [`.agents/skills/freebay-mobile-mcp/SKILL.md`](./.agents/skills/freebay-mobile-mcp/SKILL.md) |
 | **[`stripe-best-practices`](./.agents/skills/stripe-best-practices/SKILL.md)** | Stripe payments, Checkout Sessions vs PaymentIntents, webhook signature validation, idempotency, and secure payment handling. | [`.agents/skills/stripe-best-practices/SKILL.md`](./.agents/skills/stripe-best-practices/SKILL.md) |
@@ -123,7 +129,7 @@ FreeBay is engineered around **deep modules** placed at clean seams to ensure hi
 
 - **Vertical Structure**: No horizontal layer soup. Each feature module in `src/modules/<feature>/` owns its DTOs, controllers, use cases, domain repositories, concrete data repositories, and mappers.
 - **Deep Use Cases**: Every use case is a single-class file (`*.usecase.ts`) returning an explicit `Either<AppError, Output>` (or `Either<AppError, void>` for pure mutations). Use cases encapsulate full business rules, invariants, and transaction orchestrations rather than delegating them to paper-thin services.
-- **Repository Seams**: Use cases depend exclusively on abstract repository interfaces (`domain/repositories/`). Concrete Prisma repositories (`data/repositories/`) implement these interfaces and handle database queries, transactions (`tx?: Prisma.TransactionClient`), and error translations (`DatabaseError`).
+- **Repository Seams**: Use cases depend exclusively on abstract repository interfaces (`domain/repositories/`). Concrete Prisma repositories (`data/repositories/`) implement these interfaces and **MUST ONLY call the database** (Prisma queries, transactions `tx?: Prisma.TransactionClient`, and SQL), translating database errors to `AppError`/`DatabaseError`. Backend repositories never make HTTP calls.
 - **Interceptor & Filter Pipeline**:
   - `LoggingInterceptor` (outermost)
   - `TransformInterceptor` (wraps successful output in `{ success: true, data: ... }`)
@@ -133,6 +139,7 @@ FreeBay is engineered around **deep modules** placed at clean seams to ensure hi
 ### 2. Frontend Clean Architecture (`frontend/`)
 
 - **Feature Slices**: Features reside in `lib/features/<feature>/` with `data/` (entities + concrete repositories), `domain/` (abstract repositories + usecases), and `presentation/` (Riverpod controllers, providers, pages, and widgets).
+- **Repository Seams**: Concrete repositories (`data/repositories/`) implement abstract domain repository contracts and **MUST ONLY call HTTP endpoints** (via Dio / `apiClient`), converting responses into immutable domain models and mapping `DioException` to `Failure` types. Frontend repositories never access databases directly.
 - **Freezed & JSON Codegen**: Entities use `@freezed` with `fromJson` to generate both `*.freezed.dart` (immutability, `copyWith`, equality) and `*.g.dart` (`fromJson`/`toJson` serialization) via `build_runner`.
 - **Sealed Either**: Always use FreeBay's custom `Either<Failure, T>` from `package:freebay/shared/either/either.dart` (`Left(Failure)` / `Right(value)`). Never import `dartz`.
 - **State Management**: Use `Riverpod` (`StateNotifierProvider`, `AsyncValue`, `FutureProvider`). Tab pages inside `AppShell` must mix in `AutomaticKeepAliveClientMixin` and guard fetch calls against unnecessary rebuilds.
@@ -251,3 +258,6 @@ graph TD
 4. **Prisma Payload Typing**: Database repository returns and mappers must use `Prisma.validator<...>()` to derive strict `Prisma.*GetPayload` types. Avoid untyped `as unknown as` assertions.
 5. **Privacy Crypto Escrow**: Untrackable payments must adhere to the `CryptoPaymentProvider` contract (Monero XMR via `monero-wallet-rpc` ephemeral subaddresses and atomic piconero tracking).
 6. **Digital Brutalist Aesthetics**: Never add `BorderRadius.circular()`, blurred drop shadows, or standard `Divider()` widgets to the Flutter UI.
+7. **Navigation Only via `AppRoutes`**: Never navigate with a raw string literal (`context.go('/feed')`, `context.push('/user/$id')`). Use the constants and `*Path`/`*With` builders in `frontend/lib/core/router/app_routes.dart` (e.g. `AppRoutes.feed`, `AppRoutes.userPath(id)`, `AppRoutes.postSearchWith(query)`). Raw literals in `go`/`push`/`replace` calls are blocked by `make routes-check`, the pre-commit hook, and CI.
+8. **Repository Responsibility Isolation**: Backend repositories (`data/repositories/`) must strictly call the database (Prisma, SQL queries, transactions) and return typed `RepositoryResponse<T> = Promise<Either<Failure, T>>` without invoking external HTTP endpoints. Frontend repositories (`data/repositories/`) must strictly call backend HTTP endpoints via the Dio API client (`apiClient`) and return `Either<Failure, T>`, never accessing database layers directly.
+9. **Riverpod-First State**: `setState` is local ephemeral UI only (press/highlight, single-toggle). Shared/server/business state lives in Riverpod providers (`ref.watch`, notifier, `ref.invalidate`); new local state prefers `HookConsumerWidget` + `useState`.

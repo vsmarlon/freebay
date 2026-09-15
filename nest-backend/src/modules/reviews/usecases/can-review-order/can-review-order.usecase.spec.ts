@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { CanReviewOrderUseCase } from './can-review-order.usecase';
 import { OrderStatus, ReviewType, EscrowStatus } from '@prisma/client';
-import { isLeft, isRight } from '@/shared/core/either';
+;
 import type { CanReviewOrderUsecaseOutput } from './can-review-order.dto';
 
 type MockPrisma = {
@@ -51,7 +51,7 @@ describe('CanReviewOrderUseCase', () => {
   });
 
   describe('when order does not exist', () => {
-    it('should return NOT_FOUND error', async () => {
+    it('returns NOT_FOUND error', async () => {
       mockPrisma.order.findUnique.mockResolvedValue(null);
 
       const result = await sut.execute({
@@ -59,8 +59,8 @@ describe('CanReviewOrderUseCase', () => {
         userId: 'user-1',
       });
 
-      expect(isLeft(result)).toBe(true);
-      if (isLeft(result)) {
+      expect(result.isLeft()).toBe(true);
+      if (result.isLeft()) {
         expect(result.value.code).toBe('NOT_FOUND');
         expect(result.value.message).toContain('Order');
       }
@@ -68,7 +68,7 @@ describe('CanReviewOrderUseCase', () => {
   });
 
   describe('when user is not part of the order', () => {
-    it('should return canReview=false with reason', async () => {
+    it('returns canReview=false with reason', async () => {
       mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
 
       const result = await sut.execute({
@@ -76,8 +76,8 @@ describe('CanReviewOrderUseCase', () => {
         userId: 'random-user',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const value = result.value as CanReviewOrderUsecaseOutput;
         expect(value.canReview).toBe(false);
         expect(value.reason).toBe('User is not part of this order');
@@ -86,7 +86,7 @@ describe('CanReviewOrderUseCase', () => {
   });
 
   describe('when order is not completed', () => {
-    it('should return canReview=false with reason', async () => {
+    it('returns canReview=false with reason', async () => {
       const pendingOrder = { ...mockOrder, status: OrderStatus.PENDING };
       mockPrisma.order.findUnique.mockResolvedValue(pendingOrder);
 
@@ -95,8 +95,8 @@ describe('CanReviewOrderUseCase', () => {
         userId: 'buyer-1',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const value = result.value as CanReviewOrderUsecaseOutput;
         expect(value.canReview).toBe(false);
         expect(value.reason).toBe('Order must be completed before reviewing');
@@ -105,7 +105,7 @@ describe('CanReviewOrderUseCase', () => {
   });
 
   describe('when buyer already reviewed seller', () => {
-    it('should return canReview=false with reason', async () => {
+    it('returns canReview=false with reason', async () => {
       mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
       mockPrisma.review.findUnique.mockResolvedValue({
         id: 'review-1',
@@ -123,8 +123,8 @@ describe('CanReviewOrderUseCase', () => {
         userId: 'buyer-1',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const value = result.value as CanReviewOrderUsecaseOutput;
         expect(value.canReview).toBe(false);
         expect(value.reason).toBe('You have already reviewed this order');
@@ -133,7 +133,7 @@ describe('CanReviewOrderUseCase', () => {
   });
 
   describe('when buyer can review seller', () => {
-    it('should return canReview=true with BUYER_REVIEWING_SELLER type', async () => {
+    it('returns canReview=true with BUYER_REVIEWING_SELLER type', async () => {
       mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
       mockPrisma.review.findUnique.mockResolvedValue(null);
 
@@ -142,8 +142,8 @@ describe('CanReviewOrderUseCase', () => {
         userId: 'buyer-1',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const value = result.value as CanReviewOrderUsecaseOutput;
         expect(value.canReview).toBe(true);
         expect(value.reviewType).toBe(ReviewType.BUYER_REVIEWING_SELLER);
@@ -153,7 +153,7 @@ describe('CanReviewOrderUseCase', () => {
   });
 
   describe('when seller can review buyer', () => {
-    it('should return canReview=true with SELLER_REVIEWING_BUYER type', async () => {
+    it('returns canReview=true with SELLER_REVIEWING_BUYER type', async () => {
       mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
       mockPrisma.review.findUnique.mockResolvedValue(null);
 
@@ -162,8 +162,8 @@ describe('CanReviewOrderUseCase', () => {
         userId: 'seller-1',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const value = result.value as CanReviewOrderUsecaseOutput;
         expect(value.canReview).toBe(true);
         expect(value.reviewType).toBe(ReviewType.SELLER_REVIEWING_BUYER);
@@ -173,7 +173,7 @@ describe('CanReviewOrderUseCase', () => {
   });
 
   describe('when seller already reviewed buyer', () => {
-    it('should return canReview=false with reason', async () => {
+    it('returns canReview=false with reason', async () => {
       mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
       mockPrisma.review.findUnique.mockResolvedValue({
         id: 'review-2',
@@ -191,8 +191,8 @@ describe('CanReviewOrderUseCase', () => {
         userId: 'seller-1',
       });
 
-      expect(isRight(result)).toBe(true);
-      if (isRight(result)) {
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
         const value = result.value as CanReviewOrderUsecaseOutput;
         expect(value.canReview).toBe(false);
         expect(value.reason).toBe('You have already reviewed this order');

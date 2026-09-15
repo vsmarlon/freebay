@@ -122,128 +122,11 @@ class PostActionButton extends StatelessWidget {
   }
 }
 
-class PostFullScreenImage extends StatefulWidget {
-  final String imageUrl;
-  final VoidCallback onClose;
-
-  const PostFullScreenImage({
-    super.key,
-    required this.imageUrl,
-    required this.onClose,
-  });
-
-  @override
-  State<PostFullScreenImage> createState() => _PostFullScreenImageState();
-}
-
-class _PostFullScreenImageState extends State<PostFullScreenImage> {
-  final _transformController = TransformationController();
-
-  bool get _isZoomed => _transformController.value != Matrix4.identity();
-
-  void _onDoubleTapDown(TapDownDetails details) {
-    if (_isZoomed) {
-      _transformController.value = Matrix4.identity();
-    } else {
-      final pos = details.localPosition;
-      _transformController.value = Matrix4.identity()
-        ..translateByDouble(-pos.dx * 2, -pos.dy * 2, 0, 1)
-        ..scaleByDouble(3.0, 3.0, 3.0, 1);
-    }
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _transformController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onClose,
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null &&
-            details.primaryVelocity!.abs() > 300) {
-          widget.onClose();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black.withValues(alpha: 0.9),
-        body: Stack(
-          children: [
-            GestureDetector(
-              onDoubleTapDown: _onDoubleTapDown,
-              onDoubleTap: () {},
-              child: InteractiveViewer(
-                transformationController: _transformController,
-                minScale: 0.5,
-                maxScale: 6.0,
-                child: Center(
-                  child: Image.network(widget.imageUrl, fit: BoxFit.contain),
-                ),
-              ),
-            ),
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              right: 16,
-              child: GestureDetector(
-                onTap: widget.onClose,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.onSurface,
-                    border: Border.all(
-                      color: AppColors.surfaceContainerLowest,
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: AppColors.onPrimary,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 32,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  color: AppColors.onSurface.withValues(alpha: 0.7),
-                  child: const Text(
-                    'DESLIZE PARA FECHAR • DUPLO TOQUE PARA ZOOM',
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      color: AppColors.onPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class PostShareBottomSheet extends StatelessWidget {
   final String userName;
   final String? content;
   final VoidCallback onShareExternal;
-  final VoidCallback onShareAsPost;
+  final VoidCallback? onShareAsPost;
 
   const PostShareBottomSheet({
     super.key,
@@ -258,25 +141,26 @@ class PostShareBottomSheet extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ListTile(
-          leading: Icon(Icons.link, color: context.textPrimary),
-          title: Text(
-            'Compartilhar externamente',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: context.textPrimary,
+        if (onShareAsPost != null)
+          ListTile(
+            leading: Icon(Icons.link, color: context.textPrimary),
+            title: Text(
+              'Compartilhar externamente',
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                color: context.textPrimary,
+              ),
             ),
-          ),
-          subtitle: const Text(
-            'WhatsApp, Instagram, etc.',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              color: AppColors.outline,
-              fontSize: 12,
+            subtitle: const Text(
+              'WhatsApp, Instagram, etc.',
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                color: AppColors.outline,
+                fontSize: 12,
+              ),
             ),
+            onTap: onShareExternal,
           ),
-          onTap: onShareExternal,
-        ),
         ListTile(
           leading: Icon(Icons.article_outlined, color: context.textPrimary),
           title: Text(

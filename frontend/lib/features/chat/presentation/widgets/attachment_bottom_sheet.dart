@@ -23,6 +23,9 @@ class AttachmentResult {
 Future<void> showAttachmentSheet({
   required BuildContext context,
   required ValueChanged<AttachmentResult> onMediaReady,
+  bool returnRawFile = false,
+  ValueChanged<XFile>? onRawImage,
+  ValueChanged<XFile>? onRawVideo,
   VoidCallback? onLocationTap,
   VoidCallback? onProductTap,
   VoidCallback? onOfferTap,
@@ -33,6 +36,9 @@ Future<void> showAttachmentSheet({
     title: 'ADICIONAR',
     builder: (ctx) => _AttachmentSheetBody(
       onMediaReady: onMediaReady,
+      returnRawFile: returnRawFile,
+      onRawImage: onRawImage,
+      onRawVideo: onRawVideo,
       onLocationTap: onLocationTap,
       onProductTap: onProductTap,
       onOfferTap: onOfferTap,
@@ -43,6 +49,9 @@ Future<void> showAttachmentSheet({
 
 class _AttachmentSheetBody extends StatefulWidget {
   final ValueChanged<AttachmentResult> onMediaReady;
+  final bool returnRawFile;
+  final ValueChanged<XFile>? onRawImage;
+  final ValueChanged<XFile>? onRawVideo;
   final VoidCallback? onLocationTap;
   final VoidCallback? onProductTap;
   final VoidCallback? onOfferTap;
@@ -50,6 +59,9 @@ class _AttachmentSheetBody extends StatefulWidget {
 
   const _AttachmentSheetBody({
     required this.onMediaReady,
+    this.returnRawFile = false,
+    this.onRawImage,
+    this.onRawVideo,
     this.onLocationTap,
     this.onProductTap,
     this.onOfferTap,
@@ -73,6 +85,13 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
       imageQuality: 85,
     );
     if (xfile == null) return;
+
+    if (widget.returnRawFile) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      widget.onRawImage?.call(xfile);
+      return;
+    }
 
     setState(() => _isUploading = true);
 
@@ -102,6 +121,47 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
     }
   }
 
+  Future<void> _pickVideo() async {
+    if (_isUploading) return;
+
+    final xfile = await _picker.pickVideo(source: ImageSource.gallery);
+    if (xfile == null) return;
+
+    if (widget.returnRawFile && widget.onRawVideo != null) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      widget.onRawVideo?.call(xfile);
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      final result = await UploadService.uploadFile(File(xfile.path), 'chat');
+      result.fold(
+        (failure) {
+          if (mounted) {
+            widget.onError(failure.message);
+          }
+        },
+        (url) {
+          if (mounted) {
+            Navigator.of(context).pop();
+            widget.onMediaReady(AttachmentResult(url: url, type: 'VIDEO'));
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        widget.onError('Erro ao enviar vídeo');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -120,6 +180,12 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
             icon: Icons.image_outlined,
             label: 'IMAGEM / GIF',
             onTap: _pickAndUploadImage,
+          ),
+          Spacing.vMd,
+          _buildTile(
+            icon: Icons.videocam_outlined,
+            label: 'VÍDEO',
+            onTap: _pickVideo,
           ),
           Spacing.vMd,
           _buildTile(

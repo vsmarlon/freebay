@@ -2,7 +2,7 @@
 
 The Prisma schema in `nest-backend/prisma/schema.prisma` is the source of truth.
 
-Use Prisma commands from `nest-backend`; the old raw SQL migration and reset scripts were removed to avoid a second schema source.
+Use Prisma commands from `nest-backend`; this pre-production project has no migration workflow before first production release.
 
 ## Prerequisites
 
@@ -14,13 +14,13 @@ Use Prisma commands from `nest-backend`; the old raw SQL migration and reset scr
 ### Seed dev data
 
 ```bash
-psql "postgresql://postgres:postgres@localhost:5432/freebay" -f db/seeds/001_seed_dev.sql
+npm run db:sync
+npm run db:seed
 ```
 
 ## File Structure
 
 ```
 db/
-├── README.md
-└── seeds/001_seed_dev.sql          # Sample data for development
+└── README.md
 ```

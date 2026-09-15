@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType } from '@prisma/client';
+import { Prisma, DirectConversation, User, DirectMessage, ChatMessage, ChatThreadType, ConversationPreference, MessageReaction, MessageType, StarredMessage } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
 import { RepositoryResponse, right, left } from '@/shared/core/either';
@@ -13,6 +13,10 @@ import {
   DirectMessageWithSender,
   ChatMessageWithSender,
   ReplyToSummary,
+  ProductConversationSummaryRecord,
+  productConversationSummaryValidator,
+  ConversationStartRecord,
+  toProductConversationSummary,
 } from '../../mappers/conversation.mapper';
 
 const REPLY_TO_SELECT = {
@@ -70,6 +74,7 @@ export class ConversationDatabaseRepository extends BasePrismaRepository {
         include: {
           user1: { select: USER_SELECT_BASIC },
           user2: { select: USER_SELECT_BASIC },
+          product: { select: productConversationSummaryValidator.select },
           messages: {
             take: 1,
             select: { id: true, content: true, senderId: true, createdAt: true, readAt: true },
@@ -92,32 +97,80 @@ export class ConversationDatabaseRepository extends BasePrismaRepository {
     }, 'Erro ao buscar conversas');
   }
 
-  async findDirectConversationBetweenUsers(user1Id: string, user2Id: string): RepositoryResponse<DirectConversation | null> {
+  async findDirectConversationBetweenUsers(user1Id: string, user2Id: string, scopeKey = 'DIRECT'): RepositoryResponse<ConversationStartRecord | null> {
     return this.safeRun(
       () =>
         this.prisma.directConversation.findFirst({
           where: {
-            OR: [
-              { user1Id, user2Id },
-              { user1Id: user2Id, user2Id: user1Id },
-            ],
+            user1Id: user1Id < user2Id ? user1Id : user2Id,
+            user2Id: user1Id < user2Id ? user2Id : user1Id,
+            scopeKey,
           },
-        }),
+          include: { product: { select: productConversationSummaryValidator.select } },
+        }).then((conversation) => conversation ? {
+          conversationId: conversation.id,
+          status: conversation.status,
+          threadType: 'DIRECT' as const,
+          product: conversation.product ? toProductConversationSummary(conversation.product) : null,
+        } : null),
       'Erro ao buscar conversa',
     );
   }
 
-  async createDirectConversation(data: Prisma.DirectConversationCreateInput): RepositoryResponse<DirectConversation> {
+  async findProductConversationBetweenUsers(user1Id: string, user2Id: string, productId: string): RepositoryResponse<ConversationStartRecord | null> {
+    return this.findDirectConversationBetweenUsers(user1Id, user2Id, `PRODUCT:${productId}`);
+  }
+
+  async findProductSummary(productId: string): RepositoryResponse<ProductConversationSummaryRecord | null> {
     return this.safeRun(
-      () => this.prisma.directConversation.create({ data }),
-      'Erro ao criar conversa',
+      () => this.prisma.product.findUnique({ where: { id: productId }, ...productConversationSummaryValidator }),
+      'Erro ao buscar produto',
     );
+  }
+
+  async createDirectConversation(data: Prisma.DirectConversationCreateInput): RepositoryResponse<ConversationStartRecord> {
+    try {
+      const conversation = await this.prisma.directConversation.create({
+        data,
+        include: { product: { select: productConversationSummaryValidator.select } },
+      });
+      return right({
+        conversationId: conversation.id,
+        status: conversation.status,
+        threadType: 'DIRECT',
+        product: conversation.product ? toProductConversationSummary(conversation.product) : null,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const user1Id = data.user1?.connect?.id;
+        const user2Id = data.user2?.connect?.id;
+        const scopeKey = data.scopeKey;
+        if (user1Id && user2Id && typeof scopeKey === 'string') {
+          const reread = await this.findDirectConversationBetweenUsers(user1Id, user2Id, scopeKey);
+      if (reread.isRight() && reread.value) return right(reread.value);
+        }
+      }
+      return left(new DatabaseError('Erro ao criar conversa'));
+    }
   }
 
   async updateDirectConversation(id: string, data: Prisma.DirectConversationUpdateInput): RepositoryResponse<DirectConversation> {
     return this.safeRun(
       () => this.prisma.directConversation.update({ where: { id }, data }),
       'Erro ao atualizar conversa',
+    );
+  }
+
+  async findDirectMessageByClientId(
+    conversationId: string,
+    senderId: string,
+    clientMessageId: string,
+  ): RepositoryResponse<DirectMessage | null> {
+    return this.safeRun(
+      () => this.prisma.directMessage.findFirst({
+        where: { conversationId, senderId, clientMessageId },
+      }),
+      'Erro ao buscar mensagem existente',
     );
   }
 
@@ -135,10 +188,15 @@ export class ConversationDatabaseRepository extends BasePrismaRepository {
         e instanceof Prisma.PrismaClientKnownRequestError &&
         e.code === 'P2002' &&
         data.clientMessageId &&
-        conversationId
+        conversationId &&
+        data.sender.connect?.id
       ) {
         const existing = await this.prisma.directMessage.findFirst({
-          where: { conversationId, clientMessageId: data.clientMessageId },
+          where: {
+            conversationId,
+            senderId: data.sender.connect.id,
+            clientMessageId: data.clientMessageId,
+          },
           include: query.include,
         });
         if (existing) return right(existing as DirectMessage | DirectMessageWithSender);
@@ -184,16 +242,34 @@ export class ConversationDatabaseRepository extends BasePrismaRepository {
         e instanceof Prisma.PrismaClientKnownRequestError &&
         e.code === 'P2002' &&
         data.clientMessageId &&
-        orderId
+        orderId &&
+        data.sender.connect?.id
       ) {
         const existing = await this.prisma.chatMessage.findFirst({
-          where: { orderId, clientMessageId: data.clientMessageId },
+          where: {
+            orderId,
+            senderId: data.sender.connect.id,
+            clientMessageId: data.clientMessageId,
+          },
           include: query.include,
         });
         if (existing) return right(existing as ChatMessage | ChatMessageWithSender);
       }
       return left(new DatabaseError('Erro ao criar mensagem'));
     }
+  }
+
+  async findChatMessageByClientId(
+    orderId: string,
+    senderId: string,
+    clientMessageId: string,
+  ): RepositoryResponse<ChatMessage | null> {
+    return this.safeRun(
+      () => this.prisma.chatMessage.findFirst({
+        where: { orderId, senderId, clientMessageId },
+      }),
+      'Erro ao buscar mensagem existente',
+    );
   }
 
   async findChatMessagesByOrder(
@@ -366,6 +442,70 @@ export class ConversationDatabaseRepository extends BasePrismaRepository {
         : { chatMessageId: messageId };
       return this.prisma.messageReaction.findMany({ where, select: { emoji: true, userId: true } });
     }, 'Erro ao buscar reações');
+  }
+
+  async findStarByUserAndMessage(userId: string, messageId: string, model: ChatThreadType): RepositoryResponse<StarredMessage | null> {
+    return this.safeRun(async () => {
+      const where = model === 'DIRECT'
+        ? { userId, directMessageId: messageId }
+        : { userId, chatMessageId: messageId };
+      return this.prisma.starredMessage.findFirst({ where });
+    }, 'Erro ao buscar favorita');
+  }
+
+  async createStar(data: { userId: string; messageId: string; model: ChatThreadType }): RepositoryResponse<void> {
+    return this.safeRun(async () => {
+      const msgField = data.model === 'DIRECT' ? 'directMessageId' : 'chatMessageId';
+      await this.prisma.starredMessage.create({
+        data: { userId: data.userId, [msgField]: data.messageId },
+      });
+    }, 'Erro ao favoritar mensagem');
+  }
+
+  async deleteStar(starId: string): RepositoryResponse<void> {
+    return this.safeRun(
+      async () => {
+        await this.prisma.starredMessage.delete({ where: { id: starId } });
+      },
+      'Erro ao desfavoritar mensagem',
+    );
+  }
+
+  async findStarredMessages(
+    userId: string,
+    threadId: string,
+    model: ChatThreadType,
+  ): RepositoryResponse<(DirectMessageWithSender | ChatMessageWithSender)[]> {
+    return this.safeRun(async () => {
+      const stars = await this.prisma.starredMessage.findMany({
+        where: {
+          userId,
+          ...(model === 'DIRECT'
+            ? { directMessage: { conversationId: threadId } }
+            : { chatMessage: { orderId: threadId } }),
+        },
+        select: { directMessageId: true, chatMessageId: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      const ids = stars
+        .map((s) => s.directMessageId ?? s.chatMessageId)
+        .filter((id): id is string => id != null);
+      if (ids.length === 0) return [];
+      const include = {
+        sender: { select: USER_SELECT_MINIMAL },
+        replyTo: { select: REPLY_TO_SELECT },
+      };
+      if (model === 'DIRECT') {
+        return this.prisma.directMessage.findMany({
+          where: { id: { in: ids } },
+          include,
+        }) as Promise<DirectMessageWithSender[]>;
+      }
+      return this.prisma.chatMessage.findMany({
+        where: { id: { in: ids } },
+        include,
+      }) as Promise<ChatMessageWithSender[]>;
+    }, 'Erro ao buscar favoritas');
   }
 
   async findDirectMessagesByType(

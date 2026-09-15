@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidPhoneError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
@@ -27,7 +27,7 @@ export class RegisterPhoneUseCase {
     }
 
     const deleteResult = await this.phoneVerificationRepository.deleteManyForUser(input.userId);
-    if (isLeft(deleteResult)) return left(deleteResult.value);
+    if (deleteResult.isLeft()) return left(deleteResult.value);
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = await bcrypt.hash(code, 10);
@@ -39,13 +39,13 @@ export class RegisterPhoneUseCase {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       maxAttempts: 5,
     });
-    if (isLeft(createResult)) return left(createResult.value);
+    if (createResult.isLeft()) return left(createResult.value);
 
     const updateResult = await this.userRepository.update(input.userId, {
       phone: phoneDigits,
       phoneVerified: false,
     });
-    if (isLeft(updateResult)) return left(updateResult.value);
+    if (updateResult.isLeft()) return left(updateResult.value);
 
     const providerMessageId = await this.smsService.sendVerificationCode(phoneDigits, code);
 
@@ -54,7 +54,7 @@ export class RegisterPhoneUseCase {
       'twilio',
       providerMessageId,
     );
-    if (isLeft(sentResult)) return left(sentResult.value);
+    if (sentResult.isLeft()) return left(sentResult.value);
 
     return right(undefined);
   }

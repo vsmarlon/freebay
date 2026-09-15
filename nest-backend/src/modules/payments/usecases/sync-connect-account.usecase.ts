@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Either, right, isLeft } from '@/shared/core/either';
+import { Either, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { StripeProvider } from '../providers/stripe-provider';
 import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
@@ -15,16 +15,16 @@ export class SyncConnectAccountUseCase {
 
   async execute(stripeAccountId: string): Promise<Either<AppError, { processed: boolean }>> {
     const stored = await this.connectRepo.findByStripeAccountId(stripeAccountId);
-    if (isLeft(stored) || !stored.value) {
+    if (stored.isLeft() || !stored.value) {
       this.logger.warn(`Connect account ${stripeAccountId} is not linked to any user`);
       return right({ processed: false });
     }
 
     const snapshot = await this.stripe.refreshConnectAccount(stripeAccountId);
-    if (isLeft(snapshot)) return right({ processed: false });
+    if (snapshot.isLeft()) return right({ processed: false });
 
     const saved = await this.connectRepo.upsertFromSnapshot(stored.value.userId, snapshot.value);
-    if (isLeft(saved)) return right({ processed: false });
+    if (saved.isLeft()) return right({ processed: false });
 
     return right({ processed: true });
   }

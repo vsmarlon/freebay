@@ -28,7 +28,7 @@ describe('GetUserDisputesUseCase', () => {
     jest.clearAllMocks();
   });
 
-  it('should return user disputes', async () => {
+  it('returns user disputes', async () => {
     mockDisputeRepo.findByUserId.mockResolvedValue(right([mockDispute]));
 
     const result = await sut.execute('buyer-123');

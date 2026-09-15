@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$OrderInfo {
 
- String get status;
+ String get status; String? get productTitle;
 /// Create a copy of OrderInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $OrderInfoCopyWith<OrderInfo> get copyWith => _$OrderInfoCopyWithImpl<OrderInfo>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrderInfo&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OrderInfo&&(identical(other.status, status) || other.status == status)&&(identical(other.productTitle, productTitle) || other.productTitle == productTitle));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status);
+int get hashCode => Object.hash(runtimeType,status,productTitle);
 
 @override
 String toString() {
-  return 'OrderInfo(status: $status)';
+  return 'OrderInfo(status: $status, productTitle: $productTitle)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $OrderInfoCopyWith<$Res>  {
   factory $OrderInfoCopyWith(OrderInfo value, $Res Function(OrderInfo) _then) = _$OrderInfoCopyWithImpl;
 @useResult
 $Res call({
- String status
+ String status, String? productTitle
 });
 
 
@@ -65,10 +65,11 @@ class _$OrderInfoCopyWithImpl<$Res>
 
 /// Create a copy of OrderInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? productTitle = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,
+as String,productTitle: freezed == productTitle ? _self.productTitle : productTitle // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status,  String? productTitle)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OrderInfo() when $default != null:
-return $default(_that.status);case _:
+return $default(_that.status,_that.productTitle);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status,  String? productTitle)  $default,) {final _that = this;
 switch (_that) {
 case _OrderInfo():
-return $default(_that.status);case _:
+return $default(_that.status,_that.productTitle);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +195,10 @@ return $default(_that.status);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status,  String? productTitle)?  $default,) {final _that = this;
 switch (_that) {
 case _OrderInfo() when $default != null:
-return $default(_that.status);case _:
+return $default(_that.status,_that.productTitle);case _:
   return null;
 
 }
@@ -209,10 +210,11 @@ return $default(_that.status);case _:
 @JsonSerializable()
 
 class _OrderInfo implements OrderInfo {
-  const _OrderInfo({required this.status});
+  const _OrderInfo({required this.status, this.productTitle});
   factory _OrderInfo.fromJson(Map<String, dynamic> json) => _$OrderInfoFromJson(json);
 
 @override final  String status;
+@override final  String? productTitle;
 
 /// Create a copy of OrderInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +229,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrderInfo&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OrderInfo&&(identical(other.status, status) || other.status == status)&&(identical(other.productTitle, productTitle) || other.productTitle == productTitle));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status);
+int get hashCode => Object.hash(runtimeType,status,productTitle);
 
 @override
 String toString() {
-  return 'OrderInfo(status: $status)';
+  return 'OrderInfo(status: $status, productTitle: $productTitle)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$OrderInfoCopyWith<$Res> implements $OrderInfoCopyWith<$Re
   factory _$OrderInfoCopyWith(_OrderInfo value, $Res Function(_OrderInfo) _then) = __$OrderInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String status
+ String status, String? productTitle
 });
 
 
@@ -264,10 +266,11 @@ class __$OrderInfoCopyWithImpl<$Res>
 
 /// Create a copy of OrderInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? productTitle = freezed,}) {
   return _then(_OrderInfo(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,
+as String,productTitle: freezed == productTitle ? _self.productTitle : productTitle // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

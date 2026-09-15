@@ -1,59 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 
-class SavedPostsPage extends StatelessWidget {
+class SavedPostsPage extends ConsumerStatefulWidget {
   const SavedPostsPage({super.key});
 
   @override
+  ConsumerState<SavedPostsPage> createState() => _SavedPostsPageState();
+}
+
+class _SavedPostsPageState extends ConsumerState<SavedPostsPage> {
+  final _posts = <PostEntity>[];
+  String? _cursor;
+  bool _loading = true;
+  bool _hasMore = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(refresh: true);
+  }
+
+  Future<void> _load({required bool refresh}) async {
+    if (!refresh && (_loading || !_hasMore)) return;
+    final requestCursor = refresh ? null : _cursor;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final result = await ref
+        .read(socialRepositoryProvider)
+        .getSavedPosts(cursor: requestCursor);
+    if (!mounted) return;
+    result.fold(
+      (failure) => setState(() {
+        _loading = false;
+        _error = failure.message;
+      }),
+      (page) => setState(() {
+        if (refresh) {
+          _posts
+            ..clear()
+            ..addAll(page.items);
+        } else {
+          final ids = _posts.map((post) => post.id).toSet();
+          _posts.addAll(page.items.where((post) => ids.add(post.id)));
+        }
+        _cursor = page.nextCursor;
+        _hasMore = page.hasMore;
+        _loading = false;
+      }),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'POSTS SALVOS',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
-            ),
-            breadcrumbs: context.breadcrumbs,
-          ),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.bookmark_outline,
-                    size: 80,
-                    color: context.textSecondary,
-                  ),
-                  Spacing.vLg,
-                  Text(
-                    'Em breve',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  Spacing.vSm,
-                  Text(
-                    'Funcionalidade em desenvolvimento',
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.mediumGray
-                          : AppColors.mediumGray,
-                    ),
-                  ),
-                ],
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'POSTS SALVOS',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: context.pop,
               ),
             ),
-          ),
-        ],
+            Expanded(child: _body(context)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _body(BuildContext context) {
+    if (_loading && _posts.isEmpty) {
+      return const Center(child: ShimmerBlock(height: 180));
+    }
+    if (_error != null && _posts.isEmpty) {
+      return Center(
+        child: AppButton(
+          label: 'TENTAR NOVAMENTE',
+          onPressed: () => _load(refresh: true),
+        ),
+      );
+    }
+    if (_posts.isEmpty) {
+      return const EmptyState(
+        icon: Icons.bookmark_outline,
+        title: 'NENHUM POST SALVO',
+        subtitle: 'Posts salvos aparecerão aqui.',
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: () => _load(refresh: true),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _posts.length + (_hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _posts.length) {
+            Future.microtask(() => _load(refresh: false));
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: ShimmerBlock(height: 120),
+            );
+          }
+          final post = _posts[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: FeedPostItem(
+              post: post,
+              onUnsaved: () => setState(
+                () => _posts.removeWhere((item) => item.id == post.id),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

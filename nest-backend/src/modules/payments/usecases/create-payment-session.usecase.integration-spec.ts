@@ -6,7 +6,7 @@ import { TransactionDatabaseRepository } from '../data/repositories/transaction-
 import { StripeProvider } from '../providers/stripe-provider';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
-import { isLeft } from '@/shared/core/either';
+;
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { right } from '@/shared/core/either';
 
@@ -48,16 +48,16 @@ describe('CreatePaymentSessionUseCase Integration', () => {
     );
   });
 
-  it('should return error if order not found', async () => {
+  it('returns error if order not found', async () => {
     const result = await sut.execute({
       orderId: 'nonexistent',
       userId: 'user-1',
     });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) expect(result.value.code).toBe('NOT_FOUND');
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) expect(result.value.code).toBe('NOT_FOUND');
   });
 
-  it('should return error if user does not own the order', async () => {
+  it('returns error if user does not own the order', async () => {
     const buyer = await userFactory.create();
     const seller = await userFactory.create();
     const product = await productFactory.create(seller.id);
@@ -85,11 +85,11 @@ describe('CreatePaymentSessionUseCase Integration', () => {
       orderId: order.id,
       userId: 'stranger',
     });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) expect(result.value.code).toBe('BAD_REQUEST');
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) expect(result.value.code).toBe('BAD_REQUEST');
   });
 
-  it('should create payment session for valid order with CPF', async () => {
+  it('creates payment session for valid order with CPF', async () => {
     const buyer = await userFactory.create({ cpf: '12345678901' });
     const seller = await userFactory.create();
     const product = await productFactory.create(seller.id);
@@ -119,7 +119,7 @@ describe('CreatePaymentSessionUseCase Integration', () => {
     expect(mockPaymentProvider.createPaymentSession).toHaveBeenCalled();
   });
 
-  it('should return error if user has no CPF', async () => {
+  it('returns error if user has no CPF', async () => {
     const buyer = await userFactory.create({ cpf: null });
     const seller = await userFactory.create();
     const product = await productFactory.create(seller.id);
@@ -140,7 +140,7 @@ describe('CreatePaymentSessionUseCase Integration', () => {
       orderId: order.id,
       userId: buyer.id,
     });
-    expect(isLeft(result)).toBe(true);
-    if (isLeft(result)) expect(result.value.code).toBe('BAD_REQUEST');
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) expect(result.value.code).toBe('BAD_REQUEST');
   });
 });

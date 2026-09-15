@@ -39,6 +39,7 @@ Map<String, dynamic> _$FollowStatusResponseToJson(
 UserBrief _$UserBriefFromJson(Map<String, dynamic> json) => UserBrief(
   id: json['id'] as String,
   displayName: json['displayName'] as String,
+  username: json['username'] as String?,
   avatarUrl: json['avatarUrl'] as String?,
   isVerified: json['isVerified'] as bool? ?? false,
   reputationScore: (json['reputationScore'] as num?)?.toDouble() ?? 0.0,
@@ -47,6 +48,7 @@ UserBrief _$UserBriefFromJson(Map<String, dynamic> json) => UserBrief(
 Map<String, dynamic> _$UserBriefToJson(UserBrief instance) => <String, dynamic>{
   'id': instance.id,
   'displayName': instance.displayName,
+  'username': instance.username,
   'avatarUrl': instance.avatarUrl,
   'isVerified': instance.isVerified,
   'reputationScore': instance.reputationScore,

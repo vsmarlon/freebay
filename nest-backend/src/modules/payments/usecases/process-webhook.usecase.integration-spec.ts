@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProcessWebhookUseCase } from './process-webhook.usecase';
 import { prisma } from '../../../../test/setup-integration';
-import { isRight, right } from '@/shared/core/either';
+import { right } from '@/shared/core/either';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
@@ -39,27 +39,27 @@ describe('ProcessWebhookUseCase Integration', () => {
     jest.clearAllMocks();
   });
 
-  it('should succeed without mutating anything for an unknown event', async () => {
+  it('succeeds without mutating anything for an unknown event', async () => {
     const result = await sut.execute({ event: 'unknown.event', data: {} });
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
   });
 
-  it('should succeed without mutating anything when orderId is missing', async () => {
+  it('succeeds without mutating anything when orderId is missing', async () => {
     const result = await sut.execute({ event: 'checkout.session.completed', data: {} });
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
   });
 
-  it('should succeed without mutating anything for payment_intent.succeeded with no orderId', async () => {
+  it('succeeds without mutating anything for payment_intent.succeeded with no orderId', async () => {
     const result = await sut.execute({ event: 'payment_intent.succeeded', data: {} });
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
   });
 
-  it('should succeed without mutating anything for an unknown event even with orderId', async () => {
+  it('succeeds without mutating anything for an unknown event even with orderId', async () => {
     const result = await sut.execute({ event: 'unknown.event', data: { orderId: 'o1' } });
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
   });
 
-  it('should skip duplicate completion when transaction is already PAID', async () => {
+  it('skips duplicate completion when transaction is already PAID', async () => {
     mockTransactionRepo.findByOrderId = jest
       .fn()
       .mockResolvedValue(
@@ -77,7 +77,7 @@ describe('ProcessWebhookUseCase Integration', () => {
         data: { orderId: 'o1' },
       });
 
-      expect(isRight(result)).toBe(true);
+      expect(result.isRight()).toBe(true);
       expect(txSpy).not.toHaveBeenCalled();
     } finally {
       txSpy.mockRestore();

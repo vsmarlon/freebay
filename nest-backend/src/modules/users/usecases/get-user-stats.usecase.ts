@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { PrismaFollowRepository } from '../data/repositories/follow-database.repository';
@@ -19,16 +19,16 @@ export class GetUserStatsUseCase {
       this.orderRepository.countByBuyerId(input.userId),
     ]);
 
-    if (isLeft(salesCountResult)) return left(salesCountResult.value);
-    if (isLeft(purchasesCountResult)) return left(purchasesCountResult.value);
+    if (salesCountResult.isLeft()) return left(salesCountResult.value);
+    if (purchasesCountResult.isLeft()) return left(purchasesCountResult.value);
 
     const [followersCountResult, followingCountResult] = await Promise.all([
       this.followRepository.getFollowersCount(input.userId),
       this.followRepository.getFollowingCount(input.userId),
     ]);
 
-    if (isLeft(followersCountResult)) return left(followersCountResult.value);
-    if (isLeft(followingCountResult)) return left(followingCountResult.value);
+    if (followersCountResult.isLeft()) return left(followersCountResult.value);
+    if (followingCountResult.isLeft()) return left(followingCountResult.value);
 
     return right({
       salesCount: salesCountResult.value,

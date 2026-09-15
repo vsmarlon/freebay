@@ -6,19 +6,31 @@ import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, PageQuery, mapPage, paginateById } from '@/shared/core/pagination';
 import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { TransactionEntry } from '../../types/wallet.types';
+import { WalletRepository } from '../../domain/repositories/wallet.repository';
 
 const WALLET_ENTRY_INCLUDE = {
   order: { select: { product: { select: { title: true } } } },
 } satisfies Prisma.WalletEntryInclude;
 
 @Injectable()
-export class WalletDatabaseRepository extends BasePrismaRepository {
+export class WalletDatabaseRepository extends BasePrismaRepository implements WalletRepository {
   constructor(prisma: PrismaService) {
     super(prisma);
   }
 
   async findByUserId(userId: string): RepositoryResponse<Wallet | null> {
     return this.safeRun(() => this.prisma.wallet.findUnique({ where: { userId } }), 'Erro ao buscar carteira');
+  }
+
+  async ensureForUser(userId: string, tx?: Prisma.TransactionClient): RepositoryResponse<Wallet> {
+    return this.safeRun(
+      () => (tx ?? this.prisma).wallet.upsert({
+        where: { userId },
+        create: { userId, availableBalance: 0, pendingBalance: 0, totalEarned: 0 },
+        update: {},
+      }),
+      'Erro ao garantir carteira',
+    );
   }
 
   async getTransactions(

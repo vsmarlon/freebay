@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
@@ -13,7 +14,7 @@ final userPostsProvider = FutureProvider.family<List<PostEntity>, String>((
 ) async {
   final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getPostsByUser(userId);
-  return result.fold((failure) => throw failure, (posts) => posts);
+  return result.fold((failure) => throw failure, (page) => page.items);
 });
 
 class MyPostsPage extends ConsumerWidget {
@@ -38,7 +39,7 @@ class MyPostsPage extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: Icon(Icons.add, color: context.textPrimary),
-                onPressed: () => context.push('/create-post'),
+                onPressed: () => context.push(AppRoutes.createPost),
               ),
             ],
           ),
@@ -57,7 +58,8 @@ class MyPostsPage extends ConsumerWidget {
                               action: AppButton(
                                 label: 'Criar post',
                                 icon: Icons.add,
-                                onPressed: () => context.push('/create-post'),
+                                onPressed: () =>
+                                    context.push(AppRoutes.createPost),
                               ),
                             )
                           : RefreshIndicator(
@@ -153,7 +155,7 @@ class MyPostsPage extends ConsumerWidget {
     final isReposted = post.repostedAt != null;
 
     return GestureDetector(
-      onTap: () => context.push('/post/${post.id}'),
+      onTap: () => context.push(AppRoutes.postPath(post.id)),
       child: Stack(
         fit: StackFit.expand,
         children: [

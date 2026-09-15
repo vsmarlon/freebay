@@ -42,12 +42,25 @@ class FollowStatusResponse {
       _$FollowStatusResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$FollowStatusResponseToJson(this);
+
+  FollowStatusResponse copyWith({
+    bool? isFollowing,
+    int? followersCount,
+    int? followingCount,
+  }) {
+    return FollowStatusResponse(
+      isFollowing: isFollowing ?? this.isFollowing,
+      followersCount: followersCount ?? this.followersCount,
+      followingCount: followingCount ?? this.followingCount,
+    );
+  }
 }
 
 @JsonSerializable()
 class UserBrief {
   final String id;
   final String displayName;
+  final String? username;
   final String? avatarUrl;
   @JsonKey(defaultValue: false)
   final bool isVerified;
@@ -57,6 +70,7 @@ class UserBrief {
   const UserBrief({
     required this.id,
     required this.displayName,
+    this.username,
     this.avatarUrl,
     required this.isVerified,
     required this.reputationScore,

@@ -34,6 +34,13 @@ Map<String, String>? mediaAuthHeaders(String url) {
   return {'Authorization': 'Bearer $token'};
 }
 
+Future<Map<String, String>?> getMediaAuthHeadersAsync(String url) async {
+  if (!isPrivateMedia(url)) return null;
+  final token = StorageService.cachedToken ?? await StorageService.getToken();
+  if (token == null) return null;
+  return {'Authorization': 'Bearer $token'};
+}
+
 dynamic absolutizeMediaUrls(dynamic node) {
   if (node is String) return mediaUrl(node);
   if (node is List) {

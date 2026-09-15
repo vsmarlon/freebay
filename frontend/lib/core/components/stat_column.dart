@@ -45,7 +45,7 @@ class StatColumn extends StatelessWidget {
             fontSize: uppercaseLabel ? 10 : 12,
             fontWeight: uppercaseLabel ? FontWeight.w600 : FontWeight.normal,
             letterSpacing: uppercaseLabel ? 0.5 : 0,
-            color: AppColors.mediumGray,
+            color: context.textSecondary,
           ),
         ),
       ],

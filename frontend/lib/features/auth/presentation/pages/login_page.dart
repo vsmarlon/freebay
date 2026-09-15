@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
+import 'package:freebay/shared/services/storage_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -64,6 +66,23 @@ class _LoginPageState extends ConsumerState<LoginPage>
   bool _rememberMe = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadSavedEmail();
+  }
+
+  Future<void> _loadSavedEmail() async {
+    final email = await StorageService.getEmail();
+    if (!mounted ||
+        email == null ||
+        email.isEmpty ||
+        _emailController.text.isNotEmpty) {
+      return;
+    }
+    _emailController.text = email;
+  }
+
+  @override
   void dispose() {
     _anim.dispose();
     _emailController.dispose();
@@ -83,12 +102,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
     }
   }
 
-  Future<void> _maybeOfferBiometry(UserEntity user) async {
-    if (mounted && context.mounted) {
-      await BrutalistBiometricModal.show(context, ref);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
@@ -98,13 +111,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
       next.whenOrNull(
         data: (user) async {
           if (user == null || !mounted) return;
+          // ponytail: GoRouter redirect owns → /complete-profile; a second
+          // context.go here races with the redirect into the error screen.
           if (ref
               .read(authControllerProvider.notifier)
               .needsProfileCompletion(user)) {
-            if (context.mounted) context.go('/complete-profile');
             return;
           }
-          await _maybeOfferBiometry(user);
           if (context.mounted) {
             final from = GoRouterState.of(context).uri.queryParameters['from'];
             context.go(resolvePostAuthDestination(from));
@@ -118,7 +131,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
     });
 
     return Scaffold(
-      body: BrutalistBackground(
+      body: AppBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -264,7 +277,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 ),
                               ),
                               InkWell(
-                                onTap: () => context.push('/recover-password'),
+                                onTap: () =>
+                                    context.push(AppRoutes.recoverPassword),
                                 child: const Padding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 4,
@@ -363,7 +377,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 ),
                               ),
                               InkWell(
-                                onTap: () => context.push('/register'),
+                                onTap: () => context.push(AppRoutes.register),
                                 child: const Padding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 6,

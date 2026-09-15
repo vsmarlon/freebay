@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
-
-final userStoriesProvider = FutureProvider.family<List<StoryEntity>, String>((
-  ref,
-  userId,
-) async {
-  final repository = ref.watch(socialRepositoryProvider);
-  final result = await repository.getUserStories(userId);
-  return result.fold((failure) => throw failure, (stories) => stories);
-});
 
 class MyStoriesPage extends ConsumerWidget {
   final String userId;
@@ -38,7 +31,7 @@ class MyStoriesPage extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: Icon(Icons.add, color: context.textPrimary),
-                onPressed: () => context.push('/create-story'),
+                onPressed: () => context.push(AppRoutes.createStory),
               ),
             ],
           ),
@@ -57,7 +50,8 @@ class MyStoriesPage extends ConsumerWidget {
                               action: AppButton(
                                 label: 'Criar hist\u00f3ria',
                                 icon: Icons.add,
-                                onPressed: () => context.push('/create-story'),
+                                onPressed: () =>
+                                    context.push(AppRoutes.createStory),
                               ),
                             )
                           : RefreshIndicator(
@@ -141,7 +135,7 @@ class MyStoriesPage extends ConsumerWidget {
     final isExpired = expiry.isBefore(now);
 
     return GestureDetector(
-      onTap: () => context.push('/story?index=0'),
+      onTap: () => context.push(AppRoutes.storyAt(0)),
       onLongPress: () => _showDeleteDialog(context, ref, story, isDark),
       child: Stack(
         fit: StackFit.expand,

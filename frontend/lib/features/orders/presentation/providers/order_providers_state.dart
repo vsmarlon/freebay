@@ -39,5 +39,6 @@ abstract class SalesListState with _$SalesListState {
     String? nextCursor,
     String? error,
     @Default(true) bool hasMore,
+    OrderStatus? selectedStatus,
   }) = _SalesListState;
 }

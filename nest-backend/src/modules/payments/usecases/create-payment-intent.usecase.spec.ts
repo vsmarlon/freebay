@@ -60,11 +60,7 @@ describe('CreatePaymentIntentUseCase', () => {
     sut = module.get(CreatePaymentIntentUseCase);
   });
 
-  it('should be defined', () => {
-    expect(sut).toBeDefined();
-  });
-
-  it('should return error if order not found', async () => {
+  it('returns error if order not found', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(left(new NotFoundError('Order')));
 
     const result = await sut.execute({
@@ -76,7 +72,7 @@ describe('CreatePaymentIntentUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return error if user is not the buyer', async () => {
+  it('returns error if user is not the buyer', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
 
     const result = await sut.execute({
@@ -88,7 +84,7 @@ describe('CreatePaymentIntentUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(BadRequestError);
   });
 
-  it('should NOT require CPF for mobile card-only PaymentIntent flow', async () => {
+  it('does NOT require CPF for mobile card-only PaymentIntent flow', async () => {
     // CPF is only required for Checkout Session (PIX). Mobile card-only must succeed without it.
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockUserRepository.findPaymentInfo = jest.fn().mockResolvedValue(
@@ -104,7 +100,7 @@ describe('CreatePaymentIntentUseCase', () => {
     expect(mockPaymentProvider.createPaymentIntent).toHaveBeenCalled();
   });
 
-  it('should return error if a Checkout Session (cs_) is already active', async () => {
+  it('returns error if a Checkout Session (cs_) is already active', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({
@@ -131,7 +127,7 @@ describe('CreatePaymentIntentUseCase', () => {
     expect(mockPaymentProvider.createPaymentIntent).not.toHaveBeenCalled();
   });
 
-  it('should return error if order is already paid', async () => {
+  it('returns error if order is already paid', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({
@@ -155,7 +151,7 @@ describe('CreatePaymentIntentUseCase', () => {
     }
   });
 
-  it('should create payment intent successfully for a fresh order', async () => {
+  it('creates payment intent successfully for a fresh order', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
 
     const result = await sut.execute({
@@ -187,7 +183,7 @@ describe('CreatePaymentIntentUseCase', () => {
     );
   });
 
-  it('should handle payment provider failure', async () => {
+  it('handles payment provider failure', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockPaymentProvider.createPaymentIntent = jest.fn().mockResolvedValue(
       left(new PaymentProviderError('Provider error', 500)),
@@ -202,7 +198,7 @@ describe('CreatePaymentIntentUseCase', () => {
     if (result.isLeft()) expect(result.value.code).toBe('PAYMENT_PROVIDER_ERROR');
   });
 
-  it('should return NotFoundError when the order repository resolves null', async () => {
+  it('returns NotFoundError when the order repository resolves null', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(null));
 
     const result = await sut.execute({
@@ -214,7 +210,7 @@ describe('CreatePaymentIntentUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('should return "Order is not payable" for a FAILED transaction', async () => {
+  it('returns "Order is not payable" for a FAILED transaction', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockTransactionRepository.findByOrderId = jest.fn().mockResolvedValue(
       right({
@@ -239,7 +235,7 @@ describe('CreatePaymentIntentUseCase', () => {
     expect(mockPaymentProvider.createPaymentIntent).not.toHaveBeenCalled();
   });
 
-  it('should not upsert a transaction row when the provider fails', async () => {
+  it('does not upsert a transaction row when the provider fails', async () => {
     mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
     mockPaymentProvider.createPaymentIntent = jest.fn().mockResolvedValue(
       left(new PaymentProviderError('Provider error', 500)),

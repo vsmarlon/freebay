@@ -39,46 +39,48 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
     final productAsync = ref.watch(productByIdProvider(widget.productId));
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          const PageHeader(text: 'EDITAR ANÚNCIO'),
-          Expanded(
-            child: productAsync.when(
-              loading: () => const SkeletonPage(
-                child: Column(
-                  children: [
-                    SizedBox(height: 16),
-                    ShimmerBlock(height: 200),
-                    SizedBox(height: 16),
-                    ShimmerBlock(height: 48),
-                    SizedBox(height: 12),
-                    ShimmerBlock(height: 48),
-                    SizedBox(height: 12),
-                    ShimmerBlock(height: 48),
-                    SizedBox(height: 12),
-                    ShimmerBlock(height: 120),
-                    SizedBox(height: 16),
-                    ShimmerBlock(height: 48),
-                  ],
-                ),
-              ),
-              error: (_, _) => Center(
-                child: Text(
-                  'Não foi possível carregar o anúncio.',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    color: context.textPrimary,
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            const PageHeader(text: 'EDITAR ANÚNCIO'),
+            Expanded(
+              child: productAsync.when(
+                loading: () => const SkeletonPage(
+                  child: Column(
+                    children: [
+                      SizedBox(height: 16),
+                      ShimmerBlock(height: 200),
+                      SizedBox(height: 16),
+                      ShimmerBlock(height: 48),
+                      SizedBox(height: 12),
+                      ShimmerBlock(height: 48),
+                      SizedBox(height: 12),
+                      ShimmerBlock(height: 48),
+                      SizedBox(height: 12),
+                      ShimmerBlock(height: 120),
+                      SizedBox(height: 16),
+                      ShimmerBlock(height: 48),
+                    ],
                   ),
                 ),
+                error: (_, _) => Center(
+                  child: Text(
+                    'Não foi possível carregar o anúncio.',
+                    style: TextStyle(
+                      fontFamily: AppTypography.fontFamily,
+                      color: context.textPrimary,
+                    ),
+                  ),
+                ),
+                data: (product) {
+                  _prefill(product);
+                  return _buildForm(context, product, isDark);
+                },
               ),
-              data: (product) {
-                _prefill(product);
-                return _buildForm(context, product, isDark);
-              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -108,6 +110,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           controller: _titleController,
           label: 'Título',
           hint: 'Ex: iPhone 13 Pro Max 256GB',
+          maxLength: 100,
         ),
         Spacing.vMd,
         AppTextField(

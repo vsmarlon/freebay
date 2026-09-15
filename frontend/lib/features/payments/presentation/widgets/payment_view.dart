@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 
@@ -63,7 +64,9 @@ class PaymentView extends StatelessWidget {
         context,
         'Pagamento enviado! Estamos confirmando com o provedor.',
       );
-      if (createdOrderId != null) context.go('/orders/${createdOrderId!}');
+      if (createdOrderId != null) {
+        context.go(AppRoutes.orderPath(createdOrderId!));
+      }
     } on StripeException catch (e) {
       if (!context.mounted) return;
       if (e.error.code == FailureCode.Canceled) {
@@ -166,7 +169,7 @@ class PaymentView extends StatelessWidget {
           label: 'Ver pedido',
           onPressed: createdOrderId == null
               ? null
-              : () => context.go('/orders/${createdOrderId!}'),
+              : () => context.go(AppRoutes.orderPath(createdOrderId!)),
         ),
       ],
     );

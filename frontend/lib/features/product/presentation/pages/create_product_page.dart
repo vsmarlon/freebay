@@ -98,148 +98,154 @@ class CreateProductPage extends HookConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: context.bgColor,
-      body: Column(
-        children: [
-          PageHeader(
-            text: 'NOVO ANÚNCIO',
-            leading: BrutalistIconButton(
-              icon: Icons.arrow_back,
-              onTap: () => context.pop(),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Column(
+          children: [
+            PageHeader(
+              text: 'NOVO ANÚNCIO',
+              leading: BrutalistIconButton(
+                icon: Icons.arrow_back,
+                onTap: () => context.pop(),
+              ),
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ProductPreviewCard(
-                    title: titleController.text.trim(),
-                    description: descriptionController.text.trim(),
-                    pricePreview: CurrencyUtils.formatCents(
-                      int.tryParse(
-                            priceController.text.replaceAll(RegExp(r'\D'), ''),
-                          ) ??
-                          0,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ProductPreviewCard(
+                      title: titleController.text.trim(),
+                      description: descriptionController.text.trim(),
+                      pricePreview: CurrencyUtils.formatCents(
+                        int.tryParse(
+                              priceController.text.replaceAll(
+                                RegExp(r'\D'),
+                                '',
+                              ),
+                            ) ??
+                            0,
+                      ),
+                      categoryName: selectedCategory?.name,
+                      imagePath: selectedImagePath.value,
+                      isNew: isNewProduct.value,
+                      userName: currentUser?.displayNameOrDefault ?? 'Você',
+                      userAvatarUrl: currentUser?.avatarUrl,
                     ),
-                    categoryName: selectedCategory?.name,
-                    imagePath: selectedImagePath.value,
-                    isNew: isNewProduct.value,
-                    userName: currentUser?.displayNameOrDefault ?? 'Você',
-                    userAvatarUrl: currentUser?.avatarUrl,
-                  ),
-                  Spacing.vLg,
-                  AppTextField(
-                    controller: titleController,
-                    label: 'Título do anúncio',
-                    hint: 'Ex: iPhone 13 Pro Max 256GB',
-                  ),
-                  Spacing.vMd,
-                  AppTextField(
-                    controller: descriptionController,
-                    label: 'Descrição',
-                    hint: 'Detalhes do estado, acessórios, tempo de uso...',
-                    maxLines: 4,
-                  ),
-                  Spacing.vMd,
-                  AppTextField(
-                    controller: priceController,
-                    label: 'Preço (R\$)',
-                    hint: '0,00',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+                    Spacing.vLg,
+                    AppTextField(
+                      controller: titleController,
+                      label: 'Título do anúncio',
+                      hint: 'Ex: iPhone 13 Pro Max 256GB',
+                      maxLength: 100,
                     ),
-                  ),
-                  Spacing.vLg,
-                  CategorySelectorField(
-                    categoriesAsync: categoriesAsync,
-                    selectedCategory: selectedCategory,
-                    onCategorySelected: (value) =>
-                        selectedCategoryId.value = value,
-                    onRetry: () => ref.invalidate(categoriesProvider),
-                  ),
-                  Spacing.vMd,
-                  Container(
-                    color: context.surfaceColor,
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            selectedImagePath.value == null
-                                ? 'Nenhuma foto selecionada'
-                                : 'Foto selecionada',
-                            style: TextStyle(
-                              color: context.textPrimary,
-                              fontSize: 13,
+                    Spacing.vMd,
+                    AppTextField(
+                      controller: descriptionController,
+                      label: 'Descrição',
+                      hint: 'Detalhes do estado, acessórios, tempo de uso...',
+                      maxLines: 4,
+                    ),
+                    Spacing.vMd,
+                    AppTextField(
+                      controller: priceController,
+                      label: 'Preço (R\$)',
+                      hint: '0,00',
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                    Spacing.vLg,
+                    CategorySelectorField(
+                      categoriesAsync: categoriesAsync,
+                      selectedCategory: selectedCategory,
+                      onCategorySelected: (value) =>
+                          selectedCategoryId.value = value,
+                      onRetry: () => ref.invalidate(categoriesProvider),
+                    ),
+                    Spacing.vMd,
+                    Container(
+                      color: context.surfaceColor,
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedImagePath.value == null
+                                  ? 'Nenhuma foto selecionada'
+                                  : 'Foto selecionada',
+                              style: TextStyle(
+                                color: context.textPrimary,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => pickImage(ImageSource.gallery),
-                          icon: const Icon(Icons.photo_library, size: 16),
-                          label: const Text('Galeria'),
-                          style: OutlinedButton.styleFrom(
-                            shape: const RoundedRectangleBorder(),
+                          OutlinedButton.icon(
+                            onPressed: () => pickImage(ImageSource.gallery),
+                            icon: const Icon(Icons.photo_library, size: 16),
+                            label: const Text('Galeria'),
+                            style: OutlinedButton.styleFrom(
+                              shape: const RoundedRectangleBorder(),
+                            ),
+                          ),
+                          Spacing.hSm,
+                          OutlinedButton.icon(
+                            onPressed: () => pickImage(ImageSource.camera),
+                            icon: const Icon(Icons.camera_alt, size: 16),
+                            label: const Text('Câmera'),
+                            style: OutlinedButton.styleFrom(
+                              shape: const RoundedRectangleBorder(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Spacing.vLg,
+                    Text(
+                      'CONDIÇÃO',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: context.textSecondary,
+                      ),
+                    ),
+                    Spacing.vSm,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppButton(
+                            label: 'NOVO',
+                            variant: isNewProduct.value
+                                ? AppButtonVariant.primary
+                                : AppButtonVariant.ghost,
+                            onPressed: () => isNewProduct.value = true,
                           ),
                         ),
                         Spacing.hSm,
-                        OutlinedButton.icon(
-                          onPressed: () => pickImage(ImageSource.camera),
-                          icon: const Icon(Icons.camera_alt, size: 16),
-                          label: const Text('Câmera'),
-                          style: OutlinedButton.styleFrom(
-                            shape: const RoundedRectangleBorder(),
+                        Expanded(
+                          child: AppButton(
+                            label: 'USADO',
+                            variant: !isNewProduct.value
+                                ? AppButtonVariant.primary
+                                : AppButtonVariant.ghost,
+                            onPressed: () => isNewProduct.value = false,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Spacing.vLg,
-                  Text(
-                    'CONDIÇÃO',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: context.textSecondary,
+                    Spacing.vXl,
+                    AppButton(
+                      label: 'PUBLICAR ANÚNCIO',
+                      isLoading: isLoading.value,
+                      onPressed: submit,
                     ),
-                  ),
-                  Spacing.vSm,
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppButton(
-                          label: 'NOVO',
-                          variant: isNewProduct.value
-                              ? AppButtonVariant.primary
-                              : AppButtonVariant.ghost,
-                          onPressed: () => isNewProduct.value = true,
-                        ),
-                      ),
-                      Spacing.hSm,
-                      Expanded(
-                        child: AppButton(
-                          label: 'USADO',
-                          variant: !isNewProduct.value
-                              ? AppButtonVariant.primary
-                              : AppButtonVariant.ghost,
-                          onPressed: () => isNewProduct.value = false,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Spacing.vXl,
-                  AppButton(
-                    label: 'PUBLICAR ANÚNCIO',
-                    isLoading: isLoading.value,
-                    onPressed: submit,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

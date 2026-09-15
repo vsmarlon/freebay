@@ -1,7 +1,7 @@
 import { prisma } from '../../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../../test/factories';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { isLeft, isRight, left, right } from '@/shared/core/either';
+import { left, right } from '@/shared/core/either';
 import { BadRequestError } from '@/shared/core/errors';
 import { CartDatabaseRepository } from './cart-database.repository';
 
@@ -56,8 +56,8 @@ describe('CartDatabaseRepository reservations Integration', () => {
       checkout(buyerB.id, seller.id, product, 1),
     ]);
 
-    expect(results.filter(isRight)).toHaveLength(1);
-    expect(results.filter(isLeft)).toHaveLength(1);
+    expect(results.filter((r) => r.isRight())).toHaveLength(1);
+    expect(results.filter((r) => r.isLeft())).toHaveLength(1);
     expect(await prisma.order.count({ where: { productId: product.id } })).toBe(1);
   });
 
@@ -70,7 +70,7 @@ describe('CartDatabaseRepository reservations Integration', () => {
       buyers.map((buyer) => checkout(buyer.id, seller.id, product, 2)),
     );
 
-    const succeeded = results.filter(isRight).length;
+    const succeeded = results.filter((r) => r.isRight()).length;
     const stored = await prisma.product.findUnique({ where: { id: product.id } });
 
     expect(succeeded).toBe(2);
@@ -84,7 +84,7 @@ describe('CartDatabaseRepository reservations Integration', () => {
     const product = await productFactory.create(seller.id, { price: 5000, quantity: 10 });
 
     const result = await checkout(buyer.id, seller.id, product, 3);
-    expect(isRight(result)).toBe(true);
+    expect(result.isRight()).toBe(true);
 
     const stored = await prisma.product.findUnique({ where: { id: product.id } });
     expect(stored?.soldCount).toBe(3);

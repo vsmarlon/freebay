@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:freebay/core/router/app_router.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,9 +26,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
 
   late AnimationController _animationController;
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
   Timer? _debounceTimer;
-  String _searchQuery = '';
-  String _sortBy = 'recent';
 
   @override
   void initState() {
@@ -37,36 +37,32 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
       vsync: this,
     );
     _animationController.forward();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _searchController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 400) {
+      ref.read(liveChatListProvider.notifier).fetchMore();
+    }
   }
 
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      setState(() => _searchQuery = value.trim().toLowerCase());
+      ref.read(chatListQueryProvider.notifier).state = value.trim();
     });
-  }
-
-  List<ChatEntity> _filterAndSortChats(List<ChatEntity> chats) {
-    var filtered = chats.where((chat) {
-      if (_searchQuery.isEmpty) return true;
-      return chat.otherName.toLowerCase().contains(_searchQuery);
-    }).toList();
-
-    if (_sortBy == 'name') {
-      filtered.sort((a, b) => a.otherName.compareTo(b.otherName));
-    } else {
-      filtered.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    }
-
-    return filtered;
   }
 
   bool _canModifyOrderChat(ChatEntity chat) {
@@ -81,7 +77,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
       ref.invalidate(chatsProvider);
       ref.invalidate(liveChatListProvider);
-      ref.invalidate(archivedChatsProvider);
+      ref.invalidate(archivedChatListProvider);
       AppSnackbar.success(
         context,
         chat.isArchived ? 'Conversa restaurada' : 'Conversa arquivada',
@@ -124,7 +120,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
       ref.invalidate(chatsProvider);
       ref.invalidate(liveChatListProvider);
-      ref.invalidate(archivedChatsProvider);
+      ref.invalidate(archivedChatListProvider);
       AppSnackbar.success(context, 'Conversa excluída');
     });
   }
@@ -158,11 +154,11 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
             },
           ),
           if (!_canModifyOrderChat(chat))
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
                 'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
-                style: TextStyle(fontSize: 12, color: AppColors.mediumGray),
+                style: TextStyle(fontSize: 12, color: context.textSecondary),
               ),
             ),
         ],
@@ -179,24 +175,27 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
 
     if (user == null) {
       return Scaffold(
-        body: GuestGateView(
-          icon: Icons.chat_bubble_outline,
-          title: 'MENSAGENS PRIVADAS',
-          description:
-              'Negocie produtos, tire dúvidas e converse em tempo real com compradores e vendedores com segurança.',
-          benefits: const [
-            'Chat em tempo real criptografado',
-            'Envio e negociação de propostas diretas',
-            'Notificações instantâneas de novas mensagens',
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            const PageHeader(text: 'MENSAGENS'),
+            Expanded(
+              child: GuestGateView(
+                icon: Icons.chat_bubble_outline,
+                title: 'MENSAGENS PRIVADAS',
+                description:
+                    'Negocie produtos, tire dúvidas e converse em tempo real com compradores e vendedores com segurança.',
+                onLoginPressed: () => context.push(loginPathFrom(context)),
+                onRegisterPressed: () => context.push(AppRoutes.register),
+              ),
+            ),
           ],
-          onLoginPressed: () => context.push(loginPathFrom(context)),
-          onRegisterPressed: () => context.push('/register'),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: context.bgColor,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           const PageHeader(text: 'MENSAGENS'),
@@ -208,9 +207,12 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                     .watch(liveChatListProvider)
                     .when(
                       data: (chats) {
-                        final filteredChats = _filterAndSortChats(chats);
-                        if (filteredChats.isEmpty) {
-                          return _buildEmptyState(isDark, chats.isEmpty);
+                        final query = ref.watch(chatListQueryProvider);
+                        final loadingMore = ref.watch(
+                          chatListLoadingMoreProvider,
+                        );
+                        if (chats.isEmpty) {
+                          return _buildEmptyState(query.isNotEmpty);
                         }
                         return Expanded(
                           child: AppRefreshIndicator(
@@ -219,22 +221,19 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                               ref.invalidate(liveChatListProvider);
                             },
                             child: ListView.builder(
-                              itemCount: filteredChats.length,
+                              controller: _scrollController,
+                              itemCount: chats.length + (loadingMore ? 1 : 0),
                               itemBuilder: (context, index) {
-                                final chat = filteredChats[index];
+                                if (index == chats.length) {
+                                  return ChatListLoadingTile(isDark: isDark);
+                                }
+                                final chat = chats[index];
                                 return ChatListTile(
                                   chat: chat,
                                   isDark: isDark,
                                   canSwipe: _canModifyOrderChat(chat),
                                   onTap: () {
-                                    context.push(
-                                      '/chat/${chat.id}',
-                                      extra: {
-                                        'orderName': chat.otherName,
-                                        'orderAvatarUrl': chat.otherAvatarUrl,
-                                        'chatType': chat.threadType.name,
-                                      },
-                                    );
+                                    context.push(AppRoutes.chatPath(chat.id));
                                   },
                                   onLongPress: () => _showContextMenu(chat),
                                   onArchive: () => _archiveChat(chat),
@@ -262,30 +261,29 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   }
 
   Widget _buildSearchBar(bool isDark) {
+    final hasQuery = ref.watch(chatListQueryProvider).isNotEmpty;
     return ChatSearchBar(
       controller: _searchController,
       onChanged: _onSearchChanged,
-      hasQuery: _searchQuery.isNotEmpty,
+      hasQuery: hasQuery,
       onClear: () {
         _searchController.clear();
-        setState(() => _searchQuery = '');
+        ref.read(chatListQueryProvider.notifier).state = '';
       },
-      sortBy: _sortBy,
-      onSortChanged: (value) => setState(() => _sortBy = value),
-      onArchiveTap: () => context.push('/chat/archived'),
-      onNewChatTap: () => context.push('/chat/new'),
+      onArchiveTap: () => context.push(AppRoutes.chatArchived),
+      onNewChatTap: () => context.push(AppRoutes.chatNew),
       isDark: isDark,
     );
   }
 
-  Widget _buildEmptyState(bool isDark, bool noData) {
+  Widget _buildEmptyState(bool isSearching) {
     return Expanded(
       child: EmptyState(
-        icon: noData ? Icons.chat_bubble_outline : Icons.search_off,
-        title: noData ? 'SEM CONVERSAS' : 'NENHUM RESULTADO',
-        subtitle: noData
-            ? 'Crie uma conversa ou receba uma mensagem para visualizar aqui.'
-            : 'Tente buscar por outro nome',
+        icon: isSearching ? Icons.search_off : Icons.chat_bubble_outline,
+        title: isSearching ? 'NENHUM RESULTADO' : 'SEM CONVERSAS',
+        subtitle: isSearching
+            ? 'Tente buscar por outro nome'
+            : 'Crie uma conversa ou receba uma mensagem para visualizar aqui.',
       ),
     );
   }

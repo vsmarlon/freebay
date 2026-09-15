@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ModerationActionType } from '@prisma/client';
-import { Either, left, right, isLeft } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError, ConflictError, NotFoundError } from '@/shared/core/errors';
 import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 import { ResolvableReportStatus } from '../dtos/admin.dto';
@@ -22,7 +22,7 @@ export class ResolveReportUseCase {
     note?: string;
   }): Promise<Either<AppError, void>> {
     const reportResult = await this.moderationRepository.findReportById(input.reportId);
-    if (isLeft(reportResult)) return left(reportResult.value);
+    if (reportResult.isLeft()) return left(reportResult.value);
     if (!reportResult.value) return left(new NotFoundError('Denúncia'));
 
     if (reportResult.value.status !== 'PENDING') {
@@ -33,7 +33,7 @@ export class ResolveReportUseCase {
       status: input.status,
       reviewedById: input.adminId,
     });
-    if (isLeft(resolveResult)) return left(resolveResult.value);
+    if (resolveResult.isLeft()) return left(resolveResult.value);
     if (resolveResult.value.count === 0) {
       return left(new ConflictError('Esta denúncia já foi revisada'));
     }
@@ -46,7 +46,7 @@ export class ResolveReportUseCase {
       reason: input.note ?? null,
       reportId: input.reportId,
     });
-    if (isLeft(actionResult)) return left(actionResult.value);
+    if (actionResult.isLeft()) return left(actionResult.value);
 
     return right(undefined);
   }
