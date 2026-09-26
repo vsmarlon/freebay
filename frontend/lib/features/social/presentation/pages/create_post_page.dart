@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/chat/presentation/pages/image_editor_page.dart';
+import 'package:freebay/features/chat/presentation/widgets/image_editor_models.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -100,6 +101,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       final currentUser = ref.read(authControllerProvider).value;
       if (currentUser != null) {
         ref.invalidate(userPostsProvider(currentUser.id));
+        ref.invalidate(profileTimelineProvider(currentUser.id));
       }
       context.pop();
     });

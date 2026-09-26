@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { randomUUID } from 'node:crypto';
 import { basename, extname, join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 import { MIMETYPE_EXTENSIONS } from './image-upload.utils';
 
 export const PUBLIC_UPLOAD_CONTEXTS = [
@@ -44,7 +44,7 @@ export function saveUpload(
   mkdirSync(dir, { recursive: true });
 
   const ext = MIMETYPE_EXTENSIONS[file.mimetype] || '.bin';
-  const filename = `${uuidv4()}${ext}`;
+  const filename = `${randomUUID()}${ext}`;
   writeFileSync(join(dir, filename), file.buffer);
 
   return isPrivate

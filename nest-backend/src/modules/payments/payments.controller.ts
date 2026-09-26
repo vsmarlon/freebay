@@ -8,7 +8,6 @@ import {
   Req,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import Stripe from 'stripe';
 import { ApiTags } from '@nestjs/swagger';
 import { GetAuth, PostAuth, StripeWebhook, CurrentUserId } from '@/shared/decorators';
 import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.usecase';
@@ -185,35 +184,12 @@ export class PaymentsController {
     if (V2_ACCOUNT_EVENTS.has(event.type)) return right(undefined);
 
     if (event.type === 'account.updated') {
-      const accountId =
-        event.account ?? (event.data.object as { id?: string }).id ?? undefined;
+      const accountId = event.account ?? event.data.object.id;
       if (!accountId) return right(undefined);
       return this.syncConnectAccountUseCase.execute(accountId);
     }
 
     if (!('data' in event)) return right(undefined);
-
-    if (event.type.startsWith('charge.')) {
-      const charge = event.data.object as Stripe.Charge | Stripe.Dispute;
-      const chargeId =
-        'charge' in charge && typeof charge.charge === 'string' ? charge.charge : charge.id;
-      if (event.type === 'charge.refunded') {
-        const refund = charge as Stripe.Charge;
-        if (!isFullRefund(refund)) {
-          this.logger.warn(
-            `Ignoring partial Stripe refund event ${event.id} for charge ${chargeId}`,
-          );
-          return right(undefined);
-        }
-        return this.processRefundUseCase.execute(chargeId, true);
-      }
-      const dispute = charge as Stripe.Dispute;
-      if (event.type === 'charge.dispute.created' || dispute.status === 'lost') {
-        return this.recoverDisputeTransferUseCase.execute(chargeId);
-      }
-      this.logger.log(`Dispute event ${event.type} for charge ${chargeId} does not require transfer recovery`);
-      return right(undefined);
-    }
 
     let orderId: string | undefined;
     let paymentGroupId: string | undefined;
@@ -223,27 +199,60 @@ export class PaymentsController {
     let paymentStatus: string | undefined;
     let chargeId: string | undefined;
 
-    if (event.type.startsWith('checkout.session.')) {
-      const session = event.data.object as Stripe.Checkout.Session;
-      orderId = session.metadata?.orderId ?? undefined;
-      paymentGroupId = session.metadata?.paymentGroupId ?? undefined;
-      providerObjectId = session.id;
-      amountTotal = session.amount_total ?? undefined;
-      currency = session.currency ?? undefined;
-      paymentStatus = session.payment_status;
-      chargeId =
-        typeof session.payment_intent === 'string'
-          ? undefined
-          : ((session.payment_intent?.latest_charge as string | undefined) ?? undefined);
-    } else {
-      const intent = event.data.object as Stripe.PaymentIntent;
-      orderId = intent.metadata?.orderId ?? undefined;
-      paymentGroupId = intent.metadata?.paymentGroupId ?? undefined;
-      providerObjectId = intent.id;
-      amountTotal = intent.amount ?? undefined;
-      currency = intent.currency ?? undefined;
-      paymentStatus = intent.status;
-      chargeId = typeof intent.latest_charge === 'string' ? intent.latest_charge : (intent.latest_charge?.id ?? undefined);
+    switch (event.type) {
+      case 'charge.refunded': {
+        const charge = event.data.object;
+        if (!isFullRefund(charge)) {
+          this.logger.warn(`Ignoring partial Stripe refund event ${event.id} for charge ${charge.id}`);
+          return right(undefined);
+        }
+        return this.processRefundUseCase.execute(charge.id, true);
+      }
+      case 'charge.dispute.created':
+      case 'charge.dispute.closed': {
+        const dispute = event.data.object;
+        const chargeId = typeof dispute.charge === 'string' ? dispute.charge : dispute.charge.id;
+        if (event.type === 'charge.dispute.created' || dispute.status === 'lost') {
+          return this.recoverDisputeTransferUseCase.execute(chargeId);
+        }
+        this.logger.log(`Dispute event ${event.type} for charge ${chargeId} does not require transfer recovery`);
+        return right(undefined);
+      }
+      case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
+      case 'checkout.session.async_payment_failed':
+      case 'checkout.session.expired': {
+        const session = event.data.object;
+        orderId = session.metadata?.orderId ?? undefined;
+        paymentGroupId = session.metadata?.paymentGroupId ?? undefined;
+        providerObjectId = session.id;
+        amountTotal = session.amount_total ?? undefined;
+        currency = session.currency ?? undefined;
+        paymentStatus = session.payment_status;
+        const paymentIntent = session.payment_intent;
+        const latestCharge =
+          typeof paymentIntent === 'string' || paymentIntent === null
+            ? undefined
+            : paymentIntent.latest_charge;
+        chargeId = typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+        break;
+      }
+      case 'payment_intent.succeeded':
+      case 'payment_intent.canceled':
+      case 'payment_intent.payment_failed': {
+        const intent = event.data.object;
+        orderId = intent.metadata?.orderId ?? undefined;
+        paymentGroupId = intent.metadata?.paymentGroupId ?? undefined;
+        providerObjectId = intent.id;
+        amountTotal = intent.amount;
+        currency = intent.currency;
+        paymentStatus = intent.status;
+        const latestCharge = intent.latest_charge;
+        chargeId = typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+        break;
+      }
+      default:
+        return right(undefined);
     }
 
     const data = {

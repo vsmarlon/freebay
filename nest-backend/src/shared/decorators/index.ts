@@ -3,3 +3,4 @@ export * from './current-user.decorator';
 export * from './public.decorator';
 export * from './roles.decorator';
 export * from './paginated.decorator';
+export * from './strict-origin.decorator';

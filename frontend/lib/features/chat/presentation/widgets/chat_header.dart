@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 
 class ChatHeader extends StatelessWidget {
   final String name;
   final String? avatarUrl;
-  final String chatType;
+  final ChatThreadType chatType;
   final Color accentColor;
   final VoidCallback onBack;
   final VoidCallback onConfig;
@@ -41,12 +42,10 @@ class ChatHeader extends StatelessWidget {
       return 'Visto há ${diff.inDays}d';
     }
     switch (chatType) {
-      case 'order':
+      case ChatThreadType.order:
         return 'PEDIDO';
-      case 'direct':
+      case ChatThreadType.direct:
         return 'DIRETA';
-      default:
-        return chatType.toUpperCase();
     }
   }
 

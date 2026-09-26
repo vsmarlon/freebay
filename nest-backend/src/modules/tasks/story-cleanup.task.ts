@@ -11,7 +11,7 @@ export class StoryCleanupTask {
   @Cron(CronExpression.EVERY_HOUR)
   async cleanupExpiredStories() {
     const result = await this.prisma.story.deleteMany({
-      where: { expiresAt: { lt: new Date() } },
+      where: { expiresAt: { lt: new Date() }, deletedAt: { not: null } },
     });
 
     if (result.count > 0) {

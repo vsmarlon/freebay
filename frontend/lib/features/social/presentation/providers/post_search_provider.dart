@@ -1,9 +1,14 @@
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/features/social/data/entities/social_filters.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+export 'package:freebay/features/social/data/entities/social_filters.dart';
+
 part 'post_search_provider.g.dart';
+
+const _postSearchPageSize = 20;
 
 class PostSearchState {
   final List<PostEntity> posts;
@@ -12,7 +17,7 @@ class PostSearchState {
   final String? cursor;
   final String? error;
   final String query;
-  final String filter;
+  final PostSearchFilter filter;
 
   const PostSearchState({
     this.posts = const [],
@@ -21,7 +26,7 @@ class PostSearchState {
     this.cursor,
     this.error,
     this.query = '',
-    this.filter = 'all',
+    this.filter = PostSearchFilter.all,
   });
 
   PostSearchState copyWith({
@@ -31,7 +36,7 @@ class PostSearchState {
     String? cursor,
     String? error,
     String? query,
-    String? filter,
+    PostSearchFilter? filter,
   }) {
     return PostSearchState(
       posts: posts ?? this.posts,
@@ -56,7 +61,7 @@ class PostSearch extends _$PostSearch {
 
   Future<void> search({
     String? query,
-    String? filter,
+    PostSearchFilter? filter,
     bool refresh = false,
   }) async {
     if (state.isLoading) return;
@@ -84,7 +89,7 @@ class PostSearch extends _$PostSearch {
       (posts) => state = state.copyWith(
         posts: refresh ? posts : [...state.posts, ...posts],
         isLoading: false,
-        hasMore: posts.length >= 20,
+        hasMore: posts.length >= _postSearchPageSize,
         cursor: posts.isNotEmpty ? posts.last.id : state.cursor,
       ),
     );

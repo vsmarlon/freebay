@@ -168,61 +168,67 @@ class _NotificationTile extends ConsumerWidget {
     }
 
     switch (notification.type) {
-      case 'ORDER':
+      case NotificationType.order:
         if (notification.orderId != null) {
           context.push(AppRoutes.orderPath(notification.orderId!));
         }
         break;
-      case 'FOLLOW':
+      case NotificationType.follow:
         if (notification.senderId != null) {
           context.push(AppRoutes.userPath(notification.senderId!));
         }
         break;
-      case 'MESSAGE':
+      case NotificationType.message:
         if (notification.conversationId != null) {
           context.push(AppRoutes.chatPath(notification.conversationId!));
         } else if (notification.orderId != null) {
           context.push(AppRoutes.chatPath(notification.orderId!));
         }
         break;
-      case 'DISPUTE':
+      case NotificationType.dispute:
         if (notification.orderId != null) {
           context.push(AppRoutes.orderPath(notification.orderId!));
         }
         break;
+      case NotificationType.payment:
+      case NotificationType.mention:
+      case NotificationType.unknown:
+        break;
     }
   }
 
-  IconData _getIcon(String type) {
+  IconData _getIcon(NotificationType type) {
     switch (type) {
-      case 'ORDER':
+      case NotificationType.order:
         return Icons.shopping_bag;
-      case 'FOLLOW':
+      case NotificationType.follow:
         return Icons.person_add;
-      case 'MESSAGE':
+      case NotificationType.message:
         return Icons.chat_bubble;
-      case 'DISPUTE':
+      case NotificationType.dispute:
         return Icons.warning;
-      case 'PAYMENT':
+      case NotificationType.payment:
         return Icons.payments;
-      default:
+      case NotificationType.mention:
+      case NotificationType.unknown:
         return Icons.notifications;
     }
   }
 
-  Color _getIconColor(String type) {
+  Color _getIconColor(NotificationType type) {
     switch (type) {
-      case 'ORDER':
+      case NotificationType.order:
         return AppColors.success;
-      case 'FOLLOW':
+      case NotificationType.follow:
         return AppColors.info;
-      case 'MESSAGE':
+      case NotificationType.message:
         return AppColors.primaryContainer;
-      case 'DISPUTE':
+      case NotificationType.dispute:
         return AppColors.error;
-      case 'PAYMENT':
+      case NotificationType.payment:
         return AppColors.warning;
-      default:
+      case NotificationType.mention:
+      case NotificationType.unknown:
         return AppColors.onSurfaceVariant;
     }
   }

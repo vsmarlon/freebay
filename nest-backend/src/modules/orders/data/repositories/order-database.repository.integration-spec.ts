@@ -39,6 +39,11 @@ describe('PrismaOrderRepository.refundOrder', () => {
       900,
       { status, escrowStatus },
     );
+    await prisma.transaction.create({ data: {
+      orderId: order.id, amount: 1000, platformFee: 100, sellerAmount: 900,
+      paymentMethod: 'CREDIT_CARD', provider: 'STRIPE', status: 'PAID',
+      idempotencyKey: `refund-${order.id}`,
+    } });
     await prisma.wallet.update({
       where: { userId: seller.id },
       data:
@@ -80,7 +85,7 @@ describe('PrismaOrderRepository.refundOrder', () => {
       availableBalance: 0,
       totalEarned: 0,
     });
-    expect(await prisma.walletEntry.count({ where: { orderId: result.order.id } })).toBe(1);
+    expect(await prisma.walletEntry.count({ where: { orderId: result.order.id } })).toBe(0);
   });
 
   it('debits available and earned balances when released funds were not transferred', async () => {
@@ -104,7 +109,7 @@ describe('PrismaOrderRepository.refundOrder', () => {
       availableBalance: 0,
       totalEarned: 0,
     });
-    expect(await prisma.walletEntry.count({ where: { orderId: result.order.id } })).toBe(3);
+    expect(await prisma.walletEntry.count({ where: { orderId: result.order.id } })).toBe(2);
   });
 
   it('debits pending escrow only and does not add entries on retry', async () => {
@@ -128,6 +133,8 @@ describe('PrismaOrderRepository.refundOrder', () => {
       availableBalance: 0,
       pendingBalance: 0,
     });
-    expect(await prisma.walletEntry.count({ where: { orderId: result.order.id } })).toBe(2);
+    expect(await prisma.walletEntry.count({ where: { orderId: result.order.id } })).toBe(1);
+    expect((await prisma.wallet.findUniqueOrThrow({ where: { userId: result.buyer.id } })).availableBalance).toBe(0);
+    expect((await prisma.transaction.findUniqueOrThrow({ where: { orderId: result.order.id } })).status).toBe('REFUNDED');
   });
 });

@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
+import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/chat/data/entities/last_message_info.dart';
@@ -48,5 +49,15 @@ abstract class ChatEntity with _$ChatEntity {
   bool get unread => unreadCount > 0;
   bool get isArchived => preference?.isArchived ?? false;
   String? get orderStatus => orderInfo?.status;
+
+  OrderStatus? get orderStatusEnum {
+    final status = orderStatus;
+    if (status == null) return null;
+    for (final value in OrderStatus.values) {
+      if (value.name.toUpperCase() == status) return value;
+    }
+    return null;
+  }
+
   String? get productTitle => product?.title ?? orderInfo?.productTitle;
 }

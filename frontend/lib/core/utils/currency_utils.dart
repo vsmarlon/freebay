@@ -16,7 +16,13 @@ class CurrencyUtils {
 
   /// Parses a pt-BR amount string ("1.234,56") to integer cents, null when invalid.
   static int? parseReaisToCents(String raw) {
-    final normalized = raw.trim().replaceAll('.', '').replaceAll(',', '.');
+    final value = raw.trim();
+    if (value.isEmpty || value.startsWith('-')) return null;
+
+    // Product prices use the pt-BR field contract: dots group reais and the
+    // comma separates cents. A dot-only value is therefore grouping, not a
+    // decimal separator ("12.34" means 1,234 reais).
+    final normalized = value.replaceAll('.', '').replaceAll(',', '.');
     final reais = double.tryParse(normalized);
     return reais == null ? null : reaisToCents(reais);
   }

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import Stripe from "stripe";
-import { OrderStatus } from "@prisma/client";
+import { EscrowStatus, OrderStatus } from "@prisma/client";
 import { Either, left, right } from "@/shared/core/either";
 import {
   AppError,
@@ -49,7 +49,7 @@ export class ProcessRefundUseCase {
     const transaction = found.value;
     const order = transaction.order;
 
-    if (order.status === "CANCELLED" || order.escrowStatus === "REFUNDED") {
+    if (order.status === OrderStatus.CANCELLED || order.escrowStatus === EscrowStatus.REFUNDED) {
       return right(undefined);
     }
 
@@ -66,10 +66,10 @@ export class ProcessRefundUseCase {
     }
 
     const escrowStatus =
-      order.escrowStatus === "RELEASED"
-        ? "RELEASED"
-        : order.escrowStatus === "HELD"
-          ? "HELD"
+      order.escrowStatus === EscrowStatus.RELEASED
+        ? EscrowStatus.RELEASED
+        : order.escrowStatus === EscrowStatus.HELD
+          ? EscrowStatus.HELD
           : undefined;
     if (!escrowStatus) {
       return left(

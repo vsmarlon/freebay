@@ -20,6 +20,19 @@ If a cast is genuinely unavoidable, it lives in exactly one named place with a c
 
 ---
 
+## Testing: TDD and E2E first
+
+- **Never write unit tests after you write code.** For each behavioral change, work in one vertical slice: **RED** — write a behavioral test and run it to observe the intended failure; **GREEN** — implement the minimum fix; **REFACTOR** — simplify while keeping the test green. A compile error, broken fixture, or unavailable dependency is not the intended RED.
+- **Highly prefer E2E tests as the sole testing mechanism.** Verify complex features through real application boundaries and dependencies. A mocked repository or a widget with substituted business state does not establish E2E coverage.
+- **If isolation is necessary, first write down all the ways the system could fail**, the expected observable outcomes, and the gap in existing E2E coverage. Then write and run the failing test before implementation. Keep only tests that catch a concrete bug broader coverage misses.
+- **Finish E2E runs with a verifiable, repeatable artifact:** tested revision (including working-tree changes), environment identity without credentials, fixture/reset instructions, exact commands or steps, expected/actual outcomes, exit status, and relevant logs/screenshots. Store the report and evidence under `docs/test-runs/<date>/` (device evidence follows `docs/DEVICE_TESTING.md`). Record blocked runs as blocked, never passed.
+- **Test behavior, not scaffolding.** Remove tautologies, generated-code checks, mock-return echoes, and assertions duplicated by verified broader tests. Name the failure a retained test catches; wording such as `should` does not determine its value. Preserve distinct money, authorization, concurrency, and recovery checks until equivalent broader coverage is verified.
+- **Database verification reaches the database the app actually uses.** Generated types and a freshly synchronized test database do not prove the runtime schema is current. Follow `freebay-prisma` for schema/client drift and real-database evidence.
+
+This policy governs testing choices in the linked skills and `CLAUDE.md`. The commands below run existing verification; they do not require a new unit test for every file.
+
+---
+
 ## 🛠️ Common Commands for Verifying Work
 
 Before completing tasks or opening PRs, agents must run the following verification commands to ensure zero errors, zero linter warnings, and passing tests across both backend and frontend.
@@ -36,13 +49,18 @@ npm run tsc:check
 npm test
 
 # Run a single test file
-npx jest src/modules/auth/usecases/register.usecase.spec.ts
+npx jest src/shared/auth/jwt-token-validator.service.spec.ts
 
 # Run tests by name pattern
-npx jest --testNamePattern "should return error"
+npx jest --testNamePattern "rejects a token"
 
 # Integration tests (requires explicitly configured native/external PostgreSQL + Redis)
 npm run test:integration
+
+# E2E journey tests: full AppModule over HTTP against the real test database
+# (same PostgreSQL + Redis requirement; Stripe/FCM/email are out of scope by
+# construction — the journey never calls them)
+npm run test:e2e
 
 # Linting & code style
 npm run lint
@@ -73,7 +91,7 @@ flutter analyze
 flutter test
 
 # Run a single Flutter test file
-flutter test test/features/auth/presentation/login_page_test.dart
+flutter test test/core/utils/currency_utils_test.dart
 
 # Code generation (Freezed @freezed -> .freezed.dart & JsonSerializable -> .g.dart)
 flutter pub run build_runner build --delete-conflicting-outputs
@@ -88,17 +106,29 @@ flutter build apk --debug
 ### 3. Root Level & CI Pipeline (`/`)
 
 ```bash
-# Unit test suite (TypeScript + Jest backend + Flutter unit tests)
-make test-unit
+# Architecture and design gates (scans production source only)
+node scripts/ci-check.js
 
-# Backend integration test suite (configured native/external services)
-make test-integration
+# Dart formatting gate
+dart format --output=none --set-exit-if-changed frontend/lib frontend/test frontend/libs/freebay_design_system/lib
 
-# Complete test suite
+# Flutter analysis and tests
+cd frontend
+flutter analyze --fatal-infos lib test libs/freebay_design_system/lib
+flutter test --coverage
+flutter build apk --debug
+
+# Backend typecheck, lint, unit, and integration commands remain under nest-backend.
+# The integration suite needs configured native/external PostgreSQL and Redis.
+
+# Full local convenience target
+cd ..
 make test
-
-# CI provides PostgreSQL and Redis service containers; local runs use configured `.env.test` services.
 ```
+
+The GitHub Actions workflow runs these direct gates plus backend CI against PostgreSQL and
+Redis service containers. `npm run ci:check` is the root package alias for the architecture,
+route, and design script; `npm run test:ci-scripts` tests that script.
 
 ---
 
@@ -110,9 +140,10 @@ All agents must follow the conventions defined in the corresponding skill before
 |---|---|---|
 | **[`freebay-app-flows`](./.agents/skills/freebay-app-flows/SKILL.md)** | End-to-end user journeys, sequence flows, state hierarchy, and navigation routes (Auth, Biometry, Google Login, Onboarding, Wallet, Chat, Profile, Feed/Explore, Checkout, Disputes, Notifications). | [`.agents/skills/freebay-app-flows/SKILL.md`](./.agents/skills/freebay-app-flows/SKILL.md) |
 | **[`freebay-design-system`](./.agents/skills/freebay-design-system/SKILL.md)** | Flutter "Digital Brutalist" UI: strict 0px border radius, no drop shadows (tonal layering only), no divider lines, Space Grotesk / Inter fonts, `#8A1083` magenta accent, role-based motion tokens, theme-driven dark mode, and widget primitives. Points at `frontend/DESIGN.md` for token values. | [`.agents/skills/freebay-design-system/SKILL.md`](./.agents/skills/freebay-design-system/SKILL.md) |
-| **[`freebay-flutter-feature`](./.agents/skills/freebay-flutter-feature/SKILL.md)** | Frontend Flutter Clean Architecture: `data/domain/presentation` layers, Riverpod state management, Dio HTTP client, `safeCall` error wrapper, GoRouter route definitions, and widget tests. | [`.agents/skills/freebay-flutter-feature/SKILL.md`](./.agents/skills/freebay-flutter-feature/SKILL.md) |
+| **[`freebay-flutter-feature`](./.agents/skills/freebay-flutter-feature/SKILL.md)** | Frontend Flutter Clean Architecture: `data/domain/presentation` layers, Riverpod state management, Dio HTTP client, `requestEither` error adapter, GoRouter route definitions, and widget tests. | [`.agents/skills/freebay-flutter-feature/SKILL.md`](./.agents/skills/freebay-flutter-feature/SKILL.md) |
 | **[`freebay-backend-module`](./.agents/skills/freebay-backend-module/SKILL.md)** | NestJS Backend vertical slices: `dtos/` with `class-validator` + `@ApiDoc`, single-class `usecases/` returning `Either<AppError, Output>`, `domain/repositories/` abstract interfaces, `data/repositories/` concrete Prisma repos, mappers, and colocated `*.spec.ts` tests. | [`.agents/skills/freebay-backend-module/SKILL.md`](./.agents/skills/freebay-backend-module/SKILL.md) |
 | **[`freebay-data-model`](./.agents/skills/freebay-data-model/SKILL.md)** | PostgreSQL / Prisma schema conventions: strict monetary **cents-as-Int** (`price Int // em centavos`), real enums over strings, mandatory `onDelete` cascading rules, foreign key indexing, and schema-sync-only development workflow. | [`.agents/skills/freebay-data-model/SKILL.md`](./.agents/skills/freebay-data-model/SKILL.md) |
+| **[`freebay-prisma`](./.agents/skills/freebay-prisma/SKILL.md)** | Prisma 7 runtime workflow: dev/test database targets, `db push` + `generate` sync, P2022 drift diagnosis, and real-database verification. | [`.agents/skills/freebay-prisma/SKILL.md`](./.agents/skills/freebay-prisma/SKILL.md) |
 | **[`freebay-system-design`](./.agents/skills/freebay-system-design/SKILL.md)** | End-to-end system design: C2C escrow lifecycle, Socket.IO `/chat` gateway, Stripe PaymentSheet & Checkout Sessions, Redis token blacklist, background cron tasks, and security isolation. | [`.agents/skills/freebay-system-design/SKILL.md`](./.agents/skills/freebay-system-design/SKILL.md) |
 | **[`freebay-mobile-mcp`](./.agents/skills/freebay-mobile-mcp/SKILL.md)** | Mobile MCP device automation, UI inspection, end-to-end test execution, screenshot verification, and physical/virtual Android/iOS device interactions. | [`.agents/skills/freebay-mobile-mcp/SKILL.md`](./.agents/skills/freebay-mobile-mcp/SKILL.md) |
 | **[`stripe-best-practices`](./.agents/skills/stripe-best-practices/SKILL.md)** | Stripe payments, Checkout Sessions vs PaymentIntents, webhook signature validation, idempotency, and secure payment handling. | [`.agents/skills/stripe-best-practices/SKILL.md`](./.agents/skills/stripe-best-practices/SKILL.md) |
@@ -129,7 +160,7 @@ FreeBay is engineered around **deep modules** placed at clean seams to ensure hi
 
 - **Vertical Structure**: No horizontal layer soup. Each feature module in `src/modules/<feature>/` owns its DTOs, controllers, use cases, domain repositories, concrete data repositories, and mappers.
 - **Deep Use Cases**: Every use case is a single-class file (`*.usecase.ts`) returning an explicit `Either<AppError, Output>` (or `Either<AppError, void>` for pure mutations). Use cases encapsulate full business rules, invariants, and transaction orchestrations rather than delegating them to paper-thin services.
-- **Repository Seams**: Use cases depend exclusively on abstract repository interfaces (`domain/repositories/`). Concrete Prisma repositories (`data/repositories/`) implement these interfaces and **MUST ONLY call the database** (Prisma queries, transactions `tx?: Prisma.TransactionClient`, and SQL), translating database errors to `AppError`/`DatabaseError`. Backend repositories never make HTTP calls.
+- **Repository Seams**: Use cases depend exclusively on abstract repository interfaces (`domain/repositories/`). Concrete Prisma repositories (`data/repositories/`) implement these interfaces and **MUST ONLY call the database** (Prisma queries, transactions `tx?: Prisma.TransactionClient`, and SQL), wrapping operations with `repositoryResponse(operation, errorMessage?, logger?)` from `shared/infra/prisma/repository-response.ts`. Backend repositories never make HTTP calls.
 - **Interceptor & Filter Pipeline**:
   - `LoggingInterceptor` (outermost)
   - `TransformInterceptor` (wraps successful output in `{ success: true, data: ... }`)
@@ -139,7 +170,7 @@ FreeBay is engineered around **deep modules** placed at clean seams to ensure hi
 ### 2. Frontend Clean Architecture (`frontend/`)
 
 - **Feature Slices**: Features reside in `lib/features/<feature>/` with `data/` (entities + concrete repositories), `domain/` (abstract repositories + usecases), and `presentation/` (Riverpod controllers, providers, pages, and widgets).
-- **Repository Seams**: Concrete repositories (`data/repositories/`) implement abstract domain repository contracts and **MUST ONLY call HTTP endpoints** (via Dio / `apiClient`), converting responses into immutable domain models and mapping `DioException` to `Failure` types. Frontend repositories never access databases directly.
+- **Repository Seams**: Concrete repositories (`data/repositories/`) implement abstract domain repository contracts and **MUST ONLY call HTTP endpoints** (via Dio), adapting each call with `requestEither<T>(request, decoder:, debugLabel:)` from `shared/http/request_either.dart`, converting responses into immutable domain models and mapping failures to `Failure` types. Frontend repositories never access databases directly.
 - **Freezed & JSON Codegen**: Entities use `@freezed` with `fromJson` to generate both `*.freezed.dart` (immutability, `copyWith`, equality) and `*.g.dart` (`fromJson`/`toJson` serialization) via `build_runner`.
 - **Sealed Either**: Always use FreeBay's custom `Either<Failure, T>` from `package:freebay/shared/either/either.dart` (`Left(Failure)` / `Right(value)`). Never import `dartz`.
 - **State Management**: Use `Riverpod` (`StateNotifierProvider`, `AsyncValue`, `FutureProvider`). Tab pages inside `AppShell` must mix in `AutomaticKeepAliveClientMixin` and guard fetch calls against unnecessary rebuilds.

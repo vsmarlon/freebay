@@ -1,24 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, PasswordRecoveryCode } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 
 @Injectable()
-export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class PasswordRecoveryDatabaseRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async create(data: Prisma.PasswordRecoveryCodeCreateInput): RepositoryResponse<PasswordRecoveryCode> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.passwordRecoveryCode.create({ data }),
       'Erro ao criar código de recuperação',
     );
   }
 
   async findLatestActiveByEmail(email: string): RepositoryResponse<PasswordRecoveryCode | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.passwordRecoveryCode.findFirst({
           where: { user: { email }, usedAt: null, expiresAt: { gt: new Date() } },
@@ -29,7 +28,7 @@ export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository {
   }
 
   async findLatestByEmail(email: string): RepositoryResponse<PasswordRecoveryCode | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.passwordRecoveryCode.findFirst({
           where: { user: { email } },
@@ -40,7 +39,7 @@ export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository {
   }
 
   async incrementAttempts(id: string): RepositoryResponse<PasswordRecoveryCode> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.passwordRecoveryCode.update({
           where: { id },
@@ -51,7 +50,7 @@ export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository {
   }
 
   async markSent(id: string, resendMessageId?: string | null): RepositoryResponse<PasswordRecoveryCode> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.passwordRecoveryCode.update({
           where: { id },
@@ -62,7 +61,7 @@ export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository {
   }
 
   async markUsed(id: string): RepositoryResponse<PasswordRecoveryCode> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.passwordRecoveryCode.update({
           where: { id },
@@ -73,7 +72,7 @@ export class PasswordRecoveryDatabaseRepository extends BasePrismaRepository {
   }
 
   async deleteManyForUser(userId: string): RepositoryResponse<void> {
-    return this.safeRun(
+    return repositoryResponse(
       async () => {
         await this.prisma.passwordRecoveryCode.deleteMany({ where: { userId } });
       },

@@ -7,6 +7,8 @@ import {
   FeedQuery,
   FeedRepositoryQuery,
   FeedResult,
+  ContentFilter,
+  FeedType,
 } from '../types/social.types';
 
 @Injectable()
@@ -14,12 +16,12 @@ export class GetFeedUseCase {
   constructor(private readonly postRepository: PrismaPostRepository) {}
 
   async execute(input: FeedQuery): Promise<Either<AppError, FeedResult>> {
-    const type = input.type ?? 'explore';
-    const contentFilter = input.contentFilter ?? 'all';
-    if (type !== 'explore' && type !== 'following') {
+    const type = input.type ?? FeedType.EXPLORE;
+    const contentFilter = input.contentFilter ?? ContentFilter.ALL;
+    if (type !== FeedType.EXPLORE && type !== FeedType.FOLLOWING) {
       return left(new BadRequestError('Tipo de feed inválido'));
     }
-    if (!['all', 'social', 'selling'].includes(contentFilter)) {
+    if (contentFilter !== ContentFilter.ALL && contentFilter !== ContentFilter.SOCIAL && contentFilter !== ContentFilter.SELLING) {
       return left(new BadRequestError('Filtro de conteúdo inválido'));
     }
 
@@ -29,7 +31,7 @@ export class GetFeedUseCase {
       if (
         !cursor ||
         cursor.scope !== 'following-feed' ||
-        type !== 'following' ||
+        type !== FeedType.FOLLOWING ||
         cursor.userId !== (input.userId ?? '') ||
         cursor.type !== type ||
         cursor.contentFilter !== contentFilter

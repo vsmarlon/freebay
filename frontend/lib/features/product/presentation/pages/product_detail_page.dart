@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,10 +7,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/features/product/presentation/widgets/escrow_trust_banner.dart';
 import 'package:freebay/features/product/presentation/widgets/product_detail_bottom_sheet.dart';
 
 class ProductDetailPage extends ConsumerWidget {
@@ -64,8 +68,9 @@ class ProductDetailPage extends ConsumerWidget {
               background:
                   product.imageUrl != null && product.imageUrl!.isNotEmpty
                   ? GestureDetector(
-                      onTap: () =>
-                          showFullScreenImage(context, product.imageUrl!),
+                      onTap: () => unawaited(
+                        showAppImageViewer(context, product.imageUrl!),
+                      ),
                       child: CachedNetworkImage(
                         imageUrl: product.imageUrl!,
                         fit: BoxFit.cover,
@@ -159,25 +164,25 @@ class ProductDetailPage extends ConsumerWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: product.condition.toUpperCase() == 'NEW'
+                          color: product.condition == ProductCondition.isNew
                               ? AppColors.primaryContainer.withAlpha(30)
                               : context.surfaceMidColor,
                           border: Border.all(
-                            color: product.condition.toUpperCase() == 'NEW'
+                            color: product.condition == ProductCondition.isNew
                                 ? AppColors.primaryContainer
                                 : context.borderColor,
                             width: 1.5,
                           ),
                         ),
                         child: Text(
-                          product.condition.toUpperCase() == 'NEW'
+                          product.condition == ProductCondition.isNew
                               ? 'NOVO'
                               : 'USADO',
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
-                            color: product.condition.toUpperCase() == 'NEW'
+                            color: product.condition == ProductCondition.isNew
                                 ? AppColors.primaryContainer
                                 : context.textPrimary,
                             letterSpacing: 0.5,
@@ -187,54 +192,7 @@ class ProductDetailPage extends ConsumerWidget {
                     ],
                   ),
                   Spacing.vMd,
-                  // Escrow Trust Banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryContainer.withAlpha(20),
-                      border: Border.all(
-                        color: AppColors.primaryContainer,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.shield_outlined,
-                          color: AppColors.primaryContainer,
-                          size: 20,
-                        ),
-                        Spacing.hSm,
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'CUSTÓDIA FREEBAY GARANTIDA',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.primaryContainer,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Seu pagamento só é liberado para o vendedor após você receber o produto e confirmar a entrega.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: context.textPrimary,
-                                  height: 1.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const EscrowTrustBanner(),
                   Spacing.vMd,
                   Container(
                     padding: const EdgeInsets.all(12),

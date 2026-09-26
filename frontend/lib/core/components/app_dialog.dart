@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'app_dialog/app_dialog_body.dart';
 
 class AppDialog extends StatelessWidget {
   final String? logoAsset;
@@ -56,46 +57,42 @@ class AppDialog extends StatelessWidget {
     bool barrierDismissible = true,
     bool preventBack = false,
   }) {
-    return showGeneralDialog<T>(
-      context: context,
-      barrierDismissible: barrierDismissible,
-      barrierLabel: 'Dismiss',
-      barrierColor: AppColors.onSurface.withValues(alpha: 0.54),
-      transitionDuration: const Duration(milliseconds: 150),
-      pageBuilder: (context, animation, secondaryAnimation) {
-        return AppDialog(
-          logoAsset: logoAsset,
-          icon: icon,
-          iconColor: iconColor,
-          title: title,
-          subtitle: subtitle,
-          dismissText: dismissText,
-          okText: okText,
-          onDismiss: onDismiss,
-          onOk: onOk,
-          isError: isError,
-          isSuccess: isSuccess,
-          showCloseButton: showCloseButton,
-          preventBack: preventBack,
-          customActions: customActions,
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curvedAnimation = CurvedAnimation(
-          parent: animation,
-          curve: AppMotion.baseCurve,
-        );
-        return FadeTransition(
-          opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation),
-          child: ScaleTransition(
-            scale: Tween<double>(
-              begin: 0.95,
-              end: 1.0,
-            ).animate(curvedAnimation),
-            child: child,
+    final List<Widget> actions = customActions ?? [];
+
+    if (customActions == null) {
+      if (dismissText != null) {
+        actions.add(
+          BrutalistDialogAction(
+            text: dismissText.toUpperCase(),
+            onPressed: () {
+              onDismiss?.call();
+              Navigator.of(context).pop();
+            },
           ),
         );
-      },
+      }
+
+      if (okText != null || dismissText == null) {
+        actions.add(
+          BrutalistDialogAction(
+            text: (okText ?? 'OK').toUpperCase(),
+            isDefaultAction: true,
+            isDestructiveAction: isError,
+            onPressed: () {
+              onOk?.call();
+              Navigator.of(context).pop();
+            },
+          ),
+        );
+      }
+    }
+
+    return showBrutalistCupertinoDialog<T>(
+      context: context,
+      title: title.toUpperCase(),
+      content: subtitle,
+      actions: actions,
+      preventBack: preventBack,
     );
   }
 
@@ -109,22 +106,20 @@ class AppDialog extends StatelessWidget {
     FutureOr<void> Function()? onDismiss,
     bool barrierDismissible = true,
     bool preventBack = false,
-  }) {
-    return show<T>(
-      context: context,
-      title: title,
-      subtitle: subtitle,
-      okText: okText,
-      onOk: onOk,
-      dismissText: dismissText,
-      onDismiss: onDismiss,
-      barrierDismissible: barrierDismissible,
-      preventBack: preventBack,
-      isError: true,
-      icon: Icons.error_outline,
-      iconColor: AppColors.error,
-    );
-  }
+  }) => show<T>(
+    context: context,
+    title: title,
+    subtitle: subtitle,
+    okText: okText,
+    onOk: onOk,
+    dismissText: dismissText,
+    onDismiss: onDismiss,
+    barrierDismissible: barrierDismissible,
+    preventBack: preventBack,
+    isError: true,
+    icon: Icons.error_outline,
+    iconColor: AppColors.error,
+  );
 
   static Future<T?> showSuccess<T>({
     required BuildContext context,
@@ -132,25 +127,19 @@ class AppDialog extends StatelessWidget {
     String? subtitle,
     String okText = 'OK',
     VoidCallback? onOk,
-  }) {
-    return show<T>(
-      context: context,
-      title: title,
-      subtitle: subtitle,
-      okText: okText,
-      onOk: onOk,
-      isSuccess: true,
-      icon: Icons.check_circle_outline,
-      iconColor: AppColors.success,
-    );
-  }
+  }) => show<T>(
+    context: context,
+    title: title,
+    subtitle: subtitle,
+    okText: okText,
+    onOk: onOk,
+    isSuccess: true,
+    icon: Icons.check_circle_outline,
+    iconColor: AppColors.success,
+  );
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
-    final backgroundColor = context.surfaceColor;
-    final borderColor = AppColors.onSurface;
-
     return PopScope(
       canPop: !preventBack,
       child: Center(
@@ -161,30 +150,33 @@ class AppDialog extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 32),
               decoration: BoxDecoration(
-                color: backgroundColor,
-                border: Border.all(color: borderColor, width: 2),
+                color: context.surfaceColor,
+                border: Border.all(color: AppColors.onSurface, width: 2),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildTopBorder(),
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (showCloseButton) _buildCloseButton(context),
-                        if (icon != null) ...[_buildIcon(isDark), Spacing.vMd],
-                        _buildTitle(context),
-                        if (subtitle != null) ...[
-                          Spacing.vSm,
-                          _buildSubtitle(isDark),
-                        ],
-                        Spacing.vLg,
-                        _buildActions(context, isDark),
-                      ],
-                    ),
+                  _DialogTopBorder(isError: isError, isSuccess: isSuccess),
+                  AppDialogBody(
+                    logoAsset: logoAsset,
+                    icon: icon,
+                    iconColor: iconColor,
+                    title: title,
+                    subtitle: subtitle,
+                    dismissText: dismissText,
+                    okText: okText,
+                    onDismiss: onDismiss,
+                    onOk: onOk,
+                    isError: isError,
+                    isSuccess: isSuccess,
+                    showCloseButton: showCloseButton,
+                    onClose: () {
+                      HapticFeedback.lightImpact();
+                      onDismiss?.call();
+                      if (context.mounted) Navigator.of(context).pop();
+                    },
+                    customActions: customActions,
                   ),
                 ],
               ),
@@ -194,10 +186,17 @@ class AppDialog extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildTopBorder() {
+class _DialogTopBorder extends StatelessWidget {
+  final bool isError;
+  final bool isSuccess;
+
+  const _DialogTopBorder({required this.isError, required this.isSuccess});
+
+  @override
+  Widget build(BuildContext context) {
     final colors = [AppColors.primaryContainer, AppColors.primary];
-
     return Container(
       height: 4,
       decoration: BoxDecoration(
@@ -207,173 +206,6 @@ class AppDialog extends StatelessWidget {
               : isSuccess
               ? [AppColors.success, AppColors.success.withAlpha(150)]
               : colors,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIcon(bool isDark) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: (iconColor ?? AppColors.primaryContainer).withAlpha(25),
-        border: Border.all(
-          color: iconColor ?? AppColors.primaryContainer,
-          width: 2,
-        ),
-      ),
-      child: Icon(
-        icon,
-        size: 32,
-        color: iconColor ?? AppColors.primaryContainer,
-      ),
-    );
-  }
-
-  Widget _buildTitle(BuildContext context) {
-    return Text(
-      title.toUpperCase(),
-      style: AppTypography.h3
-          .weight(800)
-          .copyWith(letterSpacing: 0.5, color: context.textPrimary),
-      textAlign: TextAlign.center,
-    );
-  }
-
-  Widget _buildSubtitle(bool isDark) {
-    return Text(
-      subtitle!,
-      style: const TextStyle(
-        fontFamily: AppTypography.fontFamily,
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: AppColors.outline,
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-
-  Widget _buildActions(BuildContext context, bool isDark) {
-    if (customActions != null) {
-      return Row(children: customActions!);
-    }
-
-    final hasDismiss = dismissText != null;
-    final hasOk = okText != null;
-
-    if (!hasDismiss && !hasOk) {
-      return const SizedBox.shrink();
-    }
-
-    // ponytail: stacked full-width on purpose — side-by-side Expanded buttons
-    // end up with different heights when one label wraps to two lines.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (hasDismiss) ...[
-          _buildButton(
-            context: context,
-            text: dismissText!,
-            onPressed: () {
-              return onDismiss?.call();
-            },
-            isPrimary: false,
-          ),
-          if (hasOk) const SizedBox(height: 12),
-        ],
-        if (hasOk)
-          _buildButton(
-            context: context,
-            text: okText!,
-            onPressed: () {
-              return onOk?.call();
-            },
-            isPrimary: true,
-            isError: isError,
-            isSuccess: isSuccess,
-          ),
-      ],
-    );
-  }
-
-  Widget _buildButton({
-    required BuildContext context,
-    required String text,
-    required FutureOr<void> Function() onPressed,
-    required bool isPrimary,
-    bool isError = false,
-    bool isSuccess = false,
-  }) {
-    final isDark = context.isDark;
-    Color backgroundColor;
-    Color textColor;
-
-    if (isPrimary) {
-      if (isError) {
-        backgroundColor = AppColors.error;
-        textColor = AppColors.onPrimary;
-      } else if (isSuccess) {
-        backgroundColor = AppColors.success;
-        textColor = AppColors.onPrimary;
-      } else {
-        backgroundColor = AppColors.primaryContainer;
-        textColor = AppColors.onPrimary;
-      }
-    } else {
-      backgroundColor = isDark
-          ? AppColors.surfaceContainerDark
-          : AppColors.surfaceContainer;
-      textColor = context.textPrimary;
-    }
-
-    return GestureDetector(
-      onTap: () async {
-        HapticFeedback.lightImpact();
-        await onPressed();
-        if (context.mounted) Navigator.of(context).pop();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          border: Border.all(
-            color: isPrimary ? Colors.transparent : AppColors.outline,
-            width: 2,
-          ),
-        ),
-        child: Text(
-          text.toUpperCase(),
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-            color: textColor,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCloseButton(BuildContext context) {
-    return Align(
-      alignment: Alignment.topRight,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          Navigator.of(context).pop();
-          onDismiss?.call();
-        },
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.outline),
-          ),
-          child: const Icon(Icons.close, size: 18, color: AppColors.outline),
         ),
       ),
     );

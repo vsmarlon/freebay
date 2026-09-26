@@ -3,6 +3,11 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderStatus } from '@prisma/client';
+import {
+  DISPUTE_EXPIRY_WINDOW_HOURS,
+  DISPUTE_HOUR_IN_MILLISECONDS,
+  DISPUTE_OPENING_WINDOW_HOURS,
+} from '../dispute.constants';
 import { OpenDisputeInput, OpenDisputeOutput } from '../dtos/dispute.dto';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
@@ -39,12 +44,15 @@ export class OpenDisputeUseCase {
 
     const currentTime = now ?? new Date();
     const deliveryTime = order.deliveryConfirmedAt || order.createdAt;
-    const hoursSinceDelivery = (currentTime.getTime() - deliveryTime.getTime()) / (1000 * 60 * 60);
-    if (hoursSinceDelivery > 48) {
-      return left(new BadRequestError('Dispute window has expired (48h after delivery)'));
+    const hoursSinceDelivery =
+      (currentTime.getTime() - deliveryTime.getTime()) / DISPUTE_HOUR_IN_MILLISECONDS;
+    if (hoursSinceDelivery > DISPUTE_OPENING_WINDOW_HOURS) {
+      return left(new BadRequestError(`Dispute window has expired (${DISPUTE_OPENING_WINDOW_HOURS}h after delivery)`));
     }
 
-    const expiresAt = new Date(currentTime.getTime() + 72 * 60 * 60 * 1000);
+    const expiresAt = new Date(
+      currentTime.getTime() + DISPUTE_EXPIRY_WINDOW_HOURS * DISPUTE_HOUR_IN_MILLISECONDS,
+    );
 
     const disputeResult = await this.disputeRepo.create({
       orderId: input.orderId,
@@ -64,8 +72,8 @@ export class OpenDisputeUseCase {
     const otherUserId = order.buyerId === input.userId ? order.sellerId : order.buyerId;
     await Promise.all([
       this.notificationService.notifyDispute(otherUserId, dispute.id, 'Uma disputa foi aberta em um dos seus pedidos'),
-      this.notificationService.notifyOrderStatus(input.userId, order.id, 'DISPUTED'),
-      this.notificationService.notifyOrderStatus(otherUserId, order.id, 'DISPUTED'),
+      this.notificationService.notifyOrderStatus(input.userId, order.id, OrderStatus.DISPUTED),
+      this.notificationService.notifyOrderStatus(otherUserId, order.id, OrderStatus.DISPUTED),
     ]);
 
     return right({

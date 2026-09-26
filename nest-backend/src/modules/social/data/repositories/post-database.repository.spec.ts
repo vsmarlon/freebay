@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
 import { PrismaPostRepository } from "./post-database.repository";
+import { ContentFilter, FeedType } from "../../types/social.types";
 
 const post = {
   id: "post-1",
@@ -41,8 +42,8 @@ describe("PrismaPostRepository canonical interactions", () => {
 
     const result = await module.get(PrismaPostRepository).findFeed({
       userId: "viewer-1",
-      type: "following",
-      contentFilter: "social",
+       type: FeedType.FOLLOWING,
+       contentFilter: ContentFilter.SOCIAL,
       limit: 1,
     });
 

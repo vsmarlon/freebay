@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { SessionTokenService } from './session-token.service';
+import { UserRole } from '@prisma/client';
 
 describe('SessionTokenService', () => {
   it('keeps biometric issuance separate from normal sessions', async () => {
@@ -20,10 +21,10 @@ describe('SessionTokenService', () => {
 
     const service = module.get(SessionTokenService);
 
-    expect(service.generate('user-1', 'USER')).toEqual({
+    expect(service.generate('user-1', UserRole.USER)).toEqual({
       token: 'jwt',
       refreshToken: 'jwt',
     });
-    expect(service.generateBiometric('user-1', 'USER')).toBe('jwt');
+    expect(service.generateBiometric('user-1', UserRole.USER)).toBe('jwt');
   });
 });

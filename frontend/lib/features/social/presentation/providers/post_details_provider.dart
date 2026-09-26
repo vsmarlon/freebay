@@ -2,21 +2,17 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/domain/usecases/get_post_details_usecase.dart';
-import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'post_details_provider.g.dart';
 
-final httpClientProvider = Provider((ref) => HttpClient());
-
 final getPostDetailsUseCaseProvider = Provider((ref) {
-  final httpClient = ref.watch(httpClientProvider);
-  return GetPostDetailsUseCase(httpClient);
+  return GetPostDetailsUseCase(ref.watch(socialRepositoryProvider));
 });
 
 final getPostCommentsUseCaseProvider = Provider((ref) {
-  final httpClient = ref.watch(httpClientProvider);
-  return GetPostCommentsUseCase(httpClient);
+  return GetPostCommentsUseCase(ref.watch(socialRepositoryProvider));
 });
 
 class PostDetailsState {

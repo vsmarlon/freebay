@@ -4,14 +4,16 @@
     "lint-staged": "^17.0.8"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "ci:check": "node scripts/ci-check.js",
+    "test:ci-scripts": "node --test scripts/ci-check.test.js"
   },
   "lint-staged": {
     "nest-backend/src/**/*.ts": [
-      "nest-backend/node_modules/.bin/eslint --config nest-backend/eslint.config.js --fix"
+      "npx --no-install eslint --config nest-backend/eslint.config.js --fix"
     ],
     "frontend/lib/**/*.dart": [
-      "fvm dart format"
+      "dart format"
     ]
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
@@ -17,12 +18,13 @@ export class MarkAsShippedUseCase {
       return left(new UnauthorizedError('Only seller can mark as shipped'));
     }
 
-    if (orderResult.value.status !== 'CONFIRMED') {
+    if (orderResult.value.status !== OrderStatus.CONFIRMED) {
       return left(new InvalidOrderStateError('CONFIRMED to ship', orderResult.value.status));
     }
 
-    const result = await this.orderRepository.update(input.orderId, { status: 'SHIPPED' });
+    const result = await this.orderRepository.markShipped(input.orderId);
     if (result.isLeft()) return left(result.value);
+    if (!result.value) return left(new InvalidOrderStateError('CONFIRMED sem reembolso pendente'));
 
     return right(undefined);
   }

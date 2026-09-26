@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
-import { SocialController } from "./social.controller";
+import { SocialReadController } from "./social-read.controller";
+import { SocialWriteController } from "./social-write.controller";
 
 // Repositories
 import { PrismaCommentRepository } from "./data/repositories/comment-database.repository";
@@ -16,6 +17,7 @@ import { UnlikePostUseCase } from "./usecases/unlike-post.usecase";
 import { GetPostUseCase } from "./usecases/get-post.usecase";
 import { GetFeedUseCase } from "./usecases/get-feed.usecase";
 import { GetUserPostsUseCase } from "./usecases/get-user-posts.usecase";
+import { GetProfileTimelineUseCase } from './usecases/get-profile-timeline.usecase';
 import { GetUserRepostsUseCase } from "./usecases/get-user-reposts.usecase";
 import { SearchPostsUseCase } from "./usecases/search-posts.usecase";
 import { GetCommentsUseCase } from "./usecases/get-comments.usecase";
@@ -31,7 +33,7 @@ import { DeleteCommentUseCase } from "./usecases/delete-comment.usecase";
 import { GetSavedPostsUseCase } from "./usecases/get-saved-posts.usecase";
 
 @Module({
-  controllers: [SocialController],
+  controllers: [SocialReadController, SocialWriteController],
   providers: [
     // Repositories
     PrismaCommentRepository,
@@ -47,6 +49,7 @@ import { GetSavedPostsUseCase } from "./usecases/get-saved-posts.usecase";
     GetPostUseCase,
     GetFeedUseCase,
     GetUserPostsUseCase,
+    GetProfileTimelineUseCase,
     GetUserRepostsUseCase,
     SearchPostsUseCase,
     GetCommentsUseCase,
@@ -74,6 +77,7 @@ import { GetSavedPostsUseCase } from "./usecases/get-saved-posts.usecase";
     GetPostUseCase,
     GetFeedUseCase,
     GetUserPostsUseCase,
+    GetProfileTimelineUseCase,
     GetUserRepostsUseCase,
     SearchPostsUseCase,
     GetCommentsUseCase,

@@ -13,6 +13,42 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   return ChatRepository();
 });
 
+List<ChatEntity> _sortedChats(Iterable<ChatEntity> chats) {
+  final byId = <String, ChatEntity>{};
+  for (final chat in chats) {
+    final existing = byId[chat.id];
+    if (existing == null || chat.timestamp.isAfter(existing.timestamp)) {
+      byId[chat.id] = chat;
+    }
+  }
+  final result = byId.values.toList()
+    ..sort((a, b) {
+      final timestamp = b.timestamp.compareTo(a.timestamp);
+      return timestamp == 0 ? a.id.compareTo(b.id) : timestamp;
+    });
+  return result;
+}
+
+class ChatListState {
+  final List<ChatEntity> items;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final String? nextCursor;
+  final Object? error;
+
+  const ChatListState({
+    this.items = const [],
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = false,
+    this.nextCursor,
+    this.error,
+  });
+}
+
+typedef ArchivedChatListState = ChatListState;
+
 final reportChatUsecaseProvider = Provider<ReportChatUsecase>((ref) {
   return ReportChatUsecase();
 });
@@ -24,90 +60,72 @@ final chatsProvider = FutureProvider<CursorPage<ChatEntity>>((ref) async {
   return result.fold((failure) => throw failure, (page) => page);
 });
 
-class ArchivedChatListController
-    extends Notifier<AsyncValue<List<ChatEntity>>> {
-  String? _cursor;
+class ArchivedChatListController extends Notifier<ArchivedChatListState> {
+  int _generation = 0;
+  String? _userId;
 
   @override
-  AsyncValue<List<ChatEntity>> build() {
-    _loadFirstPage();
-    return const AsyncValue.loading();
+  ArchivedChatListState build() {
+    final userId = ref.watch(authControllerProvider.select((s) => s.value?.id));
+    final generation = ++_generation;
+    _userId = userId;
+    _loadFirstPage(generation, userId);
+    return const ArchivedChatListState(isLoading: true);
   }
 
-  Future<void> _loadFirstPage() async {
+  bool _isCurrent(int generation, String? userId) =>
+      ref.mounted && generation == _generation && userId == _userId;
+
+  Future<void> _loadFirstPage(int generation, String? userId) async {
     final repository = ref.read(chatRepositoryProvider);
     final result = await repository.getArchivedChats();
-    if (!ref.mounted) return;
-    result.fold(
-      (failure) => state = AsyncValue.error(failure, StackTrace.current),
-      (page) {
-        _cursor = page.nextCursor;
-        ref.read(archivedChatListHasMoreProvider.notifier).state = page.hasMore;
-        state = AsyncValue.data(page.items);
-      },
-    );
+    if (!_isCurrent(generation, userId)) return;
+    result.fold((failure) => state = ArchivedChatListState(error: failure), (
+      page,
+    ) {
+      state = ArchivedChatListState(
+        items: _sortedChats(page.items),
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+      );
+    });
   }
 
   Future<void> fetchMore() async {
-    if (ref.read(archivedChatListLoadingMoreProvider)) return;
-    if (!ref.read(archivedChatListHasMoreProvider)) return;
-    final cursor = _cursor;
-    final items = state.value;
-    if (cursor == null || items == null) return;
-
-    ref.read(archivedChatListLoadingMoreProvider.notifier).state = true;
-    try {
-      final repository = ref.read(chatRepositoryProvider);
-      final result = await repository.getArchivedChats(cursor: cursor);
-      if (!ref.mounted) return;
-      result.fold((_) {}, (page) {
-        _cursor = page.nextCursor;
-        ref.read(archivedChatListHasMoreProvider.notifier).state = page.hasMore;
-        final known = {for (final c in items) c.id: true};
-        state = AsyncValue.data([
-          ...items,
-          ...page.items.where((c) => !known.containsKey(c.id)),
-        ]);
-      });
-    } finally {
-      if (ref.mounted) {
-        ref.read(archivedChatListLoadingMoreProvider.notifier).state = false;
-      }
-    }
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    final cursor = state.nextCursor;
+    if (cursor == null) return;
+    final generation = _generation;
+    final userId = _userId;
+    state = ArchivedChatListState(
+      items: state.items,
+      isLoadingMore: true,
+      hasMore: state.hasMore,
+      nextCursor: cursor,
+    );
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .getArchivedChats(cursor: cursor);
+    if (!_isCurrent(generation, userId)) return;
+    result.fold(
+      (failure) => state = ArchivedChatListState(
+        items: state.items,
+        hasMore: state.hasMore,
+        nextCursor: state.nextCursor,
+        error: failure,
+      ),
+      (page) => state = ArchivedChatListState(
+        items: _sortedChats([...state.items, ...page.items]),
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+      ),
+    );
   }
 }
 
 final archivedChatListProvider =
-    NotifierProvider<ArchivedChatListController, AsyncValue<List<ChatEntity>>>(
+    NotifierProvider<ArchivedChatListController, ArchivedChatListState>(
       ArchivedChatListController.new,
-    );
-
-class ArchivedChatListHasMoreNotifier extends Notifier<bool> {
-  @override
-  bool build() => false;
-
-  @override
-  set state(bool value) => super.state = value;
-  void set(bool value) => state = value;
-}
-
-final archivedChatListHasMoreProvider =
-    NotifierProvider<ArchivedChatListHasMoreNotifier, bool>(
-      ArchivedChatListHasMoreNotifier.new,
-    );
-
-class ArchivedChatListLoadingMoreNotifier extends Notifier<bool> {
-  @override
-  bool build() => false;
-
-  @override
-  set state(bool value) => super.state = value;
-  void set(bool value) => state = value;
-}
-
-final archivedChatListLoadingMoreProvider =
-    NotifierProvider<ArchivedChatListLoadingMoreNotifier, bool>(
-      ArchivedChatListLoadingMoreNotifier.new,
     );
 
 class ChatListQueryNotifier extends Notifier<String> {
@@ -123,40 +141,23 @@ final chatListQueryProvider = NotifierProvider<ChatListQueryNotifier, String>(
   ChatListQueryNotifier.new,
 );
 
-class ChatListHasMoreNotifier extends Notifier<bool> {
-  @override
-  bool build() => false;
-
-  @override
-  set state(bool value) => super.state = value;
-  void set(bool value) => state = value;
-}
-
-final chatListHasMoreProvider = NotifierProvider<ChatListHasMoreNotifier, bool>(
-  ChatListHasMoreNotifier.new,
-);
-
-class ChatListLoadingMoreNotifier extends Notifier<bool> {
-  @override
-  bool build() => false;
-
-  @override
-  set state(bool value) => super.state = value;
-  void set(bool value) => state = value;
-}
-
-final chatListLoadingMoreProvider =
-    NotifierProvider<ChatListLoadingMoreNotifier, bool>(
-      ChatListLoadingMoreNotifier.new,
-    );
-
-class ChatListController extends Notifier<AsyncValue<List<ChatEntity>>> {
+class ChatListController extends Notifier<ChatListState> {
   StreamSubscription<Map<String, dynamic>>? _subscription;
-  String? _cursor;
+  int _generation = 0;
+  String? _userId;
+  String _query = '';
+  bool _hasRetainedTail = false;
+  Future<void>? _refreshFuture;
+  int? _refreshGeneration;
 
   @override
-  AsyncValue<List<ChatEntity>> build() {
+  ChatListState build() {
+    final userId = ref.watch(authControllerProvider.select((s) => s.value?.id));
     final query = ref.watch(chatListQueryProvider);
+    final generation = ++_generation;
+    _userId = userId;
+    _query = query;
+    _hasRetainedTail = false;
 
     _subscription?.cancel();
     final socketService = ref.read(chatSocketServiceProvider);
@@ -165,87 +166,118 @@ class ChatListController extends Notifier<AsyncValue<List<ChatEntity>>> {
       _subscription?.cancel();
     });
 
-    _loadFirstPage(query);
-    return const AsyncValue.loading();
+    _loadFirstPage(generation, userId, query);
+    return const ChatListState(isLoading: true);
   }
 
   String? _queryOrNull(String query) => query.isEmpty ? null : query;
 
-  Future<void> _loadFirstPage(String query) async {
+  bool _isCurrent(int generation, String? userId, String query) =>
+      ref.mounted &&
+      generation == _generation &&
+      userId == _userId &&
+      query == _query;
+
+  Future<void> _loadFirstPage(
+    int generation,
+    String? userId,
+    String query,
+  ) async {
     final repository = ref.read(chatRepositoryProvider);
     final result = await repository.getChats(query: _queryOrNull(query));
-    if (!ref.mounted) return;
+    if (!_isCurrent(generation, userId, query)) return;
+    result.fold((failure) => state = ChatListState(error: failure), (page) {
+      state = ChatListState(
+        items: _sortedChats(page.items),
+        hasMore: page.hasMore,
+        nextCursor: page.nextCursor,
+      );
+    });
+  }
+
+  Future<void> fetchMore() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    final cursor = state.nextCursor;
+    if (cursor == null) return;
+    final generation = _generation;
+    final userId = _userId;
+    final query = _query;
+    state = ChatListState(
+      items: state.items,
+      isLoadingMore: true,
+      hasMore: state.hasMore,
+      nextCursor: cursor,
+    );
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .getChats(query: _queryOrNull(query), cursor: cursor);
+    if (!_isCurrent(generation, userId, query)) return;
     result.fold(
-      (failure) => state = AsyncValue.error(failure, StackTrace.current),
+      (failure) => state = ChatListState(
+        items: state.items,
+        hasMore: state.hasMore,
+        nextCursor: state.nextCursor,
+        error: failure,
+      ),
       (page) {
-        _cursor = page.nextCursor;
-        ref.read(chatListHasMoreProvider.notifier).state = page.hasMore;
-        state = AsyncValue.data(page.items);
+        _hasRetainedTail = true;
+        state = ChatListState(
+          items: _sortedChats([...state.items, ...page.items]),
+          hasMore: page.hasMore,
+          nextCursor: page.nextCursor,
+        );
       },
     );
   }
 
-  Future<void> fetchMore() async {
-    if (ref.read(chatListLoadingMoreProvider)) return;
-    if (!ref.read(chatListHasMoreProvider)) return;
-    final cursor = _cursor;
-    final items = state.value;
-    if (cursor == null || items == null) return;
-
-    ref.read(chatListLoadingMoreProvider.notifier).state = true;
-    try {
-      final repository = ref.read(chatRepositoryProvider);
-      final result = await repository.getChats(
-        query: _queryOrNull(ref.read(chatListQueryProvider)),
-        cursor: cursor,
-      );
-      if (!ref.mounted) return;
-      result.fold((_) {}, (page) {
-        _cursor = page.nextCursor;
-        ref.read(chatListHasMoreProvider.notifier).state = page.hasMore;
-        final known = {for (final c in items) c.id: true};
-        state = AsyncValue.data([
-          ...items,
-          ...page.items.where((c) => !known.containsKey(c.id)),
-        ]);
-      });
-    } finally {
-      if (ref.mounted) {
-        ref.read(chatListLoadingMoreProvider.notifier).state = false;
-      }
+  Future<void> refreshRecent() {
+    final existing = _refreshFuture;
+    if (existing != null && _refreshGeneration == _generation) {
+      return existing;
     }
+    late Future<void> future;
+    final generation = _generation;
+    _refreshGeneration = generation;
+    future = _mergeFirstPage().whenComplete(() {
+      if (identical(_refreshFuture, future)) _refreshFuture = null;
+    });
+    _refreshFuture = future;
+    return future;
   }
 
-  Future<void> refreshRecent() => _mergeFirstPage();
-
   Future<void> _mergeFirstPage() async {
+    final generation = _generation;
+    final userId = _userId;
+    final query = _query;
     final repository = ref.read(chatRepositoryProvider);
-    final result = await repository.getChats(
-      query: _queryOrNull(ref.read(chatListQueryProvider)),
+    final result = await repository.getChats(query: _queryOrNull(query));
+    if (!_isCurrent(generation, userId, query)) return;
+    result.fold(
+      (failure) => state = ChatListState(
+        items: state.items,
+        hasMore: state.hasMore,
+        nextCursor: state.nextCursor,
+        error: failure,
+      ),
+      (page) {
+        final current = state.items;
+        state = ChatListState(
+          items: _sortedChats([...page.items, ...current]),
+          hasMore: _hasRetainedTail ? state.hasMore : page.hasMore,
+          nextCursor: _hasRetainedTail ? state.nextCursor : page.nextCursor,
+        );
+      },
     );
-    if (!ref.mounted) return;
-    result.fold((_) {}, (page) {
-      final current = state.value ?? [];
-      final freshIds = {for (final c in page.items) c.id: true};
-      final merged = [
-        ...page.items,
-        ...current.where((c) => !freshIds.containsKey(c.id)),
-      ]..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      _cursor = page.nextCursor;
-      ref.read(chatListHasMoreProvider.notifier).state = page.hasMore;
-      state = AsyncValue.data(merged);
-    });
   }
 
   void _onSocketMessage(Map<String, dynamic> msg) {
-    final currentList = state.value;
-    if (currentList == null) return;
+    final currentList = state.items;
 
     final conversationId = msg['conversationId'] as String?;
     if (conversationId == null) return;
 
     if (!currentList.any((chat) => chat.id == conversationId)) {
-      _mergeFirstPage();
+      unawaited(refreshRecent());
       return;
     }
 
@@ -271,16 +303,13 @@ class ChatListController extends Notifier<AsyncValue<List<ChatEntity>>> {
       );
     }).toList();
 
-    updatedList.sort((a, b) {
-      final aTime = a.lastMessageInfo?.createdAt ?? a.createdAt;
-      final bTime = b.lastMessageInfo?.createdAt ?? b.createdAt;
-      return bTime.compareTo(aTime);
-    });
-    state = AsyncValue.data(updatedList);
+    state = ChatListState(
+      items: _sortedChats(updatedList),
+      hasMore: state.hasMore,
+      nextCursor: state.nextCursor,
+    );
   }
 }
 
 final liveChatListProvider =
-    NotifierProvider<ChatListController, AsyncValue<List<ChatEntity>>>(
-      ChatListController.new,
-    );
+    NotifierProvider<ChatListController, ChatListState>(ChatListController.new);

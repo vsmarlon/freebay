@@ -4,6 +4,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './shared/guards/roles.guard';
+import { OriginGuard } from './shared/guards/origin.guard';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SharedModule } from './shared/shared.module';
@@ -29,6 +30,7 @@ import { BugReportModule } from './modules/bug-reports/bug-report.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MediaModule } from './modules/media/media.module';
 import { HealthModule } from './modules/health/health.module';
+import { THROTTLE_TTL_HOUR_MS, THROTTLE_TTL_MINUTE_MS, THROTTLE_TTL_SECOND_MS } from './shared/http/throttle.constants';
 
 @Module({
   imports: [
@@ -43,17 +45,17 @@ import { HealthModule } from './modules/health/health.module';
         throttlers: [
           {
             name: 'short',
-            ttl: 1000, // 1 second
+             ttl: THROTTLE_TTL_SECOND_MS,
             limit: config.get('THROTTLE_SHORT_LIMIT', 10),
           },
           {
             name: 'medium',
-            ttl: 60000, // 1 minute
+             ttl: THROTTLE_TTL_MINUTE_MS,
             limit: config.get('THROTTLE_MEDIUM_LIMIT', 60),
           },
           {
             name: 'long',
-            ttl: 3600000, // 1 hour
+             ttl: THROTTLE_TTL_HOUR_MS,
             limit: config.get('THROTTLE_LONG_LIMIT', 1000),
           },
         ],
@@ -105,6 +107,10 @@ import { HealthModule } from './modules/health/health.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: OriginGuard,
     },
   ],
 })

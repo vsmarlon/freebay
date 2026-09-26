@@ -6,11 +6,13 @@ import { JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { BiometricLoginUseCase } from './biometric-login.usecase';
+import { UserRole } from '@prisma/client';
+import { SessionTokenService } from '../services/session-token.service';
 
 describe('BiometricLoginUseCase', () => {
   const payload = {
     userId: 'u1',
-    role: 'USER',
+    role: UserRole.USER,
     type: JwtTokenType.BIOMETRIC,
     jti: 'biometric-jti',
     exp: Math.floor(Date.now() / 1000) + 60,
@@ -18,8 +20,9 @@ describe('BiometricLoginUseCase', () => {
   };
 
   async function createSubject(redis: { get: jest.Mock }) {
+    let claimed = false;
     const users = {
-      findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: 'USER', suspendedAt: null })),
+      findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: UserRole.USER, suspendedAt: null })),
     };
     const jwt = { verifyAsync: jest.fn().mockResolvedValue(payload) };
     const module = await Test.createTestingModule({
@@ -29,17 +32,18 @@ describe('BiometricLoginUseCase', () => {
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('secret') } },
         { provide: RedisService, useValue: redis },
+        { provide: SessionTokenService, useValue: { claimBiometric: jest.fn().mockImplementation(async () => { if (claimed) return false; claimed = true; return true; }), generate: jest.fn().mockReturnValue({ token: 'a', refreshToken: 'r' }), generateBiometric: jest.fn().mockReturnValue('b') } },
       ],
     }).compile();
     return module.get(BiometricLoginUseCase);
   }
 
-  it('validates concurrent biometric requests; replay protection belongs to AuthService', async () => {
+  it('allows only one concurrent biometric rotation for a token', async () => {
     const sut = await createSubject({ get: jest.fn().mockResolvedValue(null) });
 
     const results = await Promise.all([sut.execute('token'), sut.execute('token')]);
 
-    expect(results.filter((result) => result.isRight())).toHaveLength(2);
+    expect(results.filter((result) => result.isRight())).toHaveLength(1);
   });
 
   it('rejects an already revoked or claimed token', async () => {
@@ -52,7 +56,7 @@ describe('BiometricLoginUseCase', () => {
 
   it('checks suspension before claiming the token', async () => {
     const users = {
-      findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: 'USER', suspendedAt: new Date(), suspensionReason: 'fraud' })),
+      findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: UserRole.USER, suspendedAt: new Date(), suspensionReason: 'fraud' })),
     };
     const jwt = { verifyAsync: jest.fn().mockResolvedValue(payload) };
     const module = await Test.createTestingModule({
@@ -62,6 +66,7 @@ describe('BiometricLoginUseCase', () => {
         { provide: JwtService, useValue: jwt },
         { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('secret') } },
         { provide: RedisService, useValue: { get: jest.fn().mockResolvedValue(null) } },
+        { provide: SessionTokenService, useValue: { claimBiometric: jest.fn().mockResolvedValue(true), generate: jest.fn().mockReturnValue({ token: 'a', refreshToken: 'r' }), generateBiometric: jest.fn().mockReturnValue('b') } },
       ],
     }).compile();
 

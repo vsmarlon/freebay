@@ -4,22 +4,19 @@ import {
   UseInterceptors,
   HttpCode,
   HttpStatus,
-  Type,
-  CanActivate,
   Get,
   Post,
   Patch,
   Delete,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/shared/guards/roles.guard';
 import { Public as SetPublicMetadata } from '@/shared/decorators/public.decorator';
 import { Roles } from '@/shared/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+import { DEFAULT_THROTTLE_LIMIT, THROTTLE_TTL_MINUTE_MS } from '@/shared/http/throttle.constants';
 import { WebhookGuard } from '@/shared/guards/webhook.guard';
 import { WebhookDedupeInterceptor } from '@/shared/interceptors/webhook-dedupe.interceptor';
 import { ApiDoc, ApiDocOptions } from '@/shared/swagger/api-doc.decorator';
-import { ApiBearerAuth } from '@nestjs/swagger';
 
 export interface ThrottleSpec {
   limit: number;
@@ -34,8 +31,7 @@ export interface EndpointOptions extends Omit<ApiDocOptions, 'auth'> {
 }
 
 export interface AuthenticatedOptions extends EndpointOptions {
-  guards?: Type<CanActivate>[];
-  roles?: string[];
+  roles?: UserRole[];
 }
 
 export type AuthOptionsInput = string | AuthenticatedOptions;
@@ -48,16 +44,14 @@ function normalizeThrottle(config: ThrottleConfig): Record<string, ThrottleSpec>
   return config as Record<string, ThrottleSpec>;
 }
 
-function buildGuards(guards?: Type<CanActivate>[]): Array<ClassDecorator | MethodDecorator | PropertyDecorator> {
-  const applied = guards ?? [JwtAuthGuard];
-  return [UseGuards(applied[0], ...applied.slice(1))];
-}
-
 /**
  * Patternized authentication decorator.
  *
+ * JwtAuthGuard and RolesGuard already run globally via APP_GUARD.
+ * This only records Roles metadata, throttle, and auth Swagger docs.
+ *
  * Overloads:
- * - `@Auth()` -> Applies JwtAuthGuard, BearerAuth, and default auth Swagger docs.
+ * - `@Auth()` -> Default auth Swagger docs.
  * - `@Auth('Get user profile')` -> String summary shortcut without boilerplate objects.
  * - `@Auth({ summary: '...', roles: ['ADMIN'], ... })` -> Full options.
  */
@@ -65,14 +59,10 @@ export function Auth(input?: AuthOptionsInput): MethodDecorator {
   const opts: AuthenticatedOptions =
     typeof input === 'string' ? { summary: input } : (input ?? {});
 
-  const decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator> = [
-    ...buildGuards(opts.guards),
-    ApiBearerAuth(),
-  ];
+  const decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator> = [];
 
   if (opts.roles && opts.roles.length > 0) {
     decorators.push(Roles(...opts.roles));
-    decorators.push(UseGuards(RolesGuard));
   }
 
   if (opts.throttle) {
@@ -93,12 +83,9 @@ export function Auth(input?: AuthOptionsInput): MethodDecorator {
   return applyDecorators(...decorators);
 }
 
-/** Backward-compatible alias for @Auth */
-export const Authenticated = Auth;
-
 /**
  * Patternized admin-only route decorator.
- * Automatically enforces the 'ADMIN' role, attaches RolesGuard, BearerAuth, and 403 Swagger docs.
+ * Automatically enforces the 'ADMIN' role and 403 Swagger docs.
  *
  * Overloads:
  * - `@AdminOnly()`
@@ -108,12 +95,12 @@ export const Authenticated = Auth;
 export function AdminOnly(input?: AuthOptionsInput): MethodDecorator {
   const opts: AuthenticatedOptions =
     typeof input === 'string' ? { summary: input } : (input ?? {});
-  return Auth({ ...opts, roles: ['ADMIN'] });
+  return Auth({ ...opts, roles: [UserRole.ADMIN] });
 }
 
 export const StripeWebhook = applyDecorators(
   SetPublicMetadata(),
-  Throttle({ default: { limit: 60, ttl: 60000 } }),
+  Throttle({ default: { limit: DEFAULT_THROTTLE_LIMIT, ttl: THROTTLE_TTL_MINUTE_MS } }),
   UseGuards(WebhookGuard),
   UseInterceptors(WebhookDedupeInterceptor),
   HttpCode(HttpStatus.OK),

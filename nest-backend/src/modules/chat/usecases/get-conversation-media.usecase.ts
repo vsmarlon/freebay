@@ -8,6 +8,7 @@ import {
   GetMessagesOutput,
   GetFilteredMessagesInput,
   GetFilteredMessagesResult,
+  FILTERED_MESSAGES_DEFAULT_LIMIT,
 } from '../dtos/chat.dto';
 import {
   ChatMessageWithSender,
@@ -29,8 +30,8 @@ export class GetConversationMediaUseCase {
 
     const { orderId, directConversationId } = resolved.value;
     const isOrderThread = Boolean(orderId);
-    const type = (input.type ?? 'IMAGE') as MessageType;
-    const limit = input.limit ?? 50;
+    const type = input.type ?? MessageType.IMAGE;
+    const limit = input.limit ?? FILTERED_MESSAGES_DEFAULT_LIMIT;
 
     let allMessages: (DirectMessageWithSender | ChatMessageWithSender)[];
 

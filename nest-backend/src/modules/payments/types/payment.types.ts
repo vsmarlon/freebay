@@ -1,11 +1,15 @@
-import { Transaction, Order, PaymentMethod } from '@prisma/client';
+import { Prisma, PaymentMethod } from '@prisma/client';
 
-export type TransactionWithOrder = Transaction & {
-  order: Order & {
-    buyer: { id: string; displayName: string };
-    seller: { id: string; displayName: string };
-  };
-};
+export const TRANSACTION_WITH_ORDER_INCLUDE = {
+  order: { include: {
+    buyer: { select: { id: true, displayName: true } },
+    seller: { select: { id: true, displayName: true } },
+  } },
+} satisfies Prisma.TransactionInclude;
+
+export type TransactionWithOrder = Prisma.TransactionGetPayload<{
+  include: typeof TRANSACTION_WITH_ORDER_INCLUDE;
+}>;
 
 export interface ExpiredPendingTransaction {
   readonly id: string;

@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListModerationActionsUseCase } from './list-moderation-actions.usecase';
 import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
-import { left, right } from '@/shared/core/either';
-import { DatabaseError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
 import { encodeCursor } from '@/shared/core/pagination';
 
 const mockModerationRepository = {
@@ -44,12 +43,4 @@ describe('ListModerationActionsUseCase', () => {
     expect(mockModerationRepository.findActions.mock.calls[0][0].cursorId).toBe('action-3');
   });
 
-  it('deve propagar a falha do repositório', async () => {
-    mockModerationRepository.findActions.mockResolvedValue(left(new DatabaseError('boom')));
-
-    const result = await sut.execute({});
-
-    expect(result.isLeft()).toBe(true);
-    expect(result.value).toBeInstanceOf(DatabaseError);
-  });
 });

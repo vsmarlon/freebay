@@ -8,8 +8,11 @@ import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/data/entities/create_product_input.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/presentation/widgets/category_selector_field.dart';
 import 'package:freebay/features/product/presentation/widgets/product_preview_card.dart';
+import 'package:freebay/features/product/presentation/widgets/product_form_fields.dart';
+import 'package:freebay/features/product/presentation/widgets/product_form_validation.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
@@ -49,18 +52,17 @@ class CreateProductPage extends HookConsumerWidget {
     Future<void> submit() async {
       final title = titleController.text.trim();
       final description = descriptionController.text.trim();
-      final priceDigits = priceController.text.replaceAll(RegExp(r'\D'), '');
-      final price = int.tryParse(priceDigits) ?? 0;
+      final price = CurrencyUtils.parseReaisToCents(priceController.text) ?? 0;
 
-      if (title.length < 3) {
+      if (!ProductFormValidation.isTitleValid(title)) {
         AppSnackbar.error(context, 'Informe um título válido.');
         return;
       }
-      if (description.length < 10) {
+      if (!ProductFormValidation.isDescriptionValid(description)) {
         AppSnackbar.error(context, 'Adicione uma descrição mais completa.');
         return;
       }
-      if (price <= 0) {
+      if (!ProductFormValidation.isPriceValid(price)) {
         AppSnackbar.error(context, 'Informe um preço válido.');
         return;
       }
@@ -79,7 +81,9 @@ class CreateProductPage extends HookConsumerWidget {
           title: title,
           description: description,
           price: price,
-          condition: isNewProduct.value ? 'NEW' : 'USED',
+          condition: isNewProduct.value
+              ? ProductCondition.isNew
+              : ProductCondition.used,
           categoryId: selectedCategoryId.value!,
           imagePath: selectedImagePath.value!,
         ),
@@ -119,12 +123,7 @@ class CreateProductPage extends HookConsumerWidget {
                       title: titleController.text.trim(),
                       description: descriptionController.text.trim(),
                       pricePreview: CurrencyUtils.formatCents(
-                        int.tryParse(
-                              priceController.text.replaceAll(
-                                RegExp(r'\D'),
-                                '',
-                              ),
-                            ) ??
+                        CurrencyUtils.parseReaisToCents(priceController.text) ??
                             0,
                       ),
                       categoryName: selectedCategory?.name,
@@ -134,27 +133,11 @@ class CreateProductPage extends HookConsumerWidget {
                       userAvatarUrl: currentUser?.avatarUrl,
                     ),
                     Spacing.vLg,
-                    AppTextField(
-                      controller: titleController,
-                      label: 'Título do anúncio',
-                      hint: 'Ex: iPhone 13 Pro Max 256GB',
-                      maxLength: 100,
-                    ),
-                    Spacing.vMd,
-                    AppTextField(
-                      controller: descriptionController,
-                      label: 'Descrição',
-                      hint: 'Detalhes do estado, acessórios, tempo de uso...',
-                      maxLines: 4,
-                    ),
-                    Spacing.vMd,
-                    AppTextField(
-                      controller: priceController,
-                      label: 'Preço (R\$)',
-                      hint: '0,00',
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
+                    ProductBasicFields(
+                      titleController: titleController,
+                      descriptionController: descriptionController,
+                      priceController: priceController,
+                      titleLabel: 'Título do anúncio',
                     ),
                     Spacing.vLg,
                     CategorySelectorField(
@@ -181,58 +164,28 @@ class CreateProductPage extends HookConsumerWidget {
                               ),
                             ),
                           ),
-                          OutlinedButton.icon(
+                          AppButton(
                             onPressed: () => pickImage(ImageSource.gallery),
-                            icon: const Icon(Icons.photo_library, size: 16),
-                            label: const Text('Galeria'),
-                            style: OutlinedButton.styleFrom(
-                              shape: const RoundedRectangleBorder(),
-                            ),
+                            icon: Icons.photo_library,
+                            label: 'Galeria',
+                            variant: AppButtonVariant.secondary,
+                            size: AppButtonSize.compact,
                           ),
                           Spacing.hSm,
-                          OutlinedButton.icon(
+                          AppButton(
                             onPressed: () => pickImage(ImageSource.camera),
-                            icon: const Icon(Icons.camera_alt, size: 16),
-                            label: const Text('Câmera'),
-                            style: OutlinedButton.styleFrom(
-                              shape: const RoundedRectangleBorder(),
-                            ),
+                            icon: Icons.camera_alt,
+                            label: 'Câmera',
+                            variant: AppButtonVariant.secondary,
+                            size: AppButtonSize.compact,
                           ),
                         ],
                       ),
                     ),
                     Spacing.vLg,
-                    Text(
-                      'CONDIÇÃO',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: context.textSecondary,
-                      ),
-                    ),
-                    Spacing.vSm,
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AppButton(
-                            label: 'NOVO',
-                            variant: isNewProduct.value
-                                ? AppButtonVariant.primary
-                                : AppButtonVariant.ghost,
-                            onPressed: () => isNewProduct.value = true,
-                          ),
-                        ),
-                        Spacing.hSm,
-                        Expanded(
-                          child: AppButton(
-                            label: 'USADO',
-                            variant: !isNewProduct.value
-                                ? AppButtonVariant.primary
-                                : AppButtonVariant.ghost,
-                            onPressed: () => isNewProduct.value = false,
-                          ),
-                        ),
-                      ],
+                    ProductConditionSelector(
+                      isNew: isNewProduct.value,
+                      onChanged: (value) => isNewProduct.value = value,
                     ),
                     Spacing.vXl,
                     AppButton(

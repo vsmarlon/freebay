@@ -1,52 +1,51 @@
 import { Injectable } from '@nestjs/common';
 import { Report, Prisma, User, Post, DirectConversation, Order } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { DirectMessageWithConversation, ChatMessageWithOrder, CreateReportData } from '../../types/report.types';
 
 @Injectable()
-export class ReportDatabaseRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class ReportDatabaseRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findUserById(id: string): RepositoryResponse<User | null> {
-    return this.safeRun(() => this.prisma.user.findUnique({ where: { id } }), 'Erro ao buscar usuário');
+    return repositoryResponse(() => this.prisma.user.findUnique({ where: { id } }), 'Erro ao buscar usuário');
   }
 
   async findPostById(id: string): RepositoryResponse<Post | null> {
-    return this.safeRun(() => this.prisma.post.findUnique({ where: { id } }), 'Erro ao buscar post');
+    return repositoryResponse(() => this.prisma.post.findUnique({ where: { id } }), 'Erro ao buscar post');
   }
 
   async findConversationById(id: string): RepositoryResponse<DirectConversation | null> {
-    return this.safeRun(() => this.prisma.directConversation.findUnique({ where: { id } }), 'Erro ao buscar conversa');
+    return repositoryResponse(() => this.prisma.directConversation.findUnique({ where: { id } }), 'Erro ao buscar conversa');
   }
 
   async findDirectMessageById(id: string): RepositoryResponse<DirectMessageWithConversation | null> {
-    return this.safeRun(() => this.prisma.directMessage.findUnique({
+    return repositoryResponse(() => this.prisma.directMessage.findUnique({
       where: { id },
       include: { conversation: true },
     }), 'Erro ao buscar mensagem');
   }
 
   async findOrderById(id: string): RepositoryResponse<Order | null> {
-    return this.safeRun(() => this.prisma.order.findUnique({ where: { id } }), 'Erro ao buscar pedido');
+    return repositoryResponse(() => this.prisma.order.findUnique({ where: { id } }), 'Erro ao buscar pedido');
   }
 
   async findChatMessageById(id: string): RepositoryResponse<ChatMessageWithOrder | null> {
-    return this.safeRun(() => this.prisma.chatMessage.findUnique({
+    return repositoryResponse(() => this.prisma.chatMessage.findUnique({
       where: { id },
       include: { order: true },
     }), 'Erro ao buscar mensagem do chat');
   }
 
   async findReportByUnique(where: Prisma.ReportWhereUniqueInput): RepositoryResponse<Report | null> {
-    return this.safeRun(() => this.prisma.report.findUnique({ where }), 'Erro ao buscar denúncia');
+    return repositoryResponse(() => this.prisma.report.findUnique({ where }), 'Erro ao buscar denúncia');
   }
 
   async createReport(data: CreateReportData): RepositoryResponse<Report> {
-    return this.safeRun(() => {
+    return repositoryResponse(() => {
       const prismaData: Prisma.ReportCreateInput = {
         reporter: { connect: { id: data.reporterId } },
         targetType: data.targetType,

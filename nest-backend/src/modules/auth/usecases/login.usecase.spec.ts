@@ -3,6 +3,8 @@ import { UserDatabaseRepository } from '../data/repositories/user-database.repos
 import { InvalidCredentialsError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 import * as bcrypt from 'bcryptjs';
+import { Test } from '@nestjs/testing';
+import { SessionTokenService } from '../services/session-token.service';
 
 jest.mock('bcryptjs');
 
@@ -15,7 +17,14 @@ describe('LoginUseCase', () => {
       findByEmail: jest.fn(),
     } as jest.Mocked<Partial<UserDatabaseRepository>>;
 
-    sut = new LoginUseCase(mockUserRepository as UserDatabaseRepository);
+    const module = await Test.createTestingModule({
+      providers: [
+        LoginUseCase,
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+        { provide: SessionTokenService, useValue: { generate: jest.fn().mockReturnValue({ token: 'access', refreshToken: 'refresh' }) } },
+      ],
+    }).compile();
+    sut = module.get(LoginUseCase);
   });
 
   it('returns error if user not found', async () => {

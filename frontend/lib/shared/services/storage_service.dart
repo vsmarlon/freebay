@@ -29,13 +29,6 @@ class StorageService {
     }
   }
 
-  static Future<void> saveToken(String token) async {
-    await _enqueueTokenOperation(() async {
-      await _storage.write(key: _tokenKey, value: token);
-      _tokenCache = token;
-    });
-  }
-
   static String? get cachedToken => _tokenCache;
 
   static Future<String?> getToken() async {
@@ -44,13 +37,6 @@ class StorageService {
       final token = await _storage.read(key: _tokenKey);
       _tokenCache = token;
       return token;
-    });
-  }
-
-  static Future<void> saveRefreshToken(String token) async {
-    await _enqueueTokenOperation(() async {
-      await _storage.write(key: _refreshTokenKey, value: token);
-      _refreshTokenCache = token;
     });
   }
 
@@ -155,14 +141,6 @@ class StorageService {
 
   static Future<void> clearLastActiveAt() async {
     await _prefs?.remove(_lastActiveAtKey);
-  }
-
-  static Future<bool> getHasSeenOnboarding() async {
-    if (_prefs != null) {
-      return _prefs!.getBool(_hasSeenOnboardingKey) ?? false;
-    }
-    final value = await _storage.read(key: _hasSeenOnboardingKey);
-    return value == 'true';
   }
 
   static Future<void> setHasSeenOnboarding() async {

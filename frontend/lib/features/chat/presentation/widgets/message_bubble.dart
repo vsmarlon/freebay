@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/utils/date_utils.dart';
-import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
 import 'package:freebay/features/chat/presentation/widgets/product_card_bubble.dart';
-import 'package:freebay/features/chat/presentation/widgets/offer_message_bubble.dart';
 import 'reply_preview_banner.dart';
 import 'reaction_bar.dart';
 import 'image_message_bubble.dart';
@@ -13,6 +11,8 @@ import 'audio_message_bubble.dart';
 import 'video_message_bubble.dart';
 import 'link_preview_card.dart';
 import 'location_message_bubble.dart';
+import 'message_bubble/expandable_text_message.dart';
+import 'message_bubble/read_status_icon.dart';
 
 class MessageBubble extends StatelessWidget {
   final MessageEntity message;
@@ -31,6 +31,7 @@ class MessageBubble extends StatelessWidget {
   final String? otherUserName;
   final VoidCallback? onViewOnceReveal;
   final bool isStarred;
+  final VoidCallback? onImageTap;
 
   const MessageBubble({
     super.key,
@@ -49,6 +50,7 @@ class MessageBubble extends StatelessWidget {
     this.otherUserName,
     this.onViewOnceReveal,
     this.isStarred = false,
+    this.onImageTap,
   });
 
   bool get _isRead => message.readAt != null;
@@ -160,7 +162,7 @@ class MessageBubble extends StatelessWidget {
                   ),
                   if (isMe) ...[
                     const SizedBox(width: 4),
-                    _ReadStatusIcon(isRead: _isRead, isDelivered: _isDelivered),
+                    ReadStatusIcon(isRead: _isRead, isDelivered: _isDelivered),
                   ],
                 ],
               ),
@@ -227,9 +229,16 @@ class MessageBubble extends StatelessWidget {
 
     // View-once already revealed
     if (_isViewOnceRevealed) {
-      return _buildRevealedContent(context);
+      return _buildMessageContent(context, showViewedFooter: true);
     }
 
+    return _buildMessageContent(context);
+  }
+
+  Widget _buildMessageContent(
+    BuildContext context, {
+    bool showViewedFooter = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -277,112 +286,64 @@ class MessageBubble extends StatelessWidget {
         ],
         // Main content by type
         _buildTypedContent(context),
-      ],
-    );
-  }
-
-  Widget _buildRevealedContent(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Forwarded badge
-        if (_isForwarded) ...[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.forward,
-                  size: 13,
-                  color: isMe
-                      ? AppColors.onPrimary.withValues(alpha: 0.75)
-                      : context.textSecondary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Encaminhada',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 11,
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w600,
-                    color: isMe
-                        ? AppColors.onPrimary.withValues(alpha: 0.75)
-                        : context.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-        // Reply preview
-        if (_hasReply) ...[
-          ReplyPreviewBanner(
-            replyTo: message.replyTo,
-            currentUserId: currentUserId,
-            otherUserName: otherUserName,
-            onTap: onReplyTap,
-          ),
+        if (showViewedFooter) ...[
           const SizedBox(height: 6),
-        ],
-        _buildTypedContent(context),
-        const SizedBox(height: 6),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.visibility_outlined,
-              size: 12,
-              color: context.textSecondary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              'Mensagem já visualizada',
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 11,
-                fontStyle: FontStyle.italic,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.visibility_outlined,
+                size: 12,
                 color: context.textSecondary,
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 4),
+              Text(
+                'Mensagem já visualizada',
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: context.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
 
   Widget _buildTypedContent(BuildContext context) {
-    final type = message.type.toUpperCase();
-
-    switch (type) {
-      case 'IMAGE':
-      case 'GIF':
-        return ImageMessageBubble(imageUrl: message.attachmentUrl, isMe: isMe);
-      case 'VIDEO':
+    switch (message.type) {
+      case MessageType.image:
+      case MessageType.gif:
+        return ImageMessageBubble(
+          imageUrl: message.attachmentUrl,
+          isMe: isMe,
+          onTapImage: onImageTap,
+        );
+      case MessageType.video:
         return VideoMessageBubble(videoUrl: message.attachmentUrl, isMe: isMe);
-      case 'AUDIO':
+      case MessageType.audio:
         final rawDuration = message.metadata?['durationMs'];
         return AudioMessageBubble(
           audioUrl: message.attachmentUrl,
           isMe: isMe,
           durationMs: rawDuration is int ? rawDuration : null,
         );
-      case 'LOCATION':
+      case MessageType.location:
         return LocationMessageBubble(metadata: message.metadata, isMe: isMe);
-      case 'PRODUCT_CARD':
+      case MessageType.productCard:
         return ProductCardBubble(message: message, isMe: isMe);
-      case 'OFFER':
-        return OfferMessageBubble(message: message, isMe: isMe);
-      case 'TEXT':
-      default:
+      case MessageType.unknown:
+        return _buildMessageContent(context);
+      case MessageType.text:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (message.content != null && message.content!.isNotEmpty)
-              _ExpandableTextMessage(text: message.content!, isMe: isMe),
+              ExpandableTextMessage(text: message.content!, isMe: isMe),
             // Link preview below text
             if (message.metadata != null) ...[
               const SizedBox(height: 6),
@@ -391,112 +352,5 @@ class MessageBubble extends StatelessWidget {
           ],
         );
     }
-  }
-}
-
-class _ReadStatusIcon extends StatelessWidget {
-  final bool isRead;
-  final bool isDelivered;
-
-  const _ReadStatusIcon({required this.isRead, required this.isDelivered});
-
-  @override
-  Widget build(BuildContext context) {
-    if (isRead) {
-      return const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.done_all, size: 14, color: AppColors.primaryContainer),
-        ],
-      );
-    }
-    if (isDelivered) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.done_all, size: 14, color: context.textSecondary),
-        ],
-      );
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [Icon(Icons.done, size: 14, color: context.textSecondary)],
-    );
-  }
-}
-
-class _ExpandableTextMessage extends StatefulWidget {
-  final String text;
-  final bool isMe;
-
-  const _ExpandableTextMessage({required this.text, required this.isMe});
-
-  @override
-  State<_ExpandableTextMessage> createState() => _ExpandableTextMessageState();
-}
-
-class _ExpandableTextMessageState extends State<_ExpandableTextMessage> {
-  bool _isExpanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool shouldTruncate =
-        widget.text.length > 300 || widget.text.split('\n').length > 12;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        BrutalistHighlightedText(
-          text: widget.text,
-          maxLines: (_isExpanded || !shouldTruncate) ? null : 12,
-          overflow: (_isExpanded || !shouldTruncate)
-              ? TextOverflow.clip
-              : TextOverflow.ellipsis,
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 14,
-            color: widget.isMe ? AppColors.onPrimary : (context.textPrimary),
-          ),
-          linkColor: widget.isMe
-              ? AppColors.onPrimary
-              : (context.colors.primary),
-          mentionColor: widget.isMe
-              ? AppColors.onPrimary
-              : (context.colors.primary),
-          hashtagColor: widget.isMe
-              ? AppColors.onPrimary
-              : (context.colors.primary),
-          onLinkTap: (url) => showBrutalistSafeLinkDialog(context, url),
-          onMentionTap: (mention) {
-            final username = mention.replaceFirst('@', '');
-            context.push(AppRoutes.peopleSearchWith(username));
-          },
-          onHashtagTap: (tag) {
-            context.push(AppRoutes.postSearchWith(tag));
-          },
-        ),
-        if (shouldTruncate)
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Text(
-                _isExpanded ? 'Ver menos' : 'Ver mais',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: context.textSecondary,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
   }
 }

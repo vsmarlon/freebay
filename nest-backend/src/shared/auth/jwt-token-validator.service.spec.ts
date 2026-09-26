@@ -5,6 +5,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { JwtTokenValidatorService } from './jwt-token-validator.service';
+import { UserRole } from '@prisma/client';
 
 describe('JwtTokenValidatorService session revocation', () => {
   const invalidBefore = 1_700_000_000_500;
@@ -25,19 +26,19 @@ describe('JwtTokenValidatorService session revocation', () => {
   }
 
   it('rejects a token issued immediately before revoke in the same second', async () => {
-    const validator = await createValidator({ userId: 'user-1', role: 'USER', type: JwtTokenType.ACCESS, iat: 1_700_000_000, issuedAtMs: invalidBefore - 1 });
+    const validator = await createValidator({ userId: 'user-1', role: UserRole.USER, type: JwtTokenType.ACCESS, iat: 1_700_000_000, issuedAtMs: invalidBefore - 1 });
 
     await expect(validator.verifyAndValidate('token')).rejects.toThrow(new UnauthorizedException('Sessão expirada'));
   });
 
   it('accepts a token issued after revoke in the same second', async () => {
-    const validator = await createValidator({ userId: 'user-1', role: 'USER', type: JwtTokenType.ACCESS, iat: 1_700_000_000, issuedAtMs: invalidBefore + 1 });
+    const validator = await createValidator({ userId: 'user-1', role: UserRole.USER, type: JwtTokenType.ACCESS, iat: 1_700_000_000, issuedAtMs: invalidBefore + 1 });
 
     await expect(validator.verifyAndValidate('token')).resolves.toEqual(expect.objectContaining({ issuedAtMs: invalidBefore + 1 }));
   });
 
   it('keeps legacy second-resolution tokens on their existing safe semantics', async () => {
-    const validator = await createValidator({ userId: 'user-1', role: 'USER', type: JwtTokenType.ACCESS, iat: 1_699_999_999 });
+    const validator = await createValidator({ userId: 'user-1', role: UserRole.USER, type: JwtTokenType.ACCESS, iat: 1_699_999_999 });
 
     await expect(validator.verifyAndValidate('token')).rejects.toThrow('Sessão expirada');
   });

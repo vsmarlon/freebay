@@ -1,24 +1,40 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/shared/repositories/base_http_repository.dart';
+import 'package:dio/dio.dart';
+import 'package:freebay/shared/http/request_either.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
-class FavoritesService extends BaseHttpRepository {
-  FavoritesService({super.client});
+class FavoritesService {
+  final Dio client;
+
+  FavoritesService({Dio? client}) : client = client ?? HttpClient.instance;
 
   Future<Either<Failure, void>> toggleFavorite(String productId) =>
-      safeVoid(() => client.post('/favorites/$productId'));
+      requestEither<void>(
+        () => client.post('/favorites/$productId'),
+        decoder: (_) => const Right(null),
+      );
 
-  Future<Either<Failure, bool>> isFavorited(String productId) => safeGet<bool>(
-    '/favorites/check/$productId',
-    extractKey: 'data.isFavorited',
-    customMapper: (d) => d == true,
+  Future<Either<Failure, bool>> isFavorited(String productId) => requestEither(
+    () => client.get('/favorites/check/$productId'),
+    decoder: (response) => Right(response.data['data']['isFavorited'] == true),
   );
 
-  Future<Either<Failure, List<ProductEntity>>> getFavorites() =>
-      safeGetList<ProductEntity>(
-        '/favorites',
-        listKey: 'data.products',
-        fromJson: ProductEntity.fromJson,
-      );
+  Future<Either<Failure, List<ProductEntity>>> getFavorites() => requestEither(
+    () => client.get('/favorites'),
+    decoder: (response) {
+      final raw = response.data['data']['products'];
+      final products = raw is List
+          ? raw
+                .whereType<Map>()
+                .map(
+                  (item) =>
+                      ProductEntity.fromJson(Map<String, dynamic>.from(item)),
+                )
+                .toList()
+          : <ProductEntity>[];
+      return Right(products);
+    },
+  );
 }

@@ -33,7 +33,16 @@ Uint8List? _decodeResizeEncode(_CompressParams params) {
 class ImageUploadService {
   ImageUploadService._();
 
-  static const int maxUploadBytes = 800000;
+  static const int compressedTargetBytes = 800000;
+  static const int serverUploadMaxBytes = 5 * 1024 * 1024;
+  static const int initialQuality = 90;
+  static const int minimumQuality = 50;
+  static const int qualityStep = 8;
+  static const int reducedDimensionQuality = 74;
+  static const int minimumDimensionQuality = 66;
+  static const int initialMaxDimension = 1600;
+  static const int reducedMaxDimension = 1280;
+  static const int minimumMaxDimension = 1080;
 
   static Future<MultipartFile> compressedMultipartFile(
     String path, {
@@ -41,8 +50,8 @@ class ImageUploadService {
   }) async {
     final originalBytes = await File(path).readAsBytes();
 
-    int quality = 90;
-    int maxDimension = 1600;
+    int quality = initialQuality;
+    int maxDimension = initialMaxDimension;
 
     Uint8List? compressed = await compute<_CompressParams, Uint8List?>(
       _decodeResizeEncode,
@@ -54,14 +63,14 @@ class ImageUploadService {
     }
 
     while (compressed != null &&
-        compressed.length > maxUploadBytes &&
-        quality > 50) {
-      quality -= 8;
-      if (quality <= 74) {
-        maxDimension = 1280;
+        compressed.length > compressedTargetBytes &&
+        quality > minimumQuality) {
+      quality -= qualityStep;
+      if (quality <= reducedDimensionQuality) {
+        maxDimension = reducedMaxDimension;
       }
-      if (quality <= 66) {
-        maxDimension = 1080;
+      if (quality <= minimumDimensionQuality) {
+        maxDimension = minimumMaxDimension;
       }
 
       compressed = await compute<_CompressParams, Uint8List?>(

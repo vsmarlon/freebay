@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
@@ -29,7 +31,7 @@ class ConversationMessagesState {
   final String? otherUserId;
   final String? otherUserName;
   final String? otherUserAvatarUrl;
-  final String? threadType;
+  final ChatThreadType? threadType;
   final String? loadError;
 
   const ConversationMessagesState({
@@ -62,8 +64,9 @@ class ConversationMessagesState {
     String? otherUserId,
     String? otherUserName,
     String? otherUserAvatarUrl,
-    String? threadType,
+    ChatThreadType? threadType,
     String? loadError,
+    bool clearLoadError = false,
   }) {
     return ConversationMessagesState(
       messages: messages ?? this.messages,
@@ -78,7 +81,7 @@ class ConversationMessagesState {
       otherUserName: otherUserName ?? this.otherUserName,
       otherUserAvatarUrl: otherUserAvatarUrl ?? this.otherUserAvatarUrl,
       threadType: threadType ?? this.threadType,
-      loadError: loadError,
+      loadError: clearLoadError ? null : loadError ?? this.loadError,
     );
   }
 }
@@ -98,6 +101,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
     socket.joinConversation(chatId);
     _sub = socket.events.listen(_onEvent);
     ref.onDispose(() {
+      socket.leaveConversation(chatId);
       _sub?.cancel();
       _typingTimer?.cancel();
     });
@@ -106,25 +110,32 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
   }
 
   Future<void> _loadFirstPage() async {
+    await _loadConversation(showLoadingError: true);
+  }
+
+  Future<void> _loadConversation({required bool showLoadingError}) async {
     final repo = ref.read(chatRepositoryProvider);
     final results = await repo.getConversation(chatId);
     final starred = await repo.getStarredMessages(chatId);
     if (!ref.mounted) return;
     results.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, loadError: failure.message),
+      (failure) {
+        if (showLoadingError) {
+          state = state.copyWith(isLoading: false, loadError: failure.message);
+        }
+      },
       (data) {
         _cursor = data.nextCursor;
         state = state.copyWith(
           messages: List.from(data.messages),
           preference: data.preference,
           hasMore: data.hasMore,
-          isLoading: false,
+          isLoading: showLoadingError ? false : null,
           otherUserId: data.otherUserId,
           otherUserName: data.otherUserName,
           otherUserAvatarUrl: data.otherUserAvatarUrl,
           threadType: data.threadType,
-          loadError: null,
+          clearLoadError: true,
         );
       },
     );
@@ -135,29 +146,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
   }
 
   /// Silent reload (no skeleton) after sends from attachment sheets.
-  Future<void> refresh() async {
-    final repo = ref.read(chatRepositoryProvider);
-    final results = await repo.getConversation(chatId);
-    final starred = await repo.getStarredMessages(chatId);
-    if (!ref.mounted) return;
-    results.fold((_) {}, (data) {
-      _cursor = data.nextCursor;
-      state = state.copyWith(
-        messages: List.from(data.messages),
-        preference: data.preference,
-        hasMore: data.hasMore,
-        otherUserId: data.otherUserId,
-        otherUserName: data.otherUserName,
-        otherUserAvatarUrl: data.otherUserAvatarUrl,
-        threadType: data.threadType,
-        loadError: null,
-      );
-    });
-    if (!ref.mounted) return;
-    starred.fold((_) {}, (messages) {
-      state = state.copyWith(starredIds: {for (final m in messages) m.id});
-    });
-  }
+  Future<void> refresh() => _loadConversation(showLoadingError: false);
 
   Future<Either<Failure, MessageEntity>> sendLocation({
     required Map<String, dynamic> metadata,
@@ -172,7 +161,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
         .sendRichMessage(
           conversationId: chatId,
           clientMessageId: operationId,
-          type: 'LOCATION',
+          type: MessageType.location,
           replyToId: replyToId,
           metadata: metadata,
         );

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { UsersController } from './users.controller';
+import { UsersAccountController } from './users-account.controller';
+import { UsersDiscoveryController } from './users-discovery.controller';
+import { UsersSocialController } from './users-social.controller';
 import {
   GetProfileUseCase,
   GetUserStatsUseCase,
@@ -16,6 +18,10 @@ import {
   RequestAccountDeletionUseCase,
   CancelAccountDeletionUseCase,
   ExportUserDataUseCase,
+  ListFollowersUseCase,
+  ListFollowingUseCase,
+  GetFollowStatusUseCase,
+  GetBlockStatusUseCase,
 } from './usecases';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { PrismaFollowRepository } from './data/repositories/follow-database.repository';
@@ -25,10 +31,20 @@ import { PhoneVerificationDatabaseRepository } from './data/repositories/phone-v
 import { AccountLifecycleDatabaseRepository } from './data/repositories/account-lifecycle-database.repository';
 import { SmsService } from './services/sms.service';
 import { TwilioSmsService } from './services/twilio-sms.service';
+import { FollowRepository } from './domain/repositories/follow.repository';
+import { BlockRepository } from './domain/repositories/block.repository';
+import { UserLookupRepository } from './domain/repositories/user-lookup.repository';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 
 @Module({
   imports: [AuthModule],
-  controllers: [UsersController],
+  // Registration order matters: static routes (me/*, search, suggestions)
+  // must win over the dynamic :id routes in UsersSocialController.
+  controllers: [
+    UsersAccountController,
+    UsersDiscoveryController,
+    UsersSocialController,
+  ],
   providers: [
     GetProfileUseCase,
     GetUserStatsUseCase,
@@ -45,7 +61,10 @@ import { TwilioSmsService } from './services/twilio-sms.service';
     RequestAccountDeletionUseCase,
     CancelAccountDeletionUseCase,
     ExportUserDataUseCase,
-    AccountLifecycleDatabaseRepository,
+    ListFollowersUseCase,
+    ListFollowingUseCase,
+    GetFollowStatusUseCase,
+    GetBlockStatusUseCase,
     AccountLifecycleDatabaseRepository,
     PrismaFollowRepository,
     PrismaBlockRepository,
@@ -53,6 +72,9 @@ import { TwilioSmsService } from './services/twilio-sms.service';
     PhoneVerificationDatabaseRepository,
     TwilioSmsService,
     { provide: SmsService, useExisting: TwilioSmsService },
+    { provide: FollowRepository, useExisting: PrismaFollowRepository },
+    { provide: BlockRepository, useExisting: PrismaBlockRepository },
+    { provide: UserLookupRepository, useExisting: UserDatabaseRepository },
   ],
   exports: [PrismaFollowRepository, PrismaBlockRepository, AccountLifecycleDatabaseRepository],
 })

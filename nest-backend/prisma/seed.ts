@@ -381,17 +381,29 @@ async function main() {
     where: { userId: carol.id, imageUrl: storyUrl },
     select: { id: true },
   });
-  if (existingStory) {
-    await prisma.story.update({
+  const seededStory = existingStory
+    ? await prisma.story.update({
       where: { id: existingStory.id },
       data: { expiresAt: tomorrow },
-    });
-  } else {
-    await prisma.story.create({
+    })
+    : await prisma.story.create({
       data: {
         userId: carol.id,
         imageUrl: storyUrl,
         expiresAt: tomorrow,
+      },
+    });
+
+  const seededHighlight = await prisma.storyHighlight.findFirst({
+    where: { userId: carol.id, title: 'Estilo' },
+  });
+  if (!seededHighlight) {
+    await prisma.storyHighlight.create({
+      data: {
+        userId: carol.id,
+        title: 'Estilo',
+        coverStoryId: seededStory.id,
+        stories: { create: [{ storyId: seededStory.id, position: 0 }] },
       },
     });
   }

@@ -1,6 +1,11 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
-import 'package:freebay/features/reviews/data/repositories/review_repository.dart';
+import 'package:freebay/features/reviews/domain/repositories/review_repository.dart';
+import 'package:freebay/shared/services/image_upload_service.dart';
 
 class UploadReviewImageParams {
   final String orderId;
@@ -16,10 +21,17 @@ class UploadReviewImageUsecase
   UploadReviewImageUsecase(this._repository);
 
   @override
-  UsecaseResponse<Failure, String> call(UploadReviewImageParams params) {
-    return _repository.uploadReviewImage(
-      orderId: params.orderId,
-      filePath: params.filePath,
-    );
+  Future<Either<Failure, String>> call(UploadReviewImageParams params) async {
+    final filename = params.filePath.split(Platform.pathSeparator).last;
+    final MultipartFile file;
+    try {
+      file = await ImageUploadService.compressedMultipartFile(
+        params.filePath,
+        filename: filename,
+      );
+    } catch (_) {
+      return const Left(ServerFailure('Erro ao processar imagem.'));
+    }
+    return _repository.uploadReviewImage(orderId: params.orderId, file: file);
   }
 }

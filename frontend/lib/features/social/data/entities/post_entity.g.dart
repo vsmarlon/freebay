@@ -12,7 +12,9 @@ _PostProductInfo _$PostProductInfoFromJson(Map<String, dynamic> json) =>
       title: json['title'] as String,
       description: json['description'] as String,
       price: (json['price'] as num?)?.toInt() ?? 0,
-      condition: json['condition'] as String? ?? 'NEW',
+      condition: json['condition'] == null
+          ? ProductCondition.isNew
+          : _productConditionFromJson(json['condition']),
     );
 
 Map<String, dynamic> _$PostProductInfoToJson(_PostProductInfo instance) =>
@@ -21,7 +23,7 @@ Map<String, dynamic> _$PostProductInfoToJson(_PostProductInfo instance) =>
       'title': instance.title,
       'description': instance.description,
       'price': instance.price,
-      'condition': instance.condition,
+      'condition': _productConditionToJson(instance.condition),
     };
 
 _PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => _PostEntity(
@@ -29,7 +31,8 @@ _PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => _PostEntity(
   userId: json['userId'] as String,
   content: json['content'] as String?,
   imageUrl: json['imageUrl'] as String?,
-  type: json['type'] as String? ?? 'REGULAR',
+  type:
+      $enumDecodeNullable(_$PostTypeEnumMap, json['type']) ?? PostType.regular,
   likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
   commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
   sharesCount: (json['sharesCount'] as num?)?.toInt() ?? 0,
@@ -55,7 +58,7 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
       'userId': instance.userId,
       'content': instance.content,
       'imageUrl': instance.imageUrl,
-      'type': instance.type,
+      'type': _$PostTypeEnumMap[instance.type]!,
       'likesCount': instance.likesCount,
       'commentsCount': instance.commentsCount,
       'sharesCount': instance.sharesCount,
@@ -68,3 +71,8 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
       'user': instance.user.toJson(),
       'product': instance.product?.toJson(),
     };
+
+const _$PostTypeEnumMap = {
+  PostType.product: 'PRODUCT',
+  PostType.regular: 'REGULAR',
+};

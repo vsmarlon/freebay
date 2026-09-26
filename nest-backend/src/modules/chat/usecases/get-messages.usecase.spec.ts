@@ -5,6 +5,7 @@ import { PrismaConversationPreferenceRepository } from '../data/repositories/con
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
+import { directMessage, orderMessage } from './test-fixtures';
 
 const mockRepo = {
   findMessagesByConversation: jest.fn(),
@@ -73,22 +74,10 @@ describe('GetMessagesUseCase', () => {
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );
     mockRepo.findMessagesByConversation.mockResolvedValue(right(page([
-      {
-        id: 'msg-1',
-        conversationId: 'conv-1',
-        senderId: 'user-2',
-        content: 'Hello',
-        type: 'TEXT',
-        attachmentUrl: null,
-        metadata: null,
-        replyToId: null,
-        replyTo: null,
-        deletedAt: null,
-        readAt: null,
-        deliveredAt: null,
-        createdAt: now,
+      directMessage({
+        senderId: 'user-2', createdAt: now,
         sender: { id: 'user-2', displayName: 'Other', avatarUrl: null },
-      },
+      }),
     ])));
 
     const result = await sut.execute('conv-1', 'user-1');
@@ -112,22 +101,10 @@ describe('GetMessagesUseCase', () => {
       right({ orderId: 'order-1', otherUserId: 'seller-1', orderStatus: 'CONFIRMED' }),
     );
     mockRepo.findChatMessagesByOrder.mockResolvedValue(right(page([
-      {
-        id: 'msg-1',
-        orderId: 'order-1',
-        senderId: 'seller-1',
-        content: 'A caminho',
-        type: 'TEXT',
-        attachmentUrl: null,
-        metadata: null,
-        replyToId: null,
-        replyTo: null,
-        deletedAt: null,
-        readAt: null,
-        deliveredAt: null,
-        createdAt: now,
+      orderMessage({
+        senderId: 'seller-1', content: 'A caminho', createdAt: now,
         sender: { id: 'seller-1', displayName: 'Seller', avatarUrl: null },
-      },
+      }),
     ])));
 
     const result = await sut.execute('order-1', 'buyer-1');
@@ -147,15 +124,8 @@ describe('GetMessagesUseCase', () => {
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );
     mockRepo.findMessagesByConversation.mockResolvedValue(right(page([
-      {
-        id: 'msg-2',
-        conversationId: 'conv-1',
-        senderId: 'user-1',
-        content: 'Respondendo',
-        type: 'TEXT',
-        attachmentUrl: null,
-        metadata: null,
-        replyToId: 'msg-1',
+      directMessage({
+        id: 'msg-2', senderId: 'user-1', content: 'Respondendo', replyToId: 'msg-1',
         replyTo: {
           id: 'msg-1',
           senderId: 'user-2',
@@ -164,12 +134,9 @@ describe('GetMessagesUseCase', () => {
           attachmentUrl: null,
           deletedAt: now,
         },
-        deletedAt: null,
-        readAt: null,
-        deliveredAt: null,
         createdAt: now,
         sender: { id: 'user-1', displayName: 'Me', avatarUrl: null },
-      },
+      }),
     ])));
 
     const result = await sut.execute('conv-1', 'user-1');

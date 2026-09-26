@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/features/product/presentation/widgets/product_form_fields.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/features/product/presentation/widgets/product_form_validation.dart';
 
 class EditProductPage extends ConsumerStatefulWidget {
   final String productId;
@@ -22,7 +26,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
   bool _didPrefill = false;
   bool _isLoading = false;
-  String _status = 'ACTIVE';
+  ProductStatus _status = ProductStatus.active;
   bool _isNewProduct = true;
 
   @override
@@ -35,7 +39,6 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     final productAsync = ref.watch(productByIdProvider(widget.productId));
 
     return Scaffold(
@@ -75,7 +78,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
                 ),
                 data: (product) {
                   _prefill(product);
-                  return _buildForm(context, product, isDark);
+                  return _buildForm(context, product);
                 },
               ),
             ),
@@ -95,69 +98,38 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
     _priceController.text = (product.price / 100)
         .toStringAsFixed(2)
         .replaceAll('.', ',');
-    _status = product.status == 'PAUSED' ? 'PAUSED' : 'ACTIVE';
-    _isNewProduct = product.condition == 'NEW';
+    _status = product.status == ProductStatus.paused
+        ? ProductStatus.paused
+        : ProductStatus.active;
+    _isNewProduct = product.condition == ProductCondition.isNew;
     _didPrefill = true;
   }
 
-  Widget _buildForm(BuildContext context, ProductEntity product, bool isDark) {
+  Widget _buildForm(BuildContext context, ProductEntity product) {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
         BrutalistBreadcrumb(items: context.breadcrumbs),
         Spacing.vMd,
-        AppTextField(
-          controller: _titleController,
-          label: 'Título',
-          hint: 'Ex: iPhone 13 Pro Max 256GB',
-          maxLength: 100,
-        ),
-        Spacing.vMd,
-        AppTextField(
-          controller: _descriptionController,
-          label: 'Descrição',
-          hint: 'Detalhes do produto',
-          maxLines: 4,
-        ),
-        Spacing.vMd,
-        AppTextField(
-          controller: _priceController,
-          label: 'Preço (R\$)',
-          hint: '0,00',
-          keyboardType: TextInputType.number,
+        ProductBasicFields(
+          titleController: _titleController,
+          descriptionController: _descriptionController,
+          priceController: _priceController,
+          descriptionHint: 'Detalhes do produto',
+          priceKeyboardType: TextInputType.number,
         ),
         Spacing.vLg,
-        Text(
-          'Condição',
-          style: TextStyle(
+        ProductConditionSelector(
+          label: 'Condição',
+          newLabel: 'Novo',
+          usedLabel: 'Usado',
+          labelStyle: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
             color: context.textPrimary,
           ),
-        ),
-        Spacing.vSm,
-        Row(
-          children: [
-            Expanded(
-              child: AppButton(
-                label: 'Novo',
-                variant: _isNewProduct
-                    ? AppButtonVariant.primary
-                    : AppButtonVariant.ghost,
-                onPressed: () => setState(() => _isNewProduct = true),
-              ),
-            ),
-            Spacing.hSm,
-            Expanded(
-              child: AppButton(
-                label: 'Usado',
-                variant: !_isNewProduct
-                    ? AppButtonVariant.primary
-                    : AppButtonVariant.ghost,
-                onPressed: () => setState(() => _isNewProduct = false),
-              ),
-            ),
-          ],
+          isNew: _isNewProduct,
+          onChanged: (value) => setState(() => _isNewProduct = value),
         ),
         Spacing.vLg,
         Text(
@@ -174,20 +146,20 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
             Expanded(
               child: AppButton(
                 label: 'Ativo',
-                variant: _status == 'ACTIVE'
+                variant: _status == ProductStatus.active
                     ? AppButtonVariant.primary
                     : AppButtonVariant.ghost,
-                onPressed: () => setState(() => _status = 'ACTIVE'),
+                onPressed: () => setState(() => _status = ProductStatus.active),
               ),
             ),
             Spacing.hSm,
             Expanded(
               child: AppButton(
                 label: 'Pausado',
-                variant: _status == 'PAUSED'
+                variant: _status == ProductStatus.paused
                     ? AppButtonVariant.primary
                     : AppButtonVariant.ghost,
-                onPressed: () => setState(() => _status = 'PAUSED'),
+                onPressed: () => setState(() => _status = ProductStatus.paused),
               ),
             ),
           ],
@@ -205,12 +177,11 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
   Future<void> _submit(BuildContext context, ProductEntity product) async {
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
-    final price =
-        ((double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0) *
-                100)
-            .toInt();
+    final price = CurrencyUtils.parseReaisToCents(_priceController.text) ?? 0;
 
-    if (title.length < 3 || description.length < 10 || price <= 0) {
+    if (!ProductFormValidation.isTitleValid(title) ||
+        !ProductFormValidation.isDescriptionValid(description) ||
+        !ProductFormValidation.isPriceValid(price)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Preencha título, descrição e preço corretamente.'),
@@ -228,8 +199,10 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           'title': title,
           'description': description,
           'price': price,
-          'condition': _isNewProduct ? 'NEW' : 'USED',
-          'status': _status,
+          'condition': _isNewProduct
+              ? ProductCondition.isNew.wireValue
+              : ProductCondition.used.wireValue,
+          'status': _status.wireValue,
         });
 
     if (!mounted) {

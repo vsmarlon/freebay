@@ -36,8 +36,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private connectedUsers = new Map<string, AuthenticatedUser>();
-  private userSockets = new Map<string, string>();
-
   constructor(
     private tokenValidator: JwtTokenValidatorService,
     private conversationRepository: ConversationDatabaseRepository,
@@ -59,7 +57,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const payload = await this.tokenValidator.verifyAndValidate(token, [JwtTokenType.ACCESS]);
       this.connectedUsers.set(client.id, { userId: payload.userId, email: payload.email });
-      this.userSockets.set(payload.userId, client.id);
       this.logger.log(`Client connected: ${client.id}, userId: ${payload.userId}`);
 
       client.broadcast.emit('user_online', { userId: payload.userId, lastSeenAt: null });
@@ -72,7 +69,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const user = this.connectedUsers.get(client.id);
     if (user) {
-      this.userSockets.delete(user.userId);
       const now = new Date();
       client.broadcast.emit('user_offline', { userId: user.userId, lastSeenAt: now.toISOString() });
     }
@@ -231,34 +227,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return null;
     }
 
-    const convResult = await this.conversationRepository.findDirectConversationById(conversationId);
-    if (convResult.isLeft() || !convResult.value) return null;
-
-    const conversation = convResult.value;
-
-    const otherUserId = conversation.user1Id === userId ? conversation.user2Id : conversation.user1Id;
     const resultValue = result.value;
 
     let replyTo = null;
-    if (resultValue.replyToId) {
-      const replyResult = await this.conversationRepository.findReplyToSummary(resultValue.replyToId);
+    if (resultValue.message.replyToId) {
+      const replyResult = await this.conversationRepository.findReplyToSummary(resultValue.message.replyToId);
       if (!replyResult.isLeft() && replyResult.value) {
         replyTo =
-          replyResult.value.conversationId === conversationId
+          replyResult.value.conversationId === resultValue.message.conversationId
             ? redactReplySummary(replyResult.value)
             : null;
       }
     }
 
-    const senderName = await this.getSenderName(userId);
-    await this.notificationService.notifyNewMessage(otherUserId, senderName, conversationId);
+    try {
+      await this.notificationService.notifyNewMessage(
+        resultValue.recipientId,
+        resultValue.senderName,
+        conversationId,
+      );
+    } catch (error) {
+      this.logger.warn(`Chat notification failed: ${String(error)}`);
+    }
 
-    return { ...resultValue, replyTo };
-  }
-
-  private async getSenderName(userId: string): Promise<string> {
-    const userResult = await this.conversationRepository.findUserById(userId);
-    if (userResult.isLeft() || !userResult.value) return 'Alguém';
-    return userResult.value.displayName || 'Alguém';
+    return { ...resultValue.message, replyTo };
   }
 }

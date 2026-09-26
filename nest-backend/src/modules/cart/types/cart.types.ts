@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, ProductStatus } from '@prisma/client';
 
 export const CART_ITEM_INCLUDE = {
   product: {
@@ -14,7 +14,7 @@ export type CartItemPayload = Prisma.CartItemGetPayload<{ include: typeof CART_I
 export interface ProductBrief {
   id: string;
   sellerId: string;
-  status: string;
+  status: ProductStatus;
   price: number;
 }
 

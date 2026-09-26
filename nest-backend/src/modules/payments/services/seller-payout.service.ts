@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ReversalState, TransferDeliveryState } from '@prisma/client';
 import { WalletEntryReason } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
@@ -23,7 +24,7 @@ export class SellerPayoutService {
     const found = await this.transactionRepo.findByOrderId(orderId);
     if (found.isLeft() || !found.value) return;
     const transaction = found.value;
-    if (transaction.transferState === 'SUCCEEDED' || transaction.transferId) return;
+    if (transaction.transferState === TransferDeliveryState.SUCCEEDED || transaction.transferId) return;
     if (!transaction.chargeId) return;
 
     const account = await this.connectRepo.findByUserId(transaction.order.sellerId);
@@ -99,7 +100,7 @@ export class SellerPayoutService {
     const transaction = found.value;
     const transferId = transaction.transferId;
     if (!transferId) return right(undefined);
-    if (transaction.reversalState === 'SUCCEEDED') return right(undefined);
+    if (transaction.reversalState === ReversalState.SUCCEEDED) return right(undefined);
 
     const claimed = await this.transactionRepo.claimReversal(orderId, new Date());
     if (claimed.isLeft()) return left(claimed.value);
@@ -126,7 +127,7 @@ export class SellerPayoutService {
       transaction.reversalIdempotencyKey,
     );
     if (reversed.isLeft()) {
-      await this.transactionRepo.markReversalFailure(transaction.id, this.failureState(reversed.value), reversed.value.message);
+      await this.transactionRepo.markReversalFailure(transaction.id, this.failureReversalState(reversed.value), reversed.value.message);
       return left(reversed.value);
     }
     const finalized = await this.transactionRepo.finalizeReversal(transaction.id, reversed.value);
@@ -135,8 +136,17 @@ export class SellerPayoutService {
     return right(undefined);
   }
 
-  private failureState(error: AppError | undefined): 'RETRYABLE' | 'TERMINAL' {
-    if (!error) return 'RETRYABLE';
-    return [400, 401, 403, 404, 422].includes(error.statusCode) ? 'TERMINAL' : 'RETRYABLE';
+  private failureState(error: AppError | undefined): Extract<TransferDeliveryState, 'RETRYABLE' | 'TERMINAL'> {
+    if (!error) return TransferDeliveryState.RETRYABLE;
+    return [400, 401, 403, 404, 422].includes(error.statusCode)
+      ? TransferDeliveryState.TERMINAL
+      : TransferDeliveryState.RETRYABLE;
+  }
+
+  private failureReversalState(error: AppError | undefined): Extract<ReversalState, 'RETRYABLE' | 'TERMINAL'> {
+    if (!error) return ReversalState.RETRYABLE;
+    return [400, 401, 403, 404, 422].includes(error.statusCode)
+      ? ReversalState.TERMINAL
+      : ReversalState.RETRYABLE;
   }
 }

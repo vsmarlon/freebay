@@ -27,7 +27,7 @@ export class GetConversationsUseCase {
           createdAt: lastMsg.createdAt,
         } : null,
         unreadCount,
-        status: conv.status as 'ACTIVE' | 'PENDING',
+        status: conv.status,
         createdAt: conv.createdAt,
       };
     });

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PostProductInfo {
 
- String get id; String get title; String get description; int get price; String get condition;
+ String get id; String get title; String get description; int get price;@JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson) ProductCondition get condition;
 /// Create a copy of PostProductInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $PostProductInfoCopyWith<$Res>  {
   factory $PostProductInfoCopyWith(PostProductInfo value, $Res Function(PostProductInfo) _then) = _$PostProductInfoCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String description, int price, String condition
+ String id, String title, String description, int price,@JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson) ProductCondition condition
 });
 
 
@@ -72,7 +72,7 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
 as int,condition: null == condition ? _self.condition : condition // ignore: cast_nullable_to_non_nullable
-as String,
+as ProductCondition,
   ));
 }
 
@@ -157,7 +157,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price,  String condition)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price, @JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson)  ProductCondition condition)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PostProductInfo() when $default != null:
 return $default(_that.id,_that.title,_that.description,_that.price,_that.condition);case _:
@@ -178,7 +178,7 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price,  String condition)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price, @JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson)  ProductCondition condition)  $default,) {final _that = this;
 switch (_that) {
 case _PostProductInfo():
 return $default(_that.id,_that.title,_that.description,_that.price,_that.condition);case _:
@@ -198,7 +198,7 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String description,  int price,  String condition)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String description,  int price, @JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson)  ProductCondition condition)?  $default,) {final _that = this;
 switch (_that) {
 case _PostProductInfo() when $default != null:
 return $default(_that.id,_that.title,_that.description,_that.price,_that.condition);case _:
@@ -213,14 +213,14 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 @JsonSerializable()
 
 class _PostProductInfo implements PostProductInfo {
-  const _PostProductInfo({required this.id, required this.title, required this.description, this.price = 0, this.condition = 'NEW'});
+  const _PostProductInfo({required this.id, required this.title, required this.description, this.price = 0, @JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson) this.condition = ProductCondition.isNew});
   factory _PostProductInfo.fromJson(Map<String, dynamic> json) => _$PostProductInfoFromJson(json);
 
 @override final  String id;
 @override final  String title;
 @override final  String description;
 @override@JsonKey() final  int price;
-@override@JsonKey() final  String condition;
+@override@JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson) final  ProductCondition condition;
 
 /// Create a copy of PostProductInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -255,7 +255,7 @@ abstract mixin class _$PostProductInfoCopyWith<$Res> implements $PostProductInfo
   factory _$PostProductInfoCopyWith(_PostProductInfo value, $Res Function(_PostProductInfo) _then) = __$PostProductInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String description, int price, String condition
+ String id, String title, String description, int price,@JsonKey(name: 'condition', fromJson: _productConditionFromJson, toJson: _productConditionToJson) ProductCondition condition
 });
 
 
@@ -279,7 +279,7 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
 as int,condition: null == condition ? _self.condition : condition // ignore: cast_nullable_to_non_nullable
-as String,
+as ProductCondition,
   ));
 }
 
@@ -290,7 +290,7 @@ as String,
 /// @nodoc
 mixin _$PostEntity {
 
- String get id; String get userId; String? get content; String? get imageUrl; String get type; int get likesCount; int get commentsCount; int get sharesCount; bool get isLiked; bool get isSaved; bool get hasReposted; DateTime? get repostedAt; UserEntity? get repostedBy; DateTime get createdAt; UserEntity get user; PostProductInfo? get product;
+ String get id; String get userId; String? get content; String? get imageUrl; PostType get type; int get likesCount; int get commentsCount; int get sharesCount; bool get isLiked; bool get isSaved; bool get hasReposted; DateTime? get repostedAt; UserEntity? get repostedBy; DateTime get createdAt; UserEntity get user; PostProductInfo? get product;
 /// Create a copy of PostEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -323,7 +323,7 @@ abstract mixin class $PostEntityCopyWith<$Res>  {
   factory $PostEntityCopyWith(PostEntity value, $Res Function(PostEntity) _then) = _$PostEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String? content, String? imageUrl, String type, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
+ String id, String userId, String? content, String? imageUrl, PostType type, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
 });
 
 
@@ -347,7 +347,7 @@ as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullabl
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String,likesCount: null == likesCount ? _self.likesCount : likesCount // ignore: cast_nullable_to_non_nullable
+as PostType,likesCount: null == likesCount ? _self.likesCount : likesCount // ignore: cast_nullable_to_non_nullable
 as int,commentsCount: null == commentsCount ? _self.commentsCount : commentsCount // ignore: cast_nullable_to_non_nullable
 as int,sharesCount: null == sharesCount ? _self.sharesCount : sharesCount // ignore: cast_nullable_to_non_nullable
 as int,isLiked: null == isLiked ? _self.isLiked : isLiked // ignore: cast_nullable_to_non_nullable
@@ -476,7 +476,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  String type,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  PostType type,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PostEntity() when $default != null:
 return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
@@ -497,7 +497,7 @@ return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  String type,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  PostType type,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)  $default,) {final _that = this;
 switch (_that) {
 case _PostEntity():
 return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
@@ -517,7 +517,7 @@ return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String? content,  String? imageUrl,  String type,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String? content,  String? imageUrl,  PostType type,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,) {final _that = this;
 switch (_that) {
 case _PostEntity() when $default != null:
 return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
@@ -532,14 +532,14 @@ return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_t
 @JsonSerializable()
 
 class _PostEntity implements PostEntity {
-  const _PostEntity({required this.id, required this.userId, this.content, this.imageUrl, this.type = 'REGULAR', this.likesCount = 0, this.commentsCount = 0, this.sharesCount = 0, this.isLiked = false, this.isSaved = false, this.hasReposted = false, this.repostedAt, this.repostedBy, required this.createdAt, required this.user, this.product});
+  const _PostEntity({required this.id, required this.userId, this.content, this.imageUrl, this.type = PostType.regular, this.likesCount = 0, this.commentsCount = 0, this.sharesCount = 0, this.isLiked = false, this.isSaved = false, this.hasReposted = false, this.repostedAt, this.repostedBy, required this.createdAt, required this.user, this.product});
   factory _PostEntity.fromJson(Map<String, dynamic> json) => _$PostEntityFromJson(json);
 
 @override final  String id;
 @override final  String userId;
 @override final  String? content;
 @override final  String? imageUrl;
-@override@JsonKey() final  String type;
+@override@JsonKey() final  PostType type;
 @override@JsonKey() final  int likesCount;
 @override@JsonKey() final  int commentsCount;
 @override@JsonKey() final  int sharesCount;
@@ -585,7 +585,7 @@ abstract mixin class _$PostEntityCopyWith<$Res> implements $PostEntityCopyWith<$
   factory _$PostEntityCopyWith(_PostEntity value, $Res Function(_PostEntity) _then) = __$PostEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String? content, String? imageUrl, String type, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
+ String id, String userId, String? content, String? imageUrl, PostType type, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
 });
 
 
@@ -609,7 +609,7 @@ as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullabl
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String,likesCount: null == likesCount ? _self.likesCount : likesCount // ignore: cast_nullable_to_non_nullable
+as PostType,likesCount: null == likesCount ? _self.likesCount : likesCount // ignore: cast_nullable_to_non_nullable
 as int,commentsCount: null == commentsCount ? _self.commentsCount : commentsCount // ignore: cast_nullable_to_non_nullable
 as int,sharesCount: null == sharesCount ? _self.sharesCount : sharesCount // ignore: cast_nullable_to_non_nullable
 as int,isLiked: null == isLiked ? _self.isLiked : isLiked // ignore: cast_nullable_to_non_nullable

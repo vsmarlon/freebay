@@ -135,6 +135,7 @@ class OrderActions extends StatelessWidget {
   }
 
   bool _canCancel() {
-    return isBuyer && order.status == OrderStatus.pending;
+    return order.status == OrderStatus.pending ||
+        order.status == OrderStatus.confirmed;
   }
 }

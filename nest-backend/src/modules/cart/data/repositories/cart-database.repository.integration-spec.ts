@@ -41,7 +41,7 @@ describe('CartDatabaseRepository reservations Integration', () => {
       );
       return right(order);
     } catch (error) {
-      return left(new BadRequestError((error as Error).message));
+      return left(new BadRequestError(error instanceof Error ? error.message : String(error)));
     }
   }
 

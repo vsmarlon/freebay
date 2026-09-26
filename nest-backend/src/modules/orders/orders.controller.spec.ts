@@ -7,40 +7,36 @@ import { MarkAsShippedUseCase } from './usecases/mark-as-shipped.usecase';
 import { MarkAsDeliveredUseCase } from './usecases/mark-as-delivered.usecase';
 import { CancelOrderUseCase } from './usecases/cancel-order.usecase';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { right, left, Left } from '@/shared/core/either';
-import { BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
-import { AuthUser } from '@/shared/core/types';
+import { right, left } from '@/shared/core/either';
+import { BadRequestError } from '@/shared/core/errors';
 import { IncomingMessage, request as httpRequest } from 'http';
 import { AllExceptionsFilter } from '@/shared/http/exception-filter';
 import { EitherInterceptor } from '@/shared/http/response.interceptor';
 import { TransformInterceptor } from '@/shared/http/transform.interceptor';
 import { createValidationPipe } from '@/shared/http/validation-pipe.factory';
-import { encodeCursor } from '@/shared/core/pagination';
-import { SALES_ORDER_STATUSES } from './types/order.types';
-import { SalesOrdersQueryDTO } from './dtos/order.dto';
+import { GetOrderUseCase } from './usecases/get-order.usecase';
+import { ListSalesOrdersUseCase } from './usecases/list-sales-orders.usecase';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
-  let mockOrderRepository: { findById: jest.Mock; findProductForOrder: jest.Mock; findByBuyerId: jest.Mock; findBySellerId: jest.Mock; findSellerSales: jest.Mock };
+  let getOrder: jest.Mock;
+  let listSalesOrders: jest.Mock;
 
   beforeEach(async () => {
-    mockOrderRepository = {
-      findById: jest.fn(),
-      findProductForOrder: jest.fn(),
-      findByBuyerId: jest.fn(),
-      findBySellerId: jest.fn(),
-      findSellerSales: jest.fn(),
-    };
+    getOrder = jest.fn();
+    listSalesOrders = jest.fn();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: PrismaOrderRepository, useValue: {} },
         { provide: CreateOrderUseCase, useValue: {} },
         { provide: ConfirmDeliveryUseCase, useValue: {} },
         { provide: MarkAsShippedUseCase, useValue: {} },
         { provide: MarkAsDeliveredUseCase, useValue: {} },
         { provide: CancelOrderUseCase, useValue: {} },
+        { provide: GetOrderUseCase, useValue: { execute: getOrder } },
+        { provide: ListSalesOrdersUseCase, useValue: { execute: listSalesOrders } },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -50,148 +46,21 @@ describe('OrdersController', () => {
     controller = module.get<OrdersController>(OrdersController);
   });
 
-  describe('findOne (IDOR Security Check)', () => {
-    const mockOrder = {
-      id: 'order-123',
-      buyerId: 'buyer-user-1',
-      sellerId: 'seller-user-2',
-      productId: 'prod-123',
-      amount: 5000,
-    };
+  it('keeps the findOne response contract', async () => {
+    const response = { order: { id: 'order-1' } };
+    getOrder.mockResolvedValue(right(response));
 
-    it('allows the buyer to view their order', async () => {
-      mockOrderRepository.findById.mockResolvedValue(right(mockOrder));
-      const buyerUser: AuthUser = { userId: 'buyer-user-1', role: 'USER' };
-
-      const result = await controller.findOne('order-123', buyerUser);
-
-      expect(result).toEqual({ order: mockOrder });
-    });
-
-    it('allows the seller to view their order', async () => {
-      mockOrderRepository.findById.mockResolvedValue(right(mockOrder));
-      const sellerUser: AuthUser = { userId: 'seller-user-2', role: 'USER' };
-
-      const result = await controller.findOne('order-123', sellerUser);
-
-      expect(result).toEqual({ order: mockOrder });
-    });
-
-    it('allows an admin to view any order', async () => {
-      mockOrderRepository.findById.mockResolvedValue(right(mockOrder));
-      const adminUser: AuthUser = { userId: 'admin-user-99', role: 'ADMIN' };
-
-      const result = await controller.findOne('order-123', adminUser);
-
-      expect(result).toEqual({ order: mockOrder });
-    });
-
-    it('blocks an unrelated user with ForbiddenError (preventing IDOR)', async () => {
-      mockOrderRepository.findById.mockResolvedValue(right(mockOrder));
-      const attackerUser: AuthUser = { userId: 'stranger-user-3', role: 'USER' };
-
-      const result = await controller.findOne('order-123', attackerUser);
-
-      expect(result).toBeInstanceOf(Left);
-      if (result instanceof Left) {
-        expect(result.value).toBeInstanceOf(ForbiddenError);
-      }
-    });
-
-    it('returns NotFoundError when order does not exist', async () => {
-      mockOrderRepository.findById.mockResolvedValue(right(null));
-      const anyUser: AuthUser = { userId: 'user-1', role: 'USER' };
-
-      const result = await controller.findOne('non-existent-order', anyUser);
-
-      expect(result).toBeInstanceOf(Left);
-      if (result instanceof Left) {
-        expect(result.value).toBeInstanceOf(NotFoundError);
-      }
-    });
+    await expect(controller.findOne('order-1', { userId: 'user-1', role: 'USER' }))
+      .resolves.toEqual(right(response));
   });
 
-  describe('getMySales cursor contract', () => {
-    const query = (values: Partial<SalesOrdersQueryDTO> = {}) => ({
-      limit: 2,
-      ...values,
-    });
+  it('delegates sales policy and preserves its result', async () => {
+    const response = { items: [], hasMore: false, nextCursor: null };
+    listSalesOrders.mockResolvedValue(right(response));
 
-    it.each([...SALES_ORDER_STATUSES])(
-      'ValidationPipe accepts status %s',
-      async (status) => {
-        const result = await createValidationPipe().transform(
-          { status },
-          { type: 'query', metatype: SalesOrdersQueryDTO },
-        );
-
-        expect(result).toBeInstanceOf(SalesOrdersQueryDTO);
-        expect(result.status).toBe(status);
-      },
-    );
-
-    it('ValidationPipe accepts an absent status', async () => {
-      const result = await createValidationPipe().transform(
-        {},
-        { type: 'query', metatype: SalesOrdersQueryDTO },
-      );
-
-      expect(result.status).toBeUndefined();
-    });
-
-    it.each([
-      ['invalid status', { status: 'UNKNOWN' }],
-      ['zero limit', { limit: 0 }],
-      ['oversized limit', { limit: 51 }],
-    ])('ValidationPipe rejects %s', async (_name, input) => {
-      await expect(
-        createValidationPipe().transform(input, {
-          type: 'query',
-          metatype: SalesOrdersQueryDTO,
-        }),
-      ).rejects.toThrow();
-    });
-
-    it('scopes the repository call to the authenticated seller and selected status', async () => {
-      mockOrderRepository.findSellerSales.mockResolvedValue(right({
-        items: [],
-        hasMore: false,
-        nextCursor: null,
-      }));
-
-      await controller.getMySales('seller-1', query({ status: 'SHIPPED' }));
-
-      expect(mockOrderRepository.findSellerSales).toHaveBeenCalledWith(
-        'seller-1',
-        { limit: 2 },
-        'SHIPPED',
-        null,
-      );
-    });
-
-    it.each([
-      ['malformed cursor', 'not-a-cursor'],
-      ['wrong scope', encodeCursor({
-        scope: 'purchases', sellerId: 'seller-1', status: 'ALL',
-        createdAt: '2026-09-12T00:00:00.000Z', id: 'order-1',
-      })],
-      ['wrong seller', encodeCursor({
-        scope: 'seller-sales', sellerId: 'seller-2', status: 'ALL',
-        createdAt: '2026-09-12T00:00:00.000Z', id: 'order-1',
-      })],
-      ['wrong status', encodeCursor({
-        scope: 'seller-sales', sellerId: 'seller-1', status: 'SHIPPED',
-        createdAt: '2026-09-12T00:00:00.000Z', id: 'order-1',
-      })],
-      ['malformed cursor shape', encodeCursor({
-        scope: 'seller-sales', sellerId: 'seller-1', status: 'ALL', id: 'order-1',
-      })],
-    ])('rejects %s without restarting at page one', async (_name, cursor) => {
-      const result = await controller.getMySales('seller-1', query({ cursor }));
-
-      expect(result).toBeInstanceOf(Left);
-      expect(mockOrderRepository.findSellerSales).not.toHaveBeenCalled();
-    });
+    await expect(controller.getMySales('seller-1', { limit: 2 }))
+      .resolves.toEqual(right(response));
+    expect(listSalesOrders).toHaveBeenCalledWith('seller-1', { limit: 2 });
   });
 });
 
@@ -239,6 +108,8 @@ describe('OrdersController create HTTP contract', () => {
         { provide: MarkAsShippedUseCase, useValue: {} },
         { provide: MarkAsDeliveredUseCase, useValue: {} },
         { provide: CancelOrderUseCase, useValue: {} },
+        { provide: GetOrderUseCase, useValue: { execute: jest.fn() } },
+        { provide: ListSalesOrdersUseCase, useValue: { execute: jest.fn() } },
       ],
     })
       .overrideGuard(JwtAuthGuard)

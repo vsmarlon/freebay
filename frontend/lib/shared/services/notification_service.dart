@@ -5,6 +5,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+typedef NotificationTapCallback = void Function(Map<String, dynamic> data);
+typedef NotificationReceivedCallback =
+    void Function(String type, Map<String, dynamic> data);
+
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   if (Platform.isAndroid) {
@@ -40,8 +44,8 @@ class NotificationService {
 
   static const String _fcmTokenKey = 'fcm_token';
 
-  Function(Map<String, dynamic>)? onNotificationTapped;
-  Function(String type, Map<String, dynamic> data)? onNotificationReceived;
+  NotificationTapCallback? onNotificationTapped;
+  NotificationReceivedCallback? onNotificationReceived;
 
   Future<void> initialize() async {
     await _initializeLocalNotifications();

@@ -5,7 +5,9 @@ import { AppError, NotFoundError } from '@/shared/core/errors';
 import { RepositoryResponse } from '@/shared/core/either';
 import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 
-export type RemovableContentType = 'PRODUCT' | 'POST' | 'COMMENT';
+import { ModerationTargetType } from '@prisma/client';
+
+export type RemovableContentType = Exclude<ModerationTargetType, 'USER' | 'REPORT'>;
 
 const ACTION_BY_TYPE: Record<RemovableContentType, ModerationActionType> = {
   PRODUCT: 'PRODUCT_REMOVED',
@@ -51,10 +53,10 @@ export class RemoveContentUseCase {
     targetType: RemovableContentType,
     targetId: string,
   ): RepositoryResponse<{ count: number }> {
-    if (targetType === 'PRODUCT') {
+    if (targetType === ModerationTargetType.PRODUCT) {
       return this.moderationRepository.softDeleteProduct(targetId);
     }
-    if (targetType === 'POST') {
+    if (targetType === ModerationTargetType.POST) {
       return this.moderationRepository.softDeletePost(targetId);
     }
     return this.moderationRepository.softDeleteComment(targetId);

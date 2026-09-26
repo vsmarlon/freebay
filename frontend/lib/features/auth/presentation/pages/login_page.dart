@@ -8,7 +8,9 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/core/utils/value_utils.dart';
+import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
+import 'package:freebay/features/auth/presentation/widgets/google_auth_button.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -24,41 +26,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
     duration: AppMotion.enter,
     vsync: this,
   )..forward();
-
-  Animation<double> _fadeFor(double begin, double end) {
-    return CurvedAnimation(
-      parent: _anim,
-      curve: Interval(begin, end, curve: AppMotion.enterCurve),
-    );
-  }
-
-  Animation<Offset> _slideFor(double begin, double end) {
-    return Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _anim,
-        curve: Interval(begin, end, curve: AppMotion.enterCurve),
-      ),
-    );
-  }
-
-  late final _logoFade = _fadeFor(0.0, 0.3);
-  late final _logoSlide = _slideFor(0.0, 0.3);
-
-  late final _emailFade = _fadeFor(0.14, 0.43);
-  late final _emailSlide = _slideFor(0.14, 0.43);
-
-  late final _passFade = _fadeFor(0.26, 0.57);
-  late final _passSlide = _slideFor(0.26, 0.57);
-
-  late final _rowFade = _fadeFor(0.37, 0.65);
-
-  late final _btnFade = _fadeFor(0.49, 0.77);
-  late final _btnSlide = _slideFor(0.49, 0.77);
-
-  late final _bottomFade = _fadeFor(0.6, 0.86);
 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -105,7 +72,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
-    final isDark = context.isDark;
 
     ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
       next.whenOrNull(
@@ -135,51 +101,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
         child: SafeArea(
           child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: context.borderColor.withAlpha(40),
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    if (context.canPop())
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: BrutalistIconButton(
-                          icon: Icons.arrow_back,
-                          onTap: () => context.pop(),
-                        ),
-                      ),
-                    Center(
-                      child: Text(
-                        'ENTRAR',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.0,
-                          color: context.textPrimary,
-                          shadows: [
-                            const Shadow(
-                              color: AppColors.primaryContainer,
-                              offset: AppDepth.shadowOffsetSmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              AuthHeader(
+                title: 'ENTRAR',
+                showBack: context.canPop(),
+                onBack: () => context.pop(),
               ),
               Expanded(
                 child: CenteredFormWrapper(
@@ -189,76 +114,68 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Spacing.vMd,
-                        AuthStagger.fromAnimations(
-                          opacity: _logoFade,
-                          slide: _logoSlide,
+                        AuthStagger(
+                          animation: _anim,
+                          begin: 0.0,
+                          end: 0.3,
                           child: const BrutalistLogo(
                             fontSize: 46,
                             showTagline: false,
                           ),
                         ),
                         Spacing.vXl,
-                        FadeTransition(
-                          opacity: _emailFade,
-                          child: SlideTransition(
-                            position: _emailSlide,
-                            child: AppTextField(
-                              controller: _emailController,
-                              label: 'E-mail',
-                              hint: 'seu@email.com',
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                              prefixIcon: Icons.email_outlined,
-                              validator: (v) => (v == null || v.trim().isEmpty)
-                                  ? 'Informe seu e-mail'
-                                  : (!ValueUtils.validateEmail(v)
-                                        ? 'E-mail inválido'
-                                        : null),
-                            ),
+                        AuthStagger(
+                          animation: _anim,
+                          begin: 0.14,
+                          end: 0.43,
+                          child: AppTextField(
+                            controller: _emailController,
+                            label: 'E-mail',
+                            hint: 'seu@email.com',
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            prefixIcon: Icons.email_outlined,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Informe seu e-mail'
+                                : (!ValueUtils.validateEmail(v)
+                                      ? 'E-mail inválido'
+                                      : null),
                           ),
                         ),
                         Spacing.vMd,
-                        FadeTransition(
-                          opacity: _passFade,
-                          child: SlideTransition(
-                            position: _passSlide,
-                            child: AppTextField(
-                              controller: _passwordController,
-                              label: 'Senha',
-                              hint: '*********',
-                              obscureText: true,
-                              showPasswordToggle: true,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _handleLogin(),
-                              prefixIcon: Icons.lock_outline,
-                              validator: (v) => (v == null || v.isEmpty)
-                                  ? 'Informe sua senha'
-                                  : (v.length < 8
-                                        ? 'Mínimo 8 caracteres'
-                                        : null),
-                            ),
+                        AuthStagger(
+                          animation: _anim,
+                          begin: 0.26,
+                          end: 0.57,
+                          child: AppTextField(
+                            controller: _passwordController,
+                            label: 'Senha',
+                            hint: '*********',
+                            obscureText: true,
+                            showPasswordToggle: true,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _handleLogin(),
+                            prefixIcon: Icons.lock_outline,
+                            validator: (v) => (v == null || v.isEmpty)
+                                ? 'Informe sua senha'
+                                : (v.length < 8 ? 'Mínimo 8 caracteres' : null),
                           ),
                         ),
                         Spacing.vSm,
-                        FadeTransition(
-                          opacity: _rowFade,
+                        AuthStagger(
+                          animation: _anim,
+                          begin: 0.37,
+                          end: 0.65,
                           child: Row(
                             children: [
                               Expanded(
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Checkbox(
+                                    BrutalistCheckbox(
                                       value: _rememberMe,
                                       onChanged: (v) => setState(
                                         () => _rememberMe = v ?? false,
-                                      ),
-                                      activeColor: AppColors.primaryContainer,
-                                      side: BorderSide(
-                                        color: isDark
-                                            ? AppColors.white
-                                            : AppColors.onSurface,
-                                        width: 2,
                                       ),
                                     ),
                                     Flexible(
@@ -299,71 +216,35 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           ),
                         ),
                         Spacing.vMd,
-                        FadeTransition(
-                          opacity: _btnFade,
-                          child: SlideTransition(
-                            position: _btnSlide,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                AppButton(
-                                  label: 'ENTRAR NA CONTA',
-                                  size: AppButtonSize.large,
-                                  isLoading: authState.isLoading,
-                                  onPressed: _handleLogin,
-                                ),
-                                Spacing.vMd,
-                                InkWell(
-                                  onTap: authState.isLoading
-                                      ? null
-                                      : () => ref
-                                            .read(
-                                              authControllerProvider.notifier,
-                                            )
-                                            .googleLogin(),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(
-                                        color: context.borderColor.withAlpha(
-                                          60,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.g_mobiledata,
-                                          size: 22,
-                                          color: context.textPrimary,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          'ENTRAR COM GOOGLE',
-                                          style: TextStyle(
-                                            fontFamily: AppTypography
-                                                .headlineFontFamily,
-                                            color: context.textPrimary,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                        AuthStagger(
+                          animation: _anim,
+                          begin: 0.49,
+                          end: 0.77,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              AppButton(
+                                label: 'ENTRAR NA CONTA',
+                                size: AppButtonSize.large,
+                                isLoading: authState.isLoading,
+                                onPressed: _handleLogin,
+                              ),
+                              Spacing.vMd,
+                              GoogleAuthButton(
+                                label: 'ENTRAR COM GOOGLE',
+                                loading: authState.isLoading,
+                                onTap: () => ref
+                                    .read(authControllerProvider.notifier)
+                                    .googleLogin(),
+                              ),
+                            ],
                           ),
                         ),
                         Spacing.vLg,
-                        FadeTransition(
-                          opacity: _bottomFade,
+                        AuthStagger(
+                          animation: _anim,
+                          begin: 0.6,
+                          end: 0.86,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [

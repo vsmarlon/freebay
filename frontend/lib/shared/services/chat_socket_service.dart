@@ -8,56 +8,97 @@ import 'package:freebay/shared/events/chat_event.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
 
-/// A pending message that was queued while the socket was offline.
-class _OutboxEntry {
-  final String conversationId;
-  final String content;
-  final String? replyToId;
-  final bool viewOnce;
+typedef ChatTokenReader = Future<String?> Function();
+typedef ChatSocketFactory = ChatSocketClient Function(String url, String token);
+typedef ChatConnectivityStream = Stream<List<ConnectivityResult>> Function();
 
-  const _OutboxEntry({
-    required this.conversationId,
-    required this.content,
-    this.replyToId,
-    this.viewOnce = false,
-  });
+abstract interface class ChatSocketClient {
+  bool get connected;
+  void connect();
+  void dispose();
+  void emit(String event, [dynamic data]);
+  void onConnect(void Function(dynamic) callback);
+  void onConnectError(void Function(dynamic) callback);
+  void onDisconnect(void Function(dynamic) callback);
+  void on(String event, void Function(dynamic) callback);
+}
 
-  Map<String, dynamic> toPayload() {
-    return <String, dynamic>{
-      'conversationId': conversationId,
-      'content': content,
-      if (replyToId != null) 'replyToId': replyToId,
-      if (viewOnce) 'viewOnce': true,
-    };
+class _IoChatSocketClient implements ChatSocketClient {
+  _IoChatSocketClient(this._socket);
+
+  final io.Socket _socket;
+
+  @override
+  bool get connected => _socket.connected;
+
+  @override
+  void connect() => _socket.connect();
+
+  @override
+  void dispose() => _socket.dispose();
+
+  @override
+  void emit(String event, [dynamic data]) => _socket.emit(event, data);
+
+  @override
+  void onConnect(void Function(dynamic) callback) {
+    _socket.onConnect(callback);
+  }
+
+  @override
+  void onConnectError(void Function(dynamic) callback) {
+    _socket.onConnectError(callback);
+  }
+
+  @override
+  void onDisconnect(void Function(dynamic) callback) {
+    _socket.onDisconnect(callback);
+  }
+
+  @override
+  void on(String event, void Function(dynamic) callback) {
+    _socket.on(event, callback);
   }
 }
 
 /// Manages the Socket.IO connection for real-time chat.
 ///
-/// Offline Outbox Pattern:
-///   Messages sent while disconnected (socket not ready OR device offline)
-///   are queued in [_outboxQueue]. They are flushed automatically when:
-///     1. The socket reconnects (`onConnect` fires), OR
-///     2. Network connectivity is restored (via [connectivity_plus]).
 class ChatSocketService {
-  io.Socket? _socket;
+  ChatSocketService({
+    ChatTokenReader? tokenReader,
+    ChatSocketFactory? socketFactory,
+    ChatConnectivityStream? connectivityStream,
+  }) : _tokenReader = tokenReader ?? StorageService.getToken,
+       _socketFactory =
+           socketFactory ??
+           ((url, token) => _IoChatSocketClient(
+             io.io(url, <String, dynamic>{
+               'forceNew': true,
+               'auth': {'token': token},
+               'transports': ['websocket'],
+               'autoConnect': false,
+             }),
+           )),
+       _connectivityStream =
+           connectivityStream ?? (() => Connectivity().onConnectivityChanged);
+
+  final ChatTokenReader _tokenReader;
+  final ChatSocketFactory _socketFactory;
+  final ChatConnectivityStream _connectivityStream;
+  ChatSocketClient? _socket;
 
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
-  final _typingController = StreamController<Map<String, dynamic>>.broadcast();
-  final _presenceController =
-      StreamController<Map<String, dynamic>>.broadcast();
   final _eventsController = StreamController<ChatEvent>.broadcast();
 
-  Timer? _reconnectTimer;
-
-  /// Internal memory queue for messages sent while offline.
-  final List<_OutboxEntry> _outboxQueue = [];
-
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  Future<void>? _connectOperation;
+  final Set<String> _joinedConversations = {};
+  String? _socketToken;
+  int _generation = 0;
+  bool _desiredConnection = false;
+  bool _disposed = false;
 
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
-  Stream<Map<String, dynamic>> get typingStream => _typingController.stream;
-  Stream<Map<String, dynamic>> get presenceStream => _presenceController.stream;
   Stream<ChatEvent> get events => _eventsController.stream;
 
   String get _wsUrl {
@@ -69,131 +110,30 @@ class ChatSocketService {
 
   // ── Connection management ────────────────────────────────────────────────
 
-  Future<void> connect() async {
-    if (_socket?.connected == true) return;
+  Future<void> connect() {
+    if (_disposed) return Future.value();
+    _desiredConnection = true;
+    final pending = _connectOperation;
+    if (pending != null) return pending;
 
-    final token = await StorageService.getToken();
-    if (token == null) return;
-
-    _socket = io.io(
-      '$_wsUrl/chat',
-      io.OptionBuilder()
-          .setAuth({'token': token})
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .build(),
-    );
-
-    _socket!
-      ..onConnect((_) {
-        _reconnectTimer?.cancel();
-        _flushOutbox();
-      })
-      ..onConnectError((error) {
-        if (error is Map &&
-            error['message']?.toString().contains('jwt') == true) {
-          _reconnectTimer?.cancel();
-          disconnect();
-        }
-      })
-      ..onDisconnect((reason) {
-        if (reason != null && reason.contains('jwt') ||
-            reason == 'io server disconnect') {
-          disconnect();
-        }
-      })
-      ..on('new_message', (data) {
-        if (data is Map) {
-          final payload = Map<String, dynamic>.from(data);
-          _messageController.add(payload);
-          try {
-            _eventsController.add(
-              NewMessageEvent(MessageEntity.fromJson(payload)),
-            );
-          } catch (e) {
-            debugPrint('[chat-socket] dropped malformed new_message: $e');
-          }
-        }
-      })
-      ..on('reaction_updated', (data) {
-        if (data is Map) {
-          final payload = Map<String, dynamic>.from(data);
-          final messageId = payload['messageId'] as String? ?? '';
-          final reactions =
-              (payload['reactions'] as List?)
-                  ?.whereType<Map>()
-                  .map((e) {
-                    try {
-                      return MessageReactionEntity.fromJson(
-                        Map<String, dynamic>.from(e),
-                      );
-                    } catch (_) {
-                      return null;
-                    }
-                  })
-                  .whereType<MessageReactionEntity>()
-                  .toList() ??
-              [];
-          _eventsController.add(ReactionUpdatedEvent(messageId, reactions));
-        }
-      })
-      ..on('message_deleted', (data) {
-        if (data is Map<String, dynamic>) {
-          final messageId = data['messageId'] as String? ?? '';
-          _eventsController.add(MessageDeletedEvent(messageId));
-        }
-      })
-      ..on('user_typing', (data) {
-        if (data is Map<String, dynamic>) {
-          _typingController.add({...data, 'typing': true});
-          final userId = data['userId'] as String?;
-          if (userId != null) {
-            _eventsController.add(UserTypingEvent(userId));
-          }
-        }
-      })
-      ..on('user_stopped_typing', (data) {
-        if (data is Map<String, dynamic>) {
-          _typingController.add({...data, 'typing': false});
-          final userId = data['userId'] as String?;
-          if (userId != null) {
-            _eventsController.add(UserStoppedTypingEvent(userId));
-          }
-        }
-      })
-      ..on('user_online', (data) {
-        if (data is Map<String, dynamic>) {
-          _presenceController.add({...data, 'online': true});
-          final userId = data['userId'] as String?;
-          if (userId != null) {
-            _eventsController.add(UserOnlineEvent(userId));
-          }
-        }
-      })
-      ..on('user_offline', (data) {
-        if (data is Map<String, dynamic>) {
-          _presenceController.add({...data, 'online': false});
-          final userId = data['userId'] as String?;
-          if (userId != null) {
-            _eventsController.add(UserOfflineEvent(userId));
-          }
-        }
-      });
-
-    _socket!.connect();
-
-    // Watch for network recovery and flush outbox when connectivity returns.
-    _connectivitySub ??= Connectivity().onConnectivityChanged.listen(
-      _onConnectivityChanged,
-    );
+    final operation = _connect();
+    _connectOperation = operation;
+    return operation.whenComplete(() {
+      if (identical(_connectOperation, operation)) _connectOperation = null;
+    });
   }
 
   void disconnect() {
-    _reconnectTimer?.cancel();
+    if (_disposed) return;
+    _desiredConnection = false;
+    _generation++;
+    _connectOperation = null;
     _connectivitySub?.cancel();
     _connectivitySub = null;
     _socket?.dispose();
     _socket = null;
+    _socketToken = null;
+    _joinedConversations.clear();
   }
 
   Future<void> reconnectWithFreshToken() async {
@@ -201,60 +141,151 @@ class ChatSocketService {
     await connect();
   }
 
-  // ── Outbox helpers ───────────────────────────────────────────────────────
-
-  /// Attempts to flush all queued outbox messages in order.
-  void _flushOutbox() {
-    if (_outboxQueue.isEmpty) return;
-    if (_socket?.connected != true) return;
-
-    final pending = List<_OutboxEntry>.from(_outboxQueue);
-    _outboxQueue.clear();
-
-    for (final entry in pending) {
-      _socket!.emit('send_message', entry.toPayload());
+  Future<void> _connect() async {
+    final generation = _generation;
+    final token = await _tokenReader();
+    if (!_canContinue(generation) || token == null) {
+      if (_canContinue(generation) && token == null) _teardownSocket();
+      return;
     }
+
+    if (_socket?.connected == true && _socketToken == token) return;
+    if (_socket != null && _socketToken != token) _teardownSocket();
+    if (!_canContinue(generation)) return;
+
+    final socket = _socketFactory('$_wsUrl/chat', token);
+    _socket = socket;
+    _socketToken = token;
+    _installListeners(socket, generation);
+    _connectivitySub ??= _connectivityStream().listen(_onConnectivityChanged);
+    socket.connect();
   }
 
-  /// Called whenever device connectivity changes.
+  bool _canContinue(int generation) =>
+      !_disposed && _desiredConnection && generation == _generation;
+
+  void _teardownSocket() {
+    final socket = _socket;
+    _socket = null;
+    _socketToken = null;
+    socket?.dispose();
+  }
+
+  bool _isCurrent(ChatSocketClient socket, int generation) =>
+      _canContinue(generation) && identical(_socket, socket);
+
+  void _installListeners(ChatSocketClient socket, int generation) {
+    socket
+      ..onConnect((_) {
+        if (!_isCurrent(socket, generation)) return;
+        for (final conversationId in _joinedConversations) {
+          socket.emit('join_conversation', {'conversationId': conversationId});
+        }
+      })
+      ..onConnectError((error) {
+        if (!_isCurrent(socket, generation)) return;
+        if (error is Map &&
+            error['message']?.toString().contains('jwt') == true) {
+          disconnect();
+        }
+      })
+      ..onDisconnect((reason) {
+        if (!_isCurrent(socket, generation)) return;
+        if ((reason is String && reason.contains('jwt')) ||
+            reason == 'io server disconnect') {
+          disconnect();
+        }
+      })
+      ..on('new_message', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map) return;
+        final payload = Map<String, dynamic>.from(data);
+        _messageController.add(payload);
+        try {
+          _eventsController.add(
+            NewMessageEvent(MessageEntity.fromJson(payload)),
+          );
+        } catch (e) {
+          debugPrint('[chat-socket] dropped malformed new_message: $e');
+        }
+      })
+      ..on('reaction_updated', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map) return;
+        final payload = Map<String, dynamic>.from(data);
+        final messageId = payload['messageId'] as String? ?? '';
+        final reactions =
+            (payload['reactions'] as List?)
+                ?.whereType<Map>()
+                .map((e) {
+                  try {
+                    return MessageReactionEntity.fromJson(
+                      Map<String, dynamic>.from(e),
+                    );
+                  } catch (_) {
+                    return null;
+                  }
+                })
+                .whereType<MessageReactionEntity>()
+                .toList() ??
+            [];
+        _eventsController.add(ReactionUpdatedEvent(messageId, reactions));
+      })
+      ..on('message_deleted', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map<String, dynamic>) {
+          return;
+        }
+        _eventsController.add(
+          MessageDeletedEvent(data['messageId'] as String? ?? ''),
+        );
+      })
+      ..on('user_typing', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map<String, dynamic>) {
+          return;
+        }
+        final userId = data['userId'] as String?;
+        if (userId != null) _eventsController.add(UserTypingEvent(userId));
+      })
+      ..on('user_stopped_typing', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map<String, dynamic>) {
+          return;
+        }
+        final userId = data['userId'] as String?;
+        if (userId != null) {
+          _eventsController.add(UserStoppedTypingEvent(userId));
+        }
+      })
+      ..on('user_online', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map<String, dynamic>) {
+          return;
+        }
+        final userId = data['userId'] as String?;
+        if (userId != null) _eventsController.add(UserOnlineEvent(userId));
+      })
+      ..on('user_offline', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map<String, dynamic>) {
+          return;
+        }
+        final userId = data['userId'] as String?;
+        if (userId != null) _eventsController.add(UserOfflineEvent(userId));
+      });
+  }
+
   void _onConnectivityChanged(List<ConnectivityResult> results) {
     final hasNetwork = results.any((r) => r != ConnectivityResult.none);
-    if (hasNetwork && _socket?.connected == true) {
-      _flushOutbox();
-    } else if (hasNetwork && _socket?.connected != true) {
-      // Network returned but socket dropped — attempt reconnect.
-      reconnectWithFreshToken();
+    if (hasNetwork && _desiredConnection && !_disposed && !isConnected) {
+      connect();
     }
   }
 
   // ── Public API ───────────────────────────────────────────────────────────
 
   void joinConversation(String conversationId) {
+    _joinedConversations.add(conversationId);
     _socket?.emit('join_conversation', {'conversationId': conversationId});
   }
 
   void leaveConversation(String conversationId) {
+    _joinedConversations.remove(conversationId);
     _socket?.emit('leave_conversation', {'conversationId': conversationId});
-  }
-
-  /// Sends a message immediately when connected; queues it otherwise.
-  void sendMessage(
-    String conversationId,
-    String content, {
-    String? replyToId,
-    bool viewOnce = false,
-  }) {
-    final entry = _OutboxEntry(
-      conversationId: conversationId,
-      content: content,
-      replyToId: replyToId,
-      viewOnce: viewOnce,
-    );
-    if (_socket?.connected == true) {
-      _socket!.emit('send_message', entry.toPayload());
-    } else {
-      _outboxQueue.add(entry);
-    }
   }
 
   void sendTyping(String conversationId) {
@@ -267,14 +298,11 @@ class ChatSocketService {
 
   bool get isConnected => _socket?.connected ?? false;
 
-  /// Returns how many messages are currently waiting in the outbox.
-  int get outboxLength => _outboxQueue.length;
-
   void dispose() {
+    if (_disposed) return;
     disconnect();
+    _disposed = true;
     _messageController.close();
-    _typingController.close();
-    _presenceController.close();
     _eventsController.close();
   }
 }

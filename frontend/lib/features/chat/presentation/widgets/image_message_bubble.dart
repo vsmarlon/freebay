@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:freebay/core/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,10 +9,13 @@ class ImageMessageBubble extends StatelessWidget {
   final String? imageUrl;
   final bool isMe;
 
+  final VoidCallback? onTapImage;
+
   const ImageMessageBubble({
     super.key,
     required this.imageUrl,
     required this.isMe,
+    this.onTapImage,
   });
 
   String? get _fullUrl {
@@ -26,13 +31,15 @@ class ImageMessageBubble extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: () => showFullScreenImage(context, url),
+      onTap: onTapImage ?? () => unawaited(showAppImageViewer(context, url)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 240, maxHeight: 300),
         child: CachedNetworkImage(
           imageUrl: url,
           httpHeaders: mediaAuthHeaders(url),
           fit: BoxFit.cover,
+          memCacheWidth: 600,
+          memCacheHeight: 800,
           placeholder: (context, url) => Container(
             width: 200,
             height: 150,

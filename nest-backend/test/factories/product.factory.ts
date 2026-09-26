@@ -25,28 +25,6 @@ export class ProductFactory {
   }
 
   /**
-   * Create a product with images
-   */
-  async createWithImages(sellerId: string, imageUrls: string[], overrides: Partial<Product> = {}): Promise<Product> {
-    const product = await this.create(sellerId, overrides);
-
-    for (let i = 0; i < imageUrls.length; i++) {
-      await this.prisma.productImage.create({
-        data: {
-          productId: product.id,
-          url: imageUrls[i],
-          order: i,
-        },
-      });
-    }
-
-    return this.prisma.product.findUnique({
-      where: { id: product.id },
-      include: { images: true },
-    }) as Promise<Product>;
-  }
-
-  /**
    * Create a product with a specific price (for testing splits)
    */
   async createWithPrice(sellerId: string, priceInCents: number, overrides: Partial<Product> = {}): Promise<Product> {
@@ -63,40 +41,4 @@ export class ProductFactory {
     });
   }
 
-  /**
-   * Create a paused product
-   */
-  async createPaused(sellerId: string, overrides: Partial<Product> = {}): Promise<Product> {
-    return this.create(sellerId, {
-      ...overrides,
-      status: ProductStatus.PAUSED,
-    });
-  }
-
-  /**
-   * Create a deleted product (soft delete)
-   */
-  async createDeleted(sellerId: string, overrides: Partial<Product> = {}): Promise<Product> {
-    return this.create(sellerId, {
-      ...overrides,
-      status: ProductStatus.DELETED,
-      deletedAt: new Date(),
-    });
-  }
-
-  /**
-   * Create multiple products for a seller
-   */
-  async createMany(sellerId: string, count: number, overrides: Partial<Product> = {}): Promise<Product[]> {
-    const products: Product[] = [];
-    for (let i = 0; i < count; i++) {
-      products.push(
-        await this.create(sellerId, {
-          ...overrides,
-          title: `${overrides.title || 'Test Product'} ${i + 1}`,
-        }),
-      );
-    }
-    return products;
-  }
 }

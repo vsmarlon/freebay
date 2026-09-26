@@ -283,12 +283,14 @@ lib/
 └── shared/
     ├── either/        # hand-rolled sealed Either<L,R> (fold/leftOrNull/rightOrNull)
     ├── errors/        # Failure types
-    ├── services/      # http_client (Dio), storage_service, biometry_service,
+    ├── services/      # HttpClient transport (Dio), storage_service, biometry_service,
     │                  # notification_service, image_upload_service
     ├── models/, config/, templates/
 ```
 
 Note: The hand-rolled `shared/either/either.dart` is the project's own Either implementation and is used universally. Do not import `dartz` for Either. All entity, repository, usecase, and UI files must use this custom implementation.
+
+HTTP repositories and services call Dio methods explicitly and adapt each request with `shared/http/request_either.dart`'s `requestEither<T>(request, decoder:, debugLabel:)`. The adapter returns `Either<Failure, T>`, maps non-2xx and Dio failures, and lets the decoder map the successful response. There is no shared repository base class or `safe*` request wrapper.
 
 ### Tab pages inside the swipeable shell
 
@@ -351,6 +353,8 @@ A cast is a claim that you know better than the compiler. If it turns out you ne
 
 ## Testing patterns
 
+Follow [AGENTS.md — Testing: TDD and E2E first](AGENTS.md#testing-tdd-and-e2e-first) before implementation. It is the source of truth for test selection, red/green verification, pruning, and repeatable evidence.
+
 **Backend (Jest + ts-jest, NestJS testing utilities):**
 - Name the subject `sut` (`let sut: RegisterUseCase`)
 - Build with `Test.createTestingModule({ providers: [...] }).compile()`, mocking repositories via `{ provide: PrismaUserRepository, useValue: mockUserRepository }`. This is also how a partial mock stays type-safe — never `new SomeUseCase(mock as unknown as Repo)`
@@ -358,6 +362,5 @@ A cast is a claim that you know better than the compiler. If it turns out you ne
 - `npm run test:integration` runs a separate suite (`jest.config.integration.js`) against `.env.test`, syncing the schema with the guarded test-only Prisma entrypoint first — these are not run by plain `npm test`
 
 **Flutter:**
-- Unit/widget tests in `test/`, integration tests in `integration_test/`
-- Use `mocktail` for mocking
-- Integration test driver: `test_driver/integration_test.dart` (standard boilerplate)
+- Retained unit/widget tests live in `test/`.
+- Real-device journeys and evidence follow `docs/DEVICE_TESTING.md`; verify runnable E2E coverage before claiming a unit test is redundant.

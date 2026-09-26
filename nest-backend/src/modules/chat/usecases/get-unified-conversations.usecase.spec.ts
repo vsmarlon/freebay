@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GetUnifiedConversationsUseCase } from './get-unified-conversations.usecase';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { right } from '@/shared/core/either';
+import { directConversation, orderConversation } from './test-fixtures';
 
 const mockRepo = {
   findDirectConversationsByUser: jest.fn(),
@@ -41,21 +42,11 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('returns direct conversations mapped correctly', async () => {
-    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
-      {
-        id: 'dc-1',
-        user1Id: 'user-1',
-        user2Id: 'user-2',
-        status: 'ACTIVE',
-        lastMessageAt: new Date('2026-06-24'),
-        createdAt: new Date('2026-06-20'),
-        user1: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
-        user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
-        messages: [
-          { id: 'm-1', content: 'Hi', senderId: 'user-2', createdAt: new Date('2026-06-24'), readAt: null },
-        ],
-      },
-    ]));
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([directConversation({
+      id: 'dc-1',
+      user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
+      messages: [{ id: 'm-1', content: 'Hi', senderId: 'user-2', createdAt: new Date('2026-06-24'), readAt: null }],
+    })]));
     mockRepo.findOrdersByUser.mockResolvedValue(right([]));
     mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
@@ -71,22 +62,10 @@ describe('GetUnifiedConversationsUseCase', () => {
 
   it('returns order conversations mapped correctly', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([]));
-    mockRepo.findOrdersByUser.mockResolvedValue(right([
-      {
-        id: 'order-1',
-        buyerId: 'user-1',
-        sellerId: 'user-2',
-        status: 'COMPLETED',
-        createdAt: new Date('2026-06-22'),
-        product: { id: 'prod-1', title: 'Camera' },
-        buyer: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
-        seller: { id: 'user-2', displayName: 'Bob', avatarUrl: null, isVerified: true },
-        chatMessages: [
-          { id: 'cm-1', content: 'Thanks!', senderId: 'user-2', createdAt: new Date('2026-06-23'), readAt: null },
-        ],
-        unreadCount: 0,
-      },
-    ]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([orderConversation({
+      seller: { id: 'user-2', displayName: 'Bob', avatarUrl: null, isVerified: true },
+      chatMessages: [{ id: 'cm-1', content: 'Thanks!', senderId: 'user-2', createdAt: new Date('2026-06-23'), readAt: null }],
+    })]));
     mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-2');
@@ -100,33 +79,17 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('returns both direct and order conversations', async () => {
-    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
-      {
-        id: 'dc-1',
-        user1Id: 'user-1',
-        user2Id: 'user-2',
-        status: 'ACTIVE',
-        lastMessageAt: new Date('2026-06-20'),
-        createdAt: new Date('2026-06-20'),
-        user1: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
-        user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
-        messages: [],
-      },
-    ]));
-    mockRepo.findOrdersByUser.mockResolvedValue(right([
-      {
-        id: 'order-1',
-        buyerId: 'user-1',
-        sellerId: 'user-3',
-        status: 'ACTIVE',
-        createdAt: new Date('2026-06-22'),
-        product: { id: 'prod-1', title: 'Camera' },
-        buyer: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
-        seller: { id: 'user-3', displayName: 'Bob', avatarUrl: null, isVerified: true },
-        chatMessages: [],
-        unreadCount: 0,
-      },
-    ]));
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([directConversation({
+      id: 'dc-1',
+      user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
+      messages: [],
+    })]));
+    mockRepo.findOrdersByUser.mockResolvedValue(right([orderConversation({
+      sellerId: 'user-3',
+      seller: { id: 'user-3', displayName: 'Bob', avatarUrl: null, isVerified: true },
+      status: 'ACTIVE',
+      chatMessages: [],
+    })]));
     mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
 
     const result = await sut.execute('user-1');
@@ -135,19 +98,11 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('filters by archived flag', async () => {
-    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
-      {
-        id: 'dc-1',
-        user1Id: 'user-1',
-        user2Id: 'user-2',
-        status: 'ACTIVE',
-        lastMessageAt: new Date('2026-06-20'),
-        createdAt: new Date('2026-06-20'),
-        user1: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
-        user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
-        messages: [],
-      },
-    ]));
+    mockRepo.findDirectConversationsByUser.mockResolvedValue(right([directConversation({
+      id: 'dc-1',
+      user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
+      messages: [],
+    })]));
     mockRepo.findOrdersByUser.mockResolvedValue(right([]));
     mockRepo.findPreferencesByUser.mockResolvedValue(right([
       { id: 'pref-1', userId: 'user-1', directConversationId: 'dc-1', orderId: null, isArchived: true, isDeleted: false },
@@ -164,32 +119,17 @@ describe('GetUnifiedConversationsUseCase', () => {
 
   it('filters by search query', async () => {
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right([
-      {
+      directConversation({
         id: 'dc-1',
-        user1Id: 'user-1',
-        user2Id: 'user-2',
-        status: 'ACTIVE',
-        lastMessageAt: new Date('2026-06-20'),
-        createdAt: new Date('2026-06-20'),
-        user1: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
         user2: { id: 'user-2', displayName: 'Alice', avatarUrl: null, isVerified: true },
-        messages: [
-          { id: 'm-1', content: 'See you tomorrow', senderId: 'user-2', createdAt: new Date('2026-06-20'), readAt: null },
-        ],
-      },
-      {
-        id: 'dc-2',
-        user1Id: 'user-1',
-        user2Id: 'user-3',
-        status: 'ACTIVE',
-        lastMessageAt: new Date('2026-06-19'),
-        createdAt: new Date('2026-06-19'),
-        user1: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
+        messages: [{ id: 'm-1', content: 'See you tomorrow', senderId: 'user-2', createdAt: new Date('2026-06-20'), readAt: null }],
+      }),
+      directConversation({
+        id: 'dc-2', user2Id: 'user-3',
         user2: { id: 'user-3', displayName: 'Bob', avatarUrl: null, isVerified: true },
-        messages: [
-          { id: 'm-2', content: 'Deal!', senderId: 'user-3', createdAt: new Date('2026-06-19'), readAt: null },
-        ],
-      },
+        lastMessageAt: new Date('2026-06-19'), createdAt: new Date('2026-06-19'),
+        messages: [{ id: 'm-2', content: 'Deal!', senderId: 'user-3', createdAt: new Date('2026-06-19'), readAt: null }],
+      }),
     ]));
     mockRepo.findOrdersByUser.mockResolvedValue(right([]));
     mockRepo.findPreferencesByUser.mockResolvedValue(right([]));
@@ -210,16 +150,12 @@ describe('GetUnifiedConversationsUseCase', () => {
   });
 
   it('paginates with opaque offset cursors', async () => {
-    const convos = Array.from({ length: 25 }, (_, i) => ({
+    const convos = Array.from({ length: 25 }, (_, i) => directConversation({
       id: `dc-${i}`,
-      user1Id: 'user-1',
       user2Id: `user-${i + 2}`,
-      status: 'ACTIVE',
       lastMessageAt: new Date(Date.UTC(2026, 5, 20 + (i % 9), i % 24)),
       createdAt: new Date('2026-06-01'),
-      user1: { id: 'user-1', displayName: 'Me', avatarUrl: null, isVerified: false },
       user2: { id: `user-${i + 2}`, displayName: `User ${i}`, avatarUrl: null, isVerified: false },
-      messages: [],
     }));
     mockRepo.findDirectConversationsByUser.mockResolvedValue(right(convos));
     mockRepo.findOrdersByUser.mockResolvedValue(right([]));

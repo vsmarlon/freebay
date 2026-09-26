@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError } from "@/shared/core/errors";
+import { StoryMediaType } from "@prisma/client";
 import { PrismaStoryRepository } from "../data/repositories/story-database.repository";
 import {
   CreateStoryInput,
@@ -21,7 +22,7 @@ export class CreateStoryUseCase {
     const result = await this.storyRepository.create({
       user: { connect: { id: input.userId } },
       imageUrl: input.imageUrl,
-      mediaType: input.mediaType ?? "IMAGE",
+      mediaType: input.mediaType ?? StoryMediaType.IMAGE,
       caption: input.caption,
       textBlocks: input.textBlocks ?? [],
       expiresAt,

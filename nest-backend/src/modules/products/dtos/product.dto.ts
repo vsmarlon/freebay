@@ -15,23 +15,30 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
-import { Condition } from '@prisma/client';
-import { PRODUCT_SORTS, ProductSort } from '../types/product.types';
+import { Condition, ProductStatus } from '@prisma/client';
+import { EDITABLE_PRODUCT_STATUSES, ProductSort } from '../types/product.types';
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/shared/core/pagination';
 
+export const PRODUCT_TITLE_MIN_LENGTH = 3;
 export const PRODUCT_TITLE_MAX_LENGTH = 100;
+export const PRODUCT_DESCRIPTION_MIN_LENGTH = 10;
+export const PRODUCT_DESCRIPTION_MAX_LENGTH = 5000;
+export const PRODUCT_IMAGE_MAX_COUNT = 10;
+export const PRODUCT_QUANTITY_MIN = 1;
+export const PRODUCT_SEARCH_MAX_LENGTH = 200;
 
 export class CreateProductDTO {
   @ApiProperty({ example: 'iPhone 12', minLength: 3, maxLength: 100 })
   @IsString()
-  @MinLength(3)
+  @MinLength(PRODUCT_TITLE_MIN_LENGTH)
   @MaxLength(PRODUCT_TITLE_MAX_LENGTH)
   @SanitizeText()
   readonly title: string;
 
-  @ApiProperty({ example: 'Description of the product...', minLength: 10, maxLength: 5000 })
+  @ApiProperty({ example: 'Description of the product...', minLength: PRODUCT_DESCRIPTION_MIN_LENGTH, maxLength: PRODUCT_DESCRIPTION_MAX_LENGTH })
   @IsString()
-  @MinLength(10)
-  @MaxLength(5000)
+  @MinLength(PRODUCT_DESCRIPTION_MIN_LENGTH)
+  @MaxLength(PRODUCT_DESCRIPTION_MAX_LENGTH)
   @SanitizeText()
   readonly description: string;
 
@@ -49,18 +56,18 @@ export class CreateProductDTO {
   @IsString()
   readonly categoryId: string;
 
-  @ApiPropertyOptional({ example: ['https://example.com/img.jpg'], type: [String], maxItems: 10 })
+  @ApiPropertyOptional({ example: ['https://example.com/img.jpg'], type: [String], maxItems: PRODUCT_IMAGE_MAX_COUNT })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @ArrayMaxSize(10)
+  @ArrayMaxSize(PRODUCT_IMAGE_MAX_COUNT)
   readonly images?: string[];
 
   @ApiPropertyOptional({ example: 5, description: 'Stock quantity (default 1)' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(PRODUCT_QUANTITY_MIN)
   readonly quantity?: number;
 }
 
@@ -70,18 +77,18 @@ export class ProductQueryDTO {
   @IsString()
   readonly cursor?: string;
 
-  @ApiPropertyOptional({ example: 20 })
+  @ApiPropertyOptional({ example: DEFAULT_PAGE_SIZE })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(50)
+  @Max(MAX_PAGE_SIZE)
   readonly limit?: number;
 
   @ApiPropertyOptional({ description: 'Search query' })
   @IsOptional()
   @IsString()
-  @MaxLength(200)
+  @MaxLength(PRODUCT_SEARCH_MAX_LENGTH)
   readonly search?: string;
 
   @ApiPropertyOptional({ description: 'Category UUID filter' })
@@ -108,9 +115,9 @@ export class ProductQueryDTO {
   @IsEnum(Condition)
   readonly condition?: Condition;
 
-  @ApiPropertyOptional({ enum: PRODUCT_SORTS, default: 'recent' })
+  @ApiPropertyOptional({ enum: ProductSort, default: ProductSort.RECENT })
   @IsOptional()
-  @IsIn(PRODUCT_SORTS)
+  @IsIn(Object.values(ProductSort))
   readonly sort?: ProductSort;
 }
 
@@ -118,16 +125,16 @@ export class UpdateProductDTO {
   @ApiPropertyOptional({ example: 'iPhone 12', minLength: 3, maxLength: 100 })
   @IsOptional()
   @IsString()
-  @MinLength(3)
+  @MinLength(PRODUCT_TITLE_MIN_LENGTH)
   @MaxLength(PRODUCT_TITLE_MAX_LENGTH)
   @SanitizeText()
   readonly title?: string;
 
-  @ApiPropertyOptional({ example: 'Updated description', minLength: 10, maxLength: 5000 })
+  @ApiPropertyOptional({ example: 'Updated description', minLength: PRODUCT_DESCRIPTION_MIN_LENGTH, maxLength: PRODUCT_DESCRIPTION_MAX_LENGTH })
   @IsOptional()
   @IsString()
-  @MinLength(10)
-  @MaxLength(5000)
+  @MinLength(PRODUCT_DESCRIPTION_MIN_LENGTH)
+  @MaxLength(PRODUCT_DESCRIPTION_MAX_LENGTH)
   @SanitizeText()
   readonly description?: string;
 
@@ -143,10 +150,10 @@ export class UpdateProductDTO {
   @IsEnum(Condition)
   readonly condition?: Condition;
 
-  @ApiPropertyOptional({ enum: ['ACTIVE', 'PAUSED'], example: 'ACTIVE' })
+  @ApiPropertyOptional({ enum: EDITABLE_PRODUCT_STATUSES, example: ProductStatus.ACTIVE })
   @IsOptional()
-  @IsIn(['ACTIVE', 'PAUSED'])
-  readonly status?: 'ACTIVE' | 'PAUSED';
+  @IsIn(EDITABLE_PRODUCT_STATUSES)
+  readonly status?: (typeof EDITABLE_PRODUCT_STATUSES)[number];
 
   @ApiPropertyOptional({ example: 'category-uuid' })
   @IsOptional()
@@ -157,7 +164,7 @@ export class UpdateProductDTO {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(PRODUCT_QUANTITY_MIN)
   readonly quantity?: number;
 }
 
@@ -180,7 +187,7 @@ export interface CreateProductOutput {
   condition: Condition;
   categoryId: string;
   sellerId: string;
-  status: string;
+  status: ProductStatus;
   quantity: number;
   soldCount: number;
   createdAt: Date;
@@ -198,7 +205,7 @@ export interface UpdateProductInput {
   description?: string;
   price?: number;
   condition?: Condition;
-  status?: 'ACTIVE' | 'PAUSED';
+  status?: (typeof EDITABLE_PRODUCT_STATUSES)[number];
   categoryId?: string;
   quantity?: number;
 }
@@ -211,7 +218,7 @@ export interface UpdateProductOutput {
   condition: Condition;
   categoryId: string;
   sellerId: string;
-  status: string;
+  status: ProductStatus;
   quantity: number;
   soldCount: number;
   createdAt: Date;

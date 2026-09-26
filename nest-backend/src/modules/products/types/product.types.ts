@@ -1,4 +1,4 @@
-import { Condition, Prisma } from '@prisma/client';
+import { Condition, Prisma, ProductStatus } from '@prisma/client';
 
 export const PRODUCT_LIST_INCLUDE = {
   seller: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
@@ -14,9 +14,12 @@ export const PRODUCT_DETAIL_INCLUDE = {
 export type ProductListPayload = Prisma.ProductGetPayload<{ include: typeof PRODUCT_LIST_INCLUDE }>;
 export type ProductDetailPayload = Prisma.ProductGetPayload<{ include: typeof PRODUCT_DETAIL_INCLUDE }>;
 
-export const PRODUCT_SORTS = ['recent', 'price_asc', 'price_desc', 'popular'] as const;
-
-export type ProductSort = (typeof PRODUCT_SORTS)[number];
+export enum ProductSort {
+  RECENT = 'recent',
+  PRICE_ASC = 'price_asc',
+  PRICE_DESC = 'price_desc',
+  POPULAR = 'popular',
+}
 
 export interface FindManyParams {
   cursor?: string;
@@ -28,3 +31,6 @@ export interface FindManyParams {
   condition?: Condition;
   sort?: ProductSort;
 }
+
+export const EDITABLE_PRODUCT_STATUSES = [ProductStatus.ACTIVE, ProductStatus.PAUSED] as const;
+export type EditableProductStatus = (typeof EDITABLE_PRODUCT_STATUSES)[number];

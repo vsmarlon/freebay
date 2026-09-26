@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 
 export const SESSION_INVALID_BEFORE_PREFIX = 'user_tokens_invalid_before:';
-const SESSION_INVALID_BEFORE_TTL_SECONDS = 60 * 60 * 24 * 30;
+export const SESSION_INVALID_BEFORE_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 @Injectable()
 export class SessionRevokerService {

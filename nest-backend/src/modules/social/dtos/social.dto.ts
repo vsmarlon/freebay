@@ -4,7 +4,7 @@ import {
   MaxLength,
   IsOptional,
   IsUUID,
-  IsIn,
+  IsEnum,
   IsUrl,
   IsInt,
   Min,
@@ -13,7 +13,9 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { PostType } from "@prisma/client";
 import { SanitizeText } from "@/shared/utils/sanitize.decorator";
+import { COMMENT_MAX_LENGTH, ContentFilter, FeedType, SEARCH_MAX_LENGTH, SearchFilter } from "../types/social.types";
 
 export class CreatePostDTO {
   @ApiPropertyOptional({ example: "Post content here..." })
@@ -27,9 +29,9 @@ export class CreatePostDTO {
   @IsUrl({ require_protocol: true, protocols: ["https"] })
   readonly imageUrl?: string;
 
-  @ApiProperty({ enum: ["PRODUCT", "REGULAR"], example: "REGULAR" })
-  @IsIn(["PRODUCT", "REGULAR"])
-  readonly type: "PRODUCT" | "REGULAR";
+  @ApiProperty({ enum: PostType, example: PostType.REGULAR })
+  @IsEnum(PostType)
+  readonly type: PostType;
 
   @ApiPropertyOptional({
     example: ["uuid1", "uuid2"],
@@ -43,10 +45,10 @@ export class CreatePostDTO {
 }
 
 export class CreateCommentDTO {
-  @ApiProperty({ example: "Great post!", minLength: 1, maxLength: 1000 })
+  @ApiProperty({ example: "Great post!", minLength: 1, maxLength: COMMENT_MAX_LENGTH })
   @IsString()
   @MinLength(1)
-  @MaxLength(1000)
+  @MaxLength(COMMENT_MAX_LENGTH)
   @SanitizeText()
   readonly content: string;
 
@@ -75,10 +77,10 @@ export class GetFeedQueryDTO {
   @Max(50)
   readonly limit?: number;
 
-  @ApiPropertyOptional({ enum: ["explore", "following"], example: "explore" })
+  @ApiPropertyOptional({ enum: FeedType, example: FeedType.EXPLORE })
   @IsOptional()
-  @IsIn(["explore", "following"])
-  readonly type?: "explore" | "following";
+  @IsEnum(FeedType)
+  readonly type?: FeedType;
 
   @ApiPropertyOptional({
     description: "Keyset pagination cursor (type=following only)",
@@ -97,10 +99,10 @@ export class GetFeedQueryDTO {
   @Min(0)
   readonly offset?: number;
 
-  @ApiPropertyOptional({ enum: ["all", "social", "selling"], example: "all" })
+  @ApiPropertyOptional({ enum: ContentFilter, example: ContentFilter.ALL })
   @IsOptional()
-  @IsIn(["all", "social", "selling"])
-  readonly contentFilter?: "all" | "social" | "selling";
+  @IsEnum(ContentFilter)
+  readonly contentFilter?: ContentFilter;
 }
 
 export class GetUserPostsQueryDTO {
@@ -137,16 +139,13 @@ export class SearchPostsQueryDTO {
   @ApiPropertyOptional({ description: "Search query" })
   @IsOptional()
   @IsString()
-  @MaxLength(200)
+  @MaxLength(SEARCH_MAX_LENGTH)
   readonly q?: string;
 
-  @ApiPropertyOptional({
-    enum: ["all", "following", "followers"],
-    example: "all",
-  })
+  @ApiPropertyOptional({ enum: SearchFilter, example: SearchFilter.ALL })
   @IsOptional()
-  @IsIn(["all", "following", "followers"])
-  readonly filter?: "all" | "following" | "followers";
+  @IsEnum(SearchFilter)
+  readonly filter?: SearchFilter;
 
   @ApiPropertyOptional({ description: "Pagination cursor" })
   @IsOptional()
@@ -166,7 +165,7 @@ export interface CreatePostInput {
   userId: string;
   content?: string;
   imageUrl?: string;
-  type: "PRODUCT" | "REGULAR";
+  type: PostType;
   mentionIds?: string[];
 }
 
@@ -174,7 +173,7 @@ export interface CreatePostOutput {
   id: string;
   content: string | null;
   imageUrl: string | null;
-  type: "PRODUCT" | "REGULAR";
+  type: PostType;
   userId: string;
   likesCount: number;
   commentsCount: number;

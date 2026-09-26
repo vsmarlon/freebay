@@ -5,12 +5,21 @@ import {
   HttpStatus,
   Request,
   UnauthorizedException,
-  Res,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
-import { AuthService } from './auth.service';
+import { RegisterUseCase } from './usecases/register.usecase';
+import { LoginUseCase } from './usecases/login.usecase';
+import { GoogleAuthUseCase } from './usecases/google-auth.usecase';
+import { CompleteProfileUseCase } from './usecases/complete-profile.usecase';
+import { RefreshMobileSessionUseCase } from './usecases/refresh-mobile-session.usecase';
+import { LogoutSessionUseCase } from './usecases/logout-session.usecase';
+import { CheckUsernameAvailabilityUseCase } from './usecases/check-username-availability.usecase';
+import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
+import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
+import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
+import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
+import { EnrollBiometricUseCase } from './usecases/enroll-biometric.usecase';
+import { RevokeBiometricUseCase } from './usecases/revoke-biometric.usecase';
 import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, GoogleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
@@ -32,22 +41,37 @@ import {
   CurrentUser,
   CurrentUserId,
 } from '@/shared/decorators';
-import { AuthUser, JwtPayload, JwtTokenType } from '@/shared/core/types';
+import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
 import { AllowTokenTypes } from './guards/token-types.decorator';
-import { WebCookieAuth } from './guards/web-cookie-auth.decorator';
-import { WebOriginGuard } from './guards/web-origin.guard';
-import { RequestMagicLinkDTO, ConsumeMagicLinkDTO } from './dtos/magic-link.dto';
-import { getWebSessionCookie, WEB_REFRESH_COOKIE } from './utils/web-session-cookies';
-import type { Request as ExpressRequest, Response } from 'express';
+import { ownedPayload } from './utils/web-session-cookies';
+import { Either } from '@/shared/core/either';
+import { AppError } from '@/shared/core/errors';
+import { THROTTLE_TTL_MINUTE_MS, THROTTLE_TTL_TEN_SECONDS_MS } from '@/shared/http/throttle.constants';
+
+function unwrap<T>(result: Either<AppError, T>): T {
+  if (result.isLeft()) throw result.value;
+  return result.value;
+}
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly authService: AuthService,
+    private readonly registerUseCase: RegisterUseCase,
+    private readonly loginUseCase: LoginUseCase,
+    private readonly googleAuthUseCase: GoogleAuthUseCase,
+    private readonly completeProfileUseCase: CompleteProfileUseCase,
+    private readonly refreshMobileSessionUseCase: RefreshMobileSessionUseCase,
+    private readonly logoutSessionUseCase: LogoutSessionUseCase,
+    private readonly checkUsernameAvailabilityUseCase: CheckUsernameAvailabilityUseCase,
+    private readonly requestPasswordRecoveryUseCase: RequestPasswordRecoveryUseCase,
+    private readonly verifyPasswordRecoveryCodeUseCase: VerifyPasswordRecoveryCodeUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly biometricLoginUseCase: BiometricLoginUseCase,
+    private readonly enrollBiometricUseCase: EnrollBiometricUseCase,
+    private readonly revokeBiometricUseCase: RevokeBiometricUseCase,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
   ) {}
 
   @PostPublic('register', {
@@ -57,20 +81,20 @@ export class AuthController {
     responseType: AuthSessionResponse,
     responseStatus: 201,
     errors: [{ status: 409, description: 'Email already exists' }],
-    throttle: { short: { limit: 5, ttl: 60000 }, medium: { limit: 20, ttl: 60000 } },
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 20, ttl: THROTTLE_TTL_MINUTE_MS } },
     httpCode: HttpStatus.CREATED,
   })
   async register(@Body() body: RegisterDTO) {
-    return this.authService.register(body);
+    return unwrap(await this.registerUseCase.execute(body));
   }
 
   @GetPublic('username-available', {
     summary: 'Check username availability',
     description: 'Returns whether a username is valid and not already taken',
-    throttle: { short: { limit: 10, ttl: 10000 }, medium: { limit: 60, ttl: 60000 } },
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_TEN_SECONDS_MS }, medium: { limit: 60, ttl: THROTTLE_TTL_MINUTE_MS } },
   })
   async usernameAvailable(@Query() query: UsernameAvailabilityQueryDTO) {
-    return this.authService.checkUsernameAvailability(query);
+    return unwrap(await this.checkUsernameAvailabilityUseCase.execute({ username: query.u }));
   }
 
   @PostPublic('login', {
@@ -79,11 +103,11 @@ export class AuthController {
     bodyType: LoginDTO,
     responseType: AuthSessionResponse,
     errors: [{ status: 401, description: 'Invalid credentials' }],
-    throttle: { short: { limit: 10, ttl: 60000 }, medium: { limit: 30, ttl: 60000 } },
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
     httpCode: HttpStatus.OK,
   })
   async login(@Body() body: LoginDTO) {
-    return this.authService.login(body);
+    return unwrap(await this.loginUseCase.execute(body));
   }
 
   @PostPublic('google', {
@@ -92,11 +116,11 @@ export class AuthController {
     bodyType: GoogleAuthDTO,
     responseType: AuthSessionResponse,
     errors: [{ status: 401, description: 'Invalid Google token' }],
-    throttle: { short: { limit: 10, ttl: 60000 }, medium: { limit: 30, ttl: 60000 } },
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
     httpCode: HttpStatus.OK,
   })
   async googleAuth(@Body() body: GoogleAuthDTO) {
-    return this.authService.googleAuth(body.idToken);
+    return unwrap(await this.googleAuthUseCase.execute(body.idToken));
   }
 
   @PostAuth('complete-profile', {
@@ -106,7 +130,7 @@ export class AuthController {
     responseType: AuthSessionResponse,
   })
   async completeProfile(@CurrentUserId() userId: string, @Body() body: CompleteProfileDTO) {
-    return this.authService.completeProfile(userId, body);
+    return unwrap(await this.completeProfileUseCase.execute(userId, body));
   }
 
   @PostAuth('refresh', {
@@ -116,60 +140,7 @@ export class AuthController {
   })
   @AllowTokenTypes(JwtTokenType.REFRESH)
   async refresh(@CurrentUser() user: AuthUser) {
-    return this.authService.refresh(user);
-  }
-
-  @PostPublic('web/magic-link/request', {
-    summary: 'Request web magic link',
-    bodyType: RequestMagicLinkDTO,
-    httpCode: HttpStatus.OK,
-  })
-  @UseGuards(WebOriginGuard)
-  async requestWebMagicLink(@Request() req: ExpressRequest, @Body() body: RequestMagicLinkDTO) {
-    return this.authService.requestMagicLink({
-      ...body,
-      ip: req.ip ?? 'unknown',
-      userAgent: req.headers['user-agent'],
-    });
-  }
-
-  @PostPublic('web/magic-link/consume', {
-    summary: 'Consume web magic link',
-    bodyType: ConsumeMagicLinkDTO,
-    httpCode: HttpStatus.OK,
-  })
-  @UseGuards(WebOriginGuard)
-  async consumeWebMagicLink(@Body() body: ConsumeMagicLinkDTO, @Res({ passthrough: true }) response: Response) {
-    const result = await this.authService.consumeMagicLink(body);
-    this.setSessionCookies(response, result.tokens.token, result.tokens.refreshToken);
-    return { user: result.user };
-  }
-
-  @PostAuth('web/session/refresh', {
-    summary: 'Refresh web session',
-    httpCode: HttpStatus.OK,
-  })
-  @AllowTokenTypes(JwtTokenType.REFRESH)
-  @WebCookieAuth()
-  @UseGuards(WebOriginGuard)
-  async refreshWebSession(@CurrentUser() user: AuthUser, @Res({ passthrough: true }) response: Response) {
-    const tokens = await this.authService.refreshWebSession(user);
-    this.setSessionCookies(response, tokens.token, tokens.refreshToken);
-    return { refreshed: true };
-  }
-
-  @PostAuth('web/session/logout', {
-    summary: 'Logout web session',
-    responseType: MessageResponse,
-  })
-  @AllowTokenTypes(JwtTokenType.ACCESS)
-  @WebCookieAuth()
-  @UseGuards(WebOriginGuard)
-  async logoutWebSession(@Request() req: ExpressRequest & { user: AuthUser }, @Res({ passthrough: true }) response: Response) {
-    const refreshPayload = this._ownedPayload(getWebSessionCookie(req.headers.cookie, WEB_REFRESH_COOKIE), JwtTokenType.REFRESH, req.user.userId);
-    const result = await this.authService.logoutWebSession([req.user, refreshPayload]);
-    this.clearSessionCookies(response);
-    return result;
+    return unwrap(await this.refreshMobileSessionUseCase.execute(user));
   }
 
   @PostAuth('logout', {
@@ -183,52 +154,21 @@ export class AuthController {
     @Body('refreshToken') refreshToken?: string,
     @Body('biometricToken') biometricToken?: string,
   ) {
-    const refreshTokenPayload = this._ownedPayload(
+    const refreshTokenPayload = ownedPayload(this.jwtService,
       refreshToken,
       JwtTokenType.REFRESH,
       req.user.userId,
     );
-    const biometricTokenPayload = this._ownedPayload(
+    const biometricTokenPayload = ownedPayload(this.jwtService,
       biometricToken,
       JwtTokenType.BIOMETRIC,
       req.user.userId,
     );
-    return this.authService.logout(
-      { jti: req.user.jti, exp: req.user.exp },
+    return unwrap(await this.logoutSessionUseCase.execute([
+      req.user,
       refreshTokenPayload,
       biometricTokenPayload,
-    );
-  }
-
-  private _ownedPayload(
-    token: string | undefined,
-    type: JwtTokenType,
-    userId: string,
-  ): JwtPayload | undefined {
-    if (!token) return undefined;
-    try {
-      const payload = this.jwtService.verify<JwtPayload>(token);
-      if (payload?.type === type && payload.userId === userId) return payload;
-    } catch { void 0; }
-    return undefined;
-  }
-
-  private setSessionCookies(response: Response, access: string, refresh: string): void {
-    const secure = this.configService.get('NODE_ENV') === 'production';
-    const flags = `HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax`;
-    response.setHeader('Set-Cookie', [
-      `freebay_access=${encodeURIComponent(access)}; Path=/; Max-Age=900; ${flags}`,
-      `freebay_refresh=${encodeURIComponent(refresh)}; Path=/auth/web/session; Max-Age=604800; ${flags}`,
-    ]);
-  }
-
-  private clearSessionCookies(response: Response): void {
-    const secure = this.configService.get('NODE_ENV') === 'production';
-    const flags = `HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax`;
-    response.setHeader('Set-Cookie', [
-      `freebay_access=; Path=/; Max-Age=0; ${flags}`,
-      `freebay_refresh=; Path=/auth/web/session; Max-Age=0; ${flags}`,
-    ]);
+    ]));
   }
 
   @PostPublic('forgot-password', {
@@ -238,7 +178,9 @@ export class AuthController {
     httpCode: HttpStatus.OK,
   })
   async forgotPassword(@Body() body: RequestPasswordRecoveryDTO) {
-    return this.authService.forgotPassword(body);
+    const result = await this.requestPasswordRecoveryUseCase.execute(body);
+    unwrap(result);
+    return { sent: true };
   }
 
   @PostPublic('verify-reset-code', {
@@ -248,7 +190,9 @@ export class AuthController {
     httpCode: HttpStatus.OK,
   })
   async verifyResetCode(@Body() body: VerifyPasswordRecoveryCodeDTO) {
-    return this.authService.verifyResetCode(body);
+    const result = await this.verifyPasswordRecoveryCodeUseCase.execute(body);
+    unwrap(result);
+    return { verified: true };
   }
 
   @PostPublic('reset-password', {
@@ -258,7 +202,9 @@ export class AuthController {
     httpCode: HttpStatus.OK,
   })
   async resetPassword(@Body() body: ResetPasswordDTO) {
-    return this.authService.resetPassword(body);
+    const result = await this.resetPasswordUseCase.execute(body);
+    unwrap(result);
+    return { reset: true };
   }
 
   @PostPublic('biometric-login', {
@@ -267,11 +213,11 @@ export class AuthController {
     bodyType: BiometricLoginDTO,
     responseType: BiometricSessionResponse,
     errors: [{ status: 401, description: 'Invalid or revoked biometric token' }],
-    throttle: { short: { limit: 5, ttl: 60000 }, medium: { limit: 15, ttl: 60000 } },
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 15, ttl: THROTTLE_TTL_MINUTE_MS } },
     httpCode: HttpStatus.OK,
   })
   async biometricLogin(@Body() body: BiometricLoginDTO) {
-    return this.authService.biometricLogin(body.biometricToken);
+    return unwrap(await this.biometricLoginUseCase.execute(body.biometricToken));
   }
 
   @PostAuth('biometric-token/enroll', {
@@ -281,7 +227,7 @@ export class AuthController {
   })
   @AllowTokenTypes(JwtTokenType.ACCESS)
   async enrollBiometricToken(@CurrentUser() user: AuthUser) {
-    return this.authService.enrollBiometricToken(user);
+    return unwrap(await this.enrollBiometricUseCase.execute(user));
   }
 
   @PatchAuth('biometric-token/revoke', {
@@ -295,7 +241,7 @@ export class AuthController {
     @CurrentUser() user: AuthUser,
     @Body() body: BiometricLoginDTO,
   ) {
-    const payload = this._ownedPayload(
+    const payload = ownedPayload(this.jwtService,
       body.biometricToken,
       JwtTokenType.BIOMETRIC,
       user.userId,
@@ -303,6 +249,9 @@ export class AuthController {
     if (!payload) {
       throw new UnauthorizedException('Token biométrico inválido');
     }
-    return this.authService.revokeBiometricToken(payload.jti, payload.exp);
+    if (!payload.jti || !payload.exp) {
+      throw new UnauthorizedException('Token biométrico inválido');
+    }
+    return unwrap(await this.revokeBiometricUseCase.execute({ jti: payload.jti, exp: payload.exp }));
   }
 }

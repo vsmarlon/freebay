@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  PaymentGroupStatus,
+  PaymentMethod,
+  PaymentProvider,
+  Prisma,
+  TransactionStatus,
+} from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import {
   AttachGroupPaymentInput,
@@ -34,10 +40,9 @@ type GroupPayload = Prisma.PaymentGroupGetPayload<{ include: typeof GROUP_INCLUD
 
 @Injectable()
 export class PaymentGroupDatabaseRepository
-  extends BasePrismaRepository
+ 
 {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async create(
@@ -49,7 +54,7 @@ export class PaymentGroupDatabaseRepository
         buyerId: data.buyerId,
         amount: data.amount,
         currency: data.currency,
-        provider: 'STRIPE',
+        provider: PaymentProvider.STRIPE,
         idempotencyKey: data.idempotencyKey,
         expiresAt: data.expiresAt,
       },
@@ -63,9 +68,9 @@ export class PaymentGroupDatabaseRepository
           amount: order.amount,
           platformFee: order.platformFee,
           sellerAmount: order.sellerAmount,
-          paymentMethod: 'CREDIT_CARD',
-          provider: 'STRIPE',
-          status: 'PENDING',
+          paymentMethod: PaymentMethod.CREDIT_CARD,
+          provider: PaymentProvider.STRIPE,
+          status: TransactionStatus.PENDING,
           idempotencyKey: `group:${group.id}:${order.orderId}`,
           checkoutExpiresAt: data.expiresAt,
           paymentGroupId: group.id,
@@ -77,7 +82,7 @@ export class PaymentGroupDatabaseRepository
   }
 
   async findById(groupId: string): RepositoryResponse<PaymentGroupSnapshot | null> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const group = await this.prisma.paymentGroup.findUnique({
         where: { id: groupId },
         include: GROUP_INCLUDE,
@@ -89,7 +94,7 @@ export class PaymentGroupDatabaseRepository
   async findByIdempotencyKey(
     idempotencyKey: string,
   ): RepositoryResponse<PaymentGroupSnapshot | null> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const group = await this.prisma.paymentGroup.findUnique({
         where: { idempotencyKey },
         include: GROUP_INCLUDE,
@@ -102,7 +107,7 @@ export class PaymentGroupDatabaseRepository
     data: AttachGroupPaymentInput,
     tx?: Prisma.TransactionClient,
   ): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const attach = async (client: Prisma.TransactionClient) => {
         await client.paymentGroup.update({
           where: { id: data.groupId },
@@ -139,28 +144,28 @@ export class PaymentGroupDatabaseRepository
     tx: Prisma.TransactionClient,
   ): Promise<number> {
     const claimed = await tx.paymentGroup.updateMany({
-      where: { id: groupId, status: 'PENDING' },
-      data: { status: 'PAID', paidAt: new Date(), chargeId },
+      where: { id: groupId, status: PaymentGroupStatus.PENDING },
+      data: { status: PaymentGroupStatus.PAID, paidAt: new Date(), chargeId },
     });
     return claimed.count;
   }
 
   async markTerminal(
     groupId: string,
-    status: 'FAILED' | 'EXPIRED',
+    status: Extract<PaymentGroupStatus, 'FAILED' | 'EXPIRED'>,
     tx: Prisma.TransactionClient,
   ): Promise<number> {
     const claimed = await tx.paymentGroup.updateMany({
-      where: { id: groupId, status: 'PENDING' },
+      where: { id: groupId, status: PaymentGroupStatus.PENDING },
       data: { status },
     });
     return claimed.count;
   }
 
   async findExpiredGroupIds(now: Date): RepositoryResponse<string[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const groups = await this.prisma.paymentGroup.findMany({
-        where: { status: 'PENDING', expiresAt: { lt: now } },
+        where: { status: PaymentGroupStatus.PENDING, expiresAt: { lt: now } },
         select: { id: true },
       });
       return groups.map((group) => group.id);

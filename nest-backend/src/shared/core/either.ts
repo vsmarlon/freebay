@@ -1,6 +1,5 @@
 import { Failure } from '../errors/failures/failures';
 
-export type EitherPromise<L, R> = Promise<Either<L, R>>;
 export type Either<L, R> = Left<L, R> | Right<L, R>;
 
 export class Left<L, R = never> {
@@ -43,8 +42,4 @@ export const right = <L = never, R = unknown>(r: R): Either<L, R> => {
   return new Right<L, R>(r);
 };
 
-export interface Repository {}
-
 export type RepositoryResponse<T, F = Failure> = Promise<Either<F, T>>;
-export type UsecaseResponse<T, F = Failure> = Promise<Either<F, T>>;
-export type EntityResponse<T, F = Failure> = Either<F, T>;

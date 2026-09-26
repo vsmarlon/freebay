@@ -5,13 +5,14 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/presentation/widgets/view_once_toggle.dart';
 import 'package:freebay/shared/services/upload_service.dart';
 import 'package:video_player/video_player.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
 
 Future<void> showChatVideoComposer({
   required BuildContext context,
   required File videoFile,
   required Future<void> Function({
     required String attachmentUrl,
-    required String type,
+    required MessageType type,
     String? caption,
     required bool viewOnce,
   })
@@ -28,7 +29,7 @@ class _ChatVideoComposer extends StatefulWidget {
   final File videoFile;
   final Future<void> Function({
     required String attachmentUrl,
-    required String type,
+    required MessageType type,
     String? caption,
     required bool viewOnce,
   })
@@ -107,7 +108,7 @@ class _ChatVideoComposerState extends State<_ChatVideoComposer> {
       final caption = _captionController.text.trim();
       await widget.onSend(
         attachmentUrl: url,
-        type: 'VIDEO',
+        type: MessageType.video,
         caption: caption.isEmpty ? null : caption,
         viewOnce: _viewOnce,
       );

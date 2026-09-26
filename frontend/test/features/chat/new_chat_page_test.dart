@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'dart:async';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
@@ -17,11 +16,7 @@ import 'package:freebay/features/profile/presentation/pages/blocked_users_page.d
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
-
-class _AuthController extends AuthController {
-  @override
-  AsyncValue<UserEntity?> build() => const AsyncValue.data(null);
-}
+import '../../support/auth_test_doubles.dart';
 
 class _ChatRepository extends ChatRepository {
   int starts = 0;
@@ -98,7 +93,7 @@ Widget _app(NewChatPage page, _ChatRepository repository) {
   );
   return ProviderScope(
     overrides: [
-      authControllerProvider.overrideWith(_AuthController.new),
+      authControllerProvider.overrideWith(() => TestAuthController(null)),
       chatRepositoryProvider.overrideWithValue(repository),
       blockedUsersProvider.overrideWith(
         (ref) async => const BlockListResponse(limit: 0, offset: 0),

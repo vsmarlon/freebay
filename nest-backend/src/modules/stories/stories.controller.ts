@@ -23,15 +23,48 @@ import { BadRequestError } from "@/shared/core/errors";
 import { validateMediaFile } from "@/shared/utils/image-upload.utils";
 import {
   CreateStoryMultipartDTO,
+  SaveStoryHighlightDTO,
   parseStoryTextBlocks,
+  STORY_CAPTION_MAX_LENGTH,
+  STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH,
 } from "./dtos/stories.dto";
 import { MAX_MEDIA_SIZE } from "@/shared/utils/image-upload.utils";
-import { Prisma } from "@prisma/client";
+import { Prisma, StoryMediaType } from "@prisma/client";
 
 @ApiTags("Stories")
 @Controller("stories")
 export class StoriesController {
   constructor(private readonly storiesService: StoriesService) {}
+
+  @GetAuth('archive', { summary: 'List my stories, including expired stories' })
+  async getArchive(@CurrentUserId() userId: string) {
+    return this.storiesService.getArchive(userId);
+  }
+
+  @GetAuth('highlights/user/:userId', { summary: 'List public highlights for a user' })
+  async getHighlights(@Param('userId', ParseUUIDPipe) userId: string) {
+    return this.storiesService.getHighlights(userId);
+  }
+
+  @GetAuth('highlights/:id', { summary: 'View a public highlight' })
+  async getHighlight(@Param('id', ParseUUIDPipe) id: string) {
+    return this.storiesService.getHighlight(id);
+  }
+
+  @PostAuth('highlights', { summary: 'Create a story highlight', bodyType: SaveStoryHighlightDTO, responseStatus: 201, httpCode: HttpStatus.CREATED })
+  async createHighlight(@CurrentUserId() userId: string, @Body() body: SaveStoryHighlightDTO) {
+    return this.storiesService.saveHighlight({ userId, ...body });
+  }
+
+  @PatchAuth('highlights/:id', { summary: 'Edit a story highlight', bodyType: SaveStoryHighlightDTO })
+  async updateHighlight(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string, @Body() body: SaveStoryHighlightDTO) {
+    return this.storiesService.saveHighlight({ id, userId, ...body });
+  }
+
+  @PatchAuth('highlights/:id/delete', { summary: 'Delete a story highlight' })
+  async deleteHighlight(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() userId: string) {
+    return this.storiesService.deleteHighlight(id, userId);
+  }
 
   @GetAuth({ summary: "List active stories for explore/feed" })
   async getFeed(@CurrentUserId() userId: string) {
@@ -72,14 +105,14 @@ export class StoriesController {
     }
     const mimeError = validateMediaFile(file);
     if (mimeError) return left(new BadRequestError(mimeError));
-    if (typeof body?.caption === "string" && body.caption.length > 500) {
+    if (typeof body?.caption === "string" && body.caption.length > STORY_CAPTION_MAX_LENGTH) {
       return left(
         new BadRequestError("A legenda deve ter no máximo 500 caracteres"),
       );
     }
     if (
       typeof body?.textBlocks === "string" &&
-      body.textBlocks.length > 100_000
+      body.textBlocks.length > STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH
     ) {
       return left(
         new BadRequestError("textBlocks excede o tamanho máximo permitido"),
@@ -95,7 +128,7 @@ export class StoriesController {
     const result = await this.storiesService.createStory({
       userId,
       imageUrl,
-      mediaType: file.mimetype.startsWith("video/") ? "VIDEO" : "IMAGE",
+      mediaType: file.mimetype.startsWith("video/") ? StoryMediaType.VIDEO : StoryMediaType.IMAGE,
       caption: typeof body?.caption === "string" ? body.caption : undefined,
       textBlocks: textBlocksForPersistence,
     });

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import {
   UserProfileCounts,
@@ -16,27 +16,26 @@ import { normalizeEmail } from '../../utils/normalize-email';
 const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
 
 @Injectable()
-export class UserDatabaseRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class UserDatabaseRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findById(id: string): RepositoryResponse<User | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.user.findUnique({ where: { id } }),
       'Erro ao buscar usuário por ID',
     );
   }
 
   async findByEmail(email: string): RepositoryResponse<User | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.user.findUnique({ where: { email: normalizeEmail(email) } }),
       'Erro ao buscar usuário por email',
     );
   }
 
   async findByGoogleId(googleId: string): RepositoryResponse<User | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.user.findUnique({ where: { googleId } }),
       'Erro ao buscar usuário por Google ID',
     );
@@ -44,7 +43,7 @@ export class UserDatabaseRepository extends BasePrismaRepository {
 
   async findByUsername(username: string): RepositoryResponse<User | null> {
     const normalized = username.toLowerCase().trim();
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.user.findFirst({
           where: {
@@ -59,21 +58,21 @@ export class UserDatabaseRepository extends BasePrismaRepository {
   }
 
   async create(data: Prisma.UserCreateInput): RepositoryResponse<User> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.user.create({ data }),
       'Erro ao criar usuário',
     );
   }
 
   async update(id: string, data: Prisma.UserUpdateInput): RepositoryResponse<User> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.user.update({ where: { id }, data }),
       'Erro ao atualizar usuário',
     );
   }
 
   async searchUsers(query: string, limit: number, offset: number, viewerId?: string): RepositoryResponse<UserSearchResult[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const q = query.trim();
       const likeAll = `%${q}%`;
       const prefixLike = `${q}%`;
@@ -125,7 +124,7 @@ export class UserDatabaseRepository extends BasePrismaRepository {
   }
 
   async getSuggestions(userId: string, limit: number): RepositoryResponse<UserSuggestionResult[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const following = await this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true },
@@ -191,7 +190,7 @@ export class UserDatabaseRepository extends BasePrismaRepository {
   }
 
   async getProfileCounts(userId: string): RepositoryResponse<UserProfileCounts> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const [postsCount, productsCount, activeStory] = await Promise.all([
         this.prisma.post.count({ where: { userId } }),
         this.prisma.product.count({ where: { sellerId: userId, status: { not: 'DELETED' } } }),
@@ -206,7 +205,7 @@ export class UserDatabaseRepository extends BasePrismaRepository {
   }
 
   async findPaymentInfo(userId: string): RepositoryResponse<{ displayName: string; email: string; cpf: string | null } | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.user.findUnique({
           where: { id: userId },

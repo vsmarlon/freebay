@@ -7,28 +7,40 @@ import { MagicLinkRepository } from '../domain/repositories/magic-link.repositor
 import { RequestMagicLinkUseCase } from './request-magic-link.usecase';
 
 describe('RequestMagicLinkUseCase', () => {
-  it('normalizes email, stores only a hash, and expires after ten minutes', async () => {
-    const repository = { create: jest.fn().mockResolvedValue(right({ id: 'credential-id' })), recordSendAccepted: jest.fn().mockResolvedValue(right({})) };
-    const redis = { incrementWithExpiry: jest.fn().mockResolvedValue(1) };
-    const resend = { sendMagicLink: jest.fn().mockResolvedValue({ id: 'message-id' }) };
+  type Mocks = {
+    repository: { create: jest.Mock; recordSendAccepted: jest.Mock };
+    redis: { incrementWithExpiry: jest.Mock };
+    resend: { sendMagicLink: jest.Mock };
+  };
+
+  const compileSubject = async (mocks: Mocks): Promise<RequestMagicLinkUseCase> => {
     const module = await Test.createTestingModule({
       providers: [
         RequestMagicLinkUseCase,
-        { provide: MagicLinkRepository, useValue: repository },
-        { provide: RedisService, useValue: redis },
-        { provide: ResendService, useValue: resend },
+        { provide: MagicLinkRepository, useValue: mocks.repository },
+        { provide: RedisService, useValue: mocks.redis },
+        { provide: ResendService, useValue: mocks.resend },
       ],
     }).compile();
-    const usecase = module.get(RequestMagicLinkUseCase);
+    return module.get(RequestMagicLinkUseCase);
+  };
+
+  it('normalizes email, stores only a hash, and expires after ten minutes', async () => {
+    const mocks: Mocks = {
+      repository: {
+        create: jest.fn().mockResolvedValue(right({ id: 'credential-id' })),
+        recordSendAccepted: jest.fn().mockResolvedValue(right({})),
+      },
+      redis: { incrementWithExpiry: jest.fn().mockResolvedValue(1) },
+      resend: { sendMagicLink: jest.fn().mockResolvedValue({ id: 'message-id' }) },
+    };
+    const usecase = await compileSubject(mocks);
 
     const before = Date.now();
     const result = await usecase.execute({
-      email: '  USER@Example.COM ',
-      consent: true,
-      locale: 'en',
-      ip: '127.0.0.1',
+      email: '  USER@Example.COM ', consent: true, locale: 'en', ip: '127.0.0.1',
     });
-    const data = repository.create.mock.calls[0][0];
+    const data = mocks.repository.create.mock.calls[0][0];
 
     expect(result.isRight()).toBe(true);
     expect(data.email).toBe('user@example.com');
@@ -37,62 +49,68 @@ describe('RequestMagicLinkUseCase', () => {
     expect(data.activatedAt).toBe(data.requestedAt);
     expect(data.expiresAt.getTime() - data.requestedAt.getTime()).toBe(600000);
     expect(data.requestedAt.getTime()).toBeGreaterThanOrEqual(before);
-    expect(resend.sendMagicLink).toHaveBeenCalledWith('user@example.com', expect.any(String), 'en', 'credential-id');
-    expect(repository.create.mock.invocationCallOrder[0]).toBeLessThan(resend.sendMagicLink.mock.invocationCallOrder[0]);
-    expect(JSON.stringify(data)).not.toContain(resend.sendMagicLink.mock.calls[0][1]);
-    expect(repository.recordSendAccepted).toHaveBeenCalledWith('credential-id', expect.any(Date), 'message-id');
-    expect(redis.incrementWithExpiry).toHaveBeenCalledTimes(2);
+    expect(mocks.resend.sendMagicLink).toHaveBeenCalledWith(
+      'user@example.com', expect.any(String), 'en', 'credential-id',
+    );
+    expect(mocks.repository.create.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.resend.sendMagicLink.mock.invocationCallOrder[0],
+    );
+    expect(JSON.stringify(data)).not.toContain(mocks.resend.sendMagicLink.mock.calls[0][1]);
+    expect(mocks.repository.recordSendAccepted).toHaveBeenCalledWith(
+      'credential-id', expect.any(Date), 'message-id',
+    );
+    expect(mocks.redis.incrementWithExpiry).toHaveBeenCalledTimes(2);
   });
 
   it('returns generic success when either throttle bucket is exceeded', async () => {
-    const repository = { create: jest.fn(), recordSendAccepted: jest.fn() };
-    const redis = { incrementWithExpiry: jest.fn().mockResolvedValueOnce(6).mockResolvedValueOnce(1) };
-    const resend = { sendMagicLink: jest.fn() };
-    const module = await Test.createTestingModule({
-      providers: [
-        RequestMagicLinkUseCase,
-        { provide: MagicLinkRepository, useValue: repository },
-        { provide: RedisService, useValue: redis },
-        { provide: ResendService, useValue: resend },
-      ],
-    }).compile();
+    const mocks: Mocks = {
+      repository: { create: jest.fn(), recordSendAccepted: jest.fn() },
+      redis: { incrementWithExpiry: jest.fn().mockResolvedValueOnce(6).mockResolvedValueOnce(1) },
+      resend: { sendMagicLink: jest.fn() },
+    };
 
-    const result = await module.get(RequestMagicLinkUseCase).execute({
+    const result = await (await compileSubject(mocks)).execute({
       email: 'user@example.com', consent: true, locale: 'pt-BR', ip: '127.0.0.1',
     });
 
     expect(result.isRight()).toBe(true);
-    expect(repository.create).not.toHaveBeenCalled();
-    expect(resend.sendMagicLink).not.toHaveBeenCalled();
+    expect(mocks.repository.create).not.toHaveBeenCalled();
+    expect(mocks.resend.sendMagicLink).not.toHaveBeenCalled();
   });
 
   it('removes the pending credential and returns a generic delivery error when the provider fails', async () => {
-    const repository = { create: jest.fn().mockResolvedValue(right({ id: 'credential-id' })), recordSendAccepted: jest.fn() };
-    const redis = { incrementWithExpiry: jest.fn().mockResolvedValue(1) };
-    const resend = { sendMagicLink: jest.fn().mockRejectedValue(new Error('provider detail')) };
-    const module = await Test.createTestingModule({
-      providers: [RequestMagicLinkUseCase, { provide: MagicLinkRepository, useValue: repository }, { provide: RedisService, useValue: redis }, { provide: ResendService, useValue: resend }],
-    }).compile();
-    const result = await module.get(RequestMagicLinkUseCase).execute({ email: 'user@example.com', consent: true, locale: 'en', ip: '127.0.0.1' });
+    const mocks: Mocks = {
+      repository: {
+        create: jest.fn().mockResolvedValue(right({ id: 'credential-id' })),
+        recordSendAccepted: jest.fn(),
+      },
+      redis: { incrementWithExpiry: jest.fn().mockResolvedValue(1) },
+      resend: { sendMagicLink: jest.fn().mockRejectedValue(new Error('provider detail')) },
+    };
+    const result = await (await compileSubject(mocks)).execute({
+      email: 'user@example.com', consent: true, locale: 'en', ip: '127.0.0.1',
+    });
+
     expect(result).toEqual(right({ sent: true }));
     expect(JSON.stringify(result)).not.toContain('provider detail');
-    expect(repository.recordSendAccepted).not.toHaveBeenCalled();
+    expect(mocks.repository.recordSendAccepted).not.toHaveBeenCalled();
   });
 
   it('keeps the credential inactive when delivery finalization fails', async () => {
-    const repository = {
-      create: jest.fn().mockResolvedValue(right({})),
-      recordSendAccepted: jest.fn().mockResolvedValue(left(new DatabaseError('database unavailable'))),
+    const mocks: Mocks = {
+      repository: {
+        create: jest.fn().mockResolvedValue(right({})),
+        recordSendAccepted: jest.fn().mockResolvedValue(left(new DatabaseError('database unavailable'))),
+      },
+      redis: { incrementWithExpiry: jest.fn().mockResolvedValue(1) },
+      resend: { sendMagicLink: jest.fn().mockResolvedValue({ id: 'message-id' }) },
     };
-    const redis = { incrementWithExpiry: jest.fn().mockResolvedValue(1) };
-    const resend = { sendMagicLink: jest.fn().mockResolvedValue({ id: 'message-id' }) };
-    const module = await Test.createTestingModule({
-      providers: [RequestMagicLinkUseCase, { provide: MagicLinkRepository, useValue: repository }, { provide: RedisService, useValue: redis }, { provide: ResendService, useValue: resend }],
-    }).compile();
 
-    const result = await module.get(RequestMagicLinkUseCase).execute({ email: 'user@example.com', consent: true, locale: 'en', ip: '127.0.0.1' });
+    const result = await (await compileSubject(mocks)).execute({
+      email: 'user@example.com', consent: true, locale: 'en', ip: '127.0.0.1',
+    });
 
     expect(result).toEqual(right({ sent: true }));
-    expect(repository.recordSendAccepted).toHaveBeenCalled();
+    expect(mocks.repository.recordSendAccepted).toHaveBeenCalled();
   });
 });

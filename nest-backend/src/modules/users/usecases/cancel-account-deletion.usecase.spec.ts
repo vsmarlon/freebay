@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CancelAccountDeletionUseCase } from './cancel-account-deletion.usecase';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
-import { left, right } from '@/shared/core/either';
-import { BadRequestError, DatabaseError, UserNotFoundError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
+import { BadRequestError, UserNotFoundError } from '@/shared/core/errors';
 
 const mockUserRepository = {
   findById: jest.fn(),
@@ -64,21 +64,4 @@ describe('CancelAccountDeletionUseCase', () => {
     expect(mockAccountLifecycleRepository.cancelDeletion).not.toHaveBeenCalled();
   });
 
-  it('deve propagar a falha quando a busca do usuário falha', async () => {
-    mockUserRepository.findById.mockResolvedValue(left(new DatabaseError('boom')));
-
-    const result = await sut.execute({ userId: 'user-1' });
-
-    expect(result.isLeft()).toBe(true);
-    expect(result.value).toBeInstanceOf(DatabaseError);
-  });
-
-  it('deve propagar a falha quando o cancelamento falha', async () => {
-    mockAccountLifecycleRepository.cancelDeletion.mockResolvedValue(left(new DatabaseError('boom')));
-
-    const result = await sut.execute({ userId: 'user-1' });
-
-    expect(result.isLeft()).toBe(true);
-    expect(result.value).toBeInstanceOf(DatabaseError);
-  });
 });

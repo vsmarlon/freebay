@@ -198,6 +198,7 @@ model User {
   shares                  Share[]
   chatMessages            ChatMessage[]
   stories                 Story[]
+  storyHighlights         StoryHighlight[]
   commentLikes            CommentLike[]
   favorites               Favorite[]
   cartItems               CartItem[]
@@ -503,6 +504,7 @@ model Order {
   escrowStatus        EscrowStatus @default(HELD)
   meetingScheduledAt  DateTime?
   deliveryConfirmedAt DateTime?
+  cancellationReason  String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
@@ -765,6 +767,7 @@ model Story {
 
   user  User        @relation(fields: [userId], references: [id])
   views StoryView[]
+  highlightItems StoryHighlightItem[]
 
   @@index([userId, expiresAt])
   @@index([expiresAt])
@@ -804,6 +807,33 @@ enum MessageType {
   GIF
   LOCATION
   PRODUCT_CARD
+}
+
+model StoryHighlight {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String   @db.VarChar(40)
+  coverStoryId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stories StoryHighlightItem[]
+
+  @@index([userId, createdAt])
+}
+
+model StoryHighlightItem {
+  highlightId String
+  storyId     String
+  position    Int
+
+  highlight StoryHighlight @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  story     Story          @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@id([highlightId, storyId])
+  @@unique([highlightId, position])
+  @@index([storyId])
 }
 
 model MessageReaction {

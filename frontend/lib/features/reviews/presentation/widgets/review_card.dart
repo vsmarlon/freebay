@@ -101,7 +101,7 @@ class ReviewCard extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () =>
-                        showFullScreenImage(context, review.images[index]),
+                        showAppImageViewer(context, review.images[index]),
                     child: Container(
                       width: 100,
                       height: 100,

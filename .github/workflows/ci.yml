@@ -7,10 +7,18 @@ on:
     branches: [main, master, develop]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend-ci:
     name: Backend CI (NestJS / Prisma / Postgres / Redis)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -41,11 +49,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 24.10.0
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24.10.0
+          cache: npm
           cache-dependency-path: nest-backend/package-lock.json
 
       - name: Install backend dependencies
@@ -61,6 +69,10 @@ jobs:
       - name: Typecheck Backend (TypeScript)
         working-directory: nest-backend
         run: npx tsc --noEmit
+
+      - name: Build Backend
+        working-directory: nest-backend
+        run: npm run build
 
       - name: Lint Backend (ESLint)
         working-directory: nest-backend
@@ -99,9 +111,32 @@ jobs:
           GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
         run: npx jest --config jest.config.integration.js --runInBand
 
+      - name: Run Backend E2E Journey Tests (Jest)
+        working-directory: nest-backend
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/freebay_test_db?schema=public
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
+          GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+        run: npm run test:e2e
+
+      - name: Upload backend build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: |
+            nest-backend/dist
+            nest-backend/package.json
+            nest-backend/package-lock.json
+          if-no-files-found: error
+
   frontend-ci:
     name: Frontend CI (Flutter / Dart)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -110,17 +145,58 @@ jobs:
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.44.4'
           cache: true
+
+      - name: Create synthetic Flutter test environment
+        working-directory: frontend
+        run: touch .env
 
       - name: Install Flutter dependencies
         working-directory: frontend
         run: flutter pub get
 
+      - name: Generate Flutter code
+        working-directory: frontend
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Verify architecture and UI gates
+        run: node scripts/ci-check.js
+
+      - name: Verify Dart formatting
+        run: dart format --output=none --set-exit-if-changed frontend/lib frontend/test frontend/libs/freebay_design_system/lib
+
       - name: Analyze Flutter Code
         working-directory: frontend
-        run: flutter analyze --fatal-infos
+        run: flutter analyze --fatal-infos lib test libs/freebay_design_system/lib
 
       - name: Run Flutter Widget & Unit Tests
         working-directory: frontend
-        run: flutter test
+        run: flutter test --coverage
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Build Android debug APK
+        working-directory: frontend
+        run: flutter build apk --debug
+
+      - name: Upload Flutter coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: frontend/coverage/lcov.info
+          if-no-files-found: ignore
+
+      - name: Upload Android debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: frontend/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error

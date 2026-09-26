@@ -6,6 +6,7 @@ import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 
 class MyProductsPage extends ConsumerWidget {
@@ -193,7 +194,7 @@ class MyProductsPage extends ConsumerWidget {
                           color: AppColors.primaryContainer,
                         ),
                       ),
-                      _buildStatusBadge(product.status, isDark),
+                      _buildStatusBadge(product.status),
                     ],
                   ),
                   Spacing.vSm,
@@ -227,20 +228,20 @@ class MyProductsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status, bool isDark) {
+  Widget _buildStatusBadge(ProductStatus status) {
     Color bgColor;
     Color textColor;
 
     switch (status) {
-      case 'ACTIVE':
+      case ProductStatus.active:
         bgColor = AppColors.success.withValues(alpha: 0.2);
         textColor = AppColors.success;
         break;
-      case 'PAUSED':
+      case ProductStatus.paused:
         bgColor = AppColors.warning.withValues(alpha: 0.2);
         textColor = AppColors.warning;
         break;
-      case 'SOLD':
+      case ProductStatus.sold:
         bgColor = AppColors.mediumGray.withValues(alpha: 0.2);
         textColor = AppColors.mediumGray;
         break;
@@ -253,7 +254,7 @@ class MyProductsPage extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(color: bgColor),
       child: Text(
-        status,
+        status.label,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,

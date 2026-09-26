@@ -5,16 +5,15 @@ sealed class Either<L, R> {
 
   bool get isRight => this is Right<L, R>;
 
-  L? get leftOrNull => isLeft ? (this as Left<L, R>).value : null;
+  L? get leftOrNull => fold<L?>((left) => left, (_) => null);
 
-  R? get rightOrNull => isRight ? (this as Right<L, R>).value : null;
+  R? get rightOrNull => fold<R?>((_) => null, (right) => right);
 
   T fold<T>(T Function(L left) onLeft, T Function(R right) onRight) {
-    if (this is Left<L, R>) {
-      return onLeft((this as Left<L, R>).value);
-    } else {
-      return onRight((this as Right<L, R>).value);
-    }
+    return switch (this) {
+      Left<L, R>(value: final value) => onLeft(value),
+      Right<L, R>(value: final value) => onRight(value),
+    };
   }
 
   R getOrElse(R Function() dflt) => fold((_) => dflt(), (r) => r);
@@ -44,21 +43,16 @@ class Right<L, R> extends Either<L, R> {
 
 extension EitherExtensions<L, R> on Either<L, R> {
   R? unwrapOrHandle(void Function(L error) onError) {
-    if (isLeft) {
-      onError((this as Left<L, R>).value);
+    return fold((error) {
+      onError(error);
       return null;
-    }
-    return (this as Right<L, R>).value;
+    }, (data) => data);
   }
 
   void when({
     void Function(L failure)? onError,
     void Function(R data)? onSuccess,
   }) {
-    if (isLeft) {
-      onError?.call((this as Left<L, R>).value);
-    } else {
-      onSuccess?.call((this as Right<L, R>).value);
-    }
+    fold((failure) => onError?.call(failure), (data) => onSuccess?.call(data));
   }
 }

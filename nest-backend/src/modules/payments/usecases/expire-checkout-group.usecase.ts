@@ -60,7 +60,7 @@ export class ExpireCheckoutGroupUseCase {
       } catch (error) {
         if (error instanceof Error && error.message === GROUP_RACE_SKIP) continue;
         this.logger.error(
-          `Failed to expire payment group ${group.id}: ${(error as Error).message}`,
+          `Failed to expire payment group ${group.id}: ${error instanceof Error ? error.message : String(error)}`,
           error instanceof Error ? error.stack : undefined,
         );
       }
@@ -88,7 +88,7 @@ export class ExpireCheckoutGroupUseCase {
         ordersReclaimed += reclaimed;
       } catch (error) {
         this.logger.error(
-          `Failed to expire transaction ${transaction.id}: ${(error as Error).message}`,
+          `Failed to expire transaction ${transaction.id}: ${error instanceof Error ? error.message : String(error)}`,
           error instanceof Error ? error.stack : undefined,
         );
       }

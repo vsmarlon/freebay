@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/router/app_routes.dart';
 
 /// Renders a PRODUCT_CARD message bubble inside the chat.
@@ -52,10 +53,12 @@ class ProductCardBubble extends StatelessWidget {
                 child: SizedBox(
                   width: double.infinity,
                   height: 150,
-                  child: Image.network(
-                    imageUrl,
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    memCacheWidth: 400,
+                    memCacheHeight: 400,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => Container(
+                    errorWidget: (_, _, _) => Container(
                       height: 150,
                       color: context.surfaceMidColor,
                       child: Center(

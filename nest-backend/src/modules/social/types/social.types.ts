@@ -1,4 +1,28 @@
 import { Prisma } from "@prisma/client";
+import { DEFAULT_PAGE_SIZE } from '@/shared/core/pagination';
+
+export enum FeedType {
+  EXPLORE = "explore",
+  FOLLOWING = "following",
+}
+
+export enum ContentFilter {
+  ALL = "all",
+  SOCIAL = "social",
+  SELLING = "selling",
+}
+
+export enum SearchFilter {
+  ALL = "all",
+  FOLLOWING = "following",
+  FOLLOWERS = "followers",
+}
+
+export const COMMENT_MAX_LENGTH = 1000;
+export const SEARCH_MAX_LENGTH = 200;
+export const COMMENT_REPLY_MAX_COUNT = 50;
+export const EXPLORE_CANDIDATE_WINDOW = 300;
+export const SOCIAL_DEFAULT_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 export const POST_INCLUDE = {
   user: {
@@ -95,7 +119,7 @@ export const COMMENT_PAGE_INCLUDE = {
   replies: {
     where: { deletedAt: null },
     orderBy: { createdAt: "asc" as const },
-    take: 50,
+    take: COMMENT_REPLY_MAX_COUNT,
     include: COMMENT_FLAT_INCLUDE,
   },
 } satisfies Prisma.CommentInclude;
@@ -143,10 +167,10 @@ export interface UserPostEntry {
 export interface FeedQuery {
   userId?: string;
   limit?: number;
-  type?: "explore" | "following";
+  type?: FeedType;
   cursor?: string;
   offset?: number;
-  contentFilter?: "all" | "social" | "selling";
+  contentFilter?: ContentFilter;
 }
 
 export interface FeedRepositoryQuery
@@ -156,8 +180,8 @@ export interface FeedRepositoryQuery
 
 export interface FeedCursor {
   userId: string;
-  type: "following";
-  contentFilter: "all" | "social" | "selling";
+  type: FeedType.FOLLOWING;
+  contentFilter: ContentFilter;
   createdAt: string;
   postId: string;
   scope: "following-feed";
@@ -178,7 +202,7 @@ export function decodeFeedCursor(value: string): FeedCursor | null {
       !("postId" in parsed) ||
       !("scope" in parsed) ||
       typeof parsed.userId !== "string" ||
-      parsed.type !== "following" ||
+      parsed.type !== FeedType.FOLLOWING ||
       !isFeedContentFilter(parsed.contentFilter) ||
       parsed.scope !== "following-feed" ||
       typeof parsed.createdAt !== "string" ||
@@ -189,8 +213,8 @@ export function decodeFeedCursor(value: string): FeedCursor | null {
     }
     return {
       userId: parsed.userId,
-      type: "following",
-      contentFilter: parsed.contentFilter,
+       type: FeedType.FOLLOWING,
+       contentFilter: parsed.contentFilter,
       createdAt: parsed.createdAt,
       postId: parsed.postId,
       scope: "following-feed",
@@ -203,7 +227,7 @@ export function decodeFeedCursor(value: string): FeedCursor | null {
 function isFeedContentFilter(
   value: unknown,
 ): value is FeedCursor["contentFilter"] {
-  return value === "all" || value === "social" || value === "selling";
+  return value === ContentFilter.ALL || value === ContentFilter.SOCIAL || value === ContentFilter.SELLING;
 }
 
 export interface FeedResult {
@@ -225,6 +249,11 @@ export interface UserPostsCursor {
   profileUserId: string;
   createdAt: string;
   postId: string;
+}
+
+export interface ProfileTimelineCursor {
+  createdAt: string;
+  eventId: string;
 }
 
 export interface UserPostsRepositoryQuery {

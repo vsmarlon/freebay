@@ -1,15 +1,16 @@
 import { Prisma } from "@prisma/client";
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
-import { BasePrismaRepository } from "@/shared/infra/prisma/base-prisma.repository";
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse, left, right } from "@/shared/core/either";
 import { BadRequestError, DatabaseError } from "@/shared/core/errors";
 import { UserBrief } from "../../types/user.types";
+import { FollowRepository } from '../../domain/repositories/follow.repository';
 
 @Injectable()
-export class PrismaFollowRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class PrismaFollowRepository extends FollowRepository {
+  constructor(private readonly prisma: PrismaService) {
+    super();
   }
 
   async follow(
@@ -52,7 +53,7 @@ export class PrismaFollowRepository extends BasePrismaRepository {
     followerId: string,
     followingId: string,
   ): RepositoryResponse<boolean> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const follow = await this.prisma.follow.findUnique({
         where: { followerId_followingId: { followerId, followingId } },
       });
@@ -65,7 +66,7 @@ export class PrismaFollowRepository extends BasePrismaRepository {
     limit: number,
     offset: number,
   ): RepositoryResponse<UserBrief[]> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.user.findMany({
           where: { following: { some: { followingId: userId } } },
@@ -90,7 +91,7 @@ export class PrismaFollowRepository extends BasePrismaRepository {
     limit: number,
     offset: number,
   ): RepositoryResponse<UserBrief[]> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.user.findMany({
           where: { followers: { some: { followerId: userId } } },
@@ -111,14 +112,14 @@ export class PrismaFollowRepository extends BasePrismaRepository {
   }
 
   async getFollowersCount(userId: string): RepositoryResponse<number> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.follow.count({ where: { followingId: userId } }),
       "Failed to get followers count",
     );
   }
 
   async getFollowingCount(userId: string): RepositoryResponse<number> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.follow.count({ where: { followerId: userId } }),
       "Failed to get following count",
     );

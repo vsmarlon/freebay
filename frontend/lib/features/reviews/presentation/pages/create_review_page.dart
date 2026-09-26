@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/domain/usecases/create_review_usecase.dart';
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.dart';
@@ -53,7 +54,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
       CreateReviewParams(
         orderId: widget.orderId,
         reviewedId: widget.reviewedId,
-        type: widget.reviewType,
+        type: reviewTypeFromApiValue(widget.reviewType),
         score: _score,
         comment: _commentController.text.trim().isEmpty
             ? null

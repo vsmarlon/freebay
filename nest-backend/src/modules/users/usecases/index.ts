@@ -13,3 +13,7 @@ export * from './verify-phone.usecase';
 export * from './request-account-deletion.usecase';
 export * from './cancel-account-deletion.usecase';
 export * from './export-user-data.usecase';
+export * from './list-followers.usecase';
+export * from './list-following.usecase';
+export * from './get-follow-status.usecase';
+export * from './get-block-status.usecase';

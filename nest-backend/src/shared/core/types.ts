@@ -1,3 +1,5 @@
+import { UserRole } from '@prisma/client';
+
 export enum JwtTokenType {
   ACCESS = 'access',
   REFRESH = 'refresh',
@@ -7,7 +9,7 @@ export enum JwtTokenType {
 export interface JwtPayload {
   userId: string;
   email?: string;
-  role: string;
+  role: UserRole;
   type?: JwtTokenType;
   jti?: string;
   iat?: number;

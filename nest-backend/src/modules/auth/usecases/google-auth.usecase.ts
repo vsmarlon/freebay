@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
-import { Either, left, right } from '@/shared/core/either';
+import { Either, left } from '@/shared/core/either';
 import { AppError, InvalidGoogleTokenError, UnverifiedGoogleEmailError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
-import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
+import { AuthResponse } from '../mappers/auth.mapper';
 import { normalizeEmail } from '../utils/normalize-email';
+import { SessionTokenService } from '../services/session-token.service';
+import { issueSession } from '../utils/session-policy';
+import { UserRole } from '@prisma/client';
 
 interface GooglePayload {
   sub: string;
@@ -36,6 +39,7 @@ export class GoogleAuthUseCase {
   constructor(
     private readonly userRepository: UserDatabaseRepository,
     private readonly config: ConfigService,
+    private readonly sessionTokens: SessionTokenService,
   ) {
     this.audiences = [
       this.config.get<string>('GOOGLE_CLIENT_ID'),
@@ -54,7 +58,7 @@ export class GoogleAuthUseCase {
     this.client = new OAuth2Client(this.audiences[0]);
   }
 
-  async execute(idToken: string): Promise<Either<AppError, AuthResponse>> {
+  async execute(idToken: string): Promise<Either<AppError, AuthResponse & { token: string; refreshToken: string }>> {
     let payload: GooglePayload;
     try {
       const ticket = await this.client.verifyIdToken({
@@ -81,7 +85,7 @@ export class GoogleAuthUseCase {
     if (byGoogleId.isLeft()) return left(byGoogleId.value);
     if (byGoogleId.value) {
       this.logger.log(`Login Google bem-sucedido para usuário existente: ${byGoogleId.value.id} (${byGoogleId.value.email})`);
-      return right(toAuthResponse(byGoogleId.value));
+      return issueSession(byGoogleId.value, this.sessionTokens);
     }
 
     // 2. Usuário com mesmo e-mail já existe — vincular conta Google
@@ -103,7 +107,7 @@ export class GoogleAuthUseCase {
         this.logger.error(`Erro ao atualizar vínculo Google do usuário: ${updated.value.message}`);
         return left(updated.value);
       }
-      return right(toAuthResponse(updated.value));
+      return issueSession(updated.value, this.sessionTokens);
     }
 
     // 3. Novo usuário — criado inicialmente sem username (completará no frontend)
@@ -124,7 +128,7 @@ export class GoogleAuthUseCase {
       bio: null,
       isVerified: false,
       isGuest: false,
-      role: 'USER',
+      role: UserRole.USER,
       reputationScore: 0,
       totalReviews: 0,
       wallet: { create: {} },
@@ -135,6 +139,6 @@ export class GoogleAuthUseCase {
     }
 
     this.logger.log(`Novo usuário criado com sucesso: ${created.value.id} (${created.value.email})`);
-    return right(toAuthResponse(created.value));
+    return issueSession(created.value, this.sessionTokens);
   }
 }

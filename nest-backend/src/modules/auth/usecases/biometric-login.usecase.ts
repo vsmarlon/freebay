@@ -2,16 +2,19 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Either, left, right } from '@/shared/core/either';
-import { AccountSuspendedError, AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError } from '@/shared/core/errors';
+import { AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError, UnauthorizedError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
-import { LoginResponse, toLoginResponse } from '../mappers/auth.mapper';
+import { LoginResponse } from '../mappers/auth.mapper';
 import { AuthUser, JwtTokenType } from '@/shared/core/types';
+import { SessionTokenService } from '../services/session-token.service';
+import { issueSession } from '../utils/session-policy';
 
 export type BiometricLoginOutput = {
   user: LoginResponse['user'];
-  jti: string;
-  exp: number;
+  token: string;
+  refreshToken: string;
+  biometricToken: string;
 };
 
 @Injectable()
@@ -21,6 +24,7 @@ export class BiometricLoginUseCase {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly sessionTokens: SessionTokenService,
   ) {}
 
   async execute(biometricToken: string): Promise<Either<AppError, BiometricLoginOutput>> {
@@ -66,10 +70,11 @@ export class BiometricLoginUseCase {
     if (!user) {
       return left(new NotFoundError('Usuário'));
     }
-    if (user.suspendedAt) {
-      return left(new AccountSuspendedError(user.suspensionReason));
+    if (!await this.sessionTokens.claimBiometric(payload.jti, payload.exp)) {
+      return left(new UnauthorizedError('Token biométrico inválido ou já utilizado'));
     }
-
-    return right({ user: toLoginResponse(user).user, jti: payload.jti, exp: payload.exp });
+    const session = issueSession(user, this.sessionTokens);
+    if (session.isLeft()) return left(session.value);
+    return right({ ...session.value, biometricToken: this.sessionTokens.generateBiometric(user.id, user.role) });
   }
 }

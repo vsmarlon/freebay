@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/auth/presentation/pages/splash_widgets.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 
 class SplashPage extends StatefulWidget {
@@ -153,7 +154,7 @@ class _SplashPageState extends State<SplashPage>
                         position: _btnSlide,
                         child: FadeTransition(
                           opacity: _btnOpacity,
-                          child: _GetStartedButton(
+                          child: SplashGetStartedButton(
                             onTap: () {
                               HapticFeedback.mediumImpact();
                               final hasSeen =
@@ -175,21 +176,21 @@ class _SplashPageState extends State<SplashPage>
                           child: const Row(
                             children: [
                               Expanded(
-                                child: _StatBlock(
+                                child: SplashStatBlock(
                                   value: '0%',
                                   label: 'Trading Fees',
                                 ),
                               ),
                               SizedBox(width: 16),
                               Expanded(
-                                child: _StatBlock(
+                                child: SplashStatBlock(
                                   value: 'Instant',
                                   label: 'Verification',
                                 ),
                               ),
                               SizedBox(width: 16),
                               Expanded(
-                                child: _StatBlock(
+                                child: SplashStatBlock(
                                   value: 'Global',
                                   label: 'Reach Access',
                                 ),
@@ -206,99 +207,6 @@ class _SplashPageState extends State<SplashPage>
           ),
         ),
       ),
-    );
-  }
-}
-
-class _GetStartedButton extends StatefulWidget {
-  final VoidCallback onTap;
-  const _GetStartedButton({required this.onTap});
-
-  @override
-  State<_GetStartedButton> createState() => _GetStartedButtonState();
-}
-
-class _GetStartedButtonState extends State<_GetStartedButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedContainer(
-        duration: AppMotion.tap,
-        transform: Matrix4.translationValues(
-          _isPressed ? AppDepth.pressOffset : 0.0,
-          _isPressed ? AppDepth.pressOffset : 0.0,
-          0,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.white, width: 2),
-          boxShadow: _isPressed
-              ? []
-              : AppDepth.hard(AppColors.primaryContainer),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'GET STARTED',
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-                color: Colors.black,
-              ),
-            ),
-            Icon(Icons.arrow_forward, size: 22, color: Colors.black),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatBlock extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _StatBlock({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: AppTypography.headlineFontFamily,
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            height: 1,
-          ),
-        ),
-        Spacing.vXs,
-        Text(
-          label.toUpperCase(),
-          style: const TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.8,
-            color: AppColors.onSurfaceVariantDark,
-          ),
-        ),
-      ],
     );
   }
 }

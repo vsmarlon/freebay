@@ -50,13 +50,6 @@ export function generateTestUsername(): string {
 }
 
 /**
- * Wait for a specified number of milliseconds
- */
-export function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
  * Clean database (alternative to TRUNCATE)
  */
 export async function cleanDatabase(prisma: PrismaClient): Promise<void> {

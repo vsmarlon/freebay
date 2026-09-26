@@ -19,12 +19,16 @@ void main() {
     final settings = File(
       'lib/features/profile/presentation/widgets/profile_settings_sheet.dart',
     ).readAsStringSync();
+    final settingsTile = File(
+      'lib/features/profile/presentation/widgets/biometry_setting_tile.dart',
+    ).readAsStringSync();
 
     expect(login, isNot(contains('showEnableBiometrySheet')));
     expect(register, isNot(contains('showEnableBiometrySheet')));
     expect(completeProfile, isNot(contains('showEnableBiometrySheet')));
     expect(welcome, contains('enrollBiometricToken'));
-    expect(settings, contains('enrollBiometricToken'));
-    expect(settings, contains('revokeBiometricToken'));
+    expect(settings, contains('BiometrySettingTile'));
+    expect(settingsTile, contains('enrollBiometricToken'));
+    expect(settingsTile, contains('revokeBiometricToken'));
   });
 }

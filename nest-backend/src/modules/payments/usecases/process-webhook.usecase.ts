@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { OrderStatus, TransactionStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -80,7 +81,7 @@ export class ProcessWebhookUseCase {
       return right(undefined);
     }
 
-    if (transaction.status === 'PAID') {
+    if (transaction.status === TransactionStatus.PAID) {
       if (data.chargeId && !transaction.chargeId) {
         await this.transactionRepo.setChargeId(transaction.orderId, data.chargeId);
       }
@@ -88,7 +89,7 @@ export class ProcessWebhookUseCase {
       return right(undefined);
     }
 
-    if (transaction.status !== 'PENDING') {
+    if (transaction.status !== TransactionStatus.PENDING) {
       this.logger.warn(
         `Transaction ${transaction.id} is ${transaction.status}; refusing to credit a non-PENDING transaction`,
       );
@@ -133,7 +134,7 @@ export class ProcessWebhookUseCase {
         return right(undefined);
       }
       this.logger.error(
-        `Failed to settle transaction ${transaction.id} for order ${orderId}: ${(error as Error).message}`,
+        `Failed to settle transaction ${transaction.id} for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined,
       );
       return left(new DatabaseError('Failed to process payment webhook'));
@@ -141,10 +142,10 @@ export class ProcessWebhookUseCase {
 
     try {
       await this.notificationService.notifyPayment(transaction.order.sellerId, transaction.amount);
-      await this.notificationService.notifyOrderStatus(transaction.order.buyerId, transaction.orderId, 'CONFIRMED');
+      await this.notificationService.notifyOrderStatus(transaction.order.buyerId, transaction.orderId, OrderStatus.CONFIRMED);
     } catch (error) {
       this.logger.error(
-        `Payment notifications failed for order ${transaction.orderId}: ${(error as Error).message}`,
+        `Payment notifications failed for order ${transaction.orderId}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
 
@@ -163,7 +164,7 @@ export class ProcessWebhookUseCase {
       return right(undefined);
     }
 
-    if (transaction.status !== 'PENDING') {
+    if (transaction.status !== TransactionStatus.PENDING) {
       this.logger.warn(
         `Transaction ${transaction.id} is ${transaction.status}; refusing to expire a non-PENDING transaction`,
       );
@@ -181,7 +182,7 @@ export class ProcessWebhookUseCase {
       return right(undefined);
     }
 
-    if (transaction.order.status !== 'PENDING') {
+    if (transaction.order.status !== OrderStatus.PENDING) {
       this.logger.warn(
         `Order ${orderId} is ${transaction.order.status}; refusing to cancel it on expiry`,
       );
@@ -204,7 +205,7 @@ export class ProcessWebhookUseCase {
         return right(undefined);
       }
       this.logger.error(
-        `Failed to expire transaction ${transaction.id} for order ${orderId}: ${(error as Error).message}`,
+        `Failed to expire transaction ${transaction.id} for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined,
       );
       return left(new DatabaseError('Failed to process webhook'));

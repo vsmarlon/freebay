@@ -5,31 +5,52 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/data/repositories/order_repository.dart';
-import 'package:freebay/features/orders/data/services/order_service.dart';
+import 'package:freebay/features/orders/domain/repositories/order_repository.dart';
 import 'package:freebay/features/orders/presentation/pages/orders_page.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
 
-class _PageRepository extends OrderRepository {
+class _PageRepository implements OrderRepository {
   final responses = <Future<Either<Failure, CursorPage<OrderEntity>>>>[];
-  final calls = <({String? cursor, String? status})>[];
-
-  _PageRepository() : super(OrderService());
+  final purchaseCalls = <({String? cursor, OrderStatus? status})>[];
+  final calls = <({String? cursor, OrderStatus? status})>[];
 
   @override
   Future<Either<Failure, CursorPage<OrderEntity>>> getMyPurchases({
     String? cursor,
     int limit = 20,
-    String? status,
-  }) async => const Right(CursorPage(items: [], hasMore: false));
+    OrderStatus? status,
+  }) async {
+    purchaseCalls.add((cursor: cursor, status: status));
+    return Right(CursorPage(items: [_order('purchase-1')], hasMore: false));
+  }
+
+  @override
+  Future<Either<Failure, OrderEntity>> getOrder(String orderId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, OrderEntity>> createOrder(String productId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, String>> cancelOrder(String orderId, {String? reason}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, CanReviewResponse>> canReviewOrder(String orderId) =>
+      throw UnimplementedError();
 
   @override
   Future<Either<Failure, CursorPage<OrderEntity>>> getMySales({
     String? cursor,
     int limit = 20,
-    String? status,
+    OrderStatus? status,
   }) {
     calls.add((cursor: cursor, status: status));
     return responses.removeAt(0);
@@ -136,6 +157,54 @@ void main() {
       expect(find.text('MEUS PRODUTOS'), findsNothing);
     },
   );
+
+  testWidgets('loads only the visible order tab and loads the other once', (
+    tester,
+  ) async {
+    final repository = _PageRepository()
+      ..responses.add(
+        Future.value(const Right(CursorPage(items: [], hasMore: false))),
+      );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [orderRepositoryProvider.overrideWithValue(repository)],
+        child: const MaterialApp(home: OrdersPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.purchaseCalls, hasLength(1));
+    expect(repository.calls, isEmpty);
+
+    await tester.tap(find.text('VENDAS'));
+    await tester.pumpAndSettle();
+    expect(repository.calls, hasLength(1));
+
+    await tester.tap(find.text('COMPRAS'));
+    await tester.pumpAndSettle();
+    expect(repository.purchaseCalls, hasLength(1));
+  });
+
+  testWidgets('loads sales when the page opens on the sales tab', (
+    tester,
+  ) async {
+    final repository = _PageRepository()
+      ..responses.add(
+        Future.value(const Right(CursorPage(items: [], hasMore: false))),
+      );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [orderRepositoryProvider.overrideWithValue(repository)],
+        child: const MaterialApp(home: OrdersPage(initialTabIndex: 1)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.purchaseCalls, isEmpty);
+    expect(repository.calls, hasLength(1));
+  });
 
   testWidgets(
     'shows loading more and retries the append with the preserved cursor',

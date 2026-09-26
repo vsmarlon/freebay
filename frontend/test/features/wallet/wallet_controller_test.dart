@@ -10,11 +10,12 @@ import 'package:freebay/features/wallet/data/repositories/wallet_repository.dart
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart'
     hide ConnectStatus;
 import 'package:freebay/features/wallet/presentation/pages/wallet_page.dart';
-import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
+import '../../support/auth_test_doubles.dart';
+import '../../support/test_users.dart';
 
 class _WalletRepository extends WalletRepository {
   final initial =
@@ -70,12 +71,6 @@ class _RenderingWalletRepository extends _WalletRepository {
       Right(
         ConnectStatusEntity(status: status, requirementsDue: requirementsDue),
       );
-}
-
-class _SignedInAuth extends AuthController {
-  @override
-  AsyncValue<UserEntity?> build() =>
-      const AsyncValue.data(UserEntity(id: 'user-a'));
 }
 
 void main() {
@@ -200,7 +195,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authControllerProvider.overrideWith(_SignedInAuth.new),
+          authControllerProvider.overrideWith(
+            () => TestAuthController(testUser(id: 'user-a')),
+          ),
           walletRepositoryProvider.overrideWithValue(
             _RenderingWalletRepository(),
           ),
@@ -228,7 +225,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authControllerProvider.overrideWith(_SignedInAuth.new),
+            authControllerProvider.overrideWith(
+              () => TestAuthController(testUser(id: 'user-a')),
+            ),
             walletRepositoryProvider.overrideWithValue(
               _RenderingWalletRepository(
                 status: testCase.$1,

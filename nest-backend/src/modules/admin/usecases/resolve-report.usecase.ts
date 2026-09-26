@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { ModerationActionType } from '@prisma/client';
+import { ModerationActionType, ModerationTargetType, ReportStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, ConflictError, NotFoundError } from '@/shared/core/errors';
 import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
 import { ResolvableReportStatus } from '../dtos/admin.dto';
 
 const ACTION_BY_STATUS: Record<ResolvableReportStatus, ModerationActionType> = {
-  REVIEWED: 'REPORT_REVIEWED',
-  RESOLVED: 'REPORT_RESOLVED',
-  REJECTED: 'REPORT_REJECTED',
+  [ReportStatus.REVIEWED]: ModerationActionType.REPORT_REVIEWED,
+  [ReportStatus.RESOLVED]: ModerationActionType.REPORT_RESOLVED,
+  [ReportStatus.REJECTED]: ModerationActionType.REPORT_REJECTED,
 };
 
 @Injectable()
@@ -25,7 +25,7 @@ export class ResolveReportUseCase {
     if (reportResult.isLeft()) return left(reportResult.value);
     if (!reportResult.value) return left(new NotFoundError('Denúncia'));
 
-    if (reportResult.value.status !== 'PENDING') {
+    if (reportResult.value.status !== ReportStatus.PENDING) {
       return left(new ConflictError('Esta denúncia já foi revisada'));
     }
 
@@ -40,7 +40,7 @@ export class ResolveReportUseCase {
 
     const actionResult = await this.moderationRepository.recordAction({
       actorId: input.adminId,
-      targetType: 'REPORT',
+      targetType: ModerationTargetType.REPORT,
       targetId: input.reportId,
       action: ACTION_BY_STATUS[input.status],
       reason: input.note ?? null,

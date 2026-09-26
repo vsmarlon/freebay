@@ -25,6 +25,8 @@ lib/features/<feature>/
 
 ## Step by step
 
+Before implementation, follow [AGENTS.md — Testing: TDD and E2E first](../../../AGENTS.md#testing-tdd-and-e2e-first). Verify user journeys with the real backend using `freebay-mobile-mcp`; isolate a test only for a documented coverage gap.
+
 ### 1. Entity (`data/entities/`)
 
 ```dart
@@ -60,29 +62,28 @@ abstract class MyEntityRepository {
 
 ### 3. Concrete repository (`data/repositories/`)
 
-> **Rule**: Frontend repositories **MUST ONLY call HTTP endpoints** (via `HttpClient` / Dio). They never access databases directly.
+> **Rule**: Frontend repositories **MUST ONLY call HTTP endpoints** (via Dio). They never access databases directly.
 
-Use the shared `http_client` from `shared/services/http_client.dart` (Dio-based):
+Use the shared Dio instance from `shared/services/http_client.dart` and adapt each request with `shared/http/request_either.dart`:
 
 ```dart
-import 'package:freebay/shared/services/http_client.dart';
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/either/either.dart';
-import 'package:freebay/shared/errors/failure.dart';
-import 'package:freebay/shared/utils/safe_call.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/http/request_either.dart';
 import 'package:freebay/features/my_feature/domain/repositories/my_entity_repository.dart';
 import 'package:freebay/features/my_feature/data/entities/my_entity.dart';
 
 class MyEntityRepositoryImpl implements MyEntityRepository {
-  final HttpClient _client;
+  final Dio _client;
 
   MyEntityRepositoryImpl(this._client);
 
   @override
   Future<Either<Failure, List<MyEntity>>> getAll() async {
-    return safeCall<List<MyEntity>>(
+    return requestEither<List<MyEntity>>(
       () => _client.get('/my-entities'),
-      debugLabel: 'MY_ENTITY getAll',
-      onSuccess: (response) {
+      decoder: (response) {
         final list = (response.data['data'] as List)
             .map((e) => MyEntity.fromJson(e as Map<String, dynamic>))
             .toList();
@@ -93,10 +94,9 @@ class MyEntityRepositoryImpl implements MyEntityRepository {
 
   @override
   Future<Either<Failure, MyEntity>> getById(String id) async {
-    return safeCall<MyEntity>(
+    return requestEither<MyEntity>(
       () => _client.get('/my-entities/$id'),
-      debugLabel: 'MY_ENTITY getById',
-      onSuccess: (response) => Right(MyEntity.fromJson(response.data['data'])),
+      decoder: (response) => Right(MyEntity.fromJson(response.data['data'])),
     );
   }
 }
@@ -111,7 +111,7 @@ import 'package:freebay/features/my_feature/domain/repositories/my_entity_reposi
 import 'package:freebay/features/my_feature/data/repositories/my_entity_repository_impl.dart';
 
 final myEntityRepositoryProvider = Provider<MyEntityRepository>((ref) {
-  return MyEntityRepositoryImpl(ref.watch(httpClientProvider));
+  return MyEntityRepositoryImpl(HttpClient.instance);
 });
 
 final myEntityListProvider = FutureProvider.autoDispose((ref) async {

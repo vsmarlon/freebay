@@ -8,6 +8,8 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/bug_report/presentation/widgets/bug_report_sheet.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_drawer_footer.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart';
 
 class FeedDrawer extends ConsumerWidget {
   const FeedDrawer({super.key});
@@ -19,9 +21,7 @@ class FeedDrawer extends ConsumerWidget {
     final navigator = Navigator.of(drawerContext, rootNavigator: true);
     final router = GoRouter.of(drawerContext);
     final scaffold = Scaffold.maybeOf(drawerContext);
-    if (scaffold?.isDrawerOpen ?? false) {
-      scaffold!.closeDrawer();
-    }
+    if (scaffold?.isDrawerOpen ?? false) scaffold!.closeDrawer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (navigator.mounted) action(navigator.context, router);
     });
@@ -41,8 +41,7 @@ class FeedDrawer extends ConsumerWidget {
       isError: true,
       onOk: () async {
         if (ref.read(authControllerProvider).isLoading) return;
-        final scaffold = Scaffold.maybeOf(context);
-        if (scaffold?.isDrawerOpen ?? false) scaffold!.closeDrawer();
+        Scaffold.maybeOf(context)?.closeDrawer();
         await ref.read(authControllerProvider.notifier).logout();
         if (navigator.mounted) router.go(AppRoutes.login);
       },
@@ -51,10 +50,17 @@ class FeedDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authControllerProvider);
-    final user = authState.value;
-    final bio = user?.bio;
+    final user = ref.watch(authControllerProvider).value;
     final stats = ref.watch(profileStatsProvider).value;
+    void action(String route) {
+      _afterDrawer(context, (_, router) {
+        if (route == AppRoutes.wallet) {
+          router.go(route);
+        } else {
+          router.push(route);
+        }
+      });
+    }
 
     return RepaintBoundary(
       child: Drawer(
@@ -67,7 +73,7 @@ class FeedDrawer extends ConsumerWidget {
               border: Border(
                 right: BorderSide(
                   color: AppColors.primaryContainer.withAlpha(120),
-                  width: 2.0,
+                  width: 2,
                 ),
               ),
             ),
@@ -80,19 +86,18 @@ class FeedDrawer extends ConsumerWidget {
                       padding: EdgeInsets.zero,
                       children: [
                         RepaintBoundary(
-                          child: _Header(
+                          child: FeedDrawerHeader(
                             name: user?.displayName ?? 'Usuário',
                             avatarUrl: user?.avatarUrl,
                             isVerified: user?.isVerified ?? false,
                             onTap: () => _afterDrawer(
                               context,
-                              (rootContext, router) =>
-                                  router.go(AppRoutes.profile),
+                              (_, router) => router.go(AppRoutes.profile),
                             ),
                           ),
                         ),
                         RepaintBoundary(
-                          child: _StatsStrip(
+                          child: FeedDrawerStats(
                             followers:
                                 stats?.followersCount ??
                                 user?.followersCount ??
@@ -103,135 +108,31 @@ class FeedDrawer extends ConsumerWidget {
                                 0,
                             sales: stats?.salesCount ?? user?.salesCount ?? 0,
                             reputation: user?.reputationScore ?? 0,
-                            onFollowers: () {
-                              _afterDrawer(
-                                context,
-                                (rootContext, router) => router.push(
-                                  AppRoutes.followersWith(user?.id ?? ''),
-                                ),
-                              );
-                            },
-                            onFollowing: () {
-                              _afterDrawer(
-                                context,
-                                (rootContext, router) => router.push(
-                                  AppRoutes.followingWith(user?.id ?? ''),
-                                ),
-                              );
-                            },
+                            onFollowers: () =>
+                                action(AppRoutes.followersWith(user?.id ?? '')),
+                            onFollowing: () =>
+                                action(AppRoutes.followingWith(user?.id ?? '')),
                           ),
                         ),
-                        if (bio != null && bio.isNotEmpty) _BioBlock(bio: bio),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              MenuListTile(
-                                icon: Icons.grid_view,
-                                label: 'Meus posts',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.profilePosts),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.shopping_bag_outlined,
-                                label: 'Meus anúncios',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.profileProducts),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.bookmark_outline,
-                                label: 'Salvos',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.profileSaved),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.shopping_cart_outlined,
-                                label: 'Carrinho',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.cart),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.receipt_long_outlined,
-                                label: 'Meus pedidos',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.orders),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.account_balance_wallet_outlined,
-                                label: 'Carteira e custódia',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.wallet),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.notifications_outlined,
-                                label: 'Notificações',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.notifications),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.settings_outlined,
-                                label: 'Configurações',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      showProfileSettingsSheet(rootContext),
-                                ),
-                              ),
-                              MenuListTile(
-                                icon: Icons.help_outline,
-                                label: 'Ajuda e suporte',
-                                onTap: () => _afterDrawer(
-                                  context,
-                                  (rootContext, router) =>
-                                      router.push(AppRoutes.faq),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        if (user?.bio?.isNotEmpty ?? false)
+                          FeedDrawerBio(bio: user!.bio!),
+                        _menu(context, action),
                       ],
                     ),
                   ),
                   RepaintBoundary(
-                    child: _Footer(
+                    child: FeedDrawerFooter(
                       isDark: ref.watch(isDarkModeProvider),
                       onToggleTheme: () =>
                           ref.read(themeModeProvider.notifier).toggleTheme(),
                       onSettings: () => _afterDrawer(
                         context,
-                        (rootContext, router) =>
-                            showProfileSettingsSheet(rootContext),
+                        (root, _) => showProfileSettingsSheet(root),
                       ),
                       onLogout: () => _confirmLogout(context, ref),
                       onReportBug: () => _afterDrawer(
                         context,
-                        (rootContext, router) =>
-                            showBugReportSheet(rootContext),
+                        (root, _) => showBugReportSheet(root),
                       ),
                     ),
                   ),
@@ -243,247 +144,41 @@ class FeedDrawer extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _Header extends StatelessWidget {
-  final String name;
-  final String? avatarUrl;
-  final bool isVerified;
-  final VoidCallback onTap;
-
-  const _Header({
-    required this.name,
-    required this.avatarUrl,
-    required this.isVerified,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: context.surfaceMidColor,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 20, 12, 20),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: context.borderColor.withAlpha(50),
-                width: 1.5,
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              UserAvatar(
-                imageUrl: avatarUrl,
-                isVerified: isVerified,
-                size: AppAvatarSize.large,
-              ),
-              Spacing.hMd,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        fontStyle: FontStyle.italic,
-                        color: context.textPrimary,
-                      ),
-                    ),
-                    Spacing.vXs,
-                    const Text(
-                      'VER MEU PERFIL',
-                      style: TextStyle(
-                        fontFamily: AppTypography.headlineFontFamily,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
-                        color: AppColors.primaryContainer,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: context.textSecondary),
-            ],
-          ),
-        ),
+  Widget _menu(BuildContext context, void Function(String route) action) {
+    const entries = [
+      (Icons.grid_view, 'Meus posts', AppRoutes.profilePosts),
+      (Icons.shopping_bag_outlined, 'Meus anúncios', AppRoutes.profileProducts),
+      (Icons.bookmark_outline, 'Salvos', AppRoutes.profileSaved),
+      (Icons.shopping_cart_outlined, 'Carrinho', AppRoutes.cart),
+      (Icons.receipt_long_outlined, 'Meus pedidos', AppRoutes.orders),
+      (
+        Icons.account_balance_wallet_outlined,
+        'Carteira e custódia',
+        AppRoutes.wallet,
       ),
-    );
-  }
-}
-
-class _StatsStrip extends StatelessWidget {
-  final int followers;
-  final int following;
-  final int sales;
-  final num reputation;
-  final VoidCallback onFollowers;
-  final VoidCallback onFollowing;
-
-  const _StatsStrip({
-    required this.followers,
-    required this.following,
-    required this.sales,
-    required this.reputation,
-    required this.onFollowers,
-    required this.onFollowing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: context.surfaceMidColor,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: StatColumn(
-                  label: 'Seguidores',
-                  value: '$followers',
-                  uppercaseLabel: true,
-                  onTap: onFollowers,
-                ),
-              ),
-              Expanded(
-                child: StatColumn(
-                  label: 'Seguindo',
-                  value: '$following',
-                  uppercaseLabel: true,
-                  onTap: onFollowing,
-                ),
-              ),
-            ],
-          ),
-          Spacing.vMd,
-          Row(
-            children: [
-              Expanded(
-                child: StatColumn(
-                  label: 'Vendas',
-                  value: '$sales',
-                  uppercaseLabel: true,
-                ),
-              ),
-              Expanded(
-                child: StatColumn(
-                  label: 'Reputação',
-                  value: reputation.toStringAsFixed(1),
-                  uppercaseLabel: true,
-                  usePrimaryColor: true,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BioBlock extends StatelessWidget {
-  final String bio;
-
-  const _BioBlock({required this.bio});
-
-  @override
-  Widget build(BuildContext context) {
+      (Icons.notifications_outlined, 'Notificações', AppRoutes.notifications),
+      (Icons.settings_outlined, 'Configurações', ''),
+      (Icons.help_outline, 'Ajuda e suporte', AppRoutes.faq),
+    ];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'BIO',
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-              color: AppColors.primaryContainer,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            bio,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontSize: 13,
-              color: context.textPrimary,
-              height: 1.4,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Footer extends StatelessWidget {
-  final bool isDark;
-  final VoidCallback onToggleTheme;
-  final VoidCallback onSettings;
-  final VoidCallback onLogout;
-  final VoidCallback onReportBug;
-
-  const _Footer({
-    required this.isDark,
-    required this.onToggleTheme,
-    required this.onSettings,
-    required this.onLogout,
-    required this.onReportBug,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.surfaceMidColor,
-        border: Border(
-          top: BorderSide(color: context.borderColor.withAlpha(50), width: 1.5),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: Icon(
-              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-              color: context.textPrimary,
-            ),
-            tooltip: isDark ? 'Modo claro' : 'Modo escuro',
-            onPressed: onToggleTheme,
-          ),
-          IconButton(
-            icon: Icon(Icons.bug_report_outlined, color: context.textSecondary),
-            tooltip: 'Reportar problema',
-            onPressed: onReportBug,
-          ),
-          IconButton(
-            icon: Icon(Icons.settings_outlined, color: context.textSecondary),
-            tooltip: 'Configurações',
-            onPressed: onSettings,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.error),
-            tooltip: 'Sair',
-            onPressed: onLogout,
-          ),
-        ],
+        mainAxisSize: MainAxisSize.min,
+        children: entries
+            .map(
+              (entry) => MenuListTile(
+                icon: entry.$1,
+                label: entry.$2,
+                onTap: entry.$3.isEmpty
+                    ? () => _afterDrawer(
+                        context,
+                        (root, _) => showProfileSettingsSheet(root),
+                      )
+                    : () => action(entry.$3),
+              ),
+            )
+            .toList(),
       ),
     );
   }

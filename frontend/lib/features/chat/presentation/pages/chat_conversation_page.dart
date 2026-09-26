@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -9,30 +9,27 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
-import 'package:freebay/features/chat/presentation/pages/location_picker_page.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/conversation_messages_provider.dart';
-import 'package:freebay/features/chat/presentation/widgets/attachment_bottom_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/audio_recorder_bar.dart';
-import 'package:freebay/features/chat/presentation/widgets/chat_header.dart';
-import 'package:freebay/features/chat/presentation/widgets/chat_input_bar.dart';
-import 'package:freebay/features/chat/presentation/widgets/chat_media_composer.dart';
-import 'package:freebay/features/chat/presentation/widgets/chat_video_composer.dart';
-import 'package:freebay/features/chat/presentation/widgets/chat_message_list.dart';
-import 'package:freebay/features/chat/presentation/widgets/multi_select_toolbar.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_attachment_flow.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_conversation_body.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_conversation_composer.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_conversation_header.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_theme_picker.dart';
 import 'package:freebay/features/chat/presentation/widgets/forward_message_sheet.dart';
-import 'package:freebay/features/chat/presentation/widgets/product_picker_sheet.dart';
-import 'package:freebay/features/chat/presentation/widgets/make_offer_dialog.dart';
-import 'package:freebay/features/chat/presentation/widgets/reply_composer_banner.dart';
-import 'package:freebay/features/chat/presentation/widgets/typing_indicator_bubble.dart';
 import 'package:freebay/features/chat/presentation/widgets/who_reacted_sheet.dart';
 import 'package:freebay/features/chat/presentation/widgets/conversation_menu.dart';
 import 'package:freebay/shared/services/upload_service.dart';
-import 'package:freebay/shared/utils/media_url.dart';
 import 'package:freebay/shared/utils/date_utils.dart';
+
+part 'chat_conversation_selection.dart';
+part 'chat_conversation_lifecycle.dart';
+part 'chat_conversation_actions.dart';
 
 class ChatConversationPage extends ConsumerStatefulWidget {
   final String chatId;
@@ -44,32 +41,52 @@ class ChatConversationPage extends ConsumerStatefulWidget {
       _ChatConversationPageState();
 }
 
-class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
+class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
+    with
+        _ChatConversationLifecycle,
+        _ChatConversationActions,
+        _ChatConversationSelectionActions {
+  @override
   final _messageController = TextEditingController();
+  @override
   final _scrollController = ScrollController();
+  @override
   final _messageKeys = <String, GlobalKey>{};
+  ProviderSubscription<List<MessageEntity>>? _messageSubscription;
+  @override
   final _selectedMessageIds = <String>{};
 
   // Ephemeral UI only. Server state (messages, preference, starred, cursor,
   // typing/presence) lives in conversationMessagesProvider(widget.chatId).
+  @override
   bool _isSending = false;
+  @override
   bool _isSelecting = false;
+  @override
   bool _viewOnceEnabled = false;
+  @override
   bool _isRecording = false;
+  @override
   String? _highlightedMessageId;
+  @override
   MessageEntity? _replyTarget;
+  @override
   Timer? _typingDebounceTimer;
+  @override
   bool _scrollPostFrameQueued = false;
+  @override
   bool _scrollAnimating = false;
+  @override
+  int _conversationGeneration = 0;
 
+  @override
   ConversationMessagesNotifier get _notifier =>
       ref.read(conversationMessagesProvider(widget.chatId).notifier);
 
+  @override
   ChatThreadType get _threadType =>
-      ref.read(conversationMessagesProvider(widget.chatId)).threadType ==
-          'ORDER'
-      ? ChatThreadType.order
-      : ChatThreadType.direct;
+      ref.read(conversationMessagesProvider(widget.chatId)).threadType ??
+      ChatThreadType.direct;
 
   Color get _accentColor {
     final theme = ChatTheme.fromApiValue(
@@ -83,10 +100,57 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
   void initState() {
     super.initState();
     _messageController.addListener(_onTextChanged);
+    _bindMessageListener(widget.chatId);
+  }
+
+  void _bindMessageListener(String chatId) {
+    final generation = ++_conversationGeneration;
+    _messageSubscription?.close();
+    _messageSubscription = ref.listenManual<List<MessageEntity>>(
+      conversationMessagesProvider(chatId).select((state) => state.messages),
+      (previous, next) {
+        if (!mounted || generation != _conversationGeneration) return;
+        final previousMessages = previous ?? const <MessageEntity>[];
+        final previousIds = {for (final m in previousMessages) m.id};
+        final appended =
+            next.length > previousMessages.length &&
+            next
+                .take(previousMessages.length)
+                .every((m) => previousIds.contains(m.id));
+        if (appended) _scrollToBottom(generation);
+        if (previousMessages != next) _syncMessageKeys(next);
+      },
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatConversationPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chatId == widget.chatId) return;
+
+    _messageSubscription?.close();
+    _messageSubscription = null;
+    _messageKeys.clear();
+    _selectedMessageIds.clear();
+    _isSelecting = false;
+    _viewOnceEnabled = false;
+    _isRecording = false;
+    _isSending = false;
+    _highlightedMessageId = null;
+    _replyTarget = null;
+    _typingDebounceTimer?.cancel();
+    _messageController.removeListener(_onTextChanged);
+    _messageController.clear();
+    _messageController.addListener(_onTextChanged);
+    _scrollPostFrameQueued = false;
+    _scrollAnimating = false;
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
+    _bindMessageListener(widget.chatId);
   }
 
   @override
   void dispose() {
+    _messageSubscription?.close();
     _typingDebounceTimer?.cancel();
     _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
@@ -94,475 +158,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
     super.dispose();
   }
 
-  void _onTextChanged() {
-    _typingDebounceTimer?.cancel();
-    _typingDebounceTimer = Timer(const Duration(milliseconds: 300), () {
-      final ws = ref.read(chatSocketServiceProvider);
-      ws.sendTyping(widget.chatId);
-    });
-  }
-
-  void _scrollToBottom() {
-    if (!mounted || _scrollPostFrameQueued || _scrollAnimating) return;
-    _scrollPostFrameQueued = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollPostFrameQueued = false;
-      if (!mounted ||
-          !_scrollController.hasClients ||
-          !_scrollController.position.hasContentDimensions) {
-        return;
-      }
-      _scrollAnimating = true;
-      _scrollController
-          .animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: AppMotion.enter,
-            curve: AppMotion.enterCurve,
-          )
-          .whenComplete(() => _scrollAnimating = false);
-    });
-  }
-
-  Future<void> _sendMessage() async {
-    final text = _messageController.text.trim();
-    if (text.isEmpty || _isSending) return;
-
-    final currentUserId = ref.read(authControllerProvider).value?.id;
-    final replyId = _replyTarget?.id;
-    final viewOnce = _viewOnceEnabled;
-    _messageController.clear();
-
-    final tempId = 'temp-${DateTime.now().millisecondsSinceEpoch}';
-    final optimisticMessage = MessageEntity(
-      id: tempId,
-      conversationId: widget.chatId,
-      senderId: currentUserId ?? '',
-      clientMessageId: tempId,
-      content: text,
-      replyToId: replyId,
-      createdAt: DateTime.now(),
-      viewOnce: viewOnce,
-    );
-
-    setState(() {
-      _replyTarget = null;
-      _viewOnceEnabled = false;
-      _isSending = true;
-    });
-    _notifier.addOptimistic(optimisticMessage);
-    _scrollToBottom();
-
-    final repo = ref.read(chatRepositoryProvider);
-    final result = await repo.sendMessage(
-      widget.chatId,
-      text,
-      replyToId: replyId,
-      viewOnce: viewOnce,
-      clientMessageId: tempId,
-    );
-
-    if (!mounted) return;
-    setState(() => _isSending = false);
-    result.fold(
-      (f) {
-        _notifier.removeByIds({tempId});
-        AppSnackbar.error(context, f.message);
-      },
-      (sent) {
-        _notifier.confirmSent(tempId, sent);
-        _scrollToBottom();
-        ref.read(liveChatListProvider.notifier).refreshRecent();
-      },
-    );
-  }
-
-  String? _takeReplyTarget() {
-    final replyId = _replyTarget?.id;
-    if (replyId != null && mounted) setState(() => _replyTarget = null);
-    return replyId;
-  }
-
-  Future<void> _scrollToQuoted(String id) async {
-    final ctx = _messageKeys[id]?.currentContext;
-    if (ctx == null) return;
-    setState(() => _highlightedMessageId = id);
-    await Scrollable.ensureVisible(
-      ctx,
-      duration: AppMotion.enter,
-      curve: AppMotion.enterCurve,
-      alignment: 0.5,
-    );
-    Timer(const Duration(milliseconds: 1500), () {
-      if (mounted && _highlightedMessageId == id) {
-        setState(() => _highlightedMessageId = null);
-      }
-    });
-  }
-
-  void _replyFromSelection() {
-    if (_selectedMessageIds.length != 1) {
-      AppSnackbar.info(context, 'Selecione uma mensagem para responder.');
-      return;
-    }
-    final id = _selectedMessageIds.single;
-    final messages = ref
-        .read(conversationMessagesProvider(widget.chatId))
-        .messages;
-    final found = messages.where((m) => m.id == id).toList();
-    setState(() {
-      _isSelecting = false;
-      _selectedMessageIds.clear();
-      _replyTarget = found.isEmpty ? null : found.first;
-    });
-  }
-
-  Future<void> _toggleStarSelected() async {
-    if (_selectedMessageIds.isEmpty) return;
-    final ids = _selectedMessageIds.toList();
-    final starredIds = ref
-        .read(conversationMessagesProvider(widget.chatId))
-        .starredIds;
-    final allStarred = ids.every(starredIds.contains);
-    final repo = ref.read(chatRepositoryProvider);
-    var failures = 0;
-    for (final id in ids) {
-      final currentlyStarred = starredIds.contains(id);
-      if (allStarred == currentlyStarred) {
-        final result = await repo.toggleStar(widget.chatId, id);
-        result.fold((_) => failures++, (starred) {
-          _notifier.setStarred(id, starred);
-        });
-      }
-    }
-    if (!mounted) return;
-    setState(() {
-      _isSelecting = false;
-      _selectedMessageIds.clear();
-    });
-    if (failures > 0) {
-      AppSnackbar.error(context, 'Não foi possível favoritar tudo.');
-    } else {
-      AppSnackbar.success(
-        context,
-        allStarred ? 'Removido dos favoritos.' : 'Adicionado aos favoritos.',
-      );
-    }
-  }
-
-  Future<void> _shareSelected() async {
-    if (_selectedMessageIds.isEmpty) return;
-    final currentUserId = ref.read(authControllerProvider).value?.id;
-    final selected = ref
-        .read(conversationMessagesProvider(widget.chatId))
-        .messages
-        .where((m) => _selectedMessageIds.contains(m.id))
-        .toList();
-    if (selected.isEmpty) return;
-    final otherName = ref
-        .read(conversationMessagesProvider(widget.chatId))
-        .otherUserName;
-    if (otherName == null) return;
-    final lines = selected
-        .map((m) {
-          final who = m.senderId == currentUserId ? 'Você' : otherName;
-          final when =
-              '${DateUtilsCustom.formatShortDate(m.createdAt.toLocal())} ${formatMessageTime(m.createdAt)}';
-          return '[$when] $who: ${m.previewText}';
-        })
-        .join('\n');
-    await SharePlus.instance.share(ShareParams(text: lines));
-    if (mounted) {
-      setState(() {
-        _isSelecting = false;
-        _selectedMessageIds.clear();
-      });
-    }
-  }
-
-  Future<void> _sendAudio(AudioRecording recording) async {
-    final replyId = _takeReplyTarget();
-    setState(() {
-      _isRecording = false;
-      _isSending = true;
-    });
-    try {
-      final upload = await UploadService.uploadFile(recording.file, 'chat');
-      final url = upload.rightOrNull;
-      if (url == null) {
-        if (mounted) {
-          AppSnackbar.error(
-            context,
-            upload.leftOrNull?.message ?? 'Erro ao enviar áudio',
-          );
-        }
-        return;
-      }
-      final result = await ref
-          .read(chatRepositoryProvider)
-          .sendRichMessage(
-            conversationId: widget.chatId,
-            type: 'AUDIO',
-            attachmentUrl: url,
-            replyToId: replyId,
-            durationMs: recording.duration.inMilliseconds,
-          );
-      if (!mounted) return;
-      result.fold((f) => AppSnackbar.error(context, f.message), (sent) {
-        _notifier.addOptimistic(sent);
-        _scrollToBottom();
-      });
-      _notifier.refresh();
-    } finally {
-      try {
-        await recording.file.delete();
-      } catch (_) {}
-      if (mounted) setState(() => _isSending = false);
-    }
-  }
-
-  Future<void> _sendLocation({
-    required Map<String, dynamic> metadata,
-    required String? replyToId,
-    required String clientMessageId,
-  }) async {
-    if (_isSending) return;
-    setState(() => _isSending = true);
-    try {
-      final result = await _notifier.sendLocation(
-        metadata: metadata,
-        replyToId: replyToId,
-        clientMessageId: clientMessageId,
-      );
-      if (!mounted) return;
-      result.fold(
-        (failure) => AppSnackbar.error(
-          context,
-          failure.message,
-          action: SnackBarAction(
-            label: 'TENTAR NOVAMENTE',
-            onPressed: () => _sendLocation(
-              metadata: metadata,
-              replyToId: replyToId,
-              clientMessageId: clientMessageId,
-            ),
-          ),
-        ),
-        (_) => _notifier.refresh(),
-      );
-    } finally {
-      if (mounted) setState(() => _isSending = false);
-    }
-  }
-
-  void _showMenu() {
-    final preference = ref
-        .read(conversationMessagesProvider(widget.chatId))
-        .preference;
-    showConversationMenu(
-      context: context,
-      isArchived: preference?.isArchived == true,
-      onCustomize: _showCustomizeSheet,
-      onArchive: () async {
-        final isArchived = preference?.isArchived ?? false;
-        final result = await ref
-            .read(chatRepositoryProvider)
-            .archiveChat(widget.chatId, _threadType, !isArchived);
-        if (!mounted) return;
-        result.fold((failure) => AppSnackbar.error(context, failure.message), (
-          _,
-        ) {
-          final current = ref
-              .read(conversationMessagesProvider(widget.chatId))
-              .preference;
-          if (current != null) {
-            _notifier.setPreference(current.copyWith(isArchived: !isArchived));
-          }
-          ref.invalidate(chatsProvider);
-          ref.invalidate(liveChatListProvider);
-          ref.invalidate(archivedChatListProvider);
-          context.pop();
-        });
-      },
-    );
-  }
-
-  void _showCustomizeSheet() {
-    String currentTheme =
-        ref
-            .read(conversationMessagesProvider(widget.chatId))
-            .preference
-            ?.theme ??
-        'DEFAULT';
-    showBrutalistSheet(
-      context: context,
-      title: 'TEMA',
-      builder: (_) => StatefulBuilder(
-        builder: (context, setSheetState) => Padding(
-          padding: const EdgeInsets.all(16),
-          child: Wrap(
-            spacing: 12,
-            children: ChatTheme.values.map((t) {
-              final isSelected = t.apiValue == currentTheme;
-              return GestureDetector(
-                onTap: () async {
-                  setSheetState(() => currentTheme = t.apiValue);
-                  final res = await ref
-                      .read(chatRepositoryProvider)
-                      .setTheme(widget.chatId, _threadType, t.apiValue);
-                  res.fold((_) {}, (p) {
-                    _notifier.setPreference(p);
-                  });
-                },
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Color(
-                      int.parse(t.accentHex.replaceFirst('#', '0xFF')),
-                    ),
-                    border: Border.all(
-                      color: isSelected ? Colors.white : Colors.transparent,
-                      width: 3,
-                    ),
-                  ),
-                  child: isSelected
-                      ? const Icon(Icons.check, color: Colors.white)
-                      : null,
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _copySelectedMessages() {
-    if (_selectedMessageIds.isEmpty) return;
-
-    final selectedMsgs = ref
-        .read(conversationMessagesProvider(widget.chatId))
-        .messages
-        .where((m) => _selectedMessageIds.contains(m.id))
-        .toList();
-
-    if (selectedMsgs.isEmpty) return;
-
-    final currentUserId = ref.read(authControllerProvider).value?.id;
-
-    String textToCopy;
-    if (selectedMsgs.length == 1) {
-      final msg = selectedMsgs.first;
-      if (msg.content != null && msg.content!.isNotEmpty) {
-        textToCopy = msg.content!;
-      } else if (msg.attachmentUrl != null && msg.attachmentUrl!.isNotEmpty) {
-        textToCopy = msg.attachmentUrl!;
-      } else if (msg.type == 'LOCATION' && msg.metadata != null) {
-        final lat = msg.metadata!['latitude'];
-        final lng = msg.metadata!['longitude'];
-        final address = msg.metadata!['address'] ?? '';
-        textToCopy =
-            'Localização: $address (https://maps.google.com/?q=$lat,$lng)';
-      } else {
-        textToCopy = '[Mensagem: ${msg.type}]';
-      }
-    } else {
-      selectedMsgs.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      final buffer = StringBuffer();
-      final otherName = ref
-          .read(conversationMessagesProvider(widget.chatId))
-          .otherUserName;
-      if (otherName == null) return;
-      for (final msg in selectedMsgs) {
-        final isMe = msg.senderId == currentUserId;
-        final senderName = isMe ? 'Você' : otherName;
-        final timeStr = formatMessageTime(msg.createdAt);
-        final content = msg.content ?? msg.attachmentUrl ?? '[${msg.type}]';
-        buffer.writeln('[$timeStr] $senderName: $content');
-      }
-      textToCopy = buffer.toString().trim();
-    }
-
-    Clipboard.setData(ClipboardData(text: textToCopy));
-    final count = selectedMsgs.length;
-    AppSnackbar.success(
-      context,
-      count == 1
-          ? 'Mensagem copiada para a área de transferência'
-          : '$count mensagens copiadas para a área de transferência',
-    );
-    setState(() {
-      _isSelecting = false;
-      _selectedMessageIds.clear();
-    });
-  }
-
-  Future<void> _forwardSelectedMessages() async {
-    if (_selectedMessageIds.isEmpty) return;
-
-    final ids = _selectedMessageIds.toList();
-    final result = await showForwardMessageSheet(
-      context: context,
-      messageIds: ids,
-      currentChatId: widget.chatId,
-    );
-
-    if (result == true && mounted) {
-      setState(() {
-        _isSelecting = false;
-        _selectedMessageIds.clear();
-      });
-      _notifier.refresh();
-    }
-  }
-
-  void _syncMessageKeys(List<MessageEntity> messages) {
-    var changed = false;
-    for (final m in messages) {
-      if (!_messageKeys.containsKey(m.id)) {
-        _messageKeys[m.id] = GlobalKey();
-        changed = true;
-      }
-    }
-    final ids = {for (final m in messages) m.id};
-    final stale = _messageKeys.keys.where((id) => !ids.contains(id)).toList();
-    for (final id in stale) {
-      _messageKeys.remove(id);
-      changed = true;
-    }
-    if (changed && mounted) setState(() {});
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currentUserId = ref.watch(authControllerProvider).value?.id;
-    final conv = ref.watch(conversationMessagesProvider(widget.chatId));
-    final messages = conv.messages;
-    final bgUrl = conv.preference?.backgroundUrl;
-
-    // Socket joins land in the provider; scroll when new messages arrive.
-    // Keys are synced here (outside the widget tree) so itemBuilder never
-    // creates GlobalKeys during build.
-    ref.listen(conversationMessagesProvider(widget.chatId), (prev, next) {
-      final previous = prev?.messages ?? const <MessageEntity>[];
-      final appended =
-          next.messages.length > previous.length &&
-          next.messages
-              .take(previous.length)
-              .map((message) => message.id)
-              .toList()
-              .every((id) => previous.any((message) => message.id == id));
-      if (appended) {
-        _scrollToBottom();
-      }
-      if (prev?.messages != next.messages) {
-        _syncMessageKeys(next.messages);
-      }
-    });
-
-    if (_messageKeys.isEmpty && messages.isNotEmpty) {
+    final currentMessages = ref
+        .read(conversationMessagesProvider(widget.chatId))
+        .messages;
+    if (_messageKeys.isEmpty && currentMessages.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _syncMessageKeys(messages);
+        if (!mounted) return;
+        _syncMessageKeys(currentMessages);
       });
     }
 
@@ -576,315 +180,156 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage> {
         body: AppBackground(
           child: Column(
             children: [
-              if (_isSelecting)
-                MultiSelectToolbar(
-                  selectedCount: _selectedMessageIds.length,
-                  onClose: () => setState(() => _isSelecting = false),
-                  onCopy: _copySelectedMessages,
-                  onForward: _forwardSelectedMessages,
-                  onDelete: () {
-                    final ids = Set<String>.from(_selectedMessageIds);
-                    final removed = messages
-                        .where((m) => ids.contains(m.id))
-                        .toList();
-                    final indexes = {
-                      for (final m in removed) m.id: messages.indexOf(m),
-                    };
-                    _notifier.removeByIds(ids);
-                    setState(() {
-                      _selectedMessageIds.clear();
-                      _isSelecting = false;
-                    });
-                    AppSnackbar.undoable(
-                      context,
-                      message: ids.length == 1
-                          ? 'Mensagem apagada.'
-                          : '${ids.length} mensagens apagadas.',
-                      onUndo: () {
-                        final current = ref
-                            .read(conversationMessagesProvider(widget.chatId))
-                            .messages;
-                        for (final m in removed) {
-                          _notifier.insertMessage(
-                            (indexes[m.id] ?? current.length),
-                            m,
-                          );
-                        }
-                      },
-                      onCommit: () async {
-                        final repo = ref.read(chatRepositoryProvider);
-                        for (final id in ids) {
-                          await repo.deleteMessage(widget.chatId, id);
-                        }
-                      },
-                    );
-                  },
-                  onReply: _replyFromSelection,
-                  onStar: _toggleStarSelected,
-                  onShare: _shareSelected,
-                )
-              else if (conv.loadError != null && !conv.hasHeader)
-                ChatHeader(
-                  name: '',
-                  chatType: 'direct',
-                  accentColor: _accentColor,
-                  hasError: true,
-                  onBack: () => context.pop(),
-                  onConfig: () {},
-                  onRetry: () => _notifier.refresh(),
-                )
-              else if (!conv.hasHeader)
-                ChatHeader(
-                  name: '',
-                  chatType: 'direct',
-                  accentColor: _accentColor,
-                  isLoading: true,
-                  onBack: () => context.pop(),
-                  onConfig: () {},
-                )
-              else
-                ChatHeader(
-                  name: conv.otherUserName ?? '',
-                  avatarUrl: conv.otherUserAvatarUrl,
-                  chatType: conv.threadType ?? 'direct',
-                  accentColor: _accentColor,
-                  isOnline: conv.otherUserOnline,
-                  onBack: () => context.pop(),
-                  onConfig: _showMenu,
-                  onInfo: () =>
-                      context.push(AppRoutes.chatDetailsPath(widget.chatId)),
-                ),
-              Expanded(
-                child: !conv.hasHeader
-                    ? (conv.loadError != null
-                          ? EmptyState.error(
-                              message: conv.loadError,
-                              onRetry: () => _notifier.refresh(),
-                            )
-                          : const SkeletonPage(
-                              child: Column(
-                                children: [
-                                  SizedBox(height: 16),
-                                  ShimmerBlock(height: 60),
-                                  SizedBox(height: 12),
-                                  ShimmerBlock(height: 60),
-                                ],
-                              ),
-                            ))
-                    : messages.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.chat_bubble_outline,
-                        title: 'NENHUMA MENSAGEM',
-                        subtitle:
-                            'Envie a primeira mensagem para iniciar a conversa.',
-                      )
-                    : Container(
-                        decoration: bgUrl != null && bgUrl.isNotEmpty
-                            ? BoxDecoration(
-                                image: DecorationImage(
-                                  image: NetworkImage(
-                                    bgUrl,
-                                    headers: mediaAuthHeaders(bgUrl),
-                                  ),
-                                  fit: BoxFit.cover,
-                                  opacity: 0.15,
-                                ),
-                              )
-                            : null,
-                        child: InfiniteScrollListener(
-                          edge: ScrollEdge.start,
-                          onLoadMore: _notifier.loadOlder,
-                          child: ChatMessageList(
-                            scrollController: _scrollController,
-                            messages: messages,
-                            currentUserId: currentUserId,
-                            otherUserName: conv.otherUserName ?? '',
-                            isDark: context.isDark,
-                            accentColor: _accentColor,
-                            messageKeys: _messageKeys,
-                            highlightedMessageId: _highlightedMessageId,
-                            starredIds: conv.starredIds,
-                            isSelecting: _isSelecting,
-                            selectedMessageIds: _selectedMessageIds,
-                            onToggleSelection: (id) => setState(() {
-                              if (_selectedMessageIds.contains(id)) {
-                                _selectedMessageIds.remove(id);
-                                if (_selectedMessageIds.isEmpty) {
-                                  _isSelecting = false;
-                                }
-                              } else {
-                                _selectedMessageIds.add(id);
-                              }
-                            }),
-                            onEnterSelectionMode: (id) => setState(() {
-                              _isSelecting = true;
-                              _selectedMessageIds.add(id);
-                            }),
-                            onReplyTap: _scrollToQuoted,
-                            onSwipeToReply: (msg) =>
-                                setState(() => _replyTarget = msg),
-                            onReactionTap: (msgId, emoji) => ref
-                                .read(chatRepositoryProvider)
-                                .reactToMessage(widget.chatId, msgId, emoji),
-                            onReactionLongPress: (msg, emoji) =>
-                                showModalBottomSheet(
-                                  context: context,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (_) => WhoReactedSheet(
-                                    reactions: msg.reactions,
-                                    initialEmoji: emoji,
-                                  ),
-                                ),
-                            onViewOnceReveal: (msgId) => ref
-                                .read(chatRepositoryProvider)
-                                .markAsRead(widget.chatId),
-                          ),
-                        ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final header = ref.watch(
+                    conversationMessagesProvider(widget.chatId).select(
+                      (state) => (
+                        hasHeader: state.hasHeader,
+                        loadError: state.loadError,
+                        theme: state.preference?.theme,
+                        name: state.otherUserName,
+                        avatarUrl: state.otherUserAvatarUrl,
+                        chatType: state.threadType,
+                        isOnline: state.otherUserOnline,
                       ),
+                    ),
+                  );
+                  return ChatConversationHeader(
+                    isSelecting: _isSelecting,
+                    selectedCount: _selectedMessageIds.length,
+                    hasHeader: header.hasHeader,
+                    loadError: header.loadError,
+                    name: header.name ?? '',
+                    avatarUrl: header.avatarUrl,
+                    chatType: header.chatType ?? ChatThreadType.direct,
+                    accentColor: _accentColor,
+                    isOnline: header.isOnline,
+                    onBack: () => context.pop(),
+                    onConfig: _showMenu,
+                    onInfo: () =>
+                        context.push(AppRoutes.chatDetailsPath(widget.chatId)),
+                    onRetry: () => _notifier.refresh(),
+                    onCloseSelection: () =>
+                        setState(() => _isSelecting = false),
+                    onCopy: _copySelectedMessages,
+                    onForward: _forwardSelectedMessages,
+                    onDelete: _deleteSelectedMessages,
+                    onReply: _replyFromSelection,
+                    onStar: _toggleStarSelected,
+                    onShare: _shareSelected,
+                  );
+                },
               ),
-              if (conv.otherUserTyping) const TypingIndicatorBubble(),
-              if (_replyTarget != null && conv.otherUserName != null)
-                ReplyComposerBanner(
-                  replyTo: _replyTarget!,
-                  currentUserId: currentUserId,
-                  otherUserName: conv.otherUserName ?? '',
-                  accentColor: _accentColor,
-                  onCancel: () => setState(() => _replyTarget = null),
-                ),
-              if (_isRecording)
-                AudioRecorderBar(
-                  onSend: _sendAudio,
-                  onCancel: () => setState(() => _isRecording = false),
-                )
-              else
-                ChatInputBar(
-                  controller: _messageController,
-                  isSending: _isSending,
-                  viewOnceEnabled: _viewOnceEnabled,
-                  accentColor: _accentColor,
-                  onSend: _sendMessage,
-                  onRecordAudio: () => setState(() => _isRecording = true),
-                  onAttachment: () => showAttachmentSheet(
-                    context: context,
-                    onMediaReady: (attachment) async {
-                      final replyId = _takeReplyTarget();
-                      await ref
-                          .read(chatRepositoryProvider)
-                          .sendRichMessage(
-                            conversationId: widget.chatId,
-                            type: attachment.type,
-                            attachmentUrl: attachment.url,
-                            replyToId: replyId,
-                          );
-                      await _notifier.refresh();
-                    },
-                    returnRawFile: true,
-                    onRawImage: (xfile) async {
-                      final bytes = await xfile.readAsBytes();
-                      if (!context.mounted) return;
-                      await showChatMediaComposer(
-                        context: context,
-                        imageBytes: bytes,
-                        onSend:
-                            ({
-                              required attachmentUrl,
-                              required type,
-                              caption,
-                              required viewOnce,
-                            }) async {
-                              final replyId = _takeReplyTarget();
-                              await ref
-                                  .read(chatRepositoryProvider)
-                                  .sendRichMessage(
-                                    conversationId: widget.chatId,
-                                    content: caption,
-                                    type: type,
-                                    attachmentUrl: attachmentUrl,
-                                    replyToId: replyId,
-                                    viewOnce: viewOnce,
-                                  );
-                              _notifier.refresh();
-                            },
-                      );
-                    },
-                    onRawVideo: (xfile) => showChatVideoComposer(
-                      context: context,
-                      videoFile: File(xfile.path),
-                      onSend:
-                          ({
-                            required attachmentUrl,
-                            required type,
-                            caption,
-                            required viewOnce,
-                          }) async {
-                            final replyId = _takeReplyTarget();
-                            await ref
-                                .read(chatRepositoryProvider)
-                                .sendRichMessage(
-                                  conversationId: widget.chatId,
-                                  content: caption,
-                                  type: type,
-                                  attachmentUrl: attachmentUrl,
-                                  replyToId: replyId,
-                                  viewOnce: viewOnce,
-                                );
-                            await _notifier.refresh();
-                          },
-                    ),
-                    onLocationTap: () async {
-                      final loc = await Navigator.push<Map<String, dynamic>>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LocationPickerPage(),
-                        ),
-                      );
-                      if (loc != null && mounted) {
-                        final replyId = _takeReplyTarget();
-                        await _sendLocation(
-                          metadata: loc,
-                          replyToId: replyId,
-                          clientMessageId:
-                              'location-${DateTime.now().microsecondsSinceEpoch}',
-                        );
-                      }
-                    },
-                    onProductTap: () => showProductPickerSheet(
-                      context: context,
-                      onProductSelected: (meta) async {
-                        final replyId = _takeReplyTarget();
-                        await ref
-                            .read(chatRepositoryProvider)
-                            .sendRichMessage(
-                              conversationId: widget.chatId,
-                              type: 'PRODUCT_CARD',
-                              replyToId: replyId,
-                              metadata: meta,
-                            );
-                        _notifier.refresh();
-                      },
-                    ),
-                    onOfferTap: () => showDialog(
-                      context: context,
-                      builder: (_) => MakeOfferDialog(
-                        onSendOffer: (offerData) async {
-                          final replyId = _takeReplyTarget();
-                          await ref
-                              .read(chatRepositoryProvider)
-                              .sendRichMessage(
-                                conversationId: widget.chatId,
-                                type: 'OFFER',
-                                replyToId: replyId,
-                                metadata: offerData,
-                              );
-                          _notifier.refresh();
-                        },
+              Consumer(
+                builder: (context, ref, _) {
+                  final body = ref.watch(
+                    conversationMessagesProvider(widget.chatId).select(
+                      (state) => (
+                        messages: state.messages,
+                        theme: state.preference?.theme,
+                        bgUrl: state.preference?.backgroundUrl,
+                        hasHeader: state.hasHeader,
+                        loadError: state.loadError,
+                        otherUserName: state.otherUserName,
+                        starredIds: state.starredIds,
                       ),
                     ),
-                    onError: (e) => AppSnackbar.error(context, e),
-                  ),
-                  onViewOnceToggled: (v) =>
-                      setState(() => _viewOnceEnabled = v),
-                ),
+                  );
+                  final currentUserId = ref.watch(
+                    authControllerProvider.select((state) => state.value?.id),
+                  );
+                  return ChatConversationBody(
+                    scrollController: _scrollController,
+                    messages: body.messages,
+                    bgUrl: body.bgUrl,
+                    hasHeader: body.hasHeader,
+                    loadError: body.loadError,
+                    currentUserId: currentUserId,
+                    otherUserName: body.otherUserName ?? '',
+                    accentColor: _accentColor,
+                    messageKeys: _messageKeys,
+                    highlightedMessageId: _highlightedMessageId,
+                    starredIds: body.starredIds,
+                    isSelecting: _isSelecting,
+                    selectedMessageIds: _selectedMessageIds,
+                    onLoadMore: _notifier.loadOlder,
+                    onRetry: () => _notifier.refresh(),
+                    onToggleSelection: (id) => setState(() {
+                      if (_selectedMessageIds.contains(id)) {
+                        _selectedMessageIds.remove(id);
+                        if (_selectedMessageIds.isEmpty) {
+                          _isSelecting = false;
+                        }
+                      } else {
+                        _selectedMessageIds.add(id);
+                      }
+                    }),
+                    onEnterSelectionMode: (id) => setState(() {
+                      _isSelecting = true;
+                      _selectedMessageIds.add(id);
+                    }),
+                    onReplyTap: _scrollToQuoted,
+                    onSwipeToReply: (msg) => setState(() => _replyTarget = msg),
+                    onReactionTap: (msgId, emoji) => ref
+                        .read(chatRepositoryProvider)
+                        .reactToMessage(widget.chatId, msgId, emoji),
+                    onReactionLongPress: (msg, emoji) => showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => WhoReactedSheet(
+                        reactions: msg.reactions,
+                        initialEmoji: emoji,
+                      ),
+                    ),
+                    onViewOnceReveal: (msgId) => ref
+                        .read(chatRepositoryProvider)
+                        .markAsRead(widget.chatId),
+                  );
+                },
+              ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final composer = ref.watch(
+                    conversationMessagesProvider(widget.chatId).select(
+                      (state) => (
+                        otherUserTyping: state.otherUserTyping,
+                        theme: state.preference?.theme,
+                        otherUserName: state.otherUserName,
+                      ),
+                    ),
+                  );
+                  final currentUserId = ref.watch(
+                    authControllerProvider.select((state) => state.value?.id),
+                  );
+                  return ChatConversationComposer(
+                    otherUserTyping: composer.otherUserTyping,
+                    replyTarget: _replyTarget,
+                    currentUserId: currentUserId,
+                    otherUserName: composer.otherUserName,
+                    accentColor: _accentColor,
+                    isRecording: _isRecording,
+                    messageController: _messageController,
+                    isSending: _isSending,
+                    viewOnceEnabled: _viewOnceEnabled,
+                    onCancelReply: () => setState(() => _replyTarget = null),
+                    onSendAudio: _sendAudio,
+                    onCancelRecording: () =>
+                        setState(() => _isRecording = false),
+                    onSend: _sendMessage,
+                    onRecordAudio: () => setState(() => _isRecording = true),
+                    onAttachment: () => showConversationAttachmentSheet(
+                      context: context,
+                      takeReplyTarget: _takeReplyTarget,
+                      sendRich: _sendRich,
+                      sendLocation: _sendLocation,
+                      showError: (e) => AppSnackbar.error(context, e),
+                    ),
+                    onViewOnceToggled: (v) =>
+                        setState(() => _viewOnceEnabled = v),
+                  );
+                },
+              ),
             ],
           ),
         ),

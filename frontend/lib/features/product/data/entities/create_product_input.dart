@@ -1,8 +1,10 @@
+import 'package:freebay/features/product/domain/product_filters.dart';
+
 class CreateProductInput {
   final String title;
   final String description;
   final int price;
-  final String condition;
+  final ProductCondition condition;
   final String categoryId;
   final String imagePath;
 

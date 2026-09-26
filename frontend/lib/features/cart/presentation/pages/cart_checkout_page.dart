@@ -7,6 +7,7 @@ import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 class CartCheckoutPage extends HookConsumerWidget {
   const CartCheckoutPage({super.key});
@@ -30,7 +31,7 @@ class CartCheckoutPage extends HookConsumerWidget {
     final state = ref.watch(cartProvider);
     final cart = state.cart;
     final hasUnavailableItems = cart.items.any(
-      (item) => item.product.status != 'ACTIVE',
+      (item) => item.product.status != ProductStatus.active,
     );
 
     return Scaffold(
@@ -89,7 +90,8 @@ class CartCheckoutPage extends HookConsumerWidget {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        item.product.status == 'ACTIVE'
+                                        item.product.status ==
+                                                ProductStatus.active
                                             ? item.product.title
                                             : '${item.product.title} (indisponível)',
                                         style: TextStyle(

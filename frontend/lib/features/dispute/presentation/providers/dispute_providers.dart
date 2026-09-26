@@ -1,16 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/dispute/data/entities/dispute_entity.dart';
-import 'package:freebay/features/dispute/data/services/dispute_service.dart';
 import 'package:freebay/features/dispute/data/repositories/dispute_repository.dart';
+import 'package:freebay/features/dispute/domain/repositories/dispute_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
 part 'dispute_providers.g.dart';
 
-final disputeServiceProvider = Provider((ref) => DisputeService());
-
-final disputeRepositoryProvider = Provider<DisputeRepository>((ref) {
-  return DisputeRepository(ref.watch(disputeServiceProvider));
-});
+final disputeRepositoryProvider = Provider<DisputeRepository>(
+  (ref) => DisputeRepositoryImpl(client: HttpClient.instance),
+);
 
 class DisputeListState {
   final bool isLoading;

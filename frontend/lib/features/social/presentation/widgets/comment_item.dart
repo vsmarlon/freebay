@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/utils/time_utils.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 
 class CommentItem extends StatelessWidget {
@@ -47,7 +48,9 @@ class CommentItem extends StatelessWidget {
                       color: context.surfaceMidColor,
                       image: comment.user?.avatarUrl != null
                           ? DecorationImage(
-                              image: NetworkImage(comment.user!.avatarUrl!),
+                              image: CachedNetworkImageProvider(
+                                comment.user!.avatarUrl!,
+                              ),
                               fit: BoxFit.cover,
                             )
                           : null,

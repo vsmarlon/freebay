@@ -11,11 +11,11 @@ import 'package:freebay/features/social/presentation/providers/post_details_prov
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
-import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
 
 class _FakeGetPostDetailsUseCase extends GetPostDetailsUseCase {
   final PostEntity post;
-  _FakeGetPostDetailsUseCase(this.post) : super(HttpClient());
+  _FakeGetPostDetailsUseCase(this.post) : super(SocialRepository());
 
   @override
   Future<Either<Failure, PostEntity>> call(String postId) async {
@@ -24,7 +24,7 @@ class _FakeGetPostDetailsUseCase extends GetPostDetailsUseCase {
 }
 
 class _FakeGetPostCommentsUseCase extends GetPostCommentsUseCase {
-  _FakeGetPostCommentsUseCase() : super(HttpClient());
+  _FakeGetPostCommentsUseCase() : super(SocialRepository());
 
   @override
   Future<Either<Failure, List<CommentEntity>>> call(String postId) async {

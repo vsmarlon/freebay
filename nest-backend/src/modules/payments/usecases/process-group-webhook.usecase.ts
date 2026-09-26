@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { OrderStatus, PaymentGroupStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -72,7 +73,7 @@ export class ProcessGroupWebhookUseCase {
       return right(undefined);
     }
 
-    if (group.status !== 'PENDING') {
+    if (group.status !== PaymentGroupStatus.PENDING) {
       this.logger.log(`Payment group ${groupId} is already ${group.status}; skipping ${event}`);
       return right(undefined);
     }
@@ -115,7 +116,7 @@ export class ProcessGroupWebhookUseCase {
         return right(undefined);
       }
       this.logger.error(
-        `Failed to settle payment group ${group.id}: ${(error as Error).message}`,
+        `Failed to settle payment group ${group.id}: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined,
       );
       return left(new DatabaseError('Failed to process payment webhook'));
@@ -124,10 +125,10 @@ export class ProcessGroupWebhookUseCase {
     for (const order of group.orders) {
       try {
         await this.notificationService.notifyPayment(order.sellerId, order.amount);
-        await this.notificationService.notifyOrderStatus(order.buyerId, order.orderId, 'CONFIRMED');
+        await this.notificationService.notifyOrderStatus(order.buyerId, order.orderId, OrderStatus.CONFIRMED);
       } catch (error) {
         this.logger.error(
-          `Payment notifications failed for order ${order.orderId}: ${(error as Error).message}`,
+          `Payment notifications failed for order ${order.orderId}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -158,7 +159,7 @@ export class ProcessGroupWebhookUseCase {
         return right(undefined);
       }
       this.logger.error(
-        `Failed to expire payment group ${group.id}: ${(error as Error).message}`,
+        `Failed to expire payment group ${group.id}: ${error instanceof Error ? error.message : String(error)}`,
         error instanceof Error ? error.stack : undefined,
       );
       return left(new DatabaseError('Failed to process webhook'));

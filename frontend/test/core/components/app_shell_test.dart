@@ -3,13 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
-
-class _SignedOutAuth extends AuthController {
-  @override
-  AsyncValue<UserEntity?> build() => const AsyncValue.data(null);
-}
+import '../../support/auth_test_doubles.dart';
 
 const _labels = ['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA', 'ECHO'];
 
@@ -38,7 +33,9 @@ Widget _app() {
   );
 
   return ProviderScope(
-    overrides: [authControllerProvider.overrideWith(_SignedOutAuth.new)],
+    overrides: [
+      authControllerProvider.overrideWith(() => TestAuthController(null)),
+    ],
     child: MaterialApp.router(routerConfig: router),
   );
 }

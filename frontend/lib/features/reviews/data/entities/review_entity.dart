@@ -14,10 +14,14 @@ ReviewType _reviewTypeFromJson(String value) =>
     ? ReviewType.buyerReviewingSeller
     : ReviewType.sellerReviewingBuyer;
 
+ReviewType reviewTypeFromApiValue(String value) => _reviewTypeFromJson(value);
+
 String _reviewTypeToJson(ReviewType type) =>
     type == ReviewType.buyerReviewingSeller
     ? 'BUYER_REVIEWING_SELLER'
     : 'SELLER_REVIEWING_BUYER';
+
+String reviewTypeToApiValue(ReviewType type) => _reviewTypeToJson(type);
 
 @freezed
 abstract class ReviewEntity with _$ReviewEntity {

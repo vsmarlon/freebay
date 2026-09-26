@@ -4,20 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:freebay/core/router/app_routes.dart';
-import 'package:freebay/features/auth/data/entities/user_entity.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/onboarding/presentation/pages/welcome_setup_page.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/shared/services/storage_service.dart';
-
-class _MockAuthController extends AuthController {
-  _MockAuthController(this.user);
-
-  final UserEntity user;
-
-  @override
-  AsyncValue<UserEntity?> build() => AsyncValue.data(user);
-}
+import '../../support/auth_test_doubles.dart';
+import '../../support/test_users.dart';
 
 class _MockBiometryService extends BiometryService {
   int authenticationAttempts = 0;
@@ -43,7 +35,7 @@ void main() {
   testWidgets(
     'declining welcome setup never prompts and completion stays user-keyed',
     (tester) async {
-      const user = UserEntity(id: 'welcome-user', email: 'user@example.com');
+      final user = testUser(id: 'welcome-user', email: 'user@example.com');
       SharedPreferences.setMockInitialValues({});
       await StorageService.init();
       final biometry = _MockBiometryService();
@@ -65,9 +57,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            authControllerProvider.overrideWith(
-              () => _MockAuthController(user),
-            ),
+            authControllerProvider.overrideWith(() => TestAuthController(user)),
             biometryServiceProvider.overrideWithValue(biometry),
             biometryAvailableProvider.overrideWith((ref) async => true),
             biometryEnabledProvider.overrideWith((ref) async => false),

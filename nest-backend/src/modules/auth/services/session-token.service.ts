@@ -5,6 +5,12 @@ import type { JwtSignOptions } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
 import { JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
+import { UserRole } from '@prisma/client';
+
+export const DEFAULT_ACCESS_TOKEN_TTL = '15m';
+export const DEFAULT_REFRESH_TOKEN_TTL = '7d';
+export const DEFAULT_BIOMETRIC_TOKEN_TTL = '7d';
+export const BIOMETRIC_ENROLLMENT_CLAIM_TTL_SECONDS = 300;
 
 @Injectable()
 export class SessionTokenService {
@@ -14,15 +20,15 @@ export class SessionTokenService {
     private readonly redisService: RedisService,
   ) {}
 
-  generate(userId: string, role: string) {
+  generate(userId: string, role: UserRole) {
     return {
-      token: this.sign(userId, role, JwtTokenType.ACCESS, this.config.get('JWT_EXPIRES_IN', '15m')),
-      refreshToken: this.sign(userId, role, JwtTokenType.REFRESH, this.config.get('JWT_REFRESH_EXPIRES_IN', '7d')),
+      token: this.sign(userId, role, JwtTokenType.ACCESS, this.config.get('JWT_EXPIRES_IN', DEFAULT_ACCESS_TOKEN_TTL)),
+      refreshToken: this.sign(userId, role, JwtTokenType.REFRESH, this.config.get('JWT_REFRESH_EXPIRES_IN', DEFAULT_REFRESH_TOKEN_TTL)),
     };
   }
 
-  generateBiometric(userId: string, role: string) {
-    return this.sign(userId, role, JwtTokenType.BIOMETRIC, this.config.get('JWT_BIOMETRIC_EXPIRES_IN', '7d'));
+  generateBiometric(userId: string, role: UserRole) {
+    return this.sign(userId, role, JwtTokenType.BIOMETRIC, this.config.get('JWT_BIOMETRIC_EXPIRES_IN', DEFAULT_BIOMETRIC_TOKEN_TTL));
   }
 
   async revoke(jti?: string, exp?: number): Promise<void> {
@@ -42,11 +48,11 @@ export class SessionTokenService {
   }
 
   async claimBiometricEnrollment(jti: string, exp?: number): Promise<boolean> {
-    const ttl = Math.max(1, (exp ?? Math.floor(Date.now() / 1000) + 300) - Math.floor(Date.now() / 1000));
+    const ttl = Math.max(1, (exp ?? Math.floor(Date.now() / 1000) + BIOMETRIC_ENROLLMENT_CLAIM_TTL_SECONDS) - Math.floor(Date.now() / 1000));
     return this.redisService.setIfAbsent(`biometric-enrollment-claimed:${jti}`, '1', ttl);
   }
 
-  private sign(userId: string, role: string, type: JwtTokenType, expiresIn: string) {
+  private sign(userId: string, role: UserRole, type: JwtTokenType, expiresIn: string) {
     return this.jwtService.sign(
       { userId, role, type, jti: randomUUID(), issuedAtMs: Date.now() } satisfies JwtPayload,
       { expiresIn: expiresIn as JwtSignOptions['expiresIn'] },

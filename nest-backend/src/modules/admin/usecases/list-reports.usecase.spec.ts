@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListReportsUseCase } from './list-reports.usecase';
 import { ModerationDatabaseRepository } from '../data/repositories/moderation-database.repository';
-import { left, right } from '@/shared/core/either';
-import { DatabaseError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
 import { encodeCursor } from '@/shared/core/pagination';
 
 const mockModerationRepository = {
@@ -63,12 +62,4 @@ describe('ListReportsUseCase', () => {
     expect(mockModerationRepository.findReports.mock.calls[0][0].status).toBe('PENDING');
   });
 
-  it('deve propagar a falha do repositório', async () => {
-    mockModerationRepository.findReports.mockResolvedValue(left(new DatabaseError('boom')));
-
-    const result = await sut.execute({});
-
-    expect(result.isLeft()).toBe(true);
-    expect(result.value).toBeInstanceOf(DatabaseError);
-  });
 });

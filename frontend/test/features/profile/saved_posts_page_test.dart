@@ -5,12 +5,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/features/profile/presentation/pages/saved_posts_page.dart';
-import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../support/auth_test_doubles.dart';
+import '../../support/test_users.dart';
 
 class _Adapter implements HttpClientAdapter {
   final List<ResponseBody Function(RequestOptions)> responses = [];
@@ -26,17 +27,11 @@ class _Adapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-class _AuthenticatedAuthController extends AuthController {
-  @override
-  AsyncValue<UserEntity?> build() =>
-      const AsyncValue.data(UserEntity(id: 'user-1'));
-}
-
 ResponseBody _page(String id) => ResponseBody.fromString(
   jsonEncode({
     'success': true,
     'data': {
-      'posts': [
+      'items': [
         {
           'id': id,
           'userId': 'user-1',
@@ -47,6 +42,7 @@ ResponseBody _page(String id) => ResponseBody.fromString(
         },
       ],
       'hasMore': false,
+      'nextCursor': null,
     },
   }),
   200,
@@ -106,7 +102,9 @@ void main() {
           socialRepositoryProvider.overrideWithValue(
             SocialRepository(client: dio),
           ),
-          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          authControllerProvider.overrideWith(
+            () => TestAuthController(testUser(id: 'user-1')),
+          ),
         ],
         child: const MaterialApp(home: SavedPostsPage()),
       ),

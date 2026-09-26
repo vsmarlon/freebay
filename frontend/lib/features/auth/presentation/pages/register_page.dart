@@ -10,7 +10,9 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/core/utils/value_utils.dart';
+import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
+import 'package:freebay/features/auth/presentation/widgets/google_auth_button.dart';
 
 class RegisterPage extends HookConsumerWidget {
   const RegisterPage({super.key});
@@ -59,51 +61,7 @@ class RegisterPage extends HookConsumerWidget {
           child: Column(
             children: [
               // Top Bar with centered massive header (100% larger)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: context.borderColor.withAlpha(40),
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: BrutalistIconButton(
-                        icon: Icons.arrow_back,
-                        onTap: () => context.pop(),
-                      ),
-                    ),
-                    Center(
-                      child: Text(
-                        'CRIAR CONTA',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: AppTypography.headlineFontFamily,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.0,
-                          color: context.textPrimary,
-                          shadows: [
-                            const Shadow(
-                              color: AppColors.primaryContainer,
-                              offset: AppDepth.shadowOffsetSmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              AuthHeader(title: 'CRIAR CONTA', onBack: () => context.pop()),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -243,44 +201,12 @@ class RegisterPage extends HookConsumerWidget {
                           ),
                           Spacing.vMd,
                           AuthStagger(
-                            child: InkWell(
-                              onTap: authState.isLoading
-                                  ? null
-                                  : () => ref
-                                        .read(authControllerProvider.notifier)
-                                        .googleLogin(),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: context.borderColor.withAlpha(60),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.g_mobiledata,
-                                      size: 22,
-                                      color: context.textPrimary,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'CRIAR COM GOOGLE',
-                                      style: TextStyle(
-                                        fontFamily:
-                                            AppTypography.headlineFontFamily,
-                                        color: context.textPrimary,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            child: GoogleAuthButton(
+                              label: 'CRIAR COM GOOGLE',
+                              loading: authState.isLoading,
+                              onTap: () => ref
+                                  .read(authControllerProvider.notifier)
+                                  .googleLogin(),
                             ),
                             animation: animController,
                             begin: 0.65,

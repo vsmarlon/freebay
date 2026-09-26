@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
-import { BasePrismaRepository } from "@/shared/infra/prisma/base-prisma.repository";
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from "@/shared/core/either";
 import {
   StoryWithViews,
@@ -11,13 +11,12 @@ import {
 import { canonicalStoryTextBlocks } from "../../dtos/stories.dto";
 
 @Injectable()
-export class PrismaStoryRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class PrismaStoryRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findActiveWithViews(): RepositoryResponse<StoryWithViews[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       return await this.prisma.story.findMany({
         where: { expiresAt: { gt: new Date() }, deletedAt: null },
         include: {
@@ -30,7 +29,7 @@ export class PrismaStoryRepository extends BasePrismaRepository {
   }
 
   async findByUserId(userId: string): RepositoryResponse<StoryBrief[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const stories = await this.prisma.story.findMany({
         where: { userId, expiresAt: { gt: new Date() }, deletedAt: null },
         include: {
@@ -63,7 +62,7 @@ export class PrismaStoryRepository extends BasePrismaRepository {
     userId: string;
     imageUrl: string;
   } | null> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const story = await this.prisma.story.findUnique({
         where: { id },
         select: { id: true, userId: true, imageUrl: true, deletedAt: true },
@@ -74,7 +73,7 @@ export class PrismaStoryRepository extends BasePrismaRepository {
   }
 
   async create(data: CreateStoryInput): RepositoryResponse<StoryCreatePayload> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.story.create({
           data,
@@ -94,7 +93,7 @@ export class PrismaStoryRepository extends BasePrismaRepository {
   }
 
   async delete(id: string): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.story.update({
         where: { id },
         data: { deletedAt: new Date() },
@@ -106,7 +105,7 @@ export class PrismaStoryRepository extends BasePrismaRepository {
     storyId: string,
     viewerId: string,
   ): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.storyView.upsert({
         where: { storyId_viewerId: { storyId, viewerId } },
         create: { storyId, viewerId },

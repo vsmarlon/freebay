@@ -58,7 +58,7 @@ final class OrderDetailProvider
   }
 }
 
-String _$orderDetailHash() => r'2945811eb41e3b6ce18275432854eea9f2d4c0fa';
+String _$orderDetailHash() => r'9c9e1b1592d7d6aab521f87c90df2d64841d981d';
 
 final class OrderDetailFamily extends $Family
     with
@@ -190,7 +190,7 @@ final class SalesListProvider
   }
 }
 
-String _$salesListHash() => r'a77242b2f3c83d3c91574bed2fab3819414d58d3';
+String _$salesListHash() => r'62cd3f9567b5d066bd90ddf77c2c8b9bbdaabaad';
 
 abstract class _$SalesList extends $Notifier<SalesListState> {
   SalesListState build();

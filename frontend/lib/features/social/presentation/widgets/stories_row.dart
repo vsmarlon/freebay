@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
@@ -13,20 +14,20 @@ class StoriesRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final storiesAsync = ref.watch(storiesProvider);
-    final stories = storiesAsync.value?.stories ?? [];
+    final groups = storiesAsync.value?.groups ?? [];
 
     return _buildRow(
       context,
       ref,
-      stories,
-      isLoading: storiesAsync.isLoading && stories.isEmpty,
+      groups,
+      isLoading: storiesAsync.isLoading && groups.isEmpty,
     );
   }
 
   Widget _buildRow(
     BuildContext context,
     WidgetRef ref,
-    List<StoryEntity> stories, {
+    List<StoryGroupEntity> groups, {
     bool isLoading = false,
   }) {
     return SizedBox(
@@ -34,21 +35,17 @@ class StoriesRow extends ConsumerWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: stories.length + 1,
+        itemCount: groups.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             return const _AddStoryItem();
           }
-          final story = stories[index - 1];
+          final group = groups[index - 1];
           return _StoryItem(
-            story: story,
+            group: group,
             onTap: () {
               HapticFeedback.lightImpact();
-              final current = ref.read(storiesProvider).value?.stories ?? [];
-              if (current.isNotEmpty) {
-                final storyIndex = current.indexWhere((s) => s.id == story.id);
-                context.push(AppRoutes.storyAt(storyIndex));
-              }
+              context.push(AppRoutes.storyAt(index - 1));
             },
           );
         },
@@ -108,10 +105,10 @@ class _AddStoryItem extends StatelessWidget {
 }
 
 class _StoryItem extends StatelessWidget {
-  final StoryEntity story;
+  final StoryGroupEntity group;
   final VoidCallback onTap;
 
-  const _StoryItem({required this.story, required this.onTap});
+  const _StoryItem({required this.group, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -127,20 +124,20 @@ class _StoryItem extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: story.isViewed
-                      ? AppColors.outline
-                      : AppColors.primaryContainer,
+                  color: AppColors.primaryContainer, // we can refine this later
                   width: 2,
                 ),
-                image: story.imageUrl.isNotEmpty
+                image: group.user.avatarUrl != null
                     ? DecorationImage(
-                        image: NetworkImage(story.imageUrl),
+                        image: CachedNetworkImageProvider(
+                          group.user.avatarUrl!,
+                        ),
                         fit: BoxFit.cover,
                       )
                     : null,
                 color: context.surfaceColor,
               ),
-              child: story.imageUrl.isEmpty
+              child: group.user.avatarUrl == null
                   ? const Icon(Icons.person, color: AppColors.outline, size: 24)
                   : null,
             ),
@@ -148,7 +145,7 @@ class _StoryItem extends StatelessWidget {
             SizedBox(
               width: 56,
               child: Text(
-                story.user.displayName,
+                group.user.displayName,
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 10,

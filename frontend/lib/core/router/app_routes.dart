@@ -15,6 +15,7 @@ class AppRoutes {
   static const String productDetail = '/products/:id';
   static const String editProduct = 'edit';
   static const String story = '/story';
+  static const String storyHighlight = '/story/highlights/:id';
   static const String createStory = '/create-story';
   static const String userProfile = '/user/:id';
   static const String feed = '/feed';
@@ -77,6 +78,7 @@ class AppRoutes {
   static String followingWith(String userId) =>
       '$profileFollowing?userId=${Uri.encodeComponent(userId)}';
   static String storyAt(int index) => '$story?index=$index';
+  static String storyHighlightPath(String id) => '/story/highlights/$id';
   static String peopleSearchWith(String query) =>
       '$peopleSearch?q=${Uri.encodeComponent(query)}';
   static String postSearchWith(String query) =>

@@ -9,7 +9,8 @@ Accepted
 ## Context
 
 Raw exceptions were reaching users. Four mechanisms, all above the repository
-layer (`base_http_repository.dart`'s `safeCall` was already correct):
+layer. The current request boundary is `shared/http/request_either.dart`'s
+`requestEither`, which maps Dio and decoder failures into `Failure` values:
 
 - `AppErrorWidget` rendered `details.exception.toString()` full-screen in every
   build mode, so any uncaught build-phase error became a visible stack-ish dump.

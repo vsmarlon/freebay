@@ -54,52 +54,51 @@ class _ArchivedChatsPageState extends ConsumerState<ArchivedChatsPage> {
               ),
             ),
             Expanded(
-              child: ref
-                  .watch(archivedChatListProvider)
-                  .when(
-                    data: (chats) {
-                      final loadingMore = ref.watch(
-                        archivedChatListLoadingMoreProvider,
-                      );
-                      if (chats.isEmpty) {
-                        return const EmptyState(
-                          icon: Icons.archive_outlined,
-                          title: 'NENHUMA CONVERSA ARQUIVADA',
-                          subtitle:
-                              'Arraste uma conversa para a esquerda para arquivar.',
+              child: (() {
+                final listState = ref.watch(archivedChatListProvider);
+                if (listState.isLoading) return _buildLoadingChat(context);
+                if (listState.error != null && listState.items.isEmpty) {
+                  return const Center(
+                    child: Text('Erro ao carregar conversas arquivadas'),
+                  );
+                }
+                final chats = listState.items;
+                final loadingMore = listState.isLoadingMore;
+                if (chats.isEmpty) {
+                  return const EmptyState(
+                    icon: Icons.archive_outlined,
+                    title: 'NENHUMA CONVERSA ARQUIVADA',
+                    subtitle:
+                        'Arraste uma conversa para a esquerda para arquivar.',
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(archivedChatListProvider);
+                  },
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: chats.length + (loadingMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == chats.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          child: ShimmerBlock(height: 72),
                         );
                       }
-                      return RefreshIndicator(
-                        onRefresh: () async =>
-                            ref.invalidate(archivedChatListProvider),
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          itemCount: chats.length + (loadingMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == chats.length) {
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 6,
-                                ),
-                                child: ShimmerBlock(height: 72),
-                              );
-                            }
-                            return _buildArchivedItem(
-                              context,
-                              isDark,
-                              chats[index],
-                              ref,
-                            );
-                          },
-                        ),
+                      return _buildArchivedItem(
+                        context,
+                        isDark,
+                        chats[index],
+                        ref,
                       );
                     },
-                    loading: () => _buildLoadingChat(context),
-                    error: (_, _) => const Center(
-                      child: Text('Erro ao carregar conversas arquivadas'),
-                    ),
                   ),
+                );
+              })(),
             ),
           ],
         ),

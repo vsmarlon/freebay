@@ -9,7 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
   freebay_design_system:
     path: ./libs/freebay_design_system
 
@@ -33,7 +32,6 @@ dependencies:
 
   local_auth: ^2.3.0
 
-  web_socket_channel: ^3.0.3
   socket_io_client: ^3.0.2
   flutter_secure_storage: ^10.0.0
   flutter_hooks: ^0.21.3+1

@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsUUID } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EscrowStatus, OrderStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
@@ -58,9 +58,10 @@ export class MarkAsDeliveredDTO {
 }
 
 export class CancelOrderDTO {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
-  @IsUUID()
-  readonly orderId: string;
+  @ApiProperty({ example: 'Buyer changed mind' })
+  @IsString()
+  @IsNotEmpty()
+  readonly reason: string;
 }
 
 export interface MarkAsShippedInput {
@@ -76,4 +77,5 @@ export interface MarkAsDeliveredInput {
 export interface CancelOrderInput {
   orderId: string;
   userId: string;
+  reason: string;
 }

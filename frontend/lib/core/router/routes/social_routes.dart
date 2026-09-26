@@ -31,6 +31,11 @@ final List<RouteBase> socialRoutes = [
     (context, state) =>
         StoryViewerWrapper(indexParam: state.uri.queryParameters['index']),
   ),
+  appSlideRoute(
+    AppRoutes.storyHighlight,
+    (context, state) =>
+        HighlightStoryViewerWrapper(id: state.pathParameters['id']!),
+  ),
   appCupertinoRoute(
     AppRoutes.createStory,
     (context, state) => const CreateStoryPage(),

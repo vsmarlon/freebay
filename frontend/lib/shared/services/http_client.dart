@@ -5,6 +5,8 @@ import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:freebay/shared/services/storage_service.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 
+const httpRequestTimeout = Duration(seconds: 10);
+
 class LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -77,8 +79,8 @@ class HttpClient {
     final dio = Dio(
       BaseOptions(
         baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: httpRequestTimeout,
+        receiveTimeout: httpRequestTimeout,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -263,76 +265,6 @@ class HttpClient {
 
   static bool _isCurrent(int generation) =>
       generation == _sessionGeneration && !_refreshSuspended;
-
-  Future<Response> get(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return instance.get(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
-
-  Future<Response> post(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return instance.post(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
-
-  Future<Response> put(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return instance.put(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
-
-  Future<Response> delete(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return instance.delete(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
-
-  Future<Response> patch(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return instance.patch(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
 }
 
 class _TokenPair {

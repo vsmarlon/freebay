@@ -1,25 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { Category } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CategoryWithChildren } from '../../types/category.types';
 
 @Injectable()
-export class CategoryDatabaseRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class CategoryDatabaseRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findAll(): RepositoryResponse<CategoryWithChildren[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const categories = await this.prisma.category.findMany({ orderBy: { name: 'asc' } });
       return this.buildTree(categories);
     }, 'Erro ao listar categorias');
   }
 
   async findById(id: string): RepositoryResponse<Category | null> {
-    return this.safeRun(() => this.prisma.category.findUnique({ where: { id } }), 'Erro ao buscar categoria');
+    return repositoryResponse(() => this.prisma.category.findUnique({ where: { id } }), 'Erro ao buscar categoria');
   }
 
   private buildTree(categories: Category[]): CategoryWithChildren[] {

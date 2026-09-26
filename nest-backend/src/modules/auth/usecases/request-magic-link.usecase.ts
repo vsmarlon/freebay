@@ -8,8 +8,8 @@ import { RequestMagicLinkDTO } from '../dtos/magic-link.dto';
 import { MagicLinkRepository } from '../domain/repositories/magic-link.repository';
 import { normalizeEmail } from '../utils/normalize-email';
 
-const THROTTLE_TTL = 60 * 60;
-const LINK_TTL = 10 * 60;
+export const MAGIC_LINK_THROTTLE_TTL_SECONDS = 60 * 60;
+export const MAGIC_LINK_TTL_SECONDS = 10 * 60;
 
 export class RequestMagicLinkInput extends RequestMagicLinkDTO {
   ip: string;
@@ -29,8 +29,8 @@ export class RequestMagicLinkUseCase {
   async execute(input: RequestMagicLinkInput): Promise<Either<AppError, { sent: true }>> {
     const email = normalizeEmail(input.email);
     const [emailCount, ipCount] = await Promise.all([
-      this.redis.incrementWithExpiry(`magic-link:email:${email}`, THROTTLE_TTL),
-      this.redis.incrementWithExpiry(`magic-link:ip:${input.ip}`, THROTTLE_TTL),
+      this.redis.incrementWithExpiry(`magic-link:email:${email}`, MAGIC_LINK_THROTTLE_TTL_SECONDS),
+      this.redis.incrementWithExpiry(`magic-link:ip:${input.ip}`, MAGIC_LINK_THROTTLE_TTL_SECONDS),
     ]);
     if (emailCount > 5 || ipCount > 20) return right({ sent: true });
 
@@ -44,7 +44,7 @@ export class RequestMagicLinkUseCase {
       consentAt: input.consent ? now : null,
       requestedAt: now,
       activatedAt: now,
-      expiresAt: new Date(now.getTime() + LINK_TTL * 1000),
+      expiresAt: new Date(now.getTime() + MAGIC_LINK_TTL_SECONDS * 1000),
       requestedIp: input.ip,
       userAgent: input.userAgent,
     });

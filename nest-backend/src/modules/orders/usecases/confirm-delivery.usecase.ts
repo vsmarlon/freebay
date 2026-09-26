@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
@@ -22,7 +23,7 @@ export class ConfirmDeliveryUseCase {
       return left(new UnauthorizedError('Only buyer can confirm delivery'));
     }
 
-    if (order.status !== 'CONFIRMED' && order.status !== 'DELIVERED') {
+    if (order.status !== OrderStatus.CONFIRMED && order.status !== OrderStatus.DELIVERED) {
       return left(new InvalidOrderStateError('CONFIRMED or DELIVERED', order.status));
     }
 

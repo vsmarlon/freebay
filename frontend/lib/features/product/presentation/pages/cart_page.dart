@@ -6,6 +6,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 class CartPage extends ConsumerStatefulWidget {
   const CartPage({super.key});
@@ -26,7 +27,7 @@ class _CartPageState extends ConsumerState<CartPage> {
     final state = ref.watch(cartProvider);
     final cart = state.cart;
     final hasUnavailableItems = cart.items.any(
-      (item) => item.product.status != 'ACTIVE',
+      (item) => item.product.status != ProductStatus.active,
     );
 
     return Scaffold(
@@ -61,7 +62,7 @@ class _CartPageState extends ConsumerState<CartPage> {
               ],
             ),
             Expanded(
-              child: state.isLoading
+              child: state.isLoading && cart.items.isEmpty
                   ? const SkeletonPage(
                       child: Column(
                         children: [
@@ -125,7 +126,8 @@ class _CartPageState extends ConsumerState<CartPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item.product.status == 'ACTIVE'
+                                        item.product.status ==
+                                                ProductStatus.active
                                             ? item.product.title
                                             : '${item.product.title} (indisponível)',
                                         style: TextStyle(
@@ -148,12 +150,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                                       Spacing.vSm,
                                       Row(
                                         children: [
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.remove,
-                                              size: 16,
-                                            ),
-                                            onPressed: item.quantity > 1
+                                          BrutalistIconButton(
+                                            icon: Icons.remove,
+                                            size: 24,
+                                            onTap: item.quantity > 1
                                                 ? () => ref
                                                       .read(
                                                         cartProvider.notifier,
@@ -164,19 +164,22 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                       )
                                                 : null,
                                           ),
-                                          Text(
-                                            '${item.quantity}',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: context.textPrimary,
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            child: Text(
+                                              '${item.quantity}',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: context.textPrimary,
+                                              ),
                                             ),
                                           ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.add,
-                                              size: 16,
-                                            ),
-                                            onPressed: item.quantity < 10
+                                          BrutalistIconButton(
+                                            icon: Icons.add,
+                                            size: 24,
+                                            onTap: item.quantity < 10
                                                 ? () => ref
                                                       .read(
                                                         cartProvider.notifier,
@@ -202,9 +205,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                                     ],
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.close, size: 18),
-                                  onPressed: () async {
+                                BrutalistIconButton(
+                                  icon: Icons.close,
+                                  size: 24,
+                                  onTap: () async {
                                     final notifier = ref.read(
                                       cartProvider.notifier,
                                     );

@@ -13,7 +13,9 @@ _MessageEntity _$MessageEntityFromJson(Map<String, dynamic> json) =>
       senderId: json['senderId'] as String,
       clientMessageId: json['clientMessageId'] as String?,
       content: json['content'] as String?,
-      type: json['type'] as String? ?? 'TEXT',
+      type: json['type'] == null
+          ? MessageType.text
+          : messageTypeFromJson(json['type']),
       attachmentUrl: json['attachmentUrl'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
       replyToId: json['replyToId'] as String?,
@@ -48,7 +50,7 @@ Map<String, dynamic> _$MessageEntityToJson(_MessageEntity instance) =>
       'senderId': instance.senderId,
       'clientMessageId': instance.clientMessageId,
       'content': instance.content,
-      'type': instance.type,
+      'type': messageTypeToJson(instance.type),
       'attachmentUrl': instance.attachmentUrl,
       'metadata': instance.metadata,
       'replyToId': instance.replyToId,

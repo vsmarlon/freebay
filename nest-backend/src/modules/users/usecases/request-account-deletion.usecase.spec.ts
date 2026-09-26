@@ -1,8 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  ACCOUNT_DELETION_GRACE_DAYS,
-  RequestAccountDeletionUseCase,
-} from './request-account-deletion.usecase';
+import { RequestAccountDeletionUseCase } from './request-account-deletion.usecase';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
@@ -58,10 +55,6 @@ describe('RequestAccountDeletionUseCase', () => {
       Promise.resolve(right(requestedAt)),
     );
     mockSessionRevoker.revokeAllSessions.mockResolvedValue(undefined);
-  });
-
-  it('deve usar 30 dias como janela de carência', () => {
-    expect(ACCOUNT_DELETION_GRACE_DAYS).toBe(30);
   });
 
   it('deve retornar UserNotFoundError quando o usuário não existe', async () => {

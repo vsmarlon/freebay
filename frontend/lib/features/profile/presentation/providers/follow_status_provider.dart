@@ -164,15 +164,3 @@ final followStatusProvider = FutureProvider.family<FollowStatusResponse?, String
     return status;
   });
 });
-
-/// Deprecated cache kept for backward compatibility (no-op).
-class FollowStatusCache {
-  FollowStatusResponse? get(String userId) => null;
-  void set(String userId, FollowStatusResponse status) {}
-  void invalidate(String userId) {}
-  void invalidateAll() {}
-}
-
-final followStatusCacheProvider = Provider<FollowStatusCache>((ref) {
-  return FollowStatusCache();
-});

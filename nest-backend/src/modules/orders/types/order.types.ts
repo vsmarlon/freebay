@@ -1,4 +1,4 @@
-import { OrderStatus, Prisma } from "@prisma/client";
+import { EscrowStatus, OrderStatus, Prisma } from "@prisma/client";
 import { USER_SELECT_MINIMAL } from "@/shared/utils/prisma-selects";
 
 export const ORDER_INCLUDE_FULL = {
@@ -35,13 +35,13 @@ export type CreateOrderPayload = Prisma.OrderGetPayload<{
 }>;
 
 export const SALES_ORDER_STATUSES = [
-  "PENDING",
-  "CONFIRMED",
-  "SHIPPED",
-  "DELIVERED",
-  "DISPUTED",
-  "COMPLETED",
-  "CANCELLED",
+  OrderStatus.PENDING,
+  OrderStatus.CONFIRMED,
+  OrderStatus.SHIPPED,
+  OrderStatus.DELIVERED,
+  OrderStatus.DISPUTED,
+  OrderStatus.COMPLETED,
+  OrderStatus.CANCELLED,
 ] as const satisfies readonly OrderStatus[];
 
 export type SalesOrderStatus = (typeof SALES_ORDER_STATUSES)[number];
@@ -71,15 +71,18 @@ export interface CancelOrderTxData {
   productId: string;
   buyerId: string;
   amount: number;
-  status: string;
+  status: OrderStatus;
   orderQuantity: number;
   sellerId: string;
   sellerAmount: number;
+  reason: string;
 }
 
-export interface RefundOrderTxData extends CancelOrderTxData {
+// Webhook-initiated refunds carry no user-supplied reason; only the
+// user-driven cancel path records one.
+export interface RefundOrderTxData extends Omit<CancelOrderTxData, 'reason'> {
   status: OrderStatus;
-  escrowStatus: "HELD" | "RELEASED";
+  escrowStatus: Extract<EscrowStatus, 'HELD' | 'RELEASED'>;
   transferId: string | null;
 }
 

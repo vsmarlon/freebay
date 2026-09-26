@@ -1,47 +1,67 @@
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
-import 'package:freebay/shared/repositories/base_http_repository.dart';
+import 'package:freebay/shared/http/request_either.dart';
+import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/conversation_preference.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/features/chat/data/entities/conversation_media_filter.dart';
 import 'package:freebay/features/profile/data/entities/block_responses.dart';
 
-class ChatRepository extends BaseHttpRepository {
-  ChatRepository({super.client});
+const _archivedChatsPageLimit = 50;
+const _conversationMediaPageLimit = 50;
+
+class ChatRepository {
+  final Dio client;
+
+  ChatRepository({Dio? client}) : client = client ?? HttpClient.instance;
 
   Future<Either<Failure, CursorPage<ChatEntity>>> getChats({
     String? query,
     String? cursor,
     int? limit,
-  }) => safePage<ChatEntity>(
-    '/chat/conversations',
-    ChatEntity.fromJson,
-    cursor: cursor,
-    limit: limit,
-    queryParameters: {'q': ?query?.isNotEmpty == true ? query : null},
+  }) => requestEither<CursorPage<ChatEntity>>(
+    () => client.get(
+      '/chat/conversations',
+      queryParameters: {
+        'q': ?query?.isNotEmpty == true ? query : null,
+        'cursor': ?cursor,
+        'limit': ?limit,
+      },
+    ),
+    decoder: (response) => Right(
+      parseCursorPage<ChatEntity>(response.data['data'], ChatEntity.fromJson),
+    ),
   );
 
   Future<Either<Failure, CursorPage<ChatEntity>>> getArchivedChats({
     String? cursor,
-    int limit = 50,
-  }) => safePage<ChatEntity>(
-    '/chat/archived',
-    ChatEntity.fromJson,
-    cursor: cursor,
-    limit: limit,
+    int limit = _archivedChatsPageLimit,
+  }) => requestEither<CursorPage<ChatEntity>>(
+    () => client.get(
+      '/chat/archived',
+      queryParameters: {'cursor': ?cursor, 'limit': limit},
+    ),
+    decoder: (response) => Right(
+      parseCursorPage<ChatEntity>(response.data['data'], ChatEntity.fromJson),
+    ),
   );
 
   Future<Either<Failure, String>> startDirectConversation(
     String targetUserId, {
     String? productId,
-  }) => safePost<String>(
-    '/chat/conversations',
-    data: {'targetUserId': targetUserId, 'productId': ?productId},
-    extractKey: 'data.conversationId',
-    customMapper: (id) => id as String,
+  }) => requestEither(
+    () => client.post(
+      '/chat/conversations',
+      data: {'targetUserId': targetUserId, 'productId': ?productId},
+    ),
+    decoder: (response) =>
+        Right(response.data['data']['conversationId'] as String),
   );
 
   Future<
@@ -51,7 +71,7 @@ class ChatRepository extends BaseHttpRepository {
         List<MessageEntity> messages,
         bool hasMore,
         String? nextCursor,
-        String threadType,
+        ChatThreadType threadType,
         String otherUserId,
         String otherUserName,
         String? otherUserAvatarUrl,
@@ -60,12 +80,12 @@ class ChatRepository extends BaseHttpRepository {
     >
   >
   getConversation(String conversationId, {String? cursor, int? limit}) =>
-      safeCall(
+      requestEither(
         () => client.get(
           '/chat/conversations/$conversationId',
           queryParameters: {'cursor': ?cursor, 'limit': ?limit},
         ),
-        onSuccess: (response) {
+        decoder: (response) {
           final data = response.data['data'];
           if (data is! Map<String, dynamic>) {
             return const Left(ServerFailure('Resposta inválida do servidor.'));
@@ -89,8 +109,8 @@ class ChatRepository extends BaseHttpRepository {
               .whereType<Map>()
               .map((m) => MessageEntity.fromJson(Map<String, dynamic>.from(m)))
               .toList();
-          final threadType = data['threadType'];
-          if (threadType is! String) {
+          final threadType = ChatThreadType.fromWire(data['threadType']);
+          if (threadType == null) {
             return const Left(ServerFailure('Resposta inválida do servidor.'));
           }
           final rawPref = data['preference'];
@@ -119,152 +139,192 @@ class ChatRepository extends BaseHttpRepository {
     String? replyToId,
     bool viewOnce = false,
     String? clientMessageId,
-  }) => safePost<MessageEntity>(
-    '/chat/conversations/$chatId/messages',
-    data: {
-      'content': message,
-      'replyToId': ?replyToId,
-      'clientMessageId': ?clientMessageId,
-      if (viewOnce) 'viewOnce': true,
-    },
-    extractKey: 'data',
-    fromJson: MessageEntity.fromJson,
+  }) => requestEither(
+    () => client.post(
+      '/chat/conversations/$chatId/messages',
+      data: {
+        'content': message,
+        'replyToId': ?replyToId,
+        'clientMessageId': ?clientMessageId,
+        if (viewOnce) 'viewOnce': true,
+      },
+    ),
+    decoder: (response) => Right(MessageEntity.fromJson(response.data['data'])),
   );
 
   Future<Either<Failure, void>> markAsRead(String chatId) =>
-      safeVoid(() => client.patch('/chat/conversations/$chatId/read'));
+      requestEither<void>(
+        () => client.patch('/chat/conversations/$chatId/read'),
+        decoder: (_) => const Right(null),
+      );
 
   Future<Either<Failure, void>> archiveChat(
     String id,
     ChatThreadType type,
     bool archived,
-  ) => safeVoid(
+  ) => requestEither<void>(
     () => client.patch(
       '/chat/conversations/$id/archive',
       data: {'archived': archived},
     ),
+    decoder: (_) => const Right(null),
   );
 
   Future<Either<Failure, void>> deleteChat(String id, ChatThreadType type) =>
-      safeVoid(() => client.patch('/chat/conversations/$id/delete'));
+      requestEither<void>(
+        () => client.patch('/chat/conversations/$id/delete'),
+        decoder: (_) => const Right(null),
+      );
 
   Future<Either<Failure, BlockResponse>> blockUser(String userId) =>
-      safePost<BlockResponse>(
-        '/users/$userId/block',
-        extractKey: 'data',
-        fromJson: BlockResponse.fromJson,
+      requestEither(
+        () => client.post('/users/$userId/block'),
+        decoder: (response) =>
+            Right(BlockResponse.fromJson(response.data['data'])),
       );
 
   Future<Either<Failure, ConversationPreference>> setTheme(
     String id,
     ChatThreadType type,
     String theme,
-  ) => safePatch<ConversationPreference>(
-    '/chat/conversations/$id/theme',
-    data: {'theme': theme},
-    extractKey: 'data',
-    fromJson: ConversationPreference.fromJson,
+  ) => requestEither(
+    () => client.patch('/chat/conversations/$id/theme', data: {'theme': theme}),
+    decoder: (response) =>
+        Right(ConversationPreference.fromJson(response.data['data'])),
   );
 
   Future<Either<Failure, ConversationPreference>> setBackground(
     String id,
     ChatThreadType type,
     String base64DataUri,
-  ) => safePatch<ConversationPreference>(
-    '/chat/conversations/$id/background',
-    data: {'backgroundUrl': base64DataUri},
-    extractKey: 'data',
-    fromJson: ConversationPreference.fromJson,
+  ) => requestEither(
+    () => client.patch(
+      '/chat/conversations/$id/background',
+      data: {'backgroundUrl': base64DataUri},
+    ),
+    decoder: (response) =>
+        Right(ConversationPreference.fromJson(response.data['data'])),
   );
 
   Future<Either<Failure, MessageEntity>> sendRichMessage({
     required String conversationId,
     String? clientMessageId,
     String? content,
-    String type = 'TEXT',
+    MessageType type = MessageType.text,
     String? attachmentUrl,
     String? replyToId,
     Map<String, dynamic>? metadata,
     bool viewOnce = false,
     int? durationMs,
-  }) => safePost<MessageEntity>(
-    '/chat/conversations/$conversationId/messages',
-    data: {
-      'type': type,
-      'clientMessageId': ?clientMessageId,
-      'content': ?content,
-      'attachmentUrl': ?attachmentUrl,
-      'replyToId': ?replyToId,
-      'metadata': ?metadata,
-      'durationMs': ?durationMs,
-      if (viewOnce) 'viewOnce': true,
-    },
-    extractKey: 'data',
-    fromJson: MessageEntity.fromJson,
+  }) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages',
+      data: {
+        'type': type.wireValue,
+        'clientMessageId': ?clientMessageId,
+        'content': ?content,
+        'attachmentUrl': ?attachmentUrl,
+        'replyToId': ?replyToId,
+        'metadata': ?metadata,
+        'durationMs': ?durationMs,
+        if (viewOnce) 'viewOnce': true,
+      },
+    ),
+    decoder: (response) => Right(MessageEntity.fromJson(response.data['data'])),
   );
 
   Future<Either<Failure, void>> deleteMessage(
     String conversationId,
     String messageId,
-  ) => safeVoid(
+  ) => requestEither<void>(
     () => client.patch(
       '/chat/conversations/$conversationId/messages/$messageId/delete',
     ),
+    decoder: (_) => const Right(null),
   );
 
   Future<Either<Failure, bool>> toggleStar(
     String conversationId,
     String messageId,
-  ) => safePost<bool>(
-    '/chat/conversations/$conversationId/messages/$messageId/star',
-    extractKey: 'data.starred',
-    customMapper: (starred) => starred == true,
+  ) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/star',
+    ),
+    decoder: (response) => Right(response.data['data']['starred'] == true),
   );
 
   Future<Either<Failure, List<MessageEntity>>> getStarredMessages(
     String conversationId,
-  ) => safeGetList<MessageEntity>(
-    '/chat/conversations/$conversationId/starred',
-    fromJson: MessageEntity.fromJson,
+  ) => requestEither(
+    () => client.get('/chat/conversations/$conversationId/starred'),
+    decoder: (response) {
+      final raw = response.data['data'];
+      return Right(
+        raw is List
+            ? raw
+                  .whereType<Map>()
+                  .map(
+                    (item) =>
+                        MessageEntity.fromJson(Map<String, dynamic>.from(item)),
+                  )
+                  .toList()
+            : <MessageEntity>[],
+      );
+    },
   );
 
   Future<Either<Failure, List<MessageReactionEntity>>> reactToMessage(
     String conversationId,
     String messageId,
     String emoji,
-  ) => safePost<List<MessageReactionEntity>>(
-    '/chat/conversations/$conversationId/messages/$messageId/react',
-    data: {'emoji': emoji},
-    extractKey: 'data.reactions',
-    customMapper: (list) =>
-        (list as List?)
-            ?.whereType<Map>()
-            .map(
-              (e) =>
-                  MessageReactionEntity.fromJson(Map<String, dynamic>.from(e)),
-            )
-            .toList() ??
-        [],
+  ) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/react',
+      data: {'emoji': emoji},
+    ),
+    decoder: (response) {
+      final raw = response.data['data']['reactions'];
+      return Right(
+        raw is List
+            ? raw
+                  .whereType<Map>()
+                  .map(
+                    (e) => MessageReactionEntity.fromJson(
+                      Map<String, dynamic>.from(e),
+                    ),
+                  )
+                  .toList()
+            : <MessageReactionEntity>[],
+      );
+    },
   );
 
   Future<Either<Failure, ({List<MessageEntity> messages, String? nextCursor})>>
   getConversationMedia(
     String conversationId, {
-    String type = 'IMAGE',
-    int limit = 50,
+    ConversationMediaFilter type = ConversationMediaFilter.image,
+    int limit = _conversationMediaPageLimit,
     String? cursor,
-  }) => safeGet<({List<MessageEntity> messages, String? nextCursor})>(
-    '/chat/conversations/$conversationId/messages',
-    queryParameters: {'type': type, 'limit': limit, 'cursor': ?cursor},
-    extractKey: 'data',
-    customMapper: (raw) {
-      final data = raw as Map<String, dynamic>? ?? {};
+  }) => requestEither<({List<MessageEntity> messages, String? nextCursor})>(
+    () => client.get(
+      '/chat/conversations/$conversationId/messages',
+      queryParameters: {
+        'type': type.wireValue,
+        'limit': limit,
+        'cursor': ?cursor,
+      },
+    ),
+    decoder: (response) {
+      final data = response.data['data'] as Map<String, dynamic>? ?? {};
       final rawMessages = (data['messages'] as List?) ?? [];
       final messages = rawMessages
           .whereType<Map>()
           .map((m) => MessageEntity.fromJson(Map<String, dynamic>.from(m)))
           .toList();
-      return (messages: messages, nextCursor: data['nextCursor'] as String?);
+      return Right((
+        messages: messages,
+        nextCursor: data['nextCursor'] as String?,
+      ));
     },
   );
 
@@ -272,19 +332,27 @@ class ChatRepository extends BaseHttpRepository {
     required List<String> messageIds,
     required List<String> targetConversationIds,
     String? sourceConversationId,
-  }) => safePost<List<MessageEntity>>(
-    '/chat/messages/forward',
-    data: {
-      'messageIds': messageIds,
-      'targetConversationIds': targetConversationIds,
-      'sourceConversationId': ?sourceConversationId,
+  }) => requestEither(
+    () => client.post(
+      '/chat/messages/forward',
+      data: {
+        'messageIds': messageIds,
+        'targetConversationIds': targetConversationIds,
+        'sourceConversationId': ?sourceConversationId,
+      },
+    ),
+    decoder: (response) {
+      final raw = response.data['data']['messages'];
+      return Right(
+        raw is List
+            ? raw
+                  .whereType<Map>()
+                  .map(
+                    (e) => MessageEntity.fromJson(Map<String, dynamic>.from(e)),
+                  )
+                  .toList()
+            : <MessageEntity>[],
+      );
     },
-    extractKey: 'data.messages',
-    customMapper: (list) =>
-        (list as List?)
-            ?.whereType<Map>()
-            .map((e) => MessageEntity.fromJson(Map<String, dynamic>.from(e)))
-            .toList() ??
-        [],
   );
 }

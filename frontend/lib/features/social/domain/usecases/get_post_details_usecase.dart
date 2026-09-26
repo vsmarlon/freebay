@@ -2,52 +2,32 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
-import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/features/social/data/repositories/social_repository.dart';
 
 class GetPostDetailsUseCase {
-  final HttpClient _httpClient;
+  final SocialRepository _repository;
 
-  GetPostDetailsUseCase(this._httpClient);
+  GetPostDetailsUseCase(this._repository);
 
   Future<Either<Failure, PostEntity>> call(String postId) async {
-    try {
-      final response = await _httpClient.get('/social/posts/$postId');
-      final data = response.data['data'] ?? response.data;
-      final postJson = data is Map<String, dynamic>
-          ? (data['post'] ?? data)
-          : data;
-      return Right(PostEntity.fromJson(postJson as Map<String, dynamic>));
-    } catch (e) {
-      return const Left(ServerFailure('Erro ao carregar post'));
-    }
+    final result = await _repository.getPost(postId);
+    return result.fold(
+      (_) => const Left(ServerFailure('Erro ao carregar post')),
+      Right.new,
+    );
   }
 }
 
 class GetPostCommentsUseCase {
-  final HttpClient _httpClient;
+  final SocialRepository _repository;
 
-  GetPostCommentsUseCase(this._httpClient);
+  GetPostCommentsUseCase(this._repository);
 
   Future<Either<Failure, List<CommentEntity>>> call(String postId) async {
-    try {
-      final response = await _httpClient.get('/social/posts/$postId/comments');
-      final rawData = response.data['data'] ?? response.data;
-      // Backend returns array directly in data, or wrapped in { comments: [...] }
-      final List commentsList;
-      if (rawData is List) {
-        commentsList = rawData;
-      } else if (rawData is Map && rawData['comments'] is List) {
-        commentsList = rawData['comments'];
-      } else {
-        return const Right([]);
-      }
-      return Right(
-        commentsList
-            .map((e) => CommentEntity.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
-    } catch (e) {
-      return const Left(ServerFailure('Erro ao carregar comentários'));
-    }
+    final result = await _repository.getPostComments(postId);
+    return result.fold(
+      (_) => const Left(ServerFailure('Erro ao carregar comentários')),
+      Right.new,
+    );
   }
 }

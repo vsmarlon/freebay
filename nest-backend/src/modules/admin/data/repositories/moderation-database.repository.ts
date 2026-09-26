@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, ReportStatus } from '@prisma/client';
+import { Prisma, ProductStatus, ReportStatus } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, buildIdCursorPage } from '@/shared/core/pagination';
 import {
@@ -38,10 +38,8 @@ const REPORT_SELECT = {
 
 @Injectable()
 export class ModerationDatabaseRepository
-  extends BasePrismaRepository
 {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findReports(params: {
@@ -49,7 +47,7 @@ export class ModerationDatabaseRepository
     cursorId: string | null;
     limit: number;
   }): RepositoryResponse<CursorPage<AdminReportRow>> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const rows = await this.prisma.report.findMany({
         where: params.status ? { status: params.status } : {},
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
@@ -58,17 +56,17 @@ export class ModerationDatabaseRepository
         select: REPORT_SELECT,
       });
 
-      return buildIdCursorPage(rows as AdminReportRow[], params.limit);
+      return buildIdCursorPage(rows, params.limit);
     }, 'Erro ao buscar denúncias');
   }
 
   async findReportById(reportId: string): RepositoryResponse<AdminReportRow | null> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const report = await this.prisma.report.findUnique({
         where: { id: reportId },
         select: REPORT_SELECT,
       });
-      return report as AdminReportRow | null;
+      return report;
     }, 'Erro ao buscar denúncia');
   }
 
@@ -77,9 +75,9 @@ export class ModerationDatabaseRepository
     data: { status: ReportStatus; reviewedById: string },
     tx?: Prisma.TransactionClient,
   ): RepositoryResponse<{ count: number }> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const result = await (tx ?? this.prisma).report.updateMany({
-        where: { id: reportId, status: 'PENDING' },
+        where: { id: reportId, status: ReportStatus.PENDING },
         data: {
           status: data.status,
           reviewedAt: new Date(),
@@ -94,7 +92,7 @@ export class ModerationDatabaseRepository
     data: CreateModerationActionInput,
     tx?: Prisma.TransactionClient,
   ): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await (tx ?? this.prisma).moderationAction.create({
         data: {
           actorId: data.actorId,
@@ -112,7 +110,7 @@ export class ModerationDatabaseRepository
     cursorId: string | null;
     limit: number;
   }): RepositoryResponse<CursorPage<ModerationActionRow>> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const rows = await this.prisma.moderationAction.findMany({
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         take: params.limit + 1,
@@ -150,7 +148,7 @@ export class ModerationDatabaseRepository
     userId: string,
     data: { suspendedAt: Date | null; suspensionReason: string | null },
   ): RepositoryResponse<{ count: number }> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const result = await this.prisma.user.updateMany({
         where: {
           id: userId,
@@ -164,24 +162,24 @@ export class ModerationDatabaseRepository
   }
 
   async userExists(userId: string): RepositoryResponse<boolean> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const count = await this.prisma.user.count({ where: { id: userId, deletedAt: null } });
       return count > 0;
     }, 'Erro ao buscar usuário');
   }
 
   async softDeleteProduct(productId: string): RepositoryResponse<{ count: number }> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const result = await this.prisma.product.updateMany({
         where: { id: productId, deletedAt: null },
-        data: { deletedAt: new Date(), status: 'PAUSED' },
+        data: { deletedAt: new Date(), status: ProductStatus.PAUSED },
       });
       return { count: result.count };
     }, 'Erro ao remover produto');
   }
 
   async softDeletePost(postId: string): RepositoryResponse<{ count: number }> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const result = await this.prisma.post.updateMany({
         where: { id: postId, deletedAt: null },
         data: { deletedAt: new Date() },
@@ -191,7 +189,7 @@ export class ModerationDatabaseRepository
   }
 
   async softDeleteComment(commentId: string): RepositoryResponse<{ count: number }> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const result = await this.prisma.comment.updateMany({
         where: { id: commentId, deletedAt: null },
         data: { deletedAt: new Date() },

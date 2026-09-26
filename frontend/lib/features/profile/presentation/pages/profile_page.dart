@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
@@ -7,6 +9,7 @@ import 'package:freebay/features/profile/presentation/controllers/profile_contro
 import 'package:freebay/features/profile/presentation/widgets/guest_profile_view.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
+import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
@@ -41,6 +44,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     super.build(context);
     final authState = ref.watch(authControllerProvider);
 
+    // Auth still loading — show skeleton, not guest view
+    if (authState.isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
+            PageHeader(text: 'PERFIL'),
+            Expanded(
+              child: SkeletonPage(
+                child: Column(
+                  children: [
+                    SizedBox(height: 16),
+                    ShimmerBlock(height: 80, width: 80),
+                    SizedBox(height: 12),
+                    ShimmerBlock(height: 20, width: 160),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (authState.value == null) {
       return const GuestProfileView();
     }
@@ -56,6 +83,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           PageHeader(
             text: 'PERFIL',
             actions: [
+              IconButton(
+                icon: Icon(Icons.add_box_outlined, color: context.textPrimary),
+                tooltip: 'Criar post',
+                onPressed: () => context.push(AppRoutes.createPost),
+              ),
               IconButton(
                 icon: Icon(Icons.settings_outlined, color: context.textPrimary),
                 onPressed: () => showProfileSettingsSheet(context),
@@ -76,40 +108,48 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               data: (profileUser) {
                 final u = profileUser;
                 return AppRefreshIndicator(
-                  onRefresh: () async =>
-                      ref.refresh(profileFutureProvider(userId).future),
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(16),
-                        sliver: SliverToBoxAdapter(
-                          child: statsAsync.when(
-                            data: (stats) => ProfileHeader(
-                              user: u,
-                              followersCount: stats.followersCount,
-                              followingCount: stats.followingCount,
+                  onRefresh: () async {
+                    ref.invalidate(profileTimelineProvider(userId));
+                    ref.invalidate(profileFutureProvider(userId));
+                    await ref.read(profileFutureProvider(userId).future);
+                  },
+                  child: InfiniteScrollListener(
+                    onLoadMore: () => ref
+                        .read(profileTimelineProvider(userId).notifier)
+                        .loadMore(),
+                    child: CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        SliverPadding(
+                          padding: const EdgeInsets.all(16),
+                          sliver: SliverToBoxAdapter(
+                            child: statsAsync.when(
+                              data: (stats) => ProfileHeader(
+                                user: u,
+                                followersCount: stats.followersCount,
+                                followingCount: stats.followingCount,
+                              ),
+                              loading: () => ProfileHeader(user: u),
+                              error: (_, _) => ProfileHeader(user: u),
                             ),
-                            loading: () => ProfileHeader(user: u),
-                            error: (_, _) => ProfileHeader(user: u),
                           ),
                         ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverToBoxAdapter(
-                          child: Container(
-                            width: double.infinity,
-                            height: 1,
-                            color: context.isDark
-                                ? AppColors.outlineVariant.withAlpha(40)
-                                : AppColors.surfaceContainerHigh,
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverToBoxAdapter(
+                            child: Container(
+                              width: double.infinity,
+                              height: 1,
+                              color: context.isDark
+                                  ? AppColors.outlineVariant.withAlpha(40)
+                                  : AppColors.surfaceContainerHigh,
+                            ),
                           ),
                         ),
-                      ),
-                      const SuggestionsSection(),
-                      SliverToBoxAdapter(child: ProfileTabs(user: u)),
-                    ],
+                        const SuggestionsSection(),
+                        SliverToBoxAdapter(child: ProfileTabs(user: u)),
+                      ],
+                    ),
                   ),
                 );
               },

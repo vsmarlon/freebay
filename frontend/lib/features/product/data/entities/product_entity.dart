@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/product/data/entities/product_image_entity.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 part 'product_entity.freezed.dart';
 part 'product_entity.g.dart';
@@ -14,8 +15,12 @@ abstract class ProductEntity with _$ProductEntity {
     required String title,
     @Default('') String description,
     @Default(0) int price,
-    @Default('NEW') String condition,
-    @Default('ACTIVE') String status,
+    @ProductConditionConverter()
+    @Default(ProductCondition.isNew)
+    ProductCondition condition,
+    @ProductStatusConverter()
+    @Default(ProductStatus.active)
+    ProductStatus status,
     required String sellerId,
     String? postId,
     UserEntity? seller,

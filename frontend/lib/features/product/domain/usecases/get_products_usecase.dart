@@ -64,7 +64,7 @@ class GetProductsUsecase
       minPrice: params.minPrice,
       maxPrice: params.maxPrice,
       cursor: params.cursor,
-      condition: params.condition?.wireValue,
+      condition: params.condition,
       sort: params.sort.wireValue,
     );
   }

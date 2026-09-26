@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
-import { BasePrismaRepository } from "@/shared/infra/prisma/base-prisma.repository";
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from "@/shared/core/either";
 import {
   CommentFlatPayload,
@@ -11,13 +11,12 @@ import {
 } from "../../types/social.types";
 
 @Injectable()
-export class PrismaCommentRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class PrismaCommentRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findById(id: string): RepositoryResponse<CommentPayload | null> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const comment = await this.prisma.comment.findUnique({
         where: { id },
         include: COMMENT_INCLUDE,
@@ -33,7 +32,7 @@ export class PrismaCommentRepository extends BasePrismaRepository {
     limit = 20,
     offset = 0,
   ): RepositoryResponse<CommentFlatPayload[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const comments = await this.prisma.comment.findMany({
         where: { postId, parentId: null, deletedAt: null },
         orderBy: { createdAt: "asc" },
@@ -51,11 +50,11 @@ export class PrismaCommentRepository extends BasePrismaRepository {
   }
 
   async create(
-    data: Record<string, unknown>,
+    data: Prisma.CommentCreateInput,
   ): RepositoryResponse<CommentPayload> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const comment = await this.prisma.comment.create({
-        data: data as Prisma.CommentCreateInput,
+        data,
         include: COMMENT_INCLUDE,
       });
       return comment;
@@ -67,7 +66,7 @@ export class PrismaCommentRepository extends BasePrismaRepository {
     commentId: string,
     active: boolean,
   ): RepositoryResponse<void> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.$transaction(async (tx) => {
           if (active) {
@@ -102,7 +101,7 @@ export class PrismaCommentRepository extends BasePrismaRepository {
     data: Prisma.CommentCreateInput,
     postId: string,
   ): RepositoryResponse<CommentPayload> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.$transaction(async (tx) => {
           const comment = await tx.comment.create({
@@ -123,7 +122,7 @@ export class PrismaCommentRepository extends BasePrismaRepository {
     commentId: string,
     mentionedUserIds: string[],
   ): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.commentMention.createMany({
         data: mentionedUserIds.map((mentionedUserId) => ({
           commentId,
@@ -135,7 +134,7 @@ export class PrismaCommentRepository extends BasePrismaRepository {
   }
 
   async softDelete(id: string): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.comment.update({
         where: { id },
         data: { deletedAt: new Date() },
@@ -144,7 +143,7 @@ export class PrismaCommentRepository extends BasePrismaRepository {
   }
 
   async softDeleteWithCount(id: string): RepositoryResponse<boolean> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.$transaction(async (tx) => {
           const comment = await tx.comment.findUnique({
@@ -171,13 +170,13 @@ export class PrismaCommentRepository extends BasePrismaRepository {
 
   async update(
     id: string,
-    data: Record<string, unknown>,
+    data: Prisma.CommentUpdateInput,
   ): RepositoryResponse<unknown> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.comment.update({
           where: { id },
-          data: data as Prisma.CommentUpdateInput,
+          data,
         }),
       "Erro ao atualizar comentário",
     );

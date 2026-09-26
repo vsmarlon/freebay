@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, StoryMediaType } from "@prisma/client";
 import { StoryTextBlock } from "../dtos/stories.dto";
 
 export const storyWithViewsValidator =
@@ -34,7 +34,7 @@ export type StoryCreatePayload = Prisma.StoryGetPayload<
 export interface StoryBrief {
   id: string;
   imageUrl: string;
-  mediaType: "IMAGE" | "VIDEO";
+  mediaType: StoryMediaType;
   caption: string | null;
   textBlocks: StoryTextBlock[];
   createdAt: Date;

@@ -30,32 +30,14 @@ describe('ProcessWebhookUseCase', () => {
   };
   let mockPrisma: { $transaction: jest.Mock };
 
-  const paidTransaction = {
-    id: 'tx-paid',
+  const buildTransaction = (status: 'PAID' | 'PENDING' | 'FAILED') => ({
+    id: `tx-${status.toLowerCase()}`,
     orderId: 'o1',
-    status: 'PAID',
+    status,
     amount: 10000,
     sellerAmount: 9000,
     order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3, status: 'PENDING' },
-  };
-
-  const pendingTransaction = {
-    id: 'tx-pending',
-    orderId: 'o1',
-    status: 'PENDING',
-    amount: 10000,
-    sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3, status: 'PENDING' },
-  };
-
-  const failedTransaction = {
-    id: 'tx-failed',
-    orderId: 'o1',
-    status: 'FAILED',
-    amount: 10000,
-    sellerAmount: 9000,
-    order: { productId: 'p1', sellerId: 's1', buyerId: 'b1', quantity: 3, status: 'PENDING' },
-  };
+  });
 
   beforeEach(async () => {
     mockProductRepo = {
@@ -100,7 +82,7 @@ describe('ProcessWebhookUseCase', () => {
   it.each(['checkout.session.completed', 'payment_intent.succeeded'])(
     'skips duplicate completion when transaction is already PAID for %s',
     async (event) => {
-      mockTransactionRepo.findByOrderId.mockResolvedValue(right(paidTransaction));
+      mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PAID')));
 
       const result = await sut.execute({ event, data: { orderId: 'o1' } });
 
@@ -115,7 +97,7 @@ describe('ProcessWebhookUseCase', () => {
   it.each(['checkout.session.expired', 'payment_intent.canceled'])(
     'marks failed, cancels order and restores inventory for %s',
     async (event) => {
-      mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+      mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PENDING')));
 
       const result = await sut.execute({ event, data: { orderId: 'o1' } });
 
@@ -129,7 +111,7 @@ describe('ProcessWebhookUseCase', () => {
   );
 
   it('does not mutate anything for payment_intent.payment_failed', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PENDING')));
 
     const result = await sut.execute({
       event: 'payment_intent.payment_failed',
@@ -172,7 +154,7 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it('surfaces a DatabaseError when the completion transaction fails', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PENDING')));
     mockPrisma.$transaction.mockRejectedValue(new Error('db exploded'));
 
     const result = await sut.execute({
@@ -186,7 +168,7 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it('marks paid, confirms order, credits wallet and notifies on completion', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PENDING')));
 
     const result = await sut.execute({
       event: 'payment_intent.succeeded',
@@ -205,8 +187,8 @@ describe('ProcessWebhookUseCase', () => {
 
   it('processes the first completion and skips the duplicate on the second call', async () => {
     mockTransactionRepo.findByOrderId
-      .mockResolvedValueOnce(right(pendingTransaction))
-      .mockResolvedValueOnce(right(paidTransaction));
+      .mockResolvedValueOnce(right(buildTransaction('PENDING')))
+      .mockResolvedValueOnce(right(buildTransaction('PAID')));
 
     const first = await sut.execute({
       event: 'payment_intent.succeeded',
@@ -226,7 +208,7 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it('rolls back and credits nothing when the paid transition loses the race', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PENDING')));
     mockTransactionRepo.markAsPaid.mockResolvedValue(right({ count: 0 }));
 
     const result = await sut.execute({
@@ -244,7 +226,7 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it('never credits a FAILED transaction that receives a success event', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(failedTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('FAILED')));
 
     const result = await sut.execute({
       event: 'payment_intent.succeeded',
@@ -260,7 +242,7 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it('does not cancel the order when the failed transition loses the race', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PENDING')));
     mockTransactionRepo.markAsFailed.mockResolvedValue(right({ count: 0 }));
 
     const result = await sut.execute({
@@ -275,7 +257,7 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it('never cancels a PAID order when a late expiry event arrives', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(paidTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PAID')));
 
     const result = await sut.execute({
       event: 'checkout.session.expired',
@@ -290,7 +272,7 @@ describe('ProcessWebhookUseCase', () => {
 
   it('refuses to cancel an order that is no longer PENDING on expiry', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(
-      right({ ...pendingTransaction, order: { ...pendingTransaction.order, status: 'DELIVERED' } }),
+      right({ ...buildTransaction('PENDING'), order: { ...buildTransaction('PENDING').order, status: 'DELIVERED' } }),
     );
 
     const result = await sut.execute({ event: 'checkout.session.expired', data: { orderId: 'o1' } });
@@ -302,7 +284,7 @@ describe('ProcessWebhookUseCase', () => {
 
   it('ignores an expiry that references a different provider object than the transaction holds', async () => {
     mockTransactionRepo.findByOrderId.mockResolvedValue(
-      right({ ...pendingTransaction, externalId: 'cs_current' }),
+      right({ ...buildTransaction('PENDING'), externalId: 'cs_current' }),
     );
 
     const result = await sut.execute({
@@ -315,7 +297,7 @@ describe('ProcessWebhookUseCase', () => {
   });
 
   it('does not credit the seller when the order confirm claim finds no PENDING row', async () => {
-    mockTransactionRepo.findByOrderId.mockResolvedValue(right(pendingTransaction));
+    mockTransactionRepo.findByOrderId.mockResolvedValue(right(buildTransaction('PENDING')));
     mockOrderRepo.confirm.mockResolvedValue(right(false));
 
     const result = await sut.execute({ event: 'payment_intent.succeeded', data: { orderId: 'o1' } });

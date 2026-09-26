@@ -7,7 +7,7 @@ import {
   ArrayNotEmpty,
   ArrayMaxSize,
   Matches,
-  IsIn,
+  IsEnum,
   IsInt,
   Max,
   Min,
@@ -15,7 +15,11 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { STORED_MEDIA_PATH } from '@/shared/utils/file.utils';
-import { ChatThreadType } from '@prisma/client';
+import { ChatTheme, ChatThreadType, ConversationStatus, MessageType } from '@prisma/client';
+
+export const FORWARD_MESSAGE_MAX_COUNT = 50;
+export const AUDIO_DURATION_MAX_MS = 60_000;
+export const FILTERED_MESSAGES_DEFAULT_LIMIT = 50;
 
 export class VerifyUrlDTO {
   @ApiProperty({ example: 'https://google.com' })
@@ -28,7 +32,7 @@ export class ForwardMessagesDTO {
   @IsArray()
   @IsUUID('4', { each: true })
   @ArrayNotEmpty()
-  @ArrayMaxSize(50)
+  @ArrayMaxSize(FORWARD_MESSAGE_MAX_COUNT)
   readonly messageIds: string[];
 
   @ApiProperty({ type: [String], example: ['550e8400-e29b-41d4-a716-446655440001'] })
@@ -66,10 +70,10 @@ export class SendMessageDTO {
   @IsOptional()
   readonly clientMessageId?: string;
 
-  @ApiProperty({ enum: ['TEXT', 'IMAGE', 'GIF', 'AUDIO', 'VIDEO', 'LOCATION', 'PRODUCT_CARD'], default: 'TEXT', required: false })
-  @IsIn(['TEXT', 'IMAGE', 'GIF', 'AUDIO', 'VIDEO', 'LOCATION', 'PRODUCT_CARD'])
+  @ApiProperty({ enum: MessageType, default: MessageType.TEXT, required: false })
+  @IsEnum(MessageType)
   @IsOptional()
-  readonly type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'VIDEO' | 'LOCATION' | 'PRODUCT_CARD';
+  readonly type?: MessageType;
 
   @ApiProperty({
     example: '/media/chat/550e8400-e29b-41d4-a716-446655440000.jpg',
@@ -94,7 +98,7 @@ export class SendMessageDTO {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(60000)
+  @Max(AUDIO_DURATION_MAX_MS)
   readonly durationMs?: number;
 
   @ApiProperty({ required: false, description: 'Message self-destructs after being seen' })
@@ -109,7 +113,7 @@ export class StartConversationOutput {
 
   @ApiProperty({ example: 'PENDING' })
   readonly status: string;
-  readonly threadType: 'DIRECT';
+  readonly threadType: ChatThreadType;
   readonly otherUser: ConversationCounterpartSummary;
   readonly product: ProductConversationSummary | null;
 }
@@ -137,7 +141,7 @@ export interface SendMessageInput {
   conversationId: string;
   clientMessageId?: string;
   content?: string;
-  type?: 'TEXT' | 'IMAGE' | 'GIF' | 'AUDIO' | 'VIDEO' | 'LOCATION' | 'PRODUCT_CARD';
+  type?: MessageType;
   attachmentUrl?: string;
   replyToId?: string;
   metadata?: Record<string, unknown>;
@@ -159,6 +163,12 @@ export interface SendMessageOutput {
   createdAt: Date;
 }
 
+export interface SendMessageInternalOutput {
+  message: SendMessageOutput;
+  recipientId: string;
+  senderName: string;
+}
+
 export interface ConversationWithStatus {
   id: string;
   otherUser: {
@@ -172,7 +182,7 @@ export interface ConversationWithStatus {
     createdAt: Date;
   } | null;
   unreadCount: number;
-  status: 'ACTIVE' | 'PENDING';
+  status: ConversationStatus;
   createdAt: Date;
 }
 
@@ -209,7 +219,7 @@ export interface GetMessagesOutput {
 export interface GetFilteredMessagesInput {
   conversationId: string;
   userId: string;
-  type?: string;
+  type?: MessageType;
   limit?: number;
   cursor?: string;
 }
@@ -231,9 +241,9 @@ export interface AcceptConversationInput {
 }
 
 export class UpdatePreferenceDTO {
-  @ApiProperty({ enum: ['DEFAULT', 'CRIMSON', 'COBALT', 'FOREST', 'AMBER', 'SLATE'], example: 'DEFAULT' })
-  @IsString()
-  readonly theme: string;
+  @ApiProperty({ enum: ChatTheme, example: ChatTheme.DEFAULT })
+  @IsEnum(ChatTheme)
+  readonly theme: ChatTheme;
 }
 
 export interface ConversationPreferenceSummary {

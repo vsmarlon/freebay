@@ -4,7 +4,7 @@ import { ReportStatus } from '@prisma/client';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { CursorQueryDTO } from '@/shared/dtos/pagination.dto';
 
-export const RESOLVABLE_REPORT_STATUSES = ['REVIEWED', 'RESOLVED', 'REJECTED'] as const;
+export const RESOLVABLE_REPORT_STATUSES = [ReportStatus.REVIEWED, ReportStatus.RESOLVED, ReportStatus.REJECTED] as const;
 export type ResolvableReportStatus = (typeof RESOLVABLE_REPORT_STATUSES)[number];
 
 export class AdminReportQueryDTO extends CursorQueryDTO {

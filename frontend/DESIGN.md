@@ -208,7 +208,7 @@ Before building a UI primitive, check whether it exists. The common ones:
 | Bottom sheet | `showBrutalistSheet<T>()` / `BrutalistSheetScaffold` | `showModalBottomSheet` |
 | Snackbar | `AppSnackbar` | `ScaffoldMessenger.showSnackBar` |
 | Empty state | `EmptyState` | An inline `Column` with an icon and two `Text`s |
-| Loading | `ShimmerBlock`, `SkeletonList`, `SkeletonPage`, `WalletSkeleton`, `ChatLoadingSkeleton` | `CircularProgressIndicator` for page loads |
+| Loading | `ShimmerBlock`, `SkeletonList`, `SkeletonPage` | `CircularProgressIndicator` for page loads |
 | Screen header | `PageHeader` | A hand-rolled `AppBar` |
 | Avatar | `UserAvatar` | `CircleAvatar` |
 

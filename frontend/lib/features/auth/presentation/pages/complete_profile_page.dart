@@ -6,6 +6,7 @@ import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
+import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 
@@ -23,36 +24,6 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
     duration: AppMotion.enter,
     vsync: this,
   )..forward();
-
-  Animation<double> _fadeFor(double begin, double end) {
-    return CurvedAnimation(
-      parent: _anim,
-      curve: Interval(begin, end, curve: AppMotion.enterCurve),
-    );
-  }
-
-  Animation<Offset> _slideFor(double begin, double end) {
-    return Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _anim,
-        curve: Interval(begin, end, curve: AppMotion.enterCurve),
-      ),
-    );
-  }
-
-  late final _titleFade = _fadeFor(0.0, 0.3);
-  late final _titleSlide = _slideFor(0.0, 0.3);
-  late final _nameFade = _fadeFor(0.14, 0.43);
-  late final _nameSlide = _slideFor(0.14, 0.43);
-  late final _usernameFade = _fadeFor(0.26, 0.57);
-  late final _usernameSlide = _slideFor(0.26, 0.57);
-  late final _cityFade = _fadeFor(0.37, 0.65);
-  late final _citySlide = _slideFor(0.37, 0.65);
-  late final _btnFade = _fadeFor(0.49, 0.77);
-  late final _btnSlide = _slideFor(0.49, 0.77);
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -141,51 +112,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
           child: SafeArea(
             child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: context.borderColor.withAlpha(40),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.arrow_back,
-                          color: context.textPrimary,
-                        ),
-                        tooltip: 'Voltar ao login',
-                        onPressed: _confirmCancel,
-                      ),
-                      Expanded(
-                        child: Text(
-                          'COMPLETAR PERFIL',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2.0,
-                            color: context.textPrimary,
-                            shadows: const [
-                              Shadow(
-                                color: AppColors.primaryContainer,
-                                offset: AppDepth.shadowOffsetSmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
+                AuthHeader(
+                  title: 'COMPLETAR PERFIL',
+                  onBack: _confirmCancel,
+                  backTooltip: 'Voltar ao login',
                 ),
                 Expanded(
                   child: CenteredFormWrapper(
@@ -195,9 +125,10 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Spacing.vMd,
-                          AuthStagger.fromAnimations(
-                            opacity: _titleFade,
-                            slide: _titleSlide,
+                          AuthStagger(
+                            animation: _anim,
+                            begin: 0.0,
+                            end: 0.3,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 4,
@@ -213,82 +144,78 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             ),
                           ),
                           Spacing.vLg,
-                          FadeTransition(
-                            opacity: _nameFade,
-                            child: SlideTransition(
-                              position: _nameSlide,
-                              child: AppTextField(
-                                controller: _nameController,
-                                label: 'Nome de exibição',
-                                hint: 'Seu apelido na plataforma',
-                                prefixIcon: Icons.person_outline,
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) {
-                                    return 'Informe seu nome';
-                                  }
-                                  if (v.trim().length < 2) {
-                                    return 'Nome muito curto';
-                                  }
-                                  if (!ValueUtils.validateDisplayName(v)) {
-                                    return 'Nome contém caracteres inválidos';
-                                  }
-                                  return null;
-                                },
-                              ),
+                          AuthStagger(
+                            animation: _anim,
+                            begin: 0.14,
+                            end: 0.43,
+                            child: AppTextField(
+                              controller: _nameController,
+                              label: 'Nome de exibição',
+                              hint: 'Seu apelido na plataforma',
+                              prefixIcon: Icons.person_outline,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Informe seu nome';
+                                }
+                                if (v.trim().length < 2) {
+                                  return 'Nome muito curto';
+                                }
+                                if (!ValueUtils.validateDisplayName(v)) {
+                                  return 'Nome contém caracteres inválidos';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                           Spacing.vMd,
-                          FadeTransition(
-                            opacity: _usernameFade,
-                            child: SlideTransition(
-                              position: _usernameSlide,
-                              child: AppTextField(
-                                controller: _usernameController,
-                                label: '@ Username',
-                                hint: 'seu_username',
-                                prefixIcon: Icons.alternate_email,
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) {
-                                    return 'Escolha um username';
-                                  }
-                                  if (v.trim().length < 3) {
-                                    return 'Mínimo 3 caracteres';
-                                  }
-                                  if (v.trim().length > 20) {
-                                    return 'Máximo 20 caracteres';
-                                  }
-                                  if (!ValueUtils.validateUsername(v.trim())) {
-                                    return 'Apenas letras minúsculas, números e _';
-                                  }
-                                  return null;
-                                },
-                              ),
+                          AuthStagger(
+                            animation: _anim,
+                            begin: 0.26,
+                            end: 0.57,
+                            child: AppTextField(
+                              controller: _usernameController,
+                              label: '@ Username',
+                              hint: 'seu_username',
+                              prefixIcon: Icons.alternate_email,
+                              validator: (v) {
+                                if (v == null || v.trim().isEmpty) {
+                                  return 'Escolha um username';
+                                }
+                                if (v.trim().length < 3) {
+                                  return 'Mínimo 3 caracteres';
+                                }
+                                if (v.trim().length > 20) {
+                                  return 'Máximo 20 caracteres';
+                                }
+                                if (!ValueUtils.validateUsername(v.trim())) {
+                                  return 'Apenas letras minúsculas, números e _';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                           Spacing.vMd,
-                          FadeTransition(
-                            opacity: _cityFade,
-                            child: SlideTransition(
-                              position: _citySlide,
-                              child: AppTextField(
-                                controller: _cityController,
-                                label: 'Cidade (opcional)',
-                                hint: 'Sua cidade',
-                                prefixIcon: Icons.location_city_outlined,
-                              ),
+                          AuthStagger(
+                            animation: _anim,
+                            begin: 0.37,
+                            end: 0.65,
+                            child: AppTextField(
+                              controller: _cityController,
+                              label: 'Cidade (opcional)',
+                              hint: 'Sua cidade',
+                              prefixIcon: Icons.location_city_outlined,
                             ),
                           ),
                           Spacing.vLg,
-                          FadeTransition(
-                            opacity: _btnFade,
-                            child: SlideTransition(
-                              position: _btnSlide,
-                              child: AppButton(
-                                label: 'FINALIZAR',
-                                size: AppButtonSize.large,
-                                isLoading: authState.isLoading,
-                                onPressed: _handleComplete,
-                              ),
+                          AuthStagger(
+                            animation: _anim,
+                            begin: 0.49,
+                            end: 0.77,
+                            child: AppButton(
+                              label: 'FINALIZAR',
+                              size: AppButtonSize.large,
+                              isLoading: authState.isLoading,
+                              onPressed: _handleComplete,
                             ),
                           ),
                           Spacing.vMd,

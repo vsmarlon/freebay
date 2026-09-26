@@ -42,6 +42,7 @@ class _AppShellState extends State<AppShell>
   @override
   void initState() {
     super.initState();
+    _visitedTabs.add(widget.navigationShell.currentIndex);
     WidgetsBinding.instance.addObserver(this);
     _navHide = HideOnScrollController(vsync: this);
     _pageController = PageController(
@@ -53,6 +54,7 @@ class _AppShellState extends State<AppShell>
   void didUpdateWidget(AppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     final index = widget.navigationShell.currentIndex;
+    _visitedTabs.add(index);
     if (_pageController.hasClients &&
         _pageController.page?.round() != index &&
         !_pageController.position.isScrollingNotifier.value) {
@@ -116,7 +118,9 @@ class _AppShellState extends State<AppShell>
         _overscrolledLeft -= notification.overscroll;
         if (_overscrolledLeft > kDrawerOverswipeThreshold) {
           _overscrolledLeft = 0;
-          appShellScaffoldKey.currentState?.openDrawer();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            appShellScaffoldKey.currentState?.openDrawer();
+          });
         }
       } else if (notification is ScrollEndNotification) {
         _overscrolledLeft = 0;
@@ -144,10 +148,16 @@ class _AppShellState extends State<AppShell>
 
     return Consumer(
       builder: (context, ref, _) {
-        ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
+        ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (
+          previous,
+          next,
+        ) {
           final user = next.value;
           final socketService = ref.read(chatSocketServiceProvider);
           if (user != null) {
+            if (previous?.value != null && previous?.value?.id != user.id) {
+              socketService.disconnect();
+            }
             socketService.connect();
           } else {
             socketService.disconnect();

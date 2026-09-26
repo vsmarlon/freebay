@@ -419,6 +419,17 @@ flutter build apk --release
 
 ### Testes
 
+#### CI/CD
+
+O workflow único em `.github/workflows/ci.yml` executa os gates de backend e Flutter,
+testa PostgreSQL/Redis e publica cobertura, o build do backend e um APK Android debug.
+Não há deploy automático: nenhum destino de produção ou credencial é configurado neste
+repositório.
+
+Para reproduzir os gates locais, use `make test` ou `npm run ci:check` (a suíte do script é
+`npm run test:ci-scripts`). O projeto usa `flutter`/`dart` do PATH;
+instalações FVM podem ser selecionadas com `make FLUTTER="fvm flutter" DART="fvm dart"`.
+
 ```bash
 # Backend - Unit tests
 cd nest-backend

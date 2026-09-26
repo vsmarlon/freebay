@@ -1,4 +1,4 @@
-npx lint-staged
+npx lint-staged || exit $?
 
 # Block raw route literals in navigation calls — use AppRoutes (see AGENTS.md).
 staged_dart=$(git diff --cached --name-only --diff-filter=ACM | grep '^frontend/.*\.dart$' || true)
@@ -9,3 +9,5 @@ if [ -n "$staged_dart" ]; then
     exit 1
   fi
 fi
+
+node scripts/ci-check.js

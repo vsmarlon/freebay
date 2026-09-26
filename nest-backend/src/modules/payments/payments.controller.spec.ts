@@ -24,6 +24,8 @@ type V2AccountEventType =
   | 'v2.core.account[requirements].updated'
   | 'v2.core.account[future_requirements].updated';
 
+type Handler = { execute: jest.Mock };
+
 function event(type: V2AccountEventType, relatedType = 'v2.core.account'): Stripe.V2.Core.EventNotification {
   return {
     id: `evt_${type}`,
@@ -32,49 +34,51 @@ function event(type: V2AccountEventType, relatedType = 'v2.core.account'): Strip
     livemode: false,
     type,
     related_object: { id: 'acct_1', type: relatedType, url: '' },
-    fetchRelatedObject: async () => {
-      throw new Error('not used');
-    },
-    fetchEvent: async () => {
-      throw new Error('not used');
-    },
+    fetchRelatedObject: async () => { throw new Error('not used'); },
+    fetchEvent: async () => { throw new Error('not used'); },
   };
 }
+
+const handler = (): Handler => ({ execute: jest.fn() });
+
+const compileController = async (overrides: {
+  sync?: Handler;
+  recovery?: Handler;
+} = {}): Promise<PaymentsController> => {
+  const module = await Test.createTestingModule({
+    controllers: [PaymentsController],
+    providers: [
+      { provide: CreatePaymentSessionUseCase, useValue: handler() },
+      { provide: CreatePaymentIntentUseCase, useValue: handler() },
+      { provide: ProcessWebhookUseCase, useValue: handler() },
+      { provide: ProcessGroupWebhookUseCase, useValue: handler() },
+      { provide: ProcessRefundUseCase, useValue: handler() },
+      { provide: StartConnectOnboardingUseCase, useValue: handler() },
+      { provide: GetConnectStatusUseCase, useValue: handler() },
+      { provide: GetConnectDashboardLinkUseCase, useValue: handler() },
+      { provide: SyncConnectAccountUseCase, useValue: overrides.sync ?? handler() },
+      { provide: RecoverDisputeTransferUseCase, useValue: overrides.recovery ?? handler() },
+    ],
+  })
+    .overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
+    .overrideGuard(WebhookGuard).useValue({ canActivate: () => true })
+    .overrideInterceptor(WebhookDedupeInterceptor).useValue({ intercept: () => undefined })
+    .compile();
+  return module.get(PaymentsController);
+};
 
 describe('PaymentsController Connect webhooks', () => {
   it('routes the legacy v1 account.updated event by its account id', async () => {
     const sync = { execute: jest.fn().mockResolvedValue(right({ processed: true })) };
-    const module = await Test.createTestingModule({
-      controllers: [PaymentsController],
-      providers: [
-        { provide: CreatePaymentSessionUseCase, useValue: { execute: jest.fn() } },
-        { provide: CreatePaymentIntentUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessGroupWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessRefundUseCase, useValue: { execute: jest.fn() } },
-        { provide: StartConnectOnboardingUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectStatusUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectDashboardLinkUseCase, useValue: { execute: jest.fn() } },
-        { provide: SyncConnectAccountUseCase, useValue: sync },
-        { provide: RecoverDisputeTransferUseCase, useValue: { execute: jest.fn() } },
-      ],
-    })
-      .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(WebhookGuard)
-      .useValue({ canActivate: () => true })
-      .overrideInterceptor(WebhookDedupeInterceptor)
-      .useValue({ intercept: () => undefined })
-      .compile();
-
+    const controller = await compileController({ sync });
     const legacyEvent = {
       id: 'evt_account_updated',
-      type: 'account.updated' as const,
+      type: 'account.updated',
       account: 'acct_legacy',
       data: { object: { id: 'acct_from_object' } },
     } as Stripe.Event;
 
-    await module.get(PaymentsController).handleWebhook({ stripeEvent: legacyEvent });
+    await controller.handleWebhook({ stripeEvent: legacyEvent });
 
     expect(sync.execute).toHaveBeenCalledWith('acct_legacy');
   });
@@ -88,31 +92,7 @@ describe('PaymentsController Connect webhooks', () => {
     'v2.core.account[future_requirements].updated',
   ] as const)('syncs the related account for %s', async (type) => {
     const sync = { execute: jest.fn().mockResolvedValue(right({ processed: true })) };
-    const module = await Test.createTestingModule({
-      controllers: [PaymentsController],
-      providers: [
-        { provide: CreatePaymentSessionUseCase, useValue: { execute: jest.fn() } },
-        { provide: CreatePaymentIntentUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessGroupWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessRefundUseCase, useValue: { execute: jest.fn() } },
-        { provide: StartConnectOnboardingUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectStatusUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectDashboardLinkUseCase, useValue: { execute: jest.fn() } },
-        { provide: SyncConnectAccountUseCase, useValue: sync },
-        { provide: RecoverDisputeTransferUseCase, useValue: { execute: jest.fn() } },
-      ],
-    })
-      .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(WebhookGuard)
-      .useValue({ canActivate: () => true })
-      .overrideInterceptor(WebhookDedupeInterceptor)
-      .useValue({ intercept: () => undefined })
-      .compile();
-
-    await module.get(PaymentsController).handleWebhook({ stripeEvent: event(type) });
-
+    await (await compileController({ sync })).handleWebhook({ stripeEvent: event(type) });
     expect(sync.execute).toHaveBeenCalledWith('acct_1');
   });
 
@@ -121,31 +101,7 @@ describe('PaymentsController Connect webhooks', () => {
     event('v2.core.account.closed', 'missing.type'),
   ])('ignores malformed v2 account events', async (stripeEvent) => {
     const sync = { execute: jest.fn() };
-    const module = await Test.createTestingModule({
-      controllers: [PaymentsController],
-      providers: [
-        { provide: CreatePaymentSessionUseCase, useValue: { execute: jest.fn() } },
-        { provide: CreatePaymentIntentUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessGroupWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessRefundUseCase, useValue: { execute: jest.fn() } },
-        { provide: StartConnectOnboardingUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectStatusUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectDashboardLinkUseCase, useValue: { execute: jest.fn() } },
-        { provide: SyncConnectAccountUseCase, useValue: sync },
-        { provide: RecoverDisputeTransferUseCase, useValue: { execute: jest.fn() } },
-      ],
-    })
-      .overrideGuard(JwtAuthGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(WebhookGuard)
-      .useValue({ canActivate: () => true })
-      .overrideInterceptor(WebhookDedupeInterceptor)
-      .useValue({ intercept: () => undefined })
-      .compile();
-
-    await module.get(PaymentsController).handleWebhook({ stripeEvent });
-
+    await (await compileController({ sync })).handleWebhook({ stripeEvent });
     expect(sync.execute).not.toHaveBeenCalled();
   });
 });
@@ -155,71 +111,28 @@ describe('PaymentsController dispute webhooks', () => {
     'routes %s into durable payment recovery for its charge',
     async (type) => {
       const recovery = { execute: jest.fn().mockResolvedValue(right(undefined)) };
-      const module = await Test.createTestingModule({
-        controllers: [PaymentsController],
-        providers: [
-          { provide: CreatePaymentSessionUseCase, useValue: { execute: jest.fn() } },
-          { provide: CreatePaymentIntentUseCase, useValue: { execute: jest.fn() } },
-          { provide: ProcessWebhookUseCase, useValue: { execute: jest.fn() } },
-          { provide: ProcessGroupWebhookUseCase, useValue: { execute: jest.fn() } },
-          { provide: ProcessRefundUseCase, useValue: { execute: jest.fn() } },
-          { provide: StartConnectOnboardingUseCase, useValue: { execute: jest.fn() } },
-          { provide: GetConnectStatusUseCase, useValue: { execute: jest.fn() } },
-          { provide: GetConnectDashboardLinkUseCase, useValue: { execute: jest.fn() } },
-          { provide: SyncConnectAccountUseCase, useValue: { execute: jest.fn() } },
-          { provide: RecoverDisputeTransferUseCase, useValue: recovery },
-        ],
-      })
-        .overrideGuard(JwtAuthGuard)
-        .useValue({ canActivate: () => true })
-        .overrideGuard(WebhookGuard)
-        .useValue({ canActivate: () => true })
-        .overrideInterceptor(WebhookDedupeInterceptor)
-        .useValue({ intercept: () => undefined })
-        .compile();
+      const controller = await compileController({ recovery });
+      const disputeEvent = {
+        id: `evt_${type}`,
+        type,
+        data: { object: { id: 'dp_1', charge: 'ch_1', ...(type.endsWith('closed') ? { status: 'lost' } : {}) } },
+      } as Stripe.Event;
 
-       const disputeEvent = {
-         id: `evt_${type}`,
-         type,
-         data: { object: { id: 'dp_1', charge: 'ch_1', ...(type.endsWith('closed') ? { status: 'lost' } : {}) } },
-       } as Stripe.Event;
-
-      await module.get(PaymentsController).handleWebhook({ stripeEvent: disputeEvent });
-
-       expect(recovery.execute).toHaveBeenCalledWith('ch_1');
+      await controller.handleWebhook({ stripeEvent: disputeEvent });
+      expect(recovery.execute).toHaveBeenCalledWith('ch_1');
     },
   );
 
   it('does not recover a closed dispute won by FreeBay', async () => {
     const recovery = { execute: jest.fn().mockResolvedValue(right(undefined)) };
-    const module = await Test.createTestingModule({
-      controllers: [PaymentsController],
-      providers: [
-        { provide: CreatePaymentSessionUseCase, useValue: { execute: jest.fn() } },
-        { provide: CreatePaymentIntentUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessGroupWebhookUseCase, useValue: { execute: jest.fn() } },
-        { provide: ProcessRefundUseCase, useValue: { execute: jest.fn() } },
-        { provide: StartConnectOnboardingUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectStatusUseCase, useValue: { execute: jest.fn() } },
-        { provide: GetConnectDashboardLinkUseCase, useValue: { execute: jest.fn() } },
-        { provide: SyncConnectAccountUseCase, useValue: { execute: jest.fn() } },
-        { provide: RecoverDisputeTransferUseCase, useValue: recovery },
-      ],
-    })
-      .overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
-      .overrideGuard(WebhookGuard).useValue({ canActivate: () => true })
-      .overrideInterceptor(WebhookDedupeInterceptor).useValue({ intercept: () => undefined })
-      .compile();
-
+    const controller = await compileController({ recovery });
     const disputeEvent = {
       id: 'evt_dispute_won',
-      type: 'charge.dispute.closed' as const,
+      type: 'charge.dispute.closed',
       data: { object: { id: 'dp_1', charge: 'ch_1', status: 'won' } },
     } as Stripe.Event;
 
-    await module.get(PaymentsController).handleWebhook({ stripeEvent: disputeEvent });
-
+    await controller.handleWebhook({ stripeEvent: disputeEvent });
     expect(recovery.execute).not.toHaveBeenCalled();
   });
 });

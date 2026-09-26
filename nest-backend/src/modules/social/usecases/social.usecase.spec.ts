@@ -1,14 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { CreatePostUseCase } from './create-post.usecase';
 import { LikePostUseCase } from './like-post.usecase';
 import { UnlikePostUseCase } from './unlike-post.usecase';
 import { CommentUseCase } from './comment.usecase';
-import { NotFoundError } from '@/shared/core/errors';
-import { right } from '@/shared/core/either';
 import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { PrismaLikeRepository } from '../data/repositories/like-database.repository';
 import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
-import { NotificationService } from '@/modules/notifications/services/notification.service';
+import {
+  createCommentInput,
+  createPostInput,
+  expectLeft,
+  expectRight,
+} from './social-test-fixtures';
 
 describe('CreatePostUseCase', () => {
   let sut: CreatePostUseCase;
@@ -36,10 +42,7 @@ describe('CreatePostUseCase', () => {
       }))),
       createMentions: jest.fn().mockResolvedValue(right(undefined)),
     };
-
-    mockNotificationService = {
-      notifyMention: jest.fn().mockResolvedValue(undefined),
-    };
+    mockNotificationService = { notifyMention: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -53,49 +56,32 @@ describe('CreatePostUseCase', () => {
   });
 
   it('creates a regular post', async () => {
-    const input = {
-      userId: 'user-123',
-      content: 'Test content',
-      type: 'REGULAR' as const,
-    };
+    const result = await sut.execute(createPostInput());
+    const post = expectRight(result);
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
-    if (result.isRight()) {
-      expect(result.value.content).toBe('Test content');
-      expect(result.value.type).toBe('REGULAR');
-    }
+    expect(post.content).toBe('Test content');
+    expect(post.type).toBe('REGULAR');
     expect(mockPostRepository.create).toHaveBeenCalled();
   });
 
   it('creates a post with image', async () => {
-    const input = {
-      userId: 'user-123',
+    const result = await sut.execute(createPostInput({
       imageUrl: 'http://example.com/image.jpg',
-      type: 'PRODUCT' as const,
-    };
+      type: 'PRODUCT',
+    }));
+    const post = expectRight(result);
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
-    if (result.isRight()) {
-      expect(result.value.imageUrl).toBe('http://example.com/image.jpg');
-      expect(result.value.type).toBe('PRODUCT');
-    }
+    expect(post.imageUrl).toBe('http://example.com/image.jpg');
+    expect(post.type).toBe('PRODUCT');
   });
 
   it('creates PostMention rows for each mentionId', async () => {
-    const input = {
-      userId: 'user-123',
+    const result = await sut.execute(createPostInput({
       content: 'Hey @friend!',
-      type: 'REGULAR' as const,
       mentionIds: ['friend-user-id'],
-    };
+    }));
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
+    expectRight(result);
     expect(mockPostRepository.createMentions).toHaveBeenCalledWith('post-123', ['friend-user-id']);
     expect(mockNotificationService.notifyMention).toHaveBeenCalledWith(
       'friend-user-id',
@@ -105,30 +91,19 @@ describe('CreatePostUseCase', () => {
   });
 
   it('filters out author own userId from mentionIds', async () => {
-    const input = {
-      userId: 'user-123',
+    const result = await sut.execute(createPostInput({
       content: 'Hey self!',
-      type: 'REGULAR' as const,
       mentionIds: ['user-123', 'friend-user-id'],
-    };
+    }));
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
+    expectRight(result);
     expect(mockPostRepository.createMentions).toHaveBeenCalledWith('post-123', ['friend-user-id']);
   });
 
   it('does not create mentions when mentionIds is empty', async () => {
-    const input = {
-      userId: 'user-123',
-      content: 'No mentions',
-      type: 'REGULAR' as const,
-      mentionIds: [],
-    };
+    const result = await sut.execute(createPostInput({ content: 'No mentions', mentionIds: [] }));
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
+    expectRight(result);
     expect(mockPostRepository.createMentions).not.toHaveBeenCalled();
     expect(mockNotificationService.notifyMention).not.toHaveBeenCalled();
   });
@@ -144,7 +119,6 @@ describe('LikePostUseCase', () => {
       findById: jest.fn(),
       update: jest.fn().mockResolvedValue(right({})),
     };
-
     mockLikeRepository = {
       findPostLike: jest.fn().mockResolvedValue(right(null)),
       createLike: jest.fn().mockResolvedValue(right({})),
@@ -162,18 +136,12 @@ describe('LikePostUseCase', () => {
   });
 
   it('likes a post when it exists', async () => {
-    mockPostRepository.findById.mockResolvedValue(right({
-      id: 'post-123',
-       content: 'Test',
-       likesCount: 0,
-    }));
+    mockPostRepository.findById.mockResolvedValue(right({ id: 'post-123', content: 'Test', likesCount: 0 }));
 
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
+    const like = expectRight(result);
 
-    expect(result.isRight()).toBe(true);
-    if (result.isRight()) {
-      expect(result.value).toEqual({ active: true, count: 1 });
-    }
+    expect(like).toEqual({ active: true, count: 1 });
     expect(mockLikeRepository.createLike).toHaveBeenCalled();
     expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { increment: 1 } });
   });
@@ -183,10 +151,7 @@ describe('LikePostUseCase', () => {
 
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
 
-    expect(result.isLeft()).toBe(true);
-    if (result.isLeft()) {
-      expect(result.value).toBeInstanceOf(NotFoundError);
-    }
+    expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
   });
 });
 
@@ -196,10 +161,7 @@ describe('UnlikePostUseCase', () => {
   let mockLikeRepository: { findPostLike: jest.Mock; deletePostLikeByUser: jest.Mock };
 
   beforeEach(async () => {
-    mockPostRepository = {
-      update: jest.fn().mockResolvedValue(right({})),
-    };
-
+    mockPostRepository = { update: jest.fn().mockResolvedValue(right({})) };
     mockLikeRepository = {
       findPostLike: jest.fn().mockResolvedValue(right({ id: 'like-123' })),
       deletePostLikeByUser: jest.fn().mockResolvedValue(right(undefined)),
@@ -218,11 +180,9 @@ describe('UnlikePostUseCase', () => {
 
   it('unlikes a post', async () => {
     const result = await sut.execute({ userId: 'user-123', postId: 'post-123' });
+    const unlike = expectRight(result);
 
-    expect(result.isRight()).toBe(true);
-    if (result.isRight()) {
-      expect(result.value).toEqual({ active: false, count: 0 });
-    }
+    expect(unlike).toEqual({ active: false, count: 0 });
     expect(mockLikeRepository.deletePostLikeByUser).toHaveBeenCalledWith('user-123', 'post-123');
     expect(mockPostRepository.update).toHaveBeenCalledWith('post-123', { likesCount: { decrement: 1 } });
   });
@@ -244,10 +204,7 @@ describe('CommentUseCase', () => {
       })),
       createMentions: jest.fn().mockResolvedValue(right(undefined)),
     };
-
-    mockNotificationService = {
-      notifyMention: jest.fn().mockResolvedValue(undefined),
-    };
+    mockNotificationService = { notifyMention: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -261,20 +218,12 @@ describe('CommentUseCase', () => {
   });
 
   it('creates a comment', async () => {
-    const input = {
-      userId: 'user-123',
-      postId: 'post-123',
-      content: 'Great post!',
-    };
+    const result = await sut.execute(createCommentInput());
+    const comment = expectRight(result);
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
-    if (result.isRight()) {
-      expect(result.value.content).toBe('Great post!');
-      expect(result.value.postId).toBe('post-123');
-      expect(result.value.userId).toBe('user-123');
-    }
+    expect(comment.content).toBe('Great post!');
+    expect(comment.postId).toBe('post-123');
+    expect(comment.userId).toBe('user-123');
     expect(mockCommentRepository.createWithCount).toHaveBeenCalledWith(
       expect.objectContaining({ content: 'Great post!' }),
       'post-123',
@@ -282,16 +231,12 @@ describe('CommentUseCase', () => {
   });
 
   it('creates CommentMention rows for each mentionId', async () => {
-    const input = {
-      userId: 'user-123',
-      postId: 'post-123',
+    const result = await sut.execute(createCommentInput({
       content: '@friend nice!',
       mentionIds: ['friend-user-id'],
-    };
+    }));
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
+    expectRight(result);
     expect(mockCommentRepository.createMentions).toHaveBeenCalledWith('comment-123', ['friend-user-id']);
     expect(mockNotificationService.notifyMention).toHaveBeenCalledWith(
       'friend-user-id',
@@ -301,16 +246,12 @@ describe('CommentUseCase', () => {
   });
 
   it('filters out author own userId from comment mentionIds', async () => {
-    const input = {
-      userId: 'user-123',
-      postId: 'post-123',
+    const result = await sut.execute(createCommentInput({
       content: '@self hi',
       mentionIds: ['user-123', 'friend-user-id'],
-    };
+    }));
 
-    const result = await sut.execute(input);
-
-    expect(result.isRight()).toBe(true);
+    expectRight(result);
     expect(mockCommentRepository.createMentions).toHaveBeenCalledWith('comment-123', ['friend-user-id']);
   });
 });

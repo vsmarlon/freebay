@@ -1,15 +1,16 @@
-.PHONY: help lint analyze format design-check routes-check test test-unit test-integration
+.PHONY: help lint analyze format architecture-check design-check routes-check test test-unit test-integration
 
 BACKEND_DIR  := nest-backend
 FRONTEND_DIR := frontend
-FLUTTER ?= fvm flutter
-DART ?= fvm dart
+FLUTTER ?= flutter
+DART ?= dart
 
 help:
 	@echo ""
 	@echo "  make lint              Backend eslint (zero warnings)"
 	@echo "  make analyze           Flutter static analysis (zero issues)"
 	@echo "  make format            Dart format gate (frontend and design system)"
+	@echo "  make architecture-check No removed repository/API identifiers"
 	@echo "  make design-check      Design system rules (see frontend/DESIGN.md)"
 	@echo "  make routes-check      No raw route literals (navigate via AppRoutes)"
 	@echo "  make test              Run everything (lint + analyze + unit + integration)"
@@ -32,25 +33,22 @@ format:
 	@echo "=== Dart format gate ==="
 	cd $(FRONTEND_DIR) && $(DART) format --output=none --set-exit-if-changed lib test libs/freebay_design_system/lib
 
+architecture-check:
+	@echo ""
+	@echo "=== Removed architecture/API identifiers ==="
+	node scripts/ci-check.js --architecture
+
 design-check:
 	@echo ""
 	@echo "=== Design system rules ==="
-	@cd $(FRONTEND_DIR) && ! grep -rnE \
-		"BorderRadius\.(circular|all|only|vertical|horizontal)|StadiumBorder|CircleBorder|CircleAvatar|ClipOval|BoxShape\.circle|blurRadius|Curves\.(elasticOut|easeOutBack|easeInOut)|accentAmber|Divider\(" \
-		lib libs/freebay_design_system/lib --include=*.dart \
-		|| (echo "" && echo "Banned pattern above. See frontend/DESIGN.md." && exit 1)
-	@echo "OK"
+	node scripts/ci-check.js --design
 
 routes-check:
 	@echo ""
 	@echo "=== Route literal rules (navigate via AppRoutes) ==="
-	@cd $(FRONTEND_DIR) && ! grep -rnE \
-		"(context|appRouter)\.(go|push|pushReplacement|replace)\([[:space:]]*['\"]/" \
-		lib --include=*.dart \
-		|| (echo "" && echo "Raw route literal above. Navigate via AppRoutes (see AGENTS.md)." && exit 1)
-	@echo "OK"
+	node scripts/ci-check.js --routes
 
-test: lint analyze format design-check routes-check test-unit test-integration
+test: lint analyze format architecture-check design-check routes-check test-unit test-integration
 	@echo ""
 	@echo "✓ All checks passed"
 

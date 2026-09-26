@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/pages/story_viewer_page.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/social/presentation/providers/story_highlight_provider.dart';
 
 class StoryViewerWrapper extends ConsumerWidget {
   final String? indexParam;
@@ -15,8 +16,8 @@ class StoryViewerWrapper extends ConsumerWidget {
 
     return storiesAsync.when(
       data: (storiesResponse) {
-        final stories = storiesResponse.stories;
-        if (stories.isEmpty) {
+        final groups = storiesResponse.groups;
+        if (groups.isEmpty) {
           return const Scaffold(
             body: EmptyState(
               icon: Icons.auto_awesome,
@@ -29,12 +30,12 @@ class StoryViewerWrapper extends ConsumerWidget {
         int initialIndex = 0;
         if (indexParam != null) {
           initialIndex = int.tryParse(indexParam!) ?? 0;
-          if (initialIndex < 0 || initialIndex >= stories.length) {
+          if (initialIndex < 0 || initialIndex >= groups.length) {
             initialIndex = 0;
           }
         }
 
-        return StoryViewerPage(stories: stories, initialIndex: initialIndex);
+        return StoryViewerPage(groups: groups, initialGroupIndex: initialIndex);
       },
       loading: () => const SkeletonPage(
         child: Column(
@@ -57,4 +58,22 @@ class StoryViewerWrapper extends ConsumerWidget {
           Scaffold(body: EmptyState.error(message: userMessageOf(err))),
     );
   }
+}
+
+class HighlightStoryViewerWrapper extends ConsumerWidget {
+  const HighlightStoryViewerWrapper({super.key, required this.id});
+
+  final String id;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ref
+      .watch(storyHighlightProvider(id))
+      .when(
+        data: (highlight) => StoryViewerPage(groups: [highlight.group]),
+        loading: () => const Scaffold(
+          body: SkeletonPage(child: ShimmerBlock(height: 400)),
+        ),
+        error: (err, _) =>
+            Scaffold(body: EmptyState.error(message: userMessageOf(err))),
+      );
 }

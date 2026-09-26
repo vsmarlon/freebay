@@ -67,7 +67,7 @@ class ProductResultsGrid extends StatelessWidget {
               imageUrl: product.imageUrl,
               title: product.title,
               priceInCents: product.price,
-              condition: product.condition,
+              condition: product.condition.wireValue,
               variant: AppCardVariant.compact,
               onTap: () => context.push(AppRoutes.productPath(product.id)),
             ),

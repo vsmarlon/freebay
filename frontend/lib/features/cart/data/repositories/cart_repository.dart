@@ -1,38 +1,58 @@
-import 'package:freebay/shared/either/either.dart';
+import 'package:dio/dio.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
-import 'package:freebay/features/cart/data/services/cart_service.dart';
+import 'package:freebay/features/cart/domain/repositories/cart_repository.dart';
+import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/http/request_either.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
-class CartRepository {
-  final CartService _service;
+class CartRepositoryImpl implements CartRepository {
+  final Dio client;
 
-  CartRepository(this._service);
+  CartRepositoryImpl({Dio? client}) : client = client ?? HttpClient.instance;
 
-  Future<Either<Failure, CartEntity>> getCart() {
-    return _service.getCart();
-  }
+  @override
+  Future<Either<Failure, CartEntity>> getCart() => requestEither(
+    () => client.get('/cart'),
+    decoder: (response) => Right(CartEntity.fromJson(response.data['data'])),
+  );
 
+  @override
   Future<Either<Failure, void>> addToCart(
     String productId, {
     int quantity = 1,
-  }) {
-    return _service.addToCart(productId, quantity: quantity);
-  }
+  }) => requestEither<void>(
+    () => client.post('/cart/$productId', data: {'quantity': quantity}),
+    decoder: (_) => const Right(null),
+  );
 
-  Future<Either<Failure, void>> updateQuantity(String productId, int quantity) {
-    return _service.updateQuantity(productId, quantity);
-  }
+  @override
+  Future<Either<Failure, void>> updateQuantity(
+    String productId,
+    int quantity,
+  ) => requestEither<void>(
+    () => client.patch('/cart/$productId', data: {'quantity': quantity}),
+    decoder: (_) => const Right(null),
+  );
 
-  Future<Either<Failure, void>> removeFromCart(String productId) {
-    return _service.removeFromCart(productId);
-  }
+  @override
+  Future<Either<Failure, void>> removeFromCart(String productId) =>
+      requestEither<void>(
+        () => client.patch('/cart/$productId/remove'),
+        decoder: (_) => const Right(null),
+      );
 
-  Future<Either<Failure, void>> clearCart() {
-    return _service.clearCart();
-  }
+  @override
+  Future<Either<Failure, void>> clearCart() => requestEither<void>(
+    () => client.patch('/cart/clear'),
+    decoder: (_) => const Right(null),
+  );
 
-  Future<Either<Failure, CartCheckoutEntity>> checkoutCart() {
-    return _service.checkoutCart();
-  }
+  @override
+  Future<Either<Failure, CartCheckoutEntity>> checkoutCart() => requestEither(
+    () => client.post('/cart/checkout'),
+    decoder: (response) =>
+        Right(CartCheckoutEntity.fromJson(response.data['data'])),
+  );
 }

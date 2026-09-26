@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
+import 'package:freebay/features/social/data/entities/social_filters.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'package:freebay/features/social/presentation/providers/social_provider_states.dart';
+export 'package:freebay/features/social/data/entities/social_filters.dart';
 
 part 'feed_provider.g.dart';
 
@@ -22,23 +24,6 @@ final userStoriesProvider = FutureProvider.family<List<StoryEntity>, String>((
 void invalidateStoryConsumers(WidgetRef ref, String userId) {
   ref.invalidate(storiesProvider);
   ref.invalidate(userStoriesProvider(userId));
-}
-
-enum FeedType { explore, following }
-
-enum FeedContentFilter { all, socialOnly, sellingOnly }
-
-extension FeedContentFilterApi on FeedContentFilter {
-  String get apiValue {
-    switch (this) {
-      case FeedContentFilter.socialOnly:
-        return 'social';
-      case FeedContentFilter.sellingOnly:
-        return 'selling';
-      case FeedContentFilter.all:
-        return 'all';
-    }
-  }
 }
 
 // Class named FeedTypeSetting (not FeedType) because the FeedType enum lives in
@@ -72,10 +57,10 @@ class Feed extends _$Feed {
 
   Future<void> loadFeed({
     bool refresh = false,
-    String feedType = 'explore',
-    String contentFilter = 'all',
+    FeedType feedType = FeedType.explore,
+    FeedContentFilter contentFilter = FeedContentFilter.all,
   }) async {
-    final scope = '$feedType:$contentFilter';
+    final scope = '${feedType.wireValue}:${contentFilter.apiValue}';
     if (scope != _scope) {
       _scope = scope;
       state = const FeedState();
@@ -83,7 +68,7 @@ class Feed extends _$Feed {
     if (state.isLoading && !refresh) return;
     if (!refresh && !state.hasMore) return;
 
-    final isFollowing = feedType == 'following';
+    final isFollowing = feedType == FeedType.following;
     final cursor = refresh ? null : (isFollowing ? state.cursor : null);
     final offset = refresh ? 0 : (isFollowing ? 0 : state.offset);
 
@@ -132,8 +117,8 @@ class Feed extends _$Feed {
   }
 
   Future<void> refresh({
-    String feedType = 'explore',
-    String contentFilter = 'all',
+    FeedType feedType = FeedType.explore,
+    FeedContentFilter contentFilter = FeedContentFilter.all,
   }) async {
     await loadFeed(
       refresh: true,

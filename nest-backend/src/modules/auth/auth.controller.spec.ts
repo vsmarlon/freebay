@@ -3,11 +3,31 @@ import { AuthUser, JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthWebSessionController } from './auth-web-session.controller';
+import { right } from '@/shared/core/either';
+import { RegisterUseCase } from './usecases/register.usecase';
+import { LoginUseCase } from './usecases/login.usecase';
+import { GoogleAuthUseCase } from './usecases/google-auth.usecase';
+import { CompleteProfileUseCase } from './usecases/complete-profile.usecase';
+import { RefreshMobileSessionUseCase } from './usecases/refresh-mobile-session.usecase';
+import { LogoutSessionUseCase } from './usecases/logout-session.usecase';
+import { CheckUsernameAvailabilityUseCase } from './usecases/check-username-availability.usecase';
+import { RequestPasswordRecoveryUseCase } from './usecases/request-password-recovery.usecase';
+import { VerifyPasswordRecoveryCodeUseCase } from './usecases/verify-password-recovery-code.usecase';
+import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
+import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
+import { EnrollBiometricUseCase } from './usecases/enroll-biometric.usecase';
+import { RevokeBiometricUseCase } from './usecases/revoke-biometric.usecase';
+import { RequestMagicLinkUseCase } from './usecases/request-magic-link.usecase';
+import { ConsumeMagicLinkUseCase } from './usecases/consume-magic-link.usecase';
+import { RefreshWebSessionUseCase } from './usecases/refresh-web-session.usecase';
+import { LogoutWebSessionUseCase } from './usecases/logout-web-session.usecase';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { WebOriginGuard } from './guards/web-origin.guard';
+import { OriginGuard } from '@/shared/guards/origin.guard';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 import { request as httpRequest, IncomingMessage } from 'http';
+import { UserRole } from '@prisma/client';
 
 type JsonRequest = {
   method: 'POST';
@@ -69,29 +89,47 @@ describe('AuthController web session endpoints', () => {
 
   beforeAll(async () => {
     authService = {
-      requestMagicLink: jest.fn().mockResolvedValue({ sent: true }),
-      consumeMagicLink: jest.fn().mockResolvedValue({
+      requestMagicLink: jest.fn().mockResolvedValue(right(undefined)),
+      consumeMagicLink: jest.fn().mockResolvedValue(right({
         user: { id: 'user-1', email: 'user@example.com' },
         tokens: { token: 'access/token', refreshToken: 'refresh/token' },
-      }),
-      refreshWebSession: jest.fn().mockResolvedValue({ token: 'rotated/access', refreshToken: 'rotated/refresh' }),
-      logoutWebSession: jest.fn().mockResolvedValue({ message: 'Logout realizado' }),
-      enrollBiometricToken: jest.fn().mockResolvedValue({ biometricToken: 'enrolled-token' }),
+      })),
+      refreshWebSession: jest.fn().mockResolvedValue(right({ token: 'rotated/access', refreshToken: 'rotated/refresh' })),
+      logoutWebSession: jest.fn().mockResolvedValue(right({ message: 'Logout realizado' })),
+      enrollBiometricToken: jest.fn().mockResolvedValue(right({ biometricToken: 'enrolled-token' })),
     };
     jwtService = { verify: jest.fn().mockReturnValue({
-      userId: 'user-1', role: 'USER', type: JwtTokenType.REFRESH, jti: 'refresh-jti', exp: 500,
+      userId: 'user-1', role: UserRole.USER, type: JwtTokenType.REFRESH, jti: 'refresh-jti', exp: 500,
     } satisfies JwtPayload) };
     tokenValidator = { verifyAndValidate: jest.fn().mockResolvedValue({
-      userId: 'user-1', role: 'USER', type: JwtTokenType.ACCESS, jti: 'access-jti', exp: 500,
+      userId: 'user-1', role: UserRole.USER, type: JwtTokenType.ACCESS, jti: 'access-jti', exp: 500,
     } satisfies AuthUser) };
     module = await Test.createTestingModule({
-      controllers: [AuthController],
+      controllers: [AuthController, AuthWebSessionController],
       providers: [
-        { provide: AuthService, useValue: authService },
+        { provide: RegisterUseCase, useValue: { execute: jest.fn() } },
+        { provide: LoginUseCase, useValue: { execute: jest.fn() } },
+        { provide: GoogleAuthUseCase, useValue: { execute: jest.fn() } },
+        { provide: CompleteProfileUseCase, useValue: { execute: jest.fn() } },
+        { provide: RefreshMobileSessionUseCase, useValue: { execute: jest.fn() } },
+        { provide: LogoutSessionUseCase, useValue: { execute: jest.fn() } },
+        { provide: CheckUsernameAvailabilityUseCase, useValue: { execute: jest.fn() } },
+        { provide: RequestPasswordRecoveryUseCase, useValue: { execute: jest.fn() } },
+        { provide: VerifyPasswordRecoveryCodeUseCase, useValue: { execute: jest.fn() } },
+        { provide: ResetPasswordUseCase, useValue: { execute: jest.fn() } },
+        { provide: BiometricLoginUseCase, useValue: { execute: jest.fn() } },
+        { provide: EnrollBiometricUseCase, useValue: { execute: authService.enrollBiometricToken } },
+        { provide: RevokeBiometricUseCase, useValue: { execute: jest.fn() } },
+        { provide: RequestMagicLinkUseCase, useValue: { execute: authService.requestMagicLink } },
+        { provide: ConsumeMagicLinkUseCase, useValue: { execute: authService.consumeMagicLink } },
+        { provide: RefreshWebSessionUseCase, useValue: { execute: authService.refreshWebSession } },
+        { provide: LogoutWebSessionUseCase, useValue: { execute: authService.logoutWebSession } },
         { provide: JwtService, useValue: jwtService },
         { provide: ConfigService, useValue: { get: jest.fn((key: string) => key === 'NODE_ENV' ? 'production' : undefined) } },
-        WebOriginGuard,
-        { provide: JwtAuthGuard, useClass: JwtAuthGuard },
+        JwtAuthGuard,
+        OriginGuard,
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: OriginGuard },
         { provide: JwtTokenValidatorService, useValue: tokenValidator },
       ],
     }).overrideProvider(ConfigService).useValue({ get: jest.fn((key: string) => key === 'NODE_ENV' ? 'production' : key === 'WEB_APP_URL' ? 'https://app.example.com' : undefined) }).compile();

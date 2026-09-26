@@ -1,18 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { ChatThreadType, ChatTheme, ConversationPreference } from '@prisma/client';
+import { RepositoryResponse, left } from '@/shared/core/either';
+import { BadRequestError } from '@/shared/core/errors';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { ChatThreadType, ConversationPreference } from '@prisma/client';
-import { RepositoryResponse, left, right } from '@/shared/core/either';
-import { BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { UpsertPreferenceInput } from '../../types/chat.types';
 
 @Injectable()
 export class PrismaConversationPreferenceRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+  }
 
   async findByAnyId(userId: string, threadId: string): RepositoryResponse<ConversationPreference | null> {
-    try {
-      return right(
-        await this.prisma.conversationPreference.findFirst({
+    return repositoryResponse(
+      () =>
+        this.prisma.conversationPreference.findFirst({
           where: {
             userId,
             OR: [
@@ -21,21 +23,18 @@ export class PrismaConversationPreferenceRepository {
             ],
           },
         }),
-      );
-    } catch {
-      return left(new DatabaseError('Failed to find preference'));
-    }
+      'Failed to find preference',
+    );
   }
 
   async findByUserAndThread(userId: string, threadId: string, type: ChatThreadType): RepositoryResponse<ConversationPreference | null> {
-    try {
-      const where = type === 'DIRECT'
-        ? { userId_directConversationId: { userId, directConversationId: threadId } }
-        : { userId_orderId: { userId, orderId: threadId } };
-      return right(await this.prisma.conversationPreference.findUnique({ where }));
-    } catch {
-      return left(new DatabaseError('Failed to find preference'));
-    }
+    const where = type === ChatThreadType.DIRECT
+      ? { userId_directConversationId: { userId, directConversationId: threadId } }
+      : { userId_orderId: { userId, orderId: threadId } };
+    return repositoryResponse(
+      () => this.prisma.conversationPreference.findUnique({ where }),
+      'Failed to find preference',
+    );
   }
 
   async upsert(input: UpsertPreferenceInput): RepositoryResponse<ConversationPreference> {
@@ -50,9 +49,9 @@ export class PrismaConversationPreferenceRepository {
       ? { userId_directConversationId: { userId: input.userId, directConversationId: input.directConversationId! } }
       : { userId_orderId: { userId: input.userId, orderId: input.orderId! } };
 
-    try {
-      return right(
-        await this.prisma.conversationPreference.upsert({
+    return repositoryResponse(
+      () =>
+        this.prisma.conversationPreference.upsert({
           where,
           create: {
             userId: input.userId,
@@ -60,7 +59,7 @@ export class PrismaConversationPreferenceRepository {
             directConversationId: input.directConversationId ?? null,
             isArchived: input.isArchived ?? false,
             isDeleted: input.isDeleted ?? false,
-            theme: input.theme ?? 'DEFAULT',
+            theme: input.theme ?? ChatTheme.DEFAULT,
             backgroundUrl: input.backgroundUrl ?? null,
           },
           update: {
@@ -70,33 +69,26 @@ export class PrismaConversationPreferenceRepository {
             backgroundUrl: input.backgroundUrl ?? undefined,
           },
         }),
-      );
-    } catch {
-      return left(new DatabaseError('Failed to upsert preference'));
-    }
+      'Failed to upsert preference',
+    );
   }
 
   async findArchived(userId: string): RepositoryResponse<ConversationPreference[]> {
-    try {
-      return right(
-        await this.prisma.conversationPreference.findMany({
+    return repositoryResponse(
+      () =>
+        this.prisma.conversationPreference.findMany({
           where: { userId, isArchived: true, isDeleted: false },
         }),
-      );
-    } catch {
-      return left(new DatabaseError('Failed to find archived preferences'));
-    }
+      'Failed to find archived preferences',
+    );
   }
 
   async findDeleted(userId: string): RepositoryResponse<ConversationPreference[]> {
-    try {
-      return right(
-        await this.prisma.conversationPreference.findMany({
-          where: { userId, isDeleted: true },
-        }),
-      );
-    } catch {
-      return left(new DatabaseError('Failed to find deleted preferences'));
-    }
+    return repositoryResponse(
+      () => this.prisma.conversationPreference.findMany({
+        where: { userId, isDeleted: true },
+      }),
+      'Failed to find deleted preferences',
+    );
   }
 }

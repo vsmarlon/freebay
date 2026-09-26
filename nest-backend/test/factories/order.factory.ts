@@ -1,4 +1,4 @@
-import { PrismaClient, Order, OrderStatus, EscrowStatus, TransactionStatus } from '@prisma/client';
+import { PrismaClient, Order, OrderStatus, EscrowStatus } from '@prisma/client';
 
 export class OrderFactory {
   private readonly PLATFORM_FEE_PERCENTAGE = 0.1; // 10%
@@ -72,33 +72,6 @@ export class OrderFactory {
   }
 
   /**
-   * Create a confirmed order
-   */
-  async createConfirmed(buyerId: string, sellerId: string, productId: string): Promise<Order> {
-    return this.create(buyerId, sellerId, productId, {
-      status: OrderStatus.CONFIRMED,
-    });
-  }
-
-  /**
-   * Create a shipped order
-   */
-  async createShipped(buyerId: string, sellerId: string, productId: string): Promise<Order> {
-    return this.create(buyerId, sellerId, productId, {
-      status: OrderStatus.SHIPPED,
-    });
-  }
-
-  /**
-   * Create a delivered order
-   */
-  async createDelivered(buyerId: string, sellerId: string, productId: string): Promise<Order> {
-    return this.create(buyerId, sellerId, productId, {
-      status: OrderStatus.DELIVERED,
-    });
-  }
-
-  /**
    * Create a completed order with released escrow
    */
   async createCompleted(buyerId: string, sellerId: string, productId: string): Promise<Order> {
@@ -109,53 +82,4 @@ export class OrderFactory {
     });
   }
 
-  /**
-   * Create a cancelled order
-   */
-  async createCancelled(buyerId: string, sellerId: string, productId: string): Promise<Order> {
-    return this.create(buyerId, sellerId, productId, {
-      status: OrderStatus.CANCELLED,
-      escrowStatus: EscrowStatus.REFUNDED,
-    });
-  }
-
-  /**
-   * Create a disputed order
-   */
-  async createDisputed(buyerId: string, sellerId: string, productId: string): Promise<Order> {
-    return this.create(buyerId, sellerId, productId, {
-      status: OrderStatus.DISPUTED,
-    });
-  }
-
-  /**
-   * Create order with transaction
-   */
-  async createWithTransaction(
-    buyerId: string,
-    sellerId: string,
-    productId: string,
-    transactionStatus: string = 'PAID',
-  ): Promise<Order> {
-    const order = await this.create(buyerId, sellerId, productId);
-
-    await this.prisma.transaction.create({
-      data: {
-        orderId: order.id,
-        amount: order.amount,
-        platformFee: order.platformFee,
-        sellerAmount: order.sellerAmount,
-        paymentMethod: 'CREDIT_CARD',
-        provider: 'STRIPE',
-        status: transactionStatus as TransactionStatus,
-        idempotencyKey: `test-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        paidAt: transactionStatus === 'PAID' ? new Date() : null,
-      },
-    });
-
-    return this.prisma.order.findUnique({
-      where: { id: order.id },
-      include: { transaction: true },
-    }) as Promise<Order>;
-  }
 }

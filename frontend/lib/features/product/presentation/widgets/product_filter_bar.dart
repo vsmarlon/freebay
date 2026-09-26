@@ -12,6 +12,7 @@ class ProductFilterBar extends StatefulWidget {
   final ValueChanged<ProductSort> onSortChanged;
   final ValueChanged<ProductCondition?> onConditionChanged;
   final ValueChanged<RangeValues?> onPriceRangeChanged;
+  final VoidCallback onClear;
 
   const ProductFilterBar({
     super.key,
@@ -21,6 +22,7 @@ class ProductFilterBar extends StatefulWidget {
     required this.onSortChanged,
     required this.onConditionChanged,
     required this.onPriceRangeChanged,
+    required this.onClear,
   });
 
   @override
@@ -134,10 +136,10 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
             children: [
               Expanded(
                 child: AppButton(
-                  label: 'Cancelar',
+                  label: 'Limpar',
                   variant: AppButtonVariant.secondary,
                   size: AppButtonSize.compact,
-                  onPressed: () => setState(() => _draftRange = _appliedRange),
+                  onPressed: widget.onClear,
                 ),
               ),
               Spacing.hSm,

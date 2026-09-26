@@ -6,6 +6,8 @@ import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
+const usernameAvailabilityDebounce = Duration(milliseconds: 500);
+
 enum UsernameFieldStatus { idle, checking, available, taken, invalid }
 
 class UsernameField extends ConsumerStatefulWidget {
@@ -52,7 +54,7 @@ class _UsernameFieldState extends ConsumerState<UsernameField> {
     }
 
     setState(() => _status = UsernameFieldStatus.checking);
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
+    _debounce = Timer(usernameAvailabilityDebounce, () async {
       final result = await ref
           .read(authRepositoryProvider)
           .checkUsernameAvailable(candidate);

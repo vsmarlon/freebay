@@ -574,7 +574,7 @@ as bool,
 /// @nodoc
 mixin _$StoryEntity {
 
- String get id; String get userId; String get imageUrl; String get mediaType; String? get caption; List<StoryTextBlockEntity>? get textBlocks; DateTime get expiresAt; DateTime get createdAt; StoryUserEntity get user; bool get isViewed;
+ String get id; String get userId; String get imageUrl; StoryMediaType get mediaType; String? get caption; List<StoryTextBlockEntity>? get textBlocks; DateTime get expiresAt; DateTime get createdAt; StoryUserEntity get user; bool get isViewed;
 /// Create a copy of StoryEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -607,7 +607,7 @@ abstract mixin class $StoryEntityCopyWith<$Res>  {
   factory $StoryEntityCopyWith(StoryEntity value, $Res Function(StoryEntity) _then) = _$StoryEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String imageUrl, String mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
+ String id, String userId, String imageUrl, StoryMediaType mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
 });
 
 
@@ -630,7 +630,7 @@ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,imageUrl: null == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String,mediaType: null == mediaType ? _self.mediaType : mediaType // ignore: cast_nullable_to_non_nullable
-as String,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
+as StoryMediaType,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
 as String?,textBlocks: freezed == textBlocks ? _self.textBlocks : textBlocks // ignore: cast_nullable_to_non_nullable
 as List<StoryTextBlockEntity>?,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -730,7 +730,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  String mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _StoryEntity() when $default != null:
 return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
@@ -751,7 +751,7 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.capti
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  String mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)  $default,) {final _that = this;
 switch (_that) {
 case _StoryEntity():
 return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
@@ -771,7 +771,7 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.capti
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String imageUrl,  String mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,) {final _that = this;
 switch (_that) {
 case _StoryEntity() when $default != null:
 return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
@@ -786,13 +786,13 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.capti
 @JsonSerializable()
 
 class _StoryEntity extends StoryEntity {
-  const _StoryEntity({required this.id, required this.userId, required this.imageUrl, this.mediaType = 'IMAGE', this.caption, final  List<StoryTextBlockEntity>? textBlocks, required this.expiresAt, required this.createdAt, required this.user, this.isViewed = false}): _textBlocks = textBlocks,super._();
+  const _StoryEntity({required this.id, required this.userId, required this.imageUrl, this.mediaType = StoryMediaType.image, this.caption, final  List<StoryTextBlockEntity>? textBlocks, required this.expiresAt, required this.createdAt, required this.user, this.isViewed = false}): _textBlocks = textBlocks,super._();
   factory _StoryEntity.fromJson(Map<String, dynamic> json) => _$StoryEntityFromJson(json);
 
 @override final  String id;
 @override final  String userId;
 @override final  String imageUrl;
-@override@JsonKey() final  String mediaType;
+@override@JsonKey() final  StoryMediaType mediaType;
 @override final  String? caption;
  final  List<StoryTextBlockEntity>? _textBlocks;
 @override List<StoryTextBlockEntity>? get textBlocks {
@@ -841,7 +841,7 @@ abstract mixin class _$StoryEntityCopyWith<$Res> implements $StoryEntityCopyWith
   factory _$StoryEntityCopyWith(_StoryEntity value, $Res Function(_StoryEntity) _then) = __$StoryEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String imageUrl, String mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
+ String id, String userId, String imageUrl, StoryMediaType mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
 });
 
 
@@ -864,7 +864,7 @@ id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,imageUrl: null == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String,mediaType: null == mediaType ? _self.mediaType : mediaType // ignore: cast_nullable_to_non_nullable
-as String,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
+as StoryMediaType,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
 as String?,textBlocks: freezed == textBlocks ? _self._textBlocks : textBlocks // ignore: cast_nullable_to_non_nullable
 as List<StoryTextBlockEntity>?,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable

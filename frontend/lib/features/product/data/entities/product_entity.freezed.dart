@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ProductEntity {
 
- String get id; String get title; String get description; int get price; String get condition; String get status; String get sellerId; String? get postId; UserEntity? get seller; List<ProductImageEntity>? get images; int get quantity; int get soldCount;
+ String get id; String get title; String get description; int get price;@ProductConditionConverter() ProductCondition get condition;@ProductStatusConverter() ProductStatus get status; String get sellerId; String? get postId; UserEntity? get seller; List<ProductImageEntity>? get images; int get quantity; int get soldCount;
 /// Create a copy of ProductEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $ProductEntityCopyWith<$Res>  {
   factory $ProductEntityCopyWith(ProductEntity value, $Res Function(ProductEntity) _then) = _$ProductEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String description, int price, String condition, String status, String sellerId, String? postId, UserEntity? seller, List<ProductImageEntity>? images, int quantity, int soldCount
+ String id, String title, String description, int price,@ProductConditionConverter() ProductCondition condition,@ProductStatusConverter() ProductStatus status, String sellerId, String? postId, UserEntity? seller, List<ProductImageEntity>? images, int quantity, int soldCount
 });
 
 
@@ -72,8 +72,8 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
 as int,condition: null == condition ? _self.condition : condition // ignore: cast_nullable_to_non_nullable
-as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,sellerId: null == sellerId ? _self.sellerId : sellerId // ignore: cast_nullable_to_non_nullable
+as ProductCondition,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as ProductStatus,sellerId: null == sellerId ? _self.sellerId : sellerId // ignore: cast_nullable_to_non_nullable
 as String,postId: freezed == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String?,seller: freezed == seller ? _self.seller : seller // ignore: cast_nullable_to_non_nullable
 as UserEntity?,images: freezed == images ? _self.images : images // ignore: cast_nullable_to_non_nullable
@@ -176,7 +176,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price,  String condition,  String status,  String sellerId,  String? postId,  UserEntity? seller,  List<ProductImageEntity>? images,  int quantity,  int soldCount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price, @ProductConditionConverter()  ProductCondition condition, @ProductStatusConverter()  ProductStatus status,  String sellerId,  String? postId,  UserEntity? seller,  List<ProductImageEntity>? images,  int quantity,  int soldCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProductEntity() when $default != null:
 return $default(_that.id,_that.title,_that.description,_that.price,_that.condition,_that.status,_that.sellerId,_that.postId,_that.seller,_that.images,_that.quantity,_that.soldCount);case _:
@@ -197,7 +197,7 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price,  String condition,  String status,  String sellerId,  String? postId,  UserEntity? seller,  List<ProductImageEntity>? images,  int quantity,  int soldCount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String description,  int price, @ProductConditionConverter()  ProductCondition condition, @ProductStatusConverter()  ProductStatus status,  String sellerId,  String? postId,  UserEntity? seller,  List<ProductImageEntity>? images,  int quantity,  int soldCount)  $default,) {final _that = this;
 switch (_that) {
 case _ProductEntity():
 return $default(_that.id,_that.title,_that.description,_that.price,_that.condition,_that.status,_that.sellerId,_that.postId,_that.seller,_that.images,_that.quantity,_that.soldCount);case _:
@@ -217,7 +217,7 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String description,  int price,  String condition,  String status,  String sellerId,  String? postId,  UserEntity? seller,  List<ProductImageEntity>? images,  int quantity,  int soldCount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String description,  int price, @ProductConditionConverter()  ProductCondition condition, @ProductStatusConverter()  ProductStatus status,  String sellerId,  String? postId,  UserEntity? seller,  List<ProductImageEntity>? images,  int quantity,  int soldCount)?  $default,) {final _that = this;
 switch (_that) {
 case _ProductEntity() when $default != null:
 return $default(_that.id,_that.title,_that.description,_that.price,_that.condition,_that.status,_that.sellerId,_that.postId,_that.seller,_that.images,_that.quantity,_that.soldCount);case _:
@@ -232,15 +232,15 @@ return $default(_that.id,_that.title,_that.description,_that.price,_that.conditi
 @JsonSerializable()
 
 class _ProductEntity extends ProductEntity {
-  const _ProductEntity({required this.id, required this.title, this.description = '', this.price = 0, this.condition = 'NEW', this.status = 'ACTIVE', required this.sellerId, this.postId, this.seller, final  List<ProductImageEntity>? images, this.quantity = 1, this.soldCount = 0}): _images = images,super._();
+  const _ProductEntity({required this.id, required this.title, this.description = '', this.price = 0, @ProductConditionConverter() this.condition = ProductCondition.isNew, @ProductStatusConverter() this.status = ProductStatus.active, required this.sellerId, this.postId, this.seller, final  List<ProductImageEntity>? images, this.quantity = 1, this.soldCount = 0}): _images = images,super._();
   factory _ProductEntity.fromJson(Map<String, dynamic> json) => _$ProductEntityFromJson(json);
 
 @override final  String id;
 @override final  String title;
 @override@JsonKey() final  String description;
 @override@JsonKey() final  int price;
-@override@JsonKey() final  String condition;
-@override@JsonKey() final  String status;
+@override@JsonKey()@ProductConditionConverter() final  ProductCondition condition;
+@override@JsonKey()@ProductStatusConverter() final  ProductStatus status;
 @override final  String sellerId;
 @override final  String? postId;
 @override final  UserEntity? seller;
@@ -289,7 +289,7 @@ abstract mixin class _$ProductEntityCopyWith<$Res> implements $ProductEntityCopy
   factory _$ProductEntityCopyWith(_ProductEntity value, $Res Function(_ProductEntity) _then) = __$ProductEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String description, int price, String condition, String status, String sellerId, String? postId, UserEntity? seller, List<ProductImageEntity>? images, int quantity, int soldCount
+ String id, String title, String description, int price,@ProductConditionConverter() ProductCondition condition,@ProductStatusConverter() ProductStatus status, String sellerId, String? postId, UserEntity? seller, List<ProductImageEntity>? images, int quantity, int soldCount
 });
 
 
@@ -313,8 +313,8 @@ as String,title: null == title ? _self.title : title // ignore: cast_nullable_to
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,price: null == price ? _self.price : price // ignore: cast_nullable_to_non_nullable
 as int,condition: null == condition ? _self.condition : condition // ignore: cast_nullable_to_non_nullable
-as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as String,sellerId: null == sellerId ? _self.sellerId : sellerId // ignore: cast_nullable_to_non_nullable
+as ProductCondition,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
+as ProductStatus,sellerId: null == sellerId ? _self.sellerId : sellerId // ignore: cast_nullable_to_non_nullable
 as String,postId: freezed == postId ? _self.postId : postId // ignore: cast_nullable_to_non_nullable
 as String?,seller: freezed == seller ? _self.seller : seller // ignore: cast_nullable_to_non_nullable
 as UserEntity?,images: freezed == images ? _self._images : images // ignore: cast_nullable_to_non_nullable

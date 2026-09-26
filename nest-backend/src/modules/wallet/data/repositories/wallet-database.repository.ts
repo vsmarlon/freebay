@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Wallet, Prisma, WalletBalanceKind, WalletEntryReason } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
-import { CursorPage, PageQuery, mapPage, paginateById } from '@/shared/core/pagination';
+import { buildIdCursorPage, CursorPage, PageQuery, mapPage } from '@/shared/core/pagination';
 import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { TransactionEntry } from '../../types/wallet.types';
 import { WalletRepository } from '../../domain/repositories/wallet.repository';
@@ -13,17 +13,16 @@ const WALLET_ENTRY_INCLUDE = {
 } satisfies Prisma.WalletEntryInclude;
 
 @Injectable()
-export class WalletDatabaseRepository extends BasePrismaRepository implements WalletRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class WalletDatabaseRepository implements WalletRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findByUserId(userId: string): RepositoryResponse<Wallet | null> {
-    return this.safeRun(() => this.prisma.wallet.findUnique({ where: { userId } }), 'Erro ao buscar carteira');
+    return repositoryResponse(() => this.prisma.wallet.findUnique({ where: { userId } }), 'Erro ao buscar carteira');
   }
 
   async ensureForUser(userId: string, tx?: Prisma.TransactionClient): RepositoryResponse<Wallet> {
-    return this.safeRun(
+    return repositoryResponse(
       () => (tx ?? this.prisma).wallet.upsert({
         where: { userId },
         create: { userId, availableBalance: 0, pendingBalance: 0, totalEarned: 0 },
@@ -37,22 +36,15 @@ export class WalletDatabaseRepository extends BasePrismaRepository implements Wa
     userId: string,
     page: PageQuery,
   ): RepositoryResponse<CursorPage<TransactionEntry>> {
-    return this.safeRun(async () => {
-      const entries = await paginateById<
-        Prisma.WalletEntryGetPayload<{ include: typeof WALLET_ENTRY_INCLUDE }>,
-        Prisma.WalletEntryFindManyArgs
-      >(
-        (args) =>
-          this.prisma.walletEntry.findMany(args) as Promise<
-            Prisma.WalletEntryGetPayload<{ include: typeof WALLET_ENTRY_INCLUDE }>[]
-          >,
-        {
-          where: { userId, kind: { not: WalletBalanceKind.TOTAL_EARNED } },
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          include: WALLET_ENTRY_INCLUDE,
-        },
-        page,
-      );
+    return repositoryResponse(async () => {
+      const rows = await this.prisma.walletEntry.findMany({
+        where: { userId, kind: { not: WalletBalanceKind.TOTAL_EARNED } },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: page.limit + 1,
+        ...(page.cursor ? { cursor: { id: page.cursor }, skip: 1 } : {}),
+        include: WALLET_ENTRY_INCLUDE,
+      });
+      const entries = buildIdCursorPage(rows, page.limit);
 
       return mapPage(entries, (entry) => ({
         id: entry.id,
@@ -67,7 +59,7 @@ export class WalletDatabaseRepository extends BasePrismaRepository implements Wa
   }
 
   async findUserById(userId: string): RepositoryResponse<{ id: string } | null> {
-    return this.safeRun(() => this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } }), 'Erro ao buscar usuário');
+    return repositoryResponse(() => this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } }), 'Erro ao buscar usuário');
   }
 
   async creditPending(
@@ -76,7 +68,7 @@ export class WalletDatabaseRepository extends BasePrismaRepository implements Wa
     orderId: string,
     tx?: Prisma.TransactionClient,
   ): RepositoryResponse<void> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         applyWalletDelta(
           tx ?? this.prisma,

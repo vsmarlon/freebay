@@ -7,6 +7,7 @@ import { ALLOWED_TOKEN_TYPES_KEY } from './token-types.decorator';
 import { WEB_COOKIE_AUTH_KEY } from './web-cookie-auth.decorator';
 import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
+import { UserRole } from '@prisma/client';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
@@ -82,7 +83,7 @@ describe('JwtAuthGuard', () => {
     const { context, request } = createContext('Bearer token');
     tokenValidator.verifyAndValidate.mockResolvedValue({
       userId: 'user-1',
-      role: 'USER',
+      role: UserRole.USER,
       type: JwtTokenType.ACCESS,
       jti: 'jti-1',
       iat: 200,
@@ -97,7 +98,7 @@ describe('JwtAuthGuard', () => {
     const { context } = createContext('Bearer header-token', 'freebay_access=cookie-token');
     tokenValidator.verifyAndValidate.mockResolvedValue({
       userId: 'user-1',
-      role: 'USER',
+      role: UserRole.USER,
       type: JwtTokenType.ACCESS,
       jti: 'jti-1',
       iat: 200,
@@ -113,7 +114,7 @@ describe('JwtAuthGuard', () => {
     reflector.getAllAndOverride.mockImplementation((key: string) => key === WEB_COOKIE_AUTH_KEY ? true : undefined);
     tokenValidator.verifyAndValidate.mockResolvedValue({
       userId: 'user-1',
-      role: 'USER',
+      role: UserRole.USER,
       type: JwtTokenType.ACCESS,
       jti: 'jti-1',
       iat: 200,
@@ -133,7 +134,7 @@ describe('JwtAuthGuard', () => {
     });
     tokenValidator.verifyAndValidate.mockResolvedValue({
       userId: 'user-1',
-      role: 'USER',
+      role: UserRole.USER,
       type: JwtTokenType.REFRESH,
       jti: 'jti-1',
       iat: 200,
@@ -179,7 +180,7 @@ describe('JwtAuthGuard', () => {
     });
     tokenValidator.verifyAndValidate.mockResolvedValue({
       userId: 'user-1',
-      role: 'USER',
+      role: UserRole.USER,
       type: JwtTokenType.REFRESH,
       jti: 'jti-1',
       iat: 200,

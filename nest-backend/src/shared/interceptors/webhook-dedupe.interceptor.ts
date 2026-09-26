@@ -14,7 +14,7 @@ import type { Failure } from "@/shared/core/errors";
 
 type WebhookRequest = { stripeEvent?: StripeWebhookEvent };
 
-const DEDUPE_TTL_SECONDS = 86400;
+export const WEBHOOK_DEDUPE_TTL_SECONDS = 24 * 60 * 60;
 
 @Injectable()
 export class WebhookDedupeInterceptor implements NestInterceptor<
@@ -38,7 +38,7 @@ export class WebhookDedupeInterceptor implements NestInterceptor<
 
     const key = `webhook:${eventId}`;
 
-    if (!(await this.redis.setIfAbsent(key, "1", DEDUPE_TTL_SECONDS))) {
+    if (!(await this.redis.setIfAbsent(key, "1", WEBHOOK_DEDUPE_TTL_SECONDS))) {
       this.logger.log(`Webhook ${eventId} already processed; skipping`);
       return of({ processed: false });
     }

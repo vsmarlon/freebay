@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, WalletEntryReason } from '@prisma/client';
+import { EscrowStatus, OrderStatus, Prisma, WalletEntryReason } from '@prisma/client';
 import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { DisputeWithOrder } from '../types/dispute.types';
 
@@ -7,8 +7,8 @@ import { DisputeWithOrder } from '../types/dispute.types';
 export class DisputeResolutionExecutionService {
   async resolveInFavorOfBuyer(tx: Prisma.TransactionClient, dispute: DisputeWithOrder): Promise<void> {
     const claimed = await tx.order.updateMany({
-      where: { id: dispute.orderId, escrowStatus: 'HELD' },
-      data: { status: 'CANCELLED', escrowStatus: 'REFUNDED' },
+      where: { id: dispute.orderId, escrowStatus: EscrowStatus.HELD },
+      data: { status: OrderStatus.CANCELLED, escrowStatus: EscrowStatus.REFUNDED },
     });
     if (claimed.count === 0) {
       return;
@@ -30,8 +30,8 @@ export class DisputeResolutionExecutionService {
 
   async resolveInFavorOfSeller(tx: Prisma.TransactionClient, dispute: DisputeWithOrder): Promise<void> {
     const claimed = await tx.order.updateMany({
-      where: { id: dispute.orderId, escrowStatus: 'HELD' },
-      data: { status: 'COMPLETED', escrowStatus: 'RELEASED' },
+      where: { id: dispute.orderId, escrowStatus: EscrowStatus.HELD },
+      data: { status: OrderStatus.COMPLETED, escrowStatus: EscrowStatus.RELEASED },
     });
     if (claimed.count === 0) {
       return;

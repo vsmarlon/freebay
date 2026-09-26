@@ -4,13 +4,14 @@ import { AppError } from '@/shared/core/errors';
 import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { ProductQueryDTO } from '../../dtos/product.dto';
 import { ProductListPayload } from '../../types/product.types';
+import { DEFAULT_PAGE_SIZE } from '@/shared/core/pagination';
 
 @Injectable()
 export class GetProductsUseCase {
   constructor(private readonly productRepository: ProductDatabaseRepository) {}
 
   async execute(query: ProductQueryDTO): Promise<Either<AppError, { products: ProductListPayload[]; nextCursor: string | null }>> {
-    const limit = query.limit ?? 20;
+    const limit = query.limit ?? DEFAULT_PAGE_SIZE;
     const result = await this.productRepository.findMany({
       cursor: query.cursor,
       limit,

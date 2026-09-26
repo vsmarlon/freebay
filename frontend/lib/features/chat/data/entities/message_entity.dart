@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'message_reaction_entity.dart';
+import 'message_type.dart';
 
 part 'message_entity.freezed.dart';
 part 'message_entity.g.dart';
@@ -12,7 +13,9 @@ abstract class MessageEntity with _$MessageEntity {
     required String senderId,
     String? clientMessageId,
     String? content,
-    @Default('TEXT') String type,
+    @JsonKey(fromJson: messageTypeFromJson, toJson: messageTypeToJson)
+    @Default(MessageType.text)
+    MessageType type,
     String? attachmentUrl,
     Map<String, dynamic>? metadata,
     String? replyToId,
@@ -33,22 +36,22 @@ abstract class MessageEntity with _$MessageEntity {
   String get previewText {
     final body = content ?? '';
     if (body.isNotEmpty) return body;
-    switch (type.toUpperCase()) {
-      case 'IMAGE':
-      case 'GIF':
+    switch (type) {
+      case MessageType.image:
+      case MessageType.gif:
         return 'Imagem';
-      case 'VIDEO':
+      case MessageType.video:
         return 'Vídeo';
-      case 'AUDIO':
+      case MessageType.audio:
         final ms = metadata?['durationMs'];
         if (ms is int && ms > 0) {
           final totalSec = ms ~/ 1000;
           return 'Áudio ${totalSec ~/ 60}:${(totalSec % 60).toString().padLeft(2, '0')}';
         }
         return 'Áudio';
-      case 'LOCATION':
+      case MessageType.location:
         return 'Localização';
-      case 'PRODUCT_CARD':
+      case MessageType.productCard:
         return 'Produto';
       default:
         return 'Mensagem';

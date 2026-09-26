@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConversationStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
@@ -55,7 +56,7 @@ export class StartConversationUseCase {
     const followResult = await this.conversationRepository.findFollow(initiatorId, targetUserId);
     if (followResult.isLeft()) return left(followResult.value);
 
-    const status = followResult.value ? 'ACTIVE' : 'PENDING';
+    const status = followResult.value ? ConversationStatus.ACTIVE : ConversationStatus.PENDING;
 
     const createResult = await this.conversationRepository.createDirectConversation({
       user1: { connect: { id: user1Id } },

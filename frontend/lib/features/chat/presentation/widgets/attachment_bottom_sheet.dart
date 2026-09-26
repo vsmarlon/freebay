@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/shared/services/upload_service.dart';
+import 'package:freebay/features/chat/data/entities/message_type.dart';
+
+const _imageUploadMaxWidth = 1024.0;
+const _imageUploadQuality = 85;
 
 /// Result returned by the attachment bottom sheet.
 class AttachmentResult {
   final String url;
-  final String type; // 'IMAGE' or 'GIF'
+  final MessageType type;
 
   const AttachmentResult({required this.url, required this.type});
 }
@@ -81,8 +85,8 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
 
     final xfile = await _picker.pickImage(
       source: ImageSource.gallery,
-      maxWidth: 1024,
-      imageQuality: 85,
+      maxWidth: _imageUploadMaxWidth,
+      imageQuality: _imageUploadQuality,
     );
     if (xfile == null) return;
 
@@ -106,7 +110,9 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
         (url) {
           if (mounted) {
             Navigator.of(context).pop();
-            widget.onMediaReady(AttachmentResult(url: url, type: 'IMAGE'));
+            widget.onMediaReady(
+              AttachmentResult(url: url, type: MessageType.image),
+            );
           }
         },
       );
@@ -147,7 +153,9 @@ class _AttachmentSheetBodyState extends State<_AttachmentSheetBody> {
         (url) {
           if (mounted) {
             Navigator.of(context).pop();
-            widget.onMediaReady(AttachmentResult(url: url, type: 'VIDEO'));
+            widget.onMediaReady(
+              AttachmentResult(url: url, type: MessageType.video),
+            );
           }
         },
       );

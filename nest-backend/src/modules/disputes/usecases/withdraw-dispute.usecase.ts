@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DisputeStatus, EscrowStatus, OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -35,12 +36,12 @@ export class WithdrawDisputeUseCase {
     await this.prisma.$transaction(async (tx) => {
       await tx.dispute.update({
         where: { id: input.disputeId },
-        data: { status: 'CANCELLED', resolvedAt: new Date() },
+        data: { status: DisputeStatus.CANCELLED, resolvedAt: new Date() },
       });
 
       await tx.order.update({
         where: { id: dispute.orderId },
-        data: { status: 'DELIVERED', escrowStatus: 'HELD' },
+        data: { status: OrderStatus.DELIVERED, escrowStatus: EscrowStatus.HELD },
       });
     });
 

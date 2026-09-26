@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -7,6 +8,8 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
+import 'package:freebay/features/chat/presentation/widgets/new_chat/new_chat_product_composer.dart';
+import 'package:freebay/features/chat/presentation/widgets/new_chat/new_chat_user_results.dart';
 import 'package:freebay/features/profile/data/entities/follower_entity.dart';
 import 'package:freebay/features/profile/data/entities/block_responses.dart';
 import 'package:freebay/features/profile/presentation/pages/blocked_users_page.dart';
@@ -78,7 +81,6 @@ class NewChatPage extends HookConsumerWidget {
     final blockedIds = blockedAsync.value?.users.map((u) => u.id).toSet() ?? {};
     List<UserSearchEntity> filterBlocked(List<UserSearchEntity> users) =>
         users.where((u) => !blockedIds.contains(u.id)).toList();
-
     final following = (followingAsync.value ?? [])
         .map(
           (f) => UserSearchEntity(
@@ -115,8 +117,9 @@ class NewChatPage extends HookConsumerWidget {
       }
       await ref.read(liveChatListProvider.notifier).refreshRecent();
       ref.invalidate(chatsProvider);
-      if (!context.mounted) return;
-      context.push(AppRoutes.chatPath(conversationId));
+      if (context.mounted) {
+        context.push(AppRoutes.chatPath(conversationId));
+      }
     }
 
     Future<void> sendProductMessage() async {
@@ -152,8 +155,9 @@ class NewChatPage extends HookConsumerWidget {
             }
             await ref.read(liveChatListProvider.notifier).refreshRecent();
             ref.invalidate(chatsProvider);
-            if (!context.mounted) return;
-            context.push(AppRoutes.chatPath(conversationId));
+            if (context.mounted) {
+              context.push(AppRoutes.chatPath(conversationId));
+            }
           },
         );
       } finally {
@@ -161,10 +165,7 @@ class NewChatPage extends HookConsumerWidget {
       }
     }
 
-    final isDark = context.isDark;
-    final isSearching = searchController.text.isNotEmpty;
-
-    if (targetUserId != null && productId != null) {
+    if (isProductContext) {
       return Scaffold(
         backgroundColor: Colors.transparent,
         body: AppBackground(
@@ -179,27 +180,10 @@ class NewChatPage extends HookConsumerWidget {
                   },
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Mensagem para o vendedor',
-                      style: TextStyle(color: context.textSecondary),
-                    ),
-                    Spacing.vSm,
-                    AppTextField(controller: draftController, maxLines: 5),
-                    Spacing.vMd,
-                    AppButton(
-                      label: 'ENVIAR MENSAGEM',
-                      onPressed: draftController.text.trim().isEmpty
-                          ? null
-                          : sendProductMessage,
-                      isLoading: isSending.value,
-                    ),
-                  ],
-                ),
+              NewChatProductComposer(
+                controller: draftController,
+                isSending: isSending.value,
+                onSend: sendProductMessage,
               ),
             ],
           ),
@@ -207,6 +191,7 @@ class NewChatPage extends HookConsumerWidget {
       );
     }
 
+    final isSearching = searchController.text.isNotEmpty;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
@@ -239,7 +224,7 @@ class NewChatPage extends HookConsumerWidget {
                               )
                             : null,
                         filled: true,
-                        fillColor: isDark
+                        fillColor: context.isDark
                             ? AppColors.surfaceDark
                             : AppColors.white,
                         border: const OutlineInputBorder(
@@ -250,21 +235,16 @@ class NewChatPage extends HookConsumerWidget {
                     ),
                   ),
                   Expanded(
-                    child: isSearching
-                        ? _buildSearchResults(
-                            context,
-                            filterBlocked(searchState.users),
-                            searchState.isLoading,
-                            startConversation,
-                          )
-                        : _buildFollowingAndSuggestions(
-                            context,
-                            filterBlocked(following),
-                            followingAsync.isLoading,
-                            filterBlocked(suggestions.users),
-                            suggestions.isLoading,
-                            startConversation,
-                          ),
+                    child: NewChatUserResults(
+                      isSearching: isSearching,
+                      searchUsers: filterBlocked(searchState.users),
+                      isLoadingSearch: searchState.isLoading,
+                      following: filterBlocked(following),
+                      isLoadingFollowing: followingAsync.isLoading,
+                      suggestions: filterBlocked(suggestions.users),
+                      isLoadingSuggestions: suggestions.isLoading,
+                      onStartConversation: startConversation,
+                    ),
                   ),
                 ],
               ),
@@ -272,149 +252,6 @@ class NewChatPage extends HookConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSearchResults(
-    BuildContext context,
-    List<UserSearchEntity> users,
-    bool isLoading,
-    Future<void> Function(String) startConversation,
-  ) {
-    if (users.isEmpty && !isLoading) {
-      return const EmptyState(
-        icon: Icons.person_search,
-        title: 'NENHUM USUÁRIO',
-        subtitle: 'Tente buscar por outro nome.',
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: users.length + (isLoading ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == users.length) return const ShimmerBlock(height: 72);
-        final user = users[index];
-        return _buildUserTile(context, user, () => startConversation(user.id));
-      },
-    );
-  }
-
-  Widget _buildFollowingAndSuggestions(
-    BuildContext context,
-    List<UserSearchEntity> following,
-    bool isLoadingFollowing,
-    List<UserSearchEntity> suggestions,
-    bool isLoadingSuggestions,
-    Future<void> Function(String) startConversation,
-  ) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (isLoadingFollowing || following.isNotEmpty) ...[
-          _buildSectionTitle(context, 'Quem você segue'),
-          if (isLoadingFollowing)
-            const ShimmerBlock(width: 20, height: 20)
-          else if (following.isEmpty)
-            const EmptyState(
-              icon: Icons.people_outline,
-              title: 'NENHUM SEGUIDO',
-              subtitle: 'Você ainda não segue ninguém.',
-            )
-          else
-            for (final u in following)
-              _buildUserTile(context, u, () => startConversation(u.id)),
-          Spacing.vLg,
-        ],
-        if (isLoadingSuggestions || suggestions.isNotEmpty) ...[
-          _buildSectionTitle(context, 'Sugestões'),
-          if (isLoadingSuggestions)
-            const ShimmerBlock(width: 20, height: 20)
-          else if (suggestions.isEmpty)
-            const EmptyState(
-              icon: Icons.explore_outlined,
-              title: 'NENHUMA SUGESTÃO',
-              subtitle: 'No momento não há sugestões de usuários.',
-            )
-          else
-            for (final u in suggestions)
-              _buildUserTile(context, u, () => startConversation(u.id)),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: context.textPrimary,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUserTile(
-    BuildContext context,
-    UserSearchEntity user,
-    VoidCallback onTap,
-  ) {
-    return ListTile(
-      leading: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          image: user.avatarUrl != null
-              ? DecorationImage(
-                  image: NetworkImage(user.avatarUrl!),
-                  fit: BoxFit.cover,
-                )
-              : null,
-          color: context.surfaceColor,
-        ),
-        child: user.avatarUrl == null
-            ? Center(
-                child: Text(
-                  user.displayName.isNotEmpty
-                      ? user.displayName[0].toUpperCase()
-                      : 'U',
-                ),
-              )
-            : null,
-      ),
-      title: Row(
-        children: [
-          Flexible(
-            child: Text(
-              user.displayName,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: context.textPrimary,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (user.isVerified) ...[
-            Spacing.hXs,
-            const Icon(
-              Icons.verified,
-              color: AppColors.primaryContainer,
-              size: 16,
-            ),
-          ],
-        ],
-      ),
-      subtitle: user.followersCount > 0
-          ? Text(
-              '${user.followersCount} seguidores',
-              style: TextStyle(color: context.textSecondary, fontSize: 12),
-            )
-          : null,
-      onTap: onTap,
     );
   }
 }

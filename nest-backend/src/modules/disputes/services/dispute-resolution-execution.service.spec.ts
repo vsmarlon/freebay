@@ -50,6 +50,7 @@ describe('DisputeResolutionExecutionService', () => {
         escrowStatus: 'HELD',
         meetingScheduledAt: null,
         deliveryConfirmedAt: null,
+        cancellationReason: null,
         createdAt: now,
         updatedAt: now,
         ...overrides,

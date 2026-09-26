@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
-import { PrismaBlockRepository } from '../data/repositories/block-database.repository';
+import { BlockRepository } from '../domain/repositories/block.repository';
 import { BlockResponse } from '../mappers/user.mapper';
 import { BlockUserInput } from '../dtos/user.dto';
 
@@ -10,7 +10,7 @@ import { BlockUserInput } from '../dtos/user.dto';
 export class BlockUserUseCase {
   constructor(
     private readonly userRepository: UserDatabaseRepository,
-    private readonly blockRepository: PrismaBlockRepository,
+    private readonly blockRepository: BlockRepository,
   ) {}
 
   async execute(input: BlockUserInput): Promise<Either<AppError, BlockResponse>> {

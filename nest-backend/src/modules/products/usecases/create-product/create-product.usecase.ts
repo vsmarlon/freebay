@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ProductStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
@@ -18,7 +19,7 @@ export class CreateProductUseCase {
       condition: input.condition,
       category: { connect: { id: input.categoryId } },
       seller: { connect: { id: input.sellerId } },
-      status: 'ACTIVE',
+      status: ProductStatus.ACTIVE,
       quantity: input.quantity ?? 1,
       images: { create: imageUrls },
     });

@@ -87,6 +87,31 @@ class FaqPage extends StatelessWidget {
       ],
     },
     {
+      'title': 'CANCELAMENTO E REEMBOLSO',
+      'items': [
+        {
+          'q': 'Posso cancelar um pedido?',
+          'a':
+              'Sim! Tanto o comprador quanto o vendedor podem cancelar o pedido a qualquer momento enquanto o status for Pendente ou Confirmado (antes do envio). Após o produto ser marcado como Enviado, cancelamentos diretos não são mais permitidos, sendo necessário recorrer à mediação por Disputa.',
+        },
+        {
+          'q': 'Como funciona o reembolso após o cancelamento?',
+          'a':
+              'Se o pedido já foi pago, solicitamos o estorno à Stripe. O cancelamento fica em processamento até a confirmação; o prazo para aparecer na fatura depende do emissor do cartão.',
+        },
+        {
+          'q': 'O que acontece com o produto após o cancelamento?',
+          'a':
+              'Após o cancelamento confirmado, o estoque do produto é restaurado e ele volta a ficar disponível.',
+        },
+        {
+          'q': 'Preciso informar um motivo para cancelar?',
+          'a':
+              'Sim, é obrigatório selecionar o motivo do cancelamento na lista suspensa. A outra parte do pedido receberá uma notificação informando o cancelamento e a justificativa.',
+        },
+      ],
+    },
+    {
       'title': 'DISPUTAS E SEGURANÇA',
       'items': [
         {

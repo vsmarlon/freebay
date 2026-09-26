@@ -20,8 +20,8 @@ class _FakeSocialRepository extends SocialRepository {
     int limit = 20,
     String? cursor,
     int? offset,
-    String type = 'explore',
-    String contentFilter = 'all',
+    FeedType type = FeedType.explore,
+    FeedContentFilter contentFilter = FeedContentFilter.all,
   }) {
     cursors.add(cursor);
     final request = Completer<Either<Failure, FeedPageResult>>();
@@ -51,8 +51,8 @@ void main() {
       final first = notifier.loadFeed();
       final second = notifier.loadFeed(
         refresh: true,
-        feedType: 'following',
-        contentFilter: 'social',
+        feedType: FeedType.following,
+        contentFilter: FeedContentFilter.socialOnly,
       );
       repository.requests[1].complete(
         const Right(FeedPageResult(posts: [], hasMore: false)),
@@ -67,8 +67,8 @@ void main() {
 
       final page = notifier.loadFeed(
         refresh: true,
-        feedType: 'following',
-        contentFilter: 'social',
+        feedType: FeedType.following,
+        contentFilter: FeedContentFilter.socialOnly,
       );
       repository.requests[2].complete(
         Right(
@@ -94,7 +94,10 @@ void main() {
     addTearDown(container.dispose);
     final notifier = container.read(feedProvider.notifier);
 
-    final initial = notifier.loadFeed(refresh: true, feedType: 'following');
+    final initial = notifier.loadFeed(
+      refresh: true,
+      feedType: FeedType.following,
+    );
     repository.requests[0].complete(
       Right(
         FeedPageResult(
@@ -106,12 +109,12 @@ void main() {
     );
     await initial;
 
-    final failed = notifier.loadFeed(feedType: 'following');
+    final failed = notifier.loadFeed(feedType: FeedType.following);
     repository.requests[1].complete(const Left(ServerFailure('offline')));
     await failed;
     expect(container.read(feedProvider).cursor, 'cursor-1');
 
-    final retried = notifier.loadFeed(feedType: 'following');
+    final retried = notifier.loadFeed(feedType: FeedType.following);
     expect(repository.cursors, [null, 'cursor-1', 'cursor-1']);
     repository.requests[2].complete(
       const Right(FeedPageResult(posts: [], hasMore: false)),

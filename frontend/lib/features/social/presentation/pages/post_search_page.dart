@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/post_search_provider.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
 
@@ -16,7 +17,7 @@ class PostSearchPage extends ConsumerStatefulWidget {
 
 class _PostSearchPageState extends ConsumerState<PostSearchPage> {
   final _searchController = TextEditingController();
-  String _selectedFilter = 'all';
+  PostSearchFilter _selectedFilter = PostSearchFilter.all;
   Timer? _debounceTimer;
 
   @override
@@ -35,7 +36,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
     });
   }
 
-  void _onFilterChanged(String filter) {
+  void _onFilterChanged(PostSearchFilter filter) {
     setState(() {
       _selectedFilter = filter;
     });
@@ -95,20 +96,22 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                 children: [
                   _FilterChip(
                     label: 'Todos',
-                    isSelected: _selectedFilter == 'all',
-                    onSelected: () => _onFilterChanged('all'),
+                    isSelected: _selectedFilter == PostSearchFilter.all,
+                    onSelected: () => _onFilterChanged(PostSearchFilter.all),
                   ),
                   Spacing.hSm,
                   _FilterChip(
                     label: 'Seguindo',
-                    isSelected: _selectedFilter == 'following',
-                    onSelected: () => _onFilterChanged('following'),
+                    isSelected: _selectedFilter == PostSearchFilter.following,
+                    onSelected: () =>
+                        _onFilterChanged(PostSearchFilter.following),
                   ),
                   Spacing.hSm,
                   _FilterChip(
                     label: 'Seguidores',
-                    isSelected: _selectedFilter == 'followers',
-                    onSelected: () => _onFilterChanged('followers'),
+                    isSelected: _selectedFilter == PostSearchFilter.followers,
+                    onSelected: () =>
+                        _onFilterChanged(PostSearchFilter.followers),
                   ),
                 ],
               ),
@@ -178,7 +181,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
               isLiked: isLiked,
               createdAt: post.createdAt,
               price: post.product?.price.toDouble(),
-              isSelling: post.type == 'PRODUCT',
+              isSelling: post.type == PostType.product,
               onTap: () => context.push(AppRoutes.postPath(post.id)),
               onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
               onLike: () async {

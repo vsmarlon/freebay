@@ -1,39 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage } from '@/shared/core/pagination';
 import { PostResponse, postIncludeForViewer, SavedPostsRepositoryQuery } from '../../types/social.types';
 import { normalizePost } from './post-database.repository';
 
 @Injectable()
-export class PrismaSavedPostRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class PrismaSavedPostRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findByUserAndPost(userId: string, postId: string): RepositoryResponse<{ id: string } | null> {
-    return this.safeRun(() => this.prisma.savedPost.findUnique({
+    return repositoryResponse(() => this.prisma.savedPost.findUnique({
       where: { userId_postId: { userId, postId } },
       select: { id: true },
     }), 'Erro ao buscar post salvo');
   }
 
   async save(userId: string, postId: string): RepositoryResponse<{ id: string }> {
-    return this.safeRun(() => this.prisma.savedPost.create({
+    return repositoryResponse(() => this.prisma.savedPost.create({
       data: { userId, postId },
       select: { id: true },
     }), 'Erro ao salvar post');
   }
 
   async unsave(userId: string, postId: string): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.savedPost.delete({ where: { userId_postId: { userId, postId } } });
     }, 'Erro ao remover post salvo');
   }
 
   async setSaved(userId: string, postId: string, active: boolean): RepositoryResponse<{ active: boolean }> {
-    return this.safeRun(() => this.prisma.$transaction(async (tx) => {
+    return repositoryResponse(() => this.prisma.$transaction(async (tx) => {
       const existing = await tx.savedPost.findUnique({ where: { userId_postId: { userId, postId } } });
       if (active && !existing) await tx.savedPost.create({ data: { userId, postId } });
       if (!active && existing) await tx.savedPost.delete({ where: { userId_postId: { userId, postId } } });
@@ -44,7 +43,7 @@ export class PrismaSavedPostRepository extends BasePrismaRepository {
   async findSaved(
     query: SavedPostsRepositoryQuery,
   ): RepositoryResponse<CursorPage<PostResponse>> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const limit = query.limit ?? 20;
       const saved = await this.prisma.savedPost.findMany({
         where: {

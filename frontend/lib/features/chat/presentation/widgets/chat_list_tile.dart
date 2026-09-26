@@ -3,6 +3,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatListTile extends StatelessWidget {
   final ChatEntity chat;
@@ -26,7 +27,7 @@ class ChatListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final productTitle = chat.productTitle;
     Widget tile = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
@@ -40,12 +41,10 @@ class ChatListTile extends StatelessWidget {
                     : Colors.transparent,
                 width: 4,
               ),
-              top: BorderSide(color: context.borderColor),
-              right: BorderSide(color: context.borderColor),
-              bottom: BorderSide(color: context.borderColor),
+              bottom: BorderSide(color: context.borderSoftColor, width: 0.5),
             ),
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               _buildAvatar(context),
@@ -170,32 +169,7 @@ class ChatListTile extends StatelessWidget {
       ),
     );
 
-    if (canSwipe) {
-      tile = Dismissible(
-        key: ValueKey('chat_${chat.id}'),
-        direction: DismissDirection.endToStart,
-        background: Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 24),
-          decoration: const BoxDecoration(
-            gradient: AppColors.brutalistGradient,
-          ),
-          child: const Icon(
-            Icons.archive,
-            color: AppColors.onPrimary,
-            size: 28,
-          ),
-        ),
-        confirmDismiss: (direction) async {
-          await onArchive();
-          return false;
-        },
-        child: tile,
-      );
-    }
-
-    return tile;
+    return RepaintBoundary(child: tile);
   }
 
   Widget _buildAvatar(BuildContext context) {
@@ -210,7 +184,7 @@ class ChatListTile extends StatelessWidget {
           decoration: BoxDecoration(
             image: hasAvatar
                 ? DecorationImage(
-                    image: NetworkImage(avatarUrl),
+                    image: CachedNetworkImageProvider(avatarUrl),
                     fit: BoxFit.cover,
                   )
                 : null,
@@ -243,60 +217,6 @@ class ChatListTile extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class ChatListLoadingTile extends StatelessWidget {
-  final bool isDark;
-
-  const ChatListLoadingTile({super.key, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.bgColor,
-          border: Border.all(color: context.borderColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              color: isDark
-                  ? context.textSecondary.withAlpha(51)
-                  : context.surfaceMidColor,
-            ),
-            Spacing.hMd,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 14,
-                    width: 100,
-                    color: isDark
-                        ? context.textSecondary.withAlpha(51)
-                        : context.surfaceMidColor,
-                  ),
-                  Spacing.vSm,
-                  Container(
-                    height: 12,
-                    width: 150,
-                    color: isDark
-                        ? context.textSecondary.withAlpha(51)
-                        : context.surfaceMidColor,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

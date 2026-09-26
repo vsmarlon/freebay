@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
@@ -17,12 +18,12 @@ export class MarkAsDeliveredUseCase {
       return left(new UnauthorizedError('Only buyer can mark as delivered'));
     }
 
-    if (orderResult.value.status !== 'SHIPPED') {
+    if (orderResult.value.status !== OrderStatus.SHIPPED) {
       return left(new InvalidOrderStateError('SHIPPED to deliver', orderResult.value.status));
     }
 
     const result = await this.orderRepository.update(input.orderId, {
-      status: 'DELIVERED',
+      status: OrderStatus.DELIVERED,
       deliveryConfirmedAt: new Date(),
     });
     if (result.isLeft()) return left(result.value);

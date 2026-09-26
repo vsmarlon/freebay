@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { OrderStatus, PaymentMethod, TransactionStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
@@ -36,8 +37,8 @@ export class CreatePaymentIntentUseCase {
       return left(new BadRequestError('Order does not belong to this user'));
     }
 
-    if (order.status !== 'PENDING') {
-      return left(new InvalidOrderStateError('PENDING', order.status));
+    if (order.status !== OrderStatus.PENDING) {
+      return left(new InvalidOrderStateError(OrderStatus.PENDING, order.status));
     }
 
     const userResult = await this.userRepository.findPaymentInfo(input.userId);
@@ -52,12 +53,12 @@ export class CreatePaymentIntentUseCase {
 
     const existing = existingResult.value;
 
-    if (existing?.status === 'PAID') {
+    if (existing?.status === TransactionStatus.PAID) {
       return left(new BadRequestError('Order already paid'));
     }
 
     if (
-      existing?.status === 'PENDING' &&
+      existing?.status === TransactionStatus.PENDING &&
       existing.externalId?.startsWith('cs_')
     ) {
       return left(
@@ -69,7 +70,7 @@ export class CreatePaymentIntentUseCase {
 
     if (
       existing &&
-      (existing.status !== 'PENDING' || !existing.externalId?.startsWith('pi_'))
+      (existing.status !== TransactionStatus.PENDING || !existing.externalId?.startsWith('pi_'))
     ) {
       return left(new BadRequestError('Order is not payable'));
     }
@@ -97,7 +98,7 @@ export class CreatePaymentIntentUseCase {
       amount: order.amount,
       platformFee: order.platformFee,
       sellerAmount: order.sellerAmount,
-      paymentMethod: 'CREDIT_CARD',
+      paymentMethod: PaymentMethod.CREDIT_CARD,
       idempotencyKey,
     });
     if (upsertResult.isLeft()) return left(upsertResult.value);

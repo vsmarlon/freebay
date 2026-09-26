@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { GoogleAuthUseCase } from './google-auth.usecase';
+import { UserRole } from '@prisma/client';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { right } from '@/shared/core/either';
+import { SessionTokenService } from '../services/session-token.service';
 
 const mockVerifyIdToken = jest.fn();
 
@@ -48,6 +50,7 @@ describe('GoogleAuthUseCase', () => {
         GoogleAuthUseCase,
         { provide: UserDatabaseRepository, useValue: mockUserRepository },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: SessionTokenService, useValue: { generate: jest.fn().mockReturnValue({ token: 'access', refreshToken: 'refresh' }) } },
       ],
     }).compile();
 
@@ -82,7 +85,7 @@ describe('GoogleAuthUseCase', () => {
       bio: null,
       isVerified: false,
       isGuest: false,
-      role: 'USER',
+      role: UserRole.USER,
       reputationScore: 0,
       totalReviews: 0,
       createdAt: new Date(),
@@ -128,7 +131,7 @@ describe('GoogleAuthUseCase', () => {
       bio: null,
       isVerified: false,
       isGuest: false,
-      role: 'USER',
+      role: UserRole.USER,
       reputationScore: 0,
       totalReviews: 0,
       createdAt: new Date(),
@@ -182,7 +185,7 @@ describe('GoogleAuthUseCase', () => {
       bio: null,
       isVerified: false,
       isGuest: false,
-      role: 'USER',
+      role: UserRole.USER,
       reputationScore: 0,
       totalReviews: 0,
       createdAt: new Date(),

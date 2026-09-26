@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/core/components/app_card_image.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 enum AppCardVariant { compact, full, skeleton }
 
@@ -53,7 +54,8 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
 
     final isDark = context.isDark;
     final price = CurrencyUtils.formatCents(widget.priceInCents);
-    final isNew = widget.condition == 'new' || widget.condition == 'NOVO';
+    final isNew =
+        ProductCondition.fromLegacy(widget.condition) == ProductCondition.isNew;
 
     return AnimatedContainer(
       duration: AppMotion.tap,
@@ -217,58 +219,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
 
   Widget _buildImage() {
     final height = widget.variant == AppCardVariant.compact ? 120.0 : 160.0;
-
-    if (widget.imageUrl == null || widget.imageUrl!.isEmpty) {
-      return _buildPlaceholder(height);
-    }
-
-    return CachedNetworkImage(
-      imageUrl: widget.imageUrl!,
-      height: height,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      memCacheWidth: 400,
-      memCacheHeight: 400,
-      placeholder: (context, url) => _buildPlaceholder(height),
-      errorWidget: (context, url, error) => _buildPlaceholder(height),
-    );
-  }
-
-  Widget _buildPlaceholder(double height) {
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [context.surfaceMidColor, context.surfaceHighColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.shopping_bag_outlined,
-              color: AppColors.primaryContainer,
-              size: 32,
-            ),
-            SizedBox(height: 4),
-            Text(
-              'FREEBAY',
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-                color: AppColors.primaryContainer,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return AppCardImage(imageUrl: widget.imageUrl, height: height);
   }
 
   Widget _buildSkeleton(BuildContext context) {

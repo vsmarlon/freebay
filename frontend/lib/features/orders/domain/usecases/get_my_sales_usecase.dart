@@ -2,14 +2,18 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/data/repositories/order_repository.dart';
+import 'package:freebay/features/orders/domain/repositories/order_repository.dart';
 
 class GetMySalesParams {
   final String? cursor;
   final int limit;
-  final String? status;
+  final OrderStatus? status;
 
-  GetMySalesParams({this.cursor, this.limit = 20, this.status});
+  GetMySalesParams({
+    this.cursor,
+    this.limit = defaultOrderPageLimit,
+    this.status,
+  });
 }
 
 class GetMySalesUsecase

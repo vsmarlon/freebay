@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 import { User } from '@prisma/client';
+import { UserBrief } from '../types/user.types';
 
 // ─── Swagger response classes ──────────────────────────
 
@@ -41,7 +43,7 @@ export class UserResponse {
   createdAt: Date;
 
   @ApiProperty({ example: 'USER' })
-  role: string;
+  role: UserRole;
 
   @ApiProperty({ example: true })
   hasCpf: boolean;
@@ -178,6 +180,15 @@ export interface UserResponseExtras {
   hasActiveStory?: boolean;
 }
 
+export const toUserBrief = (user: UserBrief) => ({
+  id: user.id,
+  displayName: user.displayName,
+  username: user.username ?? null,
+  avatarUrl: user.avatarUrl,
+  isVerified: user.isVerified,
+  reputationScore: user.reputationScore,
+});
+
 export const toUserResponse = (
   user: User,
   extras?: UserResponseExtras,
@@ -195,7 +206,7 @@ export const toUserResponse = (
   reputationScore: user.reputationScore,
   totalReviews: user.totalReviews,
   createdAt: user.createdAt,
-  role: isOwner ? user.role : 'USER',
+  role: isOwner ? user.role : UserRole.USER,
   hasCpf: isOwner ? !!user.cpf : false,
   cpf: isOwner && user.cpf
     ? user.cpf.length === 11

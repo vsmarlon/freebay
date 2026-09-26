@@ -4,13 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_status_timeline.dart';
 import 'package:freebay/features/orders/presentation/widgets/escrow_status_card.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_actions.dart';
 import 'package:freebay/features/orders/presentation/widgets/brutalist_confirm_dialog.dart';
-import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/core/router/app_routes.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
@@ -256,12 +256,17 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
       Text(k, style: TextStyle(fontSize: 13, color: context.textSecondary)),
-      Text(
-        v,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: context.textPrimary,
+      const SizedBox(width: 12),
+      Flexible(
+        child: Text(
+          v,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: context.textPrimary,
+          ),
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.end,
         ),
       ),
     ],
@@ -302,17 +307,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
   Future<void> _handleChat(OrderEntity order, bool isBuyer) async {
     final targetId = isBuyer ? order.sellerId : order.buyerId;
-    try {
-      final res = await HttpClient.instance.post(
-        '/chat/conversations',
-        data: {'targetUserId': targetId},
-      );
-      final conversationId = res.data['data']['conversationId'] as String;
-      if (!mounted) return;
-      context.push(AppRoutes.chatPath(conversationId));
-    } catch (e) {
-      if (mounted) AppSnackbar.error(context, userMessageOf(e));
-    }
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .startDirectConversation(targetId);
+    if (!mounted) return;
+    result.fold(
+      (failure) => AppSnackbar.error(context, failure.message),
+      (conversationId) => context.push(AppRoutes.chatPath(conversationId)),
+    );
   }
 
   void _handleDispute(OrderEntity order) {
@@ -321,22 +323,121 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     ).showSnackBar(const SnackBar(content: Text('Disputa em breve')));
   }
 
+  static const _cancelReasons = [
+    'Mudei de ideia',
+    'Encontrei um preço melhor',
+    'Produto incorreto',
+    'Demora na confirmação',
+    'Problemas com o vendedor',
+    'Outro motivo',
+  ];
+
   Future<void> _handleCancel() async {
+    String? selectedReason;
+
+    selectedReason = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: context.surfaceColor,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'CANCELAR PEDIDO',
+                style: TextStyle(
+                  fontFamily: AppTypography.headlineFontFamily,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(ctx).brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Selecione o motivo do cancelamento:',
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 14,
+                  color: AppColors.mediumGray,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ..._cancelReasons.map(
+                (reason) => InkWell(
+                  onTap: () => Navigator.of(ctx).pop(reason),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 16,
+                    ),
+                    margin: const EdgeInsets.only(bottom: 4),
+                    color: Theme.of(ctx).brightness == Brightness.dark
+                        ? Colors.white.withAlpha(10)
+                        : Colors.black.withAlpha(10),
+                    child: Text(
+                      reason,
+                      style: TextStyle(
+                        fontFamily: AppTypography.fontFamily,
+                        fontSize: 15,
+                        color: Theme.of(ctx).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              AppButton(
+                label: 'Voltar',
+                variant: AppButtonVariant.secondary,
+                onPressed: () => Navigator.of(ctx).pop(),
+                width: double.infinity,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selectedReason == null || !mounted) return;
+
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => const BrutalistConfirmDialog(
-        title: 'Cancelar Pedido',
+      builder: (_) => BrutalistConfirmDialog(
+        title: 'Confirmar Cancelamento',
         message:
-            'Tem certeza que deseja cancelar este pedido? O valor será reembolsado.',
+            'Tem certeza que deseja cancelar este pedido?\n\nMotivo: $selectedReason\n\nO valor será reembolsado se já tiver sido pago.',
         confirmLabel: 'Cancelar Pedido',
         cancelLabel: 'Voltar',
         isDanger: true,
       ),
     );
-    if (ok == true) {
-      await ref
-          .read(orderDetailProvider(widget.orderId).notifier)
-          .cancelOrder();
+    if (ok != true || !mounted) return;
+
+    final outcome = await ref
+        .read(orderDetailProvider(widget.orderId).notifier)
+        .cancelOrder(selectedReason);
+
+    if (!mounted) return;
+    if (outcome != null) {
+      if (outcome == 'REFUND_PENDING') {
+        AppSnackbar.info(
+          context,
+          'Reembolso solicitado. Aguarde a confirmação do pagamento.',
+        );
+      } else {
+        AppSnackbar.success(context, 'Pedido cancelado com sucesso');
+      }
+      await ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
+    } else {
+      final error = ref.read(orderDetailProvider(widget.orderId)).error;
+      AppSnackbar.error(context, error ?? 'Erro ao cancelar pedido');
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ProductStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
@@ -14,7 +15,7 @@ export class AddToCartUseCase {
 
     const productResult = await this.cartRepository.findProductById(input.productId);
     if (productResult.isLeft()) return left(productResult.value);
-    if (!productResult.value || productResult.value.status !== 'ACTIVE') {
+    if (!productResult.value || productResult.value.status !== ProductStatus.ACTIVE) {
       return left(new NotFoundError('Produto'));
     }
     if (productResult.value.sellerId === input.userId) {

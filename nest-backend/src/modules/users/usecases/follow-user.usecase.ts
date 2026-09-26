@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
-import { PrismaFollowRepository } from '../data/repositories/follow-database.repository';
+import { FollowRepository } from '../domain/repositories/follow.repository';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { FollowResponse } from '../mappers/user.mapper';
 import { FollowUserInput } from '../dtos/user.dto';
@@ -11,7 +11,7 @@ import { FollowUserInput } from '../dtos/user.dto';
 export class FollowUserUseCase {
   constructor(
     private readonly userRepository: UserDatabaseRepository,
-    private readonly followRepository: PrismaFollowRepository,
+    private readonly followRepository: FollowRepository,
     private readonly notificationService: NotificationService,
   ) {}
 

@@ -100,7 +100,11 @@ describe('ChatController.sendMessage', () => {
       viewOnce: false,
       createdAt: new Date(),
     };
-    const execute = jest.fn().mockResolvedValue(right(message));
+    const execute = jest.fn().mockResolvedValue(right({
+      message,
+      recipientId: 'recipient-1',
+      senderName: 'Sender',
+    }));
     const broadcastNewMessage = jest.fn();
     const module = await Test.createTestingModule({
       controllers: [ChatController],
@@ -135,8 +139,9 @@ describe('ChatController.sendMessage', () => {
       metadata: message.metadata,
     } satisfies SendMessageDTO;
 
-    await controller.sendMessage('conversation-1', body, 'sender-1');
+    const result = await controller.sendMessage('conversation-1', body, 'sender-1');
 
     expect(broadcastNewMessage).toHaveBeenCalledWith('conversation-1', message);
+    expect(result).toEqual(message);
   });
 });

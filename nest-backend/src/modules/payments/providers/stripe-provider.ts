@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
+import { CHECKOUT_EXPIRY_MILLISECONDS, CHECKOUT_EXPIRY_SECONDS } from '../payment.constants';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, PaymentProviderError } from '@/shared/core/errors';
 import {
@@ -11,19 +12,19 @@ import {
 } from '../types/payment-provider.types';
 import {
   ConnectAccountSnapshot,
-  ConnectStatus,
   CreateConnectAccountParams,
   CreateTransferParams,
   TransferReconciliationParams,
   TransferReconciliationResult,
   ReversalReconciliationParams,
 } from '../types/connect.types';
+import { StripeConnectClient } from './stripe-connect-client';
+import {
+  StripeWebhookEvent,
+  StripeWebhookVerifier,
+} from './stripe-webhook-verifier';
 
-export type StripeWebhookEvent = Stripe.Event | Stripe.V2.Core.EventNotification;
-export type VerifiedV2AccountWebhookEvent = Extract<
-  Stripe.V2.Core.EventNotification,
-  { related_object: { id: string; type: string } }
->;
+export { StripeWebhookEvent, VerifiedV2AccountWebhookEvent } from './stripe-webhook-verifier';
 
 @Injectable()
 export class StripeProvider {
@@ -31,6 +32,8 @@ export class StripeProvider {
   private readonly logger = new Logger(StripeProvider.name);
   private readonly stripe: Stripe;
   private readonly webhookSecret: string;
+  private readonly connect: StripeConnectClient;
+  private readonly webhookVerifier: StripeWebhookVerifier;
 
   constructor(private readonly config: ConfigService) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
@@ -52,6 +55,12 @@ export class StripeProvider {
     }
     this.stripe = new Stripe(key, { apiVersion: StripeProvider.API_VERSION });
     this.webhookSecret = webhookSecret;
+    this.connect = new StripeConnectClient(this.stripe, this.logger);
+    this.webhookVerifier = new StripeWebhookVerifier(
+      this.stripe,
+      this.webhookSecret,
+      this.logger,
+    );
   }
 
   async createPaymentSession(
@@ -88,12 +97,12 @@ export class StripeProvider {
            ...(params.transferGroup
              ? { payment_intent_data: { transfer_group: params.transferGroup } }
              : {}),
-          expires_at: Math.floor(Date.now() / 1000) + 3600,
+          expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRY_SECONDS,
         },
         { idempotencyKey: params.idempotencyKey || fallbackKey },
       );
 
-      const expiresAt = new Date(Date.now() + 3600 * 1000);
+      const expiresAt = new Date(Date.now() + CHECKOUT_EXPIRY_MILLISECONDS);
 
       return right({
         stripeSessionId: session.id,
@@ -180,48 +189,43 @@ export class StripeProvider {
     }
   }
 
+  async refundPayment(payment: {
+    orderId: string;
+    amount: number;
+    chargeId?: string;
+    paymentIntentId?: string;
+  }): Promise<Either<AppError, 'succeeded' | 'pending'>> {
+    try {
+      const refund = await this.stripe.refunds.create(
+        {
+          amount: payment.amount,
+          ...(payment.chargeId
+            ? { charge: payment.chargeId }
+            : { payment_intent: payment.paymentIntentId }),
+          reason: 'requested_by_customer',
+        },
+        { idempotencyKey: `order-cancel-${payment.orderId}` },
+      );
+      if (refund.status === 'succeeded') return right('succeeded');
+      if (refund.status === 'pending') return right('pending');
+      return left(new PaymentProviderError('O reembolso não foi aceito pelo provedor'));
+    } catch (error) {
+      this.logger.error(`Stripe refund failed for order ${payment.orderId}: ${error instanceof Error ? error.message : String(error)}`);
+      return left(new PaymentProviderError('Erro ao solicitar reembolso'));
+    }
+  }
+
 
   async createConnectAccount(
     params: CreateConnectAccountParams,
   ): Promise<Either<AppError, ConnectAccountSnapshot>> {
-    try {
-      const account = await this.stripe.v2.core.accounts.create({
-        contact_email: params.email,
-        display_name: params.displayName,
-        dashboard: 'express',
-        identity: { country: params.country },
-        defaults: {
-          currency: params.currency,
-          responsibilities: {
-            fees_collector: 'application',
-            losses_collector: 'application',
-          },
-        },
-        configuration: {
-          recipient: {
-            capabilities: { stripe_balance: { stripe_transfers: { requested: true } } },
-          },
-        },
-        include: ['configuration.recipient', 'identity', 'requirements', 'future_requirements'],
-      });
-
-      return right(this.toSnapshot(account, params.country, params.currency));
-    } catch (error) {
-      return left(this.connectError('Connect account creation', error));
-    }
+    return this.connect.createAccount(params);
   }
 
   async refreshConnectAccount(
     stripeAccountId: string,
   ): Promise<Either<AppError, ConnectAccountSnapshot>> {
-    try {
-      const account = await this.stripe.v2.core.accounts.retrieve(stripeAccountId, {
-          include: ['configuration.recipient', 'identity', 'requirements', 'future_requirements'],
-      });
-      return right(this.toSnapshot(account, '', ''));
-    } catch (error) {
-      return left(this.connectError('Connect account refresh', error));
-    }
+    return this.connect.refreshAccount(stripeAccountId);
   }
 
   async createOnboardingLink(
@@ -229,55 +233,15 @@ export class StripeProvider {
     refreshUrl: string,
     returnUrl: string,
   ): Promise<Either<AppError, string>> {
-    try {
-      const link = await this.stripe.v2.core.accountLinks.create({
-        account: stripeAccountId,
-        use_case: {
-          type: 'account_onboarding',
-          account_onboarding: {
-            configurations: ['recipient'],
-            refresh_url: refreshUrl,
-            return_url: returnUrl,
-          },
-        },
-      });
-      return right(link.url);
-    } catch (error) {
-      return left(this.connectError('Connect onboarding link', error));
-    }
+    return this.connect.createOnboardingLink(stripeAccountId, refreshUrl, returnUrl);
   }
 
   async createDashboardLink(stripeAccountId: string): Promise<Either<AppError, string>> {
-    try {
-      const link = await this.stripe.accounts.createLoginLink(stripeAccountId);
-      return right(link.url);
-    } catch (error) {
-      return left(this.connectError('Connect dashboard link', error));
-    }
+    return this.connect.createDashboardLink(stripeAccountId);
   }
 
   async createTransfer(params: CreateTransferParams): Promise<Either<AppError, string>> {
-    try {
-      const transfer = await this.stripe.transfers.create(
-        {
-          amount: params.amount,
-          currency: params.currency,
-          destination: params.destination,
-          source_transaction: params.sourceTransaction,
-           transfer_group: params.transferGroup,
-           metadata: {
-             orderId: params.orderId,
-             transactionId: params.transactionId,
-             ...(params.paymentGroupId ? { paymentGroupId: params.paymentGroupId } : {}),
-             idempotencyKey: params.idempotencyKey,
-           },
-        },
-        { idempotencyKey: params.idempotencyKey },
-      );
-      return right(transfer.id);
-    } catch (error) {
-      return left(this.connectError('Transfer creation', error));
-    }
+    return this.connect.createTransfer(params);
   }
 
   async reverseTransfer(
@@ -287,159 +251,35 @@ export class StripeProvider {
     transactionId: string,
     idempotencyKey: string,
   ): Promise<Either<AppError, string>> {
-    try {
-      const reversal = await this.stripe.transfers.createReversal(
-        transferId,
-         { amount, metadata: { orderId, transactionId, idempotencyKey } },
-         { idempotencyKey },
-      );
-      return right(reversal.id);
-    } catch (error) {
-      return left(this.connectError('Transfer reversal', error));
-    }
+    return this.connect.reverseTransfer(
+      transferId,
+      amount,
+      orderId,
+      transactionId,
+      idempotencyKey,
+    );
   }
 
   async findTransfer(
     params: TransferReconciliationParams,
   ): Promise<Either<AppError, TransferReconciliationResult | null>> {
-    try {
-      if (params.transferId) {
-        const transfer = await this.stripe.transfers.retrieve(params.transferId);
-        return right(this.matchesTransfer(transfer, params) ? { providerId: transfer.id } : null);
-      }
-
-      const transfers = await this.stripe.transfers.list({ transfer_group: params.transferGroup, limit: 100 });
-      const match = transfers.data.find((transfer) => this.matchesTransfer(transfer, params));
-      return right(match ? { providerId: match.id } : null);
-    } catch (error) {
-      return left(this.connectError('Transfer reconciliation', error));
-    }
-  }
-
-  private matchesTransfer(
-    transfer: Stripe.Transfer,
-    params: TransferReconciliationParams,
-  ): boolean {
-    return transfer.destination === params.destination &&
-      transfer.transfer_group === params.transferGroup &&
-      transfer.metadata.orderId === params.orderId &&
-      transfer.metadata.transactionId === params.transactionId &&
-      transfer.metadata.idempotencyKey === params.idempotencyKey &&
-      (!params.paymentGroupId || transfer.metadata.paymentGroupId === params.paymentGroupId);
+    return this.connect.findTransfer(params);
   }
 
   async findReversal(
     params: ReversalReconciliationParams,
   ): Promise<Either<AppError, string | null>> {
-    try {
-      if (!params.reversalId) return right(null);
-      const reversal = await this.stripe.transfers.retrieveReversal(params.transferId, params.reversalId);
-      const metadata = reversal.metadata ?? {};
-      return right(
-        metadata.orderId === params.orderId &&
-        metadata.transactionId === params.transactionId &&
-        metadata.idempotencyKey === params.idempotencyKey
-          ? reversal.id
-          : null,
-      );
-    } catch (error) {
-      return left(this.connectError('Reversal reconciliation', error));
-    }
-  }
-
-  private toSnapshot(
-    account: Stripe.V2.Core.Account,
-    fallbackCountry: string,
-    fallbackCurrency: string,
-  ): ConnectAccountSnapshot {
-    const balance = account.configuration?.recipient?.capabilities?.stripe_balance;
-    const requirements = account.requirements?.entries ?? [];
-    const transferStatus = balance?.stripe_transfers?.status;
-    const hasDueRequirements = requirements.some(
-      (entry) =>
-        entry.minimum_deadline.status === 'currently_due' ||
-        entry.minimum_deadline.status === 'past_due',
-    );
-    const hasRecipient =
-      account.configuration?.recipient !== undefined &&
-      account.applied_configurations.includes('recipient');
-    let status: ConnectStatus = 'onboarding-required';
-    if (account.closed || transferStatus === 'restricted' || transferStatus === 'unsupported') {
-      status = 'restricted';
-    } else if (!hasRecipient) {
-      status = 'onboarding-required';
-    } else if (transferStatus === 'active') {
-      status = 'transfer-ready';
-    } else if (transferStatus === 'pending' && hasDueRequirements) {
-      status = 'requirements-due';
-    }
-
-    return {
-      stripeAccountId: account.id,
-      country: account.identity?.country ?? fallbackCountry,
-      defaultCurrency: account.defaults?.currency ?? fallbackCurrency,
-      status,
-      transfersEnabled: balance?.stripe_transfers?.status === 'active',
-      payoutsEnabled: balance?.payouts?.status === 'active',
-      detailsSubmitted: hasRecipient,
-      requirementsDue: requirements
-        .filter(
-          (entry) =>
-            entry.minimum_deadline.status === 'currently_due' ||
-            entry.minimum_deadline.status === 'past_due',
-        )
-        .map((entry) => entry.description),
-    };
-  }
-
-  private connectError(operation: string, error: unknown): AppError {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    this.logger.error(`${operation} failed: ${message}`);
-    const statusCode = error instanceof Stripe.errors.StripeError
-      ? error.statusCode ?? 500
-      : 500;
-    return new PaymentProviderError('Erro na integração de pagamentos', statusCode);
+    return this.connect.findReversal(params);
   }
 
   verifyWebhook(payload: string, signature: string): boolean {
-    if (!this.webhookSecret) {
-      return false;
-    }
-    if (!signature) {
-      return false;
-    }
-    const event = this.constructWebhookEvent(payload, signature);
-    return event !== null;
+    return this.webhookVerifier.verify(payload, signature);
   }
 
   constructWebhookEvent(
     payload: string,
     signature: string,
   ): StripeWebhookEvent | null {
-    if (!this.webhookSecret) {
-      return null;
-    }
-    try {
-      return this.stripe.webhooks.constructEvent(
-        payload,
-        signature,
-        this.webhookSecret,
-      );
-    } catch (v1Error) {
-      try {
-        return this.stripe.parseEventNotification(payload, signature, this.webhookSecret) ?? null;
-      } catch (v2Error) {
-        this.logger.warn(
-          `Webhook signature verification failed: ${
-            v2Error instanceof Error
-              ? v2Error.message
-              : v1Error instanceof Error
-                ? v1Error.message
-                : 'Unknown'
-          }`,
-        );
-        return null;
-      }
-    }
+    return this.webhookVerifier.construct(payload, signature);
   }
 }

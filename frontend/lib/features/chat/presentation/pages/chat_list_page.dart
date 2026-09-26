@@ -9,8 +9,10 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
+import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/features/chat/presentation/pages/chat_list_states.dart';
+import 'package:freebay/features/chat/presentation/widgets/chat_list_loading_tile.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
-import 'package:freebay/features/chat/presentation/widgets/chat_search_bar.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -20,11 +22,10 @@ class ChatListPage extends ConsumerStatefulWidget {
 }
 
 class _ChatListPageState extends ConsumerState<ChatListPage>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
-  late AnimationController _animationController;
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   Timer? _debounceTimer;
@@ -32,17 +33,11 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: AppMotion.base,
-      vsync: this,
-    );
-    _animationController.forward();
     _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
     _searchController.dispose();
     _scrollController
       ..removeListener(_onScroll)
@@ -67,7 +62,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
 
   bool _canModifyOrderChat(ChatEntity chat) {
     if (chat.threadType == ChatThreadType.direct) return true;
-    return chat.orderStatus == 'COMPLETED' || chat.orderStatus == 'CANCELLED';
+    return chat.orderStatusEnum == OrderStatus.completed ||
+        chat.orderStatusEnum == OrderStatus.cancelled;
   }
 
   Future<void> _archiveChat(ChatEntity chat) async {
@@ -202,101 +198,69 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
           Expanded(
             child: Column(
               children: [
-                _buildSearchBar(isDark),
-                ref
-                    .watch(liveChatListProvider)
-                    .when(
-                      data: (chats) {
-                        final query = ref.watch(chatListQueryProvider);
-                        final loadingMore = ref.watch(
-                          chatListLoadingMoreProvider,
-                        );
-                        if (chats.isEmpty) {
-                          return _buildEmptyState(query.isNotEmpty);
-                        }
-                        return Expanded(
-                          child: AppRefreshIndicator(
-                            onRefresh: () async {
-                              ref.invalidate(chatsProvider);
-                              ref.invalidate(liveChatListProvider);
-                            },
-                            child: ListView.builder(
-                              controller: _scrollController,
-                              itemCount: chats.length + (loadingMore ? 1 : 0),
-                              itemBuilder: (context, index) {
-                                if (index == chats.length) {
-                                  return ChatListLoadingTile(isDark: isDark);
-                                }
-                                final chat = chats[index];
-                                return ChatListTile(
-                                  chat: chat,
-                                  isDark: isDark,
-                                  canSwipe: _canModifyOrderChat(chat),
-                                  onTap: () {
-                                    context.push(AppRoutes.chatPath(chat.id));
-                                  },
-                                  onLongPress: () => _showContextMenu(chat),
-                                  onArchive: () => _archiveChat(chat),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      loading: () => Expanded(
-                        child: ListView.builder(
-                          itemCount: 5,
-                          itemBuilder: (context, index) =>
-                              ChatListLoadingTile(isDark: isDark),
-                        ),
+                buildChatSearchBar(
+                  context,
+                  ref,
+                  _searchController,
+                  _onSearchChanged,
+                  isDark,
+                ),
+                (() {
+                  final listState = ref.watch(liveChatListProvider);
+                  final query = ref.watch(chatListQueryProvider);
+                  if (listState.isLoading) {
+                    return Expanded(
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: 5,
+                        itemBuilder: (context, index) =>
+                            ChatListLoadingTile(isDark: isDark),
                       ),
-                      error: (error, stack) => _buildErrorState(),
+                    );
+                  }
+                  if (listState.error != null && listState.items.isEmpty) {
+                    return buildChatErrorState(ref);
+                  }
+                  final chats = listState.items;
+                  final loadingMore = listState.isLoadingMore;
+                  if (chats.isEmpty) {
+                    return buildChatEmptyState(query.isNotEmpty);
+                  }
+                  return Expanded(
+                    child: AppRefreshIndicator(
+                      onRefresh: () async {
+                        await ref
+                            .read(liveChatListProvider.notifier)
+                            .refreshRecent();
+                      },
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        controller: _scrollController,
+                        itemCount: chats.length + (loadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == chats.length) {
+                            return ChatListLoadingTile(isDark: isDark);
+                          }
+                          final chat = chats[index];
+                          return ChatListTile(
+                            chat: chat,
+                            isDark: isDark,
+                            canSwipe: _canModifyOrderChat(chat),
+                            onTap: () {
+                              context.push(AppRoutes.chatPath(chat.id));
+                            },
+                            onLongPress: () => _showContextMenu(chat),
+                            onArchive: () => _archiveChat(chat),
+                          );
+                        },
+                      ),
                     ),
+                  );
+                })(),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(bool isDark) {
-    final hasQuery = ref.watch(chatListQueryProvider).isNotEmpty;
-    return ChatSearchBar(
-      controller: _searchController,
-      onChanged: _onSearchChanged,
-      hasQuery: hasQuery,
-      onClear: () {
-        _searchController.clear();
-        ref.read(chatListQueryProvider.notifier).state = '';
-      },
-      onArchiveTap: () => context.push(AppRoutes.chatArchived),
-      onNewChatTap: () => context.push(AppRoutes.chatNew),
-      isDark: isDark,
-    );
-  }
-
-  Widget _buildEmptyState(bool isSearching) {
-    return Expanded(
-      child: EmptyState(
-        icon: isSearching ? Icons.search_off : Icons.chat_bubble_outline,
-        title: isSearching ? 'NENHUM RESULTADO' : 'SEM CONVERSAS',
-        subtitle: isSearching
-            ? 'Tente buscar por outro nome'
-            : 'Crie uma conversa ou receba uma mensagem para visualizar aqui.',
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Expanded(
-      child: EmptyState.error(
-        message:
-            'Não foi possível carregar suas conversas. Verifique sua conexão.',
-        onRetry: () {
-          ref.invalidate(chatsProvider);
-          ref.invalidate(liveChatListProvider);
-        },
       ),
     );
   }

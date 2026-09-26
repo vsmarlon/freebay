@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ProductStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError, BadRequestError } from '@/shared/core/errors';
 import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
@@ -17,7 +18,7 @@ export class UpdateProductUseCase {
       return left(new ForbiddenError('Você não pode editar este produto'));
     }
 
-    if (product.value.status === 'SOLD') {
+    if (product.value.status === ProductStatus.SOLD) {
       return left(new BadRequestError('Sold products cannot be edited'));
     }
 

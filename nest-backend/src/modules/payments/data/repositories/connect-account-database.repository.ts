@@ -1,20 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { ConnectAccount, Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { ConnectAccountSnapshot } from '../../types/connect.types';
 
 @Injectable()
 export class ConnectAccountDatabaseRepository
-  extends BasePrismaRepository
+ 
 {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findByUserId(userId: string): RepositoryResponse<ConnectAccount | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.connectAccount.findUnique({ where: { userId } }),
       'Erro ao buscar conta Connect',
     );
@@ -23,7 +22,7 @@ export class ConnectAccountDatabaseRepository
   async findByStripeAccountId(
     stripeAccountId: string,
   ): RepositoryResponse<ConnectAccount | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () => this.prisma.connectAccount.findUnique({ where: { stripeAccountId } }),
       'Erro ao buscar conta Connect',
     );
@@ -32,7 +31,7 @@ export class ConnectAccountDatabaseRepository
   async findUserContact(
     userId: string,
   ): RepositoryResponse<{ email: string; displayName: string } | null> {
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         this.prisma.user.findUnique({
           where: { id: userId },
@@ -57,7 +56,7 @@ export class ConnectAccountDatabaseRepository
       ...(snapshot.defaultCurrency ? { defaultCurrency: snapshot.defaultCurrency } : {}),
     };
 
-    return this.safeRun(
+    return repositoryResponse(
       () =>
         client.connectAccount.upsert({
           where: { userId },

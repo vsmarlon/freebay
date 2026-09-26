@@ -1,23 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/data/repositories/order_repository.dart';
-import 'package:freebay/features/orders/data/services/order_service.dart';
+import 'package:freebay/features/orders/domain/repositories/order_repository.dart';
 import 'package:freebay/features/orders/domain/usecases/cancel_order_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/can_review_order_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/get_my_purchases_usecase.dart';
 import 'package:freebay/features/orders/domain/usecases/get_my_sales_usecase.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:freebay/shared/services/http_client.dart';
 
 export 'package:freebay/features/orders/presentation/providers/order_providers_state.dart';
 
 part 'order_providers.g.dart';
 
-final orderServiceProvider = Provider((ref) => OrderService());
-
-final orderRepositoryProvider = Provider<OrderRepository>((ref) {
-  return OrderRepository(ref.watch(orderServiceProvider));
-});
+final orderRepositoryProvider = Provider<OrderRepository>(
+  (ref) => OrderRepositoryImpl(client: HttpClient.instance),
+);
 
 final getMyPurchasesUsecaseProvider = Provider(
   (ref) => GetMyPurchasesUsecase(ref.watch(orderRepositoryProvider)),
@@ -94,21 +93,26 @@ class OrderDetail extends _$OrderDetail {
     );
   }
 
-  Future<bool> cancelOrder() async {
+  Future<String?> cancelOrder(String reason) async {
     state = state.copyWith(isPerformingAction: true, error: null);
 
-    final result = await ref.read(cancelOrderUsecaseProvider)(orderId);
+    final result = await ref.read(cancelOrderUsecaseProvider)((
+      orderId: orderId,
+      reason: reason,
+    ));
     return result.fold(
       (failure) {
         state = state.copyWith(
           isPerformingAction: false,
           error: failure.message,
         );
-        return false;
+        return null;
       },
-      (updatedOrder) {
-        state = state.copyWith(isPerformingAction: false, order: updatedOrder);
-        return true;
+      (outcome) {
+        state = state.copyWith(isPerformingAction: false);
+        ref.invalidate(purchasesListProvider);
+        ref.invalidate(salesListProvider);
+        return outcome;
       },
     );
   }
@@ -184,7 +188,7 @@ class SalesList extends _$SalesList {
     final result = await ref.read(getMySalesUsecaseProvider)(
       GetMySalesParams(
         cursor: refresh ? null : state.nextCursor,
-        status: state.selectedStatus?.toApiString(),
+        status: state.selectedStatus,
       ),
     );
     result.fold(

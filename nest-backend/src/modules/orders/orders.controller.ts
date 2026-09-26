@@ -16,7 +16,7 @@ import {
   Paginated,
   PAGINATION_QUERIES,
 } from "@/shared/decorators";
-import { clampLimit, PageQuery } from "@/shared/core/pagination";
+import { PageQuery } from "@/shared/core/pagination";
 import { PrismaOrderRepository } from "./data/repositories/order-database.repository";
 import { OrderStatus } from "@prisma/client";
 import { CreateOrderUseCase } from "./usecases/create-order.usecase";
@@ -24,19 +24,12 @@ import { ConfirmDeliveryUseCase } from "./usecases/confirm-delivery.usecase";
 import { MarkAsShippedUseCase } from "./usecases/mark-as-shipped.usecase";
 import { MarkAsDeliveredUseCase } from "./usecases/mark-as-delivered.usecase";
 import { CancelOrderUseCase } from "./usecases/cancel-order.usecase";
-import { CreateOrderDTO, SalesOrdersQueryDTO } from "./dtos/order.dto";
-import {
-  SALES_ORDER_STATUSES,
-  SalesOrderCursor,
-  SalesOrderStatus,
-} from "./types/order.types";
+import { GetOrderUseCase } from './usecases/get-order.usecase';
+import { ListSalesOrdersUseCase } from './usecases/list-sales-orders.usecase';
+import { CancelOrderDTO, CreateOrderDTO, SalesOrdersQueryDTO } from "./dtos/order.dto";
 import { AuthUser } from "@/shared/core/types";
 import { left } from "@/shared/core/either";
-import {
-  NotFoundError,
-  ForbiddenError,
-  BadRequestError,
-} from "@/shared/core/errors";
+import { BadRequestError } from "@/shared/core/errors";
 import { getPlatformFeePercent } from "@/shared/core/platform-fee";
 
 @ApiTags("Orders")
@@ -49,6 +42,8 @@ export class OrdersController {
     private readonly markAsShippedUseCase: MarkAsShippedUseCase,
     private readonly markAsDeliveredUseCase: MarkAsDeliveredUseCase,
     private readonly cancelOrderUseCase: CancelOrderUseCase,
+    private readonly getOrderUseCase: GetOrderUseCase,
+    private readonly listSalesOrdersUseCase: ListSalesOrdersUseCase,
   ) {}
 
   @PostAuth({
@@ -86,24 +81,7 @@ export class OrdersController {
     @CurrentUserId() userId: string,
     @Query() query: SalesOrdersQueryDTO,
   ) {
-    const parsedStatus = query.status;
-    if (query.status && !this.isSalesOrderStatus(query.status))
-      return left(new BadRequestError("Status de pedido inválido"));
-    const cursor = this.decodeSalesCursor(query.cursor);
-    if (query.cursor && !cursor)
-      return left(new BadRequestError("Cursor de vendas inválido"));
-    if (
-      cursor &&
-      (cursor.sellerId !== userId || cursor.status !== (parsedStatus ?? null))
-    ) {
-      return left(new BadRequestError("Cursor de vendas inválido"));
-    }
-    return this.orderRepository.findSellerSales(
-      userId,
-      { limit: clampLimit(query.limit) },
-      parsedStatus,
-      cursor,
-    );
+    return this.listSalesOrdersUseCase.execute(userId, query);
   }
 
   @GetAuth(":id", {
@@ -118,24 +96,7 @@ export class OrdersController {
     @Param("id", ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthUser,
   ) {
-    const result = await this.orderRepository.findById(id);
-    if (result.isLeft()) return result;
-    if (!result.value) return left(new NotFoundError("Pedido"));
-
-    const order = result.value;
-    if (
-      order.buyerId !== user.userId &&
-      order.sellerId !== user.userId &&
-      user.role !== "ADMIN"
-    ) {
-      return left(
-        new ForbiddenError(
-          "Você não tem permissão para visualizar este pedido",
-        ),
-      );
-    }
-
-    return { order };
+    return this.getOrderUseCase.execute(id, user);
   }
 
   @PatchAuth(":id/ship", {
@@ -189,13 +150,15 @@ export class OrdersController {
   @PatchAuth(":id/cancel", {
     summary: "Cancel order",
     params: [{ name: "id", description: "Order UUID" }],
+    bodyType: CancelOrderDTO,
     errors: [{ status: 404, description: "Order not found" }],
   })
   async cancel(
     @Param("id", ParseUUIDPipe) id: string,
     @CurrentUserId() userId: string,
+    @Body() body: CancelOrderDTO,
   ) {
-    return this.cancelOrderUseCase.execute({ orderId: id, userId });
+    return this.cancelOrderUseCase.execute({ orderId: id, userId, reason: body.reason });
   }
 
   @GetAuth({
@@ -224,45 +187,7 @@ export class OrdersController {
   }
 
   private parseStatus(status?: string): OrderStatus | undefined {
-    return status && Object.values(OrderStatus).includes(status as OrderStatus)
-      ? (status as OrderStatus)
-      : undefined;
-  }
-
-  private isSalesOrderStatus(status: string): status is SalesOrderStatus {
-    return (SALES_ORDER_STATUSES as readonly string[]).includes(status);
-  }
-
-  private decodeSalesCursor(raw?: string): SalesOrderCursor | null {
-    if (!raw) return null;
-    try {
-      const decoded: unknown = JSON.parse(
-        Buffer.from(raw, "base64url").toString("utf8"),
-      );
-      if (!decoded || typeof decoded !== "object" || Array.isArray(decoded))
-        return null;
-      const value = decoded as Record<string, unknown>;
-      const keys = Object.keys(value).sort().join(",");
-      if (keys !== "createdAt,id,scope,sellerId,status") return null;
-      if (value.scope !== "seller-sales") return null;
-      if (typeof value.sellerId !== "string" || !value.sellerId) return null;
-      if (typeof value.id !== "string" || !value.id) return null;
-      if (typeof value.createdAt !== "string") return null;
-      const createdAt = new Date(value.createdAt);
-      if (Number.isNaN(createdAt.getTime())) return null;
-      const status = value.status === "ALL" ? null : value.status;
-      if (status !== null &&
-          (typeof status !== "string" || !this.isSalesOrderStatus(status)))
-        return null;
-      return {
-        scope: "seller-sales",
-        sellerId: value.sellerId,
-        status,
-        createdAt,
-        id: value.id,
-      };
-    } catch {
-      return null;
-    }
+    if (!status) return undefined;
+    return Object.values(OrderStatus).find((candidate) => candidate === status);
   }
 }

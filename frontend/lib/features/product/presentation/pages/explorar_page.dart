@@ -12,6 +12,8 @@ import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/router/app_routes.dart';
 
+const explorarSearchDebounce = Duration(milliseconds: 300);
+
 class ExplorarPage extends ConsumerStatefulWidget {
   const ExplorarPage({super.key});
 
@@ -36,7 +38,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
 
   void _onSearchDebounced(String query) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = Timer(explorarSearchDebounce, () {
       ref.read(searchQueryProvider.notifier).state = query;
     });
   }
@@ -47,22 +49,29 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
   }
 
   void _openFilters() {
-    final sort = ref.read(productSortProvider);
-    final condition = ref.read(productConditionProvider);
-    final priceRange = ref.read(productPriceRangeProvider);
     showBrutalistSheet(
       context: context,
       title: 'FILTROS',
-      builder: (_) => ProductFilterBar(
-        sort: sort,
-        condition: condition,
-        priceRange: priceRange,
-        onSortChanged: (value) =>
-            ref.read(productSortProvider.notifier).state = value,
-        onConditionChanged: (value) =>
-            ref.read(productConditionProvider.notifier).state = value,
-        onPriceRangeChanged: (value) =>
-            ref.read(productPriceRangeProvider.notifier).state = value,
+      builder: (_) => Consumer(
+        builder: (context, ref, _) => ProductFilterBar(
+          sort: ref.watch(productSortProvider),
+          condition: ref.watch(productConditionProvider),
+          priceRange: ref.watch(productPriceRangeProvider),
+          onSortChanged: (value) =>
+              ref.read(productSortProvider.notifier).state = value,
+          onConditionChanged: (value) =>
+              ref.read(productConditionProvider.notifier).state = value,
+          onPriceRangeChanged: (value) {
+            ref.read(productPriceRangeProvider.notifier).state = value;
+            Navigator.of(context).pop();
+          },
+          onClear: () {
+            ref.read(productSortProvider.notifier).state = ProductSort.recent;
+            ref.read(productConditionProvider.notifier).state = null;
+            ref.read(productPriceRangeProvider.notifier).state = null;
+            Navigator.of(context).pop();
+          },
+        ),
       ),
     );
   }

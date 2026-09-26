@@ -6,6 +6,7 @@ import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
+import { directConversation, directMessage, orderMessage } from './test-fixtures';
 
 const mockRepo = {
   findDirectConversationById: jest.fn(),
@@ -65,8 +66,8 @@ describe('SendMessageUseCase', () => {
     if (result.isLeft()) expect(result.value).toBeInstanceOf(NotFoundError);
   });
 
-  it('returns error if conversation not found', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right(null));
+  it('does not access the direct conversation repository after thread authorization', async () => {
+    mockThreadAccess.resolveThread.mockResolvedValue(left(new NotFoundError('Conversa')));
 
     const result = await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Hello' });
 
@@ -75,7 +76,7 @@ describe('SendMessageUseCase', () => {
   });
 
   it('returns error if conversation is pending and user not participant', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'a', user2Id: 'b', status: 'PENDING' }));
+    mockThreadAccess.resolveThread.mockResolvedValue(left(new BadRequestError('Você não é participante desta conversa')));
 
     const result = await sut.execute({ senderId: 'stranger', conversationId: 'conv-1', content: 'Hello' });
 
@@ -84,28 +85,29 @@ describe('SendMessageUseCase', () => {
   });
 
   it('sends message successfully in active conversation', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
-    mockRepo.createDirectMessage.mockResolvedValue(right({
-      id: 'msg-1', conversationId: 'conv-1', senderId: 'user-1', content: 'Hello', type: 'TEXT', createdAt: new Date(),
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
       sender: { id: 'user-1', displayName: 'John', avatarUrl: null },
-    }));
+    })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
 
     const result = await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Hello' });
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.content).toBe('Hello');
-      expect(result.value.conversationId).toBe('conv-1');
+      expect(result.value.message.content).toBe('Hello');
+      expect(result.value.message.conversationId).toBe('conv-1');
+      expect(result.value.recipientId).toBe('user-2');
+      expect(result.value.senderName).toBe('John');
     }
+    expect(mockRepo.findDirectConversationById).not.toHaveBeenCalled();
   });
 
   it('sends a VIDEO message with an attachment', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
-    mockRepo.createDirectMessage.mockResolvedValue(right({
-      id: 'msg-video', conversationId: 'conv-1', senderId: 'user-1', content: null,
-      type: 'VIDEO', attachmentUrl: '/media/chat/video.mp4', createdAt: new Date(),
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
+      id: 'msg-video', content: null, type: 'VIDEO', attachmentUrl: '/media/chat/video.mp4',
+    })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
 
     const result = await sut.execute({
@@ -123,11 +125,10 @@ describe('SendMessageUseCase', () => {
   });
 
   it('allows participant to send in pending conversation', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'PENDING' }));
-    mockRepo.createDirectMessage.mockResolvedValue(right({
-      id: 'msg-1', conversationId: 'conv-1', senderId: 'user-1', content: 'Hi', type: 'TEXT', createdAt: new Date(),
-      sender: { id: 'user-1', displayName: 'John', avatarUrl: null },
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation({ status: 'PENDING' })));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
+      content: 'Hi', sender: { id: 'user-1', displayName: 'John', avatarUrl: null },
+    })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
 
     const result = await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Hi' });
@@ -136,16 +137,16 @@ describe('SendMessageUseCase', () => {
   });
 
   it('persists the replyToId relation', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
-    mockRepo.createDirectMessage.mockResolvedValue(right({
-      id: 'msg-2', conversationId: 'conv-1', senderId: 'user-1', content: 'Resposta', type: 'TEXT', replyToId: 'msg-1', createdAt: new Date(),
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
+      id: 'msg-2', content: 'Resposta', replyToId: 'msg-1',
+    })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
 
     const result = await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Resposta', replyToId: 'msg-1' });
 
     expect(result.isRight()).toBe(true);
-    if (result.isRight()) expect(result.value.replyToId).toBe('msg-1');
+    if (result.isRight()) expect(result.value.message.replyToId).toBe('msg-1');
     expect(mockRepo.createDirectMessage).toHaveBeenCalledWith(
       expect.objectContaining({ replyTo: { connect: { id: 'msg-1' } } }),
       true,
@@ -156,20 +157,18 @@ describe('SendMessageUseCase', () => {
     mockThreadAccess.resolveThread.mockResolvedValue(
       right({ orderId: 'order-1', otherUserId: 'seller-1', orderStatus: 'CONFIRMED' }),
     );
-    mockRepo.createChatMessage.mockResolvedValue(right({
-      id: 'msg-1', senderId: 'buyer-1', content: 'Chegou?', type: 'TEXT', replyToId: null, createdAt: new Date(),
-    }));
+    mockRepo.createChatMessage.mockResolvedValue(right(orderMessage({ content: 'Chegou?' })));
 
     const result = await sut.execute({ senderId: 'buyer-1', conversationId: 'order-1', content: 'Chegou?' });
 
     expect(result.isRight()).toBe(true);
-    if (result.isRight()) expect(result.value.conversationId).toBe('order-1');
+    if (result.isRight()) expect(result.value.message.conversationId).toBe('order-1');
     expect(mockRepo.createChatMessage).toHaveBeenCalled();
     expect(mockRepo.createDirectMessage).not.toHaveBeenCalled();
   });
 
   it('rejects a reply that targets a message from another conversation', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
     mockRepo.messageBelongsToThread.mockResolvedValue(right(false));
 
     const result = await sut.execute({
@@ -184,12 +183,11 @@ describe('SendMessageUseCase', () => {
   });
 
   it('merges durationMs into metadata for AUDIO messages', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({ id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE' }));
-    mockRepo.createDirectMessage.mockResolvedValue(right({
-      id: 'msg-audio', conversationId: 'conv-1', senderId: 'user-1', content: null,
-      type: 'AUDIO', attachmentUrl: '/media/chat/audio.m4a',
-      metadata: { durationMs: 12500 }, createdAt: new Date(),
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
+      id: 'msg-audio', content: null, type: 'AUDIO', attachmentUrl: '/media/chat/audio.m4a',
+      metadata: { durationMs: 12500 },
+    })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
 
     const result = await sut.execute({
@@ -219,9 +217,7 @@ describe('SendMessageUseCase', () => {
     { latitude: 0, longitude: 0, accuracyMeters: 1, capturedAt: '2026-09-14T05:00:00.000Z', address: ' ' },
     { latitude: 0, longitude: 0, accuracyMeters: 1, capturedAt: '2026-09-14T05:00:00.000Z', extra: true },
   ])('rejects invalid location metadata without persistence', async (metadata) => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({
-      id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE',
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
 
     const result = await sut.execute({
       senderId: 'user-1',
@@ -243,14 +239,10 @@ describe('SendMessageUseCase', () => {
       capturedAt,
       address: 'Rua Teste',
     };
-    mockRepo.findDirectConversationById.mockResolvedValue(right({
-      id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE',
-    }));
-    mockRepo.createDirectMessage.mockResolvedValue(right({
-      id: 'msg-location', conversationId: 'conv-1', senderId: 'user-1',
-      clientMessageId: 'location-1', content: null, type: 'LOCATION', metadata,
-      createdAt: new Date(),
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
+      id: 'msg-location', clientMessageId: 'location-1', content: null, type: 'LOCATION', metadata,
+    })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
 
     const result = await sut.execute({
@@ -294,9 +286,7 @@ describe('SendMessageUseCase', () => {
   });
 
   it('rejects a stale location for a new direct operation', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({
-      id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE',
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
     const capturedAt = new Date(Date.now() - 6 * 60 * 1000).toISOString();
 
     const result = await sut.execute({
@@ -314,17 +304,12 @@ describe('SendMessageUseCase', () => {
   });
 
   it('returns an existing direct message for a delayed retry by its sender', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({
-      id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE',
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
     const capturedAt = new Date(Date.now() - 6 * 60 * 1000).toISOString();
-    mockRepo.findDirectMessageByClientId.mockResolvedValue(right({
-      id: 'msg-location', conversationId: 'conv-1', senderId: 'user-1',
-      clientMessageId: 'location-1', content: null, type: 'LOCATION',
-      attachmentUrl: null, metadata: { latitude: 0, longitude: 0, accuracyMeters: 1,
-        capturedAt },
-      replyToId: null, viewOnce: false, createdAt: new Date(),
-    }));
+    mockRepo.findDirectMessageByClientId.mockResolvedValue(right(directMessage({
+      id: 'msg-location', clientMessageId: 'location-1', content: null, type: 'LOCATION',
+      metadata: { latitude: 0, longitude: 0, accuracyMeters: 1, capturedAt },
+    })));
 
     const result = await sut.execute({
       senderId: 'user-1', conversationId: 'conv-1', clientMessageId: 'location-1',
@@ -342,13 +327,10 @@ describe('SendMessageUseCase', () => {
       right({ orderId: 'order-1', otherUserId: 'seller-1', orderStatus: 'CONFIRMED' }),
     );
     const capturedAt = new Date(Date.now() - 6 * 60 * 1000).toISOString();
-    mockRepo.findChatMessageByClientId.mockResolvedValue(right({
-      id: 'msg-location', orderId: 'order-1', senderId: 'buyer-1',
-      clientMessageId: 'location-1', content: null, type: 'LOCATION',
-      attachmentUrl: null, metadata: { latitude: 0, longitude: 0, accuracyMeters: 1,
-        capturedAt },
-      replyToId: null, viewOnce: false, createdAt: new Date(),
-    }));
+    mockRepo.findChatMessageByClientId.mockResolvedValue(right(orderMessage({
+      id: 'msg-location', clientMessageId: 'location-1', content: null, type: 'LOCATION',
+      metadata: { latitude: 0, longitude: 0, accuracyMeters: 1, capturedAt },
+    })));
 
     const result = await sut.execute({
       senderId: 'buyer-1', conversationId: 'order-1', clientMessageId: 'location-1',
@@ -362,16 +344,11 @@ describe('SendMessageUseCase', () => {
   });
 
   it('rejects a delayed retry when the existing message is not a location', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({
-      id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE',
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
     const capturedAt = new Date(Date.now() - 6 * 60 * 1000).toISOString();
-    mockRepo.findDirectMessageByClientId.mockResolvedValue(right({
-      id: 'msg-text', conversationId: 'conv-1', senderId: 'user-1',
-      clientMessageId: 'location-1', content: 'text', type: 'TEXT',
-      attachmentUrl: null, metadata: null, replyToId: null, viewOnce: false,
-      createdAt: new Date(),
-    }));
+    mockRepo.findDirectMessageByClientId.mockResolvedValue(right(directMessage({
+      id: 'msg-text', clientMessageId: 'location-1', content: 'text', type: 'TEXT',
+    })));
 
     const result = await sut.execute({
       senderId: 'user-1', conversationId: 'conv-1', clientMessageId: 'location-1',
@@ -385,17 +362,12 @@ describe('SendMessageUseCase', () => {
   });
 
   it('rejects a delayed retry when location metadata differs', async () => {
-    mockRepo.findDirectConversationById.mockResolvedValue(right({
-      id: 'conv-1', user1Id: 'user-1', user2Id: 'user-2', status: 'ACTIVE',
-    }));
+    mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
     const capturedAt = new Date(Date.now() - 6 * 60 * 1000).toISOString();
-    mockRepo.findDirectMessageByClientId.mockResolvedValue(right({
-      id: 'msg-location', conversationId: 'conv-1', senderId: 'user-1',
-      clientMessageId: 'location-1', content: null, type: 'LOCATION',
-      attachmentUrl: null, metadata: { latitude: 1, longitude: 0, accuracyMeters: 1,
-        capturedAt },
-      replyToId: null, viewOnce: false, createdAt: new Date(),
-    }));
+    mockRepo.findDirectMessageByClientId.mockResolvedValue(right(directMessage({
+      id: 'msg-location', clientMessageId: 'location-1', content: null, type: 'LOCATION',
+      metadata: { latitude: 1, longitude: 0, accuracyMeters: 1, capturedAt },
+    })));
 
     const result = await sut.execute({
       senderId: 'user-1', conversationId: 'conv-1', clientMessageId: 'location-1',

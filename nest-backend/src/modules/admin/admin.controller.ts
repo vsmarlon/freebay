@@ -1,4 +1,5 @@
 import { Body, Controller, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { ModerationTargetType } from '@prisma/client';
 import { ApiTags } from '@nestjs/swagger';
 import {
   CurrentUserId,
@@ -122,7 +123,7 @@ export class AdminController {
     @Body() body: ModerationReasonDTO,
   ) {
     return this.removeContentUseCase.execute({
-      targetType: 'PRODUCT',
+      targetType: ModerationTargetType.PRODUCT,
       targetId: id,
       adminId,
       reason: body.reason,
@@ -141,7 +142,7 @@ export class AdminController {
     @Body() body: ModerationReasonDTO,
   ) {
     return this.removeContentUseCase.execute({
-      targetType: 'POST',
+      targetType: ModerationTargetType.POST,
       targetId: id,
       adminId,
       reason: body.reason,
@@ -160,7 +161,7 @@ export class AdminController {
     @Body() body: ModerationReasonDTO,
   ) {
     return this.removeContentUseCase.execute({
-      targetType: 'COMMENT',
+      targetType: ModerationTargetType.COMMENT,
       targetId: id,
       adminId,
       reason: body.reason,

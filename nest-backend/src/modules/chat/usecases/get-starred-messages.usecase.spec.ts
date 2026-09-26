@@ -4,6 +4,7 @@ import { ConversationDatabaseRepository } from '../data/repositories/conversatio
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { NotFoundError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
+import { directMessage } from './test-fixtures';
 
 const mockRepo = {
   findStarredMessages: jest.fn(),
@@ -13,21 +14,10 @@ const mockThreadAccess = {
   resolveThread: jest.fn(),
 };
 
-const directStar = {
-  id: 'msg-1',
+const directStar = directMessage({
   senderId: 'user-2',
   content: 'Lembrete',
-  type: 'TEXT',
-  attachmentUrl: null,
-  metadata: null,
-  replyToId: null,
-  replyTo: null,
-  deletedAt: null,
-  readAt: null,
-  deliveredAt: null,
-  createdAt: new Date('2026-06-24'),
-  viewOnce: false,
-};
+});
 
 describe('GetStarredMessagesUseCase', () => {
   let sut: GetStarredMessagesUseCase;

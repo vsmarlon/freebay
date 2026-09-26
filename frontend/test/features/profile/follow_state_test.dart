@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 import 'package:freebay/features/profile/data/services/follow_service.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/entities/feed_page_result.dart';
@@ -14,6 +14,8 @@ import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
+import '../../support/auth_test_doubles.dart';
+import '../../support/test_users.dart';
 
 class _FakeFollowService extends FollowService {
   Either<Failure, FollowResponse>? followResult;
@@ -57,8 +59,8 @@ class _FakeSocialRepository extends SocialRepository {
     int limit = 20,
     String? cursor,
     int? offset,
-    String type = 'explore',
-    String contentFilter = 'all',
+    FeedType type = FeedType.explore,
+    FeedContentFilter contentFilter = FeedContentFilter.all,
   }) async => Right(
     feedResult ??
         FeedPageResult(
@@ -83,14 +85,6 @@ class _FakeSocialRepository extends SocialRepository {
   }
 }
 
-class _FakeAuthController extends AuthController {
-  final UserEntity? _user;
-  _FakeAuthController(this._user);
-
-  @override
-  AsyncValue<UserEntity?> build() => AsyncValue.data(_user);
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -105,7 +99,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           authControllerProvider.overrideWith(
-            () => _FakeAuthController(const UserEntity(id: 'me-user-id')),
+            () => TestAuthController(testUser(id: 'me-user-id')),
           ),
           followServiceProvider.overrideWithValue(fakeFollowService),
           socialRepositoryProvider.overrideWithValue(fakeSocialRepository),
@@ -211,7 +205,7 @@ void main() {
         );
         await container
             .read(feedProvider.notifier)
-            .loadFeed(refresh: true, feedType: 'following');
+            .loadFeed(refresh: true, feedType: FeedType.following);
         expect(container.read(feedProvider).posts, isNotEmpty);
         expect(container.read(feedProvider).cursor, 'following-cursor');
 
@@ -244,7 +238,7 @@ void main() {
 
         await container
             .read(feedProvider.notifier)
-            .loadFeed(refresh: true, feedType: 'following');
+            .loadFeed(refresh: true, feedType: FeedType.following);
         fakeFollowService.unfollowResult = const Left(ServerFailure('offline'));
         final failedUnfollow = await container
             .read(followStateProvider.notifier)

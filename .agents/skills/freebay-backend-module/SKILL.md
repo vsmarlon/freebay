@@ -32,6 +32,8 @@ src/modules/<feature>/
 
 ## Step by step
 
+Before implementation, follow [AGENTS.md — Testing: TDD and E2E first](../../../AGENTS.md#testing-tdd-and-e2e-first). Select the real behavioral boundary and observe RED before changing production code.
+
 ### 1. DTOs (`dtos/`)
 
 Use **class-validator** decorators + `@ApiProperty` from `@nestjs/swagger`. Never Zod.
@@ -76,15 +78,15 @@ export class GetMyEntityUseCase {
 
 ### 3. Repository (`domain/repositories/` & `data/repositories/`)
 
-Define the abstract class in `domain/repositories/` (implementing `Repository` and returning `RepositoryResponse<T, F = Failure>`), and the concrete implementation in `data/repositories/`.
+Define the abstract class in `domain/repositories/` (returning `RepositoryResponse<T, F = Failure>`), and the concrete implementation in `data/repositories/`. Wrap each Prisma operation with the standalone `repositoryResponse(operation, errorMessage?, logger?)` adapter from `shared/infra/prisma/repository-response.ts`.
 
 > **Rule**: Backend repositories **MUST ONLY call the database** (via Prisma or transactions). They never call external HTTP endpoints.
 
 ```typescript
 // domain/repositories/my-entity.repository.ts
-import { Repository, RepositoryResponse } from '@/shared/core/either';
+import { RepositoryResponse } from '@/shared/core/either';
 
-export abstract class MyEntityRepository implements Repository {
+export abstract class MyEntityRepository {
   abstract findById(id: string): RepositoryResponse<MyEntity | null>;
   abstract create(data: Prisma.MyEntityCreateInput): RepositoryResponse<MyEntity>;
 }
@@ -92,6 +94,7 @@ export abstract class MyEntityRepository implements Repository {
 // data/repositories/my-entity-database.repository.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { Prisma, MyEntity } from '@prisma/client';
 import { MyEntityRepository } from '../../domain/repositories/my-entity.repository';
 
@@ -100,11 +103,11 @@ export class PrismaMyEntityRepository implements MyEntityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string) {
-    return this.prisma.myEntity.findUnique({ where: { id } });
+    return repositoryResponse(() => this.prisma.myEntity.findUnique({ where: { id } }));
   }
 
   async create(data: Prisma.MyEntityCreateInput) {
-    return this.prisma.myEntity.create({ data });
+    return repositoryResponse(() => this.prisma.myEntity.create({ data }));
   }
 }
 ```
@@ -163,24 +166,8 @@ async create(@CurrentUser() user: AuthUser, @Body() body: CreateMyEntityDTO) {
 export class MyEntityModule {}
 ```
 
-### 7. Test (`*.spec.ts`)
+### 7. Verify the behavioral slice
 
-```typescript
-describe('CreateMyEntityUseCase', () => {
-  let sut: CreateMyEntityUseCase;
-  let mockRepo: jest.Mocked<MyEntityRepository>;
-
-  beforeEach(async () => {
-    mockRepo = { create: jest.fn() } as any;
-    sut = new CreateMyEntityUseCase(mockRepo);
-  });
-
-  it('should create entity', async () => {
-    mockRepo.create.mockResolvedValue({ id: '1', name: 'Test' } as any);
-    const result = await sut.execute({ name: 'Test' });
-    expect(result.isRight()).toBe(true);
-  });
-});
-```
+Rerun the test that was RED before implementation, then the relevant existing gates from `AGENTS.md`. Finish with the repeatable evidence required by that policy. Repository mocks cannot verify database columns, constraints, transactions, or query behavior.
 
 ---

@@ -7,6 +7,8 @@ import 'package:freebay/features/product/domain/usecases/get_products_usecase.da
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
 
+const productSearchDebounce = Duration(milliseconds: 300);
+
 class ProductListPage extends ConsumerStatefulWidget {
   const ProductListPage({super.key});
 
@@ -40,7 +42,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
 
   void _onSearchDebounced(String query) {
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = Timer(productSearchDebounce, () {
       ref.read(searchQueryProvider.notifier).state = query;
     });
   }

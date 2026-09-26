@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DisputeStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -7,6 +8,7 @@ import { PrismaDisputeRepository } from '../data/repositories/dispute-database.r
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
+import { DisputeWinner } from '../dispute.constants';
 
 @Injectable()
 export class ResolveDisputeUseCase {
@@ -40,11 +42,11 @@ export class ResolveDisputeUseCase {
     try {
       await this.prisma.$transaction(async (tx) => {
         const claimed = await tx.dispute.updateMany({
-          where: { id: input.disputeId, status: { notIn: ['RESOLVED', 'CANCELLED'] } },
+          where: { id: input.disputeId, status: { notIn: [DisputeStatus.RESOLVED, DisputeStatus.CANCELLED] } },
           data: {
             resolution: input.resolution,
             resolvedById: input.resolvedById ?? null,
-            status: 'RESOLVED',
+            status: DisputeStatus.RESOLVED,
             resolvedAt: new Date(),
           },
         });
@@ -52,25 +54,25 @@ export class ResolveDisputeUseCase {
           throw new Error('DISPUTE_NOT_RESOLVABLE');
         }
 
-        if (input.winner === 'BUYER') {
+        if (input.winner === DisputeWinner.BUYER) {
           await this.resolutionExecution.resolveInFavorOfBuyer(tx, dispute);
         } else {
           await this.resolutionExecution.resolveInFavorOfSeller(tx, dispute);
         }
       });
-    } catch (e) {
-      if ((e as Error).message === 'DISPUTE_NOT_RESOLVABLE') {
+    } catch (error) {
+      if (error instanceof Error && error.message === 'DISPUTE_NOT_RESOLVABLE') {
         return left(new BadRequestError('Dispute cannot be resolved while it is not open'));
       }
       return left(new DatabaseError('Failed to resolve dispute'));
     }
 
-    if (input.winner === 'SELLER') {
+    if (input.winner === DisputeWinner.SELLER) {
       await this.payoutService.payoutForOrder(dispute.orderId);
     }
 
-    const buyerMsg = input.winner === 'BUYER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do vendedor';
-    const sellerMsg = input.winner === 'SELLER' ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do comprador';
+    const buyerMsg = input.winner === DisputeWinner.BUYER ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do vendedor';
+    const sellerMsg = input.winner === DisputeWinner.SELLER ? 'A disputa foi resolvida a seu favor' : 'A disputa foi resolvida a favor do comprador';
     await Promise.all([
       this.notificationService.notifyDispute(dispute.order.buyerId, dispute.id, buyerMsg),
       this.notificationService.notifyDispute(dispute.order.sellerId, dispute.id, sellerMsg),

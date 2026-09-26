@@ -1,25 +1,44 @@
-import { Prisma } from "@prisma/client";
-import { IsOptional, IsString, MaxLength } from "class-validator";
+import { Prisma, StoryMediaType } from "@prisma/client";
+import { ArrayMaxSize, ArrayNotEmpty, ArrayUnique, IsArray, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
 
-export const STORY_TEXT_STYLES = [
-  "classic",
-  "strong",
-  "editorial",
-  "compact",
-] as const;
+export enum StoryTextStyle {
+  CLASSIC = "classic",
+  STRONG = "strong",
+  EDITORIAL = "editorial",
+  COMPACT = "compact",
+}
 
-export type StoryTextStyle = (typeof STORY_TEXT_STYLES)[number];
+export const STORY_CAPTION_MAX_LENGTH = 500;
+export const STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH = 100_000;
+export const STORY_TEXT_BLOCK_MAX_COUNT = 10;
+export const STORY_TEXT_MAX_LENGTH = 200;
 
 export class CreateStoryMultipartDTO {
   @IsOptional()
   @IsString()
-  @MaxLength(500)
+  @MaxLength(STORY_CAPTION_MAX_LENGTH)
   caption?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(100_000)
+  @MaxLength(STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH)
   textBlocks?: string;
+}
+
+export class SaveStoryHighlightDTO {
+  @IsString()
+  @MaxLength(40)
+  title: string;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(50)
+  @ArrayUnique()
+  @IsUUID('4', { each: true })
+  storyIds: string[];
+
+  @IsUUID('4')
+  coverStoryId: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -29,7 +48,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isStoryTextStyle(value: unknown): value is StoryTextStyle {
   return (
     typeof value === "string" &&
-    STORY_TEXT_STYLES.some((style) => style === value)
+    Object.values(StoryTextStyle).some((style) => style === value)
   );
 }
 
@@ -48,7 +67,7 @@ export interface StoryTextBlock {
 export interface CreateStoryInput {
   userId: string;
   imageUrl: string;
-  mediaType?: "IMAGE" | "VIDEO";
+  mediaType?: StoryMediaType;
   caption?: string;
   textBlocks?: Prisma.InputJsonValue;
 }
@@ -57,7 +76,7 @@ export interface CreateStoryOutput {
   id: string;
   userId: string;
   imageUrl: string;
-  mediaType: "IMAGE" | "VIDEO";
+  mediaType: StoryMediaType;
   caption: string | null;
   textBlocks: StoryTextBlock[];
   expiresAt: Date;
@@ -89,7 +108,7 @@ export function parseStoryTextBlocks(
 ): { value: StoryTextBlock[] } | { error: string } {
   let parsed: unknown = value;
   if (typeof value === "string") {
-    if (value.length > 100_000) {
+    if (value.length > STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH) {
       return { error: "textBlocks excede o tamanho máximo permitido" };
     }
     try {
@@ -101,7 +120,7 @@ export function parseStoryTextBlocks(
   if (parsed === undefined || parsed === null || parsed === "") {
     return { value: [] };
   }
-  if (!Array.isArray(parsed) || parsed.length > 10) {
+  if (!Array.isArray(parsed) || parsed.length > STORY_TEXT_BLOCK_MAX_COUNT) {
     return { error: "textBlocks deve ser uma lista com no máximo 10 itens" };
   }
 
@@ -119,7 +138,7 @@ export function parseStoryTextBlocks(
     const text = typeof block.text === "string" ? block.text.trim() : "";
     if (!id || ids.has(id))
       return { error: "IDs de texto devem ser únicos e não vazios" };
-    if (text.length < 1 || text.length > 200)
+    if (text.length < 1 || text.length > STORY_TEXT_MAX_LENGTH)
       return { error: "Cada texto deve ter entre 1 e 200 caracteres" };
     ids.add(id);
 

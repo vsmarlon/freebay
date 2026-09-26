@@ -14,6 +14,24 @@ enum StoryTextStyle {
   compact,
 }
 
+enum StoryMediaType {
+  @JsonValue('IMAGE')
+  image('IMAGE'),
+  @JsonValue('VIDEO')
+  video('VIDEO');
+
+  const StoryMediaType(this.wireValue);
+
+  final String wireValue;
+}
+
+StoryMediaType storyMediaTypeFromWire(Object? value) {
+  return StoryMediaType.values.firstWhere(
+    (type) => type.wireValue == value,
+    orElse: () => StoryMediaType.image,
+  );
+}
+
 @freezed
 abstract class StoryTextBlockEntity with _$StoryTextBlockEntity {
   const factory StoryTextBlockEntity({
@@ -53,7 +71,7 @@ abstract class StoryEntity with _$StoryEntity {
     required String id,
     required String userId,
     required String imageUrl,
-    @Default('IMAGE') String mediaType,
+    @Default(StoryMediaType.image) StoryMediaType mediaType,
     String? caption,
     List<StoryTextBlockEntity>? textBlocks,
     required DateTime expiresAt,
@@ -103,7 +121,7 @@ class StoryGroupItem {
   final String imageUrl;
   final DateTime createdAt;
   final DateTime expiresAt;
-  final String mediaType;
+  final StoryMediaType mediaType;
   final String? caption;
   final List<StoryTextBlockEntity>? textBlocks;
   const StoryGroupItem({
@@ -111,8 +129,62 @@ class StoryGroupItem {
     required this.imageUrl,
     required this.createdAt,
     required this.expiresAt,
-    this.mediaType = 'IMAGE',
+    this.mediaType = StoryMediaType.image,
     this.caption,
     this.textBlocks,
   });
+
+  factory StoryGroupItem.fromJson(Map<String, dynamic> json) => StoryGroupItem(
+    id: json['id'] as String,
+    imageUrl: json['imageUrl'] as String,
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    expiresAt: DateTime.parse(json['expiresAt'] as String),
+    mediaType: storyMediaTypeFromWire(json['mediaType']),
+    caption: json['caption'] as String?,
+    textBlocks: (json['textBlocks'] as List?)
+        ?.whereType<Map>()
+        .map(
+          (value) =>
+              StoryTextBlockEntity.fromJson(Map<String, dynamic>.from(value)),
+        )
+        .toList(),
+  );
+}
+
+class StoryHighlightEntity {
+  final String id;
+  final String title;
+  final String coverUrl;
+  final String coverStoryId;
+  final StoryUserEntity user;
+  final List<StoryGroupItem> stories;
+
+  const StoryHighlightEntity({
+    required this.id,
+    required this.title,
+    required this.coverUrl,
+    required this.coverStoryId,
+    required this.user,
+    required this.stories,
+  });
+
+  factory StoryHighlightEntity.fromJson(Map<String, dynamic> json) =>
+      StoryHighlightEntity(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        coverUrl: json['coverUrl'] as String,
+        coverStoryId: json['coverStoryId'] as String,
+        user: StoryUserEntity.fromJson(
+          Map<String, dynamic>.from(json['user'] as Map),
+        ),
+        stories: (json['stories'] as List)
+            .whereType<Map>()
+            .map(
+              (value) =>
+                  StoryGroupItem.fromJson(Map<String, dynamic>.from(value)),
+            )
+            .toList(),
+      );
+
+  StoryGroupEntity get group => StoryGroupEntity(user: user, stories: stories);
 }

@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { GetFeedUseCase } from './get-feed.usecase';
+import { FeedType } from '../types/social.types';
 
 describe('GetFeedUseCase cursor validation', () => {
   it.each([
@@ -41,7 +42,7 @@ describe('GetFeedUseCase cursor validation', () => {
 
     const result = await module.get(GetFeedUseCase).execute({
       userId: 'viewer-1',
-      type: name === 'wrong feed type' ? 'explore' : 'following',
+      type: name === 'wrong feed type' ? FeedType.EXPLORE : FeedType.FOLLOWING,
       cursor,
     });
 

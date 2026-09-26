@@ -17,6 +17,10 @@ import { RequestMagicLinkUseCase } from './request-magic-link.usecase';
 import { ConsumeMagicLinkUseCase } from './consume-magic-link.usecase';
 import { RefreshWebSessionUseCase } from './refresh-web-session.usecase';
 import { LogoutWebSessionUseCase } from './logout-web-session.usecase';
+import { RefreshMobileSessionUseCase } from './refresh-mobile-session.usecase';
+import { LogoutSessionUseCase } from './logout-session.usecase';
+import { EnrollBiometricUseCase } from './enroll-biometric.usecase';
+import { RevokeBiometricUseCase } from './revoke-biometric.usecase';
 import { SessionTokenService } from '../services/session-token.service';
 
 @Module({
@@ -40,6 +44,10 @@ import { SessionTokenService } from '../services/session-token.service';
     ConsumeMagicLinkUseCase,
     RefreshWebSessionUseCase,
     LogoutWebSessionUseCase,
+    RefreshMobileSessionUseCase,
+    LogoutSessionUseCase,
+    EnrollBiometricUseCase,
+    RevokeBiometricUseCase,
   ],
   exports: [
     UserDatabaseRepository,
@@ -57,6 +65,10 @@ import { SessionTokenService } from '../services/session-token.service';
     ConsumeMagicLinkUseCase,
     RefreshWebSessionUseCase,
     LogoutWebSessionUseCase,
+    RefreshMobileSessionUseCase,
+    LogoutSessionUseCase,
+    EnrollBiometricUseCase,
+    RevokeBiometricUseCase,
     SessionTokenService,
   ],
 })

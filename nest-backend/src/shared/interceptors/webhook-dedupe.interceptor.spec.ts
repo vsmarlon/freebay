@@ -2,7 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { CallHandler, ExecutionContext } from "@nestjs/common";
 import { createExecutionContext } from "@/shared/testing/test-doubles";
 import { of, throwError, lastValueFrom } from "rxjs";
-import { WebhookDedupeInterceptor } from "./webhook-dedupe.interceptor";
+import { WebhookDedupeInterceptor, WEBHOOK_DEDUPE_TTL_SECONDS } from "./webhook-dedupe.interceptor";
 import { RedisService } from "@/shared/infra/redis/redis.service";
 import { left, right } from "@/shared/core/either";
 
@@ -62,7 +62,7 @@ describe("WebhookDedupeInterceptor", () => {
     expect(mockRedis.setIfAbsent).toHaveBeenCalledWith(
       "webhook:evt_123",
       "1",
-      86400,
+      WEBHOOK_DEDUPE_TTL_SECONDS,
     );
   });
 
@@ -141,7 +141,7 @@ describe("WebhookDedupeInterceptor", () => {
     expect(mockRedis.setIfAbsent).toHaveBeenCalledWith(
       "webhook:evt_v2_account",
       "1",
-      86400,
+      WEBHOOK_DEDUPE_TTL_SECONDS,
     );
     expect(handler.handle).not.toHaveBeenCalled();
   });

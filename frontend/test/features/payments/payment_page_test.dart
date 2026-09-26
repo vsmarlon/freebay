@@ -7,6 +7,7 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/payments/presentation/pages/payment_page.dart';
 import 'package:freebay/features/payments/presentation/providers/payment_providers.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
 const _product = ProductEntity(
@@ -14,8 +15,7 @@ const _product = ProductEntity(
   title: 'Vintage Camera',
   description: 'A used film camera',
   price: 10000,
-  condition: 'used',
-  status: 'available',
+  condition: ProductCondition.used,
   sellerId: 'seller-1',
 );
 

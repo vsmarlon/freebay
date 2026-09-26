@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/core/components/safe_link_destination.dart';
 import 'package:freebay/core/utils/url_safety_analyzer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -45,11 +45,6 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
         AppSnackbar.error(context, 'Não foi possível abrir o link.');
       }
     }
-  }
-
-  void _copyUrl(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: safetyResult.normalizedUrl));
-    AppSnackbar.success(context, 'Link copiado para a área de transferência');
   }
 
   @override
@@ -151,64 +146,9 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.surfaceDark
-                    : AppColors.surfaceContainerHighest,
-                border: Border.all(color: AppColors.outlineVariant),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'DESTINO:',
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: context.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    safetyResult.host,
-                    style: TextStyle(
-                      fontFamily: AppTypography.headlineFontFamily,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: context.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          safetyResult.normalizedUrl,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontSize: 11,
-                            color: context.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.copy, size: 16),
-                        onPressed: () => _copyUrl(context),
-                        tooltip: 'Copiar link',
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            SafeLinkDestination(
+              host: safetyResult.host,
+              normalizedUrl: safetyResult.normalizedUrl,
             ),
 
             if (safetyResult.riskReasons.isNotEmpty) ...[

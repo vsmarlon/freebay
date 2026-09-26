@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { Report, ReportReason, ReportTargetType } from '@prisma/client';
+import { Report, ReportTargetType } from '@prisma/client';
 import { CreateReportInput } from '../dtos/report.dto';
 import { ReportDatabaseRepository } from '../data/repositories/report-database.repository';
 
@@ -11,12 +11,12 @@ export class CreateReportUseCase {
 
   async execute(input: CreateReportInput): Promise<Either<AppError, Report>> {
     switch (input.targetType) {
-      case 'USER': return this.reportUser(input);
-      case 'POST': return this.reportPost(input);
-      case 'CONVERSATION': return this.reportConversation(input);
-      case 'MESSAGE': return this.reportMessage(input);
-      case 'ORDER_CHAT': return this.reportOrderChat(input);
-      case 'CHAT_MESSAGE': return this.reportChatMessage(input);
+      case ReportTargetType.USER: return this.reportUser(input);
+      case ReportTargetType.POST: return this.reportPost(input);
+      case ReportTargetType.CONVERSATION: return this.reportConversation(input);
+      case ReportTargetType.MESSAGE: return this.reportMessage(input);
+      case ReportTargetType.ORDER_CHAT: return this.reportOrderChat(input);
+      case ReportTargetType.CHAT_MESSAGE: return this.reportChatMessage(input);
       default: return left(new BadRequestError('Invalid target type'));
     }
   }
@@ -35,8 +35,8 @@ export class CreateReportUseCase {
     const createResult = await this.reportRepository.createReport({
       reporterId: input.reporterId,
       reportedUserId: input.targetId,
-      targetType: 'USER' as ReportTargetType,
-      reason: input.reason as ReportReason,
+      targetType: ReportTargetType.USER,
+      reason: input.reason,
       description: input.description,
     });
     if (createResult.isLeft()) return left(createResult.value);
@@ -57,8 +57,8 @@ export class CreateReportUseCase {
     const createResult = await this.reportRepository.createReport({
       reporterId: input.reporterId,
       reportedPostId: input.targetId,
-      targetType: 'POST' as ReportTargetType,
-      reason: input.reason as ReportReason,
+      targetType: ReportTargetType.POST,
+      reason: input.reason,
       description: input.description,
     });
     if (createResult.isLeft()) return left(createResult.value);
@@ -82,8 +82,8 @@ export class CreateReportUseCase {
     const createResult = await this.reportRepository.createReport({
       reporterId: input.reporterId,
       reportedDirectConversationId: input.targetId,
-      targetType: 'CONVERSATION' as ReportTargetType,
-      reason: input.reason as ReportReason,
+      targetType: ReportTargetType.CONVERSATION,
+      reason: input.reason,
       description: input.description,
     });
     if (createResult.isLeft()) return left(createResult.value);
@@ -108,8 +108,8 @@ export class CreateReportUseCase {
     const createResult = await this.reportRepository.createReport({
       reporterId: input.reporterId,
       reportedDirectMessageId: input.targetId,
-      targetType: 'MESSAGE' as ReportTargetType,
-      reason: input.reason as ReportReason,
+      targetType: ReportTargetType.MESSAGE,
+      reason: input.reason,
       description: input.description,
     });
     if (createResult.isLeft()) return left(createResult.value);
@@ -133,8 +133,8 @@ export class CreateReportUseCase {
     const createResult = await this.reportRepository.createReport({
       reporterId: input.reporterId,
       reportedOrderChatId: input.targetId,
-      targetType: 'ORDER_CHAT' as ReportTargetType,
-      reason: input.reason as ReportReason,
+      targetType: ReportTargetType.ORDER_CHAT,
+      reason: input.reason,
       description: input.description,
     });
     if (createResult.isLeft()) return left(createResult.value);
@@ -159,8 +159,8 @@ export class CreateReportUseCase {
     const createResult = await this.reportRepository.createReport({
       reporterId: input.reporterId,
       reportedChatMessageId: input.targetId,
-      targetType: 'CHAT_MESSAGE' as ReportTargetType,
-      reason: input.reason as ReportReason,
+      targetType: ReportTargetType.CHAT_MESSAGE,
+      reason: input.reason,
       description: input.description,
     });
     if (createResult.isLeft()) return left(createResult.value);

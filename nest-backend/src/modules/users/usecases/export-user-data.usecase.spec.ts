@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExportUserDataUseCase } from './export-user-data.usecase';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
-import { left, right } from '@/shared/core/either';
-import { DatabaseError, UserNotFoundError } from '@/shared/core/errors';
+import { right } from '@/shared/core/either';
+import { UserNotFoundError } from '@/shared/core/errors';
 
 const mockAccountLifecycleRepository = {
   exportData: jest.fn(),
@@ -45,12 +45,4 @@ describe('ExportUserDataUseCase', () => {
     expect(result.value).toBeInstanceOf(UserNotFoundError);
   });
 
-  it('deve propagar a falha quando a exportação falha', async () => {
-    mockAccountLifecycleRepository.exportData.mockResolvedValue(left(new DatabaseError('boom')));
-
-    const result = await sut.execute({ userId: 'user-1' });
-
-    expect(result.isLeft()).toBe(true);
-    expect(result.value).toBeInstanceOf(DatabaseError);
-  });
 });

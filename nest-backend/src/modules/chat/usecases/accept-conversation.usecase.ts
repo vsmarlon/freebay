@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConversationStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
@@ -17,12 +18,12 @@ export class AcceptConversationUseCase {
     if (conversation.user1Id !== userId && conversation.user2Id !== userId) {
       return left(new BadRequestError('Not authorized'));
     }
-    if (conversation.status !== 'PENDING') {
+    if (conversation.status !== ConversationStatus.PENDING) {
       return left(new BadRequestError('Conversation is not pending'));
     }
 
     const updateResult = await this.conversationRepository.updateDirectConversation(conversationId, {
-      status: 'ACTIVE',
+      status: ConversationStatus.ACTIVE,
     });
     if (updateResult.isLeft()) return left(updateResult.value);
 

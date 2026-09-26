@@ -3,28 +3,52 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
-import 'package:freebay/features/orders/data/repositories/order_repository.dart';
-import 'package:freebay/features/orders/data/services/order_service.dart';
+import 'package:freebay/features/orders/domain/repositories/order_repository.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
 
-class _SalesRepository extends OrderRepository {
+class _SalesRepository implements OrderRepository {
   final responses = <Future<Either<Failure, CursorPage<OrderEntity>>>>[];
-  final calls = <({String? cursor, String? status})>[];
-
-  _SalesRepository() : super(OrderService());
+  final calls = <({String? cursor, OrderStatus? status})>[];
 
   @override
   Future<Either<Failure, CursorPage<OrderEntity>>> getMySales({
     String? cursor,
-    int limit = 20,
-    String? status,
+    int limit = defaultOrderPageLimit,
+    OrderStatus? status,
   }) {
     calls.add((cursor: cursor, status: status));
     return responses.removeAt(0);
   }
+
+  @override
+  Future<Either<Failure, OrderEntity>> getOrder(String orderId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, CursorPage<OrderEntity>>> getMyPurchases({
+    String? cursor,
+    int limit = defaultOrderPageLimit,
+    OrderStatus? status,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, OrderEntity>> createOrder(String productId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, String>> cancelOrder(String orderId, {String? reason}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, CanReviewResponse>> canReviewOrder(String orderId) =>
+      throw UnimplementedError();
 }
 
 OrderEntity _order(String id) => OrderEntity(
@@ -72,7 +96,7 @@ void main() {
       expect(state.nextCursor, isNull);
       expect(repository.calls, [
         (cursor: null, status: null),
-        (cursor: null, status: 'SHIPPED'),
+        (cursor: null, status: OrderStatus.shipped),
       ]);
     },
   );

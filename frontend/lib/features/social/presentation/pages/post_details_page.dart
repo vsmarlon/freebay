@@ -1,21 +1,24 @@
-import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:animated_tree_view/animated_tree_view.dart';
+import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
-import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
-import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
-import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
-import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
-import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
-import 'package:go_router/go_router.dart';
-import 'package:animated_tree_view/animated_tree_view.dart';
-import 'package:freebay/core/router/navigation_tracker.dart';
-import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
+import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
+import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
+import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
+import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
+import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
+import 'package:freebay/features/social/presentation/widgets/post_details_comment_tree.dart';
+import 'package:freebay/features/social/presentation/widgets/post_details_post_section.dart';
+import 'package:freebay/features/social/presentation/widgets/post_details_skeleton.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -45,55 +48,37 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   Future<void> _sendComment() async {
     final isReply = _replyToId != null;
     if (isReply ? _isReplySending : _isCommentSending) return;
-
-    final activeController = isReply ? _replyController : _commentController;
-
-    setState(() {
-      if (isReply) {
-        _isReplySending = true;
-      } else {
-        _isCommentSending = true;
-      }
-    });
-    final controller = ref.read(postDetailsControllerProvider(widget.postId));
-    final sent = await controller.sendComment(
-      context,
-      activeController,
-      parentId: _replyToId,
-    );
-
+    final controller = isReply ? _replyController : _commentController;
+    setState(() => isReply ? _isReplySending = true : _isCommentSending = true);
+    final sent = await ref
+        .read(postDetailsControllerProvider(widget.postId))
+        .sendComment(context, controller, parentId: _replyToId);
     if (sent && mounted) {
       setState(() => _replyToId = null);
       _replyController.clear();
     }
     if (mounted) {
-      setState(() {
-        if (isReply) {
-          _isReplySending = false;
-        } else {
-          _isCommentSending = false;
-        }
-      });
+      setState(
+        () => isReply ? _isReplySending = false : _isCommentSending = false,
+      );
     }
   }
 
   void _setReplyTo(CommentEntity comment) {
     setState(() => _replyToId = comment.id);
-    // Seed only the reply controller with the user's handle.
     final handle = comment.user?.username;
-    _replyController.text = (handle != null && handle.isNotEmpty)
+    _replyController.text = handle != null && handle.isNotEmpty
         ? '@$handle '
         : '';
     _replyController.selection = TextSelection.fromPosition(
       TextPosition(offset: _replyController.text.length),
     );
-    // Bring up keyboard focused on the reply field.
     Future.microtask(_replyFocusNode.requestFocus);
   }
 
-  TreeNode<CommentEntity> _buildTree(List<CommentEntity> rootComments) {
+  TreeNode<CommentEntity> _buildTree(List<CommentEntity> comments) {
     final root = TreeNode<CommentEntity>.root();
-    for (final comment in rootComments) {
+    for (final comment in comments) {
       root.add(_createNode(comment));
     }
     return root;
@@ -110,7 +95,6 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(postDetailsProvider(widget.postId));
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
@@ -125,55 +109,8 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     );
   }
 
-  Widget _buildSkeleton() {
-    return const SkeletonPage(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ShimmerBlock(height: 48),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              ShimmerBlock(width: 48, height: 48),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ShimmerBlock(height: 14, width: 120),
-                  SizedBox(height: 8),
-                  ShimmerBlock(height: 12, width: 80),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          ShimmerBlock(height: 300),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              ShimmerBlock(width: 24, height: 24),
-              SizedBox(width: 16),
-              ShimmerBlock(width: 24, height: 24),
-              SizedBox(width: 16),
-              ShimmerBlock(width: 24, height: 24),
-            ],
-          ),
-          SizedBox(height: 24),
-          _CommentSkeletonRow(),
-          SizedBox(height: 12),
-          _CommentSkeletonRow(),
-          SizedBox(height: 12),
-          _CommentSkeletonRow(),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBody(BuildContext context, PostDetailsState state) {
-    if (state.isLoading) {
-      return _buildSkeleton();
-    }
-
+    if (state.isLoading) return const PostDetailsSkeleton();
     if (state.error != null) {
       return EmptyState.error(
         message: state.error,
@@ -181,141 +118,37 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
             ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
       );
     }
-
     if (state.post == null) {
       return const Center(child: Text('Post não encontrado'));
     }
 
     final post = state.post!;
-    final treeNode = _buildTree(state.comments);
-
-    final likesState = ref.watch(likesProvider);
-    final isLiked = likesState.getLikedOverride(post.id) ?? post.isLiked;
-    final likesCount = likesState.getCountOverride(post.id) ?? post.likesCount;
-
-    final savesState = ref.watch(savesProvider);
-    final isSaved = savesState.getSavedOverride(post.id) ?? post.isSaved;
-
-    final repostsState = ref.watch(repostsProvider);
-    final isReposted =
-        repostsState.getRepostedOverride(post.id) ?? post.hasReposted;
-    final sharesCount =
-        repostsState.getCountOverride(post.id) ?? post.sharesCount;
-
+    final likes = ref.watch(likesProvider);
+    final saves = ref.watch(savesProvider);
+    final reposts = ref.watch(repostsProvider);
+    final tree = _buildTree(state.comments);
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: SocialPost(
-              userId: post.user.id,
-              userName: post.user.displayNameOrDefault,
-              userAvatarUrl: post.user.avatarUrl,
-              content: post.content,
-              imageUrl: post.imageUrl,
-              likesCount: likesCount,
-              commentsCount: post.commentsCount,
-              sharesCount: sharesCount,
-              isLiked: isLiked,
-              isSaved: isSaved,
-              isReposted: isReposted,
-              isVerified: post.user.isVerified,
-              createdAt: post.createdAt,
+            child: PostDetailsPostSection(
+              post: post,
+              likesCount: likes.getCountOverride(post.id) ?? post.likesCount,
+              sharesCount:
+                  reposts.getCountOverride(post.id) ?? post.sharesCount,
+              isLiked: likes.getLikedOverride(post.id) ?? post.isLiked,
+              isSaved: saves.getSavedOverride(post.id) ?? post.isSaved,
+              isReposted:
+                  reposts.getRepostedOverride(post.id) ?? post.hasReposted,
               onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
-              onLike: () async {
-                final user = ref.read(authControllerProvider).value;
-                if (user == null) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para curtir');
-                  }
-                  return false;
-                }
-                final success = await ref
-                    .read(likesProvider.notifier)
-                    .toggleLike(
-                      post.id,
-                      initialIsLiked: post.isLiked,
-                      initialCount: post.likesCount,
-                    );
-                if (success) {
-                  final newLikesState = ref.read(likesProvider);
-                  ref
-                      .read(feedProvider.notifier)
-                      .updatePostLike(
-                        post.id,
-                        newLikesState.getLikedOverride(post.id) ?? post.isLiked,
-                        newLikesState.getCountOverride(post.id) ??
-                            post.likesCount,
-                      );
-                }
-                return success;
-              },
-              onSave: () async {
-                final user = ref.read(authControllerProvider).value;
-                if (user == null) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para salvar');
-                  }
-                  return false;
-                }
-                return ref
-                    .read(savesProvider.notifier)
-                    .toggleSave(post.id, initialIsSaved: post.isSaved);
-              },
-              onRepost: () async {
-                final user = ref.read(authControllerProvider).value;
-                if (user == null) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para repostar');
-                  }
-                  return false;
-                }
-                final success = await ref
-                    .read(repostsProvider.notifier)
-                    .toggleRepost(
-                      post.id,
-                      initialIsReposted: post.hasReposted,
-                      initialCount: post.sharesCount,
-                    );
-                if (success) {
-                  final newRepostsState = ref.read(repostsProvider);
-                  ref
-                      .read(feedProvider.notifier)
-                      .updateSharesCount(
-                        post.id,
-                        newRepostsState.getCountOverride(post.id) ??
-                            post.sharesCount,
-                      );
-                }
-                return success;
-              },
+              onLike: () => _toggleLike(post.id, post.isLiked, post.likesCount),
+              onSave: () => _toggleSave(post.id, post.isSaved),
+              onRepost: () =>
+                  _toggleRepost(post.id, post.hasReposted, post.sharesCount),
               onComment: () => FocusScope.of(context).unfocus(),
-              onShare: () async {
-                final user = ref.read(authControllerProvider).value;
-                if (user == null) {
-                  if (context.mounted) {
-                    AppSnackbar.warning(
-                      context,
-                      'Faça login para compartilhar',
-                    );
-                  }
-                  return;
-                }
-                final result = await ref
-                    .read(socialRepositoryProvider)
-                    .sharePost(post.id, null);
-                if (!context.mounted) return;
-                result.fold(
-                  (failure) => AppSnackbar.error(
-                    context,
-                    'Não foi possível compartilhar',
-                  ),
-                  (_) {
-                    AppSnackbar.success(context, 'Compartilhado no seu perfil');
-                  },
-                );
-              },
+              onShare: () => _sharePost(context, post.id),
             ),
           ),
           SliverToBoxAdapter(
@@ -352,24 +185,10 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
             )
           else
             SliverToBoxAdapter(
-              child: SizedBox(
+              child: PostDetailsCommentTree(
+                tree: tree,
                 height: MediaQuery.of(context).size.height * 0.6,
-                child: TreeView.simple<CommentEntity>(
-                  tree: treeNode,
-                  showRootNode: false,
-                  expansionIndicatorBuilder: (context, node) =>
-                      ChevronIndicator.rightDown(
-                        tree: node,
-                        color: context.textPrimary,
-                        padding: const EdgeInsets.all(8),
-                      ),
-                  indentation: const Indentation(),
-                  builder: (context, node) {
-                    final comment = node.data;
-                    if (comment == null) return const SizedBox.shrink();
-                    return _buildCommentNode(context, comment);
-                  },
-                ),
+                itemBuilder: _buildCommentNode,
               ),
             ),
         ],
@@ -377,25 +196,83 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     );
   }
 
+  Future<bool> _toggleLike(String id, bool initial, int count) async {
+    final user = ref.read(authControllerProvider).value;
+    if (user == null) {
+      if (mounted) AppSnackbar.warning(context, 'Faça login para curtir');
+      return false;
+    }
+    final success = await ref
+        .read(likesProvider.notifier)
+        .toggleLike(id, initialIsLiked: initial, initialCount: count);
+    if (success) {
+      final next = ref.read(likesProvider);
+      ref
+          .read(feedProvider.notifier)
+          .updatePostLike(
+            id,
+            next.getLikedOverride(id) ?? initial,
+            next.getCountOverride(id) ?? count,
+          );
+    }
+    return success;
+  }
+
+  Future<bool> _toggleSave(String id, bool initial) async {
+    if (ref.read(authControllerProvider).value == null) {
+      if (mounted) AppSnackbar.warning(context, 'Faça login para salvar');
+      return false;
+    }
+    return ref
+        .read(savesProvider.notifier)
+        .toggleSave(id, initialIsSaved: initial);
+  }
+
+  Future<bool> _toggleRepost(String id, bool initial, int count) async {
+    if (ref.read(authControllerProvider).value == null) {
+      if (mounted) AppSnackbar.warning(context, 'Faça login para repostar');
+      return false;
+    }
+    final success = await ref
+        .read(repostsProvider.notifier)
+        .toggleRepost(id, initialIsReposted: initial, initialCount: count);
+    if (success) {
+      ref
+          .read(feedProvider.notifier)
+          .updateSharesCount(
+            id,
+            ref.read(repostsProvider).getCountOverride(id) ?? count,
+          );
+    }
+    return success;
+  }
+
+  Future<void> _sharePost(BuildContext context, String id) async {
+    if (ref.read(authControllerProvider).value == null) {
+      if (mounted) AppSnackbar.warning(context, 'Faça login para compartilhar');
+      return;
+    }
+    final result = await ref.read(socialRepositoryProvider).sharePost(id, null);
+    if (!context.mounted) return;
+    result.fold(
+      (_) => AppSnackbar.error(context, 'Não foi possível compartilhar'),
+      (_) => AppSnackbar.success(context, 'Compartilhado no seu perfil'),
+    );
+  }
+
   Widget _buildCommentNode(BuildContext context, CommentEntity comment) {
     final isReplying = _replyToId == comment.id;
-    final commentLikesState = ref.watch(commentLikesProvider);
-    final isCommentLiked =
-        commentLikesState.getLikedOverride(comment.id) ?? comment.isLiked;
-    final commentLikesCount =
-        commentLikesState.getCountOverride(comment.id) ?? comment.likesCount;
-
+    final likes = ref.watch(commentLikesProvider);
     return Column(
       children: [
         CommentItem(
           comment: comment,
           isReplying: isReplying,
-          isLiked: isCommentLiked,
-          likesCount: commentLikesCount,
+          isLiked: likes.getLikedOverride(comment.id) ?? comment.isLiked,
+          likesCount: likes.getCountOverride(comment.id) ?? comment.likesCount,
           onReply: () => _setReplyTo(comment),
           onLike: () async {
-            final user = ref.read(authControllerProvider).value;
-            if (user == null) {
+            if (ref.read(authControllerProvider).value == null) {
               if (context.mounted) {
                 AppSnackbar.warning(context, 'Faça login para curtir');
               }
@@ -425,28 +302,6 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               compact: true,
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _CommentSkeletonRow extends StatelessWidget {
-  const _CommentSkeletonRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        ShimmerBlock(width: 32, height: 32),
-        SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ShimmerBlock(height: 14, width: 100),
-            SizedBox(height: 6),
-            ShimmerBlock(height: 12, width: 160),
-          ],
-        ),
       ],
     );
   }

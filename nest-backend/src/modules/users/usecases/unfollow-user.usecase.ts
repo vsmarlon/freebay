@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaFollowRepository } from '../data/repositories/follow-database.repository';
+import { FollowRepository } from '../domain/repositories/follow.repository';
 import { FollowResponse } from '../mappers/user.mapper';
 import { FollowUserInput } from '../dtos/user.dto';
 
 @Injectable()
 export class UnfollowUserUseCase {
   constructor(
-    private readonly followRepository: PrismaFollowRepository,
+    private readonly followRepository: FollowRepository,
   ) {}
 
   async execute(input: FollowUserInput): Promise<Either<AppError, FollowResponse>> {

@@ -20,6 +20,7 @@ void main() {
               onSortChanged: (_) {},
               onConditionChanged: (_) {},
               onPriceRangeChanged: appliedRanges.add,
+              onClear: () {},
             ),
           ),
         ),
@@ -38,10 +39,10 @@ void main() {
     expect(appliedRanges.single, isNotNull);
   });
 
-  testWidgets('Cancel restores the applied range without applying the draft', (
+  testWidgets('Limpar forwards to onClear without applying the draft', (
     tester,
   ) async {
-    const appliedRange = RangeValues(100, 200);
+    var cleared = 0;
     final appliedRanges = <RangeValues?>[];
 
     await tester.pumpWidget(
@@ -51,10 +52,11 @@ void main() {
             child: ProductFilterBar(
               sort: ProductSort.recent,
               condition: null,
-              priceRange: appliedRange,
+              priceRange: const RangeValues(100, 200),
               onSortChanged: (_) {},
               onConditionChanged: (_) {},
               onPriceRangeChanged: appliedRanges.add,
+              onClear: () => cleared++,
             ),
           ),
         ),
@@ -62,13 +64,10 @@ void main() {
     );
 
     await tester.drag(find.byType(RangeSlider), const Offset(80, 0));
-    await tester.tap(find.text('Cancelar'));
+    await tester.tap(find.text('Limpar'));
     await tester.pump();
 
-    expect(
-      tester.widget<RangeSlider>(find.byType(RangeSlider)).values,
-      appliedRange,
-    );
+    expect(cleared, 1);
     expect(appliedRanges, isEmpty);
   });
 
@@ -85,6 +84,7 @@ void main() {
             onSortChanged: (_) {},
             onConditionChanged: (_) {},
             onPriceRangeChanged: appliedRanges.add,
+            onClear: () {},
           ),
         ),
       ),
@@ -106,6 +106,7 @@ void main() {
       onSortChanged: (_) {},
       onConditionChanged: (_) {},
       onPriceRangeChanged: (_) {},
+      onClear: () {},
     );
 
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: bar)));

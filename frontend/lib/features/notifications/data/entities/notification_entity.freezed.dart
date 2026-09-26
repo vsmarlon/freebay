@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NotificationEntity {
 
- String get id; String get type; String get title; String get body;@JsonKey() Map<String, dynamic>? get data; bool get read; DateTime get createdAt;
+ String get id;@NotificationTypeConverter() NotificationType get type; String get title; String get body;@JsonKey() Map<String, dynamic>? get data; bool get read; DateTime get createdAt;
 /// Create a copy of NotificationEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $NotificationEntityCopyWith<$Res>  {
   factory $NotificationEntityCopyWith(NotificationEntity value, $Res Function(NotificationEntity) _then) = _$NotificationEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String type, String title, String body,@JsonKey() Map<String, dynamic>? data, bool read, DateTime createdAt
+ String id,@NotificationTypeConverter() NotificationType type, String title, String body,@JsonKey() Map<String, dynamic>? data, bool read, DateTime createdAt
 });
 
 
@@ -69,7 +69,7 @@ class _$NotificationEntityCopyWithImpl<$Res>
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as NotificationType,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,body: null == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String,data: freezed == data ? _self.data : data // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,read: null == read ? _self.read : read // ignore: cast_nullable_to_non_nullable
@@ -159,7 +159,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String type,  String title,  String body, @JsonKey()  Map<String, dynamic>? data,  bool read,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @NotificationTypeConverter()  NotificationType type,  String title,  String body, @JsonKey()  Map<String, dynamic>? data,  bool read,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _NotificationEntity() when $default != null:
 return $default(_that.id,_that.type,_that.title,_that.body,_that.data,_that.read,_that.createdAt);case _:
@@ -180,7 +180,7 @@ return $default(_that.id,_that.type,_that.title,_that.body,_that.data,_that.read
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String type,  String title,  String body, @JsonKey()  Map<String, dynamic>? data,  bool read,  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @NotificationTypeConverter()  NotificationType type,  String title,  String body, @JsonKey()  Map<String, dynamic>? data,  bool read,  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _NotificationEntity():
 return $default(_that.id,_that.type,_that.title,_that.body,_that.data,_that.read,_that.createdAt);case _:
@@ -200,7 +200,7 @@ return $default(_that.id,_that.type,_that.title,_that.body,_that.data,_that.read
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String type,  String title,  String body, @JsonKey()  Map<String, dynamic>? data,  bool read,  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @NotificationTypeConverter()  NotificationType type,  String title,  String body, @JsonKey()  Map<String, dynamic>? data,  bool read,  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _NotificationEntity() when $default != null:
 return $default(_that.id,_that.type,_that.title,_that.body,_that.data,_that.read,_that.createdAt);case _:
@@ -215,11 +215,11 @@ return $default(_that.id,_that.type,_that.title,_that.body,_that.data,_that.read
 @JsonSerializable()
 
 class _NotificationEntity extends NotificationEntity {
-  const _NotificationEntity({required this.id, required this.type, required this.title, required this.body, @JsonKey() final  Map<String, dynamic>? data, required this.read, required this.createdAt}): _data = data,super._();
+  const _NotificationEntity({required this.id, @NotificationTypeConverter() required this.type, required this.title, required this.body, @JsonKey() final  Map<String, dynamic>? data, required this.read, required this.createdAt}): _data = data,super._();
   factory _NotificationEntity.fromJson(Map<String, dynamic> json) => _$NotificationEntityFromJson(json);
 
 @override final  String id;
-@override final  String type;
+@override@NotificationTypeConverter() final  NotificationType type;
 @override final  String title;
 @override final  String body;
  final  Map<String, dynamic>? _data;
@@ -267,7 +267,7 @@ abstract mixin class _$NotificationEntityCopyWith<$Res> implements $Notification
   factory _$NotificationEntityCopyWith(_NotificationEntity value, $Res Function(_NotificationEntity) _then) = __$NotificationEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String type, String title, String body,@JsonKey() Map<String, dynamic>? data, bool read, DateTime createdAt
+ String id,@NotificationTypeConverter() NotificationType type, String title, String body,@JsonKey() Map<String, dynamic>? data, bool read, DateTime createdAt
 });
 
 
@@ -288,7 +288,7 @@ class __$NotificationEntityCopyWithImpl<$Res>
   return _then(_NotificationEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
+as NotificationType,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,body: null == body ? _self.body : body // ignore: cast_nullable_to_non_nullable
 as String,data: freezed == data ? _self._data : data // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,read: null == read ? _self.read : read // ignore: cast_nullable_to_non_nullable

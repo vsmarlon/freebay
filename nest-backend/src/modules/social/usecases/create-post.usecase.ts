@@ -41,7 +41,7 @@ export class CreatePostUseCase {
       id: post.id,
       content: post.content,
       imageUrl: post.imageUrl,
-      type: post.type as 'PRODUCT' | 'REGULAR',
+      type: post.type,
       userId: post.userId,
       likesCount: post.likesCount,
       commentsCount: post.commentsCount,

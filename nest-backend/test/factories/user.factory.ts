@@ -54,38 +54,4 @@ export class UserFactory {
     return user;
   }
 
-  /**
-   * Create a verified user (email verified, with CPF)
-   */
-  async createVerified(overrides: Partial<User> = {}): Promise<User> {
-    return this.create({
-      emailVerified: true,
-      isVerified: true,
-      cpfHash: generateTestCpfHash(),
-      ...overrides,
-    });
-  }
-
-  /**
-   * Create an admin user
-   */
-  async createAdmin(overrides: Partial<User> = {}): Promise<User> {
-    return this.create({
-      role: UserRole.ADMIN,
-      emailVerified: true,
-      isVerified: true,
-      ...overrides,
-    });
-  }
-
-  /**
-   * Create multiple users at once
-   */
-  async createMany(count: number, overrides: Partial<User> = {}): Promise<User[]> {
-    const users: User[] = [];
-    for (let i = 0; i < count; i++) {
-      users.push(await this.create({ ...overrides, displayName: `${overrides.displayName || 'Test User'} ${i + 1}` }));
-    }
-    return users;
-  }
 }

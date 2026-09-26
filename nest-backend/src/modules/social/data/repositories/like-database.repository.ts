@@ -1,38 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { MutationState } from '../../types/social.types';
 
 @Injectable()
-export class PrismaLikeRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class PrismaLikeRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findPostLike(userId: string, postId: string): RepositoryResponse<{ id: string } | null> {
-    return this.safeRun(() => this.prisma.like.findUnique({
+    return repositoryResponse(() => this.prisma.like.findUnique({
       where: { userId_postId: { userId, postId } },
       select: { id: true },
     }), 'Erro ao buscar like');
   }
 
-  async createLike(data: Record<string, unknown>): RepositoryResponse<{ id: string }> {
-    return this.safeRun(() => this.prisma.like.create({
-      data: data as Prisma.LikeCreateInput,
+  async createLike(data: Prisma.LikeCreateInput): RepositoryResponse<{ id: string }> {
+    return repositoryResponse(() => this.prisma.like.create({
+      data,
       select: { id: true },
     }), 'Erro ao criar like');
   }
 
   async deletePostLikeByUser(userId: string, postId: string): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.like.delete({ where: { userId_postId: { userId, postId } } });
     }, 'Erro ao remover like');
   }
 
   async setPostLike(userId: string, postId: string, active: boolean): RepositoryResponse<MutationState> {
-    return this.safeRun(() => this.prisma.$transaction(async (tx) => {
+    return repositoryResponse(() => this.prisma.$transaction(async (tx) => {
       const existing = await tx.like.findUnique({ where: { userId_postId: { userId, postId } } });
       if (active && !existing) {
         await tx.like.create({ data: { userId, postId } });
@@ -47,7 +46,7 @@ export class PrismaLikeRepository extends BasePrismaRepository {
   }
 
   async findLikedByUserId(userId: string): RepositoryResponse<unknown[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const likes = await this.prisma.like.findMany({
         where: { userId },
         include: {
@@ -65,21 +64,21 @@ export class PrismaLikeRepository extends BasePrismaRepository {
   }
 
   async findCommentLike(userId: string, commentId: string): RepositoryResponse<{ id: string } | null> {
-    return this.safeRun(() => this.prisma.commentLike.findUnique({
+    return repositoryResponse(() => this.prisma.commentLike.findUnique({
       where: { userId_commentId: { userId, commentId } },
       select: { id: true },
     }), 'Erro ao buscar like do comentário');
   }
 
-  async createCommentLike(data: Record<string, unknown>): RepositoryResponse<{ id: string }> {
-    return this.safeRun(() => this.prisma.commentLike.create({
-      data: data as Prisma.CommentLikeCreateInput,
+  async createCommentLike(data: Prisma.CommentLikeCreateInput): RepositoryResponse<{ id: string }> {
+    return repositoryResponse(() => this.prisma.commentLike.create({
+      data,
       select: { id: true },
     }), 'Erro ao curtir comentário');
   }
 
   async deleteCommentLike(data: { userId: string; commentId: string }): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.commentLike.delete({
         where: { userId_commentId: { userId: data.userId, commentId: data.commentId } },
       });

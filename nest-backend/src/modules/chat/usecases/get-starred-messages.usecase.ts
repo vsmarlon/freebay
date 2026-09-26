@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ChatThreadType } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
@@ -24,7 +25,7 @@ export class GetStarredMessagesUseCase {
     if (resolved.isLeft()) return left(resolved.value);
 
     const threadId = resolved.value.orderId ?? resolved.value.directConversationId!;
-    const messageModel = resolved.value.orderId ? 'ORDER' as const : 'DIRECT' as const;
+    const messageModel = resolved.value.orderId ? ChatThreadType.ORDER : ChatThreadType.DIRECT;
 
     const starsResult = await this.conversationRepository.findStarredMessages(
       userId,

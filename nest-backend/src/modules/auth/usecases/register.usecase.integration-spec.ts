@@ -5,23 +5,24 @@ import { prisma } from '../../../../test/setup-integration';
 import { UserFactory } from '../../../../test/factories';
 import { RegisterDTO } from '../dtos/auth.dto';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { SessionTokenService } from '../services/session-token.service';
 
 describe('RegisterUseCase Integration', () => {
   let sut: RegisterUseCase;
-  let userRepository: UserDatabaseRepository;
   let userFactory: UserFactory;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        RegisterUseCase,
         UserDatabaseRepository,
         { provide: PrismaService, useValue: prisma },
+        { provide: SessionTokenService, useValue: { generate: () => ({ token: 'access', refreshToken: 'refresh' }) } },
       ],
     }).compile();
 
-    userRepository = module.get(UserDatabaseRepository);
     userFactory = new UserFactory(prisma);
-    sut = new RegisterUseCase(userRepository);
+    sut = module.get(RegisterUseCase);
   });
 
   describe('Business Rules', () => {

@@ -32,7 +32,7 @@ void main() {
       },
     });
 
-    expect(story.mediaType, 'VIDEO');
+    expect(story.mediaType, StoryMediaType.video);
     expect(story.caption, 'caption');
     expect(story.textBlocks!.single.text, 'caption on media');
     expect(story.textBlocks!.single.style, StoryTextStyle.classic);

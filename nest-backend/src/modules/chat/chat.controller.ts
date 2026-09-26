@@ -29,6 +29,7 @@ import { VerifyUrlSafetyUseCase } from './usecases/verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './usecases/forward-messages.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { ChatGateway } from './chat.gateway';
+import { MessageType } from '@prisma/client';
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -123,7 +124,7 @@ export class ChatController {
   async getFilteredMessages(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUserId() userId: string,
-    @Query('type') type?: string,
+    @Query('type') type?: MessageType,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
   ) {
@@ -151,7 +152,8 @@ export class ChatController {
       durationMs: body.durationMs,
     });
     if (result.isRight()) {
-      this.chatGateway.broadcastNewMessage(id, result.value);
+      this.chatGateway.broadcastNewMessage(id, result.value.message);
+      return result.value.message;
     }
     return result;
   }

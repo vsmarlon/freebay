@@ -6,6 +6,7 @@ import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 
 class SuggestionsSection extends ConsumerWidget {
@@ -171,7 +172,7 @@ class _CompactSuggestionCard extends ConsumerWidget {
                   border: Border.all(color: AppColors.outlineVariant),
                   image: user.avatarUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(user.avatarUrl!),
+                          image: CachedNetworkImageProvider(user.avatarUrl!),
                           fit: BoxFit.cover,
                         )
                       : null,

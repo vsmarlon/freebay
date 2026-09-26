@@ -1,39 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { BasePrismaRepository } from '@/shared/infra/prisma/base-prisma.repository';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { postIncludeForViewer, ShareWithPost, MutationState } from '../../types/social.types';
 import { normalizePost } from './post-database.repository';
 
 @Injectable()
-export class PrismaShareRepository extends BasePrismaRepository {
-  constructor(prisma: PrismaService) {
-    super(prisma);
+export class PrismaShareRepository {
+  constructor(private readonly prisma: PrismaService) {
   }
 
   async findByUserAndPost(userId: string, postId: string): RepositoryResponse<{ id: string } | null> {
-    return this.safeRun(() => this.prisma.share.findUnique({
+    return repositoryResponse(() => this.prisma.share.findUnique({
       where: { userId_postId: { userId, postId } },
       select: { id: true },
     }), 'Erro ao buscar compartilhamento');
   }
 
-  async create(data: Record<string, unknown>): RepositoryResponse<{ id: string }> {
-    return this.safeRun(() => this.prisma.share.create({
-      data: data as Prisma.ShareCreateInput,
+  async create(data: Prisma.ShareCreateInput): RepositoryResponse<{ id: string }> {
+    return repositoryResponse(() => this.prisma.share.create({
+      data,
       select: { id: true },
     }), 'Erro ao compartilhar');
   }
 
   async delete(userId: string, postId: string): RepositoryResponse<void> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       await this.prisma.share.delete({ where: { userId_postId: { userId, postId } } });
     }, 'Erro ao remover compartilhamento');
   }
 
   async setPostShare(userId: string, postId: string, active: boolean): RepositoryResponse<MutationState> {
-    return this.safeRun(() => this.prisma.$transaction(async (tx) => {
+    return repositoryResponse(() => this.prisma.$transaction(async (tx) => {
       const existing = await tx.share.findUnique({ where: { userId_postId: { userId, postId } } });
       if (active && !existing) {
         await tx.share.create({ data: { userId, postId } });
@@ -48,7 +47,7 @@ export class PrismaShareRepository extends BasePrismaRepository {
   }
 
   async findPostsRepostedByUser(userId: string, params: { viewerId?: string; limit?: number; cursor?: string }): RepositoryResponse<ShareWithPost[]> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const shares = await this.prisma.share.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -67,7 +66,7 @@ export class PrismaShareRepository extends BasePrismaRepository {
   }
 
   async exists(userId: string, postId: string): RepositoryResponse<boolean> {
-    return this.safeRun(async () => {
+    return repositoryResponse(async () => {
       const count = await this.prisma.share.count({ where: { userId, postId } });
       return count > 0;
     }, 'Erro ao verificar compartilhamento');

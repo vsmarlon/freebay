@@ -1,16 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
-import 'package:freebay/features/cart/data/services/cart_service.dart';
 import 'package:freebay/features/cart/data/repositories/cart_repository.dart';
+import 'package:freebay/features/cart/domain/repositories/cart_repository.dart';
+import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 
-final cartServiceProvider = Provider((ref) => CartService());
-
-final cartRepositoryProvider = Provider<CartRepository>((ref) {
-  return CartRepository(ref.watch(cartServiceProvider));
-});
+final cartRepositoryProvider = Provider<CartRepository>(
+  (ref) => CartRepositoryImpl(client: HttpClient.instance),
+);
 
 class CartState {
   final bool isLoading;

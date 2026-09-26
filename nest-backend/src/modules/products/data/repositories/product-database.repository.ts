@@ -1,50 +1,45 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { Prisma, ProductStatus } from '@prisma/client';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
-import { ProductDetailPayload, ProductListPayload, FindManyParams, ProductSort, PRODUCT_DETAIL_INCLUDE, PRODUCT_LIST_INCLUDE } from '../../types/product.types';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
+import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { DEFAULT_PAGE_SIZE } from '@/shared/core/pagination';
+import { FindManyParams, ProductSort, PRODUCT_DETAIL_INCLUDE, PRODUCT_LIST_INCLUDE } from '../../types/product.types';
 
 @Injectable()
 export class ProductDatabaseRepository {
-  private readonly logger = new Logger(ProductDatabaseRepository.name);
-
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+  }
 
   async findById(id: string) {
-    try {
+    return repositoryResponse(async () => {
       const product = await this.prisma.product.findUnique({
         where: { id },
         include: PRODUCT_DETAIL_INCLUDE,
       });
-      if (product && (product.status === 'DELETED' || product.deletedAt !== null)) {
-        return right(null);
+      if (product && (product.status === ProductStatus.DELETED || product.deletedAt !== null)) {
+        return null;
       }
-      return right(product as ProductDetailPayload | null);
-    } catch (e) {
-      this.logger.error('Erro ao buscar produto', e instanceof Error ? e.stack : e);
-      return left(new DatabaseError('Erro ao buscar produto'));
-    }
+      return product;
+    }, 'Erro ao buscar produto');
   }
 
   async findBySellerId(sellerId: string) {
-    try {
+    return repositoryResponse(async () => {
       const products = await this.prisma.product.findMany({
-        where: { sellerId, status: 'ACTIVE', deletedAt: null },
+        where: { sellerId, status: ProductStatus.ACTIVE, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         include: PRODUCT_LIST_INCLUDE,
       });
-      return right(products as ProductListPayload[]);
-    } catch (e) {
-      this.logger.error('Erro ao buscar produtos do vendedor', e instanceof Error ? e.stack : e);
-      return left(new DatabaseError('Erro ao buscar produtos do vendedor'));
-    }
+      return products;
+    }, 'Erro ao buscar produtos do vendedor');
   }
 
   async findMany(params: FindManyParams) {
-    try {
-      const { cursor, limit = 20, search, categoryId, minPrice, maxPrice, condition, sort = 'recent' } = params;
-      const where: Prisma.ProductWhereInput = { status: 'ACTIVE', deletedAt: null };
+    return repositoryResponse(async () => {
+      const { cursor, limit = DEFAULT_PAGE_SIZE, search, categoryId, minPrice, maxPrice, condition, sort = ProductSort.RECENT } = params;
+      const where: Prisma.ProductWhereInput = { status: ProductStatus.ACTIVE, deletedAt: null };
       if (search) {
         where.OR = [
           { title: { contains: search, mode: 'insensitive' } },
@@ -70,20 +65,17 @@ export class ProductDatabaseRepository {
         ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
         include: PRODUCT_LIST_INCLUDE,
       });
-      return right(products as ProductListPayload[]);
-    } catch (e) {
-      this.logger.error('Erro ao listar produtos', e instanceof Error ? e.stack : e);
-      return left(new DatabaseError('Erro ao listar produtos'));
-    }
+      return products;
+    }, 'Erro ao listar produtos');
   }
 
   private buildOrderBy(sort: ProductSort): Prisma.ProductOrderByWithRelationInput[] {
     switch (sort) {
-      case 'price_asc':
+      case ProductSort.PRICE_ASC:
         return [{ price: 'asc' }, { id: 'asc' }];
-      case 'price_desc':
+      case ProductSort.PRICE_DESC:
         return [{ price: 'desc' }, { id: 'asc' }];
-      case 'popular':
+      case ProductSort.POPULAR:
         return [{ soldCount: 'desc' }, { id: 'asc' }];
       default:
         return [{ createdAt: 'desc' }, { id: 'asc' }];
@@ -122,9 +114,10 @@ export class ProductDatabaseRepository {
     const parentToChildren = ProductDatabaseRepository.categoryCache.tree;
     const collected = new Set<string>([rootId]);
     const queue = [rootId];
+    let queueIndex = 0;
 
-    while (queue.length > 0) {
-      const curr = queue.shift()!;
+    while (queueIndex < queue.length) {
+      const curr = queue[queueIndex++];
       const children = parentToChildren.get(curr);
       if (children) {
         for (const childId of children) {
@@ -140,40 +133,30 @@ export class ProductDatabaseRepository {
   }
 
   async create(data: Prisma.ProductCreateInput) {
-    try {
+    return repositoryResponse(async () => {
       const product = await this.prisma.product.create({ data, include: PRODUCT_DETAIL_INCLUDE });
-      return right(product as ProductDetailPayload);
-    } catch (e) {
-      this.logger.error('Erro ao criar produto', e instanceof Error ? e.stack : e);
-      return left(new DatabaseError('Erro ao criar produto'));
-    }
+      return product;
+    }, 'Erro ao criar produto');
   }
 
   async update(id: string, data: Prisma.ProductUpdateInput) {
-    try {
+    return repositoryResponse(async () => {
       const product = await this.prisma.product.update({
         where: { id },
         data,
         include: PRODUCT_DETAIL_INCLUDE,
       });
-      return right(product as ProductDetailPayload);
-    } catch (e) {
-      this.logger.error('Erro ao atualizar produto', e instanceof Error ? e.stack : e);
-      return left(new DatabaseError('Erro ao atualizar produto'));
-    }
+      return product;
+    }, 'Erro ao atualizar produto');
   }
 
   async delete(id: string) {
-    try {
+    return repositoryResponse(async () => {
       await this.prisma.product.update({
         where: { id },
-        data: { status: 'DELETED', deletedAt: new Date() },
+        data: { status: ProductStatus.DELETED, deletedAt: new Date() },
       });
-      return right(void 0);
-    } catch (e) {
-      this.logger.error('Erro ao remover produto', e instanceof Error ? e.stack : e);
-      return left(new DatabaseError('Erro ao remover produto'));
-    }
+    }, 'Erro ao remover produto');
   }
 
   async updateInventoryOnSale(productId: string, tx?: Prisma.TransactionClient) {
@@ -187,8 +170,8 @@ export class ProductDatabaseRepository {
       }
 
       await client.product.updateMany({
-        where: { id: productId, status: { not: 'SOLD' } },
-        data: { status: 'SOLD' },
+        where: { id: productId, status: { not: ProductStatus.SOLD } },
+        data: { status: ProductStatus.SOLD },
       });
       return right(undefined);
     } catch {
@@ -208,13 +191,13 @@ export class ProductDatabaseRepository {
           data: { soldCount: { decrement: quantity } },
         });
         await client.product.updateMany({
-          where: { id: productId, status: 'SOLD' },
-          data: { status: 'ACTIVE' },
+          where: { id: productId, status: ProductStatus.SOLD },
+          data: { status: ProductStatus.ACTIVE },
         });
       } else {
         await client.product.updateMany({
-          where: { id: productId, status: 'PAUSED' },
-          data: { status: 'ACTIVE' },
+          where: { id: productId, status: ProductStatus.PAUSED },
+          data: { status: ProductStatus.ACTIVE },
         });
       }
       return right(undefined);

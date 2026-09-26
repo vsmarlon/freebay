@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ModerationTargetType } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
@@ -52,7 +53,7 @@ export class SuspendUserUseCase {
 
     const actionResult = await this.moderationRepository.recordAction({
       actorId: input.adminId,
-      targetType: 'USER',
+      targetType: ModerationTargetType.USER,
       targetId: input.targetUserId,
       action: input.suspend ? 'USER_SUSPENDED' : 'USER_UNSUSPENDED',
       reason: input.reason ?? null,

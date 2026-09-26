@@ -1,49 +1,55 @@
 import 'package:dio/dio.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
-import 'package:freebay/shared/repositories/base_http_repository.dart';
+import 'package:freebay/shared/http/request_either.dart';
+import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 
-class ProfileRepository extends BaseHttpRepository {
-  ProfileRepository({super.client});
+class ProfileRepository {
+  final Dio client;
+
+  ProfileRepository({Dio? client}) : client = client ?? HttpClient.instance;
 
   Future<Either<Failure, UserEntity>> getProfile(String userId) =>
-      safeGet<UserEntity>(
-        '/users/$userId',
-        extractKey: 'data',
-        fromJson: UserEntity.fromJson,
+      requestEither(
+        () => client.get('/users/$userId'),
+        decoder: (response) =>
+            Right(UserEntity.fromJson(response.data['data'])),
       );
 
-  Future<Either<Failure, UserStatsEntity>> getProfileStats() =>
-      safeGet<UserStatsEntity>(
-        '/users/me/stats',
-        extractKey: 'data',
-        fromJson: UserStatsEntity.fromJson,
-      );
+  Future<Either<Failure, UserStatsEntity>> getProfileStats() => requestEither(
+    () => client.get('/users/me/stats'),
+    decoder: (response) =>
+        Right(UserStatsEntity.fromJson(response.data['data'])),
+  );
 
   Future<Either<Failure, FollowListResponse>> getFollowers(
     String userId, {
     int limit = 20,
     int offset = 0,
-  }) => safeGet<FollowListResponse>(
-    '/users/$userId/followers',
-    queryParameters: {'limit': limit, 'offset': offset},
-    extractKey: 'data',
-    fromJson: FollowListResponse.fromJson,
+  }) => requestEither(
+    () => client.get(
+      '/users/$userId/followers',
+      queryParameters: {'limit': limit, 'offset': offset},
+    ),
+    decoder: (response) =>
+        Right(FollowListResponse.fromJson(response.data['data'])),
   );
 
   Future<Either<Failure, FollowListResponse>> getFollowing(
     String userId, {
     int limit = 20,
     int offset = 0,
-  }) => safeGet<FollowListResponse>(
-    '/users/$userId/following',
-    queryParameters: {'limit': limit, 'offset': offset},
-    extractKey: 'data',
-    fromJson: FollowListResponse.fromJson,
+  }) => requestEither(
+    () => client.get(
+      '/users/$userId/following',
+      queryParameters: {'limit': limit, 'offset': offset},
+    ),
+    decoder: (response) =>
+        Right(FollowListResponse.fromJson(response.data['data'])),
   );
 
   Future<Either<Failure, UserEntity>> updateAvatar(String imagePath) async {
@@ -54,12 +60,14 @@ class ProfileRepository extends BaseHttpRepository {
           filename: 'avatar.jpg',
         ),
       });
-      return safePost<UserEntity>(
-        '/users/me/avatar',
-        data: data,
-        options: Options(contentType: 'multipart/form-data'),
-        extractKey: 'data',
-        fromJson: UserEntity.fromJson,
+      return requestEither(
+        () => client.post(
+          '/users/me/avatar',
+          data: data,
+          options: Options(contentType: 'multipart/form-data'),
+        ),
+        decoder: (response) =>
+            Right(UserEntity.fromJson(response.data['data'])),
       );
     } catch (_) {
       return const Left(UnknownFailure());
@@ -73,18 +81,19 @@ class ProfileRepository extends BaseHttpRepository {
     String? city,
     String? state,
     String? cpf,
-  }) => safePatch<UserEntity>(
-    '/users/me',
-    data: {
-      'displayName': ?displayName,
-      'username': ?username,
-      'bio': ?bio,
-      'city': ?city,
-      'state': ?state,
-      'cpf': ?cpf,
-    },
-    extractKey: 'data',
-    fromJson: UserEntity.fromJson,
+  }) => requestEither(
+    () => client.patch(
+      '/users/me',
+      data: {
+        'displayName': ?displayName,
+        'username': ?username,
+        'bio': ?bio,
+        'city': ?city,
+        'state': ?state,
+        'cpf': ?cpf,
+      },
+    ),
+    decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
   );
 
   Future<Either<Failure, UserEntity>> updateBanner(String imagePath) async {
@@ -95,12 +104,14 @@ class ProfileRepository extends BaseHttpRepository {
           filename: 'banner.jpg',
         ),
       });
-      return safePost<UserEntity>(
-        '/users/me/banner',
-        data: data,
-        options: Options(contentType: 'multipart/form-data'),
-        extractKey: 'data',
-        fromJson: UserEntity.fromJson,
+      return requestEither(
+        () => client.post(
+          '/users/me/banner',
+          data: data,
+          options: Options(contentType: 'multipart/form-data'),
+        ),
+        decoder: (response) =>
+            Right(UserEntity.fromJson(response.data['data'])),
       );
     } catch (_) {
       return const Left(UnknownFailure());
@@ -108,13 +119,13 @@ class ProfileRepository extends BaseHttpRepository {
   }
 
   Future<Either<Failure, void>> registerPhone(String phone) =>
-      safeVoid(() => client.post('/users/me/phone', data: {'phone': phone}));
-
-  Future<Either<Failure, UserEntity>> verifyPhone(String code) =>
-      safePost<UserEntity>(
-        '/users/me/phone/verify',
-        data: {'code': code},
-        extractKey: 'data',
-        fromJson: UserEntity.fromJson,
+      requestEither<void>(
+        () => client.post('/users/me/phone', data: {'phone': phone}),
+        decoder: (_) => const Right(null),
       );
+
+  Future<Either<Failure, UserEntity>> verifyPhone(String code) => requestEither(
+    () => client.post('/users/me/phone/verify', data: {'code': code}),
+    decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
+  );
 }

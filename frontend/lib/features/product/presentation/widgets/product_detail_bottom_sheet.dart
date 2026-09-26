@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/domain/product_filters.dart';
 
 class ProductDetailBottomSheet extends ConsumerStatefulWidget {
   final ProductEntity product;
@@ -25,7 +26,7 @@ class _ProductDetailBottomSheetState
     final isDark = context.isDark;
     final available = product.quantity - product.soldCount;
     final maxQty = available > 10 ? 10 : available;
-    final canAdd = available > 0 && product.status != 'SOLD';
+    final canAdd = available > 0 && product.status != ProductStatus.sold;
 
     return Container(
       padding: const EdgeInsets.all(16),
