@@ -104,7 +104,7 @@ export class SocialReadController {
   ) {
     return this.getProfileTimelineUseCase.execute({
       userId, viewerId: viewerId || undefined,
-      limit: query.limit ?? 20, cursor: query.cursor,
+      limit: query.limit ?? 20, cursor: query.cursor, kind: query.kind,
     });
   }
 

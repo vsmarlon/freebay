@@ -15,7 +15,7 @@ import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { PostType, StoryAudience } from "@prisma/client";
 import { SanitizeText } from "@/shared/utils/sanitize.decorator";
-import { COMMENT_MAX_LENGTH, ContentFilter, FeedType, SEARCH_MAX_LENGTH, SearchFilter } from "../types/social.types";
+import { COMMENT_MAX_LENGTH, ContentFilter, FeedType, ProfileTimelineKind, SEARCH_MAX_LENGTH, SearchFilter } from "../types/social.types";
 
 export class CreatePostDTO {
   @ApiPropertyOptional({ enum: StoryAudience, default: StoryAudience.EVERYONE })
@@ -110,6 +110,11 @@ export class GetFeedQueryDTO {
 }
 
 export class GetUserPostsQueryDTO {
+  @ApiPropertyOptional({ enum: ProfileTimelineKind })
+  @IsOptional()
+  @IsEnum(ProfileTimelineKind)
+  readonly kind?: ProfileTimelineKind;
+
   @ApiPropertyOptional({ description: "Pagination cursor" })
   @IsOptional()
   @IsString()

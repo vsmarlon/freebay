@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
-import { FeedResult, PostPayload, PostResponse, POST_INCLUDE, postIncludeForViewer, SearchPostsQuery, UserPostsRepositoryQuery, ProfileTimelineCursor, UserPostEntry } from '../../types/social.types';
+import { FeedResult, PostPayload, PostResponse, POST_INCLUDE, postIncludeForViewer, SearchPostsQuery, UserPostsRepositoryQuery, ProfileTimelineCursor, ProfileTimelineKind, UserPostEntry } from '../../types/social.types';
 import { CursorPage } from '@/shared/core/pagination';
 import { PostQueryHelpers, normalizePost, postVisibilityWhere } from './post-query-helpers';
 
@@ -18,7 +18,7 @@ export class PrismaPostRepository {
   findById(id: string, viewerId?: string): RepositoryResponse<PostResponse | null> { return this.queries.findById(id, viewerId); }
   findFeed(query: import('../../types/social.types').FeedRepositoryQuery): RepositoryResponse<FeedResult> { return this.queries.findFeed(query); }
   findByUserId(query: UserPostsRepositoryQuery): RepositoryResponse<CursorPage<PostResponse>> { return this.queries.findByUserId(query); }
-  findTimelineByUserId(query: { userId: string; viewerId?: string; limit: number; cursor?: ProfileTimelineCursor }): RepositoryResponse<CursorPage<UserPostEntry>> { return this.queries.findTimelineByUserId(query); }
+  findTimelineByUserId(query: { userId: string; viewerId?: string; limit: number; cursor?: ProfileTimelineCursor; kind?: ProfileTimelineKind }): RepositoryResponse<CursorPage<UserPostEntry>> { return this.queries.findTimelineByUserId(query); }
   searchPosts(query: SearchPostsQuery): RepositoryResponse<PostResponse[]> { return this.queries.searchPosts(query); }
 
   async create(data: Prisma.PostCreateInput): RepositoryResponse<PostPayload> {

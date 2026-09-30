@@ -266,6 +266,13 @@ export interface UserPostsQuery {
   viewerId?: string;
   limit?: number;
   cursor?: string;
+  kind?: ProfileTimelineKind;
+}
+
+export enum ProfileTimelineKind {
+  POSTS = 'posts',
+  REPOSTS = 'reposts',
+  PRODUCTS = 'products',
 }
 
 export interface UserPostsCursor {
@@ -278,6 +285,7 @@ export interface UserPostsCursor {
 export interface ProfileTimelineCursor {
   createdAt: string;
   eventId: string;
+  kind?: ProfileTimelineKind;
 }
 
 export interface UserPostsRepositoryQuery {

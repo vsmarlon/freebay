@@ -498,6 +498,41 @@ describe('Marketplace journey (HTTP + real database)', () => {
     expect(olderPage.items.map((entry) => entry.post.id)).not.toContain(foreign.id);
   });
 
+  it('filters the profile timeline by event kind before paginating', async () => {
+    const seller = await prisma.user.findUniqueOrThrow({ where: { email: `e2e-seller-${suffix}@example.com` } });
+    const buyer = await prisma.user.findUniqueOrThrow({ where: { email: `e2e-buyer-${suffix}@example.com` } });
+    const start = Date.now() + 5 * 86_400_000;
+    const ordinary = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: 'Timeline ordinary', createdAt: new Date(start) } });
+    const ordinaryOlder = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: 'Timeline older ordinary', createdAt: new Date(start - 1000) } });
+    const listing = await prisma.post.create({ data: { userId: seller.id, type: 'PRODUCT', content: 'Timeline listing', createdAt: new Date(start + 1000) } });
+    const foreign = await prisma.post.create({ data: { userId: buyer.id, type: 'REGULAR', content: 'Timeline repost', createdAt: new Date(start + 2000) } });
+    const productRepost = await prisma.post.create({ data: { userId: buyer.id, type: 'PRODUCT', content: 'Reposted listing', createdAt: new Date(start + 3000) } });
+    const [regularShare, productShare] = await Promise.all([
+      prisma.share.create({ data: { userId: seller.id, postId: foreign.id, createdAt: new Date(start + 4000) } }),
+      prisma.share.create({ data: { userId: seller.id, postId: productRepost.id, createdAt: new Date(start + 5000) } }),
+    ]);
+    const timeline = (kind: string) => get(`/social/posts/user/${seller.id}/timeline?kind=${kind}&limit=1`, sellerToken);
+    const entries = async (kind: string) => {
+      const response = await timeline(kind);
+      expect(response.status).toBe(200);
+      return parseData<{ items: Array<{ post: { id: string; content: string | null }; repostId: string | null }>; hasMore: boolean; nextCursor: string | null }>(response);
+    };
+    const posts = await entries('posts');
+    expect(posts.items.map(({ post }) => post.id)).toEqual([ordinary.id]);
+    expect(posts.hasMore).toBe(true);
+    const postsNext = await get(`/social/posts/user/${seller.id}/timeline?kind=posts&limit=1&cursor=${encodeURIComponent(posts.nextCursor!)}`, sellerToken);
+    expect(parseData<{ items: Array<{ post: { id: string } }> }>(postsNext).items.map(({ post }) => post.id)).toEqual([ordinaryOlder.id]);
+    const reposts = await entries('reposts');
+    expect(reposts.items[0]).toEqual(expect.objectContaining({ post: expect.objectContaining({ id: productRepost.id }), repostId: productShare.id }));
+    const repostsNext = await get(`/social/posts/user/${seller.id}/timeline?kind=reposts&limit=1&cursor=${encodeURIComponent(reposts.nextCursor!)}`, sellerToken);
+    expect(parseData<{ items: Array<{ post: { id: string }; repostId: string | null }> }>(repostsNext).items)
+      .toEqual([expect.objectContaining({ post: expect.objectContaining({ id: foreign.id }), repostId: regularShare.id })]);
+    const products = await entries('products');
+    expect(products.items.map(({ post, repostId }) => ({ id: post.id, repostId }))).toEqual([{ id: listing.id, repostId: null }]);
+    const invalid = await get(`/social/posts/user/${seller.id}/timeline?kind=unknown`, sellerToken);
+    expect(invalid.status).toBe(400);
+  });
+
   it('rejects a reply whose parent belongs to a different post without changing counts', async () => {
     const seller = await prisma.user.findUniqueOrThrow({ where: { email: `e2e-seller-${suffix}@example.com` } });
     const target = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: 'Reply target' } });
