@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
@@ -108,14 +110,18 @@ class GroupStoryViewer extends ConsumerStatefulWidget {
 }
 
 class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animController;
   int _currentIndex = 0;
   bool _isPaused = false;
+  int _activePointers = 0;
+  Timer? _holdTimer;
+  bool _wasHeld = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 7),
@@ -138,8 +144,21 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _holdTimer?.cancel();
     _animController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final shouldPause = state != AppLifecycleState.resumed;
+    if (_isPaused != shouldPause || _activePointers > 0) {
+      setState(() {
+        _isPaused = shouldPause;
+        if (shouldPause) _activePointers = 0;
+      });
+    }
   }
 
   void _onAnimStatus(AnimationStatus status) {
@@ -185,6 +204,8 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   }
 
   void _onTapUp(TapUpDetails details) {
+    if (_wasHeld) return;
+    final storyIndex = _currentIndex;
     final width = MediaQuery.of(context).size.width;
     final dx = details.globalPosition.dx;
 
@@ -193,17 +214,31 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
     } else if (dx > width * 2 / 3) {
       _nextStory();
     }
+    if (storyIndex != _currentIndex) _activePointers = 0;
   }
 
-  void _onLongPressStart(LongPressStartDetails details) {
+  void _onPointerDown(PointerDownEvent event) {
+    _activePointers++;
+    if (_activePointers == 1) {
+      _wasHeld = false;
+      _holdTimer?.cancel();
+      _holdTimer = Timer(const Duration(milliseconds: 300), () {
+        _wasHeld = true;
+      });
+    }
+    if (!widget.isActive || _isPaused) return;
     setState(() => _isPaused = true);
   }
 
-  void _onLongPressEnd(LongPressEndDetails details) {
-    setState(() => _isPaused = false);
-  }
-
-  void _onLongPressCancel() {
+  void _onPointerEnd(PointerEvent event) {
+    _activePointers = (_activePointers - 1).clamp(0, 10);
+    if (_activePointers == 0) {
+      _holdTimer?.cancel();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _wasHeld = false);
+    }
+    if (!mounted || !widget.isActive || _activePointers > 0 || !_isPaused) {
+      return;
+    }
     setState(() => _isPaused = false);
   }
 
@@ -223,23 +258,25 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
       user: widget.group.user,
     );
 
-    return GestureDetector(
-      onTapUp: _onTapUp,
-      onLongPressStart: _onLongPressStart,
-      onLongPressEnd: _onLongPressEnd,
-      onLongPressCancel: _onLongPressCancel,
-      child: Stack(
-        children: [
-          StoryPage(
-            key: ValueKey(story.id),
-            story: story,
-            animationController: _animController,
-            isPaused: _isPaused || !widget.isActive,
-            onComplete: _nextStory,
-          ),
-          _buildProgressBars(),
-          _buildHeader(story),
-        ],
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerUp: _onPointerEnd,
+      onPointerCancel: _onPointerEnd,
+      child: GestureDetector(
+        onTapUp: _onTapUp,
+        child: Stack(
+          children: [
+            StoryPage(
+              key: ValueKey(story.id),
+              story: story,
+              animationController: _animController,
+              isPaused: _isPaused || !widget.isActive,
+              onComplete: _nextStory,
+            ),
+            _buildProgressBars(),
+            _buildHeader(story),
+          ],
+        ),
       ),
     );
   }

@@ -26,6 +26,7 @@ class StoryPage extends StatefulWidget {
 class _StoryPageState extends State<StoryPage> {
   VideoPlayerController? _videoController;
   bool _imageReady = false;
+  bool _mediaError = false;
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _StoryPageState extends State<StoryPage> {
       _initializeVideo();
     } else {
       widget.animationController.duration = const Duration(seconds: 7);
+      widget.animationController.stop();
     }
   }
 
@@ -61,19 +63,53 @@ class _StoryPageState extends State<StoryPage> {
         httpHeaders: headers ?? const {},
       );
       _videoController = controller;
-      await controller.initialize();
+      controller.addListener(_onVideoUpdate);
+      await controller.initialize().timeout(const Duration(seconds: 20));
       if (!mounted || !identical(_videoController, controller)) return;
       final duration = controller.value.duration;
-      widget.animationController.duration =
-          duration > const Duration(seconds: 30)
-          ? const Duration(seconds: 30)
-          : duration;
+      widget.animationController.duration = duration > Duration.zero
+          ? duration
+          : const Duration(seconds: 1);
       setState(() {});
       if (!widget.isPaused) {
         await controller.play();
-        widget.animationController.forward();
       }
     } catch (_) {
+      final controller = _videoController;
+      controller?.removeListener(_onVideoUpdate);
+      await controller?.dispose();
+      _videoController = null;
+      if (mounted) setState(() => _mediaError = true);
+    }
+  }
+
+  void _onVideoUpdate() {
+    final controller = _videoController;
+    if (!mounted || controller?.value.isInitialized != true) return;
+    final duration = controller!.value.duration;
+    if (duration <= Duration.zero) return;
+    final progress =
+        (controller.value.position.inMicroseconds / duration.inMicroseconds)
+            .clamp(0.0, 1.0);
+    widget.animationController.value = progress;
+  }
+
+  Future<void> _retryMedia() async {
+    setState(() {
+      _mediaError = false;
+      _imageReady = false;
+    });
+    if (widget.story.mediaType == StoryMediaType.video) {
+      final controller = _videoController;
+      controller?.removeListener(_onVideoUpdate);
+      await controller?.dispose();
+      _videoController = null;
+      await _initializeVideo();
+    } else {
+      await NetworkImage(
+        widget.story.imageUrl,
+        headers: mediaAuthHeaders(widget.story.imageUrl),
+      ).evict();
       if (mounted) setState(() {});
     }
   }
@@ -85,6 +121,7 @@ class _StoryPageState extends State<StoryPage> {
       _videoController?.dispose();
       _videoController = null;
       _imageReady = false;
+      _mediaError = false;
       widget.animationController.reset();
       _setupAnimation();
     } else if (widget.isPaused != oldWidget.isPaused) {
@@ -95,7 +132,9 @@ class _StoryPageState extends State<StoryPage> {
         if (widget.story.mediaType == StoryMediaType.image && _imageReady ||
             widget.story.mediaType == StoryMediaType.video &&
                 _videoController?.value.isInitialized == true) {
-          widget.animationController.forward();
+          if (widget.story.mediaType == StoryMediaType.image) {
+            widget.animationController.forward();
+          }
           _videoController?.play();
         }
       }
@@ -104,6 +143,7 @@ class _StoryPageState extends State<StoryPage> {
 
   @override
   void dispose() {
+    _videoController?.removeListener(_onVideoUpdate);
     _videoController?.dispose();
     super.dispose();
   }
@@ -118,7 +158,9 @@ class _StoryPageState extends State<StoryPage> {
           children: [
             Center(
               child: widget.story.mediaType == StoryMediaType.video
-                  ? _videoController?.value.isInitialized == true
+                  ? _mediaError
+                        ? _buildMediaError()
+                        : _videoController?.value.isInitialized == true
                         ? AspectRatio(
                             aspectRatio: _videoController!.value.aspectRatio,
                             child: VideoPlayer(_videoController!),
@@ -141,18 +183,8 @@ class _StoryPageState extends State<StoryPage> {
                         }
                         return child;
                       },
-                      errorBuilder: (context, error, stackTrace) {
-                        WidgetsBinding.instance.addPostFrameCallback(
-                          (_) => _startImageTimer(),
-                        );
-                        return Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: AppColors.onPrimary.withAlpha(138),
-                            size: 64,
-                          ),
-                        );
-                      },
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildMediaError(),
                     ),
             ),
             if (widget.story.caption?.isNotEmpty == true)
@@ -171,4 +203,28 @@ class _StoryPageState extends State<StoryPage> {
       ),
     );
   }
+
+  Widget _buildMediaError() => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.broken_image, color: Colors.white, size: 48),
+        TextButton.icon(
+          onPressed: _retryMedia,
+          icon: const Icon(Icons.refresh, color: Colors.white),
+          label: const Text(
+            'Tentar novamente',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+        TextButton(
+          onPressed: widget.onComplete,
+          child: const Text(
+            'Pular story',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ],
+    ),
+  );
 }

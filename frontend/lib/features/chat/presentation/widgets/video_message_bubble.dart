@@ -1,13 +1,10 @@
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 import 'package:video_player/video_player.dart';
 import 'package:freebay/core/components/app_video_viewer.dart';
+import 'package:freebay/core/components/app_video_viewer/video_source_resolver.dart';
 
 class VideoMessageBubble extends StatefulWidget {
   final String? videoUrl;
@@ -30,86 +27,64 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   bool _loading = false;
   bool _muted = true;
   String? _error;
+  final _resolver = const VideoSourceResolver();
 
   String? get _url {
     final value = widget.videoUrl;
     return value == null || value.isEmpty ? null : mediaUrl(value);
   }
 
-  Future<void> _togglePlayback() async {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.thumbnailUrl == null) _initialize(play: false);
+  }
+
+  @override
+  void didUpdateWidget(VideoMessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoUrl != widget.videoUrl) {
+      _controller?.dispose();
+      _controller = null;
+      _error = null;
+      _loading = false;
+      if (widget.thumbnailUrl == null) _initialize(play: false);
+    }
+  }
+
+  Future<void> _initialize({required bool play}) async {
     final url = _url;
     if (url == null) return;
-
-    if (_controller == null) {
-      if (_loading) return;
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-
-      // 1. Try direct native streaming first
-      try {
-        final uri = Uri.parse(url);
-        final headers =
-            await getMediaAuthHeadersAsync(url) ?? const <String, String>{};
-        final controller = VideoPlayerController.networkUrl(
-          uri,
-          httpHeaders: headers,
-        );
-        await controller.initialize();
-        await controller.setLooping(true);
-        await controller.setVolume(_muted ? 0 : 1);
-        if (!mounted) {
-          await controller.dispose();
-          return;
-        }
-        setState(() => _controller = controller);
-        await controller.play();
-        if (mounted) setState(() => _loading = false);
-        return;
-      } catch (_) {
-        // Fall back to download fallback
-      }
-
-      // 2. Resilient fallback: download bytes through HttpClient and play local file
-      try {
-        final response = await HttpClient.instance.get<List<int>>(
-          url,
-          options: Options(responseType: ResponseType.bytes),
-        );
-        final bytes = response.data;
-        if (bytes == null) throw const FormatException('Vídeo vazio');
-        final ext = url.contains('.')
-            ? '.${url.split('.').last.split('?').first}'
-            : '.mp4';
-        final file = File(
-          '${Directory.systemTemp.path}/freebay_bubble_${url.hashCode.toUnsigned(32)}$ext',
-        );
-        await file.writeAsBytes(bytes, flush: true);
-        final controller = VideoPlayerController.file(file);
-        await controller.initialize();
-        await controller.setLooping(true);
-        await controller.setVolume(_muted ? 0 : 1);
-        if (!mounted) {
-          await controller.dispose();
-          return;
-        }
-        setState(() => _controller = controller);
-        await controller.play();
-      } catch (_) {
-        if (mounted) {
-          setState(() {
-            _loading = false;
-            _error = 'Não foi possível carregar o vídeo.';
-          });
-        }
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final controller = await _resolver.createController(url);
+      await controller.setLooping(true);
+      await controller.setVolume(_muted ? 0 : 1);
+      if (!mounted) {
+        await controller.dispose();
         return;
       }
+      setState(() => _controller = controller);
+      if (play) await controller.play();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Não foi possível carregar o vídeo.');
+      }
+    } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _togglePlayback() async {
+    final controller = _controller;
+    if (controller == null) {
+      await _initialize(play: true);
       return;
     }
-
-    final controller = _controller!;
     if (controller.value.isPlaying) {
       await controller.pause();
     } else {
@@ -156,9 +131,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
           alignment: Alignment.center,
           children: [
             GestureDetector(
-              onTap: () {
-                showFullScreenVideo(context, url);
-              },
+              onTap: () => showFullScreenVideo(context, url),
               child: AspectRatio(
                 aspectRatio: initialized
                     ? controller!.value.aspectRatio
@@ -188,10 +161,10 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
             if (_error != null)
               Positioned.fill(
                 child: Center(
-                  child: Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: context.textPrimary),
+                  child: TextButton.icon(
+                    onPressed: _loading ? null : () => _initialize(play: false),
+                    icon: const Icon(Icons.refresh),
+                    label: Text(_error!, textAlign: TextAlign.center),
                   ),
                 ),
               ),

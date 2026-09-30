@@ -23,7 +23,6 @@ Future<T?> showBrutalistSheet<T>({
     context: context,
     useRootNavigator: useRootNavigator,
     isScrollControlled: true,
-    enableDrag: true,
     backgroundColor: Colors.transparent,
     elevation: 0,
     builder: (sheetContext) {
@@ -35,7 +34,6 @@ Future<T?> showBrutalistSheet<T>({
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
           child: Material(
-            elevation: 0,
             color: sheetContext.isDark
                 ? AppColors.surfaceDark
                 : AppColors.white,
