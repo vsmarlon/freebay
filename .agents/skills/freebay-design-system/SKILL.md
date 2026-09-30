@@ -1,47 +1,13 @@
 ---
 name: freebay-design-system
-description: Authoritative guide and token reference for the FreeBay "Digital Brutalist" Flutter design system — 0px radius, tonal layering without shadows, no divider lines, Space Grotesk / Inter typography, and curated brutalist component primitives.
+description: Use when writing or reviewing FreeBay Flutter UI, visual tokens, components, or motion.
 ---
 
-# FreeBay Design System: "The Digital Brutalist"
+# Digital Brutalist UI
 
-**Read `frontend/DESIGN.md` before writing any Flutter UI in this repo.** It is the
-source of truth for every token — colours, the surface ladder, the type scale, motion
-roles, depth, spacing — and it is kept in sync with
-`frontend/libs/freebay_design_system/lib/tokens/`. Values are deliberately not
-repeated here: a hex that lives in two files is a hex that will drift.
+Read [`frontend/DESIGN.md`](../../../frontend/DESIGN.md) before UI edits. It is the sole token authority; do not copy token values here. Read component exports in `frontend/lib/core/ui.dart` and reuse existing primitives.
 
-## The rules that get broken most
-
-1. **0px radius, everywhere.** The theme squares every Material widget that would
-   round itself, so you never write `BorderRadius.zero` either. Avatars are squares.
-2. **No blurred shadows.** Depth is a tonal step or the hard offset shadow from
-   `AppDepth`. Any `blurRadius` is a bug.
-3. **No divider lines.** Separate blocks with adjacent surface tones. This includes
-   hairline `Border(bottom:)` used as a separator.
-4. **Never read a colour from `isDark`.** `context.textPrimary`,
-   `context.surfaceColor`, `context.borderColor` and the rest of `AppThemeContext`
-   already resolve per brightness. An `isDark ? colorA : colorB` is always redundant
-   and always drifts.
-5. **Weights need `fontVariations`.** Both faces are variable fonts declared with a
-   single asset; `fontWeight` alone renders as synthetic bold and collapses the
-   ladder. Use `AppTypography.*` styles, and `.weight(n)` when you need to override.
-6. **Motion uses `AppMotion` roles**, not raw milliseconds. `elasticOut`,
-   `easeOutBack` and `easeInOut` are banned.
-7. **Reach for the component before building one.** `AppButton`, `BrutalistBox`,
-   `AppTextField`, `BrutalistIconButton`, `EmptyState`, `AppSnackbar`, `PageHeader`
-   and the skeletons already exist. `DESIGN.md` has the full table of what to use
-   instead of what.
-
-## Where things live
-
-- Tokens: `frontend/libs/freebay_design_system/lib/tokens/`
-- Design system components: `frontend/libs/freebay_design_system/lib/components/`
-- App-level components: `frontend/lib/core/components/`
-- Import everything from `package:freebay/core/ui.dart` — never reach into the
-  design system package directly from a feature.
-
-## Verifying
-
-`make design-check` greps for the banned patterns above. `make analyze` must be
-clean at zero issues, infos included. `make format` gates `dart format`.
+- Square geometry (0 radius); tonal layering or `AppDepth` hard-offset depth, never blur; separate sections with tonal blocks, not lines/dividers.
+- Resolve colors through theme context; typography uses `AppTypography` and variable-font weight helpers; motion uses `AppMotion` roles. Avoid hand-coded brightness branches and raw duration/easing values.
+- Use accessible labels/actions and the existing loading, empty and error components. Preserve native continuous gestures, reverse scrolling and keyboard behavior where applicable.
+- `make design-check`, format/analyze commands are defined in root `AGENTS.md`; run applicable gates and report real output. Do not assert device validation from widget evidence.

@@ -1,120 +1,15 @@
 ---
 name: freebay-data-model
-description: Use when editing the Prisma schema or working with database models in the Freebay backend — enforces cents-as-Int, real enums, onDelete conventions, proper indexing, and schema-sync-only development.
+description: Use when changing FreeBay Prisma schema, database models, relations, indexes, or data constraints.
 ---
 
-# Freebay Data Model Conventions
+# Prisma data model
 
-## Source of truth
+Read `nest-backend/prisma/schema.prisma` and inspect current callers/records before editing. Use the repository hardening plan for phase decisions when available; read [`freebay-prisma`](../freebay-prisma/SKILL.md) for sync/drift verification.
 
-The Prisma schema (`nest-backend/prisma/schema.prisma`) is the single source of truth for the data model. All changes start here.
+- Money remains `Int` cents; preserve existing monetary semantics and avoid money-path refactors absent explicit approval.
+- Use Prisma enums for closed state sets. Give every relation deliberate `onDelete` behavior and index queried foreign keys; check uniqueness and query patterns rather than adding speculative indexes.
+- Schema is authoritative. Development synchronization is `npm run db:sync`; seed only the intended disposable development DB. Tests use the guarded `.env.test` / `freebay_test_db` path. Never sync/seed a non-test database as test setup.
+- Agents do not create or run migrations. Migration workflow is owner-only P10; production release remains migration-gated. Do not claim `db push` proves runtime schema currency.
 
-## Cents convention
-
-**All monetary values must be `Int` (cents), never `Float` or `Decimal`.**
-
-```prisma
-model Product {
-  price Int // em centavos — 1990 = R$19,90
-}
-```
-
-Add `// em centavos` comments on price/amount fields for clarity.
-
-## Enums over strings
-
-Use Prisma `enum` for fields with a fixed set of values — never bare `String`.
-
-```prisma
-// CORRECT
-enum WithdrawalStatus { PENDING, PROCESSING, COMPLETED, FAILED }
-
-model Withdrawal {
-  status WithdrawalStatus @default(PENDING)
-}
-
-// WRONG — string field, no type safety
-model Withdrawal {
-  status String // ❌
-}
-```
-
-Key enums in the schema: `OrderStatus`, `EscrowStatus`, `PaymentStatus`, `ProductStatus`, `PostType`, `DisputeStatus`, `NotificationType`, `UserRole`, `PaymentProvider`.
-
-## Required `onDelete`
-
-Every relation must specify `onDelete` to prevent orphaned rows:
-
-```prisma
-model Order {
-  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-  productId String
-  buyer     User   @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  buyerId   String
-}
-```
-
-Common options:
-- `Cascade` — child should be deleted with parent (e.g. OrderItems on Order)
-- `Restrict` — prevent parent deletion if children exist (e.g. Product on Orders)
-- `SetNull` — optional relation, set FK to null on parent delete
-
-## Indexes
-
-Add `@@index` or `@index` on foreign keys and frequently-queried columns:
-
-```prisma
-model DirectMessage {
-  senderId   String
-  receiverId String
-
-  @@index([senderId])
-  @@index([receiverId])
-  @@index([conversationId])
-}
-```
-
-Prisma auto-indexes `@id` and `@unique` fields — everything else (especially FKs) needs an explicit index.
-
-## Database workflow
-
-```bash
-# 1. Edit schema.prisma
-# This pre-production project has no migration workflow before first production release.
-# 2. Sync and regenerate
-npm run db:sync
-# 3. Update the canonical seed and run it
-npm run db:seed
-```
-
-Never create or run Prisma migrations or add `prisma/migrations`.
-
-## Key model relationships
-
-| Parent | Child | Relation | onDelete |
-|--------|-------|----------|----------|
-| User | Post | one-to-many | Cascade |
-| User | Order (buyer) | one-to-many | Restrict |
-| User | Order (seller) | one-to-many | Restrict |
-| Product | Order | one-to-many | Restrict |
-| Order | Payment | one-to-one | Cascade |
-| Order | Dispute | one-to-one | Cascade |
-| Order | ChatMessage | one-to-many | Cascade |
-| Post | Comment | one-to-many | Cascade |
-| Post | Like | one-to-many | Cascade |
-| User | Review | one-to-many | Cascade |
-| Category | Product | one-to-many | SetNull |
-| Category | Category (self) | one-to-many | SetNull |
-
-## Escrow & order lifecycle
-
-```
-PENDING  →  CONFIRMED  →  SHIPPED  →  DELIVERED  →  COMPLETED
-                                    ↘ DISPUTED →  RESOLVED → CANCELLED
-                                                    ↙
-                                               REFUNDED
-
-Escrow: HELD → RELEASED | REFUNDED
-```
-
-All enums are defined in `schema.prisma` — reference them via Prisma client imports.
+Verify generated client and database target explicitly. Report schema/client/test DB/runtime DB evidence separately; never include credentials in evidence.

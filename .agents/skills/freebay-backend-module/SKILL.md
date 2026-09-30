@@ -1,171 +1,21 @@
 ---
 name: freebay-backend-module
-description: Use when scaffolding or modifying a NestJS feature module in the Freebay backend — enforces vertical-module structure, class-validator DTOs, Either monad use cases, concrete Prisma repositories, and colocated specs.
+description: Use when changing a NestJS module, DTO, controller, use case, or Prisma repository in FreeBay.
 ---
 
-# Freebay Backend Module Scaffold
+# Backend vertical slice
 
-## Module structure
+Before changing behavior, read root [`AGENTS.md`](../../../AGENTS.md), `docs/FEATURE_TRUTH.md` for capability claims, and `test-audit` when touching tests. Prefer a real HTTP/DB boundary; establish intended behavioral RED before production edits. Follow repository scripts for exact gates.
 
-Every feature module follows the same layout:
+## Implementation
 
-```
-src/modules/<feature>/
-├── <feature>.module.ts       # @Module({ providers: [controller, usecases, repositories] })
-├── <feature>.controller.ts   # routes + @ApiDoc() + Either response shaping
-├── dtos/                     # class-validator + @nestjs/swagger (NOT Zod)
-│   ├── <feature>.dto.ts
-│   └── <feature>-response.class.ts
-├── domain/
-│   └── repositories/         # abstract Repository classes
-│       └── <feature>.repository.ts
-├── data/
-│   └── repositories/         # concrete Prisma*Repository implementations
-│       └── <feature>-database.repository.ts
-├── usecases/                 # one class per file, returns Either<AppError, Output>
-│   ├── create-<entity>.usecase.ts
-│   └── *.spec.ts             # colocated test
-└── guards/                   # (optional) module-specific Nest guards
-```
+- Inspect the feature's actual layout first. DTOs use `class-validator` and Swagger decorators. Keep public response projections explicit; never serialize raw user records.
+- Use cases are one class per file and return `Either<AppError, Output>`; expected business errors are `left(AppError)`. Controllers follow local conventions and preserve original error status/mapping.
+- New use cases depend directly on concrete `ThingDatabaseRepository` classes: do not add abstract backend repository ports. The existing five/six legacy ports are not a mandate to add more. `TransactionRunner` is a future P5-only exception; do not introduce it now.
+- Repositories own database access only (Prisma/SQL/transactions); use typed Prisma payloads and `repositoryResponse`. External HTTP belongs outside repositories. Class names follow the established `ThingDatabaseRepository` role; do not rename files or DI tokens as part of naming changes.
+- Transactions are money-sensitive: preserve query order, atomicity and integer-cent amounts. Do not refactor financial paths without explicit scope/approval.
+- No `any`, `as any`, or `as unknown as`. Narrow unknown input or fix the declared contract.
 
-## Step by step
+## Finish
 
-Before implementation, follow [AGENTS.md — Testing: TDD and E2E first](../../../AGENTS.md#testing-tdd-and-e2e-first). Select the real behavioral boundary and observe RED before changing production code.
-
-### 1. DTOs (`dtos/`)
-
-Use **class-validator** decorators + `@ApiProperty` from `@nestjs/swagger`. Never Zod.
-
-```typescript
-import { IsString, MinLength, IsOptional, IsInt, Min } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-export class CreateMyEntityDTO {
-  @ApiProperty({ example: 'Example name', minLength: 2 })
-  @IsString()
-  @MinLength(2)
-  name: string;
-
-  @ApiPropertyOptional({ example: 100 })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  amount?: number;
-}
-```
-
-### 2. Use cases (`usecases/`)
-
-**One class per file.** Return `Either<AppError, Output>`. Never `throw` for expected business errors.
-
-```typescript
-import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError } from '@/shared/core/errors';
-import { MyEntityRepository } from '../domain/repositories/my-entity.repository';
-
-export class GetMyEntityUseCase {
-  constructor(private readonly repo: MyEntityRepository) {}
-
-  async execute(id: string): Promise<Either<AppError, Output>> {
-    const entity = await this.repo.findById(id);
-    if (!entity) return left(new NotFoundError('MyEntity'));
-    return right({ entity });
-  }
-}
-```
-
-### 3. Repository (`domain/repositories/` & `data/repositories/`)
-
-Define the abstract class in `domain/repositories/` (returning `RepositoryResponse<T, F = Failure>`), and the concrete implementation in `data/repositories/`. Wrap each Prisma operation with the standalone `repositoryResponse(operation, errorMessage?, logger?)` adapter from `shared/infra/prisma/repository-response.ts`.
-
-> **Rule**: Backend repositories **MUST ONLY call the database** (via Prisma or transactions). They never call external HTTP endpoints.
-
-```typescript
-// domain/repositories/my-entity.repository.ts
-import { RepositoryResponse } from '@/shared/core/either';
-
-export abstract class MyEntityRepository {
-  abstract findById(id: string): RepositoryResponse<MyEntity | null>;
-  abstract create(data: Prisma.MyEntityCreateInput): RepositoryResponse<MyEntity>;
-}
-
-// data/repositories/my-entity-database.repository.ts
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
-import { Prisma, MyEntity } from '@prisma/client';
-import { MyEntityRepository } from '../../domain/repositories/my-entity.repository';
-
-@Injectable()
-export class PrismaMyEntityRepository implements MyEntityRepository {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async findById(id: string) {
-    return repositoryResponse(() => this.prisma.myEntity.findUnique({ where: { id } }));
-  }
-
-  async create(data: Prisma.MyEntityCreateInput) {
-    return repositoryResponse(() => this.prisma.myEntity.create({ data }));
-  }
-}
-```
-
-### 4. Response projection (`dtos/` or the owning use case)
-
-Return only public fields. Keep the response shape with its DTO or the use case that returns it; keep Prisma query payload types beside the repository. Never expose sensitive fields.
-
-```typescript
-import { MyEntity } from '@prisma/client';
-
-export class MyEntityResponse {
-  id: string;
-  name: string;
-  amount: number;
-  createdAt: Date;
-}
-
-export function toMyEntityResponse(entity: MyEntity): MyEntityResponse {
-  return {
-    id: entity.id,
-    name: entity.name,
-    amount: entity.amount,
-    createdAt: entity.createdAt,
-  };
-}
-```
-
-### 5. Controller
-
-Canonical Either response shape (see `CLAUDE.md` for full convention):
-
-```typescript
-@Post()
-@HttpCode(HttpStatus.CREATED)
-@ApiDoc({ summary: '…', bodyType: CreateMyEntityDTO, responseStatus: 201, auth: true })
-async create(@CurrentUser() user: AuthUser, @Body() body: CreateMyEntityDTO) {
-  const result = await this.createUseCase.execute({ userId: user.userId, ...body });
-  if (result.isLeft()) return left(new AppError(result.value.code, result.value.message));
-  return result.value;
-}
-```
-
-### 6. Module wiring (`*.module.ts`)
-
-```typescript
-@Module({
-  controllers: [MyEntityController],
-  providers: [
-    MyEntityController,
-    CreateMyEntityUseCase,
-    PrismaMyEntityRepository,
-    { provide: MyEntityRepository, useExisting: PrismaMyEntityRepository },
-  ],
-})
-export class MyEntityModule {}
-```
-
-### 7. Verify the behavioral slice
-
-Rerun the test that was RED before implementation, then the relevant existing gates from `AGENTS.md`. Finish with the repeatable evidence required by that policy. Repository mocks cannot verify database columns, constraints, transactions, or query behavior.
-
----
+Run the focused owner-boundary test and applicable checks from `AGENTS.md` / `nest-backend/package.json`; report exact command, result and blockers. Record E2E evidence at `docs/test-runs/<date>/` with revision, safe environment identity, reset/fixture steps and actual outcomes. Do not imply mocked or test-DB evidence proves runtime DB/provider/device behavior.
