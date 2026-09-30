@@ -32,3 +32,18 @@ The six measured abstract-port files are an inventory count, not a list of six P
 - New links/imports were manually checked against the worktree; `git diff --check` passed. No test, lint, analyzer, or full branch gate was run. This docs-only correction does not alter the three-phase verification cadence; the parent owns later full gates.
 - `@AGENTS.md` and subtree `@../AGENTS.md` imports resolve relative to each CLAUDE file. The `.claude/skills` mirror/symlink identity is not asserted as verified; confirm git mode, content identity, and Windows `core.symlinks=true` during parent/agent4 integration.
 - Files in this docs slice: root `AGENTS.md`, root `CLAUDE.md`, `README.md`, `docs/HARDENING_PLAN.md`, this report, and `frontend/CLAUDE.md` plus `nest-backend/CLAUDE.md`. No main-worktree changes are included here.
+
+## Documentation size (base `4558181` → docs head `cf685a5`)
+
+Counts use LF-normalized git blobs; words are whitespace-separated tokens. Token figures are rough estimates (`ceil(words × 1.35)`), not model-tokenizer measurements. This table excludes this report to avoid a self-referential size count.
+
+| File | Lines | Words | UTF-8 bytes | Estimated tokens |
+|---|---:|---:|---:|---:|
+| `AGENTS.md` | 310 → 78 | 2,843 → 776 | 23,798 → 5,945 | ~3,839 → ~1,048 |
+| `CLAUDE.md` | 366 → 5 | 3,082 → 54 | 25,652 → 422 | ~4,161 → ~73 |
+| `README.md` | 584 → 110 | 2,739 → 609 | 27,337 → 5,475 | ~3,698 → ~823 |
+| `docs/HARDENING_PLAN.md` | 0 → 205 | 0 → 2,653 | 0 → 20,452 | 0 → ~3,582 |
+| `frontend/CLAUDE.md` | 0 → 7 | 0 → 98 | 0 → 777 | 0 → ~133 |
+| `nest-backend/CLAUDE.md` | 0 → 7 | 0 → 105 | 0 → 868 | 0 → ~142 |
+
+`docs/test-runs/2026-09-30/agent-docs/REPORT.md` was 34 lines / 476 words / 3,740 UTF-8 bytes / ~643 estimated tokens at the measurement point; additions below that point are excluded from that self-size snapshot.
