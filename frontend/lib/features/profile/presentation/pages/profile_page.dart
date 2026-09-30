@@ -50,7 +50,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            PageHeader(text: 'PERFIL'),
+            ShellScrollHeader(child: PageHeader(text: 'PERFIL')),
             Expanded(
               child: SkeletonPage(
                 child: Column(
@@ -80,28 +80,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          PageHeader(
-            text: 'PERFIL',
-            actions: [
-              IconButton(
-                icon: Icon(Icons.add_box_outlined, color: context.textPrimary),
-                tooltip: 'Criar post',
-                onPressed: () => context.push(AppRoutes.createPost),
-              ),
-              IconButton(
-                icon: Icon(Icons.settings_outlined, color: context.textPrimary),
-                onPressed: () => showProfileSettingsSheet(context),
-              ),
-              IconButton(
-                icon: Icon(
-                  context.isDark ? Icons.light_mode : Icons.brightness_6,
-                  color: context.textPrimary,
+          ShellScrollHeader(
+            child: PageHeader(
+              text: 'PERFIL',
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    Icons.add_box_outlined,
+                    color: context.textPrimary,
+                  ),
+                  tooltip: 'Criar post',
+                  onPressed: () => context.push(AppRoutes.createPost),
                 ),
-                onPressed: () {
-                  ref.read(themeModeProvider.notifier).toggleTheme();
-                },
-              ),
-            ],
+                IconButton(
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: context.textPrimary,
+                  ),
+                  onPressed: () => showProfileSettingsSheet(context),
+                ),
+                IconButton(
+                  icon: Icon(
+                    context.isDark ? Icons.light_mode : Icons.brightness_6,
+                    color: context.textPrimary,
+                  ),
+                  onPressed: () {
+                    ref.read(themeModeProvider.notifier).toggleTheme();
+                  },
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: profileAsync.when(
@@ -109,47 +117,34 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 final u = profileUser;
                 return AppRefreshIndicator(
                   onRefresh: () async {
-                    ref.invalidate(profileTimelineProvider(userId));
+                    for (final kind in ['posts', 'reposts', 'products']) {
+                      ref.invalidate(
+                        profileTimelineProvider(userId, kind: kind),
+                      );
+                    }
                     ref.invalidate(profileFutureProvider(userId));
                     await ref.read(profileFutureProvider(userId).future);
                   },
-                  child: InfiniteScrollListener(
-                    onLoadMore: () => ref
-                        .read(profileTimelineProvider(userId).notifier)
-                        .loadMore(),
-                    child: CustomScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.all(16),
-                          sliver: SliverToBoxAdapter(
-                            child: statsAsync.when(
-                              data: (stats) => ProfileHeader(
-                                user: u,
-                                followersCount: stats.followersCount,
-                                followingCount: stats.followingCount,
-                              ),
-                              loading: () => ProfileHeader(user: u),
-                              error: (_, _) => ProfileHeader(user: u),
+                  child: ProfileTabs(
+                    user: u,
+                    headerSlivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: SliverToBoxAdapter(
+                          child: statsAsync.when(
+                            data: (stats) => ProfileHeader(
+                              user: u,
+                              followersCount: stats.followersCount,
+                              followingCount: stats.followingCount,
                             ),
+                            loading: () => ProfileHeader(user: u),
+                            error: (_, _) => ProfileHeader(user: u),
                           ),
                         ),
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          sliver: SliverToBoxAdapter(
-                            child: Container(
-                              width: double.infinity,
-                              height: 1,
-                              color: context.isDark
-                                  ? AppColors.outlineVariant.withAlpha(40)
-                                  : AppColors.surfaceContainerHigh,
-                            ),
-                          ),
-                        ),
-                        const SuggestionsSection(),
-                        SliverToBoxAdapter(child: ProfileTabs(user: u)),
-                      ],
-                    ),
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                      const SuggestionsSection(),
+                    ],
                   ),
                 );
               },

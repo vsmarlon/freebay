@@ -71,7 +71,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            PageHeader(text: 'CARTEIRA'),
+            ShellScrollHeader(child: PageHeader(text: 'CARTEIRA')),
             Expanded(
               child: SkeletonPage(
                 child: Column(
@@ -96,7 +96,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            const PageHeader(text: 'CARTEIRA'),
+            const ShellScrollHeader(child: PageHeader(text: 'CARTEIRA')),
             Expanded(
               child: GuestGateView(
                 icon: Icons.account_balance_wallet_outlined,
@@ -119,14 +119,16 @@ class _WalletPageState extends ConsumerState<WalletPage>
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          PageHeader(
-            text: 'CARTEIRA',
-            actions: [
-              IconButton(
-                icon: Icon(Icons.help_outline, color: context.textPrimary),
-                onPressed: () => context.push(AppRoutes.faq),
-              ),
-            ],
+          ShellScrollHeader(
+            child: PageHeader(
+              text: 'CARTEIRA',
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.help_outline, color: context.textPrimary),
+                  onPressed: () => context.push(AppRoutes.faq),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: walletState.hasError

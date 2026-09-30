@@ -31,11 +31,9 @@ class HideOnScrollController {
       return false;
     }
 
-    if (notification is ScrollUpdateNotification) {
-      final rawDelta = notification.scrollDelta ?? 0;
-      final delta = metrics.axisDirection == AxisDirection.up
-          ? -rawDelta
-          : rawDelta;
+    if (notification is ScrollUpdateNotification &&
+        notification.dragDetails != null) {
+      final delta = notification.scrollDelta ?? 0;
       if (delta == 0) return false;
 
       final sameDirection =
@@ -56,6 +54,11 @@ class HideOnScrollController {
 
   void _show() {
     _controller.animateTo(1, duration: AppMotion.base);
+  }
+
+  void showImmediately() {
+    _accumulated = 0;
+    _controller.value = 1;
   }
 
   void _hide() {
@@ -95,4 +98,38 @@ class ScrollAwareBar extends StatelessWidget {
       child: RepaintBoundary(child: child),
     );
   }
+}
+
+class CollapsingScrollBar extends StatelessWidget {
+  const CollapsingScrollBar({
+    super.key,
+    required this.animation,
+    required this.child,
+    this.edge = ScrollBarEdge.top,
+  });
+
+  final Animation<double> animation;
+  final Widget child;
+  final ScrollBarEdge edge;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: animation,
+    builder: (context, child) => ClipRect(
+      child: Align(
+        alignment: edge == ScrollBarEdge.top
+            ? Alignment.topCenter
+            : Alignment.bottomCenter,
+        heightFactor: animation.value,
+        child: IgnorePointer(
+          ignoring: animation.value == 0,
+          child: ExcludeSemantics(
+            excluding: animation.value == 0,
+            child: child,
+          ),
+        ),
+      ),
+    ),
+    child: RepaintBoundary(child: child),
+  );
 }

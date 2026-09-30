@@ -10,6 +10,7 @@ import 'package:freebay/features/social/presentation/providers/social_repository
 
 class _Adapter implements HttpClientAdapter {
   final List<ResponseBody Function(RequestOptions)> responses = [];
+  final List<RequestOptions> requests = [];
 
   @override
   Future<ResponseBody> fetch(
@@ -17,6 +18,7 @@ class _Adapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    requests.add(options);
     if (responses.isEmpty) return ResponseBody.fromString('', 500);
     return responses.removeAt(0)(options);
   }
@@ -56,6 +58,57 @@ ResponseBody _page(
 }
 
 void main() {
+  test(
+    'profile timeline sends a server-side kind filter when selected',
+    () async {
+      final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+      final adapter = _Adapter();
+      dio.httpClientAdapter = adapter;
+      adapter.responses.add(
+        (_) => ResponseBody.fromString(
+          jsonEncode({
+            'success': true,
+            'data': {
+              'items': [
+                {
+                  'post': {
+                    'id': 'post-1',
+                    'userId': 'user-1',
+                    'createdAt': '2026-09-12T00:00:00.000Z',
+                    'user': {'id': 'user-1'},
+                  },
+                  'isReposted': false,
+                },
+              ],
+              'hasMore': false,
+              'nextCursor': null,
+            },
+          }),
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        ),
+      );
+      final repository = SocialRepository(client: dio);
+
+      final result = await repository.getProfileTimeline(
+        'user-1',
+        kind: 'products',
+      );
+
+      expect(
+        adapter.requests.single.path,
+        '/social/posts/user/user-1/timeline',
+      );
+      expect(adapter.requests.single.queryParameters['kind'], 'products');
+      result.fold(
+        (failure) => fail(failure.message),
+        (page) => expect(page.items.single.post.id, 'post-1'),
+      );
+    },
+  );
+
   test(
     'deduplicates appended posts and uses server terminal metadata',
     () async {

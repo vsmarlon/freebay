@@ -23,7 +23,7 @@ class ProfileTimelineState {
 @riverpod
 class ProfileTimeline extends _$ProfileTimeline {
   @override
-  ProfileTimelineState build(String userId) {
+  ProfileTimelineState build(String userId, {String? kind}) {
     Future.microtask(loadMore);
     return const ProfileTimelineState();
   }
@@ -38,7 +38,7 @@ class ProfileTimeline extends _$ProfileTimeline {
     );
     final result = await ref
         .read(socialRepositoryProvider)
-        .getProfileTimeline(userId, cursor: state.cursor);
+        .getProfileTimeline(userId, cursor: state.cursor, kind: kind);
     if (!ref.mounted) return;
     result.fold(
       (failure) => state = ProfileTimelineState(
@@ -48,7 +48,10 @@ class ProfileTimeline extends _$ProfileTimeline {
         error: failure.message,
       ),
       (page) => state = ProfileTimelineState(
-        entries: [...state.entries, ...page.items],
+        entries: {
+          for (final entry in [...state.entries, ...page.items])
+            entry.repostId ?? entry.post.id: entry,
+        }.values.toList(),
         cursor: page.nextCursor,
         hasMore: page.hasMore,
       ),

@@ -90,44 +90,46 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          PageHeader(
-            text: 'EXPLORAR',
-            actions: [
-              Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.filter_list,
-                      color: context.isDark
-                          ? AppColors.white
-                          : AppColors.primaryContainer,
+          ShellScrollHeader(
+            child: PageHeader(
+              text: 'EXPLORAR',
+              actions: [
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.filter_list,
+                        color: context.isDark
+                            ? AppColors.white
+                            : AppColors.primaryContainer,
+                      ),
+                      onPressed: _openFilters,
                     ),
-                    onPressed: _openFilters,
-                  ),
-                  if (hasActiveFilters)
-                    const Positioned(
-                      right: 10,
-                      top: 10,
-                      child: SizedBox(
-                        width: 8,
-                        height: 8,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryContainer,
+                    if (hasActiveFilters)
+                      const Positioned(
+                        right: 10,
+                        top: 10,
+                        child: SizedBox(
+                          width: 8,
+                          height: 8,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryContainer,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.add_box_outlined,
-                  color: AppColors.primaryContainer,
+                  ],
                 ),
-                onPressed: () => context.push(AppRoutes.createProduct),
-              ),
-            ],
+                IconButton(
+                  icon: const Icon(
+                    Icons.add_box_outlined,
+                    color: AppColors.primaryContainer,
+                  ),
+                  onPressed: () => context.push(AppRoutes.createProduct),
+                ),
+              ],
+            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),

@@ -43,6 +43,7 @@ class ChatConversationPage extends ConsumerStatefulWidget {
 
 class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
     with
+        TickerProviderStateMixin,
         _ChatConversationLifecycle,
         _ChatConversationActions,
         _ChatConversationSelectionActions {
@@ -50,6 +51,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
   final _messageController = TextEditingController();
   @override
   final _scrollController = ScrollController();
+  late final HideOnScrollController _chromeHide;
   @override
   final _messageKeys = <String, GlobalKey>{};
   ProviderSubscription<List<MessageEntity>>? _messageSubscription;
@@ -78,6 +80,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
   bool _scrollAnimating = false;
   @override
   int _conversationGeneration = 0;
+  bool _keyboardWasOpen = false;
 
   @override
   ConversationMessagesNotifier get _notifier =>
@@ -99,6 +102,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
   @override
   void initState() {
     super.initState();
+    _chromeHide = HideOnScrollController(vsync: this);
     _messageController.addListener(_onTextChanged);
     _bindMessageListener(widget.chatId);
   }
@@ -144,8 +148,18 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
     _messageController.addListener(_onTextChanged);
     _scrollPostFrameQueued = false;
     _scrollAnimating = false;
+    _chromeHide.showImmediately();
     if (_scrollController.hasClients) _scrollController.jumpTo(0);
     _bindMessageListener(widget.chatId);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    if (keyboardOpen == _keyboardWasOpen) return;
+    _keyboardWasOpen = keyboardOpen;
+    _chromeHide.showImmediately();
   }
 
   @override
@@ -155,11 +169,13 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
     _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
     _scrollController.dispose();
+    _chromeHide.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final currentMessages = ref
         .read(conversationMessagesProvider(widget.chatId))
         .messages;
@@ -180,46 +196,50 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
         body: AppBackground(
           child: Column(
             children: [
-              Consumer(
-                builder: (context, ref, _) {
-                  final header = ref.watch(
-                    conversationMessagesProvider(widget.chatId).select(
-                      (state) => (
-                        hasHeader: state.hasHeader,
-                        loadError: state.loadError,
-                        theme: state.preference?.theme,
-                        name: state.otherUserName,
-                        avatarUrl: state.otherUserAvatarUrl,
-                        chatType: state.threadType,
-                        isOnline: state.otherUserOnline,
+              CollapsingScrollBar(
+                animation: _chromeHide.animation,
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final header = ref.watch(
+                      conversationMessagesProvider(widget.chatId).select(
+                        (state) => (
+                          hasHeader: state.hasHeader,
+                          loadError: state.loadError,
+                          theme: state.preference?.theme,
+                          name: state.otherUserName,
+                          avatarUrl: state.otherUserAvatarUrl,
+                          chatType: state.threadType,
+                          isOnline: state.otherUserOnline,
+                        ),
                       ),
-                    ),
-                  );
-                  return ChatConversationHeader(
-                    isSelecting: _isSelecting,
-                    selectedCount: _selectedMessageIds.length,
-                    hasHeader: header.hasHeader,
-                    loadError: header.loadError,
-                    name: header.name ?? '',
-                    avatarUrl: header.avatarUrl,
-                    chatType: header.chatType ?? ChatThreadType.direct,
-                    accentColor: _accentColor,
-                    isOnline: header.isOnline,
-                    onBack: () => context.pop(),
-                    onConfig: _showMenu,
-                    onInfo: () =>
-                        context.push(AppRoutes.chatDetailsPath(widget.chatId)),
-                    onRetry: () => _notifier.refresh(),
-                    onCloseSelection: () =>
-                        setState(() => _isSelecting = false),
-                    onCopy: _copySelectedMessages,
-                    onForward: _forwardSelectedMessages,
-                    onDelete: _deleteSelectedMessages,
-                    onReply: _replyFromSelection,
-                    onStar: _toggleStarSelected,
-                    onShare: _shareSelected,
-                  );
-                },
+                    );
+                    return ChatConversationHeader(
+                      isSelecting: _isSelecting,
+                      selectedCount: _selectedMessageIds.length,
+                      hasHeader: header.hasHeader,
+                      loadError: header.loadError,
+                      name: header.name ?? '',
+                      avatarUrl: header.avatarUrl,
+                      chatType: header.chatType ?? ChatThreadType.direct,
+                      accentColor: _accentColor,
+                      isOnline: header.isOnline,
+                      onBack: () => context.pop(),
+                      onConfig: _showMenu,
+                      onInfo: () => context.push(
+                        AppRoutes.chatDetailsPath(widget.chatId),
+                      ),
+                      onRetry: () => _notifier.refresh(),
+                      onCloseSelection: () =>
+                          setState(() => _isSelecting = false),
+                      onCopy: _copySelectedMessages,
+                      onForward: _forwardSelectedMessages,
+                      onDelete: _deleteSelectedMessages,
+                      onReply: _replyFromSelection,
+                      onStar: _toggleStarSelected,
+                      onShare: _shareSelected,
+                    );
+                  },
+                ),
               ),
               Consumer(
                 builder: (context, ref, _) {
@@ -239,105 +259,123 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                   final currentUserId = ref.watch(
                     authControllerProvider.select((state) => state.value?.id),
                   );
-                  return ChatConversationBody(
-                    scrollController: _scrollController,
-                    messages: body.messages,
-                    bgUrl: body.bgUrl,
-                    hasHeader: body.hasHeader,
-                    loadError: body.loadError,
-                    currentUserId: currentUserId,
-                    otherUserName: body.otherUserName ?? '',
-                    accentColor: _accentColor,
-                    messageKeys: _messageKeys,
-                    highlightedMessageId: _highlightedMessageId,
-                    starredIds: body.starredIds,
-                    isSelecting: _isSelecting,
-                    selectedMessageIds: _selectedMessageIds,
-                    onLoadMore: _notifier.loadOlder,
-                    onRetry: () => _notifier.refresh(),
-                    onToggleSelection: (id) => setState(() {
-                      if (_selectedMessageIds.contains(id)) {
-                        _selectedMessageIds.remove(id);
-                        if (_selectedMessageIds.isEmpty) {
-                          _isSelecting = false;
-                        }
-                      } else {
-                        _selectedMessageIds.add(id);
-                      }
-                    }),
-                    onEnterSelectionMode: (id) => setState(() {
-                      _isSelecting = true;
-                      _selectedMessageIds.add(id);
-                    }),
-                    onReplyTap: _scrollToQuoted,
-                    onSwipeToReply: (msg) => setState(() => _replyTarget = msg),
-                    onReactionTap: (msgId, emoji) => ref
-                        .read(chatRepositoryProvider)
-                        .reactToMessage(widget.chatId, msgId, emoji),
-                    onReactionLongPress: (msg, emoji) => showModalBottomSheet(
-                      context: context,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => WhoReactedSheet(
-                        reactions: msg.reactions,
-                        initialEmoji: emoji,
-                      ),
-                    ),
-                    onViewOnceReveal: (msgId) async {
-                      final generation = _conversationGeneration;
-                      final result = await _notifier.revealViewOnce(msgId);
-                      if (!mounted || generation != _conversationGeneration) {
-                        return;
-                      }
-                      result.fold(
-                        (failure) =>
-                            AppSnackbar.error(context, failure.message),
-                        (_) {},
-                      );
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (keyboardOpen) return false;
+                      return _chromeHide.handleNotification(notification);
                     },
+                    child: ChatConversationBody(
+                      scrollController: _scrollController,
+                      messages: body.messages,
+                      bgUrl: body.bgUrl,
+                      hasHeader: body.hasHeader,
+                      loadError: body.loadError,
+                      currentUserId: currentUserId,
+                      otherUserName: body.otherUserName ?? '',
+                      accentColor: _accentColor,
+                      messageKeys: _messageKeys,
+                      highlightedMessageId: _highlightedMessageId,
+                      starredIds: body.starredIds,
+                      isSelecting: _isSelecting,
+                      selectedMessageIds: _selectedMessageIds,
+                      onLoadMore: _notifier.loadOlder,
+                      onRetry: () => _notifier.refresh(),
+                      onToggleSelection: (id) => setState(() {
+                        if (_selectedMessageIds.contains(id)) {
+                          _selectedMessageIds.remove(id);
+                          if (_selectedMessageIds.isEmpty) {
+                            _isSelecting = false;
+                          }
+                        } else {
+                          _selectedMessageIds.add(id);
+                        }
+                      }),
+                      onEnterSelectionMode: (id) => setState(() {
+                        _isSelecting = true;
+                        _selectedMessageIds.add(id);
+                      }),
+                      onReplyTap: _scrollToQuoted,
+                      onSwipeToReply: (msg) =>
+                          setState(() => _replyTarget = msg),
+                      onReactionTap: (msgId, emoji) => ref
+                          .read(chatRepositoryProvider)
+                          .reactToMessage(widget.chatId, msgId, emoji),
+                      onReactionLongPress: (msg, emoji) => showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => WhoReactedSheet(
+                          reactions: msg.reactions,
+                          initialEmoji: emoji,
+                        ),
+                      ),
+                      onViewOnceReveal: (msgId) async {
+                        final generation = _conversationGeneration;
+                        final result = await _notifier.revealViewOnce(msgId);
+                        if (!mounted || generation != _conversationGeneration) {
+                          return;
+                        }
+                        result.fold(
+                          (failure) =>
+                              AppSnackbar.error(context, failure.message),
+                          (_) {},
+                        );
+                      },
+                    ),
                   );
                 },
               ),
-              Consumer(
-                builder: (context, ref, _) {
-                  final composer = ref.watch(
-                    conversationMessagesProvider(widget.chatId).select(
-                      (state) => (
-                        otherUserTyping: state.otherUserTyping,
-                        theme: state.preference?.theme,
-                        otherUserName: state.otherUserName,
-                      ),
-                    ),
-                  );
-                  final currentUserId = ref.watch(
-                    authControllerProvider.select((state) => state.value?.id),
-                  );
-                  return ChatConversationComposer(
-                    otherUserTyping: composer.otherUserTyping,
-                    replyTarget: _replyTarget,
-                    currentUserId: currentUserId,
-                    otherUserName: composer.otherUserName,
-                    accentColor: _accentColor,
-                    isRecording: _isRecording,
-                    messageController: _messageController,
-                    isSending: _isSending,
-                    viewOnceEnabled: _viewOnceEnabled,
-                    onCancelReply: () => setState(() => _replyTarget = null),
-                    onSendAudio: _sendAudio,
-                    onCancelRecording: () =>
-                        setState(() => _isRecording = false),
-                    onSend: _sendMessage,
-                    onRecordAudio: () => setState(() => _isRecording = true),
-                    onAttachment: () => showConversationAttachmentSheet(
-                      context: context,
-                      takeReplyTarget: _takeReplyTarget,
-                      sendRich: _sendRich,
-                      sendLocation: _sendLocation,
-                      showError: (e) => AppSnackbar.error(context, e),
-                    ),
-                    onViewOnceToggled: (v) =>
-                        setState(() => _viewOnceEnabled = v),
-                  );
-                },
+              CollapsingScrollBar(
+                animation: _chromeHide.animation,
+                edge: ScrollBarEdge.bottom,
+                child: SafeArea(
+                  top: false,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final composer = ref.watch(
+                        conversationMessagesProvider(widget.chatId).select(
+                          (state) => (
+                            otherUserTyping: state.otherUserTyping,
+                            theme: state.preference?.theme,
+                            otherUserName: state.otherUserName,
+                          ),
+                        ),
+                      );
+                      final currentUserId = ref.watch(
+                        authControllerProvider.select(
+                          (state) => state.value?.id,
+                        ),
+                      );
+                      return ChatConversationComposer(
+                        otherUserTyping: composer.otherUserTyping,
+                        replyTarget: _replyTarget,
+                        currentUserId: currentUserId,
+                        otherUserName: composer.otherUserName,
+                        accentColor: _accentColor,
+                        isRecording: _isRecording,
+                        messageController: _messageController,
+                        isSending: _isSending,
+                        viewOnceEnabled: _viewOnceEnabled,
+                        onCancelReply: () =>
+                            setState(() => _replyTarget = null),
+                        onSendAudio: _sendAudio,
+                        onCancelRecording: () =>
+                            setState(() => _isRecording = false),
+                        onSend: _sendMessage,
+                        onRecordAudio: () =>
+                            setState(() => _isRecording = true),
+                        onAttachment: () => showConversationAttachmentSheet(
+                          context: context,
+                          takeReplyTarget: _takeReplyTarget,
+                          sendRich: _sendRich,
+                          sendLocation: _sendLocation,
+                          showError: (e) => AppSnackbar.error(context, e),
+                        ),
+                        onViewOnceToggled: (v) =>
+                            setState(() => _viewOnceEnabled = v),
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),

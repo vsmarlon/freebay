@@ -22,6 +22,7 @@ export 'components/empty_state.dart';
 export 'components/eyebrow_label.dart';
 export 'components/app_image_viewer.dart';
 export 'components/hide_on_scroll.dart';
+export 'components/shell_scroll_chrome.dart';
 export 'components/image_picker_grid.dart';
 export 'components/infinite_scroll_listener.dart';
 export 'components/menu_list_tile.dart';

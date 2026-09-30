@@ -68,10 +68,11 @@ mixin SocialRepositorySaves {
     String userId, {
     int limit = 15,
     String? cursor,
+    String? kind,
   }) => requestEither(
     () => client.get(
       '/social/posts/user/$userId/timeline',
-      queryParameters: {'limit': limit, 'cursor': ?cursor},
+      queryParameters: {'limit': limit, 'cursor': ?cursor, 'kind': ?kind},
     ),
     decoder: (response) => Right(
       parseCursorPage<UserPostEntry>(

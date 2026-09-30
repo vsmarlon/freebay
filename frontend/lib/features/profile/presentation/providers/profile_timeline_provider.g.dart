@@ -16,7 +16,7 @@ final class ProfileTimelineProvider
     extends $NotifierProvider<ProfileTimeline, ProfileTimelineState> {
   ProfileTimelineProvider._({
     required ProfileTimelineFamily super.from,
-    required String super.argument,
+    required (String, {String? kind}) super.argument,
   }) : super(
          retry: null,
          name: r'profileTimelineProvider',
@@ -32,7 +32,7 @@ final class ProfileTimelineProvider
   String toString() {
     return r'profileTimelineProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -58,7 +58,7 @@ final class ProfileTimelineProvider
   }
 }
 
-String _$profileTimelineHash() => r'bcc6fc42875615cee5b2b3d45671b530d9056d91';
+String _$profileTimelineHash() => r'5f1a4b506961575bde4cc0a3fb5045d0f141fff1';
 
 final class ProfileTimelineFamily extends $Family
     with
@@ -67,7 +67,7 @@ final class ProfileTimelineFamily extends $Family
           ProfileTimelineState,
           ProfileTimelineState,
           ProfileTimelineState,
-          String
+          (String, {String? kind})
         > {
   ProfileTimelineFamily._()
     : super(
@@ -78,18 +78,19 @@ final class ProfileTimelineFamily extends $Family
         isAutoDispose: true,
       );
 
-  ProfileTimelineProvider call(String userId) =>
-      ProfileTimelineProvider._(argument: userId, from: this);
+  ProfileTimelineProvider call(String userId, {String? kind}) =>
+      ProfileTimelineProvider._(argument: (userId, kind: kind), from: this);
 
   @override
   String toString() => r'profileTimelineProvider';
 }
 
 abstract class _$ProfileTimeline extends $Notifier<ProfileTimelineState> {
-  late final _$args = ref.$arg as String;
-  String get userId => _$args;
+  late final _$args = ref.$arg as (String, {String? kind});
+  String get userId => _$args.$1;
+  String? get kind => _$args.kind;
 
-  ProfileTimelineState build(String userId);
+  ProfileTimelineState build(String userId, {String? kind});
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
@@ -102,6 +103,6 @@ abstract class _$ProfileTimeline extends $Notifier<ProfileTimelineState> {
               Object?,
               Object?
             >;
-    return element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args.$1, kind: _$args.kind));
   }
 }

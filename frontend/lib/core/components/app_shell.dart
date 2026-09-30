@@ -10,6 +10,7 @@ import 'package:freebay/core/components/app_background.dart';
 import 'package:freebay/core/components/brutalist_fab.dart';
 import 'package:freebay/core/components/app_shell_scaffold_key.dart';
 import 'package:freebay/core/components/hide_on_scroll.dart';
+import 'package:freebay/core/components/shell_scroll_chrome.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
 
@@ -54,6 +55,9 @@ class _AppShellState extends State<AppShell>
   void didUpdateWidget(AppShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     final index = widget.navigationShell.currentIndex;
+    if (oldWidget.navigationShell.currentIndex != index) {
+      _navHide.showImmediately();
+    }
     _visitedTabs.add(index);
     if (_pageController.hasClients &&
         _pageController.page?.round() != index &&
@@ -128,7 +132,10 @@ class _AppShellState extends State<AppShell>
       }
       return false;
     }
-    if (notification.depth != 0) return false;
+    if (MediaQuery.viewInsetsOf(context).bottom > 0) {
+      _navHide.showImmediately();
+      return false;
+    }
     return _navHide.handleNotification(notification);
   }
 
@@ -171,6 +178,7 @@ class _AppShellState extends State<AppShell>
         final fab = _fabFor(context, selectedIndex);
 
         final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+        if (isKeyboardOpen || !shellIsCurrent) _navHide.showImmediately();
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -206,7 +214,10 @@ class _AppShellState extends State<AppShell>
                                 child: TickerMode(
                                   enabled:
                                       shellIsCurrent && index == selectedIndex,
-                                  child: branch,
+                                  child: ShellScrollChromeScope(
+                                    animation: _navHide.animation,
+                                    child: branch,
+                                  ),
                                 ),
                               ),
                             ),

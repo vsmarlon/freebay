@@ -15,25 +15,28 @@ class GuestProfileView extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          PageHeader(
-            text: 'PERFIL',
-            actions: [
-              GestureDetector(
-                onTap: () => ref.read(themeModeProvider.notifier).toggleTheme(),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: context.borderColor, width: 2),
-                  ),
-                  child: Icon(
-                    context.isDark ? Icons.light_mode : Icons.brightness_6,
-                    color: context.textPrimary,
-                    size: 20,
+          ShellScrollHeader(
+            child: PageHeader(
+              text: 'PERFIL',
+              actions: [
+                GestureDetector(
+                  onTap: () =>
+                      ref.read(themeModeProvider.notifier).toggleTheme(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: context.borderColor, width: 2),
+                    ),
+                    child: Icon(
+                      context.isDark ? Icons.light_mode : Icons.brightness_6,
+                      color: context.textPrimary,
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Expanded(
             child: Center(

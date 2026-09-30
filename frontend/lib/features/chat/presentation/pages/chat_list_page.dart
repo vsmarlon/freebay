@@ -192,7 +192,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            const PageHeader(text: 'MENSAGENS'),
+            const ShellScrollHeader(child: PageHeader(text: 'MENSAGENS')),
             Expanded(
               child: GuestGateView(
                 icon: Icons.chat_bubble_outline,
@@ -212,7 +212,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          const PageHeader(text: 'MENSAGENS'),
+          const ShellScrollHeader(child: PageHeader(text: 'MENSAGENS')),
           Expanded(
             child: Column(
               children: [
