@@ -40,6 +40,56 @@ Widget _app() {
   );
 }
 
+Widget _scrollChromeApp({EdgeInsets viewInsets = EdgeInsets.zero}) {
+  final router = GoRouter(
+    initialLocation: '/b0',
+    routes: [
+      StatefulShellRoute(
+        builder: (_, _, shell) => shell,
+        navigatorContainerBuilder: (_, shell, children) =>
+            AppShell(navigationShell: shell, branches: children),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/b0',
+                builder: (_, _) => Scaffold(
+                  body: Column(
+                    children: [
+                      const ShellScrollHeader(
+                        child: PageHeader(text: 'SCROLL HEADER'),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemExtent: 80,
+                          itemCount: 40,
+                          itemBuilder: (_, index) => Text('ROW $index'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          for (var index = 1; index < _labels.length; index++)
+            _branch('/b$index', _labels[index]),
+        ],
+      ),
+    ],
+  );
+
+  return MediaQuery(
+    data: MediaQueryData(viewInsets: viewInsets),
+    child: ProviderScope(
+      overrides: [
+        authControllerProvider.overrideWith(() => TestAuthController(null)),
+      ],
+      child: MaterialApp.router(routerConfig: router),
+    ),
+  );
+}
+
 Future<void> _settle(WidgetTester tester) async {
   for (var i = 0; i < 20; i++) {
     await tester.pump(const Duration(milliseconds: 50));
@@ -162,5 +212,38 @@ void main() {
     expect(find.text('TIMELINE B'), findsOneWidget);
     expect(find.text('ALPHA'), findsNothing);
     expect(find.text('BRAVO'), findsNothing);
+  });
+
+  testWidgets('shell chrome hides on a user drag and returns on reverse drag', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_scrollChromeApp());
+    await _settle(tester);
+    final header = find.byType(ShellScrollHeader);
+    final visibleHeight = tester.getSize(header).height;
+
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await _settle(tester);
+    expect(tester.getSize(header).height, lessThan(visibleHeight));
+
+    await tester.drag(find.byType(ListView), const Offset(0, 80));
+    await _settle(tester);
+    expect(tester.getSize(header).height, greaterThan(0));
+  });
+
+  testWidgets('keyboard layout keeps shell header visible during scroll', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _scrollChromeApp(viewInsets: const EdgeInsets.only(bottom: 240)),
+    );
+    await _settle(tester);
+    final header = find.byType(ShellScrollHeader);
+    final visibleHeight = tester.getSize(header).height;
+
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await _settle(tester);
+
+    expect(tester.getSize(header).height, visibleHeight);
   });
 }
