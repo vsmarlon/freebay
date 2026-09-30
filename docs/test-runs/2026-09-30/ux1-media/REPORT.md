@@ -32,5 +32,5 @@ The focused test source imports the already-resolved `video_player_platform_inte
 
 - View-once authorization was not reimplemented; the existing message-bubble reveal gate still owns whether `VideoMessageBubble` is built.
 - The new preview test covers the no-thumbnail paused-frame path and fullscreen handoff. It does not exercise authenticated thumbnail HTTP delivery or actual native decoder playback.
-- Retry button accessibility/callback is covered at the shared viewer error component boundary. No device-level network retry or real decoder/provider test was run.
+- Fullscreen retry is exercised from the real viewer error state with an invalid `file:` URI; tapping re-enters the resolver path and leaves the retry action available for another attempt. This does not prove successful recovery from an HTTP outage. No device-level network retry or real decoder/provider test was run.
 - Tests are widget/plugin-boundary evidence, not a device verification claim.

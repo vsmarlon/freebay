@@ -104,20 +104,33 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('failed media offers an accessible retry action', (tester) async {
-    var retried = false;
+  testWidgets('fullscreen retries a failed source and keeps retry available', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: VideoViewerError(
-            message: 'Vídeo indisponível',
-            onRetry: () => retried = true,
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showFullScreenVideo(
+              context,
+              'file:///fixture/video.mp4?invalid=1',
+            ),
+            child: const Text('Open video'),
           ),
         ),
       ),
     );
+    await tester.tap(find.text('Open video'));
+    for (var frame = 0; frame < 4; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Tentar novamente'), findsOneWidget);
+
     await tester.tap(find.text('Tentar novamente'));
-    expect(retried, isTrue);
+    for (var frame = 0; frame < 4; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Tentar novamente'), findsOneWidget);
   });
 }
 
