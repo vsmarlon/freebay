@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/storage_service.dart';
@@ -30,6 +31,7 @@ void main() {
   test(
     'logout preserves the captured bearer and does not refresh on 401',
     () async {
+      SharedPreferences.setMockInitialValues({});
       FlutterSecureStorage.setMockInitialValues({
         'auth_token': 'access-token',
         'refresh_token': 'refresh-token',

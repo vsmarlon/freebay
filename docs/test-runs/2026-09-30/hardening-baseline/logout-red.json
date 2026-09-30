@@ -1,0 +1,8 @@
+{
+  "label": "logout-red",
+  "command": "flutter test test/shared/services/http_client_logout_test.dart",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "started": "2026-09-30T04:26:50.666Z",
+  "ended": "2026-09-30T04:26:55.597Z",
+  "exitCode": 1
+}

@@ -1,0 +1,13 @@
+W These options have been removed and were ignored: --delete-conflicting-outputs
+  0s riverpod_generator on 468 inputs; integration_test/perf_test.dart
+  0s riverpod_generator on 468 inputs: 1 skipped; lib/core/components/app_background.dart
+  8s riverpod_generator on 468 inputs: 161 skipped, 1 same, 17 no-op; spent 7s analyzing, 1s resolving; lib/features/favorites/data/repositories/favorites_repository.dart
+  11s riverpod_generator on 468 inputs: 226 skipped, 5 same, 21 no-op; spent 9s analyzing, 2s resolving; lib/features/profile/presentation/controllers/states/user_posts_state.dart
+  11s riverpod_generator on 468 inputs: 415 skipped, 15 same, 38 no-op; spent 9s analyzing, 2s resolving
+  0s freezed on 468 inputs; integration_test/perf_test.dart
+  0s freezed on 468 inputs: 415 skipped, 53 no-op
+  0s json_serializable on 936 inputs; integration_test/perf_test.dart
+  1s json_serializable on 936 inputs: 607 skipped, 329 no-op
+  0s source_gen:combining_builder on 936 inputs; integration_test/perf_test.dart
+  0s source_gen:combining_builder on 936 inputs: 919 skipped, 1 output, 14 same, 2 no-op
+  Built with build_runner/aot in 16s; wrote 30 outputs.

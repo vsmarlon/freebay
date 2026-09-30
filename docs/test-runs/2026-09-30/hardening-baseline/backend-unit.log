@@ -1,0 +1,165 @@
+
+> nest-backend@1.0.0 test
+> jest
+
+PASS src/modules/social/usecases/get-user-posts.usecase.spec.ts (19.724 s)
+PASS src/shared/auth/session-revoker.service.spec.ts (19.726 s)
+PASS src/modules/auth/services/session-token.service.spec.ts (19.806 s)
+PASS src/shared/auth/jwt-token-validator.service.spec.ts (19.751 s)
+PASS src/shared/core/either.spec.ts
+PASS src/modules/disputes/services/dispute-transition.policy.spec.ts
+PASS src/modules/disputes/services/dispute-resolution-execution.service.spec.ts
+PASS src/modules/admin/usecases/list-reports.usecase.spec.ts
+PASS src/modules/admin/usecases/list-transfer-failures.usecase.spec.ts
+PASS src/modules/chat/services/url-safety.service.spec.ts
+PASS src/modules/tasks/transfer-reconciliation.task.spec.ts (20.38 s)
+PASS src/shared/interceptors/webhook-dedupe.interceptor.spec.ts
+PASS src/modules/chat/usecases/get-conversations.usecase.spec.ts
+PASS src/shared/utils/cpf.utils.spec.ts
+[31m[Nest] 17464  - [39m30/09/2026, 01:13:31 [31m  ERROR[39m [38;5;3m[ProcessWebhookUseCase] [39m[31mFailed to settle transaction tx-pending for order o1: db exploded[39m
+Error: db exploded
+    at Object.<anonymous> (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\payments\usecases\process-webhook.usecase.spec.ts:158:47)
+    at Promise.then.completed (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-runner\build\runTest.js:444:34)
+    at Object.worker (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-runner\build\testWorker.js:106:12)
+[31m[Nest] 17464  - [39m30/09/2026, 01:13:31 [31m  ERROR[39m [38;5;3m[ProcessWebhookUseCase] [39m[31mOrder o1 is not PENDING; refusing to confirm and credit it from a payment webhook[39m
+PASS src/modules/payments/usecases/process-webhook.usecase.spec.ts
+PASS src/modules/auth/usecases/request-magic-link.usecase.spec.ts (20.989 s)
+PASS src/shared/infra/prisma/repository-response.spec.ts
+PASS src/modules/products/data/repositories/category-traversal.spec.ts
+PASS src/modules/social/data/repositories/saved-post-database.repository.spec.ts
+[31m[Nest] 9892  - [39m30/09/2026, 01:13:32 [31m  ERROR[39m [38;5;3m[CheckoutCartUseCase] [39m[31mCart payment session failed: stripe down[39m
+[31m[Nest] 9892  - [39m30/09/2026, 01:13:32 [31m  ERROR[39m [38;5;3m[CheckoutCartUseCase] [39m[31mPayment group group-1 remains pending for webhook or expiry reconciliation[39m
+[31m[Nest] 9892  - [39m30/09/2026, 01:13:32 [31m  ERROR[39m [38;5;3m[CheckoutCartUseCase] [39m[31mCart checkout transaction failed for user buyer-1: connection reset[39m
+PASS src/modules/cart/usecases/checkout-cart.usecase.spec.ts
+PASS src/modules/users/usecases/verify-phone.usecase.spec.ts (21.706 s)
+PASS src/modules/payments/services/seller-payout.service.spec.ts
+PASS src/modules/notifications/usecases/mark-as-read.usecase.spec.ts
+PASS src/modules/users/dtos/user.dto.spec.ts
+PASS src/modules/users/usecases/user.usecase.spec.ts
+PASS src/modules/payments/payments.controller.spec.ts
+PASS src/modules/users/usecases/register-phone.usecase.spec.ts
+PASS src/modules/auth/usecases/login.usecase.spec.ts
+PASS src/modules/chat/usecases/send-message.usecase.spec.ts
+PASS src/modules/auth/guards/jwt-auth.guard.spec.ts
+PASS src/modules/auth/auth.controller.spec.ts (23.137 s)
+PASS src/modules/chat/usecases/toggle-star.usecase.spec.ts
+PASS src/modules/auth/dtos/auth.dto.spec.ts
+PASS src/modules/media/media.controller.spec.ts
+PASS src/modules/stories/stories.controller.spec.ts
+PASS src/modules/auth/usecases/reset-password.usecase.spec.ts
+PASS src/modules/admin/usecases/remove-content.usecase.spec.ts
+PASS src/modules/admin/usecases/list-moderation-actions.usecase.spec.ts
+PASS src/shared/utils/image-upload.utils.spec.ts
+PASS src/modules/admin/usecases/suspend-user.usecase.spec.ts
+PASS src/shared/guards/webhook.guard.spec.ts
+PASS src/modules/social/usecases/delete-post.usecase.spec.ts
+PASS src/modules/wallet/usecases/get-wallet.usecase.spec.ts
+PASS src/modules/chat/chat.controller.spec.ts (24.088 s)
+PASS src/modules/auth/usecases/refresh-web-session.usecase.spec.ts
+PASS src/modules/upload/upload.controller.spec.ts
+PASS src/modules/social/data/repositories/comment-database.repository.spec.ts
+[31m[Nest] 46588  - [39m30/09/2026, 01:13:35 [31m  ERROR[39m [38;5;3m[CreatePaymentSessionUseCase] [39m[31mPayment session failed: Provider error[39m
+PASS src/modules/chat/usecases/get-unified-conversations.usecase.spec.ts
+[31m[Nest] 42488  - [39m30/09/2026, 01:13:35 [31m  ERROR[39m [38;5;3m[GoogleAuthUseCase] [39m[31mFalha na validação do token Google: Invalid token (aud=<indecifrável> <> [mock-client-id.apps.googleusercontent.com])[39m
+PASS src/modules/auth/usecases/google-auth.usecase.spec.ts
+PASS src/modules/payments/usecases/create-payment-session.usecase.spec.ts
+PASS src/modules/auth/usecases/check-username-availability.usecase.spec.ts
+PASS src/modules/auth/usecases/consume-magic-link.usecase.spec.ts
+[31m[Nest] 42488  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[StripeProvider] [39m[31mTransfer creation failed: provider rejected[39m
+[31m[Nest] 42488  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[StripeProvider] [39m[31mTransfer creation failed: provider rejected[39m
+[31m[Nest] 42488  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[StripeProvider] [39m[31mTransfer reversal failed: provider rejected[39m
+[31m[Nest] 42488  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[StripeProvider] [39m[31mTransfer reversal failed: provider rejected[39m
+PASS src/modules/social/data/repositories/post-database.repository.spec.ts
+[31m[Nest] 42488  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[StripeProvider] [39m[31mStripe payment session creation failed: Stripe API error: invalid request[39m
+[31m[Nest] 42488  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[StripeProvider] [39m[31mPaymentIntent creation failed: Stripe API error: invalid request[39m
+PASS src/modules/social/usecases/get-feed.usecase.spec.ts
+PASS src/modules/reviews/usecases/can-review-order/can-review-order.usecase.spec.ts
+PASS src/modules/social/usecases/get-saved-posts.usecase.spec.ts
+PASS src/modules/payments/providers/stripe-provider.spec.ts
+[31m[Nest] 33676  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[CreatePaymentIntentUseCase] [39m[31mPaymentIntent creation failed: Provider error[39m
+[31m[Nest] 33676  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[CreatePaymentIntentUseCase] [39m[31mPaymentIntent creation failed: Provider error[39m
+PASS src/modules/payments/usecases/create-payment-intent.usecase.spec.ts
+[31m[Nest] 42484  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[ProcessGroupWebhookUseCase] [39m[31mWebhook object does not match payment group group-1: amount 29999 != sum of orders 30000[39m
+[31m[Nest] 42484  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[ProcessGroupWebhookUseCase] [39m[31mWebhook object does not match payment group group-1: currency usd != brl[39m
+[31m[Nest] 42484  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[ProcessGroupWebhookUseCase] [39m[31mWebhook object does not match payment group group-1: provider object pi_outro != group object pi_1[39m
+PASS src/modules/users/usecases/request-account-deletion.usecase.spec.ts
+[31m[Nest] 42484  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[ProcessGroupWebhookUseCase] [39m[31mPayment notifications failed for order order-1: fcm down[39m
+[31m[Nest] 42484  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[ProcessGroupWebhookUseCase] [39m[31mPayment notifications failed for order order-2: fcm down[39m
+[31m[Nest] 42484  - [39m30/09/2026, 01:13:36 [31m  ERROR[39m [38;5;3m[ProcessGroupWebhookUseCase] [39m[31mPayment notifications failed for order order-3: fcm down[39m
+PASS src/modules/payments/usecases/process-group-webhook.usecase.spec.ts
+PASS src/modules/orders/data/repositories/order-database.repository.spec.ts
+PASS src/modules/chat/usecases/get-starred-messages.usecase.spec.ts
+PASS src/modules/social/usecases/social.usecase.spec.ts
+PASS src/modules/chat/usecases/forward-messages.usecase.spec.ts
+PASS src/modules/auth/usecases/refresh-mobile-session.usecase.spec.ts
+PASS src/modules/tasks/magic-link-cleanup.task.spec.ts
+PASS src/modules/orders/usecases/get-order.usecase.spec.ts
+PASS src/modules/auth/usecases/biometric-login.usecase.spec.ts
+PASS src/shared/utils/file.utils.spec.ts
+PASS src/modules/chat/services/og-scraper.service.spec.ts
+PASS src/modules/chat/usecases/accept-conversation.usecase.spec.ts
+PASS src/modules/chat/usecases/toggle-reaction.usecase.spec.ts
+PASS src/modules/users/usecases/list-followers.usecase.spec.ts
+PASS src/modules/users/usecases/export-user-data.usecase.spec.ts
+PASS src/modules/users/usecases/cancel-account-deletion.usecase.spec.ts
+PASS src/modules/social/usecases/delete-comment.usecase.spec.ts
+PASS src/modules/orders/usecases/list-sales-orders.usecase.spec.ts
+PASS src/modules/orders/usecases/order.usecase.spec.ts
+PASS src/modules/chat/usecases/get-messages.usecase.spec.ts
+PASS src/modules/disputes/usecases/open-dispute.usecase.spec.ts
+PASS src/modules/admin/usecases/resolve-report.usecase.spec.ts
+PASS src/modules/stories/usecases/create-story.usecase.spec.ts
+[31m[Nest] 33676  - [39m30/09/2026, 01:13:38 [31m  ERROR[39m [38;5;3m[PrismaRepository] [39m[31mErro ao registrar reação[39m
+Error: database unavailable
+    at Object.<anonymous> (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\chat\data\repositories\conversation-database.repository.spec.ts:169:33)
+    at Promise.then.completed (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\utils.js:231:10)
+    at _callCircusTest (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at _runTest (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:252:3)
+    at _runTestsForDescribeBlock (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:126:9)
+    at _runTestsForDescribeBlock (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:121:9)
+    at run (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\run.js:71:3)
+    at runAndTransformResultsToJestFormat (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+    at jestAdapter (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+    at runTestInternal (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-runner\build\runTest.js:367:16)
+    at runTest (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-runner\build\runTest.js:444:34)
+    at Object.worker (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\jest-runner\build\testWorker.js:106:12)
+PASS src/modules/chat/data/repositories/conversation-database.repository.spec.ts
+PASS src/modules/payments/usecases/get-connect-status.usecase.spec.ts
+PASS src/modules/auth/usecases/enroll-biometric.usecase.spec.ts
+PASS src/modules/disputes/usecases/get-dispute.usecase.spec.ts
+PASS src/modules/social/usecases/get-user-reposts.usecase.spec.ts
+PASS src/modules/payments/usecases/recover-dispute-transfer.usecase.spec.ts
+PASS src/modules/products/usecases/delete-product/delete-product.usecase.spec.ts
+PASS src/modules/auth/services/resend.service.spec.ts
+PASS src/modules/orders/orders.controller.spec.ts (27.931 s)
+PASS src/modules/social/data/repositories/feed-affinity.spec.ts
+PASS src/modules/chat/usecases/start-conversation.usecase.spec.ts
+PASS src/modules/payments/usecases/process-refund.usecase.spec.ts
+PASS src/modules/tasks/dispute-cleanup.task.spec.ts
+[31m[Nest] 38872  - [39m30/09/2026, 01:13:38 [31m  ERROR[39m [38;5;3m[ExpireCheckoutGroupUseCase] [39m[31mFailed to load expired payment group group-broken[39m
+PASS src/modules/payments/usecases/expire-checkout-group.usecase.spec.ts
+PASS src/modules/reports/usecases/create-report.usecase.spec.ts
+PASS src/modules/chat/usecases/delete-message.usecase.spec.ts
+PASS src/modules/users/users-controllers.spec.ts (28.255 s)
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+
+Test Suites: 99 passed, 99 total
+Tests:       609 passed, 609 total
+Snapshots:   0 total
+Time:        29.939 s, estimated 52 s
+Ran all test suites.

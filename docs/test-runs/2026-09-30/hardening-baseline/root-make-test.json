@@ -1,0 +1,8 @@
+{
+  "label": "root-make-test",
+  "command": "make test",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay",
+  "started": "2026-09-30T04:18:40.624Z",
+  "ended": "2026-09-30T04:19:08.753Z",
+  "exitCode": 1
+}

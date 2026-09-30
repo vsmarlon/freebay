@@ -1,0 +1,8 @@
+{
+  "label": "flutter-analyze",
+  "command": "flutter analyze --fatal-infos lib test libs/freebay_design_system/lib",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "started": "2026-09-30T04:28:30.510Z",
+  "ended": "2026-09-30T04:28:54.479Z",
+  "exitCode": 0
+}

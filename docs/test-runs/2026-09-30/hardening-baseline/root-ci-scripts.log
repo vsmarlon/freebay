@@ -1,0 +1,20 @@
+
+> test:ci-scripts
+> node --test scripts/ci-check.test.js scripts/perf-check.test.js
+
+✔ architecture gate rejects removed safe identifiers only (1.3194ms)
+✔ architecture gate still detects removed repository identifiers in imports (0.1246ms)
+✔ route and design gates keep their existing policy (0.2913ms)
+✔ a real trace with both build and raster timings passes (1.0169ms)
+✔ missing frame metrics cannot be green (0.2023ms)
+✔ raster jank fails even when build timings are fast (0.0975ms)
+✔ 20% regression from a measured baseline fails below the absolute threshold (0.1219ms)
+✔ absolute frame budgets fail at the boundary (0.6096ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 92.0927

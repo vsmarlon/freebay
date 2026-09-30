@@ -1,0 +1,18 @@
+""
+"=== Backend lint ==="
+cd nest-backend && npm run lint
+
+> nest-backend@1.0.0 lint
+> eslint "{src,test}/**/*.ts" --max-warnings 0
+
+""
+"=== Flutter analysis ==="
+cd frontend && flutter analyze --fatal-infos lib test libs/freebay_design_system/lib
+Analyzing 3 items...                                            
+No issues found! (ran in 19.4s)
+""
+"=== Dart format gate ==="
+cd frontend && dart format --output=none --set-exit-if-changed lib test libs/freebay_design_system/lib
+Changed test\features\payments\payment_view_test.dart
+Formatted 571 files (1 changed) in 1.63 seconds.
+make: *** [Makefile:35: format] Error 1

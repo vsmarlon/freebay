@@ -1,0 +1,8 @@
+{
+  "label": "backend-integration",
+  "command": "npm run test:integration",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\nest-backend",
+  "started": "2026-09-30T04:14:18.425Z",
+  "ended": "2026-09-30T04:15:15.852Z",
+  "exitCode": 0
+}
