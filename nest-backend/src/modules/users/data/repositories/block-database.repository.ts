@@ -15,7 +15,21 @@ export class PrismaBlockRepository extends BlockRepository {
 
   async block(blockerId: string, blockedId: string): RepositoryResponse<void> {
     try {
-      await this.prisma.block.create({ data: { blockerId, blockedId } });
+      await this.prisma.$transaction(async (tx) => {
+        await tx.block.create({ data: { blockerId, blockedId } });
+        await tx.follow.deleteMany({ where: { OR: [
+          { followerId: blockerId, followingId: blockedId },
+          { followerId: blockedId, followingId: blockerId },
+        ] } });
+        await tx.closeFriend.deleteMany({ where: { OR: [
+          { ownerId: blockerId, memberId: blockedId },
+          { ownerId: blockedId, memberId: blockerId },
+        ] } });
+        await tx.restriction.deleteMany({ where: { OR: [
+          { ownerId: blockerId, restrictedId: blockedId },
+          { ownerId: blockedId, restrictedId: blockerId },
+        ] } });
+      });
       return right(undefined);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return left(new BadRequestError('Already blocked'));
@@ -42,7 +56,7 @@ export class PrismaBlockRepository extends BlockRepository {
 
   async getBlockedUsers(userId: string, limit: number, offset: number): RepositoryResponse<UserBrief[]> {
     return repositoryResponse(() => this.prisma.user.findMany({
-      where: { blocksGiven: { some: { blockerId: userId } } },
+      where: { blocksReceived: { some: { blockerId: userId } } },
       take: limit,
       skip: offset,
       select: { id: true, displayName: true, avatarUrl: true, isVerified: true, reputationScore: true },

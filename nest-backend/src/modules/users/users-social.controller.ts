@@ -29,7 +29,7 @@ import {
   UserResponse,
   FollowResponse,
   BlockResponse,
-} from "./mappers/user.mapper";
+} from "./dtos/user-response.class";
 
 @ApiTags("Users")
 @Controller("users")
@@ -52,8 +52,8 @@ export class UsersSocialController {
     responseType: UserResponse,
     errors: [{ status: 404, description: "User not found" }],
   })
-  async getUser(@Param("id", ParseUUIDPipe) id: string) {
-    return this.getProfileUseCase.execute({ userId: id });
+  async getUser(@Param("id", ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string) {
+    return this.getProfileUseCase.execute({ userId: id, viewerId: viewerId || undefined });
   }
 
   @PostAuth(":id/follow", {
@@ -90,13 +90,13 @@ export class UsersSocialController {
   }
 
   @GetAuth("me/followers", "Get current user followers")
-  async getMyFollowers(@CurrentUserId() userId: string) {
-    return this.listFollowersUseCase.execute({ userId, limit: 20, offset: 0 });
+  async getMyFollowers(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO = {}) {
+    return this.listFollowersUseCase.execute({ userId, limit: query.limit ?? 20, offset: query.offset ?? 0 });
   }
 
   @GetAuth("me/following", "Get current user following")
-  async getMyFollowing(@CurrentUserId() userId: string) {
-    return this.listFollowingUseCase.execute({ userId, limit: 20, offset: 0 });
+  async getMyFollowing(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO = {}) {
+    return this.listFollowingUseCase.execute({ userId, limit: query.limit ?? 20, offset: query.offset ?? 0 });
   }
 
   @GetPublic(":id/followers", {

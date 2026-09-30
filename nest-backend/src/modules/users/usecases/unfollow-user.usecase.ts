@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { FollowRepository } from '../domain/repositories/follow.repository';
-import { FollowResponse } from '../mappers/user.mapper';
+import { FollowResponse } from '../dtos/user-response.class';
 import { FollowUserInput } from '../dtos/user.dto';
 
 @Injectable()

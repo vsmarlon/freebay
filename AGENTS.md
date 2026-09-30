@@ -1,3 +1,5 @@
+> **Feature truth:** Before claiming, planning, or changing FreeBay capabilities, read [docs/FEATURE_TRUTH.md](./docs/FEATURE_TRUTH.md) for code-verified implementations, missing journeys, ranking limits, and verification gaps; update it when that evidence changes.
+
 # AGENTS.md - FreeBay Architecture & Agent Directives
 
 > **MANDATORY DIRECTIVE FOR ALL AI AGENTS & ASSISTANTS**:
@@ -30,6 +32,8 @@ If a cast is genuinely unavoidable, it lives in exactly one named place with a c
 - **Database verification reaches the database the app actually uses.** Generated types and a freshly synchronized test database do not prove the runtime schema is current. Follow `freebay-prisma` for schema/client drift and real-database evidence.
 
 This policy governs testing choices in the linked skills and `CLAUDE.md`. The commands below run existing verification; they do not require a new unit test for every file.
+
+For every new, changed, or reviewed test and every test sweep, load [`test-audit`](./.agents/skills/test-audit/SKILL.md) and apply its authoring gate or audit workflow.
 
 ---
 
@@ -126,9 +130,19 @@ cd ..
 make test
 ```
 
-The GitHub Actions workflow runs these direct gates plus backend CI against PostgreSQL and
-Redis service containers. `npm run ci:check` is the root package alias for the architecture,
+The GitHub Actions workflow runs these direct gates plus backend CI against native PostgreSQL and
+Redis services on the runner. All test entry points run without Docker. `npm run ci:check` is the root package alias for the architecture,
 route, and design script; `npm run test:ci-scripts` tests that script.
+
+### 4. Performance (repo root, quando um flow perf-sensível mudou)
+
+```bash
+# Requer backend, fixture real e device Android/iOS; ver freebay-perf.
+# flutter_profile_mcp (dart pub global activate flutter_profile_mcp) para diagnóstico MCP.
+# Válido para todos os agentes (Claude Code, OpenCode, Codex e afins).
+node scripts/perf-check.js <flow> --device <id>  # feed_scroll, explore_scroll, chat_scroll, story_view, product_detail
+node scripts/perf-check.js --all --device <id>   # todos os flows; make perf-check DEVICE=<id>
+```
 
 ---
 
@@ -141,9 +155,11 @@ All agents must follow the conventions defined in the corresponding skill before
 | **[`freebay-app-flows`](./.agents/skills/freebay-app-flows/SKILL.md)** | End-to-end user journeys, sequence flows, state hierarchy, and navigation routes (Auth, Biometry, Google Login, Onboarding, Wallet, Chat, Profile, Feed/Explore, Checkout, Disputes, Notifications). | [`.agents/skills/freebay-app-flows/SKILL.md`](./.agents/skills/freebay-app-flows/SKILL.md) |
 | **[`freebay-design-system`](./.agents/skills/freebay-design-system/SKILL.md)** | Flutter "Digital Brutalist" UI: strict 0px border radius, no drop shadows (tonal layering only), no divider lines, Space Grotesk / Inter fonts, `#8A1083` magenta accent, role-based motion tokens, theme-driven dark mode, and widget primitives. Points at `frontend/DESIGN.md` for token values. | [`.agents/skills/freebay-design-system/SKILL.md`](./.agents/skills/freebay-design-system/SKILL.md) |
 | **[`freebay-flutter-feature`](./.agents/skills/freebay-flutter-feature/SKILL.md)** | Frontend Flutter Clean Architecture: `data/domain/presentation` layers, Riverpod state management, Dio HTTP client, `requestEither` error adapter, GoRouter route definitions, and widget tests. | [`.agents/skills/freebay-flutter-feature/SKILL.md`](./.agents/skills/freebay-flutter-feature/SKILL.md) |
-| **[`freebay-backend-module`](./.agents/skills/freebay-backend-module/SKILL.md)** | NestJS Backend vertical slices: `dtos/` with `class-validator` + `@ApiDoc`, single-class `usecases/` returning `Either<AppError, Output>`, `domain/repositories/` abstract interfaces, `data/repositories/` concrete Prisma repos, mappers, and colocated `*.spec.ts` tests. | [`.agents/skills/freebay-backend-module/SKILL.md`](./.agents/skills/freebay-backend-module/SKILL.md) |
+| **[`test-audit`](./.agents/skills/test-audit/SKILL.md)** | Authoring gate for new tests, evidence-first cleanup of duplicative tests and test-only seams, and full-subsystem campaigns. | [`.agents/skills/test-audit/SKILL.md`](./.agents/skills/test-audit/SKILL.md) |
+| **[`freebay-backend-module`](./.agents/skills/freebay-backend-module/SKILL.md)** | NestJS Backend vertical slices: `dtos/` with `class-validator` + `@ApiDoc` and safe response projections, single-class `usecases/` returning `Either<AppError, Output>`, `domain/repositories/` abstract interfaces, `data/repositories/` concrete Prisma repos, and colocated `*.spec.ts` tests. | [`.agents/skills/freebay-backend-module/SKILL.md`](./.agents/skills/freebay-backend-module/SKILL.md) |
 | **[`freebay-data-model`](./.agents/skills/freebay-data-model/SKILL.md)** | PostgreSQL / Prisma schema conventions: strict monetary **cents-as-Int** (`price Int // em centavos`), real enums over strings, mandatory `onDelete` cascading rules, foreign key indexing, and schema-sync-only development workflow. | [`.agents/skills/freebay-data-model/SKILL.md`](./.agents/skills/freebay-data-model/SKILL.md) |
 | **[`freebay-prisma`](./.agents/skills/freebay-prisma/SKILL.md)** | Prisma 7 runtime workflow: dev/test database targets, `db push` + `generate` sync, P2022 drift diagnosis, and real-database verification. | [`.agents/skills/freebay-prisma/SKILL.md`](./.agents/skills/freebay-prisma/SKILL.md) |
+| **[`freebay-perf`](./.agents/skills/freebay-perf/SKILL.md)** | Flutter rendering performance verification: frame timing/jank/CPU hotspots via `flutter_profile_mcp` + `dart mcp-server`, gate não-interativo via `scripts/perf-check.js`, baselines em `perf/baselines/`. | [`.agents/skills/freebay-perf/SKILL.md`](./.agents/skills/freebay-perf/SKILL.md) |
 | **[`freebay-system-design`](./.agents/skills/freebay-system-design/SKILL.md)** | End-to-end system design: C2C escrow lifecycle, Socket.IO `/chat` gateway, Stripe PaymentSheet & Checkout Sessions, Redis token blacklist, background cron tasks, and security isolation. | [`.agents/skills/freebay-system-design/SKILL.md`](./.agents/skills/freebay-system-design/SKILL.md) |
 | **[`freebay-mobile-mcp`](./.agents/skills/freebay-mobile-mcp/SKILL.md)** | Mobile MCP device automation, UI inspection, end-to-end test execution, screenshot verification, and physical/virtual Android/iOS device interactions. | [`.agents/skills/freebay-mobile-mcp/SKILL.md`](./.agents/skills/freebay-mobile-mcp/SKILL.md) |
 | **[`stripe-best-practices`](./.agents/skills/stripe-best-practices/SKILL.md)** | Stripe payments, Checkout Sessions vs PaymentIntents, webhook signature validation, idempotency, and secure payment handling. | [`.agents/skills/stripe-best-practices/SKILL.md`](./.agents/skills/stripe-best-practices/SKILL.md) |
@@ -158,7 +174,7 @@ FreeBay is engineered around **deep modules** placed at clean seams to ensure hi
 
 ### 1. Backend Vertical Slices (`nest-backend/`)
 
-- **Vertical Structure**: No horizontal layer soup. Each feature module in `src/modules/<feature>/` owns its DTOs, controllers, use cases, domain repositories, concrete data repositories, and mappers.
+- **Vertical Structure**: No horizontal layer soup. Each feature module in `src/modules/<feature>/` owns its DTOs, controllers, use cases, domain repositories, concrete data repositories, and explicit response projections.
 - **Deep Use Cases**: Every use case is a single-class file (`*.usecase.ts`) returning an explicit `Either<AppError, Output>` (or `Either<AppError, void>` for pure mutations). Use cases encapsulate full business rules, invariants, and transaction orchestrations rather than delegating them to paper-thin services.
 - **Repository Seams**: Use cases depend exclusively on abstract repository interfaces (`domain/repositories/`). Concrete Prisma repositories (`data/repositories/`) implement these interfaces and **MUST ONLY call the database** (Prisma queries, transactions `tx?: Prisma.TransactionClient`, and SQL), wrapping operations with `repositoryResponse(operation, errorMessage?, logger?)` from `shared/infra/prisma/repository-response.ts`. Backend repositories never make HTTP calls.
 - **Interceptor & Filter Pipeline**:
@@ -286,7 +302,7 @@ graph TD
    - CI Pipeline: All PRs must pass the GitHub Actions workflow (`.github/workflows/ci.yml`) including PostgreSQL & Redis service tests.
 2. **Cents as Integers**: All monetary amounts must be stored as integers representing cents in both Prisma and Dart (`1990` = R$ 19,90).
 3. **No Unhandled Throws**: Business failures in use cases must return `left(new AppError(...))` or `Left(Failure(...))`. Never throw raw unhandled exceptions.
-4. **Prisma Payload Typing**: Database repository returns and mappers must use `Prisma.validator<...>()` to derive strict `Prisma.*GetPayload` types. Avoid untyped `as unknown as` assertions.
+4. **Prisma Payload Typing**: Derive repository query payloads with `Prisma.validator<...>()` and strict `Prisma.*GetPayload` types. Return explicit public response fields; never serialize raw user records or use untyped `as unknown as` assertions.
 5. **Privacy Crypto Escrow**: Untrackable payments must adhere to the `CryptoPaymentProvider` contract (Monero XMR via `monero-wallet-rpc` ephemeral subaddresses and atomic piconero tracking).
 6. **Digital Brutalist Aesthetics**: Never add `BorderRadius.circular()`, blurred drop shadows, or standard `Divider()` widgets to the Flutter UI.
 7. **Navigation Only via `AppRoutes`**: Never navigate with a raw string literal (`context.go('/feed')`, `context.push('/user/$id')`). Use the constants and `*Path`/`*With` builders in `frontend/lib/core/router/app_routes.dart` (e.g. `AppRoutes.feed`, `AppRoutes.userPath(id)`, `AppRoutes.postSearchWith(query)`). Raw literals in `go`/`push`/`replace` calls are blocked by `make routes-check`, the pre-commit hook, and CI.

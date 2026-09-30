@@ -131,7 +131,7 @@ class OrderActions extends StatelessWidget {
 
   bool _canDispute() {
     return order.status == OrderStatus.delivered ||
-        order.status == OrderStatus.shipped;
+        order.status == OrderStatus.confirmed;
   }
 
   bool _canCancel() {

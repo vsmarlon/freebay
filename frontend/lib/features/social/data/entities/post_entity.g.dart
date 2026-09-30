@@ -33,6 +33,9 @@ _PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => _PostEntity(
   imageUrl: json['imageUrl'] as String?,
   type:
       $enumDecodeNullable(_$PostTypeEnumMap, json['type']) ?? PostType.regular,
+  audience:
+      $enumDecodeNullable(_$PostAudienceEnumMap, json['audience']) ??
+      PostAudience.everyone,
   likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
   commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
   sharesCount: (json['sharesCount'] as num?)?.toInt() ?? 0,
@@ -59,6 +62,7 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
       'content': instance.content,
       'imageUrl': instance.imageUrl,
       'type': _$PostTypeEnumMap[instance.type]!,
+      'audience': _$PostAudienceEnumMap[instance.audience]!,
       'likesCount': instance.likesCount,
       'commentsCount': instance.commentsCount,
       'sharesCount': instance.sharesCount,
@@ -75,4 +79,9 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
 const _$PostTypeEnumMap = {
   PostType.product: 'PRODUCT',
   PostType.regular: 'REGULAR',
+};
+
+const _$PostAudienceEnumMap = {
+  PostAudience.everyone: 'EVERYONE',
+  PostAudience.closeFriends: 'CLOSE_FRIENDS',
 };

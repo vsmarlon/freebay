@@ -282,9 +282,18 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                         initialEmoji: emoji,
                       ),
                     ),
-                    onViewOnceReveal: (msgId) => ref
-                        .read(chatRepositoryProvider)
-                        .markAsRead(widget.chatId),
+                    onViewOnceReveal: (msgId) async {
+                      final generation = _conversationGeneration;
+                      final result = await _notifier.revealViewOnce(msgId);
+                      if (!mounted || generation != _conversationGeneration) {
+                        return;
+                      }
+                      result.fold(
+                        (failure) =>
+                            AppSnackbar.error(context, failure.message),
+                        (_) {},
+                      );
+                    },
                   );
                 },
               ),

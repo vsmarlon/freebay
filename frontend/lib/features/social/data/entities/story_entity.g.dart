@@ -64,6 +64,9 @@ _StoryEntity _$StoryEntityFromJson(Map<String, dynamic> json) => _StoryEntity(
   mediaType:
       $enumDecodeNullable(_$StoryMediaTypeEnumMap, json['mediaType']) ??
       StoryMediaType.image,
+  audience:
+      $enumDecodeNullable(_$StoryAudienceEnumMap, json['audience']) ??
+      StoryAudience.everyone,
   caption: json['caption'] as String?,
   textBlocks: (json['textBlocks'] as List<dynamic>?)
       ?.map((e) => StoryTextBlockEntity.fromJson(e as Map<String, dynamic>))
@@ -80,6 +83,7 @@ Map<String, dynamic> _$StoryEntityToJson(_StoryEntity instance) =>
       'userId': instance.userId,
       'imageUrl': instance.imageUrl,
       'mediaType': _$StoryMediaTypeEnumMap[instance.mediaType]!,
+      'audience': _$StoryAudienceEnumMap[instance.audience]!,
       'caption': instance.caption,
       'textBlocks': instance.textBlocks?.map((e) => e.toJson()).toList(),
       'expiresAt': instance.expiresAt.toIso8601String(),
@@ -91,4 +95,9 @@ Map<String, dynamic> _$StoryEntityToJson(_StoryEntity instance) =>
 const _$StoryMediaTypeEnumMap = {
   StoryMediaType.image: 'IMAGE',
   StoryMediaType.video: 'VIDEO',
+};
+
+const _$StoryAudienceEnumMap = {
+  StoryAudience.everyone: 'EVERYONE',
+  StoryAudience.closeFriends: 'CLOSE_FRIENDS',
 };

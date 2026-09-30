@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
@@ -26,7 +27,7 @@ class _ProductDetailBottomSheetState
     final isDark = context.isDark;
     final available = product.quantity - product.soldCount;
     final maxQty = available > 10 ? 10 : available;
-    final canAdd = available > 0 && product.status != ProductStatus.sold;
+    final canAdd = available > 0 && product.status == ProductStatus.active;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -108,7 +109,7 @@ class _ProductDetailBottomSheetState
                       ),
                       child: Center(
                         child: Text(
-                          canAdd ? 'Adicionar' : 'Indisponível',
+                          canAdd ? 'Adicionar ao carrinho' : 'Indisponível',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
@@ -130,7 +131,7 @@ class _ProductDetailBottomSheetState
                     onPressed: canAdd
                         ? () {
                             context.push(
-                              '/profile/payment?productId=${product.id}',
+                              AppRoutes.profilePaymentWith(product.id),
                             );
                           }
                         : null,

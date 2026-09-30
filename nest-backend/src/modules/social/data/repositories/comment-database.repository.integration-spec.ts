@@ -23,6 +23,8 @@ describe('PrismaCommentRepository comment counters', () => {
     const root = await repository.createWithCount(
       { content: 'root', user: { connect: { id: user.id } }, post: { connect: { id: post.id } } },
       post.id,
+      user.id,
+      user.id,
     );
     expect(root.isRight()).toBe(true);
 
@@ -35,6 +37,8 @@ describe('PrismaCommentRepository comment counters', () => {
         parent: { connect: { id: root.value.id } },
       },
       post.id,
+      user.id,
+      user.id,
     );
     expect(reply.isRight()).toBe(true);
     expect((await prisma.post.findUnique({ where: { id: post.id } }))?.commentsCount).toBe(2);
@@ -46,6 +50,8 @@ describe('PrismaCommentRepository comment counters', () => {
     const result = await repository.createWithCount(
       { content: 'not persisted', user: { connect: { id: user.id } }, post: { connect: { id: post.id } } },
       '00000000-0000-0000-0000-000000000000',
+      user.id,
+      user.id,
     );
 
     expect(result.isLeft()).toBe(true);
@@ -58,6 +64,8 @@ describe('PrismaCommentRepository comment counters', () => {
     const root = await repository.createWithCount(
       { content: 'root', user: { connect: { id: user.id } }, post: { connect: { id: post.id } } },
       post.id,
+      user.id,
+      user.id,
     );
     if (root.isLeft()) return;
     await repository.createWithCount(
@@ -68,6 +76,8 @@ describe('PrismaCommentRepository comment counters', () => {
         parent: { connect: { id: root.value.id } },
       },
       post.id,
+      user.id,
+      user.id,
     );
 
     expect((await repository.softDeleteWithCount(root.value.id)).value).toBe(true);

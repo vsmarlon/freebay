@@ -25,8 +25,6 @@ src/modules/<feature>/
 ├── usecases/                 # one class per file, returns Either<AppError, Output>
 │   ├── create-<entity>.usecase.ts
 │   └── *.spec.ts             # colocated test
-├── mappers/                  # Prisma model → API response function
-│   └── <entity>.mapper.ts
 └── guards/                   # (optional) module-specific Nest guards
 ```
 
@@ -112,9 +110,9 @@ export class PrismaMyEntityRepository implements MyEntityRepository {
 }
 ```
 
-### 4. Mapper (`mappers/`)
+### 4. Response projection (`dtos/` or the owning use case)
 
-Pure function: Prisma model → API response. Never expose sensitive fields.
+Return only public fields. Keep the response shape with its DTO or the use case that returns it; keep Prisma query payload types beside the repository. Never expose sensitive fields.
 
 ```typescript
 import { MyEntity } from '@prisma/client';

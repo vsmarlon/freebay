@@ -41,7 +41,7 @@ final class UserSearchProvider
   }
 }
 
-String _$userSearchHash() => r'11c332687332c7237846146bba3ae4060d841fc9';
+String _$userSearchHash() => r'0b7e7bfefff80ae0ecc65b620b9beabe5714e0ad';
 
 abstract class _$UserSearch extends $Notifier<UserSearchState> {
   UserSearchState build();
@@ -100,7 +100,7 @@ final class SuggestionsProvider
   }
 }
 
-String _$suggestionsHash() => r'a4d632eb5cd39f8dcd22fb2fc5eb63b664a14719';
+String _$suggestionsHash() => r'6a9423f8f3cf348a276240682168df3f9234ae04';
 
 /// Kept alive for the entire app session — never disposed between tab switches.
 /// Only invalidated explicitly after a follow/unfollow action via [ref.invalidate].

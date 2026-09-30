@@ -16,15 +16,28 @@ Future<T?> showBrutalistActionSheet<T>({
     builder: (BuildContext context) {
       return Container(
         decoration: const BoxDecoration(
-          color: Colors.transparent, // Digital brutalist doesn't use standard iOS sheet blur
+          color: Colors
+              .transparent, // Digital brutalist doesn't use standard iOS sheet blur
         ),
         child: CupertinoActionSheet(
-          title: title != null 
-            ? Text(title, style: TextStyle(fontFamily: AppTypography.headlineFontFamily, color: context.textPrimary))
-            : null,
-          message: message != null 
-            ? Text(message, style: TextStyle(fontFamily: AppTypography.fontFamily, color: context.textSecondary))
-            : null,
+          title: title != null
+              ? Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: AppTypography.headlineFontFamily,
+                    color: context.textPrimary,
+                  ),
+                )
+              : null,
+          message: message != null
+              ? Text(
+                  message,
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    color: context.textSecondary,
+                  ),
+                )
+              : null,
           actions: actions,
           cancelButton: cancelAction,
         ),

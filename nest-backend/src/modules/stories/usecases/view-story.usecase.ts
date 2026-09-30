@@ -11,7 +11,7 @@ export class ViewStoryUseCase {
     storyId: string;
     viewerId: string;
   }): Promise<Either<AppError, void>> {
-    const storyResult = await this.storyRepository.findById(input.storyId);
+    const storyResult = await this.storyRepository.findById(input.storyId, input.viewerId);
     if (storyResult.isLeft()) return left(storyResult.value);
     if (!storyResult.value) return left(new NotFoundError("Story"));
 

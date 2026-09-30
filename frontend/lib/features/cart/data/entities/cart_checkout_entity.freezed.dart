@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CartCheckoutItemEntity {
 
- String get orderId; String get productId; String get productTitle; int get quantity; int get amount; String get checkoutUrl; DateTime get expiresAt;
+ String get orderId; String get productId; String get productTitle; int get quantity; int get amount;
 /// Create a copy of CartCheckoutItemEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $CartCheckoutItemEntityCopyWith<CartCheckoutItemEntity> get copyWith => _$CartCh
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CartCheckoutItemEntity&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productTitle, productTitle) || other.productTitle == productTitle)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.checkoutUrl, checkoutUrl) || other.checkoutUrl == checkoutUrl)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CartCheckoutItemEntity&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productTitle, productTitle) || other.productTitle == productTitle)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.amount, amount) || other.amount == amount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,orderId,productId,productTitle,quantity,amount,checkoutUrl,expiresAt);
+int get hashCode => Object.hash(runtimeType,orderId,productId,productTitle,quantity,amount);
 
 @override
 String toString() {
-  return 'CartCheckoutItemEntity(orderId: $orderId, productId: $productId, productTitle: $productTitle, quantity: $quantity, amount: $amount, checkoutUrl: $checkoutUrl, expiresAt: $expiresAt)';
+  return 'CartCheckoutItemEntity(orderId: $orderId, productId: $productId, productTitle: $productTitle, quantity: $quantity, amount: $amount)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $CartCheckoutItemEntityCopyWith<$Res>  {
   factory $CartCheckoutItemEntityCopyWith(CartCheckoutItemEntity value, $Res Function(CartCheckoutItemEntity) _then) = _$CartCheckoutItemEntityCopyWithImpl;
 @useResult
 $Res call({
- String orderId, String productId, String productTitle, int quantity, int amount, String checkoutUrl, DateTime expiresAt
+ String orderId, String productId, String productTitle, int quantity, int amount
 });
 
 
@@ -65,16 +65,14 @@ class _$CartCheckoutItemEntityCopyWithImpl<$Res>
 
 /// Create a copy of CartCheckoutItemEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? orderId = null,Object? productId = null,Object? productTitle = null,Object? quantity = null,Object? amount = null,Object? checkoutUrl = null,Object? expiresAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? orderId = null,Object? productId = null,Object? productTitle = null,Object? quantity = null,Object? amount = null,}) {
   return _then(_self.copyWith(
 orderId: null == orderId ? _self.orderId : orderId // ignore: cast_nullable_to_non_nullable
 as String,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as String,productTitle: null == productTitle ? _self.productTitle : productTitle // ignore: cast_nullable_to_non_nullable
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
 as int,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
-as int,checkoutUrl: null == checkoutUrl ? _self.checkoutUrl : checkoutUrl // ignore: cast_nullable_to_non_nullable
-as String,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as int,
   ));
 }
 
@@ -159,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String orderId,  String productId,  String productTitle,  int quantity,  int amount,  String checkoutUrl,  DateTime expiresAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String orderId,  String productId,  String productTitle,  int quantity,  int amount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CartCheckoutItemEntity() when $default != null:
-return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,_that.amount,_that.checkoutUrl,_that.expiresAt);case _:
+return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,_that.amount);case _:
   return orElse();
 
 }
@@ -180,10 +178,10 @@ return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String orderId,  String productId,  String productTitle,  int quantity,  int amount,  String checkoutUrl,  DateTime expiresAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String orderId,  String productId,  String productTitle,  int quantity,  int amount)  $default,) {final _that = this;
 switch (_that) {
 case _CartCheckoutItemEntity():
-return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,_that.amount,_that.checkoutUrl,_that.expiresAt);case _:
+return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,_that.amount);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +198,10 @@ return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String orderId,  String productId,  String productTitle,  int quantity,  int amount,  String checkoutUrl,  DateTime expiresAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String orderId,  String productId,  String productTitle,  int quantity,  int amount)?  $default,) {final _that = this;
 switch (_that) {
 case _CartCheckoutItemEntity() when $default != null:
-return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,_that.amount,_that.checkoutUrl,_that.expiresAt);case _:
+return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,_that.amount);case _:
   return null;
 
 }
@@ -215,7 +213,7 @@ return $default(_that.orderId,_that.productId,_that.productTitle,_that.quantity,
 @JsonSerializable()
 
 class _CartCheckoutItemEntity implements CartCheckoutItemEntity {
-  const _CartCheckoutItemEntity({required this.orderId, required this.productId, required this.productTitle, this.quantity = 1, this.amount = 0, this.checkoutUrl = '', required this.expiresAt});
+  const _CartCheckoutItemEntity({required this.orderId, required this.productId, required this.productTitle, this.quantity = 1, this.amount = 0});
   factory _CartCheckoutItemEntity.fromJson(Map<String, dynamic> json) => _$CartCheckoutItemEntityFromJson(json);
 
 @override final  String orderId;
@@ -223,8 +221,6 @@ class _CartCheckoutItemEntity implements CartCheckoutItemEntity {
 @override final  String productTitle;
 @override@JsonKey() final  int quantity;
 @override@JsonKey() final  int amount;
-@override@JsonKey() final  String checkoutUrl;
-@override final  DateTime expiresAt;
 
 /// Create a copy of CartCheckoutItemEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -239,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CartCheckoutItemEntity&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productTitle, productTitle) || other.productTitle == productTitle)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.checkoutUrl, checkoutUrl) || other.checkoutUrl == checkoutUrl)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CartCheckoutItemEntity&&(identical(other.orderId, orderId) || other.orderId == orderId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productTitle, productTitle) || other.productTitle == productTitle)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.amount, amount) || other.amount == amount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,orderId,productId,productTitle,quantity,amount,checkoutUrl,expiresAt);
+int get hashCode => Object.hash(runtimeType,orderId,productId,productTitle,quantity,amount);
 
 @override
 String toString() {
-  return 'CartCheckoutItemEntity(orderId: $orderId, productId: $productId, productTitle: $productTitle, quantity: $quantity, amount: $amount, checkoutUrl: $checkoutUrl, expiresAt: $expiresAt)';
+  return 'CartCheckoutItemEntity(orderId: $orderId, productId: $productId, productTitle: $productTitle, quantity: $quantity, amount: $amount)';
 }
 
 
@@ -259,7 +255,7 @@ abstract mixin class _$CartCheckoutItemEntityCopyWith<$Res> implements $CartChec
   factory _$CartCheckoutItemEntityCopyWith(_CartCheckoutItemEntity value, $Res Function(_CartCheckoutItemEntity) _then) = __$CartCheckoutItemEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String orderId, String productId, String productTitle, int quantity, int amount, String checkoutUrl, DateTime expiresAt
+ String orderId, String productId, String productTitle, int quantity, int amount
 });
 
 
@@ -276,16 +272,14 @@ class __$CartCheckoutItemEntityCopyWithImpl<$Res>
 
 /// Create a copy of CartCheckoutItemEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? orderId = null,Object? productId = null,Object? productTitle = null,Object? quantity = null,Object? amount = null,Object? checkoutUrl = null,Object? expiresAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? orderId = null,Object? productId = null,Object? productTitle = null,Object? quantity = null,Object? amount = null,}) {
   return _then(_CartCheckoutItemEntity(
 orderId: null == orderId ? _self.orderId : orderId // ignore: cast_nullable_to_non_nullable
 as String,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as String,productTitle: null == productTitle ? _self.productTitle : productTitle // ignore: cast_nullable_to_non_nullable
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
 as int,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
-as int,checkoutUrl: null == checkoutUrl ? _self.checkoutUrl : checkoutUrl // ignore: cast_nullable_to_non_nullable
-as String,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as int,
   ));
 }
 
@@ -296,7 +290,7 @@ as DateTime,
 /// @nodoc
 mixin _$CartCheckoutEntity {
 
- List<CartCheckoutItemEntity> get items; int get totalOrders; int get totalAmount;
+ String get paymentGroupId; List<CartCheckoutItemEntity> get items; int get totalOrders; int get totalAmount; String? get checkoutUrl; String? get paymentIntentClientSecret; DateTime? get expiresAt;
 /// Create a copy of CartCheckoutEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -309,16 +303,16 @@ $CartCheckoutEntityCopyWith<CartCheckoutEntity> get copyWith => _$CartCheckoutEn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CartCheckoutEntity&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.totalOrders, totalOrders) || other.totalOrders == totalOrders)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CartCheckoutEntity&&(identical(other.paymentGroupId, paymentGroupId) || other.paymentGroupId == paymentGroupId)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.totalOrders, totalOrders) || other.totalOrders == totalOrders)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.checkoutUrl, checkoutUrl) || other.checkoutUrl == checkoutUrl)&&(identical(other.paymentIntentClientSecret, paymentIntentClientSecret) || other.paymentIntentClientSecret == paymentIntentClientSecret)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(items),totalOrders,totalAmount);
+int get hashCode => Object.hash(runtimeType,paymentGroupId,const DeepCollectionEquality().hash(items),totalOrders,totalAmount,checkoutUrl,paymentIntentClientSecret,expiresAt);
 
 @override
 String toString() {
-  return 'CartCheckoutEntity(items: $items, totalOrders: $totalOrders, totalAmount: $totalAmount)';
+  return 'CartCheckoutEntity(paymentGroupId: $paymentGroupId, items: $items, totalOrders: $totalOrders, totalAmount: $totalAmount, checkoutUrl: $checkoutUrl, paymentIntentClientSecret: $paymentIntentClientSecret, expiresAt: $expiresAt)';
 }
 
 
@@ -329,7 +323,7 @@ abstract mixin class $CartCheckoutEntityCopyWith<$Res>  {
   factory $CartCheckoutEntityCopyWith(CartCheckoutEntity value, $Res Function(CartCheckoutEntity) _then) = _$CartCheckoutEntityCopyWithImpl;
 @useResult
 $Res call({
- List<CartCheckoutItemEntity> items, int totalOrders, int totalAmount
+ String paymentGroupId, List<CartCheckoutItemEntity> items, int totalOrders, int totalAmount, String? checkoutUrl, String? paymentIntentClientSecret, DateTime? expiresAt
 });
 
 
@@ -346,12 +340,16 @@ class _$CartCheckoutEntityCopyWithImpl<$Res>
 
 /// Create a copy of CartCheckoutEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? items = null,Object? totalOrders = null,Object? totalAmount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? paymentGroupId = null,Object? items = null,Object? totalOrders = null,Object? totalAmount = null,Object? checkoutUrl = freezed,Object? paymentIntentClientSecret = freezed,Object? expiresAt = freezed,}) {
   return _then(_self.copyWith(
-items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
+paymentGroupId: null == paymentGroupId ? _self.paymentGroupId : paymentGroupId // ignore: cast_nullable_to_non_nullable
+as String,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
 as List<CartCheckoutItemEntity>,totalOrders: null == totalOrders ? _self.totalOrders : totalOrders // ignore: cast_nullable_to_non_nullable
 as int,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,checkoutUrl: freezed == checkoutUrl ? _self.checkoutUrl : checkoutUrl // ignore: cast_nullable_to_non_nullable
+as String?,paymentIntentClientSecret: freezed == paymentIntentClientSecret ? _self.paymentIntentClientSecret : paymentIntentClientSecret // ignore: cast_nullable_to_non_nullable
+as String?,expiresAt: freezed == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -436,10 +434,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<CartCheckoutItemEntity> items,  int totalOrders,  int totalAmount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String paymentGroupId,  List<CartCheckoutItemEntity> items,  int totalOrders,  int totalAmount,  String? checkoutUrl,  String? paymentIntentClientSecret,  DateTime? expiresAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CartCheckoutEntity() when $default != null:
-return $default(_that.items,_that.totalOrders,_that.totalAmount);case _:
+return $default(_that.paymentGroupId,_that.items,_that.totalOrders,_that.totalAmount,_that.checkoutUrl,_that.paymentIntentClientSecret,_that.expiresAt);case _:
   return orElse();
 
 }
@@ -457,10 +455,10 @@ return $default(_that.items,_that.totalOrders,_that.totalAmount);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<CartCheckoutItemEntity> items,  int totalOrders,  int totalAmount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String paymentGroupId,  List<CartCheckoutItemEntity> items,  int totalOrders,  int totalAmount,  String? checkoutUrl,  String? paymentIntentClientSecret,  DateTime? expiresAt)  $default,) {final _that = this;
 switch (_that) {
 case _CartCheckoutEntity():
-return $default(_that.items,_that.totalOrders,_that.totalAmount);case _:
+return $default(_that.paymentGroupId,_that.items,_that.totalOrders,_that.totalAmount,_that.checkoutUrl,_that.paymentIntentClientSecret,_that.expiresAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -477,10 +475,10 @@ return $default(_that.items,_that.totalOrders,_that.totalAmount);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<CartCheckoutItemEntity> items,  int totalOrders,  int totalAmount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String paymentGroupId,  List<CartCheckoutItemEntity> items,  int totalOrders,  int totalAmount,  String? checkoutUrl,  String? paymentIntentClientSecret,  DateTime? expiresAt)?  $default,) {final _that = this;
 switch (_that) {
 case _CartCheckoutEntity() when $default != null:
-return $default(_that.items,_that.totalOrders,_that.totalAmount);case _:
+return $default(_that.paymentGroupId,_that.items,_that.totalOrders,_that.totalAmount,_that.checkoutUrl,_that.paymentIntentClientSecret,_that.expiresAt);case _:
   return null;
 
 }
@@ -492,9 +490,10 @@ return $default(_that.items,_that.totalOrders,_that.totalAmount);case _:
 @JsonSerializable()
 
 class _CartCheckoutEntity implements CartCheckoutEntity {
-  const _CartCheckoutEntity({final  List<CartCheckoutItemEntity> items = const [], this.totalOrders = 0, this.totalAmount = 0}): _items = items;
+  const _CartCheckoutEntity({required this.paymentGroupId, final  List<CartCheckoutItemEntity> items = const [], this.totalOrders = 0, this.totalAmount = 0, this.checkoutUrl, this.paymentIntentClientSecret, this.expiresAt}): _items = items;
   factory _CartCheckoutEntity.fromJson(Map<String, dynamic> json) => _$CartCheckoutEntityFromJson(json);
 
+@override final  String paymentGroupId;
  final  List<CartCheckoutItemEntity> _items;
 @override@JsonKey() List<CartCheckoutItemEntity> get items {
   if (_items is EqualUnmodifiableListView) return _items;
@@ -504,6 +503,9 @@ class _CartCheckoutEntity implements CartCheckoutEntity {
 
 @override@JsonKey() final  int totalOrders;
 @override@JsonKey() final  int totalAmount;
+@override final  String? checkoutUrl;
+@override final  String? paymentIntentClientSecret;
+@override final  DateTime? expiresAt;
 
 /// Create a copy of CartCheckoutEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -518,16 +520,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CartCheckoutEntity&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.totalOrders, totalOrders) || other.totalOrders == totalOrders)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CartCheckoutEntity&&(identical(other.paymentGroupId, paymentGroupId) || other.paymentGroupId == paymentGroupId)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.totalOrders, totalOrders) || other.totalOrders == totalOrders)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.checkoutUrl, checkoutUrl) || other.checkoutUrl == checkoutUrl)&&(identical(other.paymentIntentClientSecret, paymentIntentClientSecret) || other.paymentIntentClientSecret == paymentIntentClientSecret)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_items),totalOrders,totalAmount);
+int get hashCode => Object.hash(runtimeType,paymentGroupId,const DeepCollectionEquality().hash(_items),totalOrders,totalAmount,checkoutUrl,paymentIntentClientSecret,expiresAt);
 
 @override
 String toString() {
-  return 'CartCheckoutEntity(items: $items, totalOrders: $totalOrders, totalAmount: $totalAmount)';
+  return 'CartCheckoutEntity(paymentGroupId: $paymentGroupId, items: $items, totalOrders: $totalOrders, totalAmount: $totalAmount, checkoutUrl: $checkoutUrl, paymentIntentClientSecret: $paymentIntentClientSecret, expiresAt: $expiresAt)';
 }
 
 
@@ -538,7 +540,7 @@ abstract mixin class _$CartCheckoutEntityCopyWith<$Res> implements $CartCheckout
   factory _$CartCheckoutEntityCopyWith(_CartCheckoutEntity value, $Res Function(_CartCheckoutEntity) _then) = __$CartCheckoutEntityCopyWithImpl;
 @override @useResult
 $Res call({
- List<CartCheckoutItemEntity> items, int totalOrders, int totalAmount
+ String paymentGroupId, List<CartCheckoutItemEntity> items, int totalOrders, int totalAmount, String? checkoutUrl, String? paymentIntentClientSecret, DateTime? expiresAt
 });
 
 
@@ -555,12 +557,16 @@ class __$CartCheckoutEntityCopyWithImpl<$Res>
 
 /// Create a copy of CartCheckoutEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? items = null,Object? totalOrders = null,Object? totalAmount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? paymentGroupId = null,Object? items = null,Object? totalOrders = null,Object? totalAmount = null,Object? checkoutUrl = freezed,Object? paymentIntentClientSecret = freezed,Object? expiresAt = freezed,}) {
   return _then(_CartCheckoutEntity(
-items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
+paymentGroupId: null == paymentGroupId ? _self.paymentGroupId : paymentGroupId // ignore: cast_nullable_to_non_nullable
+as String,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
 as List<CartCheckoutItemEntity>,totalOrders: null == totalOrders ? _self.totalOrders : totalOrders // ignore: cast_nullable_to_non_nullable
 as int,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
-as int,
+as int,checkoutUrl: freezed == checkoutUrl ? _self.checkoutUrl : checkoutUrl // ignore: cast_nullable_to_non_nullable
+as String?,paymentIntentClientSecret: freezed == paymentIntentClientSecret ? _self.paymentIntentClientSecret : paymentIntentClientSecret // ignore: cast_nullable_to_non_nullable
+as String?,expiresAt: freezed == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

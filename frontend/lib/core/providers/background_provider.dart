@@ -12,7 +12,8 @@ class BackgroundAnimatedNotifier extends Notifier<bool> {
   @override
   bool build() {
     Future.microtask(_load);
-    return true;
+    // ponytail: keep the aurora still by default; animation is opt-in on slower GPUs.
+    return false;
   }
 
   Future<void> _load() async {
@@ -22,7 +23,7 @@ class BackgroundAnimatedNotifier extends Notifier<bool> {
       final saved = prefs.getBool(_backgroundAnimatedKey);
       if (saved != null) state = saved;
     } catch (_) {
-      // Keep default (animated)
+      // Keep the still default.
     }
   }
 

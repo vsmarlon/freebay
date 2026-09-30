@@ -47,6 +47,8 @@
     ]
   },
   "enabledMcpjsonServers": [
-    "postgres"
+    "postgres",
+    "dart",
+    "flutter-profile"
   ]
 }

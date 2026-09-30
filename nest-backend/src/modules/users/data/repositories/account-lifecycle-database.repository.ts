@@ -33,6 +33,7 @@ export class AccountLifecycleDatabaseRepository {
     return repositoryResponse(async () => {
       await this.prisma.$transaction(async (tx) => {
         await tx.user.update({ where: { id: userId }, data: { deletionRequestedAt: requestedAt, fcmToken: null } });
+        await tx.pushDevice.deleteMany({ where: { userId } });
         await tx.product.updateMany({ where: { sellerId: userId, status: 'ACTIVE' }, data: { status: 'PAUSED' } });
       });
       return requestedAt;
@@ -58,6 +59,7 @@ export class AccountLifecycleDatabaseRepository {
           cpf: null, cpfHash: null, phone: null, city: null, state: null, avatarUrl: null, bannerUrl: null, bio: null, fcmToken: null, notificationPrefs: Prisma.DbNull,
         } });
         if (claimed.count === 0) return;
+        await tx.pushDevice.deleteMany({ where: { userId } });
         await tx.notification.deleteMany({ where: { userId } });
         await tx.savedPost.deleteMany({ where: { userId } });
         await tx.favorite.deleteMany({ where: { userId } });

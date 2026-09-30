@@ -32,11 +32,10 @@ describe("PrismaPostRepository canonical interactions", () => {
     const first = { ...post, id: "post-2", userId: "followed-1", createdAt: new Date("2026-09-12T00:00:00.000Z") };
     const second = { ...post, id: "post-1", userId: "followed-1", createdAt: first.createdAt };
     const findMany = jest.fn().mockResolvedValueOnce([first, second]);
-    const followFindMany = jest.fn().mockResolvedValue([{ followingId: "followed-1" }]);
     const module = await Test.createTestingModule({
       providers: [
         PrismaPostRepository,
-        { provide: PrismaService, useValue: { post: { findMany }, follow: { findMany: followFindMany } } },
+        { provide: PrismaService, useValue: { post: { findMany } } },
       ],
     }).compile();
 
@@ -48,19 +47,15 @@ describe("PrismaPostRepository canonical interactions", () => {
     });
 
     expect(result.isRight()).toBe(true);
-    expect(followFindMany).toHaveBeenCalledWith({
-      where: { followerId: "viewer-1" },
-      select: { followingId: true },
-    });
     expect(findMany).toHaveBeenCalledWith(expect.objectContaining({
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       where: expect.objectContaining({
         type: "REGULAR",
-        userId: { in: ["followed-1"] },
-        AND: expect.arrayContaining([
-          { user: { blocksGiven: { none: { blockedId: "viewer-1" } } } },
-          { user: { blocksReceived: { none: { blockerId: "viewer-1" } } } },
-        ]),
+        user: {
+          blocksGiven: { none: { blockedId: 'viewer-1' } },
+          blocksReceived: { none: { blockerId: 'viewer-1' } },
+          followers: { some: { followerId: 'viewer-1' } },
+        },
       }),
     }));
     if (result.isRight()) {

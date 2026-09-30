@@ -11,8 +11,6 @@ abstract class CartCheckoutItemEntity with _$CartCheckoutItemEntity {
     required String productTitle,
     @Default(1) int quantity,
     @Default(0) int amount,
-    @Default('') String checkoutUrl,
-    required DateTime expiresAt,
   }) = _CartCheckoutItemEntity;
 
   factory CartCheckoutItemEntity.fromJson(Map<String, dynamic> json) =>
@@ -22,9 +20,13 @@ abstract class CartCheckoutItemEntity with _$CartCheckoutItemEntity {
 @freezed
 abstract class CartCheckoutEntity with _$CartCheckoutEntity {
   const factory CartCheckoutEntity({
+    required String paymentGroupId,
     @Default([]) List<CartCheckoutItemEntity> items,
     @Default(0) int totalOrders,
     @Default(0) int totalAmount,
+    String? checkoutUrl,
+    String? paymentIntentClientSecret,
+    DateTime? expiresAt,
   }) = _CartCheckoutEntity;
 
   factory CartCheckoutEntity.fromJson(Map<String, dynamic> json) =>

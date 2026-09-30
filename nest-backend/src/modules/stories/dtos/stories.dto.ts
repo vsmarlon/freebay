@@ -1,5 +1,5 @@
-import { Prisma, StoryMediaType } from "@prisma/client";
-import { ArrayMaxSize, ArrayNotEmpty, ArrayUnique, IsArray, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
+import { Prisma, StoryAudience, StoryMediaType } from "@prisma/client";
+import { ArrayMaxSize, ArrayNotEmpty, ArrayUnique, IsArray, IsEnum, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
 
 export enum StoryTextStyle {
   CLASSIC = "classic",
@@ -14,6 +14,10 @@ export const STORY_TEXT_BLOCK_MAX_COUNT = 10;
 export const STORY_TEXT_MAX_LENGTH = 200;
 
 export class CreateStoryMultipartDTO {
+  @IsOptional()
+  @IsEnum(StoryAudience)
+  audience?: StoryAudience;
+
   @IsOptional()
   @IsString()
   @MaxLength(STORY_CAPTION_MAX_LENGTH)
@@ -68,6 +72,7 @@ export interface CreateStoryInput {
   userId: string;
   imageUrl: string;
   mediaType?: StoryMediaType;
+  audience?: StoryAudience;
   caption?: string;
   textBlocks?: Prisma.InputJsonValue;
 }
@@ -77,6 +82,7 @@ export interface CreateStoryOutput {
   userId: string;
   imageUrl: string;
   mediaType: StoryMediaType;
+  audience: StoryAudience;
   caption: string | null;
   textBlocks: StoryTextBlock[];
   expiresAt: Date;
@@ -95,6 +101,7 @@ export interface GroupedStory {
     id: string;
     imageUrl: string;
     mediaType: "IMAGE" | "VIDEO";
+    audience: StoryAudience;
     caption: string | null;
     textBlocks: StoryTextBlock[];
     createdAt: Date;

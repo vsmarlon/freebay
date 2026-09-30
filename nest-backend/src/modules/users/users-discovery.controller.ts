@@ -10,7 +10,7 @@ import {
   UserSearchQueryDTO,
   SuggestionsQueryDTO,
 } from "./dtos/user.dto";
-import { toUserBrief } from "./mappers/user.mapper";
+import { toUserBrief } from "./dtos/user-response.class";
 import { PrismaBlockRepository } from "./data/repositories/block-database.repository";
 
 @ApiTags("Users")

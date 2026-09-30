@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
+import { AppError, BadRequestError } from '@/shared/core/errors';
+import { PostType, StoryAudience } from '@prisma/client';
 import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
@@ -13,10 +14,17 @@ export class CreatePostUseCase {
   ) {}
 
   async execute(input: CreatePostInput): Promise<Either<AppError, CreatePostOutput>> {
+    if (input.audience === StoryAudience.CLOSE_FRIENDS &&
+        (input.type !== PostType.REGULAR ||
+         (input.imageUrl != null && !input.imageUrl.startsWith('/media/privatepost/')) ||
+         (input.mentionIds?.length ?? 0) > 0)) {
+      return left(new BadRequestError('Posts para amigos próximos aceitam apenas texto e imagem enviada pelo app, sem menções ou produto'));
+    }
     const result = await this.postRepository.create({
       content: input.content ?? null,
       imageUrl: input.imageUrl ?? null,
       type: input.type,
+      audience: input.audience ?? StoryAudience.EVERYONE,
       user: { connect: { id: input.userId } },
     });
     if (result.isLeft()) return left(result.value);
@@ -42,6 +50,7 @@ export class CreatePostUseCase {
       content: post.content,
       imageUrl: post.imageUrl,
       type: post.type,
+      audience: post.audience,
       userId: post.userId,
       likesCount: post.likesCount,
       commentsCount: post.commentsCount,

@@ -211,19 +211,53 @@ class _ConversationDetailsPageState
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(ctx);
                 final conv = ref.read(
                   conversationMessagesProvider(widget.chatId),
                 );
-                await ref
-                    .read(chatRepositoryProvider)
-                    .deleteChat(widget.chatId, _threadType(conv));
-                ref.invalidate(chatsProvider);
-                if (mounted) {
-                  AppSnackbar.info(context, 'Conversa apagada');
-                  context.go(AppRoutes.chat);
-                }
+                final repository = ref.read(chatRepositoryProvider);
+                final container = ProviderScope.containerOf(
+                  context,
+                  listen: false,
+                );
+                final messenger = ScaffoldMessenger.of(context);
+                final chatId = widget.chatId;
+                final threadType = _threadType(conv);
+                AppSnackbar.undoable(
+                  context,
+                  message: 'Conversa será excluída.',
+                  onUndo: () {
+                    if (messenger.mounted) {
+                      AppSnackbar.infoOnMessenger(
+                        messenger,
+                        'Exclusão cancelada',
+                      );
+                    }
+                  },
+                  onCommit: () async {
+                    final result = await repository.deleteChat(
+                      chatId,
+                      threadType,
+                    );
+                    result.fold(
+                      (failure) {
+                        if (messenger.mounted) {
+                          AppSnackbar.errorOnMessenger(
+                            messenger,
+                            failure.message,
+                          );
+                        }
+                      },
+                      (_) {
+                        container.invalidate(chatsProvider);
+                        container.invalidate(liveChatListProvider);
+                        container.invalidate(archivedChatListProvider);
+                        if (mounted) context.go(AppRoutes.chat);
+                      },
+                    );
+                  },
+                );
               },
             ),
           ],

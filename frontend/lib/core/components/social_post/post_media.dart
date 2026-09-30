@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class SocialPostMedia extends StatelessWidget {
   final String? imageUrl;
@@ -24,6 +25,11 @@ class SocialPostMedia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final decodeWidth =
+        (MediaQuery.sizeOf(context).width *
+                MediaQuery.devicePixelRatioOf(context))
+            .ceil()
+            .clamp(1, 1080);
     return AspectRatio(
       aspectRatio: 1,
       child: Stack(
@@ -42,23 +48,35 @@ class SocialPostMedia extends StatelessWidget {
                   : Matrix4.identity(),
               color: context.surfaceMidColor,
               child: imageUrl != null
-                  ? CachedNetworkImage(
-                      imageUrl: imageUrl!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      memCacheWidth: 1080,
-                      placeholder: (context, url) =>
-                          Container(color: context.surfaceMidColor),
-                      errorWidget: (context, error, stackTrace) => Container(
-                        color: context.surfaceMidColor,
-                        child: Icon(
-                          Icons.image,
-                          color: context.textSecondary,
-                          size: 48,
-                        ),
-                      ),
-                    )
+                  ? isPrivateMedia(imageUrl!)
+                        ? Image.network(
+                            imageUrl!,
+                            headers: mediaAuthHeaders(imageUrl!),
+                            cacheWidth: decodeWidth,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            errorBuilder: (_, _, _) =>
+                                Icon(Icons.image, color: context.textSecondary),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: imageUrl!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            memCacheWidth: decodeWidth,
+                            placeholder: (context, url) =>
+                                Container(color: context.surfaceMidColor),
+                            errorWidget: (context, error, stackTrace) =>
+                                Container(
+                                  color: context.surfaceMidColor,
+                                  child: Icon(
+                                    Icons.image,
+                                    color: context.textSecondary,
+                                    size: 48,
+                                  ),
+                                ),
+                          )
                   : Center(
                       child: Text(
                         'VENDA',

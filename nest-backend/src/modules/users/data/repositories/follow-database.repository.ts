@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse, left, right } from "@/shared/core/either";
-import { BadRequestError, DatabaseError } from "@/shared/core/errors";
+import { BadRequestError, DatabaseError, ForbiddenError } from "@/shared/core/errors";
 import { UserBrief } from "../../types/user.types";
 import { FollowRepository } from '../../domain/repositories/follow.repository';
 
@@ -18,6 +18,13 @@ export class PrismaFollowRepository extends FollowRepository {
     followingId: string,
   ): RepositoryResponse<void> {
     try {
+      const blocked = await this.prisma.block.findFirst({
+        where: { OR: [
+          { blockerId: followerId, blockedId: followingId },
+          { blockerId: followingId, blockedId: followerId },
+        ] }, select: { id: true },
+      });
+      if (blocked) return left(new ForbiddenError('Não é possível seguir um usuário bloqueado'));
       await this.prisma.follow.create({ data: { followerId, followingId } });
       return right(undefined);
     } catch (error) {
@@ -35,8 +42,9 @@ export class PrismaFollowRepository extends FollowRepository {
     followingId: string,
   ): RepositoryResponse<void> {
     try {
-      await this.prisma.follow.delete({
-        where: { followerId_followingId: { followerId, followingId } },
+      await this.prisma.$transaction(async (tx) => {
+        await tx.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
+        await tx.closeFriend.deleteMany({ where: { ownerId: followingId, memberId: followerId } });
       });
       return right(undefined);
     } catch (error) {

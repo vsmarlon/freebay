@@ -13,6 +13,7 @@ import { join } from 'path';
 import { GetAuth, CurrentUserId } from '@/shared/decorators';
 import {
   PRIVATE_UPLOAD_ROOT,
+  PUBLIC_UPLOAD_ROOT,
   STORED_FILENAME,
   isPrivateContext,
   mimeForFilename,
@@ -59,7 +60,10 @@ export class MediaController {
       throw new NotFoundException('Arquivo não encontrado');
     }
 
-    const path = join(process.cwd(), PRIVATE_UPLOAD_ROOT, context, filename);
+    const privatePath = join(process.cwd(), PRIVATE_UPLOAD_ROOT, context, filename);
+    const path = context === 'story' && !existsSync(privatePath)
+      ? join(process.cwd(), PUBLIC_UPLOAD_ROOT, context, filename)
+      : privatePath;
     if (!existsSync(path)) {
       throw new NotFoundException('Arquivo não encontrado');
     }
@@ -70,6 +74,7 @@ export class MediaController {
     const rangeHeader = req?.headers?.range;
 
     res?.setHeader?.('Accept-Ranges', 'bytes');
+    res?.setHeader?.('Cache-Control', 'private, no-store');
 
     if (rangeHeader) {
       const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader);

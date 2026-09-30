@@ -16,6 +16,16 @@ enum PostType {
   final String wireValue;
 }
 
+enum PostAudience {
+  @JsonValue('EVERYONE')
+  everyone('EVERYONE'),
+  @JsonValue('CLOSE_FRIENDS')
+  closeFriends('CLOSE_FRIENDS');
+
+  const PostAudience(this.wireValue);
+  final String wireValue;
+}
+
 ProductCondition _productConditionFromJson(Object? value) {
   return ProductCondition.values.firstWhere(
     (condition) => condition.wireValue == value,
@@ -54,6 +64,7 @@ abstract class PostEntity with _$PostEntity {
     String? content,
     String? imageUrl,
     @Default(PostType.regular) PostType type,
+    @Default(PostAudience.everyone) PostAudience audience,
     @Default(0) int likesCount,
     @Default(0) int commentsCount,
     @Default(0) int sharesCount,

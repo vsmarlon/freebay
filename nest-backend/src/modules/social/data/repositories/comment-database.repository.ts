@@ -8,7 +8,9 @@ import {
   CommentPayload,
   COMMENT_INCLUDE,
   commentPageIncludeForViewer,
+  commentVisibilityWhere,
 } from "../../types/social.types";
+import { postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class PrismaCommentRepository {
@@ -26,6 +28,18 @@ export class PrismaCommentRepository {
     }, "Erro ao buscar comentário");
   }
 
+  async belongsToPost(parentId: string, postId: string, viewerId: string): RepositoryResponse<boolean> {
+    return repositoryResponse(async () => {
+      const parent = await this.prisma.comment.findFirst({
+        where: { id: parentId, postId, deletedAt: null,
+          AND: [commentVisibilityWhere(viewerId), { post: { deletedAt: null, AND: [postVisibilityWhere(viewerId)] } }],
+        },
+        select: { id: true },
+      });
+      return parent !== null;
+    }, 'Erro ao verificar comentário pai');
+  }
+
   async findAllByPostId(
     postId: string,
     viewerId?: string,
@@ -34,7 +48,9 @@ export class PrismaCommentRepository {
   ): RepositoryResponse<CommentFlatPayload[]> {
     return repositoryResponse(async () => {
       const comments = await this.prisma.comment.findMany({
-        where: { postId, parentId: null, deletedAt: null },
+        where: { postId, parentId: null, deletedAt: null,
+          AND: [commentVisibilityWhere(viewerId), { post: { deletedAt: null, AND: [postVisibilityWhere(viewerId)] } }],
+        },
         orderBy: { createdAt: "asc" },
         take: limit,
         skip: offset,
@@ -65,11 +81,18 @@ export class PrismaCommentRepository {
     userId: string,
     commentId: string,
     active: boolean,
-  ): RepositoryResponse<void> {
+  ): RepositoryResponse<boolean> {
     return repositoryResponse(
       () =>
         this.prisma.$transaction(async (tx) => {
           if (active) {
+            const visible = await tx.comment.findFirst({
+              where: { id: commentId, deletedAt: null,
+                AND: [commentVisibilityWhere(userId), { post: { deletedAt: null, AND: [postVisibilityWhere(userId)] } }],
+              },
+              select: { id: true },
+            });
+            if (!visible) return false;
             const created = await tx.commentLike.createMany({
               data: { userId, commentId },
               skipDuplicates: true,
@@ -80,7 +103,7 @@ export class PrismaCommentRepository {
                 data: { likesCount: { increment: 1 } },
               });
             }
-            return;
+            return true;
           }
 
           const deleted = await tx.commentLike.deleteMany({
@@ -92,6 +115,7 @@ export class PrismaCommentRepository {
               data: { likesCount: { decrement: 1 } },
             });
           }
+          return true;
         }),
       "Erro ao atualizar like do comentário",
     );
@@ -100,22 +124,50 @@ export class PrismaCommentRepository {
   async createWithCount(
     data: Prisma.CommentCreateInput,
     postId: string,
+    postOwnerId: string,
+    commenterId: string,
   ): RepositoryResponse<CommentPayload> {
     return repositoryResponse(
       () =>
         this.prisma.$transaction(async (tx) => {
+          const restricted = await tx.restriction.findUnique({
+            where: { ownerId_restrictedId: { ownerId: postOwnerId, restrictedId: commenterId } },
+            select: { ownerId: true },
+          });
+          const parentId = data.parent?.connect?.id;
+          const parent = parentId
+            ? await tx.comment.findUnique({ where: { id: parentId }, select: { isHidden: true } })
+            : null;
+          const isHidden = restricted !== null || parent?.isHidden === true;
           const comment = await tx.comment.create({
-            data,
+            data: { ...data, isHidden },
             include: COMMENT_INCLUDE,
           });
-          await tx.post.update({
-            where: { id: postId },
-            data: { commentsCount: { increment: 1 } },
-          });
+          if (!isHidden) {
+            await tx.post.update({
+              where: { id: postId },
+              data: { commentsCount: { increment: 1 } },
+            });
+          }
           return comment;
         }),
       "Erro ao criar comentário",
     );
+  }
+
+  async approveHiddenComment(id: string, ownerId: string): RepositoryResponse<boolean> {
+    return repositoryResponse(() => this.prisma.$transaction(async (tx) => {
+      const approved = await tx.comment.updateMany({
+        where: { id, deletedAt: null, isHidden: true, post: { userId: ownerId, deletedAt: null },
+          OR: [{ parentId: null }, { parent: { isHidden: false, deletedAt: null } }],
+        },
+        data: { isHidden: false },
+      });
+      if (approved.count === 0) return false;
+      const comment = await tx.comment.findUniqueOrThrow({ where: { id }, select: { postId: true } });
+      await tx.post.update({ where: { id: comment.postId }, data: { commentsCount: { increment: 1 } } });
+      return true;
+    }), 'Erro ao aprovar comentário');
   }
 
   async createMentions(
@@ -148,7 +200,7 @@ export class PrismaCommentRepository {
         this.prisma.$transaction(async (tx) => {
           const comment = await tx.comment.findUnique({
             where: { id },
-            select: { postId: true },
+            select: { postId: true, isHidden: true },
           });
           if (!comment) return false;
 
@@ -158,10 +210,12 @@ export class PrismaCommentRepository {
           });
           if (deleted.count === 0) return false;
 
-          await tx.post.update({
-            where: { id: comment.postId },
-            data: { commentsCount: { decrement: 1 } },
-          });
+          if (!comment.isHidden) {
+            await tx.post.update({
+              where: { id: comment.postId },
+              data: { commentsCount: { decrement: 1 } },
+            });
+          }
           return true;
         }),
       "Erro ao apagar comentário",

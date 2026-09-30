@@ -29,6 +29,7 @@ class SocialPost extends StatefulWidget {
   final VoidCallback? onUserTap;
   final double? price;
   final bool isSelling;
+  final bool isCloseFriends;
   final String? userRole;
   final bool isVerified;
   final DateTime? createdAt;
@@ -55,6 +56,7 @@ class SocialPost extends StatefulWidget {
     this.onUserTap,
     this.price,
     this.isSelling = false,
+    this.isCloseFriends = false,
     this.userRole,
     this.isVerified = false,
     this.createdAt,
@@ -105,6 +107,7 @@ class _SocialPostState extends State<SocialPost> {
     likesCount: widget.likesCount,
     commentsCount: widget.commentsCount,
     sharesCount: widget.sharesCount,
+    allowRepost: !widget.isCloseFriends,
     onLike: _handleLike,
     onSave: _handleSave,
     onRepost: _handleRepost,
@@ -141,6 +144,17 @@ class _SocialPostState extends State<SocialPost> {
               createdAt: widget.createdAt,
               onUserTap: widget.onUserTap,
             ),
+            if (widget.isCloseFriends)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Row(
+                  children: [
+                    Icon(Icons.group, size: 16, color: AppColors.success),
+                    SizedBox(width: 6),
+                    Text('AMIGOS PRÓXIMOS', style: AppTypography.brutalistTag),
+                  ],
+                ),
+              ),
             if (hasImage || widget.isSelling)
               Column(
                 children: [

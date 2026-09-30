@@ -50,8 +50,13 @@ class CartRepositoryImpl implements CartRepository {
   );
 
   @override
-  Future<Either<Failure, CartCheckoutEntity>> checkoutCart() => requestEither(
-    () => client.post('/cart/checkout'),
+  Future<Either<Failure, CartCheckoutEntity>> checkoutCart({
+    bool hosted = false,
+  }) => requestEither(
+    () => client.post(
+      '/cart/checkout',
+      data: {'mode': hosted ? 'session' : 'intent'},
+    ),
     decoder: (response) =>
         Right(CartCheckoutEntity.fromJson(response.data['data'])),
   );

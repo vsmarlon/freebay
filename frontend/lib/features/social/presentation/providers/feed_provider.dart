@@ -68,28 +68,26 @@ class Feed extends _$Feed {
     if (state.isLoading && !refresh) return;
     if (!refresh && !state.hasMore) return;
 
-    final isFollowing = feedType == FeedType.following;
-    final cursor = refresh ? null : (isFollowing ? state.cursor : null);
-    final offset = refresh ? 0 : (isFollowing ? 0 : state.offset);
+    final cursor = refresh ? null : state.cursor;
 
     state = state.copyWith(
       isLoading: true,
       error: null,
       posts: refresh ? [] : state.posts,
       cursor: refresh ? null : state.cursor,
-      offset: refresh ? 0 : state.offset,
     );
 
     final requestId = ++_currentRequestId;
 
     final result = await _repository.getFeed(
       cursor: cursor,
-      offset: offset,
       type: feedType,
       contentFilter: contentFilter,
     );
 
-    if (requestId != _currentRequestId || scope != _scope) return;
+    if (!ref.mounted || requestId != _currentRequestId || scope != _scope) {
+      return;
+    }
 
     result.fold(
       (failure) =>
@@ -103,8 +101,7 @@ class Feed extends _$Feed {
               }.values.toList(),
         isLoading: false,
         hasMore: page.hasMore,
-        cursor: page.nextCursor ?? state.cursor,
-        offset: page.nextOffset ?? state.offset,
+        cursor: page.nextCursor,
       ),
     );
   }
@@ -114,6 +111,12 @@ class Feed extends _$Feed {
       _currentRequestId++;
       state = const FeedState();
     }
+  }
+
+  void clear() {
+    _currentRequestId++;
+    _scope = 'explore:all';
+    state = const FeedState();
   }
 
   Future<void> refresh({
@@ -159,6 +162,12 @@ class Feed extends _$Feed {
 
   void addPost(PostEntity post) {
     state = state.copyWith(posts: [post, ...state.posts]);
+  }
+
+  void removePost(String id) {
+    state = state.copyWith(
+      posts: state.posts.where((post) => post.id != id).toList(),
+    );
   }
 }
 

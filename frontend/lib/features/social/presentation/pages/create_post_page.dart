@@ -11,6 +11,7 @@ import 'package:freebay/features/social/presentation/providers/social_repository
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -25,6 +26,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   final _imagePicker = ImagePicker();
   String? _selectedImagePath;
   bool _isLoading = false;
+  PostAudience _audience = PostAudience.everyone;
 
   @override
   void dispose() {
@@ -73,9 +75,11 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     final mention = _mentionController.text.trim();
 
     String? content = rawContent.isNotEmpty ? rawContent : null;
-    if (mention.isNotEmpty && content != null) {
+    if (_audience == PostAudience.everyone &&
+        mention.isNotEmpty &&
+        content != null) {
       content = '$content\n@$mention';
-    } else if (mention.isNotEmpty) {
+    } else if (_audience == PostAudience.everyone && mention.isNotEmpty) {
       content = '@$mention';
     }
 
@@ -89,6 +93,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     final result = await repository.createPost(
       content: content,
       imagePath: _selectedImagePath,
+      audience: _audience,
     );
 
     setState(() => _isLoading = false);
@@ -166,6 +171,49 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       ],
                     ),
                     Spacing.vMd,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppButton(
+                            label: 'PÚBLICO',
+                            variant: _audience == PostAudience.everyone
+                                ? AppButtonVariant.primary
+                                : AppButtonVariant.secondary,
+                            onPressed: () => setState(
+                              () => _audience = PostAudience.everyone,
+                            ),
+                          ),
+                        ),
+                        Spacing.hSm,
+                        Expanded(
+                          child: AppButton(
+                            label: 'AMIGOS PRÓXIMOS',
+                            variant: _audience == PostAudience.closeFriends
+                                ? AppButtonVariant.primary
+                                : AppButtonVariant.secondary,
+                            onPressed: () => setState(
+                              () => _audience = PostAudience.closeFriends,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_audience == PostAudience.closeFriends) ...[
+                      Spacing.vSm,
+                      Text(
+                        'Só seguidores da sua lista poderão ver este post.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: context.textSecondary,
+                        ),
+                      ),
+                      AppButton(
+                        label: 'EDITAR LISTA',
+                        variant: AppButtonVariant.ghost,
+                        onPressed: () =>
+                            context.push(AppRoutes.profileCloseFriends),
+                      ),
+                    ],
+                    Spacing.vMd,
                     Container(
                       color: context.surfaceColor,
                       padding: const EdgeInsets.all(16),
@@ -183,42 +231,43 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       ),
                     ),
                     Spacing.vSm,
-                    Container(
-                      color: context.surfaceColor,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.alternate_email,
-                            size: 18,
-                            color: context.textSecondary,
-                          ),
-                          Spacing.hSm,
-                          Expanded(
-                            child: TextField(
-                              controller: _mentionController,
-                              style: TextStyle(
-                                color: context.textPrimary,
-                                fontSize: 14,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Mencionar usuário (opcional)',
-                                hintStyle: TextStyle(
-                                  color: context.textSecondary,
+                    if (_audience == PostAudience.everyone)
+                      Container(
+                        color: context.surfaceColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.alternate_email,
+                              size: 18,
+                              color: context.textSecondary,
+                            ),
+                            Spacing.hSm,
+                            Expanded(
+                              child: TextField(
+                                controller: _mentionController,
+                                style: TextStyle(
+                                  color: context.textPrimary,
                                   fontSize: 14,
                                 ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
+                                decoration: InputDecoration(
+                                  hintText: 'Mencionar usuário (opcional)',
+                                  hintStyle: TextStyle(
+                                    color: context.textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
                     if (_selectedImagePath != null) ...[
                       Spacing.vMd,
                       Stack(

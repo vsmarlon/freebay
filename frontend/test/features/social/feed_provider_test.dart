@@ -14,6 +14,7 @@ import 'package:freebay/shared/errors/failures/failures.dart';
 class _FakeSocialRepository extends SocialRepository {
   final List<Completer<Either<Failure, FeedPageResult>>> requests = [];
   final List<String?> cursors = [];
+  final List<int?> offsets = [];
 
   @override
   Future<Either<Failure, FeedPageResult>> getFeed({
@@ -24,6 +25,7 @@ class _FakeSocialRepository extends SocialRepository {
     FeedContentFilter contentFilter = FeedContentFilter.all,
   }) {
     cursors.add(cursor);
+    offsets.add(offset);
     final request = Completer<Either<Failure, FeedPageResult>>();
     requests.add(request);
     return request.future;
@@ -38,6 +40,38 @@ PostEntity _post(String id) => PostEntity(
 );
 
 void main() {
+  test('Explore appends with the server cursor instead of an offset', () async {
+    final repository = _FakeSocialRepository();
+    final container = ProviderContainer(
+      overrides: [socialRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final feed = container.read(feedProvider.notifier);
+
+    final first = feed.loadFeed(refresh: true);
+    repository.requests[0].complete(
+      Right(
+        FeedPageResult(
+          posts: [_post('first')],
+          hasMore: true,
+          nextCursor: 'explore-1',
+        ),
+      ),
+    );
+    await first;
+    final second = feed.loadFeed();
+    expect(repository.cursors, [null, 'explore-1']);
+    expect(repository.offsets, [null, null]);
+    repository.requests[1].complete(
+      Right(FeedPageResult(posts: [_post('second')], hasMore: false)),
+    );
+    await second;
+    expect(container.read(feedProvider).posts.map((post) => post.id), [
+      'first',
+      'second',
+    ]);
+  });
+
   test(
     'scopes requests, ignores stale responses, and deduplicates posts',
     () async {

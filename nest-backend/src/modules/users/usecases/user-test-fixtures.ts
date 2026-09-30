@@ -1,5 +1,5 @@
 import { Either, right } from '@/shared/core/either';
-import { UserResponse } from '../mappers/user.mapper';
+import { UserResponse } from '../dtos/user-response.class';
 import { UserRole } from '@prisma/client';
 
 export const mockUser: UserResponse = {

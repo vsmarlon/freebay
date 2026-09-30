@@ -5,6 +5,7 @@ import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage } from '@/shared/core/pagination';
 import { PostResponse, postIncludeForViewer, SavedPostsRepositoryQuery } from '../../types/social.types';
 import { normalizePost } from './post-database.repository';
+import { postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class PrismaSavedPostRepository {
@@ -50,10 +51,7 @@ export class PrismaSavedPostRepository {
           userId: query.userId,
           post: {
             deletedAt: null,
-            user: {
-              blocksGiven: { none: { blockedId: query.userId } },
-              blocksReceived: { none: { blockerId: query.userId } },
-            },
+            AND: [postVisibilityWhere(query.userId)],
           },
           ...(query.cursor
             ? {

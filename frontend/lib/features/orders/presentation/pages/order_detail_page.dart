@@ -317,10 +317,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     );
   }
 
-  void _handleDispute(OrderEntity order) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Disputa em breve')));
+  Future<void> _handleDispute(OrderEntity order) async {
+    await context.push(AppRoutes.createDisputePath(order.id));
+    if (mounted) {
+      await ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
+    }
   }
 
   static const _cancelReasons = [

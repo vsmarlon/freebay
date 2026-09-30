@@ -1,6 +1,7 @@
 import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:dio/dio.dart';
 import 'package:freebay/shared/either/either.dart';
+import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/http/request_either.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
@@ -53,9 +54,23 @@ class NotificationRepository {
     );
   }
 
-  Future<void> updateFcmToken(String token) async {
-    await requestEither<void>(
-      () => client.patch('/users/me/fcm-token', data: {'fcmToken': token}),
+  Future<Either<Failure, void>> updateFcmToken(
+    String token, {
+    required String installationId,
+    required String authToken,
+  }) {
+    return requestEither<void>(
+      () => client.patch(
+        '/users/me/fcm-token',
+        data: {'fcmToken': token, 'installationId': installationId},
+        options: Options(
+          extra: {
+            HttpClient.preserveCapturedAuthKey: true,
+            HttpClient.capturedAuthTokenKey: authToken,
+            HttpClient.disableRefreshKey: true,
+          },
+        ),
+      ),
       decoder: (_) => const Right(null),
     );
   }

@@ -8,11 +8,10 @@ export const PUBLIC_UPLOAD_CONTEXTS = [
   'banner',
   'product',
   'post',
-  'story',
   'review',
 ] as const;
 
-export const PRIVATE_UPLOAD_CONTEXTS = ['chat', 'background'] as const;
+export const PRIVATE_UPLOAD_CONTEXTS = ['chat', 'background', 'story', 'privatepost'] as const;
 
 export const UPLOAD_CONTEXTS = [
   ...PUBLIC_UPLOAD_CONTEXTS,

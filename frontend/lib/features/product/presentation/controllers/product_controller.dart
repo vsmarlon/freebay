@@ -80,20 +80,33 @@ class ProductsFeedState {
 
 @riverpod
 class ProductsFeed extends _$ProductsFeed {
+  int _requestId = 0;
+
   @override
   ProductsFeedState build(GetProductsParams params) {
-    Future.microtask(load);
+    Future.microtask(() {
+      if (ref.mounted) load();
+    });
     return const ProductsFeedState(isLoading: true);
   }
 
   Future<void> load() async {
-    state = state.copyWith(isLoading: true);
+    final requestId = ++_requestId;
+    state = state.copyWith(
+      isLoading: true,
+      isLoadingMore: false,
+      nextCursor: state.nextCursor,
+    );
     final usecase = ref.read(getProductsUsecaseProvider);
     final result = await usecase(params.withCursor(null));
+    if (!ref.mounted || requestId != _requestId) return;
 
     result.fold(
-      (failure) =>
-          state = state.copyWith(isLoading: false, error: failure.message),
+      (failure) => state = state.copyWith(
+        isLoading: false,
+        error: failure.message,
+        nextCursor: state.nextCursor,
+      ),
       (page) => state = ProductsFeedState(
         products: page.products,
         hasMore: page.hasMore,
@@ -104,17 +117,20 @@ class ProductsFeed extends _$ProductsFeed {
 
   Future<void> loadMore() async {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
-    if (state.nextCursor == null) return;
+    final cursor = state.nextCursor;
+    if (cursor == null) return;
 
-    state = state.copyWith(isLoadingMore: true, nextCursor: state.nextCursor);
+    final requestId = _requestId;
+    state = state.copyWith(isLoadingMore: true, nextCursor: cursor);
     final usecase = ref.read(getProductsUsecaseProvider);
-    final result = await usecase(params.withCursor(state.nextCursor));
+    final result = await usecase(params.withCursor(cursor));
+    if (!ref.mounted || requestId != _requestId) return;
 
     result.fold(
       (failure) => state = state.copyWith(
         isLoadingMore: false,
         error: failure.message,
-        nextCursor: state.nextCursor,
+        nextCursor: cursor,
       ),
       (page) => state = ProductsFeedState(
         products: [...state.products, ...page.products],

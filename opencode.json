@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "dart": {
+      "type": "local",
+      "command": ["dart", "mcp-server"],
+      "enabled": true
+    },
+    "flutter-profile": {
+      "type": "local",
+      "command": ["dart", "pub", "global", "run", "flutter_profile_mcp:flutter_devtools_mcp"],
+      "enabled": true
+    }
+  }
+}

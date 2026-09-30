@@ -6,6 +6,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/shared/services/error_reporter.dart';
 
 class PaymentSectionLabel extends StatelessWidget {
   final String text;
@@ -67,16 +68,26 @@ class PaymentView extends StatelessWidget {
       if (createdOrderId != null) {
         context.go(AppRoutes.orderPath(createdOrderId!));
       }
-    } on StripeException catch (e) {
-      if (!context.mounted) return;
+    } on StripeException catch (e, stack) {
       if (e.error.code == FailureCode.Canceled) {
-        AppSnackbar.info(context, 'Pagamento cancelado');
+        if (context.mounted) AppSnackbar.info(context, 'Pagamento cancelado');
       } else {
-        AppSnackbar.error(
-          context,
-          e.error.localizedMessage ?? 'Falha no pagamento',
+        ErrorReporter.report(
+          'order-payment-sheet',
+          StateError(
+            'Stripe ${e.error.code.name}: ${e.error.stripeErrorCode ?? 'unknown'}',
+          ),
+          stack,
         );
+        if (context.mounted) AppSnackbar.handleFailure(context, e);
       }
+    } catch (error, stack) {
+      ErrorReporter.report(
+        'order-payment-sheet',
+        StateError('PaymentSheet ${error.runtimeType}'),
+        stack,
+      );
+      if (context.mounted) AppSnackbar.handleFailure(context, error);
     }
   }
 

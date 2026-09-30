@@ -8,6 +8,7 @@ import 'package:freebay/features/cart/data/repositories/cart_repository.dart';
 class _Adapter implements HttpClientAdapter {
   RequestOptions? request;
   int status = 200;
+  Object? responseData;
 
   @override
   Future<ResponseBody> fetch(
@@ -19,7 +20,7 @@ class _Adapter implements HttpClientAdapter {
     return ResponseBody.fromString(
       jsonEncode(
         status == 200
-            ? {'success': true, 'data': {}}
+            ? {'success': true, 'data': responseData ?? {}}
             : {
                 'success': false,
                 'error': {'message': 'failed'},
@@ -50,5 +51,34 @@ void main() {
     expect(adapter.request?.method, 'POST');
     expect(adapter.request?.path, '/cart/product-1');
     expect(adapter.request?.data, {'quantity': 3});
+  });
+
+  test('decodes the payment details returned by cart checkout', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+    final adapter = _Adapter()
+      ..responseData = {
+        'paymentGroupId': 'group-1',
+        'items': [
+          {
+            'orderId': 'order-1',
+            'productId': 'product-1',
+            'productTitle': 'Câmera',
+            'quantity': 2,
+            'amount': 4000,
+          },
+        ],
+        'totalOrders': 1,
+        'totalAmount': 4000,
+        'checkoutUrl': 'https://checkout.stripe.com/pay/cs_test_123',
+        'paymentIntentClientSecret': null,
+        'expiresAt': '2026-09-28T13:00:00.000Z',
+      };
+    dio.httpClientAdapter = adapter;
+
+    final result = await CartRepositoryImpl(client: dio).checkoutCart();
+
+    expect(result.isRight, isTrue);
+    expect(result.rightOrNull?.items.single.orderId, 'order-1');
+    expect(adapter.request?.data, {'mode': 'intent'});
   });
 }

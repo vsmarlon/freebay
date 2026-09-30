@@ -27,6 +27,7 @@ import {
   ExportUserDataUseCase,
 } from './usecases';
 import { request as httpRequest, IncomingMessage } from 'http';
+import { ManageSafetyListUseCase } from './usecases/manage-safety-list.usecase';
 
 const UUID = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -133,6 +134,7 @@ describe('Users controllers route precedence', () => {
           useValue: { execute: jest.fn() },
         },
         { provide: ExportUserDataUseCase, useValue: { execute: jest.fn() } },
+        { provide: ManageSafetyListUseCase, useValue: { candidates: jest.fn(), list: jest.fn(), change: jest.fn() } },
       ],
     }).compile();
     app = module.createNestApplication();
@@ -159,7 +161,7 @@ describe('Users controllers route precedence', () => {
   it('routes GET /users/:id to the public profile', async () => {
     const res = await get(`/users/${UUID}`);
     expect(res.status).toBe(200);
-    expect(getProfile.execute).toHaveBeenCalledWith({ userId: UUID });
+    expect(getProfile.execute).toHaveBeenCalledWith({ userId: UUID, viewerId: undefined });
   });
 
   it('routes POST /users/:id/follow to the follow use case', async () => {

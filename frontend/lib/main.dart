@@ -17,6 +17,7 @@ import 'shared/services/notification_service.dart';
 import 'core/router/app_link.dart';
 import 'shared/services/storage_service.dart';
 import 'shared/services/session_timeout.dart';
+import 'shared/services/auth_session_coordinator.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/data/entities/user_entity.dart';
 import 'features/notifications/presentation/providers/notifications_provider.dart';
@@ -64,11 +65,6 @@ Future<void> _bootstrap() async {
   } catch (e, s) {
     ErrorReporter.report('notifications-init', e, s);
   }
-  NotificationService().onNotificationTapped = (data) {
-    appRouter.go(AppLink.fromNotification(data));
-  };
-  unawaited(NotificationService().consumeLaunchNotification());
-
   ErrorWidget.builder = (d) => AppErrorWidget(details: d);
   runApp(const ProviderScope(child: FreeBayApp()));
 }
@@ -80,13 +76,40 @@ class FreeBayApp extends ConsumerStatefulWidget {
   ConsumerState<FreeBayApp> createState() => _FreeBayAppState();
 }
 
-class _FreeBayAppState extends ConsumerState<FreeBayApp> {
+class _FreeBayAppState extends ConsumerState<FreeBayApp>
+    with WidgetsBindingObserver {
   late final SessionTimeout _sessionTimeout;
   bool _expiring = false;
+  String? _pendingNotificationPath;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    NotificationService().onTokenChanged = _registerPushToken;
+    NotificationService().onNotificationTapped = _openNotification;
+    NotificationService().shouldShowNotification = (data) {
+      final conversationId = data['conversationId'];
+      return data['type'] != 'MESSAGE' ||
+          conversationId is! String ||
+          appRouter.routeInformationProvider.value.uri.path !=
+              AppRoutes.chatPath(conversationId);
+    };
+    NotificationService().onNotificationReceived = (_, _) {
+      if (!mounted || ref.read(authControllerProvider).value == null) return;
+      ref.invalidate(notificationsProvider);
+      ref.invalidate(unreadCountProvider);
+    };
+    ref.listenManual(isInitialAuthLoadingProvider, (_, loading) {
+      final pending = _pendingNotificationPath;
+      if (!loading && pending != null) {
+        _pendingNotificationPath = null;
+        appRouter.go(pending);
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(NotificationService().consumeLaunchNotification());
+    });
     _sessionTimeout = SessionTimeout(
       onExpired: _expireSession,
       isAuthenticated: () => ref.read(authControllerProvider).value != null,
@@ -104,8 +127,28 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    NotificationService().onTokenChanged = null;
+    NotificationService().onNotificationTapped = null;
+    NotificationService().onNotificationReceived = null;
+    NotificationService().shouldShowNotification = null;
     _sessionTimeout.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_registerPushToken());
+  }
+
+  void _openNotification(Map<String, dynamic> data) {
+    if (!mounted) return;
+    final path = AppLink.fromNotification(data);
+    if (ref.read(isInitialAuthLoadingProvider)) {
+      _pendingNotificationPath = path;
+    } else {
+      appRouter.go(path);
+    }
   }
 
   void _expireSession() {
@@ -167,11 +210,36 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp> {
     appRouter.go('${AppRoutes.login}?from=${Uri.encodeComponent(destination)}');
   }
 
-  Future<void> _registerPushToken() async {
-    final token = await NotificationService().getSavedToken();
-    if (token == null || token.isEmpty) return;
-    await ref.read(notificationRepositoryProvider).updateFcmToken(token);
-  }
+  Future<void> _registerPushToken([String? _]) =>
+      AuthSessionCoordinator.serialize(() async {
+        if (!mounted) return;
+        final userId = ref.read(authControllerProvider).value?.id;
+        if (userId == null) return;
+        try {
+          final token = await NotificationService().getToken();
+          if (token == null || token.isEmpty) return;
+          final installationId = await StorageService.getPushInstallationId();
+          final authToken = await StorageService.getToken();
+          if (!mounted ||
+              authToken == null ||
+              ref.read(authControllerProvider).value?.id != userId) {
+            return;
+          }
+          final result = await ref
+              .read(notificationRepositoryProvider)
+              .updateFcmToken(
+                token,
+                installationId: installationId,
+                authToken: authToken,
+              );
+          result.fold(
+            (failure) => ErrorReporter.report('push-token', failure),
+            (_) {},
+          );
+        } catch (error, stack) {
+          ErrorReporter.report('push-token', error, stack);
+        }
+      });
 
   @override
   Widget build(BuildContext context) {

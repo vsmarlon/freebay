@@ -4,7 +4,8 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, PageQuery } from '@/shared/core/pagination';
-import { DirectConversationWithDetails, OrderWithChatRecord, DirectMessageWithSender, ChatMessageWithSender, ReplyToSummary, ProductConversationSummaryRecord, ConversationStartRecord } from '../../mappers/conversation.mapper';
+import { DirectConversationWithDetails, OrderWithChatRecord, DirectMessageWithSender, ChatMessageWithSender, ReplyToSummary, ProductConversationSummaryRecord } from './conversation/payloads';
+import { ConversationStartRecord } from '../../dtos/conversation-response';
 import * as lookups from './conversation/lookups';
 import * as messages from './conversation/messages';
 import * as reactions from './conversation/reactions-media';
@@ -30,9 +31,9 @@ export class ConversationDatabaseRepository {
   createChatMessage(data: Prisma.ChatMessageCreateInput, includeSender?: boolean): RepositoryResponse<ChatMessage | ChatMessageWithSender> { return messages.createChatMessage(this.prisma, data, includeSender); }
   findChatMessageByClientId(orderId: string, senderId: string, clientMessageId: string): RepositoryResponse<ChatMessage | null> { return repositoryResponse(() => messages.findChatMessageByClientId(this.prisma, orderId, senderId, clientMessageId), 'Erro ao buscar mensagem existente'); }
   findChatMessagesByOrder(orderId: string, page: PageQuery): RepositoryResponse<CursorPage<ChatMessageWithSender>> { return repositoryResponse(() => messages.findChatMessagesByOrder(this.prisma, orderId, page), 'Erro ao buscar mensagens'); }
-  markChatMessagesRead(orderId: string, userId: string): RepositoryResponse<void> { return repositoryResponse(async () => { await messages.markChatMessagesRead(this.prisma, orderId, userId); }, 'Erro ao marcar mensagens'); }
+  markChatMessagesRead(orderId: string, userId: string, messageId?: string): RepositoryResponse<void> { return repositoryResponse(async () => { await messages.markChatMessagesRead(this.prisma, orderId, userId, messageId); }, 'Erro ao marcar mensagens'); }
   markMessagesDelivered(conversationId: string, userId: string): RepositoryResponse<void> { return repositoryResponse(async () => { await messages.markMessagesDelivered(this.prisma, conversationId, userId); }, 'Erro ao marcar mensagens'); }
-  markMessagesRead(conversationId: string, userId: string): RepositoryResponse<void> { return repositoryResponse(async () => { await messages.markMessagesRead(this.prisma, conversationId, userId); }, 'Erro ao marcar mensagens'); }
+  markMessagesRead(conversationId: string, userId: string, messageId?: string): RepositoryResponse<void> { return repositoryResponse(async () => { await messages.markMessagesRead(this.prisma, conversationId, userId, messageId); }, 'Erro ao marcar mensagens'); }
 
   findOrdersByUser(userId: string): RepositoryResponse<OrderWithChatRecord[]> { return repositoryResponse(() => lookups.findOrdersByUser(this.prisma, userId), 'Erro ao buscar pedidos'); }
   countUnreadChatMessages(orderIds: string[], userId: string): RepositoryResponse<Record<string, number>> { return repositoryResponse(() => lookups.countUnreadChatMessages(this.prisma, orderIds, userId), 'Erro ao contar mensagens'); }

@@ -7,10 +7,11 @@ import { PrismaConversationPreferenceRepository } from '../data/repositories/con
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ChatThreadType } from '@prisma/client';
 import { GetMessagesOutput, GetMessagesResult } from '../dtos/chat.dto';
+import { redactReplySummary } from '../dtos/conversation-response';
 import {
   ChatMessageWithSender,
   DirectMessageWithSender,
-} from '../mappers/conversation.mapper';
+} from '../data/repositories/conversation/payloads';
 
 @Injectable()
 export class GetMessagesUseCase {
@@ -95,14 +96,7 @@ export class GetMessagesUseCase {
     conversationId: string,
   ): GetMessagesOutput {
     const isViewOnceHidden = msg.viewOnce && msg.readAt !== null;
-
-    function replyContent(
-      reply: NonNullable<DirectMessageWithSender['replyTo'] | ChatMessageWithSender['replyTo']>,
-    ): string | null {
-      if (reply.deletedAt) return null;
-      if (reply.viewOnce && reply.readAt !== null) return null;
-      return reply.content;
-    }
+    const replyTo = msg.replyTo ? redactReplySummary(msg.replyTo) : null;
 
     return {
       id: msg.id,
@@ -113,18 +107,18 @@ export class GetMessagesUseCase {
       attachmentUrl: isViewOnceHidden ? null : (msg.attachmentUrl ?? null),
       metadata: isViewOnceHidden ? null : ((msg.metadata as Record<string, unknown>) ?? null),
       replyToId: msg.replyToId ?? null,
-      replyTo: msg.replyTo
+      replyTo: replyTo
         ? {
-            id: msg.replyTo.id,
-            senderId: msg.replyTo.senderId,
-            content: replyContent(msg.replyTo),
-            type: msg.replyTo.type,
-            attachmentUrl: msg.replyTo.viewOnce && msg.replyTo.readAt !== null ? null : (msg.replyTo.attachmentUrl ?? null),
-            deletedAt: msg.replyTo.deletedAt,
+            id: replyTo.id,
+            senderId: replyTo.senderId,
+            content: replyTo.content,
+            type: replyTo.type,
+            attachmentUrl: replyTo.attachmentUrl,
+            deletedAt: replyTo.deletedAt,
             conversationId,
-            createdAt: msg.replyTo.createdAt,
-            viewOnce: msg.replyTo.viewOnce,
-            readAt: msg.replyTo.readAt,
+            createdAt: replyTo.createdAt,
+            viewOnce: replyTo.viewOnce,
+            readAt: replyTo.readAt,
           }
         : null,
       deletedAt: msg.deletedAt ?? null,

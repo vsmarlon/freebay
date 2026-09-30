@@ -35,6 +35,9 @@ import { FollowRepository } from './domain/repositories/follow.repository';
 import { BlockRepository } from './domain/repositories/block.repository';
 import { UserLookupRepository } from './domain/repositories/user-lookup.repository';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { ManageSafetyListUseCase } from './usecases/manage-safety-list.usecase';
+import { SafetyListRepository } from './domain/repositories/safety-list.repository';
+import { PrismaSafetyListRepository } from './data/repositories/safety-list-database.repository';
 
 @Module({
   imports: [AuthModule],
@@ -65,6 +68,9 @@ import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-da
     ListFollowingUseCase,
     GetFollowStatusUseCase,
     GetBlockStatusUseCase,
+    ManageSafetyListUseCase,
+    PrismaSafetyListRepository,
+    { provide: SafetyListRepository, useExisting: PrismaSafetyListRepository },
     AccountLifecycleDatabaseRepository,
     PrismaFollowRepository,
     PrismaBlockRepository,

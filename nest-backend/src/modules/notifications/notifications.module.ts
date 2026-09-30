@@ -23,8 +23,7 @@ import { NotificationDatabaseRepository } from './data/repositories/notification
     RegisterFcmTokenUseCase,
     PrismaService,
     NotificationDatabaseRepository,
-    NotificationDatabaseRepository,
   ],
-  exports: [NotificationService, FcmService],
+  exports: [NotificationService, FcmService, NotificationDatabaseRepository],
 })
 export class NotificationsModule {}

@@ -4,7 +4,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { postIncludeForViewer, ShareWithPost, MutationState } from '../../types/social.types';
-import { normalizePost } from './post-database.repository';
+import { normalizePost, visiblePostAuthor, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class PrismaShareRepository {
@@ -49,7 +49,11 @@ export class PrismaShareRepository {
   async findPostsRepostedByUser(userId: string, params: { viewerId?: string; limit?: number; cursor?: string }): RepositoryResponse<ShareWithPost[]> {
     return repositoryResponse(async () => {
       const shares = await this.prisma.share.findMany({
-        where: { userId },
+        where: {
+          userId,
+          ...(params.viewerId ? { user: visiblePostAuthor(params.viewerId) } : {}),
+          post: { deletedAt: null, AND: [postVisibilityWhere(params.viewerId)] },
+        },
         orderBy: { createdAt: 'desc' },
         take: params.limit ?? 20,
         ...(params.cursor ? { skip: 1, cursor: { id: params.cursor } } : {}),
@@ -65,10 +69,4 @@ export class PrismaShareRepository {
     }, 'Erro ao buscar reposts');
   }
 
-  async exists(userId: string, postId: string): RepositoryResponse<boolean> {
-    return repositoryResponse(async () => {
-      const count = await this.prisma.share.count({ where: { userId, postId } });
-      return count > 0;
-    }, 'Erro ao verificar compartilhamento');
-  }
 }

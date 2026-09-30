@@ -152,11 +152,16 @@ class ChatRepository {
     decoder: (response) => Right(MessageEntity.fromJson(response.data['data'])),
   );
 
-  Future<Either<Failure, void>> markAsRead(String chatId) =>
-      requestEither<void>(
-        () => client.patch('/chat/conversations/$chatId/read'),
-        decoder: (_) => const Right(null),
-      );
+  Future<Either<Failure, void>> markAsRead(
+    String chatId, {
+    String? messageId,
+  }) => requestEither<void>(
+    () => client.patch(
+      '/chat/conversations/$chatId/read',
+      data: {'messageId': ?messageId},
+    ),
+    decoder: (_) => const Right(null),
+  );
 
   Future<Either<Failure, void>> archiveChat(
     String id,

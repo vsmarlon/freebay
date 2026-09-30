@@ -8,10 +8,46 @@ import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 
+typedef CloseFriendCandidate = ({UserBrief user, bool isCloseFriend});
+
 class ProfileRepository {
   final Dio client;
 
   ProfileRepository({Dio? client}) : client = client ?? HttpClient.instance;
+
+  Future<Either<Failure, List<CloseFriendCandidate>>> getCloseFriendCandidates({
+    String search = '',
+    bool selected = false,
+    int offset = 0,
+    int limit = 20,
+  }) => requestEither(
+    () => client.get(
+      '/users/me/close-friends/candidates',
+      queryParameters: {
+        'q': search,
+        if (selected) 'selected': 'true',
+        'offset': offset,
+        'limit': limit,
+      },
+    ),
+    decoder: (response) => Right([
+      for (final value in response.data['data']['users'] as List)
+        (
+          user: UserBrief.fromJson(Map<String, dynamic>.from(value as Map)),
+          isCloseFriend: value['isCloseFriend'] == true,
+        ),
+    ]),
+  );
+
+  Future<Either<Failure, void>> setCloseFriend(
+    String memberId, {
+    required bool add,
+  }) => requestEither<void>(
+    () => add
+        ? client.post('/users/me/close-friends/$memberId')
+        : client.patch('/users/me/close-friends/$memberId/remove'),
+    decoder: (_) => const Right(null),
+  );
 
   Future<Either<Failure, UserEntity>> getProfile(String userId) =>
       requestEither(

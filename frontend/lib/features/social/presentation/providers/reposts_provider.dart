@@ -9,6 +9,7 @@ part 'reposts_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Reposts extends _$Reposts {
+  int _sessionId = 0;
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
@@ -16,11 +17,17 @@ class Reposts extends _$Reposts {
     return const RepostsState();
   }
 
+  void clear() {
+    _sessionId++;
+    state = const RepostsState();
+  }
+
   Future<bool> toggleRepost(
     String postId, {
     required bool initialIsReposted,
     required int initialCount,
   }) async {
+    final sessionId = _sessionId;
     final currentReposted =
         state.repostedOverrides[postId] ?? initialIsReposted;
     final currentCount = state.countOverrides[postId] ?? initialCount;
@@ -39,6 +46,7 @@ class Reposts extends _$Reposts {
       final result = newIsReposted
           ? await _repository.repost(postId)
           : await _repository.unrepost(postId);
+      if (!ref.mounted || sessionId != _sessionId) return false;
 
       if (result.isLeft) {
         state = state.copyWith(
@@ -64,6 +72,7 @@ class Reposts extends _$Reposts {
         return true;
       });
     } catch (e) {
+      if (!ref.mounted || sessionId != _sessionId) return false;
       state = state.copyWith(
         repostedOverrides: {
           ...state.repostedOverrides,

@@ -3,6 +3,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/presentation/widgets/story_canvas.dart';
 import 'package:video_player/video_player.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class StoryPage extends StatefulWidget {
   final StoryEntity story;
@@ -34,9 +35,6 @@ class _StoryPageState extends State<StoryPage> {
 
   void _setupAnimation() {
     if (widget.story.mediaType == StoryMediaType.video) {
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.story.imageUrl),
-      );
       _initializeVideo();
     } else {
       widget.animationController.duration = const Duration(seconds: 7);
@@ -54,17 +52,25 @@ class _StoryPageState extends State<StoryPage> {
   }
 
   Future<void> _initializeVideo() async {
+    final url = widget.story.imageUrl;
     try {
-      await _videoController!.initialize();
-      if (!mounted) return;
-      final duration = _videoController!.value.duration;
+      final headers = await getMediaAuthHeadersAsync(url);
+      if (!mounted || widget.story.imageUrl != url) return;
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        httpHeaders: headers ?? const {},
+      );
+      _videoController = controller;
+      await controller.initialize();
+      if (!mounted || !identical(_videoController, controller)) return;
+      final duration = controller.value.duration;
       widget.animationController.duration =
           duration > const Duration(seconds: 30)
           ? const Duration(seconds: 30)
           : duration;
       setState(() {});
       if (!widget.isPaused) {
-        await _videoController?.play();
+        await controller.play();
         widget.animationController.forward();
       }
     } catch (_) {
@@ -120,6 +126,12 @@ class _StoryPageState extends State<StoryPage> {
                         : const CircularProgressIndicator(color: Colors.white)
                   : Image.network(
                       widget.story.imageUrl,
+                      headers: mediaAuthHeaders(widget.story.imageUrl),
+                      cacheWidth:
+                          (MediaQuery.sizeOf(context).width *
+                                  MediaQuery.devicePixelRatioOf(context))
+                              .ceil()
+                              .clamp(1, 1440),
                       fit: BoxFit.contain,
                       frameBuilder: (context, child, frame, wasSync) {
                         if (frame != null || wasSync) {

@@ -16,6 +16,7 @@ class _FakeSocialRepository extends SocialRepository {
     String imagePath, {
     String? caption,
     List<StoryTextBlockEntity> textBlocks = const [],
+    StoryAudience audience = StoryAudience.everyone,
   }) {
     createCalls++;
     final response = Completer<Either<Failure, StoryEntity>>();

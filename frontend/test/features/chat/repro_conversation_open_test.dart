@@ -80,6 +80,26 @@ class _ChatRepository extends ChatRepository {
 }
 
 void main() {
+  test(
+    'releases conversation transcript when its last listener leaves',
+    () async {
+      final container = ProviderContainer(
+        overrides: [
+          chatRepositoryProvider.overrideWithValue(_ChatRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+      final provider = conversationMessagesProvider('conv-unused');
+      final subscription = container.listen(provider, (_, _) {});
+      expect(container.exists(provider), isTrue);
+
+      subscription.close();
+      await container.pump();
+
+      expect(container.exists(provider), isFalse);
+    },
+  );
+
   testWidgets('opens a conversation without throwing', (tester) async {
     final repository = _ChatRepository();
     await tester.pumpWidget(

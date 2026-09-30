@@ -12,6 +12,9 @@ class StoryPreviewView extends StatelessWidget {
   final String? selectedTextId;
   final TextEditingController captionController;
   final bool isLoading;
+  final StoryAudience audience;
+  final ValueChanged<StoryAudience>? onAudienceChanged;
+  final VoidCallback? onManageCloseFriends;
   final VoidCallback onClose;
   final VoidCallback onUpload;
   final void Function(List<StoryTextBlockEntity>) onBlocksChanged;
@@ -30,6 +33,9 @@ class StoryPreviewView extends StatelessWidget {
     required this.selectedTextId,
     required this.captionController,
     required this.isLoading,
+    this.audience = StoryAudience.everyone,
+    this.onAudienceChanged,
+    this.onManageCloseFriends,
     required this.onClose,
     required this.onUpload,
     required this.onBlocksChanged,
@@ -91,24 +97,73 @@ class StoryPreviewView extends StatelessWidget {
                       if (isLoading)
                         const ShimmerBlock(width: 20, height: 20)
                       else
-                        AppButton(label: 'Publicar', onPressed: onUpload),
+                        AppButton(label: 'PUBLICAR', onPressed: onUpload),
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: TextField(
-                    controller: captionController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: 'Adicionar legenda',
-                      hintStyle: TextStyle(color: Colors.white70),
-                      filled: true,
-                      fillColor: Colors.black54,
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: captionController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            hintText: 'Adicionar legenda',
+                            hintStyle: TextStyle(color: Colors.white70),
+                            filled: true,
+                            fillColor: Colors.black54,
+                          ),
+                        ),
+                        Spacing.vMd,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AppButton(
+                                label: 'PÚBLICO',
+                                variant: audience == StoryAudience.everyone
+                                    ? AppButtonVariant.primary
+                                    : AppButtonVariant.secondary,
+                                onPressed: () => onAudienceChanged?.call(
+                                  StoryAudience.everyone,
+                                ),
+                              ),
+                            ),
+                            Spacing.hSm,
+                            Expanded(
+                              child: AppButton(
+                                label: 'AMIGOS PRÓXIMOS',
+                                variant: audience == StoryAudience.closeFriends
+                                    ? AppButtonVariant.primary
+                                    : AppButtonVariant.secondary,
+                                onPressed: () => onAudienceChanged?.call(
+                                  StoryAudience.closeFriends,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (audience == StoryAudience.closeFriends)
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Somente sua lista poderá ver esta história.',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              AppButton(
+                                label: 'EDITAR LISTA',
+                                variant: AppButtonVariant.secondary,
+                                onPressed: onManageCloseFriends,
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
                   ),
                 ),
-                const Spacer(),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: SingleChildScrollView(

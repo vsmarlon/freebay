@@ -27,7 +27,9 @@ class _CartPageState extends ConsumerState<CartPage> {
     final state = ref.watch(cartProvider);
     final cart = state.cart;
     final hasUnavailableItems = cart.items.any(
-      (item) => item.product.status != ProductStatus.active,
+      (item) =>
+          item.product.status != ProductStatus.active ||
+          item.quantity > item.product.quantity - item.product.soldCount,
     );
 
     return Scaffold(
@@ -126,10 +128,14 @@ class _CartPageState extends ConsumerState<CartPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item.product.status ==
+                                        item.product.status !=
                                                 ProductStatus.active
-                                            ? item.product.title
-                                            : '${item.product.title} (indisponível)',
+                                            ? '${item.product.title} (indisponível)'
+                                            : item.quantity >
+                                                  item.product.quantity -
+                                                      item.product.soldCount
+                                            ? '${item.product.title} (estoque insuficiente)'
+                                            : item.product.title,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: context.textPrimary,
@@ -179,7 +185,13 @@ class _CartPageState extends ConsumerState<CartPage> {
                                           BrutalistIconButton(
                                             icon: Icons.add,
                                             size: 24,
-                                            onTap: item.quantity < 10
+                                            onTap:
+                                                item.quantity < 10 &&
+                                                    item.quantity <
+                                                        item.product.quantity -
+                                                            item
+                                                                .product
+                                                                .soldCount
                                                 ? () => ref
                                                       .read(
                                                         cartProvider.notifier,
@@ -235,6 +247,16 @@ class _CartPageState extends ConsumerState<CartPage> {
                       ),
                     ),
             ),
+            if (state.error != null && cart.items.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  state.error!,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

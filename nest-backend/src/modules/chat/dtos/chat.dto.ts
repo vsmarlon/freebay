@@ -58,6 +58,13 @@ export class StartConversationDTO {
   readonly productId?: string;
 }
 
+export class MarkMessagesReadDTO {
+  @ApiProperty({ required: false, description: 'Only this message was explicitly opened; omitted means ordinary messages only' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly messageId?: string;
+}
+
 export class SendMessageDTO {
   @ApiProperty({ example: 'Olá!', required: false })
   @IsString()

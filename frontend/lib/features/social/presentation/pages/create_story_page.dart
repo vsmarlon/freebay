@@ -32,6 +32,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
   bool _useFrontCamera = true;
   String? _capturedImagePath;
   bool _isLoading = false;
+  StoryAudience _audience = StoryAudience.everyone;
   String? _cameraError;
   final _captionController = TextEditingController();
   final List<StoryTextBlockEntity> _textBlocks = [];
@@ -193,6 +194,7 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
         imagePath: _capturedImagePath!,
         caption: _captionController.text,
         textBlocks: _textBlocks,
+        audience: _audience,
         invalidateGlobalStories: () => ref.invalidate(storiesProvider),
         invalidateUserStories: (userId) =>
             ref.invalidate(userStoriesProvider(userId)),
@@ -282,6 +284,9 @@ class _CreateStoryPageState extends ConsumerState<CreateStoryPage> {
       selectedTextId: _selectedTextId,
       captionController: _captionController,
       isLoading: _isLoading,
+      audience: _audience,
+      onAudienceChanged: (audience) => setState(() => _audience = audience),
+      onManageCloseFriends: () => context.push(AppRoutes.profileCloseFriends),
       onClose: () => setState(() => _capturedImagePath = null),
       onUpload: _uploadStory,
       onBlocksChanged: (blocks) => setState(() {

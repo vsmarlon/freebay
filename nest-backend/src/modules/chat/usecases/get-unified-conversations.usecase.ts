@@ -8,7 +8,7 @@ import {
   decodeOffsetCursor,
 } from '@/shared/core/pagination';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { ConversationMapper, UnifiedConversationResponse } from '../mappers/conversation.mapper';
+import { toUnifiedDirect, toUnifiedOrder, UnifiedConversationResponse } from '../dtos/conversation-response';
 
 @Injectable()
 export class GetUnifiedConversationsUseCase {
@@ -63,11 +63,11 @@ export class GetUnifiedConversationsUseCase {
 
     const mappedDirect = directConvs
       .filter(c => filterDeleted(c.id) && filterArchived(c.id, !!archived))
-      .map(c => ConversationMapper.toUnifiedDirect(c, userId, prefMap.get(c.id) ?? null));
+      .map(c => toUnifiedDirect(c, userId, prefMap.get(c.id) ?? null));
 
     const mappedOrders = orderConvs
       .filter(o => filterDeleted(o.id) && filterArchived(o.id, !!archived))
-      .map(o => ConversationMapper.toUnifiedOrder(o, userId, prefMap.get(o.id) ?? null));
+      .map(o => toUnifiedOrder(o, userId, prefMap.get(o.id) ?? null));
 
     let all = [...mappedDirect, ...mappedOrders];
 

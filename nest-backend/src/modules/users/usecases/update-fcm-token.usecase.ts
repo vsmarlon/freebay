@@ -1,27 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { AppError, BadRequestError } from '@/shared/core/errors';
+import { NotificationDatabaseRepository } from '@/modules/notifications/data/repositories/notification-database.repository';
 import { UpdateFcmTokenInput } from '../dtos/user.dto';
 
 @Injectable()
 export class UpdateFcmTokenUseCase {
-  constructor(private readonly userRepository: UserDatabaseRepository) {}
+  constructor(private readonly notifications: NotificationDatabaseRepository) {}
 
   async execute(input: UpdateFcmTokenInput): Promise<Either<AppError, void>> {
-    const updateData: Record<string, unknown> = {};
-    if (input.fcmToken !== undefined) {
-      updateData.fcmToken = input.fcmToken;
+    if (input.fcmToken !== undefined && !input.installationId) {
+      return left(new BadRequestError('Identificador da instalação obrigatório'));
     }
-    if (input.notificationPrefs !== undefined) {
-      updateData.notificationPrefs = input.notificationPrefs as object;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return right(undefined);
-    }
-
-    const userResult = await this.userRepository.update(input.userId, updateData);
+    const userResult = await this.notifications.updatePushSettings(input.userId, input);
     if (userResult.isLeft()) {
       return left(userResult.value);
     }

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PrivateUploadContext } from '@/shared/utils/file.utils';
+import { storyAudienceWhere } from '@/modules/stories/data/repositories/story-database.repository';
+import { postVisibilityWhere } from '@/modules/social/data/repositories/post-query-helpers';
 
 const VIEW_ONCE_FETCH_GRACE_MS = 5 * 60 * 1000;
 
@@ -14,6 +16,29 @@ export class MediaAccessService {
     filename: string,
   ): Promise<boolean> {
     const url = `/media/${context}/${filename}`;
+
+    if (context === 'story') {
+      const story = await this.prisma.story.findFirst({
+        where: {
+          imageUrl: { in: [url, `/uploads/story/${filename}`] },
+          deletedAt: null,
+          AND: [
+            storyAudienceWhere(userId),
+            { OR: [{ expiresAt: { gt: new Date() } }, { highlightItems: { some: {} } }] },
+          ],
+        },
+        select: { id: true },
+      });
+      return story !== null;
+    }
+
+    if (context === 'privatepost') {
+      const post = await this.prisma.post.findFirst({
+        where: { imageUrl: url, deletedAt: null, AND: [postVisibilityWhere(userId)] },
+        select: { id: true },
+      });
+      return post !== null;
+    }
 
     if (context === 'background') {
       const preference = await this.prisma.conversationPreference.findFirst({

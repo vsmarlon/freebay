@@ -574,7 +574,7 @@ as bool,
 /// @nodoc
 mixin _$StoryEntity {
 
- String get id; String get userId; String get imageUrl; StoryMediaType get mediaType; String? get caption; List<StoryTextBlockEntity>? get textBlocks; DateTime get expiresAt; DateTime get createdAt; StoryUserEntity get user; bool get isViewed;
+ String get id; String get userId; String get imageUrl; StoryMediaType get mediaType; StoryAudience get audience; String? get caption; List<StoryTextBlockEntity>? get textBlocks; DateTime get expiresAt; DateTime get createdAt; StoryUserEntity get user; bool get isViewed;
 /// Create a copy of StoryEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -587,16 +587,16 @@ $StoryEntityCopyWith<StoryEntity> get copyWith => _$StoryEntityCopyWithImpl<Stor
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.mediaType, mediaType) || other.mediaType == mediaType)&&(identical(other.caption, caption) || other.caption == caption)&&const DeepCollectionEquality().equals(other.textBlocks, textBlocks)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.mediaType, mediaType) || other.mediaType == mediaType)&&(identical(other.audience, audience) || other.audience == audience)&&(identical(other.caption, caption) || other.caption == caption)&&const DeepCollectionEquality().equals(other.textBlocks, textBlocks)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,mediaType,caption,const DeepCollectionEquality().hash(textBlocks),expiresAt,createdAt,user,isViewed);
+int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,mediaType,audience,caption,const DeepCollectionEquality().hash(textBlocks),expiresAt,createdAt,user,isViewed);
 
 @override
 String toString() {
-  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, mediaType: $mediaType, caption: $caption, textBlocks: $textBlocks, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
+  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, mediaType: $mediaType, audience: $audience, caption: $caption, textBlocks: $textBlocks, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
 }
 
 
@@ -607,7 +607,7 @@ abstract mixin class $StoryEntityCopyWith<$Res>  {
   factory $StoryEntityCopyWith(StoryEntity value, $Res Function(StoryEntity) _then) = _$StoryEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String imageUrl, StoryMediaType mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
+ String id, String userId, String imageUrl, StoryMediaType mediaType, StoryAudience audience, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
 });
 
 
@@ -624,13 +624,14 @@ class _$StoryEntityCopyWithImpl<$Res>
 
 /// Create a copy of StoryEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? mediaType = null,Object? caption = freezed,Object? textBlocks = freezed,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? mediaType = null,Object? audience = null,Object? caption = freezed,Object? textBlocks = freezed,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,imageUrl: null == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String,mediaType: null == mediaType ? _self.mediaType : mediaType // ignore: cast_nullable_to_non_nullable
-as StoryMediaType,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
+as StoryMediaType,audience: null == audience ? _self.audience : audience // ignore: cast_nullable_to_non_nullable
+as StoryAudience,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
 as String?,textBlocks: freezed == textBlocks ? _self.textBlocks : textBlocks // ignore: cast_nullable_to_non_nullable
 as List<StoryTextBlockEntity>?,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -730,10 +731,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  StoryAudience audience,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _StoryEntity() when $default != null:
-return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
+return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.audience,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
   return orElse();
 
 }
@@ -751,10 +752,10 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.capti
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  StoryAudience audience,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)  $default,) {final _that = this;
 switch (_that) {
 case _StoryEntity():
-return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
+return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.audience,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -771,10 +772,10 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.capti
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String imageUrl,  StoryMediaType mediaType,  StoryAudience audience,  String? caption,  List<StoryTextBlockEntity>? textBlocks,  DateTime expiresAt,  DateTime createdAt,  StoryUserEntity user,  bool isViewed)?  $default,) {final _that = this;
 switch (_that) {
 case _StoryEntity() when $default != null:
-return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
+return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.audience,_that.caption,_that.textBlocks,_that.expiresAt,_that.createdAt,_that.user,_that.isViewed);case _:
   return null;
 
 }
@@ -786,13 +787,14 @@ return $default(_that.id,_that.userId,_that.imageUrl,_that.mediaType,_that.capti
 @JsonSerializable()
 
 class _StoryEntity extends StoryEntity {
-  const _StoryEntity({required this.id, required this.userId, required this.imageUrl, this.mediaType = StoryMediaType.image, this.caption, final  List<StoryTextBlockEntity>? textBlocks, required this.expiresAt, required this.createdAt, required this.user, this.isViewed = false}): _textBlocks = textBlocks,super._();
+  const _StoryEntity({required this.id, required this.userId, required this.imageUrl, this.mediaType = StoryMediaType.image, this.audience = StoryAudience.everyone, this.caption, final  List<StoryTextBlockEntity>? textBlocks, required this.expiresAt, required this.createdAt, required this.user, this.isViewed = false}): _textBlocks = textBlocks,super._();
   factory _StoryEntity.fromJson(Map<String, dynamic> json) => _$StoryEntityFromJson(json);
 
 @override final  String id;
 @override final  String userId;
 @override final  String imageUrl;
 @override@JsonKey() final  StoryMediaType mediaType;
+@override@JsonKey() final  StoryAudience audience;
 @override final  String? caption;
  final  List<StoryTextBlockEntity>? _textBlocks;
 @override List<StoryTextBlockEntity>? get textBlocks {
@@ -821,16 +823,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.mediaType, mediaType) || other.mediaType == mediaType)&&(identical(other.caption, caption) || other.caption == caption)&&const DeepCollectionEquality().equals(other._textBlocks, _textBlocks)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StoryEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.mediaType, mediaType) || other.mediaType == mediaType)&&(identical(other.audience, audience) || other.audience == audience)&&(identical(other.caption, caption) || other.caption == caption)&&const DeepCollectionEquality().equals(other._textBlocks, _textBlocks)&&(identical(other.expiresAt, expiresAt) || other.expiresAt == expiresAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,mediaType,caption,const DeepCollectionEquality().hash(_textBlocks),expiresAt,createdAt,user,isViewed);
+int get hashCode => Object.hash(runtimeType,id,userId,imageUrl,mediaType,audience,caption,const DeepCollectionEquality().hash(_textBlocks),expiresAt,createdAt,user,isViewed);
 
 @override
 String toString() {
-  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, mediaType: $mediaType, caption: $caption, textBlocks: $textBlocks, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
+  return 'StoryEntity(id: $id, userId: $userId, imageUrl: $imageUrl, mediaType: $mediaType, audience: $audience, caption: $caption, textBlocks: $textBlocks, expiresAt: $expiresAt, createdAt: $createdAt, user: $user, isViewed: $isViewed)';
 }
 
 
@@ -841,7 +843,7 @@ abstract mixin class _$StoryEntityCopyWith<$Res> implements $StoryEntityCopyWith
   factory _$StoryEntityCopyWith(_StoryEntity value, $Res Function(_StoryEntity) _then) = __$StoryEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String imageUrl, StoryMediaType mediaType, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
+ String id, String userId, String imageUrl, StoryMediaType mediaType, StoryAudience audience, String? caption, List<StoryTextBlockEntity>? textBlocks, DateTime expiresAt, DateTime createdAt, StoryUserEntity user, bool isViewed
 });
 
 
@@ -858,13 +860,14 @@ class __$StoryEntityCopyWithImpl<$Res>
 
 /// Create a copy of StoryEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? mediaType = null,Object? caption = freezed,Object? textBlocks = freezed,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? imageUrl = null,Object? mediaType = null,Object? audience = null,Object? caption = freezed,Object? textBlocks = freezed,Object? expiresAt = null,Object? createdAt = null,Object? user = null,Object? isViewed = null,}) {
   return _then(_StoryEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,imageUrl: null == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
 as String,mediaType: null == mediaType ? _self.mediaType : mediaType // ignore: cast_nullable_to_non_nullable
-as StoryMediaType,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
+as StoryMediaType,audience: null == audience ? _self.audience : audience // ignore: cast_nullable_to_non_nullable
+as StoryAudience,caption: freezed == caption ? _self.caption : caption // ignore: cast_nullable_to_non_nullable
 as String?,textBlocks: freezed == textBlocks ? _self._textBlocks : textBlocks // ignore: cast_nullable_to_non_nullable
 as List<StoryTextBlockEntity>?,expiresAt: null == expiresAt ? _self.expiresAt : expiresAt // ignore: cast_nullable_to_non_nullable
 as DateTime,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable

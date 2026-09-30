@@ -115,8 +115,10 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
 
   Future<void> _loadConversation({required bool showLoadingError}) async {
     final repo = ref.read(chatRepositoryProvider);
-    final results = await repo.getConversation(chatId);
-    final starred = await repo.getStarredMessages(chatId);
+    final conversationFuture = repo.getConversation(chatId);
+    final starredFuture = repo.getStarredMessages(chatId);
+    final results = await conversationFuture;
+    final starred = await starredFuture;
     if (!ref.mounted) return;
     results.fold(
       (failure) {
@@ -147,6 +149,27 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
 
   /// Silent reload (no skeleton) after sends from attachment sheets.
   Future<void> refresh() => _loadConversation(showLoadingError: false);
+
+  Future<Either<Failure, void>> revealViewOnce(String messageId) async {
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .markAsRead(chatId, messageId: messageId);
+    if (!ref.mounted || result.isLeft) return result;
+    final readAt = DateTime.now();
+    state = state.copyWith(
+      messages: [
+        for (final message in state.messages)
+          if (message.id == messageId && message.senderId == state.otherUserId)
+            message.copyWith(
+              readAt: readAt,
+              deliveredAt: message.deliveredAt ?? readAt,
+            )
+          else
+            message,
+      ],
+    );
+    return result;
+  }
 
   Future<Either<Failure, MessageEntity>> sendLocation({
     required Map<String, dynamic> metadata,
@@ -277,9 +300,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
   }
 }
 
-final conversationMessagesProvider =
-    NotifierProvider.family<
-      ConversationMessagesNotifier,
-      ConversationMessagesState,
-      String
-    >(ConversationMessagesNotifier.new);
+final conversationMessagesProvider = NotifierProvider.autoDispose
+    .family<ConversationMessagesNotifier, ConversationMessagesState, String>(
+      ConversationMessagesNotifier.new,
+    );

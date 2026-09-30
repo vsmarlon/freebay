@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Prisma, ConversationStatus, DirectMessage, MessageReaction, ChatThreadType } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ConversationDatabaseRepository } from './conversation-database.repository';
-import { DirectMessageWithSender, ProductConversationSummaryRecord, productConversationSummaryValidator } from '../../mappers/conversation.mapper';
+import { DirectMessageWithSender, ProductConversationSummaryRecord, productConversationSummaryValidator } from './conversation/payloads';
 
 type ConversationWithProduct = {
   id: string;

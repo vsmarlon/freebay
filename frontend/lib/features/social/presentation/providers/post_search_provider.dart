@@ -52,6 +52,7 @@ class PostSearchState {
 
 @Riverpod(keepAlive: true)
 class PostSearch extends _$PostSearch {
+  int _requestId = 0;
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
@@ -64,17 +65,19 @@ class PostSearch extends _$PostSearch {
     PostSearchFilter? filter,
     bool refresh = false,
   }) async {
-    if (state.isLoading) return;
+    if (!refresh && (state.isLoading || !state.hasMore)) return;
 
+    final requestId = ++_requestId;
     final newQuery = query ?? state.query;
     final newFilter = filter ?? state.filter;
     final cursor = refresh ? null : state.cursor;
 
-    state = state.copyWith(
+    state = PostSearchState(
       isLoading: true,
       posts: refresh ? [] : state.posts,
       query: newQuery,
       filter: newFilter,
+      cursor: cursor,
     );
 
     final result = await _repository.searchPosts(
@@ -82,6 +85,7 @@ class PostSearch extends _$PostSearch {
       filter: newFilter,
       cursor: cursor,
     );
+    if (!ref.mounted || requestId != _requestId) return;
 
     result.fold(
       (failure) =>
@@ -96,6 +100,7 @@ class PostSearch extends _$PostSearch {
   }
 
   void clear() {
+    _requestId++;
     state = const PostSearchState();
   }
 }

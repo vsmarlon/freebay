@@ -42,11 +42,12 @@ flutter test                             # all unit/widget tests
 flutter test test/some_widget_test.dart  # single test file
 flutter analyze                          # static analysis
 flutter build apk --debug
+node scripts/perf-check.js <flow> --device <id>  # performance gate (from repo root; see freebay-perf skill)
 ```
 
 ### Root `Makefile`
 
-Run after finishing large work.
+Run after finishing large work (`make test`; `make perf-check DEVICE=<id>` for perf-sensitive flows with a device).
 
 ---
 
@@ -71,12 +72,11 @@ src/
     └── <feature>/                  # auth, users, products, category, social, wallet,
         ├── <feature>.module.ts     # orders, payments, chat, notifications, disputes,
         ├── <feature>.controller.ts # reports, reviews, favorites, cart, tasks
-        ├── dtos/            # class-validator + @nestjs/swagger DTO classes
+        ├── dtos/            # request DTOs + safe API response shapes/projections
         ├── domain/repositories/  # abstract Repository classes (most modules)
         ├── data/repositories/    # concrete Prisma*Repository implementations (most modules)
         ├── repositories/    # flat concrete repository folder (modules not yet migrated to domain/data split)
         ├── usecases/        # one class per use case, returns Either<AppError, Output>
-        ├── mappers/         # Prisma model → API response shape
         ├── guards/          # module-specific guards (e.g. auth/guards/jwt-auth.guard.ts)
         └── services/        # third-party integrations (e.g. ResendService for email)
 ```
@@ -202,12 +202,12 @@ Routes are configured in `frontend/lib/core/router/app_router.dart` using **go_r
 - **Guest vs authenticated:** Guest users can browse public content but are redirected to login for guarded actions.
 - **Page transitions:** `CustomTransitionPage` with slide + fade, 150ms/`Curves.linear` per the design system.
 
-### Mapper pattern
+### Response projection
 
-Prisma models are never returned directly as API responses. Each module has a `mappers/` directory with pure functions that transform Prisma types → API response types:
+Prisma models are never returned directly as API responses. Keep response DTOs and any necessary field projection in the owning feature; keep Prisma payload types beside their repository queries:
 
 ```typescript
-// modules/users/mappers/user.mapper.ts
+// modules/users/dtos/user-response.class.ts
 export function toUserResponse(user: User): UserResponse {
   return {
     id: user.id,
@@ -219,7 +219,7 @@ export function toUserResponse(user: User): UserResponse {
 }
 ```
 
-Mappers handle null/default values and ensure response shape consistency. They are called from controllers or usecases before returning data.
+Explicit projections handle null/default values and prevent private fields from entering API responses. Controllers and use cases return only the response shape.
 
 ### Running seeds
 

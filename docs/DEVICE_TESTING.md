@@ -104,3 +104,19 @@ There is no in-app withdraw form — Stripe pays the seller out on its own sched
 - `mobile_take_screenshot` at each `expected`; name `flow<A-F>_<step>_<pass|fail>.png` under `docs/device-runs/<date>/`.
 - Run `mobile_list_crashes` after every flow; a non-empty result fails the flow.
 - Pass = every step's expected observed AND crashes empty.
+
+## 7. Profile-mode performance fixtures
+
+Use the same seeded backend and device model/OS for each baseline and comparison;
+connect the device to the backend (e.g. `adb reverse tcp:3000 tcp:3000`),
+unlock it and leave its screen awake. A locked Android device can hold session
+hydration in a native biometric prompt; a connected device alone is not enough.
+`feed_scroll` needs multiple real posts; `explore_scroll` needs at least four
+products; `product_detail` measures opening the first real product from Explore;
+`chat_scroll` needs an already signed-in account with a long existing real
+conversation; `story_view` needs a signed-in session and an image story with
+media loaded. The perf test
+fails explicitly when the target content or scroll extent is absent. Run
+`node scripts/perf-check.js <flow> --device <id> --update-baseline` to record
+the first **measured** baseline, then without that flag for the regression gate.
+Reports live in `docs/test-runs/<date>/perf-<flow>.md`; see `freebay-perf`.

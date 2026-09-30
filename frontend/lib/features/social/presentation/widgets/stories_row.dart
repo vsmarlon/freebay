@@ -124,7 +124,12 @@ class _StoryItem extends StatelessWidget {
               height: 56,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: AppColors.primaryContainer, // we can refine this later
+                  color:
+                      group.stories.any(
+                        (story) => story.audience == StoryAudience.closeFriends,
+                      )
+                      ? AppColors.success
+                      : AppColors.primaryContainer,
                   width: 2,
                 ),
                 image: group.user.avatarUrl != null

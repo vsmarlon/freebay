@@ -74,6 +74,7 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
         itemCount: widget.groups.length,
         itemBuilder: (context, index) {
           return GroupStoryViewer(
+            key: ValueKey(widget.groups[index].user.id),
             group: widget.groups[index],
             isActive: index == _currentGroupIndex,
             onNextGroup: _nextGroup,
@@ -128,9 +129,7 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
     super.didUpdateWidget(oldWidget);
     if (widget.isActive != oldWidget.isActive) {
       if (widget.isActive) {
-        if (!_isPaused) {
-          // Play will happen via StoryPage updating
-        }
+        _markStoryViewed(widget.group.stories[_currentIndex].id);
       } else {
         _animController.stop();
       }
@@ -176,6 +175,7 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   }
 
   Future<void> _markStoryViewed(String storyId) async {
+    if (!widget.isActive) return;
     try {
       final repository = ref.read(socialRepositoryProvider);
       await repository.viewStory(storyId);
@@ -215,6 +215,7 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
       userId: widget.group.user.id,
       imageUrl: storyItem.imageUrl,
       mediaType: storyItem.mediaType,
+      audience: storyItem.audience,
       caption: storyItem.caption,
       textBlocks: storyItem.textBlocks,
       expiresAt: storyItem.expiresAt,
@@ -317,12 +318,31 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
                       fontSize: 14,
                     ),
                   ),
-                  Text(
-                    _formatTime(story.createdAt),
-                    style: TextStyle(
-                      color: AppColors.onPrimary.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
+                  Row(
+                    children: [
+                      if (story.audience == StoryAudience.closeFriends) ...[
+                        const Icon(
+                          Icons.group,
+                          color: AppColors.success,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'AMIGOS PRÓXIMOS',
+                          style: AppTypography.brutalistTag.copyWith(
+                            color: AppColors.onPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        _formatTime(story.createdAt),
+                        style: TextStyle(
+                          color: AppColors.onPrimary.withValues(alpha: 0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError } from "@/shared/core/errors";
-import { StoryMediaType } from "@prisma/client";
-import { PrismaStoryRepository } from "../data/repositories/story-database.repository";
+import { StoryAudience, StoryMediaType } from "@prisma/client";
+import { PrismaStoryRepository, storyMediaUrl } from "../data/repositories/story-database.repository";
 import {
   CreateStoryInput,
   CreateStoryOutput,
@@ -23,6 +23,7 @@ export class CreateStoryUseCase {
       user: { connect: { id: input.userId } },
       imageUrl: input.imageUrl,
       mediaType: input.mediaType ?? StoryMediaType.IMAGE,
+      audience: input.audience ?? StoryAudience.EVERYONE,
       caption: input.caption,
       textBlocks: input.textBlocks ?? [],
       expiresAt,
@@ -33,8 +34,9 @@ export class CreateStoryUseCase {
     return right({
       id: story.id,
       userId: story.userId,
-      imageUrl: story.imageUrl,
+      imageUrl: storyMediaUrl(story.imageUrl),
       mediaType: story.mediaType,
+      audience: story.audience,
       caption: story.caption,
       textBlocks: canonicalStoryTextBlocks(story.textBlocks),
       expiresAt: story.expiresAt,

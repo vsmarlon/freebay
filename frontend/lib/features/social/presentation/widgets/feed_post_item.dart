@@ -84,6 +84,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               createdAt: post.createdAt,
               price: price,
               isSelling: post.type == PostType.product,
+              isCloseFriends: post.audience == PostAudience.closeFriends,
               onTap: () => context.push(AppRoutes.postPath(post.id)),
               onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
               onSave: () async {

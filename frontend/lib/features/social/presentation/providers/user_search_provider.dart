@@ -40,6 +40,7 @@ class UserSearchState {
 
 @Riverpod(keepAlive: true)
 class UserSearch extends _$UserSearch {
+  int _requestId = 0;
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
@@ -48,18 +49,19 @@ class UserSearch extends _$UserSearch {
   }
 
   Future<void> search({String? query, bool refresh = false}) async {
-    if (state.isLoading) return;
-    if (!refresh && !state.hasMore) return;
+    if (!refresh && (state.isLoading || !state.hasMore)) return;
 
+    final requestId = ++_requestId;
     final offset = refresh ? 0 : state.offset;
 
-    state = state.copyWith(
+    state = UserSearchState(
       isLoading: true,
       users: refresh ? [] : state.users,
-      offset: refresh ? 0 : state.offset,
+      offset: offset,
     );
 
     final result = await _repository.searchUsers(query: query, offset: offset);
+    if (!ref.mounted || requestId != _requestId) return;
 
     result.fold(
       (failure) =>
@@ -74,6 +76,7 @@ class UserSearch extends _$UserSearch {
   }
 
   void clear() {
+    _requestId++;
     state = const UserSearchState();
   }
 }
@@ -106,21 +109,32 @@ class SuggestionsState {
 /// Only invalidated explicitly after a follow/unfollow action via [ref.invalidate].
 @Riverpod(keepAlive: true)
 class Suggestions extends _$Suggestions {
+  int _sessionId = 0;
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   SuggestionsState build() {
     // Load once on first creation; subsequent tab switches reuse cached state.
-    Future.microtask(loadSuggestions);
+    final sessionId = _sessionId;
+    Future.microtask(() {
+      if (ref.mounted && sessionId == _sessionId) loadSuggestions();
+    });
     return const SuggestionsState();
+  }
+
+  void clear() {
+    _sessionId++;
+    state = const SuggestionsState();
   }
 
   Future<void> loadSuggestions() async {
     if (state.isLoading) return;
 
+    final sessionId = _sessionId;
     state = state.copyWith(isLoading: true);
 
     final result = await _repository.getSuggestions();
+    if (!ref.mounted || sessionId != _sessionId) return;
 
     result.fold(
       (failure) =>
@@ -131,8 +145,10 @@ class Suggestions extends _$Suggestions {
 
   /// Force-refresh after the user follows or unfollows someone.
   Future<void> refresh() async {
+    final sessionId = _sessionId;
     state = state.copyWith(users: [], isLoading: true);
     final result = await _repository.getSuggestions();
+    if (!ref.mounted || sessionId != _sessionId) return;
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -143,9 +159,11 @@ class Suggestions extends _$Suggestions {
   /// Fetches more suggestions and appends them to the current list
   Future<void> fetchMore() async {
     if (state.isLoading) return;
+    final sessionId = _sessionId;
     state = state.copyWith(isLoading: true);
 
     final result = await _repository.getSuggestions();
+    if (!ref.mounted || sessionId != _sessionId) return;
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),

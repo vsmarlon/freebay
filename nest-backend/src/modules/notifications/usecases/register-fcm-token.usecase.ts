@@ -7,8 +7,8 @@ import { NotificationDatabaseRepository } from '../data/repositories/notificatio
 export class RegisterFcmTokenUseCase {
   constructor(private readonly notificationRepository: NotificationDatabaseRepository) {}
 
-  async execute(userId: string, fcmToken: string): Promise<Either<AppError, void>> {
-    const result = await this.notificationRepository.updateUserFcmToken(userId, fcmToken);
+  async execute(userId: string, fcmToken: string, installationId: string): Promise<Either<AppError, void>> {
+    const result = await this.notificationRepository.updatePushSettings(userId, { fcmToken, installationId });
     if (result.isLeft()) return left(result.value);
     return right(undefined);
   }

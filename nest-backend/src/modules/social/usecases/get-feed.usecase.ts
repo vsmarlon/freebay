@@ -26,14 +26,15 @@ export class GetFeedUseCase {
     }
 
     let cursor;
+    if (type === FeedType.EXPLORE && input.offset && input.offset > 0) {
+      return left(new BadRequestError('Use o cursor para paginar o feed'));
+    }
     if (input.cursor) {
       cursor = decodeFeedCursor(input.cursor);
       if (
         !cursor ||
-        cursor.scope !== 'following-feed' ||
-        type !== FeedType.FOLLOWING ||
-        cursor.userId !== (input.userId ?? '') ||
         cursor.type !== type ||
+        cursor.userId !== (input.userId ?? '') ||
         cursor.contentFilter !== contentFilter
       ) {
         return left(new BadRequestError('Cursor inválido para este feed'));

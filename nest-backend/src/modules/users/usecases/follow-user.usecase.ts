@@ -4,7 +4,7 @@ import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { FollowResponse } from '../mappers/user.mapper';
+import { FollowResponse } from '../dtos/user-response.class';
 import { FollowUserInput } from '../dtos/user.dto';
 
 @Injectable()

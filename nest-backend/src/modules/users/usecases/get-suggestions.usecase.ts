@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
-import { SuggestionResponse } from '../mappers/user.mapper';
+import { SuggestionResponse } from '../dtos/user-response.class';
 import { GetSuggestionsInput } from '../dtos/user.dto';
 
 @Injectable()

@@ -105,5 +105,6 @@ void main() {
     expect(reloadedState.messages.single.content, 'reloaded');
     expect(repository.conversationCalls, 2);
     expect(repository.starredCalls, 2);
+    container.dispose();
   });
 }

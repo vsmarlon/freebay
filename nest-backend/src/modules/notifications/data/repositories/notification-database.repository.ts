@@ -50,9 +50,53 @@ export class NotificationDatabaseRepository {
     }, 'Failed to mark all notifications as read');
   }
 
-  async updateUserFcmToken(userId: string, fcmToken: string): RepositoryResponse<void> {
+  async updatePushSettings(userId: string, input: {
+    installationId?: string;
+    fcmToken?: string | null;
+    notificationPrefs?: Record<string, boolean>;
+  }): RepositoryResponse<void> {
     return repositoryResponse(async () => {
-      await this.prisma.user.update({ where: { id: userId }, data: { fcmToken } });
-    }, 'Failed to update FCM token');
+      await this.prisma.$transaction(async (tx) => {
+        if (input.installationId && input.fcmToken !== undefined) {
+          if (input.fcmToken === null) {
+            await tx.pushDevice.deleteMany({ where: { userId, installationId: input.installationId } });
+          } else {
+            await tx.pushDevice.deleteMany({ where: { token: input.fcmToken, installationId: { not: input.installationId } } });
+            await tx.pushDevice.upsert({
+              where: { installationId: input.installationId },
+              create: { installationId: input.installationId, userId, token: input.fcmToken },
+              update: { userId, token: input.fcmToken },
+            });
+          }
+        }
+        const data: Prisma.UserUpdateInput = {};
+        if (input.fcmToken !== undefined) data.fcmToken = null;
+        if (input.notificationPrefs !== undefined) {
+          const current = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { notificationPrefs: true } });
+          const prefs = current.notificationPrefs;
+          data.notificationPrefs = { ...(prefs && typeof prefs === 'object' && !Array.isArray(prefs) ? prefs : {}), ...input.notificationPrefs };
+        }
+        if (Object.keys(data).length) await tx.user.update({ where: { id: userId }, data });
+      });
+    }, 'Failed to update push settings');
+  }
+
+  removePushDevice(userId: string, installationId: string): RepositoryResponse<void> {
+    return repositoryResponse(async () => {
+      await this.prisma.pushDevice.deleteMany({ where: { userId, installationId } });
+    }, 'Failed to unregister push device');
+  }
+
+  findPushTargets(userId: string) {
+    return repositoryResponse(() => this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { notificationPrefs: true, deletedAt: true, deletionRequestedAt: true, pushDevices: { select: { token: true } } },
+    }), 'Failed to fetch push targets');
+  }
+
+  removeInvalidPushTokens(userId: string, tokens: string[]): RepositoryResponse<void> {
+    return repositoryResponse(async () => {
+      await this.prisma.pushDevice.deleteMany({ where: { userId, token: { in: tokens } } });
+    }, 'Failed to remove invalid push tokens');
   }
 }

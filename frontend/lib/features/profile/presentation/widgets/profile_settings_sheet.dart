@@ -82,6 +82,32 @@ void showProfileSettingsSheet(BuildContext context) {
               ),
               BiometrySettingTile(userId: user?.id),
               ListTile(
+                leading: const Icon(
+                  Icons.group_outlined,
+                  color: AppColors.success,
+                ),
+                title: Text(
+                  'Amigos próximos',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: consumerContext.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'Escolha quem vê seus stories privados',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: consumerContext.textSecondary,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(consumerContext);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (rootNavigator.mounted) {
+                      router.push(AppRoutes.profileCloseFriends);
+                    }
+                  });
+                },
+              ),
+              ListTile(
                 leading: Icon(
                   backgroundAnimated ? Icons.animation : Icons.block_outlined,
                   color: consumerContext.textPrimary,

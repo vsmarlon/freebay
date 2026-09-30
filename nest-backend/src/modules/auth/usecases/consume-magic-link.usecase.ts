@@ -4,7 +4,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidTokenError } from '@/shared/core/errors';
 import { ConsumeMagicLinkDTO } from '../dtos/magic-link.dto';
 import { MagicLinkRepository } from '../domain/repositories/magic-link.repository';
-import { AuthResponse } from '../mappers/auth.mapper';
+import { AuthSessionResponse } from '../dtos/auth-response.class';
 import { SessionTokenService } from '../services/session-token.service';
 import { issueSession } from '../utils/session-policy';
 
@@ -15,7 +15,7 @@ export class ConsumeMagicLinkUseCase {
     private readonly sessionTokens: SessionTokenService,
   ) {}
 
-  async execute(input: ConsumeMagicLinkDTO): Promise<Either<AppError, { user: AuthResponse['user']; tokens: { token: string; refreshToken: string } }>> {
+  async execute(input: ConsumeMagicLinkDTO): Promise<Either<AppError, { user: AuthSessionResponse['user']; tokens: { token: string; refreshToken: string } }>> {
     const tokenHash = createHash('sha256').update(input.token).digest('hex');
     const consumed = await this.repository.consume(tokenHash, new Date());
     if (consumed.isLeft()) return left(consumed.value);

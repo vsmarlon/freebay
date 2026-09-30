@@ -17,37 +17,22 @@ concurrency:
 jobs:
   backend-ci:
     name: Backend CI (NestJS / Prisma / Postgres / Redis)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: freebay_test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Start native PostgreSQL and Redis
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-16 redis-server
+          sudo systemctl start postgresql redis-server
+          sudo -u postgres psql --set=ON_ERROR_STOP=1 --command="CREATE ROLE test_user WITH LOGIN PASSWORD 'test_password';"
+          sudo -u postgres createdb --owner=test_user freebay_test_db
+          pg_isready --host=127.0.0.1 --port=5432
+          redis-cli ping
 
       - name: Set up Node.js 24.10.0
         uses: actions/setup-node@v4

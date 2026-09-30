@@ -130,7 +130,7 @@ class _AppShellState extends State<AppShell>
     return _navHide.handleNotification(notification);
   }
 
-  Widget? _fabFor(BuildContext context, int selectedIndex) {
+  BrutalistFab? _fabFor(BuildContext context, int selectedIndex) {
     switch (selectedIndex) {
       case 1:
         return BrutalistFab(onTap: () => context.push(AppRoutes.createProduct));
@@ -164,8 +164,8 @@ class _AppShellState extends State<AppShell>
           }
         });
 
-        final navBarHeight =
-            kNavBarContentHeight + MediaQuery.of(context).padding.bottom;
+        final navBarHeight = kNavBarContentHeight;
+        final navBottom = MediaQuery.paddingOf(context).bottom + 8;
         final fab = _fabFor(context, selectedIndex);
 
         final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
@@ -187,7 +187,7 @@ class _AppShellState extends State<AppShell>
                     child: MediaQuery(
                       data: MediaQuery.of(context).copyWith(
                         padding: MediaQuery.of(context).padding.copyWith(
-                          bottom: isKeyboardOpen ? 0 : navBarHeight,
+                          bottom: isKeyboardOpen ? 0 : navBarHeight + navBottom,
                         ),
                       ),
                       child: PageView(
@@ -214,15 +214,24 @@ class _AppShellState extends State<AppShell>
                   ),
                 ),
                 if (fab != null && !isKeyboardOpen)
-                  Positioned(right: 16, bottom: navBarHeight + 16, child: fab),
+                  Positioned(
+                    right: 16,
+                    bottom: navBarHeight + navBottom + 16,
+                    child: ScrollAwareBar(
+                      animation: _navHide.animation,
+                      height: navBarHeight + navBottom + 16 + fab.size,
+                      edge: ScrollBarEdge.bottom,
+                      child: fab,
+                    ),
+                  ),
                 if (!isKeyboardOpen)
                   Positioned(
                     left: 16,
                     right: 16,
-                    bottom: 8,
+                    bottom: navBottom,
                     child: ScrollAwareBar(
                       animation: _navHide.animation,
-                      height: navBarHeight,
+                      height: navBarHeight + navBottom,
                       edge: ScrollBarEdge.bottom,
                       child: _BrutalistNavBar(
                         selectedIndex: selectedIndex,
@@ -255,50 +264,47 @@ class _BrutalistNavBar extends StatelessWidget {
         color: context.surfaceColor,
         border: Border.all(color: context.borderColor, width: 1.5),
       ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              _NavItem(
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home,
-                label: 'FREEBAY!',
-                isSelected: selectedIndex == 0,
-                onTap: () => onDestinationSelected(0),
-              ),
-              _NavItem(
-                icon: Icons.search,
-                selectedIcon: Icons.search,
-                label: 'EXPLORAR',
-                isSelected: selectedIndex == 1,
-                onTap: () => onDestinationSelected(1),
-              ),
-              _NavItem(
-                icon: Icons.account_balance_wallet_outlined,
-                selectedIcon: Icons.account_balance_wallet,
-                label: 'CARTEIRA',
-                isSelected: selectedIndex == 2,
-                onTap: () => onDestinationSelected(2),
-                isWallet: true,
-              ),
-              _NavItem(
-                icon: Icons.chat_bubble_outline,
-                selectedIcon: Icons.chat_bubble,
-                label: 'MENSAGENS',
-                isSelected: selectedIndex == 3,
-                onTap: () => onDestinationSelected(3),
-              ),
-              _NavItem(
-                icon: Icons.person_outline,
-                selectedIcon: Icons.person,
-                label: 'PERFIL',
-                isSelected: selectedIndex == 4,
-                onTap: () => onDestinationSelected(4),
-              ),
-            ],
-          ),
+      child: SizedBox(
+        height: kNavBarContentHeight,
+        child: Row(
+          children: [
+            _NavItem(
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home,
+              label: 'FREEBAY!',
+              isSelected: selectedIndex == 0,
+              onTap: () => onDestinationSelected(0),
+            ),
+            _NavItem(
+              icon: Icons.search,
+              selectedIcon: Icons.search,
+              label: 'EXPLORAR',
+              isSelected: selectedIndex == 1,
+              onTap: () => onDestinationSelected(1),
+            ),
+            _NavItem(
+              icon: Icons.account_balance_wallet_outlined,
+              selectedIcon: Icons.account_balance_wallet,
+              label: 'CARTEIRA',
+              isSelected: selectedIndex == 2,
+              onTap: () => onDestinationSelected(2),
+              isWallet: true,
+            ),
+            _NavItem(
+              icon: Icons.chat_bubble_outline,
+              selectedIcon: Icons.chat_bubble,
+              label: 'MENSAGENS',
+              isSelected: selectedIndex == 3,
+              onTap: () => onDestinationSelected(3),
+            ),
+            _NavItem(
+              icon: Icons.person_outline,
+              selectedIcon: Icons.person,
+              label: 'PERFIL',
+              isSelected: selectedIndex == 4,
+              onTap: () => onDestinationSelected(4),
+            ),
+          ],
         ),
       ),
     );

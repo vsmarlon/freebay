@@ -8,6 +8,8 @@ import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 
+typedef UsernameAvailability = ({bool available, List<String> suggestions});
+
 class AuthRepository {
   final Dio client;
 
@@ -22,6 +24,7 @@ class AuthRepository {
       accessToken = await StorageService.getToken();
       refreshToken = await StorageService.getRefreshToken();
       biometricToken = await StorageService.getBiometricToken();
+      final installationId = await StorageService.getPushInstallationId();
 
       final result = await requestEither<void>(
         () => client.post(
@@ -29,6 +32,7 @@ class AuthRepository {
           data: {
             'refreshToken': ?refreshToken,
             'biometricToken': ?biometricToken,
+            'installationId': installationId,
           },
           options: Options(
             extra: {
@@ -129,15 +133,20 @@ class AuthRepository {
     return result;
   }
 
-  Future<Either<Failure, bool>> checkUsernameAvailable(String username) =>
-      requestEither(
-        () => client.get(
-          '/auth/username-available',
-          queryParameters: {'u': username},
-        ),
-        decoder: (response) =>
-            Right(response.data['data']['available'] == true),
-      );
+  Future<Either<Failure, UsernameAvailability>> checkUsernameAvailable(
+    String username,
+  ) => requestEither(
+    () => client.get(
+      '/auth/username-available',
+      queryParameters: {'u': username},
+    ),
+    decoder: (response) => Right((
+      available: response.data['data']['available'] == true,
+      suggestions: List<String>.from(
+        response.data['data']['suggestions'] as List? ?? const [],
+      ),
+    )),
+  );
 
   Future<Either<Failure, void>> requestPasswordRecovery(String email) =>
       requestEither<void>(

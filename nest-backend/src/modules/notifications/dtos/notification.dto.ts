@@ -1,11 +1,16 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterFcmTokenDTO {
   @ApiProperty({ example: 'fcm-token-abc123' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(4096)
   readonly fcmToken: string;
+
+  @ApiProperty({ description: 'Stable UUID of this app installation' })
+  @IsUUID('4')
+  readonly installationId: string;
 }
 
 export class NotificationResponse {

@@ -60,7 +60,7 @@ export class NotificationsController {
     bodyType: RegisterFcmTokenDTO,
   })
   async registerFcmToken(@CurrentUserId() userId: string, @Body() body: RegisterFcmTokenDTO) {
-    return this.registerFcmTokenUseCase.execute(userId, body.fcmToken);
+    return this.registerFcmTokenUseCase.execute(userId, body.fcmToken, body.installationId);
   }
 
   @PatchAuth(':id/read', {

@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/pages/story_viewer_page.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/story_highlight_provider.dart';
+import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/social/data/entities/story_entity.dart';
+
+final freshViewerStoriesProvider = FutureProvider.autoDispose<StoriesResponse>((
+  ref,
+) async {
+  final result = await ref.read(socialRepositoryProvider).getStories();
+  return result.fold((failure) => throw failure, (stories) => stories);
+});
 
 class StoryViewerWrapper extends ConsumerWidget {
   final String? indexParam;
@@ -12,7 +20,7 @@ class StoryViewerWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final storiesAsync = ref.watch(storiesProvider);
+    final storiesAsync = ref.watch(freshViewerStoriesProvider);
 
     return storiesAsync.when(
       data: (storiesResponse) {

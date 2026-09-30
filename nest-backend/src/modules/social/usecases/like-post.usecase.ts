@@ -13,7 +13,7 @@ export class LikePostUseCase {
   ) {}
 
   async execute(input: LikePostInput): Promise<Either<AppError, { active: boolean; count: number }>> {
-    const postResult = await this.postRepository.findById(input.postId);
+    const postResult = await this.postRepository.findById(input.postId, input.userId);
     if (postResult.isLeft()) return left(postResult.value);
     if (!postResult.value) return left(new NotFoundError('Post'));
 

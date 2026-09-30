@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { RepositoryResponse } from '@/shared/core/either';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
+import { storyAudienceWhere } from './story-database.repository';
 
 const highlightPayload = Prisma.validator<Prisma.StoryHighlightDefaultArgs>()({
   include: {
@@ -41,9 +42,30 @@ export class StoryHighlightDatabaseRepository {
     }), 'Erro ao buscar destaque');
   }
 
-  findByUserId(userId: string): RepositoryResponse<HighlightPayload[]> {
+  findVisibleById(id: string, viewerId: string): RepositoryResponse<HighlightPayload | null> {
+    return repositoryResponse(() => this.prisma.storyHighlight.findUnique({
+      where: { id },
+      ...highlightPayload,
+      include: {
+        ...highlightPayload.include,
+        stories: {
+          ...highlightPayload.include.stories,
+          where: { story: { deletedAt: null, ...storyAudienceWhere(viewerId) } },
+        },
+      },
+    }), 'Erro ao buscar destaque');
+  }
+
+  findByUserId(userId: string, viewerId: string): RepositoryResponse<HighlightPayload[]> {
     return repositoryResponse(() => this.prisma.storyHighlight.findMany({
       where: { userId }, ...highlightPayload,
+      include: {
+        ...highlightPayload.include,
+        stories: {
+          ...highlightPayload.include.stories,
+          where: { story: { deletedAt: null, ...storyAudienceWhere(viewerId) } },
+        },
+      },
       orderBy: { createdAt: 'asc' },
     }), 'Erro ao buscar destaques');
   }

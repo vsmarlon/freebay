@@ -51,6 +51,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isSending) return;
+    final generation = _conversationGeneration;
     final currentUserId = ref.read(authControllerProvider).value?.id;
     final replyId = _replyTarget?.id;
     final viewOnce = _viewOnceEnabled;
@@ -82,7 +83,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
           viewOnce: viewOnce,
           clientMessageId: tempId,
         );
-    if (!mounted) return;
+    if (!mounted || generation != _conversationGeneration) return;
     setState(() => _isSending = false);
     result.fold(
       (f) {
@@ -98,6 +99,8 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
   }
 
   Future<void> _sendAudio(AudioRecording recording) async {
+    final generation = _conversationGeneration;
+    final chatId = widget.chatId;
     final replyId = _takeReplyTarget();
     setState(() {
       _isRecording = false;
@@ -115,26 +118,29 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
         }
         return;
       }
+      if (!mounted || generation != _conversationGeneration) return;
       final result = await ref
           .read(chatRepositoryProvider)
           .sendRichMessage(
-            conversationId: widget.chatId,
+            conversationId: chatId,
             type: MessageType.audio,
             attachmentUrl: url,
             replyToId: replyId,
             durationMs: recording.duration.inMilliseconds,
           );
-      if (!mounted) return;
+      if (!mounted || generation != _conversationGeneration) return;
       result.fold((f) => AppSnackbar.error(context, f.message), (sent) {
-        _notifier.addOptimistic(sent);
+        _notifier.confirmSent(sent.id, sent);
         _scrollToBottom();
+        ref.read(liveChatListProvider.notifier).refreshRecent();
       });
-      _notifier.refresh();
     } finally {
       try {
         await recording.file.delete();
       } catch (_) {}
-      if (mounted) setState(() => _isSending = false);
+      if (mounted && generation == _conversationGeneration) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
@@ -144,6 +150,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
     required String clientMessageId,
   }) async {
     if (_isSending) return;
+    final generation = _conversationGeneration;
     setState(() => _isSending = true);
     try {
       final result = await _notifier.sendLocation(
@@ -151,7 +158,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
         replyToId: replyToId,
         clientMessageId: clientMessageId,
       );
-      if (!mounted) return;
+      if (!mounted || generation != _conversationGeneration) return;
       result.fold(
         (failure) => AppSnackbar.error(
           context,
@@ -165,10 +172,15 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
             ),
           ),
         ),
-        (_) => _notifier.refresh(),
+        (_) {
+          _scrollToBottom();
+          ref.read(liveChatListProvider.notifier).refreshRecent();
+        },
       );
     } finally {
-      if (mounted) setState(() => _isSending = false);
+      if (mounted && generation == _conversationGeneration) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
@@ -180,21 +192,40 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
     Map<String, dynamic>? metadata,
     bool viewOnce = false,
   }) async {
-    await ref
-        .read(chatRepositoryProvider)
-        .sendRichMessage(
-          conversationId: widget.chatId,
-          content: content,
-          type: type,
-          attachmentUrl: attachmentUrl,
-          replyToId: replyToId,
-          metadata: metadata,
-          viewOnce: viewOnce,
-        );
-    await _notifier.refresh();
+    if (!mounted || _isSending) return;
+    final generation = _conversationGeneration;
+    setState(() => _isSending = true);
+    try {
+      final result = await ref
+          .read(chatRepositoryProvider)
+          .sendRichMessage(
+            conversationId: widget.chatId,
+            content: content,
+            type: type,
+            attachmentUrl: attachmentUrl,
+            replyToId: replyToId,
+            metadata: metadata,
+            viewOnce: viewOnce,
+          );
+      if (!mounted || generation != _conversationGeneration) return;
+      result.fold((failure) => AppSnackbar.error(context, failure.message), (
+        sent,
+      ) {
+        _notifier.confirmSent(sent.id, sent);
+        _scrollToBottom();
+        ref.read(liveChatListProvider.notifier).refreshRecent();
+      });
+    } finally {
+      if (mounted && generation == _conversationGeneration) {
+        setState(() => _isSending = false);
+      }
+    }
   }
 
   void _deleteSelectedMessages() {
+    final chatId = widget.chatId;
+    final repository = ref.read(chatRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
     final ids = Set<String>.from(_selectedMessageIds);
     final messages = ref
         .read(conversationMessagesProvider(widget.chatId))
@@ -217,17 +248,26 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
           ? 'Mensagem apagada.'
           : '${ids.length} mensagens apagadas.',
       onUndo: () {
-        final current = ref
-            .read(conversationMessagesProvider(widget.chatId))
-            .messages;
+        if (!mounted || widget.chatId != chatId) return;
+        final current = ref.read(conversationMessagesProvider(chatId)).messages;
         for (final m in removed) {
           _notifier.insertMessage(indexes[m.id] ?? current.length, m);
         }
       },
       onCommit: () async {
-        final repo = ref.read(chatRepositoryProvider);
+        var failed = false;
         for (final id in ids) {
-          await repo.deleteMessage(widget.chatId, id);
+          final result = await repository.deleteMessage(chatId, id);
+          if (result.isLeft) failed = true;
+        }
+        if (failed) {
+          if (mounted && widget.chatId == chatId) await _notifier.refresh();
+          if (messenger.mounted) {
+            AppSnackbar.errorOnMessenger(
+              messenger,
+              'Não foi possível apagar algumas mensagens',
+            );
+          }
         }
       },
     );

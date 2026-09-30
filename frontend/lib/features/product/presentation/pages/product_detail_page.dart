@@ -10,6 +10,7 @@ import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
+import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/escrow_trust_banner.dart';
@@ -55,6 +56,7 @@ class ProductDetailPage extends ConsumerWidget {
     final isFavorited =
         ref.watch(isFavoritedProvider(product.id)).value ??
         ref.watch(favoritesProvider).isFavorited(product.id);
+    final cartItemCount = ref.watch(cartItemCountProvider);
 
     return Scaffold(
       backgroundColor: context.bgColor,
@@ -74,7 +76,11 @@ class ProductDetailPage extends ConsumerWidget {
                       child: CachedNetworkImage(
                         imageUrl: product.imageUrl!,
                         fit: BoxFit.cover,
-                        memCacheWidth: 1080,
+                        memCacheWidth:
+                            (MediaQuery.sizeOf(context).width *
+                                    MediaQuery.devicePixelRatioOf(context))
+                                .ceil()
+                                .clamp(1, 1080),
                         placeholder: (context, url) =>
                             Container(color: context.surfaceMidColor),
                         errorWidget: (context, url, error) => Container(
@@ -107,6 +113,36 @@ class ProductDetailPage extends ConsumerWidget {
               borderColor: context.borderColor,
             ),
             actions: [
+              Semantics(
+                label: 'Carrinho, $cartItemCount itens',
+                button: true,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    BrutalistIconButton(
+                      icon: Icons.shopping_cart_outlined,
+                      borderColor: context.borderColor,
+                      onTap: () => context.push(AppRoutes.cart),
+                    ),
+                    if (cartItemCount > 0)
+                      Positioned(
+                        top: -5,
+                        right: -5,
+                        child: Container(
+                          color: AppColors.primaryContainer,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            '$cartItemCount',
+                            style: AppTypography.labelSmall.copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               BrutalistIconButton(
                 icon: isFavorited ? Icons.favorite : Icons.favorite_border,
                 iconColor: isFavorited ? AppColors.error : context.textPrimary,

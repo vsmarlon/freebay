@@ -172,26 +172,9 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             animation: _anim,
                             begin: 0.26,
                             end: 0.57,
-                            child: AppTextField(
+                            child: UsernameField(
                               controller: _usernameController,
                               label: '@ Username',
-                              hint: 'seu_username',
-                              prefixIcon: Icons.alternate_email,
-                              validator: (v) {
-                                if (v == null || v.trim().isEmpty) {
-                                  return 'Escolha um username';
-                                }
-                                if (v.trim().length < 3) {
-                                  return 'Mínimo 3 caracteres';
-                                }
-                                if (v.trim().length > 20) {
-                                  return 'Máximo 20 caracteres';
-                                }
-                                if (!ValueUtils.validateUsername(v.trim())) {
-                                  return 'Apenas letras minúsculas, números e _';
-                                }
-                                return null;
-                              },
                             ),
                           ),
                           Spacing.vMd,

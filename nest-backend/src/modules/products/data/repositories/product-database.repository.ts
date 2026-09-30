@@ -51,10 +51,10 @@ export class ProductDatabaseRepository {
         where.categoryId = categoryIds.length > 1 ? { in: categoryIds } : categoryId;
       }
       if (condition) where.condition = condition;
-      if (minPrice || maxPrice) {
+      if (minPrice !== undefined || maxPrice !== undefined) {
         const priceFilter: Prisma.IntFilter = {};
-        if (minPrice) priceFilter.gte = minPrice;
-        if (maxPrice) priceFilter.lte = maxPrice;
+        if (minPrice !== undefined) priceFilter.gte = minPrice;
+        if (maxPrice !== undefined) priceFilter.lte = maxPrice;
         where.price = priceFilter;
       }
 

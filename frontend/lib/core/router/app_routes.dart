@@ -29,6 +29,7 @@ class AppRoutes {
   static const String chatConversation = '/chat/:chatId';
   static const String chatDetails = '/chat/:chatId/details';
   static const String profileBlocked = '/profile/blocked';
+  static const String profileCloseFriends = '/profile/close-friends';
   static const String faq = '/faq';
   static const String notifications = '/notifications';
   static const String profilePosts = '/profile/posts';
@@ -72,6 +73,8 @@ class AppRoutes {
   static String disputePath(String id) => '/disputes/$id';
   static String createDisputePath(String orderId) =>
       '/disputes/create/$orderId';
+  static String profilePaymentWith(String productId) =>
+      '$profilePayment?productId=${Uri.encodeComponent(productId)}';
 
   static String followersWith(String userId) =>
       '$profileFollowers?userId=${Uri.encodeComponent(userId)}';

@@ -7,6 +7,7 @@ class PostActions extends StatelessWidget {
   final bool isSaved;
   final bool isReposted;
   final bool isLikeLoading;
+  final bool allowRepost;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;
@@ -21,6 +22,7 @@ class PostActions extends StatelessWidget {
     required this.isSaved,
     required this.isReposted,
     required this.isLikeLoading,
+    this.allowRepost = true,
     required this.likesCount,
     required this.commentsCount,
     required this.sharesCount,
@@ -50,15 +52,16 @@ class PostActions extends StatelessWidget {
               onTap: onLike,
             ),
           ),
-          Spacing.hMd,
-          PostActionButton(
-            icon: Icons.chat_bubble_outline,
-            label: commentsCount > 0 ? commentsCount.toString() : null,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              onComment?.call();
-            },
-          ),
+          if (allowRepost) Spacing.hMd,
+          if (allowRepost)
+            PostActionButton(
+              icon: Icons.chat_bubble_outline,
+              label: commentsCount > 0 ? commentsCount.toString() : null,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onComment?.call();
+              },
+            ),
           Spacing.hMd,
           PostActionButton(
             icon: isReposted ? Icons.repeat : Icons.repeat,

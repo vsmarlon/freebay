@@ -21,7 +21,7 @@ import {
   ResolveReportDTO,
   SuspendUserDTO,
 } from './dtos/admin.dto';
-import { AdminReportPageResponse, ModerationActionPageResponse } from './mappers/admin.mapper';
+import { AdminReportPageResponse, ModerationActionPageResponse } from './dtos/admin-response.class';
 
 @ApiTags('Admin')
 @Controller('admin')

@@ -43,8 +43,10 @@ class _SalesRepository implements OrderRepository {
       throw UnimplementedError();
 
   @override
-  Future<Either<Failure, String>> cancelOrder(String orderId, {String? reason}) =>
-      throw UnimplementedError();
+  Future<Either<Failure, String>> cancelOrder(
+    String orderId, {
+    String? reason,
+  }) => throw UnimplementedError();
 
   @override
   Future<Either<Failure, CanReviewResponse>> canReviewOrder(String orderId) =>

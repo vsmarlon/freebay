@@ -4,7 +4,7 @@ import { AppError } from '@/shared/core/errors';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { UserLookupRepository } from '../domain/repositories/user-lookup.repository';
 import { NotFoundError } from '@/shared/core/errors';
-import { toUserBrief } from '../mappers/user.mapper';
+import { toUserBrief } from '../dtos/user-response.class';
 
 export type ListFollowingInput = { userId: string; limit: number; offset: number; verifyUser?: boolean };
 

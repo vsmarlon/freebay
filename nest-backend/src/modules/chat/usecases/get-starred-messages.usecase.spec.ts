@@ -82,4 +82,24 @@ describe('GetStarredMessagesUseCase', () => {
     expect(result.isRight()).toBe(true);
     expect(mockRepo.findStarredMessages).toHaveBeenCalledWith('buyer-1', 'order-1', 'ORDER');
   });
+
+  it.each([
+    { label: 'view-once já lida', viewOnce: true, readAt: new Date('2026-06-24'), deletedAt: null },
+    { label: 'apagada', viewOnce: false, readAt: null, deletedAt: new Date('2026-06-24') },
+  ])('deve ocultar conteúdo e anexo de resposta $label em mensagem favoritada', async ({ viewOnce, readAt, deletedAt }) => {
+    mockRepo.findStarredMessages.mockResolvedValue(right([directMessage({
+      replyToId: 'reply-1',
+      replyTo: {
+        id: 'reply-1', senderId: 'user-2', content: 'segredo', type: 'IMAGE',
+        attachmentUrl: '/media/chat/reply.jpg', deletedAt, viewOnce, readAt,
+      },
+    })]));
+
+    const result = await sut.execute('conv-1', 'user-1');
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value[0].replyTo).toMatchObject({ content: null, attachmentUrl: null });
+    }
+  });
 });

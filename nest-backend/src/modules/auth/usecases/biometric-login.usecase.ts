@@ -5,17 +5,10 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError, UnauthorizedError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RedisService } from '@/shared/infra/redis/redis.service';
-import { LoginResponse } from '../mappers/auth.mapper';
+import { BiometricSessionResponse } from '../dtos/auth-response.class';
 import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { SessionTokenService } from '../services/session-token.service';
 import { issueSession } from '../utils/session-policy';
-
-export type BiometricLoginOutput = {
-  user: LoginResponse['user'];
-  token: string;
-  refreshToken: string;
-  biometricToken: string;
-};
 
 @Injectable()
 export class BiometricLoginUseCase {
@@ -27,7 +20,7 @@ export class BiometricLoginUseCase {
     private readonly sessionTokens: SessionTokenService,
   ) {}
 
-  async execute(biometricToken: string): Promise<Either<AppError, BiometricLoginOutput>> {
+  async execute(biometricToken: string): Promise<Either<AppError, BiometricSessionResponse>> {
     // 1. Verify JWT signature + expiry
     let payload: AuthUser;
     try {

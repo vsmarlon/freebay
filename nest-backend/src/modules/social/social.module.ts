@@ -31,6 +31,7 @@ import { UnlikeCommentUseCase } from "./usecases/unlike-comment.usecase";
 import { DeletePostUseCase } from "./usecases/delete-post.usecase";
 import { DeleteCommentUseCase } from "./usecases/delete-comment.usecase";
 import { GetSavedPostsUseCase } from "./usecases/get-saved-posts.usecase";
+import { ApproveCommentUseCase } from './usecases/approve-comment.usecase';
 
 @Module({
   controllers: [SocialReadController, SocialWriteController],
@@ -62,6 +63,7 @@ import { GetSavedPostsUseCase } from "./usecases/get-saved-posts.usecase";
     UnlikeCommentUseCase,
     DeletePostUseCase,
     DeleteCommentUseCase,
+    ApproveCommentUseCase,
     GetSavedPostsUseCase,
   ],
   exports: [

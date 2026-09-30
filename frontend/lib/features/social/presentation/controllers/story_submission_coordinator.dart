@@ -12,6 +12,7 @@ class StorySubmissionCoordinator {
     required String imagePath,
     String? caption,
     List<StoryTextBlockEntity> textBlocks = const [],
+    StoryAudience audience = StoryAudience.everyone,
     required VoidCallback invalidateGlobalStories,
     required void Function(String userId) invalidateUserStories,
   }) async {
@@ -22,6 +23,7 @@ class StorySubmissionCoordinator {
         imagePath,
         caption: caption,
         textBlocks: textBlocks,
+        audience: audience,
       );
       result.fold((_) {}, (story) {
         invalidateGlobalStories();

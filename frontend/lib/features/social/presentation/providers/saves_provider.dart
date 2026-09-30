@@ -9,6 +9,7 @@ part 'saves_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Saves extends _$Saves {
+  int _sessionId = 0;
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
@@ -16,7 +17,13 @@ class Saves extends _$Saves {
     return const SavesState();
   }
 
+  void clear() {
+    _sessionId++;
+    state = const SavesState();
+  }
+
   Future<bool> toggleSave(String postId, {required bool initialIsSaved}) async {
+    final sessionId = _sessionId;
     final currentSaved = state.savedOverrides[postId] ?? initialIsSaved;
     final newIsSaved = !currentSaved;
 
@@ -27,6 +34,7 @@ class Saves extends _$Saves {
     final result = currentSaved
         ? await _repository.unsavePost(postId)
         : await _repository.savePost(postId);
+    if (!ref.mounted || sessionId != _sessionId) return false;
 
     return result.fold(
       (_) {

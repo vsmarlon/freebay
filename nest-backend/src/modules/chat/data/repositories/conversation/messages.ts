@@ -9,7 +9,7 @@ import {
   DirectMessageWithSender,
   ReplyToSummary,
   messageWithSenderInclude,
-} from '../../../mappers/conversation.mapper';
+} from './payloads';
 import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 
 const REPLY_TO_SELECT = {
@@ -104,16 +104,16 @@ export function findChatMessagesByOrder(prisma: PrismaService, orderId: string, 
   );
 }
 
-export function markChatMessagesRead(prisma: PrismaService, orderId: string, userId: string): Promise<{ count: number }> {
-  return prisma.chatMessage.updateMany({ where: { orderId, senderId: { not: userId }, readAt: null }, data: { readAt: new Date(), deliveredAt: new Date() } });
+export function markChatMessagesRead(prisma: PrismaService, orderId: string, userId: string, messageId?: string): Promise<{ count: number }> {
+  return prisma.chatMessage.updateMany({ where: { orderId, senderId: { not: userId }, readAt: null, ...(messageId ? { id: messageId } : { viewOnce: false }) }, data: { readAt: new Date(), deliveredAt: new Date() } });
 }
 
 export function markMessagesDelivered(prisma: PrismaService, conversationId: string, userId: string): Promise<{ count: number }> {
   return prisma.directMessage.updateMany({ where: { conversationId, senderId: { not: userId }, deliveredAt: null }, data: { deliveredAt: new Date() } });
 }
 
-export function markMessagesRead(prisma: PrismaService, conversationId: string, userId: string): Promise<{ count: number }> {
-  return prisma.directMessage.updateMany({ where: { conversationId, senderId: { not: userId }, readAt: null }, data: { readAt: new Date(), deliveredAt: new Date() } });
+export function markMessagesRead(prisma: PrismaService, conversationId: string, userId: string, messageId?: string): Promise<{ count: number }> {
+  return prisma.directMessage.updateMany({ where: { conversationId, senderId: { not: userId }, readAt: null, ...(messageId ? { id: messageId } : { viewOnce: false }) }, data: { readAt: new Date(), deliveredAt: new Date() } });
 }
 
 export function findDirectMessageById(prisma: PrismaService, id: string): Promise<DirectMessage | null> {

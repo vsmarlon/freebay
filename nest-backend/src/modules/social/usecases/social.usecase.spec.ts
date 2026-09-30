@@ -190,7 +190,7 @@ describe('UnlikePostUseCase', () => {
 
 describe('CommentUseCase', () => {
   let sut: CommentUseCase;
-  let mockCommentRepository: { createWithCount: jest.Mock; createMentions: jest.Mock };
+  let mockCommentRepository: { createWithCount: jest.Mock; createMentions: jest.Mock; belongsToPost: jest.Mock };
   let mockNotificationService: { notifyMention: jest.Mock };
 
   beforeEach(async () => {
@@ -203,6 +203,7 @@ describe('CommentUseCase', () => {
         createdAt: new Date(),
       })),
       createMentions: jest.fn().mockResolvedValue(right(undefined)),
+      belongsToPost: jest.fn().mockResolvedValue(right(true)),
     };
     mockNotificationService = { notifyMention: jest.fn().mockResolvedValue(undefined) };
 
@@ -211,6 +212,7 @@ describe('CommentUseCase', () => {
         CommentUseCase,
         { provide: PrismaCommentRepository, useValue: mockCommentRepository },
         { provide: NotificationService, useValue: mockNotificationService },
+        { provide: PrismaPostRepository, useValue: { findById: jest.fn().mockResolvedValue(right({ id: 'post-123', userId: 'owner-123' })) } },
       ],
     }).compile();
 
@@ -227,6 +229,8 @@ describe('CommentUseCase', () => {
     expect(mockCommentRepository.createWithCount).toHaveBeenCalledWith(
       expect.objectContaining({ content: 'Great post!' }),
       'post-123',
+      'owner-123',
+      'user-123',
     );
   });
 

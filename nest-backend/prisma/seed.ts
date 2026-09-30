@@ -27,6 +27,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("[Seed] Starting FreeBay database seeding...");
+  // PushDevice is not seeded: provider tokens belong to real app installations.
 
   // 1. Categories Hierarchy
   console.log("[Seed] Seeding categories...");

@@ -1,4 +1,4 @@
-import { Prisma, StoryMediaType } from "@prisma/client";
+import { Prisma, StoryAudience, StoryMediaType } from "@prisma/client";
 import { StoryTextBlock } from "../dtos/stories.dto";
 
 export const storyWithViewsValidator =
@@ -35,6 +35,7 @@ export interface StoryBrief {
   id: string;
   imageUrl: string;
   mediaType: StoryMediaType;
+  audience: StoryAudience;
   caption: string | null;
   textBlocks: StoryTextBlock[];
   createdAt: Date;

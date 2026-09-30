@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,7 @@ class AppSnackbar {
     required AppSnackbarType type,
     required Duration duration,
     SnackBarAction? action,
+    VoidCallback? onVisible,
   }) {
     final color = switch (type) {
       AppSnackbarType.success => AppColors.success,
@@ -42,6 +45,7 @@ class AppSnackbar {
         ],
       ),
       action: action,
+      onVisible: onVisible,
       backgroundColor: AppColors.darkGray,
       behavior: SnackBarBehavior.floating,
       duration: duration,
@@ -56,10 +60,53 @@ class AppSnackbar {
     Duration duration = const Duration(seconds: 3),
     SnackBarAction? action,
   }) {
-    final messenger = ScaffoldMessenger.of(context);
+    _showOnMessenger(
+      ScaffoldMessenger.of(context),
+      message: message,
+      type: type,
+      duration: duration,
+      action: action,
+    );
+  }
+
+  static void _showOnMessenger(
+    ScaffoldMessengerState messenger, {
+    required String message,
+    required AppSnackbarType type,
+    required Duration duration,
+    SnackBarAction? action,
+  }) {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       _build(message: message, type: type, duration: duration, action: action),
+    );
+  }
+
+  /// Use after a page has been popped; the root messenger may still be active.
+  static void errorOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message,
+  ) {
+    if (!messenger.mounted) return;
+    _showOnMessenger(
+      messenger,
+      message: message,
+      type: AppSnackbarType.error,
+      duration: const Duration(seconds: 3),
+    );
+    _recordError(messenger.context, message);
+  }
+
+  static void infoOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message,
+  ) {
+    if (!messenger.mounted) return;
+    _showOnMessenger(
+      messenger,
+      message: message,
+      type: AppSnackbarType.info,
+      duration: const Duration(seconds: 3),
     );
   }
 
@@ -85,8 +132,8 @@ class AppSnackbar {
   static void handleFailure(BuildContext context, Object? failure) =>
       error(context, userMessageOf(failure));
 
-  /// Optimistic destructive action: the UI removes the item immediately and
-  /// [onCommit] only fires once the snackbar closes without UNDO being tapped.
+  /// Keep the delete pending until the undo window expires. A snackbar with an
+  /// action may stay visible indefinitely with accessibility navigation enabled.
   static void undoable(
     BuildContext context, {
     required String message,
@@ -95,24 +142,38 @@ class AppSnackbar {
     Duration duration = const Duration(seconds: 4),
   }) {
     final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger
-        .showSnackBar(
-          _build(
-            message: message,
-            type: AppSnackbarType.info,
-            duration: duration,
-            action: SnackBarAction(
-              label: 'DESFAZER',
-              textColor: AppColors.onPrimaryContainer,
-              onPressed: onUndo,
-            ),
-          ),
-        )
-        .closed
-        .then((reason) {
-          if (reason != SnackBarClosedReason.action) onCommit();
-        });
+    Timer? timer;
+    var resolved = false;
+    late ScaffoldFeatureController<SnackBar, SnackBarClosedReason> controller;
+    controller = messenger.showSnackBar(
+      _build(
+        message: message,
+        type: AppSnackbarType.info,
+        duration: duration,
+        onVisible: () {
+          timer = Timer(duration, () {
+            if (resolved) return;
+            resolved = true;
+            onCommit();
+            controller.close();
+          });
+        },
+        action: SnackBarAction(
+          label: 'DESFAZER',
+          textColor: AppColors.onPrimaryContainer,
+          onPressed: () {
+            if (resolved) return;
+            resolved = true;
+            timer?.cancel();
+            onUndo();
+          },
+        ),
+      ),
+    );
+    controller.closed.then((_) {
+      timer?.cancel();
+      if (!resolved) onUndo();
+    });
   }
 
   static void _recordError(BuildContext context, String message) {

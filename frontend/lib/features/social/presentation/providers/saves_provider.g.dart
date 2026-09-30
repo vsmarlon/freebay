@@ -40,7 +40,7 @@ final class SavesProvider extends $NotifierProvider<Saves, SavesState> {
   }
 }
 
-String _$savesHash() => r'5ac59a56d24c4caf4a2772988507d16c00a9a48b';
+String _$savesHash() => r'0b6b603673a7cf88fba96e143cbcb854975e11e0';
 
 abstract class _$Saves extends $Notifier<SavesState> {
   SavesState build();

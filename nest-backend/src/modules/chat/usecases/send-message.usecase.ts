@@ -1,13 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { SendMessageInput, SendMessageInternalOutput, SendMessageOutput } from '../dtos/chat.dto';
 import { Prisma, DirectMessage, ChatMessage, MessageType, ChatThreadType } from '@prisma/client';
-import { DirectMessageWithSender, ChatMessageWithSender } from '../mappers/conversation.mapper';
+import { DirectMessageWithSender, ChatMessageWithSender } from '../data/repositories/conversation/payloads';
 import {
   readCanonicalLocationMetadata,
   validateLocationMetadata,
@@ -15,32 +16,40 @@ import {
 
 @Injectable()
 export class SendMessageUseCase {
+  private readonly logger = new Logger(SendMessageUseCase.name);
+
   constructor(
     private readonly conversationRepository: ConversationDatabaseRepository,
     private readonly blockRepository: PrismaBlockRepository,
     private readonly ogScraper: OgScraperService,
     private readonly threadAccess: ChatThreadAccessService,
+    private readonly notifications: NotificationService,
   ) {}
 
   async execute(input: SendMessageInput): Promise<Either<AppError, SendMessageInternalOutput>> {
     const resolved = await this.threadAccess.resolveThread(input.senderId, input.conversationId);
     if (resolved.isLeft()) return left(resolved.value);
 
-    if (resolved.value.orderId) {
-      return this.runMessagePipeline(input, {
-        threadId: resolved.value.orderId,
-        otherUserId: resolved.value.otherUserId,
-        model: ChatThreadType.ORDER,
-        isOrder: true,
-      });
-    }
-
-    return this.runMessagePipeline(input, {
-      threadId: input.conversationId,
+    const isOrder = !!resolved.value.orderId;
+    const result = await this.runMessagePipeline(input, {
+      threadId: resolved.value.orderId ?? input.conversationId,
       otherUserId: resolved.value.otherUserId,
-      model: ChatThreadType.DIRECT,
-      isOrder: false,
+      model: isOrder ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
+      isOrder,
     });
+    if (result.isLeft()) return result;
+
+    try {
+      await this.notifications.notifyNewMessage(
+        result.value.recipientId,
+        result.value.senderName,
+        result.value.message.conversationId,
+        result.value.message.id,
+      );
+    } catch (error) {
+      this.logger.warn(`Chat notification failed: ${String(error)}`);
+    }
+    return result;
   }
 
   // ponytail: single shared pipeline for direct/order sends; only persistence branches.

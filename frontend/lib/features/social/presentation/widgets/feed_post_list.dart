@@ -29,17 +29,28 @@ class FeedPostList extends StatelessWidget {
     if (state.posts.isEmpty && !state.isLoading) {
       return SliverFillRemaining(hasScrollBody: false, child: emptyState);
     }
-    return SliverPadding(
-      padding: const EdgeInsets.only(bottom: 120),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => RepaintBoundary(
-            key: ValueKey('post_${state.posts[index].id}'),
-            child: FeedPostItem(post: state.posts[index]),
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.only(bottom: 120),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => RepaintBoundary(
+                key: ValueKey('post_${state.posts[index].id}'),
+                child: FeedPostItem(post: state.posts[index]),
+              ),
+              childCount: state.posts.length,
+            ),
           ),
-          childCount: state.posts.length,
         ),
-      ),
+        if (state.error != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: AppButton(label: 'TENTAR NOVAMENTE', onPressed: onRetry),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/story_entity.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class StoryThumbnail extends StatefulWidget {
   const StoryThumbnail({super.key, required this.url, required this.mediaType});
@@ -25,7 +26,13 @@ class _StoryThumbnailState extends State<StoryThumbnail> {
 
   Future<void> _loadVideo() async {
     if (widget.mediaType != StoryMediaType.video) return;
-    final controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    final url = widget.url;
+    final headers = await getMediaAuthHeadersAsync(url);
+    if (!mounted || widget.url != url) return;
+    final controller = VideoPlayerController.networkUrl(
+      Uri.parse(url),
+      httpHeaders: headers ?? const {},
+    );
     _video = controller;
     try {
       await controller.initialize();
@@ -57,11 +64,20 @@ class _StoryThumbnailState extends State<StoryThumbnail> {
     child: ColoredBox(
       color: context.surfaceMidColor,
       child: widget.mediaType == StoryMediaType.image
-          ? CachedNetworkImage(
-              imageUrl: widget.url,
-              fit: BoxFit.cover,
-              errorWidget: (_, _, _) => const Icon(Icons.broken_image_outlined),
-            )
+          ? isPrivateMedia(widget.url)
+                ? Image.network(
+                    widget.url,
+                    headers: mediaAuthHeaders(widget.url),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        const Icon(Icons.broken_image_outlined),
+                  )
+                : CachedNetworkImage(
+                    imageUrl: widget.url,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, _, _) =>
+                        const Icon(Icons.broken_image_outlined),
+                  )
           : Stack(
               fit: StackFit.expand,
               children: [

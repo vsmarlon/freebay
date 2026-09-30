@@ -1,4 +1,4 @@
-.PHONY: help lint analyze format architecture-check design-check routes-check test test-unit test-integration
+.PHONY: help lint analyze format architecture-check design-check routes-check test test-unit test-integration perf-check
 
 BACKEND_DIR  := nest-backend
 FRONTEND_DIR := frontend
@@ -16,6 +16,7 @@ help:
 	@echo "  make test              Run everything (lint + analyze + unit + integration)"
 	@echo "  make test-unit         TypeScript + Jest + Flutter unit tests"
 	@echo "  make test-integration  Backend integration tests (needs configured native PostgreSQL + Redis; database freebay_test_db)"
+	@echo "  make perf-check DEVICE=<id>  Profile all five mobile flows (requires backend and fixtures)"
 	@echo ""
 
 lint:
@@ -70,3 +71,8 @@ test-integration:
 	@echo ""
 	@echo "=== Backend integration tests (needs configured native PostgreSQL + Redis) ==="
 	cd $(BACKEND_DIR) && npm run test:integration
+
+perf-check:
+	@echo ""
+	@echo "=== Performance gate (all instrumented flows) ==="
+	node scripts/perf-check.js --all --device $(DEVICE)

@@ -192,6 +192,10 @@ model User {
   following               Follow[]                 @relation("Followers")
   blocksGiven             Block[]                  @relation("Blocker")
   blocksReceived          Block[]                  @relation("Blocked")
+  closeFriendsGiven        CloseFriend[]            @relation("CloseFriendsOwner")
+  closeFriendsReceived     CloseFriend[]            @relation("CloseFriendsMember")
+  restrictionsGiven       Restriction[]            @relation("RestrictionOwner")
+  restrictionsReceived    Restriction[]            @relation("RestrictedUser")
   disputes                Dispute[]
   comments                Comment[]
   likes                   Like[]
@@ -211,6 +215,7 @@ model User {
   messageReactions        MessageReaction[]
   starredMessages         StarredMessage[]
   notifications           Notification[]
+  pushDevices             PushDevice[]
   postMentions            PostMention[]            @relation("PostMentions")
   commentMentions         CommentMention[]         @relation("CommentMentions")
   submittedReports        Report[]                 @relation("SubmittedReports")
@@ -219,7 +224,7 @@ model User {
   moderationActions       ModerationAction[]       @relation("ModerationActor")
   reviewedReports         Report[]                 @relation("ReviewedReports")
   resolvedDisputes        Dispute[]                @relation("ResolvedDisputes")
-  fcmToken                String?
+  fcmToken                String?                  // Legacy column; new registrations use PushDevice.
   notificationPrefs       Json?                    @default("{\"orders\":true,\"follows\":true,\"messages\":true,\"disputes\":true}")
   webConsentGrantedAt     DateTime?
   webConsentIp            String?
@@ -228,6 +233,17 @@ model User {
   @@index([email])
   @@index([createdAt])
   @@index([deletionRequestedAt])
+}
+
+model PushDevice {
+  installationId String   @id @db.Uuid
+  userId         String
+  token          String   @unique
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PasswordRecoveryCode {
@@ -254,6 +270,11 @@ model PasswordRecoveryCode {
 enum StoryMediaType {
   IMAGE
   VIDEO
+}
+
+enum StoryAudience {
+  EVERYONE
+  CLOSE_FRIENDS
 }
 
 model WebMagicLink {
@@ -340,9 +361,9 @@ model Product {
   directConversations DirectConversation[]
 
   @@index([sellerId, createdAt])
-  @@index([status])
-  @@index([categoryId])
-  @@index([status, createdAt])
+  @@index([status, deletedAt, createdAt(sort: Desc), id])
+  @@index([status, deletedAt, price, id])
+  @@index([status, deletedAt, soldCount(sort: Desc), id])
   @@index([categoryId, status])
 }
 
@@ -362,6 +383,7 @@ model Post {
   content       String?
   imageUrl      String?
   type          PostType
+  audience      StoryAudience @default(EVERYONE)
   userId        String
   likesCount    Int       @default(0)
   commentsCount Int       @default(0)
@@ -408,6 +430,7 @@ model Comment {
   likesCount Int       @default(0)
   createdAt  DateTime  @default(now())
   deletedAt  DateTime?
+  isHidden   Boolean   @default(false)
 
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   post         Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -417,9 +440,8 @@ model Comment {
   mentions     CommentMention[]
 
   @@index([userId])
-  @@index([postId])
-  @@index([parentId])
-  @@index([deletedAt])
+  @@index([postId, parentId, deletedAt, createdAt, id])
+  @@index([parentId, deletedAt, createdAt])
 }
 
 model CommentMention {
@@ -759,6 +781,7 @@ model Story {
   userId    String
   imageUrl  String
   mediaType StoryMediaType @default(IMAGE)
+  audience StoryAudience @default(EVERYONE)
   caption   String?
   textBlocks Json?
   expiresAt DateTime
@@ -807,6 +830,30 @@ enum MessageType {
   GIF
   LOCATION
   PRODUCT_CARD
+}
+
+model CloseFriend {
+  ownerId   String
+  memberId  String
+  createdAt DateTime @default(now())
+
+  owner  User @relation("CloseFriendsOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member User @relation("CloseFriendsMember", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, memberId])
+  @@index([memberId])
+}
+
+model Restriction {
+  ownerId      String
+  restrictedId String
+  createdAt    DateTime @default(now())
+
+  owner      User @relation("RestrictionOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  restricted User @relation("RestrictedUser", fields: [restrictedId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, restrictedId])
+  @@index([restrictedId])
 }
 
 model StoryHighlight {
@@ -1096,6 +1143,6 @@ model SavedPost {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
-  @@index([userId])
+  @@index([userId, createdAt, id])
   @@index([postId])
 }

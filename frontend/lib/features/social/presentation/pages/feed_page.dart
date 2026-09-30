@@ -48,7 +48,8 @@ class _FeedPageState extends ConsumerState<FeedPage>
   }
 
   void _onScroll() {
-    if (_scrollController.position.extentAfter < 500) {
+    if (ref.read(feedProvider).error == null &&
+        _scrollController.position.extentAfter < 500) {
       _loadMore();
     }
   }
@@ -94,7 +95,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
   }
 
   void _retry() {
-    _loadCurrentFeed(refresh: true);
+    _loadCurrentFeed(refresh: ref.read(feedProvider).posts.isEmpty);
   }
 
   @override
@@ -138,7 +139,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
                             'Troque entre posts sociais e vendas quando quiser.',
                       ),
               ),
-              if (feedState.hasMore)
+              if (feedState.hasMore && feedState.error == null)
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(16.0),

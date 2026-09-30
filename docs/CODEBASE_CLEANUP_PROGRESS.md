@@ -333,8 +333,8 @@ Status is intentionally `planned` for every inherited path until its owning atom
 | `nest-backend/src/modules/chat/data/repositories/conversation/messages.ts` | B1 — chat/catalog/core | planned |
 | `nest-backend/src/modules/chat/data/repositories/conversation/reactions-media.ts` | B1 — chat/catalog/core | planned |
 | `nest-backend/src/modules/chat/dtos/chat.dto.ts` | B1 — chat/catalog/core | planned |
-| `nest-backend/src/modules/chat/mappers/conversation.mapper.ts` | B1 — chat/catalog/core | planned |
-| `nest-backend/src/modules/chat/mappers/conversation/payloads.ts` | B1 — chat/catalog/core | planned |
+| `nest-backend/src/modules/chat/dtos/conversation-response.ts` | B1 — chat/catalog/core | planned |
+| `nest-backend/src/modules/chat/data/repositories/conversation/payloads.ts` | B1 — chat/catalog/core | planned |
 | `nest-backend/src/modules/chat/usecases/get-conversations.usecase.spec.ts` | B1 — chat/catalog/core tests | planned |
 | `nest-backend/src/modules/chat/usecases/get-messages.usecase.spec.ts` | B1 — chat/catalog/core tests | planned |
 | `nest-backend/src/modules/chat/usecases/get-starred-messages.usecase.spec.ts` | B1 — chat/catalog/core tests | planned |
@@ -393,7 +393,7 @@ Status is intentionally `planned` for every inherited path until its owning atom
 | `nest-backend/src/modules/users/data/repositories/follow-database.repository.ts` | B3 — users/auth/tooling | planned |
 | `nest-backend/src/modules/users/data/repositories/phone-verification-database.repository.ts` | B3 — users/auth/tooling | planned |
 | `nest-backend/src/modules/users/data/repositories/user-data-export.repository.ts` | B3 — users/auth/tooling | planned |
-| `nest-backend/src/modules/users/mappers/user.mapper.ts` | B3 — users/auth/tooling | planned |
+| `nest-backend/src/modules/users/dtos/user-response.class.ts` | B3 — users/auth/tooling | planned |
 | `nest-backend/src/modules/users/usecases/user-test-fixtures.ts` | B3 — users/auth/tooling tests | planned |
 | `nest-backend/src/modules/users/usecases/user.usecase.spec.ts` | B3 — users/auth/tooling tests | planned |
 | `nest-backend/src/modules/users/users-account.controller.ts` | B3 — users/auth/tooling | planned |

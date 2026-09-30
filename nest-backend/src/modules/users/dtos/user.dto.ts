@@ -13,6 +13,9 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
   IsNotEmpty,
+  IsIn,
+  IsUUID,
+  ValidateIf,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -92,15 +95,34 @@ export class VerifyPhoneDTO {
   readonly code: string;
 }
 
+@ValidatorConstraint({ name: 'notificationPreferences', async: false })
+export class NotificationPreferencesConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown): boolean {
+    return value !== null && typeof value === 'object' && !Array.isArray(value) &&
+      Object.entries(value).every(([key, enabled]) =>
+        ['orders', 'follows', 'messages', 'disputes'].includes(key) && typeof enabled === 'boolean');
+  }
+
+  defaultMessage() { return 'Preferências de notificação inválidas'; }
+}
+
 export class UpdateFcmTokenDTO {
   @ApiPropertyOptional({ example: 'fcm-token-value' })
   @IsOptional()
   @IsString()
-  readonly fcmToken?: string;
+  @MinLength(1)
+  @MaxLength(4096)
+  readonly fcmToken?: string | null;
+
+  @ApiPropertyOptional({ description: 'Stable UUID of this app installation; required when setting or removing a token' })
+  @ValidateIf((input: UpdateFcmTokenDTO) => input.fcmToken !== undefined || input.installationId !== undefined)
+  @IsUUID('4')
+  readonly installationId?: string;
 
   @ApiPropertyOptional({ example: { orders: true, follows: true, messages: true } })
   @IsOptional()
   @IsObject()
+  @Validate(NotificationPreferencesConstraint)
   readonly notificationPrefs?: Record<string, boolean>;
 }
 
@@ -119,6 +141,19 @@ export class OffsetPaginationQueryDTO {
   @IsInt()
   @Min(0)
   readonly offset?: number;
+}
+
+export class CloseFriendCandidatesQueryDTO extends OffsetPaginationQueryDTO {
+  @ApiPropertyOptional({ description: 'Search followers by name or username' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  readonly q?: string;
+
+  @ApiPropertyOptional({ enum: ['true'], description: 'Show only selected friends' })
+  @IsOptional()
+  @IsIn(['true'])
+  readonly selected?: string;
 }
 
 export class UserSearchQueryDTO {
@@ -156,6 +191,7 @@ export class SuggestionsQueryDTO {
 
 export interface GetProfileInput {
   userId: string;
+  viewerId?: string;
   includePrivate?: boolean;
 }
 

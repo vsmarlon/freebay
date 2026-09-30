@@ -40,6 +40,7 @@ class PostDetailsPostSection extends StatelessWidget {
       userAvatarUrl: post.user.avatarUrl,
       content: post.content,
       imageUrl: post.imageUrl,
+      isCloseFriends: post.audience == PostAudience.closeFriends,
       likesCount: likesCount,
       commentsCount: post.commentsCount,
       sharesCount: sharesCount,

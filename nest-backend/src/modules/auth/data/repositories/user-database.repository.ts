@@ -11,6 +11,8 @@ import {
   toUserSuggestionResult,
 } from '../../types/user.types';
 import { normalizeEmail } from '../../utils/normalize-email';
+import { postVisibilityWhere } from '@/modules/social/data/repositories/post-query-helpers';
+import { storyAudienceWhere } from '@/modules/stories/data/repositories/story-database.repository';
 
 /// Over-fetch mutual-follow candidates so the in-memory ranking has room to sort.
 const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
@@ -44,17 +46,19 @@ export class UserDatabaseRepository {
   async findByUsername(username: string): RepositoryResponse<User | null> {
     const normalized = username.toLowerCase().trim();
     return repositoryResponse(
-      () =>
-        this.prisma.user.findFirst({
-          where: {
-            username: {
-              equals: normalized,
-              mode: 'insensitive',
-            },
-          },
-        }),
+      () => this.prisma.user.findUnique({ where: { username: normalized } }),
       'Erro ao buscar usuário por username',
     );
+  }
+
+  async findTakenUsernames(candidates: string[]): RepositoryResponse<string[]> {
+    return repositoryResponse(async () => {
+      const users = await this.prisma.user.findMany({
+        where: { username: { in: candidates } },
+        select: { username: true },
+      });
+      return users.flatMap((user) => user.username ? [user.username] : []);
+    }, 'Erro ao buscar nomes de usuário');
   }
 
   async create(data: Prisma.UserCreateInput): RepositoryResponse<User> {
@@ -189,13 +193,13 @@ export class UserDatabaseRepository {
     }, 'Erro ao buscar sugestões');
   }
 
-  async getProfileCounts(userId: string): RepositoryResponse<UserProfileCounts> {
+  async getProfileCounts(userId: string, viewerId?: string): RepositoryResponse<UserProfileCounts> {
     return repositoryResponse(async () => {
       const [postsCount, productsCount, activeStory] = await Promise.all([
-        this.prisma.post.count({ where: { userId } }),
+        this.prisma.post.count({ where: { userId, deletedAt: null, AND: [postVisibilityWhere(viewerId)] } }),
         this.prisma.product.count({ where: { sellerId: userId, status: { not: 'DELETED' } } }),
         this.prisma.story.findFirst({
-          where: { userId, expiresAt: { gt: new Date() } },
+          where: { userId, deletedAt: null, expiresAt: { gt: new Date() }, AND: [storyAudienceWhere(viewerId ?? '')] },
           select: { id: true },
         }),
       ]);

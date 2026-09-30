@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math';
 
 class StorageService {
   static const _storage = FlutterSecureStorage();
@@ -14,6 +15,7 @@ class StorageService {
   static const _hasSeenOnboardingKey = 'has_seen_onboarding';
   static const _welcomeSetupDonePrefix = 'welcome_setup_done_';
   static const _lastActiveAtKey = 'last_active_at';
+  static const _pushInstallationKey = 'push_installation_id';
 
   static SharedPreferences? _prefs;
   static String? _tokenCache;
@@ -30,6 +32,24 @@ class StorageService {
   }
 
   static String? get cachedToken => _tokenCache;
+
+  static Future<String> getPushInstallationId() async {
+    final prefs = _prefs ?? await SharedPreferences.getInstance();
+    final saved = prefs.getString(_pushInstallationKey);
+    if (saved != null) return saved;
+    final random = Random.secure();
+    final bytes = List.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex = bytes
+        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+        .join();
+    final id =
+        '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+    await prefs.setString(_pushInstallationKey, id);
+    return id;
+  }
 
   static Future<String?> getToken() async {
     return _enqueueTokenRead(() async {

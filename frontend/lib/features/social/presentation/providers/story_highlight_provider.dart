@@ -13,6 +13,7 @@ final storyArchiveProvider = FutureProvider.autoDispose<List<StoryEntity>>((
 
 final storyHighlightsProvider = FutureProvider.autoDispose
     .family<List<StoryHighlightEntity>, String>((ref, userId) async {
+      ref.watch(authControllerProvider.select((state) => state.value?.id));
       final result = await ref
           .read(socialRepositoryProvider)
           .getStoryHighlights(userId);
@@ -24,6 +25,7 @@ final storyHighlightsProvider = FutureProvider.autoDispose
 
 final storyHighlightProvider = FutureProvider.autoDispose
     .family<StoryHighlightEntity, String>((ref, id) async {
+      ref.watch(authControllerProvider.select((state) => state.value?.id));
       final result = await ref
           .read(socialRepositoryProvider)
           .getStoryHighlight(id);

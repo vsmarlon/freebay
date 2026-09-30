@@ -4,7 +4,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { Either, left } from '@/shared/core/either';
 import { AppError, InvalidGoogleTokenError, UnverifiedGoogleEmailError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
-import { AuthResponse } from '../mappers/auth.mapper';
+import { AuthSessionResponse } from '../dtos/auth-response.class';
 import { normalizeEmail } from '../utils/normalize-email';
 import { SessionTokenService } from '../services/session-token.service';
 import { issueSession } from '../utils/session-policy';
@@ -58,7 +58,7 @@ export class GoogleAuthUseCase {
     this.client = new OAuth2Client(this.audiences[0]);
   }
 
-  async execute(idToken: string): Promise<Either<AppError, AuthResponse & { token: string; refreshToken: string }>> {
+  async execute(idToken: string): Promise<Either<AppError, AuthSessionResponse>> {
     let payload: GooglePayload;
     try {
       const ticket = await this.client.verifyIdToken({

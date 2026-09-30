@@ -3,7 +3,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { FollowRepository } from '../domain/repositories/follow.repository';
-import { UserStatsResponse } from '../mappers/user.mapper';
+import { UserStatsResponse } from '../dtos/user-response.class';
 import { GetUserStatsInput } from '../dtos/user.dto';
 
 @Injectable()
@@ -14,18 +14,15 @@ export class GetUserStatsUseCase {
   ) {}
 
   async execute(input: GetUserStatsInput): Promise<Either<AppError, UserStatsResponse>> {
-    const [salesCountResult, purchasesCountResult] = await Promise.all([
+    const [salesCountResult, purchasesCountResult, followersCountResult, followingCountResult] = await Promise.all([
       this.orderRepository.countBySellerId(input.userId),
       this.orderRepository.countByBuyerId(input.userId),
+      this.followRepository.getFollowersCount(input.userId),
+      this.followRepository.getFollowingCount(input.userId),
     ]);
 
     if (salesCountResult.isLeft()) return left(salesCountResult.value);
     if (purchasesCountResult.isLeft()) return left(purchasesCountResult.value);
-
-    const [followersCountResult, followingCountResult] = await Promise.all([
-      this.followRepository.getFollowersCount(input.userId),
-      this.followRepository.getFollowingCount(input.userId),
-    ]);
 
     if (followersCountResult.isLeft()) return left(followersCountResult.value);
     if (followingCountResult.isLeft()) return left(followingCountResult.value);

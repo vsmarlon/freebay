@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
@@ -71,6 +72,7 @@ class CartNotifier extends Notifier<CartState> {
         return false;
       },
       (_) async {
+        state = CartState(cart: state.cart);
         await loadCart();
         return true;
       },
@@ -125,7 +127,9 @@ class CartNotifier extends Notifier<CartState> {
 
   Future<bool> checkout() async {
     state = state.copyWith(isCheckingOut: true);
-    final result = await ref.read(cartRepositoryProvider).checkoutCart();
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .checkoutCart(hosted: kIsWeb);
     final success = result.fold(
       (failure) {
         state = state.copyWith(isCheckingOut: false, error: failure.message);

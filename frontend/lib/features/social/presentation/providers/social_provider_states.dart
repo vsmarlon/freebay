@@ -10,7 +10,6 @@ abstract class FeedState with _$FeedState {
     @Default(false) bool isLoading,
     @Default(true) bool hasMore,
     String? cursor,
-    @Default(0) int offset,
     String? error,
   }) = _FeedState;
 }

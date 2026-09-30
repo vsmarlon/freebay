@@ -13,11 +13,15 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { PostType } from "@prisma/client";
+import { PostType, StoryAudience } from "@prisma/client";
 import { SanitizeText } from "@/shared/utils/sanitize.decorator";
 import { COMMENT_MAX_LENGTH, ContentFilter, FeedType, SEARCH_MAX_LENGTH, SearchFilter } from "../types/social.types";
 
 export class CreatePostDTO {
+  @ApiPropertyOptional({ enum: StoryAudience, default: StoryAudience.EVERYONE })
+  @IsOptional()
+  @IsEnum(StoryAudience)
+  readonly audience?: StoryAudience;
   @ApiPropertyOptional({ example: "Post content here..." })
   @IsOptional()
   @IsString()
@@ -83,14 +87,14 @@ export class GetFeedQueryDTO {
   readonly type?: FeedType;
 
   @ApiPropertyOptional({
-    description: "Keyset pagination cursor (type=following only)",
+    description: "Opaque pagination cursor for Explore and Following feeds",
   })
   @IsOptional()
   @IsString()
   readonly cursor?: string;
 
   @ApiPropertyOptional({
-    description: "Page offset (type=explore only)",
+    description: "Legacy first-page offset; use cursor for subsequent Explore pages",
     example: 0,
   })
   @IsOptional()
@@ -166,6 +170,7 @@ export interface CreatePostInput {
   content?: string;
   imageUrl?: string;
   type: PostType;
+  audience?: StoryAudience;
   mentionIds?: string[];
 }
 
@@ -174,6 +179,7 @@ export interface CreatePostOutput {
   content: string | null;
   imageUrl: string | null;
   type: PostType;
+  audience: StoryAudience;
   userId: string;
   likesCount: number;
   commentsCount: number;

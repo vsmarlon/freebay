@@ -6,8 +6,8 @@ if (!process.env.GOOGLE_CLIENT_ID) {
   process.env.GOOGLE_CLIENT_ID = 'e2e-placeholder.apps.googleusercontent.com';
 }
 if (!process.env.STRIPE_SECRET_KEY) {
-  process.env.STRIPE_SECRET_KEY = 'sk_test_e2e0000000000000000000000';
+  process.env.STRIPE_SECRET_KEY = 'e2e_fake_stripe_key_not_real';
 }
 if (!process.env.STRIPE_WEBHOOK_SECRET) {
-  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_e2e00000000000000000000000000';
+  process.env.STRIPE_WEBHOOK_SECRET = 'e2e_fake_webhook_secret_not_real';
 }

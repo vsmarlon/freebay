@@ -195,7 +195,7 @@ class MessageBubble extends StatelessWidget {
     // View-once locked bubble
     if (_isViewOnceLocked) {
       return GestureDetector(
-        onTap: onViewOnceReveal,
+        onTap: isMe ? null : onViewOnceReveal,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Column(

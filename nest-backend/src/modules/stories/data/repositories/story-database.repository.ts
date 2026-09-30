@@ -9,16 +9,45 @@ import {
   StoryCreatePayload,
 } from "../../types/story.types";
 import { canonicalStoryTextBlocks } from "../../dtos/stories.dto";
+import { Prisma } from '@prisma/client';
+
+export function storyAudienceWhere(viewerId: string): Prisma.StoryWhereInput {
+  return {
+    OR: [
+      { userId: viewerId },
+      {
+        user: {
+          blocksGiven: { none: { blockedId: viewerId } },
+          blocksReceived: { none: { blockerId: viewerId } },
+        },
+        OR: [
+          { audience: 'EVERYONE' },
+          {
+            audience: 'CLOSE_FRIENDS',
+            user: {
+              closeFriendsGiven: { some: { memberId: viewerId } },
+              followers: { some: { followerId: viewerId } },
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function storyMediaUrl(url: string): string {
+  return url.replace(/^\/uploads\/story\//, '/media/story/');
+}
 
 @Injectable()
 export class PrismaStoryRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 
-  async findActiveWithViews(): RepositoryResponse<StoryWithViews[]> {
+  async findActiveWithViews(viewerId: string): RepositoryResponse<StoryWithViews[]> {
     return repositoryResponse(async () => {
       return await this.prisma.story.findMany({
-        where: { expiresAt: { gt: new Date() }, deletedAt: null },
+        where: { expiresAt: { gt: new Date() }, deletedAt: null, ...storyAudienceWhere(viewerId) },
         include: {
           user: { select: { id: true, displayName: true, avatarUrl: true } },
           _count: { select: { views: true } },
@@ -28,10 +57,10 @@ export class PrismaStoryRepository {
     }, "Erro ao buscar stories");
   }
 
-  async findByUserId(userId: string): RepositoryResponse<StoryBrief[]> {
+  async findByUserId(userId: string, viewerId: string): RepositoryResponse<StoryBrief[]> {
     return repositoryResponse(async () => {
       const stories = await this.prisma.story.findMany({
-        where: { userId, expiresAt: { gt: new Date() }, deletedAt: null },
+        where: { userId, expiresAt: { gt: new Date() }, deletedAt: null, ...storyAudienceWhere(viewerId) },
         include: {
           user: {
             select: {
@@ -46,7 +75,8 @@ export class PrismaStoryRepository {
       });
       return stories.map((story) => ({
         id: story.id,
-        imageUrl: story.imageUrl,
+        imageUrl: storyMediaUrl(story.imageUrl),
+        audience: story.audience,
         mediaType: story.mediaType,
         caption: story.caption,
         textBlocks: canonicalStoryTextBlocks(story.textBlocks),
@@ -57,14 +87,14 @@ export class PrismaStoryRepository {
     }, "Erro ao buscar stories do usuário");
   }
 
-  async findById(id: string): RepositoryResponse<{
+  async findById(id: string, viewerId?: string): RepositoryResponse<{
     id: string;
     userId: string;
     imageUrl: string;
   } | null> {
     return repositoryResponse(async () => {
       const story = await this.prisma.story.findUnique({
-        where: { id },
+        where: { ...(viewerId ? { expiresAt: { gt: new Date() }, ...storyAudienceWhere(viewerId) } : {}), id },
         select: { id: true, userId: true, imageUrl: true, deletedAt: true },
       });
       if (!story || story.deletedAt !== null) return null;

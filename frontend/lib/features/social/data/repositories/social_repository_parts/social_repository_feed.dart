@@ -12,7 +12,6 @@ mixin SocialRepositoryFeed {
   Future<Either<Failure, FeedPageResult>> getFeed({
     int limit = 20,
     String? cursor,
-    int? offset,
     FeedType type = FeedType.explore,
     FeedContentFilter contentFilter = FeedContentFilter.all,
   }) => requestEither(
@@ -23,7 +22,6 @@ mixin SocialRepositoryFeed {
         'type': type.wireValue,
         'contentFilter': contentFilter.apiValue,
         'cursor': ?cursor,
-        'offset': ?offset,
       },
     ),
     decoder: (response) {
@@ -34,7 +32,6 @@ mixin SocialRepositoryFeed {
           posts: posts,
           hasMore: map?['hasMore'] == true,
           nextCursor: map?['nextCursor'] as String?,
-          nextOffset: map?['nextOffset'] as int?,
         ),
       );
     },
@@ -44,11 +41,13 @@ mixin SocialRepositoryFeed {
     String? content,
     String? imagePath,
     PostType type = PostType.regular,
+    PostAudience audience = PostAudience.everyone,
   }) async {
     try {
       final data = FormData.fromMap({
         'content': ?content,
         'type': type.wireValue,
+        'audience': audience.wireValue,
         if (imagePath != null)
           'image': await ImageUploadService.compressedMultipartFile(
             imagePath,

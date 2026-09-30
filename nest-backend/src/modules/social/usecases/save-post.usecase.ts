@@ -12,7 +12,7 @@ export class SavePostUseCase {
   ) {}
 
   async execute(input: { userId: string; postId: string }): Promise<Either<AppError, { active: boolean }>> {
-    const postResult = await this.postRepository.findById(input.postId);
+    const postResult = await this.postRepository.findById(input.postId, input.userId);
     if (postResult.isLeft()) return left(postResult.value);
     if (!postResult.value) return left(new NotFoundError('Post'));
 

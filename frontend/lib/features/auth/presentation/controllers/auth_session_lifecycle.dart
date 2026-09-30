@@ -63,6 +63,14 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
   }
 
   void _invalidateUserProviders() {
+    ref.read(feedProvider.notifier).clear();
+    ref.read(postSearchProvider.notifier).clear();
+    ref.read(likesProvider.notifier).clear();
+    ref.read(savesProvider.notifier).clear();
+    ref.read(repostsProvider.notifier).clear();
+    ref.read(commentLikesProvider.notifier).clear();
+    ref.read(userSearchProvider.notifier).clear();
+    ref.read(suggestionsProvider.notifier).clear();
     ref.read(walletProvider.notifier).reset();
     ref.read(walletHistoryProvider.notifier).reset();
     ref.read(connectStatusProvider.notifier).reset();
@@ -78,9 +86,19 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
     ref.invalidate(chatsProvider);
     ref.invalidate(liveChatListProvider);
     ref.invalidate(archivedChatListProvider);
+    ref.invalidate(feedProvider);
+    ref.invalidate(postSearchProvider);
+    ref.invalidate(likesProvider);
+    ref.invalidate(savesProvider);
+    ref.invalidate(repostsProvider);
+    ref.invalidate(commentLikesProvider);
+    ref.invalidate(userSearchProvider);
+    ref.invalidate(suggestionsProvider);
+    ref.invalidate(storiesProvider);
+    ref.invalidate(userStoriesProvider);
   }
 
-  Future<void> logout() async {
+  Future<void> logout() => AuthSessionCoordinator.serialize(() async {
     HttpClient.suspendRefresh();
     final rememberMe = await StorageService.getRememberMe();
     if (!ref.mounted) return;
@@ -91,13 +109,16 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
       await _clearLocalAuthState(clearSavedEmail: !rememberMe);
       ErrorReporter.report('logout', failure);
     }, (_) async => _clearLocalAuthState(clearSavedEmail: !rememberMe));
-  }
+  });
 
-  Future<void> forceLogout() async => _clearLocalAuthState();
+  Future<void> forceLogout() =>
+      AuthSessionCoordinator.serialize(_clearLocalAuthState);
 
   Future<void> expireSession() async {
     HttpClient.suspendRefresh();
-    await _clearLocalAuthState(clearBiometric: false);
+    await AuthSessionCoordinator.serialize(
+      () => _clearLocalAuthState(clearBiometric: false),
+    );
   }
 
   Future<void> _clearBiometryIfAccountSwitch(UserEntity user) async {
@@ -112,6 +133,12 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
     bool clearSavedEmail = false,
   }) async {
     HttpClient.suspendRefresh();
+    state = const AsyncValue.data(null);
+    try {
+      await NotificationService().clearToken();
+    } catch (error, stack) {
+      ErrorReporter.report('push-token-revoke', error, stack);
+    }
     if (clearBiometric) {
       try {
         await BiometryService().clearState();

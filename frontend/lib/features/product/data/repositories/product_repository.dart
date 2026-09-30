@@ -11,6 +11,7 @@ import 'package:freebay/features/product/data/entities/create_product_input.dart
 import 'package:freebay/features/product/domain/product_filters.dart';
 
 const _kProductCacheBox = 'product_catalog_cache';
+const _maxProductCachePages = 8;
 
 class ProductRepository {
   final Dio client;
@@ -22,7 +23,12 @@ class ProductRepository {
   Future<void> _writeCache(String key, List<ProductEntity> products) async {
     try {
       final box = await _cacheBox();
+      if (box.containsKey(key)) await box.delete(key);
       await box.put(key, products.map((e) => e.toJson()).toList());
+      // ponytail: only recent first pages stay hot; older filters refetch.
+      while (box.length > _maxProductCachePages) {
+        await box.delete(box.keys.first);
+      }
     } catch (_) {}
   }
 
@@ -82,7 +88,6 @@ class ProductRepository {
             .whereType<Map>()
             .map((j) => ProductEntity.fromJson(Map<String, dynamic>.from(j)))
             .toList();
-        _writeCache(cacheKey, products);
         return Right(
           ProductPageResult(
             products: products,
@@ -93,7 +98,9 @@ class ProductRepository {
       },
     );
 
-    if (result.isLeft) {
+    if (result.isRight && cursor == null) {
+      await _writeCache(cacheKey, result.rightOrNull!.products);
+    } else if (result.isLeft && cursor == null) {
       final cached = await _readCache(cacheKey);
       if (cached != null) {
         return Right(ProductPageResult(products: cached, hasMore: false));

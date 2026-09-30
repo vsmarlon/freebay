@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 
@@ -80,6 +81,10 @@ class _SavedPostsPageState extends ConsumerState<SavedPostsPage> {
   }
 
   Widget _body(BuildContext context) {
+    final saves = ref.watch(savesProvider);
+    final visiblePosts = _posts
+        .where((post) => saves.getSavedOverride(post.id) ?? true)
+        .toList();
     if (_loading && _posts.isEmpty) {
       return const Center(child: ShimmerBlock(height: 180));
     }
@@ -91,7 +96,7 @@ class _SavedPostsPageState extends ConsumerState<SavedPostsPage> {
         ),
       );
     }
-    if (_posts.isEmpty) {
+    if (visiblePosts.isEmpty) {
       return const EmptyState(
         icon: Icons.bookmark_outline,
         title: 'NENHUM POST SALVO',
@@ -102,16 +107,16 @@ class _SavedPostsPageState extends ConsumerState<SavedPostsPage> {
       onRefresh: () => _load(refresh: true),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _posts.length + (_hasMore ? 1 : 0),
+        itemCount: visiblePosts.length + (_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index == _posts.length) {
+          if (index == visiblePosts.length) {
             Future.microtask(() => _load(refresh: false));
             return const Padding(
               padding: EdgeInsets.all(16),
               child: ShimmerBlock(height: 120),
             );
           }
-          final post = _posts[index];
+          final post = visiblePosts[index];
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: FeedPostItem(

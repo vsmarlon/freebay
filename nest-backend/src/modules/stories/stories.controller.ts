@@ -42,13 +42,13 @@ export class StoriesController {
   }
 
   @GetAuth('highlights/user/:userId', { summary: 'List public highlights for a user' })
-  async getHighlights(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.storiesService.getHighlights(userId);
+  async getHighlights(@Param('userId', ParseUUIDPipe) userId: string, @CurrentUserId() viewerId: string) {
+    return this.storiesService.getHighlights(userId, viewerId);
   }
 
   @GetAuth('highlights/:id', { summary: 'View a public highlight' })
-  async getHighlight(@Param('id', ParseUUIDPipe) id: string) {
-    return this.storiesService.getHighlight(id);
+  async getHighlight(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string) {
+    return this.storiesService.getHighlight(id, viewerId);
   }
 
   @PostAuth('highlights', { summary: 'Create a story highlight', bodyType: SaveStoryHighlightDTO, responseStatus: 201, httpCode: HttpStatus.CREATED })
@@ -75,8 +75,8 @@ export class StoriesController {
     summary: "List active stories for a specific user",
     params: [{ name: "userId", description: "User UUID" }],
   })
-  async getUserStories(@Param("userId", ParseUUIDPipe) userId: string) {
-    return this.storiesService.getUserStories(userId);
+  async getUserStories(@Param("userId", ParseUUIDPipe) userId: string, @CurrentUserId() viewerId: string) {
+    return this.storiesService.getUserStories(userId, viewerId);
   }
 
   @PostAuth({
@@ -129,6 +129,7 @@ export class StoriesController {
       userId,
       imageUrl,
       mediaType: file.mimetype.startsWith("video/") ? StoryMediaType.VIDEO : StoryMediaType.IMAGE,
+      audience: body?.audience,
       caption: typeof body?.caption === "string" ? body.caption : undefined,
       textBlocks: textBlocksForPersistence,
     });

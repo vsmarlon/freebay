@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "husky",
     "ci:check": "node scripts/ci-check.js",
-    "test:ci-scripts": "node --test scripts/ci-check.test.js"
+    "test:ci-scripts": "node --test scripts/ci-check.test.js scripts/perf-check.test.js"
   },
   "lint-staged": {
     "nest-backend/src/**/*.ts": [

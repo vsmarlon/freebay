@@ -47,17 +47,29 @@ void main() {
       final gesture = await tester.startGesture(const Offset(700, 400));
       await tester.pump(const Duration(seconds: 1));
       expect(find.byKey(const ValueKey('first')), findsOneWidget);
-    await tester.pump(const Duration(seconds: 8));
-    expect(find.byKey(const ValueKey('first')), findsOneWidget);
-    await gesture.up();
-    await tester.pump();
-    expect(tester.widget<StoryPage>(find.byType(StoryPage)).animationController.isAnimating, isTrue);
-    await tester.pump(const Duration(seconds: 6));
-    expect(tester.widget<StoryPage>(find.byType(StoryPage)).animationController.value, greaterThan(0.75));
+      await tester.pump(const Duration(seconds: 8));
       expect(find.byKey(const ValueKey('first')), findsOneWidget);
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pump();
-    expect(find.byKey(const ValueKey('second')), findsOneWidget);
+      await gesture.up();
+      await tester.pump();
+      expect(
+        tester
+            .widget<StoryPage>(find.byType(StoryPage))
+            .animationController
+            .isAnimating,
+        isTrue,
+      );
+      await tester.pump(const Duration(seconds: 6));
+      expect(
+        tester
+            .widget<StoryPage>(find.byType(StoryPage))
+            .animationController
+            .value,
+        greaterThan(0.75),
+      );
+      expect(find.byKey(const ValueKey('first')), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('second')), findsOneWidget);
     },
   );
 }

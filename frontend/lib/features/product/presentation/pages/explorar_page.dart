@@ -177,7 +177,9 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
       minPrice: priceRange == null
           ? null
           : CurrencyUtils.reaisToCents(priceRange.start),
-      maxPrice: priceRange == null
+      maxPrice:
+          priceRange == null ||
+              priceRange.end >= ProductFilterLimits.maxPriceReais
           ? null
           : CurrencyUtils.reaisToCents(priceRange.end),
     );
@@ -250,15 +252,48 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () => ref.read(productsFeedProvider(params).notifier).load(),
-      color: AppColors.primaryContainer,
-      child: ProductResultsGrid(
-        products: feedState.products,
-        isLoadingMore: feedState.isLoadingMore,
-        onLoadMore: () =>
-            ref.read(productsFeedProvider(params).notifier).loadMore(),
-      ),
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () =>
+                ref.read(productsFeedProvider(params).notifier).load(),
+            color: AppColors.primaryContainer,
+            child: ProductResultsGrid(
+              products: feedState.products,
+              isLoadingMore: feedState.isLoadingMore,
+              onLoadMore: () {
+                if (feedState.error == null) {
+                  ref.read(productsFeedProvider(params).notifier).loadMore();
+                }
+              },
+            ),
+          ),
+        ),
+        if (feedState.error != null)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    feedState.error!,
+                    style: AppTypography.bodyMedium,
+                  ),
+                ),
+                Spacing.hSm,
+                AppButton(
+                  label: 'TENTAR NOVAMENTE',
+                  size: AppButtonSize.compact,
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => ref
+                      .read(productsFeedProvider(params).notifier)
+                      .loadMore(),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

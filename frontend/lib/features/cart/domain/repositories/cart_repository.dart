@@ -9,5 +9,7 @@ abstract interface class CartRepository {
   Future<Either<Failure, void>> updateQuantity(String productId, int quantity);
   Future<Either<Failure, void>> removeFromCart(String productId);
   Future<Either<Failure, void>> clearCart();
-  Future<Either<Failure, CartCheckoutEntity>> checkoutCart();
+  Future<Either<Failure, CartCheckoutEntity>> checkoutCart({
+    bool hosted = false,
+  });
 }

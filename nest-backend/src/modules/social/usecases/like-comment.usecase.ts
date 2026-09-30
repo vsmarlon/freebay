@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
-import { AppError } from "@/shared/core/errors";
+import { AppError, NotFoundError } from "@/shared/core/errors";
 import { PrismaCommentRepository } from "../data/repositories/comment-database.repository";
 
 @Injectable()
@@ -16,6 +16,7 @@ export class LikeCommentUseCase {
       input.commentId,
       true,
     );
-    return result.isLeft() ? left(result.value) : right(undefined);
+    if (result.isLeft()) return left(result.value);
+    return result.value ? right(undefined) : left(new NotFoundError('Comentário'));
   }
 }

@@ -38,11 +38,11 @@ FreeBay is a high-performance C2C (Consumer-to-Consumer) hybrid marketplace with
 
 ### 2.1 Vertical Feature Slice Design
 Instead of arbitrary horizontal layer divisions, each module in `src/modules/<feature>` encapsulates its full stack:
-- **`dtos/`**: `class-validator` decorated classes for request validation and OpenAPI doc generation via `@nestjs/swagger`. (Never use Zod).
+- **`dtos/`**: `class-validator` request DTOs, OpenAPI response DTOs, and explicit public-field projections. (Never use Zod).
 - **`domain/repositories/`**: Abstract repository definitions defining business query contracts.
 - **`data/repositories/`**: Concrete Prisma-powered implementations (e.g. `*-database.repository.ts`) injecting `PrismaService`.
 - **`usecases/`**: Single-responsibility use cases, exactly one class per file. Every use case returns `Promise<Either<AppError, Output>>`.
-- **`mappers/`**: Pure functions transforming raw Prisma entities into sanitize API response objects.
+- **Response boundaries**: select or project only public fields before returning. Keep Prisma payload types near repository queries; never return raw user rows.
 - **`guards/`**: Module-specific access control guards (e.g. `JwtAuthGuard`, `NonGuestGuard`, `WebhookGuard`).
 
 ### 2.2 Either Monad Pattern

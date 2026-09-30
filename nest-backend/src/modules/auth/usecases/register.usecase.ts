@@ -4,7 +4,7 @@ import { Either, left } from '@/shared/core/either';
 import { AppError, EmailAlreadyExistsError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { RegisterDTO } from '../dtos/auth.dto';
-import { AuthResponse } from '../mappers/auth.mapper';
+import { AuthSessionResponse } from '../dtos/auth-response.class';
 import { normalizeEmail } from '../utils/normalize-email';
 import { SessionTokenService } from '../services/session-token.service';
 import { issueSession } from '../utils/session-policy';
@@ -17,7 +17,7 @@ export class RegisterUseCase {
     private readonly sessionTokens: SessionTokenService,
   ) {}
 
-  async execute(input: RegisterDTO): Promise<Either<AppError, AuthResponse & { token: string; refreshToken: string }>> {
+  async execute(input: RegisterDTO): Promise<Either<AppError, AuthSessionResponse>> {
     const email = normalizeEmail(input.email);
     const existingResult = await this.userRepository.findByEmail(email);
     if (existingResult.isLeft()) return left(existingResult.value);

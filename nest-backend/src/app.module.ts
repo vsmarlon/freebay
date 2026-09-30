@@ -7,6 +7,7 @@ import { RolesGuard } from './shared/guards/roles.guard';
 import { OriginGuard } from './shared/guards/origin.guard';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { PUBLIC_UPLOAD_CONTEXTS } from './shared/utils/file.utils';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -61,11 +62,13 @@ import { THROTTLE_TTL_HOUR_MS, THROTTLE_TTL_MINUTE_MS, THROTTLE_TTL_SECOND_MS } 
         ],
       }),
     }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'uploads'),
-      serveRoot: '/uploads',
+    // Only explicitly public contexts are mounted. Legacy /uploads/story files
+    // stay on disk for authorized reads but cannot bypass story audience checks.
+    ...PUBLIC_UPLOAD_CONTEXTS.map((context) => ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'uploads', context),
+      serveRoot: `/uploads/${context}`,
       serveStaticOptions: { index: false },
-    }),
+    })),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', '..', 'legal'),
       serveRoot: '/legal',

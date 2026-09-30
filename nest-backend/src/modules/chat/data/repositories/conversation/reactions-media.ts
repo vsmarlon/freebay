@@ -1,6 +1,6 @@
 import { MessageReaction, ChatThreadType, StarredMessage } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { ChatMessageWithSender, DirectMessageWithSender, messageWithSenderInclude } from '../../../mappers/conversation.mapper';
+import { ChatMessageWithSender, DirectMessageWithSender, messageWithSenderInclude } from './payloads';
 
 export function findReactionByUserAndMessage(prisma: PrismaService, userId: string, messageId: string, model: ChatThreadType): Promise<MessageReaction | null> {
   const where = model === 'DIRECT' ? { userId, directMessageId: messageId } : { userId, chatMessageId: messageId };

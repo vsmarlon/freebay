@@ -5,7 +5,7 @@ import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { FeedResult, PostPayload, PostResponse, POST_INCLUDE, postIncludeForViewer, SearchPostsQuery, UserPostsRepositoryQuery, ProfileTimelineCursor, UserPostEntry } from '../../types/social.types';
 import { CursorPage } from '@/shared/core/pagination';
-import { PostQueryHelpers, normalizePost } from './post-query-helpers';
+import { PostQueryHelpers, normalizePost, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class PrismaPostRepository {
@@ -46,7 +46,7 @@ export class PrismaPostRepository {
   async findSaved(query: { userId: string; limit?: number; cursor?: string }): RepositoryResponse<FeedResult> {
     return repositoryResponse(async () => {
       const limit = query.limit ?? 20;
-      const saved = await this.prisma.savedPost.findMany({ where: { userId: query.userId, post: { deletedAt: null } }, orderBy: { createdAt: 'desc' }, take: limit + 1, ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}), include: { post: { include: postIncludeForViewer(query.userId) } } });
+       const saved = await this.prisma.savedPost.findMany({ where: { userId: query.userId, post: { deletedAt: null, AND: [postVisibilityWhere(query.userId)] } }, orderBy: { createdAt: 'desc' }, take: limit + 1, ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}), include: { post: { include: postIncludeForViewer(query.userId) } } });
       const hasMore = saved.length > limit;
       const page = saved.slice(0, limit);
       return { posts: page.map(({ post }) => normalizePost(post)), hasMore, nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null };

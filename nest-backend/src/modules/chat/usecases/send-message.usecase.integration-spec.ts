@@ -7,6 +7,8 @@ import { ChatThreadAccessService } from '../services/chat-thread-access.service'
 import { OgScraperService } from '../services/og-scraper.service';
 import { SendMessageUseCase } from './send-message.usecase';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
+import { NotificationService } from '@/modules/notifications/services/notification.service';
+import { FcmService } from '@/modules/notifications/fcm.service';
 
 describe('SendMessageUseCase location integration', () => {
   it('persists canonical metadata and reuses a duplicate client id', async () => {
@@ -27,6 +29,8 @@ describe('SendMessageUseCase location integration', () => {
         PrismaBlockRepository,
         OgScraperService,
         ChatThreadAccessService,
+        NotificationService,
+        { provide: FcmService, useValue: { sendNotification: jest.fn() } },
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

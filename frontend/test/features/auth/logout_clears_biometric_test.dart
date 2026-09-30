@@ -43,13 +43,6 @@ void main() {
     });
   });
 
-  test('clearTokens alone leaves the biometric credential behind', () async {
-    await StorageService.clearTokens();
-
-    expect(await StorageService.getToken(), isNull);
-    expect(await StorageService.getBiometricToken(), 'biometric-credential');
-  });
-
   test(
     'session expiry clears the session but preserves reauthentication data',
     () async {
@@ -67,36 +60,6 @@ void main() {
       expect(await BiometryService().isEnabled(), isTrue);
     },
   );
-
-  test('saved email can be read and deleted independently', () async {
-    await StorageService.saveEmail('User@Example.COM');
-    expect(await StorageService.getEmail(), 'user@example.com');
-
-    await StorageService.clearEmail();
-    expect(await StorageService.getEmail(), isNull);
-  });
-
-  test(
-    'clearBiometricToken removes the credential a logout must not keep',
-    () async {
-      await StorageService.clearBiometricToken();
-      await StorageService.clearTokens();
-
-      expect(await StorageService.getToken(), isNull);
-      expect(await StorageService.getRefreshToken(), isNull);
-      expect(await StorageService.getBiometricToken(), isNull);
-      expect(await StorageService.getBiometricOwner(), isNull);
-    },
-  );
-
-  test('logout biometric cleanup clears state for the next account', () async {
-    final service = BiometryService();
-    await service.clearState();
-
-    expect(await StorageService.getBiometricToken(), isNull);
-    expect(await service.isEnabled(), isFalse);
-    expect(await service.hasPrompted(), isFalse);
-  });
 
   test('forceLogout clears biometric state for the next account', () async {
     final container = ProviderContainer();

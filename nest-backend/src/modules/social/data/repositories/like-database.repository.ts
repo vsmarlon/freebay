@@ -4,6 +4,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { MutationState } from '../../types/social.types';
+import { postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class PrismaLikeRepository {
@@ -48,7 +49,7 @@ export class PrismaLikeRepository {
   async findLikedByUserId(userId: string): RepositoryResponse<unknown[]> {
     return repositoryResponse(async () => {
       const likes = await this.prisma.like.findMany({
-        where: { userId },
+        where: { userId, post: { deletedAt: null, AND: [postVisibilityWhere(userId)] } },
         include: {
           post: {
             include: {

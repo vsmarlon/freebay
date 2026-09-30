@@ -356,6 +356,10 @@ corrected. No final-pass claims; final tester/review/security remain PENDING.
 
 Cumulative changed paths:
 
+The historical path `chat/mappers/conversation.mapper.ts` below was relocated in the
+2026-09-28 response-boundary cleanup to `chat/dtos/conversation-response.ts`;
+query payload types now live in `chat/data/repositories/conversation/payloads.ts`.
+
 ```text
 nest-backend/src/modules/chat/chat.controller.ts
 nest-backend/src/modules/chat/chat.controller.spec.ts
@@ -715,6 +719,7 @@ to claim completion.
 | Issue acceptance | Focused issue command or device scenario | Approved behavior passes | Test output/screenshot/video | Executor | Yes/No |
 | Backend gate | `nest-backend` commands above; test DB | All required suites pass | CI/log artifact | Release owner | Yes/No |
 | Frontend gate | `frontend` commands above | Analyze/tests/build pass | CI/log artifact | Release owner | Yes/No |
+| Performance gate | `node scripts/perf-check.js --all --device <id>` on provisioned device/backend/fixtures | Build and raster budgets pass on same-device measured baselines; blocked is not passed | `docs/test-runs/<date>/perf-<flow>.md` | Release owner | Yes/No |
 | Device flows | Physical Android and iOS | Auth, chat, location, push, links, checkout pass | Device report/video | Tester | Yes/No |
 | Stripe Connect | Test mode, then approved live environment | Onboarding, transfer, webhook, dispute and liability behavior pass | Stripe/event report | Payments owner | Yes/No |
 | Review/security | One cumulative pass after implementation | Findings fixed and affected checks rerun | Review/audit report | Reviewer/auditor | Yes/No |
@@ -736,7 +741,7 @@ to claim completion.
 - Backend/data: `freebay-backend-module`, `freebay-data-model`,
   `freebay-system-design`.
 - Flutter/product flows: `freebay-flutter-feature`, `freebay-design-system`,
-  `freebay-app-flows`, `freebay-mobile-mcp`.
+  `freebay-app-flows`, `freebay-mobile-mcp`, `freebay-perf`.
 - Payments: `stripe-best-practices`, `connect-recommend`,
   `connect-required-verification-information`, `stripe-docs`.
 

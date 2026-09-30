@@ -10,29 +10,27 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('defaults to animated background', () async {
+  test('uses a still aurora until animation is explicitly enabled', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    expect(container.read(backgroundAnimatedProvider), isTrue);
+    expect(container.read(backgroundAnimatedProvider), isFalse);
   });
 
-  test('setAnimated persists and hydrates on new container', () async {
+  test('explicitly enabled animation survives a new container', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
 
-    await container
-        .read(backgroundAnimatedProvider.notifier)
-        .setAnimated(false);
-    expect(container.read(backgroundAnimatedProvider), isFalse);
+    await container.read(backgroundAnimatedProvider.notifier).setAnimated(true);
+    expect(container.read(backgroundAnimatedProvider), isTrue);
 
     await Future<void>.delayed(const Duration(milliseconds: 100));
     final fresh = ProviderContainer();
     addTearDown(fresh.dispose);
-    // First read instantiates the notifier (default true), then _load hydrates.
-    expect(fresh.read(backgroundAnimatedProvider), isTrue);
+    // First read uses the still default, then _load hydrates the preference.
+    expect(fresh.read(backgroundAnimatedProvider), isFalse);
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
-    expect(fresh.read(backgroundAnimatedProvider), isFalse);
+    expect(fresh.read(backgroundAnimatedProvider), isTrue);
   });
 }

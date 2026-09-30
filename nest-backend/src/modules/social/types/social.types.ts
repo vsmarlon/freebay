@@ -21,7 +21,7 @@ export enum SearchFilter {
 export const COMMENT_MAX_LENGTH = 1000;
 export const SEARCH_MAX_LENGTH = 200;
 export const COMMENT_REPLY_MAX_COUNT = 50;
-export const EXPLORE_CANDIDATE_WINDOW = 300;
+export const EXPLORE_CANDIDATE_WINDOW = 60;
 export const SOCIAL_DEFAULT_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 export const POST_INCLUDE = {
@@ -37,7 +37,7 @@ export const POST_INCLUDE = {
   likes: { take: 1, select: { userId: true } },
   shares: { take: 1, select: { userId: true } },
   savedBy: { take: 1, select: { userId: true } },
-  _count: { select: { likes: true, comments: true, shares: true } },
+  _count: { select: { likes: true, comments: { where: { deletedAt: null, isHidden: false } }, shares: true } },
   product: {
     select: {
       id: true,
@@ -124,6 +124,14 @@ export const COMMENT_PAGE_INCLUDE = {
   },
 } satisfies Prisma.CommentInclude;
 
+export function commentVisibilityWhere(viewerId?: string): Prisma.CommentWhereInput {
+  return { OR: [
+    { isHidden: false },
+    { userId: viewerId ?? '' },
+    { post: { userId: viewerId ?? '' } },
+  ] };
+}
+
 export function commentPageIncludeForViewer(viewerId?: string) {
   const commentLikes = {
     where: { userId: viewerId ?? "" },
@@ -135,6 +143,7 @@ export function commentPageIncludeForViewer(viewerId?: string) {
     commentLikes,
     replies: {
       ...COMMENT_PAGE_INCLUDE.replies,
+      where: { deletedAt: null, AND: [commentVisibilityWhere(viewerId)] },
       include: { ...COMMENT_FLAT_INCLUDE, commentLikes },
     },
   } satisfies Prisma.CommentInclude;
@@ -178,47 +187,62 @@ export interface FeedRepositoryQuery
   cursor?: FeedCursor;
 }
 
-export interface FeedCursor {
+interface FeedCursorBase {
   userId: string;
-  type: FeedType.FOLLOWING;
   contentFilter: ContentFilter;
   createdAt: string;
   postId: string;
+}
+
+export interface FollowingFeedCursor extends FeedCursorBase {
+  type: FeedType.FOLLOWING;
   scope: "following-feed";
 }
 
+export interface ExploreFeedCursor extends FeedCursorBase {
+  type: FeedType.EXPLORE;
+  scope: "explore-feed";
+  remainingIds: string[];
+  hasOlder: boolean;
+}
+
+export type FeedCursor = FollowingFeedCursor | ExploreFeedCursor;
+
 export function decodeFeedCursor(value: string): FeedCursor | null {
+  if (value.length > 4096) return null;
   try {
-    const parsed: unknown = JSON.parse(
+    const decoded: unknown = JSON.parse(
       Buffer.from(value, "base64url").toString("utf8"),
     );
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      !("userId" in parsed) ||
-      !("type" in parsed) ||
-      !("contentFilter" in parsed) ||
-      !("createdAt" in parsed) ||
-      !("postId" in parsed) ||
-      !("scope" in parsed) ||
-      typeof parsed.userId !== "string" ||
-      parsed.type !== FeedType.FOLLOWING ||
-      !isFeedContentFilter(parsed.contentFilter) ||
-      parsed.scope !== "following-feed" ||
-      typeof parsed.createdAt !== "string" ||
-      Number.isNaN(new Date(parsed.createdAt).getTime()) ||
-      typeof parsed.postId !== "string"
-    ) {
-      return null;
+    if (decoded && typeof decoded === 'object' && !Array.isArray(decoded)) {
+      const parsed: Record<string, unknown> = Object.fromEntries(Object.entries(decoded));
+      if (typeof parsed.userId === 'string' &&
+          isFeedContentFilter(parsed.contentFilter) &&
+          typeof parsed.createdAt === 'string' &&
+          !Number.isNaN(new Date(parsed.createdAt).getTime()) &&
+          typeof parsed.postId === 'string' && parsed.postId.length > 0) {
+        const common = {
+          userId: parsed.userId,
+          contentFilter: parsed.contentFilter,
+          createdAt: parsed.createdAt,
+          postId: parsed.postId,
+        };
+        if (parsed.type === FeedType.FOLLOWING && parsed.scope === 'following-feed') {
+          return { ...common, type: FeedType.FOLLOWING, scope: 'following-feed' };
+        }
+        const remainingIds: unknown = parsed.remainingIds;
+        if (parsed.type === FeedType.EXPLORE && parsed.scope === 'explore-feed' &&
+            Array.isArray(remainingIds) && remainingIds.length <= EXPLORE_CANDIDATE_WINDOW &&
+            remainingIds.every((id: unknown): id is string =>
+              typeof id === 'string' && id.length > 0 && id.length <= 64) &&
+            typeof parsed.hasOlder === 'boolean' &&
+            (remainingIds.length > 0 || parsed.hasOlder)) {
+          return { ...common, type: FeedType.EXPLORE, scope: 'explore-feed',
+            remainingIds, hasOlder: parsed.hasOlder };
+        }
+      }
     }
-    return {
-      userId: parsed.userId,
-       type: FeedType.FOLLOWING,
-       contentFilter: parsed.contentFilter,
-      createdAt: parsed.createdAt,
-      postId: parsed.postId,
-      scope: "following-feed",
-    };
+    return null;
   } catch {
     return null;
   }
@@ -226,7 +250,7 @@ export function decodeFeedCursor(value: string): FeedCursor | null {
 
 function isFeedContentFilter(
   value: unknown,
-): value is FeedCursor["contentFilter"] {
+): value is ContentFilter {
   return value === ContentFilter.ALL || value === ContentFilter.SOCIAL || value === ContentFilter.SELLING;
 }
 

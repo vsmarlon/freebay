@@ -8,8 +8,8 @@ import { StoryBrief } from "../types/story.types";
 export class GetUserStoriesUseCase {
   constructor(private readonly storyRepository: PrismaStoryRepository) {}
 
-  async execute(userId: string): Promise<Either<AppError, StoryBrief[]>> {
-    const result = await this.storyRepository.findByUserId(userId);
+  async execute(userId: string, viewerId: string): Promise<Either<AppError, StoryBrief[]>> {
+    const result = await this.storyRepository.findByUserId(userId, viewerId);
     if (result.isLeft()) return left(result.value);
     return right(result.value);
   }

@@ -3,7 +3,8 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, UsernameAlreadyExistsError, UserNotFoundError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { CompleteProfileDTO } from '../dtos/auth.dto';
-import { AuthResponse, toAuthResponse } from '../mappers/auth.mapper';
+import { AuthSessionResponse } from '../dtos/auth-response.class';
+import { toUserResponse } from '../../users/dtos/user-response.class';
 
 @Injectable()
 export class CompleteProfileUseCase {
@@ -12,7 +13,7 @@ export class CompleteProfileUseCase {
   async execute(
     userId: string,
     input: CompleteProfileDTO,
-  ): Promise<Either<AppError, AuthResponse>> {
+  ): Promise<Either<AppError, Pick<AuthSessionResponse, 'user'>>> {
     const userResult = await this.userRepository.findById(userId);
     if (userResult.isLeft()) return left(userResult.value);
     if (!userResult.value) {
@@ -23,7 +24,7 @@ export class CompleteProfileUseCase {
 
     // If username is already set and not a temp value, profile is complete
     if (user.username && !user.username.startsWith('g_')) {
-      return right(toAuthResponse(user));
+      return right({ user: toUserResponse(user, undefined, true) });
     }
 
     // Check username availability
@@ -41,6 +42,6 @@ export class CompleteProfileUseCase {
     });
     if (updated.isLeft()) return left(updated.value);
 
-    return right(toAuthResponse(updated.value));
+    return right({ user: toUserResponse(updated.value, undefined, true) });
   }
 }

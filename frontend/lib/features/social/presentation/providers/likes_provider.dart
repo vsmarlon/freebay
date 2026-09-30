@@ -9,11 +9,17 @@ part 'likes_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class Likes extends _$Likes {
+  int _sessionId = 0;
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
   LikesState build() {
     return const LikesState();
+  }
+
+  void clear() {
+    _sessionId++;
+    state = const LikesState();
   }
 
   bool isPostLiked(String postId, {bool initial = false}) =>
@@ -27,6 +33,7 @@ class Likes extends _$Likes {
     required bool initialIsLiked,
     required int initialCount,
   }) async {
+    final sessionId = _sessionId;
     final currentLiked = state.likedOverrides[postId] ?? initialIsLiked;
     final currentCount = state.countOverrides[postId] ?? initialCount;
 
@@ -47,6 +54,7 @@ class Likes extends _$Likes {
       final result = newIsLiked
           ? await _repository.likePost(postId)
           : await _repository.unlikePost(postId);
+      if (!ref.mounted || sessionId != _sessionId) return false;
 
       if (result.isLeft) {
         state = state.copyWith(
@@ -75,6 +83,7 @@ class Likes extends _$Likes {
         return true;
       });
     } catch (e) {
+      if (!ref.mounted || sessionId != _sessionId) return false;
       state = state.copyWith(
         likedOverrides: {...state.likedOverrides, postId: currentLiked},
         countOverrides: {...state.countOverrides, postId: currentCount},

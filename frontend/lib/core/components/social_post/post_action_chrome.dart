@@ -6,6 +6,7 @@ class SocialPostActionChrome extends StatelessWidget {
   final bool isSaved;
   final bool isReposted;
   final bool isLikeLoading;
+  final bool allowRepost;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;
@@ -20,6 +21,7 @@ class SocialPostActionChrome extends StatelessWidget {
     required this.isSaved,
     required this.isReposted,
     required this.isLikeLoading,
+    required this.allowRepost,
     required this.likesCount,
     required this.commentsCount,
     required this.sharesCount,
@@ -42,6 +44,7 @@ class SocialPostActionChrome extends StatelessWidget {
       onLike: onLike,
       onSave: onSave,
       onRepost: onRepost,
+      allowRepost: allowRepost,
       onComment: onComment,
     );
   }

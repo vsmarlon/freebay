@@ -5,6 +5,9 @@ import {
   UploadedFile,
   BadRequestException,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Query,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
@@ -33,13 +36,16 @@ import {
   UpdateFcmTokenDTO,
   RegisterPhoneDTO,
   VerifyPhoneDTO,
+  OffsetPaginationQueryDTO,
+  CloseFriendCandidatesQueryDTO,
 } from "./dtos/user.dto";
+import { ManageSafetyListUseCase } from './usecases/manage-safety-list.usecase';
 import {
   UserResponse,
   UserStatsResponse,
   AccountDeletionResponse,
   toUserResponse,
-} from "./mappers/user.mapper";
+} from "./dtos/user-response.class";
 import { validateImageFile } from "@/shared/utils/image-upload.utils";
 import { saveUpload } from "@/shared/utils/file.utils";
 
@@ -57,7 +63,43 @@ export class UsersAccountController {
     private readonly requestAccountDeletionUseCase: RequestAccountDeletionUseCase,
     private readonly cancelAccountDeletionUseCase: CancelAccountDeletionUseCase,
     private readonly exportUserDataUseCase: ExportUserDataUseCase,
+    private readonly safetyLists: ManageSafetyListUseCase,
   ) {}
+
+  @GetAuth('me/close-friends/candidates', 'Search my followers and close friends')
+  getCloseFriendCandidates(@CurrentUserId() userId: string, @Query() query: CloseFriendCandidatesQueryDTO) {
+    return this.safetyLists.candidates(userId, query.q ?? '', query.selected === 'true', query.limit ?? 20, query.offset ?? 0);
+  }
+
+  @GetAuth('me/close-friends', 'List my close friends')
+  getCloseFriends(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO) {
+    return this.safetyLists.list(userId, 'closeFriends', query.limit ?? 20, query.offset ?? 0);
+  }
+
+  @PostAuth('me/close-friends/:memberId', { summary: 'Add a follower to close friends', responseStatus: 201 })
+  addCloseFriend(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, 'closeFriends', true);
+  }
+
+  @PatchAuth('me/close-friends/:memberId/remove', 'Remove a close friend')
+  removeCloseFriend(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, 'closeFriends', false);
+  }
+
+  @GetAuth('me/restricted', 'List my restricted users')
+  getRestricted(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO) {
+    return this.safetyLists.list(userId, 'restricted', query.limit ?? 20, query.offset ?? 0);
+  }
+
+  @PostAuth('me/restricted/:memberId', { summary: 'Restrict a user', responseStatus: 201 })
+  restrict(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, 'restricted', true);
+  }
+
+  @PatchAuth('me/restricted/:memberId/remove', 'Remove a restriction')
+  unrestrict(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
+    return this.safetyLists.change(userId, memberId, 'restricted', false);
+  }
 
   @GetAuth("me", {
     summary: "Get current user profile",

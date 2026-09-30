@@ -4,6 +4,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/router/route_helpers.dart';
 import 'package:freebay/features/profile/presentation/pages/blocked_users_page.dart';
+import 'package:freebay/features/profile/presentation/pages/close_friends_page.dart';
 import 'package:freebay/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:freebay/features/social/presentation/pages/my_posts_page.dart';
 import 'package:freebay/features/social/presentation/pages/my_stories_page.dart';
@@ -23,6 +24,10 @@ final List<RouteBase> profileRoutes = [
   appCupertinoRoute(
     AppRoutes.profileBlocked,
     (context, state) => const BlockedUsersPage(),
+  ),
+  appCupertinoRoute(
+    AppRoutes.profileCloseFriends,
+    (context, state) => const CloseFriendsPage(),
   ),
   appCupertinoRoute(
     AppRoutes.notifications,

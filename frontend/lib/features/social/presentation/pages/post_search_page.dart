@@ -21,6 +21,14 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
   Timer? _debounceTimer;
 
   @override
+  void initState() {
+    super.initState();
+    final previous = ref.read(postSearchProvider);
+    _searchController.text = previous.query;
+    _selectedFilter = previous.filter;
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _debounceTimer?.cancel();
@@ -37,6 +45,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
   }
 
   void _onFilterChanged(PostSearchFilter filter) {
+    _debounceTimer?.cancel();
     setState(() {
       _selectedFilter = filter;
     });
@@ -63,15 +72,17 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
             ),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: TextField(
+              child: AppTextField(
                 controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Buscar posts...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
+                hint: 'Buscar posts...',
+                prefixIcon: Icons.search,
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? Tooltip(
+                        message: 'Limpar busca',
+                        child: BrutalistIconButton(
+                          icon: Icons.clear,
+                          onTap: () {
+                            _debounceTimer?.cancel();
                             _searchController.clear();
                             ref
                                 .read(postSearchProvider.notifier)
@@ -81,37 +92,35 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                                   refresh: true,
                                 );
                           },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: context.bgColor,
-                  border: const OutlineInputBorder(borderSide: BorderSide.none),
-                ),
-                onChanged: _onSearchDebounced,
+                        ),
+                      )
+                    : null,
+                onChanged: (query) {
+                  setState(() {});
+                  _onSearchDebounced(query);
+                },
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  _FilterChip(
+                  BrutalistFilterChip(
                     label: 'Todos',
-                    isSelected: _selectedFilter == PostSearchFilter.all,
-                    onSelected: () => _onFilterChanged(PostSearchFilter.all),
+                    selected: _selectedFilter == PostSearchFilter.all,
+                    onTap: () => _onFilterChanged(PostSearchFilter.all),
                   ),
-                  Spacing.hSm,
-                  _FilterChip(
+                  BrutalistFilterChip(
                     label: 'Seguindo',
-                    isSelected: _selectedFilter == PostSearchFilter.following,
-                    onSelected: () =>
-                        _onFilterChanged(PostSearchFilter.following),
+                    selected: _selectedFilter == PostSearchFilter.following,
+                    onTap: () => _onFilterChanged(PostSearchFilter.following),
                   ),
-                  Spacing.hSm,
-                  _FilterChip(
+                  BrutalistFilterChip(
                     label: 'Seguidores',
-                    isSelected: _selectedFilter == PostSearchFilter.followers,
-                    onSelected: () =>
-                        _onFilterChanged(PostSearchFilter.followers),
+                    selected: _selectedFilter == PostSearchFilter.followers,
+                    onTap: () => _onFilterChanged(PostSearchFilter.followers),
                   ),
                 ],
               ),
@@ -127,6 +136,14 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
   }
 
   Widget _buildContent(PostSearchState state, LikesState likesState) {
+    if (state.error != null && state.posts.isEmpty && !state.isLoading) {
+      return EmptyState.error(
+        message: state.error,
+        onRetry: () => ref
+            .read(postSearchProvider.notifier)
+            .search(query: state.query, filter: state.filter, refresh: true),
+      );
+    }
     if (state.posts.isEmpty && !state.isLoading) {
       return const EmptyState(
         icon: Icons.search_off,
@@ -140,7 +157,8 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
         if (notification is ScrollEndNotification &&
             notification.metrics.extentAfter < 200 &&
             state.hasMore &&
-            !state.isLoading) {
+            !state.isLoading &&
+            state.error == null) {
           ref
               .read(postSearchProvider.notifier)
               .search(query: state.query, filter: state.filter);
@@ -148,11 +166,9 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
         return false;
       },
       child: RefreshIndicator(
-        onRefresh: () async {
-          ref
-              .read(postSearchProvider.notifier)
-              .search(query: state.query, filter: state.filter, refresh: true);
-        },
+        onRefresh: () => ref
+            .read(postSearchProvider.notifier)
+            .search(query: state.query, filter: state.filter, refresh: true),
         child: ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: state.posts.length + (state.isLoading ? 1 : 0),
@@ -175,6 +191,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
               userAvatarUrl: post.user.avatarUrl,
               content: post.content,
               imageUrl: post.imageUrl,
+              isCloseFriends: post.audience == PostAudience.closeFriends,
               likesCount: likesCount,
               commentsCount: post.commentsCount,
               sharesCount: post.sharesCount,
@@ -196,47 +213,6 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
               onComment: () => context.push(AppRoutes.postPath(post.id)),
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onSelected,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryContainer.withValues(alpha: 0.2)
-              : context.surfaceMidColor,
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryContainer
-                : context.borderColor,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected
-                ? AppColors.primaryContainer
-                : (context.textPrimary),
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
         ),
       ),
     );

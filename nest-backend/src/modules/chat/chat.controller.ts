@@ -17,6 +17,7 @@ import { AcceptConversationUseCase } from './usecases/accept-conversation.usecas
 import { GetMessagesUseCase } from './usecases/get-messages.usecase';
 import { GetConversationMediaUseCase } from './usecases/get-conversation-media.usecase';
 import { SendMessageUseCase } from './usecases/send-message.usecase';
+import { MarkMessagesReadDTO } from './dtos/chat.dto';
 import { ArchiveConversationUseCase } from './usecases/archive-conversation.usecase';
 import { DeleteConversationUseCase } from './usecases/delete-conversation.usecase';
 import { SetConversationThemeUseCase } from './usecases/set-conversation-theme.usecase';
@@ -170,13 +171,15 @@ export class ChatController {
 
   @PatchAuth('conversations/:id/read', {
     summary: 'Mark conversation messages as read',
+    bodyType: MarkMessagesReadDTO,
     params: [{ name: 'id', description: 'Conversation UUID' }],
   })
   async markAsRead(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUserId() userId: string,
+    @Body() body: MarkMessagesReadDTO = {},
   ) {
-    return this.markAsReadUseCase.execute(id, userId);
+    return this.markAsReadUseCase.execute(id, userId, body.messageId);
   }
 
   @PatchAuth('conversations/:id/theme', { summary: 'Set conversation theme', params: [{ name: 'id', description: 'Conversation UUID' }] })

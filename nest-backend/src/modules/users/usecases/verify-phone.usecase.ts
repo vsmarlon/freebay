@@ -11,7 +11,7 @@ import {
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
-import { UserResponse, toUserResponse } from '../mappers/user.mapper';
+import { UserResponse, toUserResponse } from '../dtos/user-response.class';
 
 export interface VerifyPhoneInput {
   userId: string;

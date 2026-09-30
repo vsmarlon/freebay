@@ -2,17 +2,28 @@ import { CheckUsernameAvailabilityUseCase } from './check-username-availability.
 import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
 import { DatabaseError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
+import { Test } from '@nestjs/testing';
 
 describe('CheckUsernameAvailabilityUseCase', () => {
   let sut: CheckUsernameAvailabilityUseCase;
-  let mockUserRepository: jest.Mocked<Partial<UserDatabaseRepository>>;
+  let mockUserRepository: {
+    findByUsername: jest.Mock;
+    findTakenUsernames: jest.Mock;
+  };
 
   beforeEach(async () => {
     mockUserRepository = {
       findByUsername: jest.fn().mockResolvedValue(right(null)),
-    } as jest.Mocked<Partial<UserDatabaseRepository>>;
+      findTakenUsernames: jest.fn().mockResolvedValue(right([])),
+    };
 
-    sut = new CheckUsernameAvailabilityUseCase(mockUserRepository as UserDatabaseRepository);
+    const module = await Test.createTestingModule({
+      providers: [
+        CheckUsernameAvailabilityUseCase,
+        { provide: UserDatabaseRepository, useValue: mockUserRepository },
+      ],
+    }).compile();
+    sut = module.get(CheckUsernameAvailabilityUseCase);
   });
 
   it('returns available: true when username is not taken', async () => {

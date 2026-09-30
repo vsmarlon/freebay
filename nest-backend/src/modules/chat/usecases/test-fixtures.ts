@@ -52,6 +52,8 @@ type MessageFixture = {
     type: MessageType;
     attachmentUrl: string | null;
     deletedAt: Date | null;
+    viewOnce?: boolean;
+    readAt?: Date | null;
   } | null;
   deletedAt: Date | null;
   readAt: Date | null;

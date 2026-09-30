@@ -87,7 +87,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
       builder: (ctx) => AlertDialog(
         title: const Text('Excluir conversa'),
         content: const Text(
-          'Esta ação não pode ser desfeita. A conversa será ocultada para você.',
+          'A conversa será ocultada para você. Você terá alguns segundos para desfazer.',
         ),
         actions: [
           TextButton(
@@ -97,7 +97,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _deleteChat(chat);
+              _queueDeleteChat(chat);
             },
             child: const Text(
               'Excluir',
@@ -109,16 +109,34 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     );
   }
 
-  Future<void> _deleteChat(ChatEntity chat) async {
-    final result = await ref
-        .read(chatRepositoryProvider)
-        .deleteChat(chat.id, chat.threadType);
-    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
-      ref.invalidate(chatsProvider);
-      ref.invalidate(liveChatListProvider);
-      ref.invalidate(archivedChatListProvider);
-      AppSnackbar.success(context, 'Conversa excluída');
-    });
+  void _queueDeleteChat(ChatEntity chat) {
+    final repository = ref.read(chatRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+    AppSnackbar.undoable(
+      context,
+      message: 'Conversa será excluída.',
+      onUndo: () {
+        if (messenger.mounted) {
+          AppSnackbar.infoOnMessenger(messenger, 'Exclusão cancelada');
+        }
+      },
+      onCommit: () async {
+        final result = await repository.deleteChat(chat.id, chat.threadType);
+        result.fold(
+          (failure) {
+            if (messenger.mounted) {
+              AppSnackbar.errorOnMessenger(messenger, failure.message);
+            }
+          },
+          (_) {
+            container.invalidate(chatsProvider);
+            container.invalidate(liveChatListProvider);
+            container.invalidate(archivedChatListProvider);
+          },
+        );
+      },
+    );
   }
 
   void _showContextMenu(ChatEntity chat) {

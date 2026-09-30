@@ -172,7 +172,7 @@ export class SuggestionResponse {
   mutualCount: number;
 }
 
-// ─── Mapper functions ──────────────────────────────────
+// ─── Safe response projections ─────────────────────────
 
 export interface UserResponseExtras {
   postsCount?: number;

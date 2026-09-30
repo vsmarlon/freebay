@@ -10,7 +10,7 @@ import {
 import { ApiTags } from "@nestjs/swagger";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
-import { saveUpload } from "@/shared/utils/file.utils";
+import { deleteUpload, saveUpload } from "@/shared/utils/file.utils";
 import {
   CreatePostDTO,
   CreateCommentDTO,
@@ -23,6 +23,7 @@ import {
 } from "@/shared/decorators";
 import { left } from "@/shared/core/either";
 import { BadRequestError } from "@/shared/core/errors";
+import { StoryAudience } from '@prisma/client';
 
 // Direct UseCases
 import { CreatePostUseCase } from "./usecases/create-post.usecase";
@@ -37,6 +38,7 @@ import { LikeCommentUseCase } from "./usecases/like-comment.usecase";
 import { UnlikeCommentUseCase } from "./usecases/unlike-comment.usecase";
 import { DeletePostUseCase } from "./usecases/delete-post.usecase";
 import { DeleteCommentUseCase } from "./usecases/delete-comment.usecase";
+import { ApproveCommentUseCase } from './usecases/approve-comment.usecase';
 
 @ApiTags("Social")
 @Controller("social")
@@ -54,6 +56,7 @@ export class SocialWriteController {
     private readonly unlikeCommentUseCase: UnlikeCommentUseCase,
     private readonly deletePostUseCase: DeletePostUseCase,
     private readonly deleteCommentUseCase: DeleteCommentUseCase,
+    private readonly approveCommentUseCase: ApproveCommentUseCase,
   ) {}
 
   @PostAuth("posts", {
@@ -78,8 +81,10 @@ export class SocialWriteController {
       const mimeError = validateImageFile(file);
       if (mimeError) return left(new BadRequestError(mimeError));
     }
-    const imageUrl = file ? saveUpload(file, "post") : body.imageUrl;
-    return this.createPostUseCase.execute({ userId, ...body, imageUrl });
+    const imageUrl = file ? saveUpload(file, body.audience === StoryAudience.CLOSE_FRIENDS ? 'privatepost' : 'post') : body.imageUrl;
+    const result = await this.createPostUseCase.execute({ userId, ...body, imageUrl });
+    if (result.isLeft() && file) deleteUpload(imageUrl);
+    return result;
   }
 
   @PatchAuth("posts/:id/delete", {
@@ -104,6 +109,14 @@ export class SocialWriteController {
     @CurrentUserId() userId: string,
   ) {
     return this.deleteCommentUseCase.execute({ commentId: id, userId });
+  }
+
+  @PatchAuth('comments/:id/approve', 'Approve a hidden comment on your post')
+  async approveComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.approveCommentUseCase.execute(id, userId);
   }
 
   @PostAuth("posts/:id/like", {

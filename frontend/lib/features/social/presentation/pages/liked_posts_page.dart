@@ -7,8 +7,13 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/shared/utils/media_url.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
-final likedPostsProvider = FutureProvider<List<PostEntity>>((ref) async {
+final likedPostsProvider = FutureProvider.autoDispose<List<PostEntity>>((
+  ref,
+) async {
+  ref.watch(authControllerProvider.select((state) => state.value?.id));
   final repository = ref.watch(socialRepositoryProvider);
   final result = await repository.getLikedPosts();
   return result.fold((failure) => throw failure, (posts) => posts);
@@ -120,15 +125,23 @@ class LikedPostsPage extends ConsumerWidget {
           ),
         ),
         child: imageUrl != null && imageUrl.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                memCacheWidth: 300,
-                memCacheHeight: 300,
-                placeholder: (_, _) => Container(color: context.bgColor),
-                errorWidget: (_, _, _) =>
-                    const Icon(Icons.image, color: AppColors.mediumGray),
-              )
+            ? isPrivateMedia(imageUrl)
+                  ? Image.network(
+                      imageUrl,
+                      headers: mediaAuthHeaders(imageUrl),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) =>
+                          const Icon(Icons.image, color: AppColors.mediumGray),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 300,
+                      memCacheHeight: 300,
+                      placeholder: (_, _) => Container(color: context.bgColor),
+                      errorWidget: (_, _, _) =>
+                          const Icon(Icons.image, color: AppColors.mediumGray),
+                    )
             : post.content != null && post.content!.isNotEmpty
             ? Center(
                 child: Padding(

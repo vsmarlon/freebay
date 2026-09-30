@@ -25,6 +25,17 @@ enum StoryMediaType {
   final String wireValue;
 }
 
+enum StoryAudience {
+  @JsonValue('EVERYONE')
+  everyone('EVERYONE'),
+  @JsonValue('CLOSE_FRIENDS')
+  closeFriends('CLOSE_FRIENDS');
+
+  const StoryAudience(this.wireValue);
+
+  final String wireValue;
+}
+
 StoryMediaType storyMediaTypeFromWire(Object? value) {
   return StoryMediaType.values.firstWhere(
     (type) => type.wireValue == value,
@@ -72,6 +83,7 @@ abstract class StoryEntity with _$StoryEntity {
     required String userId,
     required String imageUrl,
     @Default(StoryMediaType.image) StoryMediaType mediaType,
+    @Default(StoryAudience.everyone) StoryAudience audience,
     String? caption,
     List<StoryTextBlockEntity>? textBlocks,
     required DateTime expiresAt,
@@ -100,6 +112,7 @@ class StoriesResponse {
           userId: group.user.id,
           imageUrl: story.imageUrl,
           mediaType: story.mediaType,
+          audience: story.audience,
           caption: story.caption,
           textBlocks: story.textBlocks,
           expiresAt: story.expiresAt,
@@ -122,6 +135,7 @@ class StoryGroupItem {
   final DateTime createdAt;
   final DateTime expiresAt;
   final StoryMediaType mediaType;
+  final StoryAudience audience;
   final String? caption;
   final List<StoryTextBlockEntity>? textBlocks;
   const StoryGroupItem({
@@ -130,6 +144,7 @@ class StoryGroupItem {
     required this.createdAt,
     required this.expiresAt,
     this.mediaType = StoryMediaType.image,
+    this.audience = StoryAudience.everyone,
     this.caption,
     this.textBlocks,
   });
@@ -140,6 +155,9 @@ class StoryGroupItem {
     createdAt: DateTime.parse(json['createdAt'] as String),
     expiresAt: DateTime.parse(json['expiresAt'] as String),
     mediaType: storyMediaTypeFromWire(json['mediaType']),
+    audience: json['audience'] == StoryAudience.closeFriends.wireValue
+        ? StoryAudience.closeFriends
+        : StoryAudience.everyone,
     caption: json['caption'] as String?,
     textBlocks: (json['textBlocks'] as List?)
         ?.whereType<Map>()

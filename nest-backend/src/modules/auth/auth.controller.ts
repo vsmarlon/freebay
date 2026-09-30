@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Request,
   UnauthorizedException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { RegisterUseCase } from './usecases/register.usecase';
@@ -153,6 +154,7 @@ export class AuthController {
     @Request() req: { user: AuthUser },
     @Body('refreshToken') refreshToken?: string,
     @Body('biometricToken') biometricToken?: string,
+    @Body('installationId', new ParseUUIDPipe({ version: '4', optional: true })) installationId?: string,
   ) {
     const refreshTokenPayload = ownedPayload(this.jwtService,
       refreshToken,
@@ -168,7 +170,7 @@ export class AuthController {
       req.user,
       refreshTokenPayload,
       biometricTokenPayload,
-    ]));
+    ], installationId ? { userId: req.user.userId, installationId } : undefined));
   }
 
   @PostPublic('forgot-password', {

@@ -323,8 +323,7 @@ NotificationType   : ORDER, FOLLOW, MESSAGE, DISPUTE, PAYMENT
 src/
 ├── modules/                    # Vertical slices (NestJS modules)
 │   ├── {module}/
-│   │   ├── dtos/              # class-validator DTOs + @nestjs/swagger
-│   │   ├── mappers/           # Prisma → API response
+│   │   ├── dtos/              # class-validator DTOs, @nestjs/swagger e respostas públicas
 │   │   ├── domain/repositories/  # Abstract Repository classes (maioria dos módulos)
 │   │   ├── data/repositories/    # Implementação Prisma concreta
 │   │   ├── usecases/          # Uma classe por caso de uso, retorna Either<AppError, Output>
@@ -422,11 +421,16 @@ flutter build apk --release
 #### CI/CD
 
 O workflow único em `.github/workflows/ci.yml` executa os gates de backend e Flutter,
-testa PostgreSQL/Redis e publica cobertura, o build do backend e um APK Android debug.
+testa PostgreSQL/Redis nativos no runner e publica cobertura, o build do backend e um APK Android debug.
+Nenhuma suíte de testes exige Docker, localmente ou no CI. Integração/E2E usam o
+PostgreSQL local `freebay_test_db` e Redis configurados em `nest-backend/.env.test`;
+o guard de limpeza recusa qualquer outro banco ou host.
 Não há deploy automático: nenhum destino de produção ou credencial é configurado neste
 repositório.
 
-Para reproduzir os gates locais, use `make test` ou `npm run ci:check` (a suíte do script é
+`make test` executa os checks locais de lint, análise, formatação, arquitetura e testes
+unitários/integração. E2E e builds têm comandos próprios abaixo e no `AGENTS.md`.
+`npm run ci:check` executa os gates de arquitetura/design/rotas (a suíte do script é
 `npm run test:ci-scripts`). O projeto usa `flutter`/`dart` do PATH;
 instalações FVM podem ser selecionadas com `make FLUTTER="fvm flutter" DART="fvm dart"`.
 
@@ -441,6 +445,9 @@ npm run test:watch
 # Backend - Integration tests
 # Requires explicitly configured native/external PostgreSQL and Redis.
 npm run test:integration
+
+# Backend - Jornadas HTTP/socket (mesmos serviços nativos)
+npm run test:e2e
 
 # Backend - Todos os testes
 npm run test:all
@@ -470,9 +477,9 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 
 # Firebase (FCM)
-FCM_PROJECT_ID=your-project-id
-FCM_PRIVATE_KEY=...
-FCM_CLIENT_EMAIL=...
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY=...
+FIREBASE_CLIENT_EMAIL=...
 
 # Payment Provider
 STRIPE_SECRET_KEY=...

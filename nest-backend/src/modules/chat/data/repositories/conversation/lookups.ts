@@ -7,8 +7,8 @@ import {
   OrderWithChatRecord,
   ProductConversationSummaryRecord,
   productConversationSummaryValidator,
-} from '../../../mappers/conversation.mapper';
-import { ConversationStartRecord, toProductConversationSummary } from '../../../mappers/conversation.mapper';
+} from './payloads';
+import { ConversationStartRecord, toProductConversationSummary } from '../../../dtos/conversation-response';
 import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
 export function findUserById(prisma: PrismaService, id: string): Promise<User | null> {

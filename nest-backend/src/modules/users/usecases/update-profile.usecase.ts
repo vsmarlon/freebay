@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
-import { UserResponse, toUserResponse } from '../mappers/user.mapper';
+import { UserResponse, toUserResponse } from '../dtos/user-response.class';
 import { UpdateProfileInput } from '../dtos/user.dto';
 
 @Injectable()

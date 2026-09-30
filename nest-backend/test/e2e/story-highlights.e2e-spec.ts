@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { AppModule } from '../../src/app.module';
+import { StripeProvider } from '../../src/modules/payments/providers/stripe-provider';
 import { StoryCleanupTask } from '../../src/modules/tasks/story-cleanup.task';
 import { AllExceptionsFilter } from '../../src/shared/http/exception-filter';
 import { TransformInterceptor } from '../../src/shared/http/transform.interceptor';
@@ -41,7 +42,8 @@ describe('Story highlights (HTTP + real database)', () => {
     assertSafeTestEnvironment();
     await prisma.$connect();
     await cleanDatabase(prisma);
-    const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const module = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(StripeProvider).useValue({}).compile();
     app = module.createNestApplication();
     app.useGlobalPipes(createValidationPipe());
     app.useGlobalFilters(new AllExceptionsFilter());

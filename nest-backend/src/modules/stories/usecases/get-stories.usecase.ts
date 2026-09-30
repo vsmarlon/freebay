@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError } from "@/shared/core/errors";
-import { PrismaStoryRepository } from "../data/repositories/story-database.repository";
+import { PrismaStoryRepository, storyMediaUrl } from "../data/repositories/story-database.repository";
 
 import { GroupedStory } from "../dtos/stories.dto";
 import { canonicalStoryTextBlocks } from "../dtos/stories.dto";
@@ -15,7 +15,7 @@ export class GetStoriesUseCase {
   ): Promise<
     Either<AppError, { stories: GroupedStory[]; userHasStory: boolean }>
   > {
-    const result = await this.storyRepository.findActiveWithViews();
+    const result = await this.storyRepository.findActiveWithViews(userId ?? '');
     if (result.isLeft()) return left(result.value);
 
     const stories = result.value;
@@ -31,8 +31,9 @@ export class GetStoriesUseCase {
         }
         acc[uid].stories.push({
           id: story.id,
-          imageUrl: story.imageUrl,
+          imageUrl: storyMediaUrl(story.imageUrl),
           mediaType: story.mediaType,
+          audience: story.audience,
           caption: story.caption,
           textBlocks: canonicalStoryTextBlocks(story.textBlocks),
           createdAt: story.createdAt,

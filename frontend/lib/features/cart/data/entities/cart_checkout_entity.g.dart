@@ -14,8 +14,6 @@ _CartCheckoutItemEntity _$CartCheckoutItemEntityFromJson(
   productTitle: json['productTitle'] as String,
   quantity: (json['quantity'] as num?)?.toInt() ?? 1,
   amount: (json['amount'] as num?)?.toInt() ?? 0,
-  checkoutUrl: json['checkoutUrl'] as String? ?? '',
-  expiresAt: DateTime.parse(json['expiresAt'] as String),
 );
 
 Map<String, dynamic> _$CartCheckoutItemEntityToJson(
@@ -26,12 +24,11 @@ Map<String, dynamic> _$CartCheckoutItemEntityToJson(
   'productTitle': instance.productTitle,
   'quantity': instance.quantity,
   'amount': instance.amount,
-  'checkoutUrl': instance.checkoutUrl,
-  'expiresAt': instance.expiresAt.toIso8601String(),
 };
 
 _CartCheckoutEntity _$CartCheckoutEntityFromJson(Map<String, dynamic> json) =>
     _CartCheckoutEntity(
+      paymentGroupId: json['paymentGroupId'] as String,
       items:
           (json['items'] as List<dynamic>?)
               ?.map(
@@ -42,11 +39,20 @@ _CartCheckoutEntity _$CartCheckoutEntityFromJson(Map<String, dynamic> json) =>
           const [],
       totalOrders: (json['totalOrders'] as num?)?.toInt() ?? 0,
       totalAmount: (json['totalAmount'] as num?)?.toInt() ?? 0,
+      checkoutUrl: json['checkoutUrl'] as String?,
+      paymentIntentClientSecret: json['paymentIntentClientSecret'] as String?,
+      expiresAt: json['expiresAt'] == null
+          ? null
+          : DateTime.parse(json['expiresAt'] as String),
     );
 
 Map<String, dynamic> _$CartCheckoutEntityToJson(_CartCheckoutEntity instance) =>
     <String, dynamic>{
+      'paymentGroupId': instance.paymentGroupId,
       'items': instance.items.map((e) => e.toJson()).toList(),
       'totalOrders': instance.totalOrders,
       'totalAmount': instance.totalAmount,
+      'checkoutUrl': instance.checkoutUrl,
+      'paymentIntentClientSecret': instance.paymentIntentClientSecret,
+      'expiresAt': instance.expiresAt?.toIso8601String(),
     };

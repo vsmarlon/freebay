@@ -11,23 +11,31 @@ export class NotificationService {
   ) {}
 
   async create(data: {
+    id?: string;
     userId: string;
     type: NotificationType;
     title: string;
     body: string;
     extraData?: Record<string, string>;
   }) {
+    const extraData = { ...data.extraData, type: data.type };
     const notification = await this.prisma.notification.create({
       data: {
+        id: data.id,
         userId: data.userId,
         type: data.type,
         title: data.title,
         body: data.body,
-        data: (data.extraData ?? {}) as Prisma.InputJsonValue,
+        data: extraData,
       },
+    }).catch((error: unknown) => {
+      // A persisted message owns one notification, even across HTTP/socket retries.
+      if (data.id && error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return null;
+      throw error;
     });
+    if (!notification) return null;
 
-    await this.fcm.sendNotification(data.userId, data.title, data.body, data.extraData);
+    await this.fcm.sendNotification(data.userId, data.title, data.body, extraData);
 
     return notification;
   }
@@ -42,13 +50,14 @@ export class NotificationService {
     });
   }
 
-  async notifyNewMessage(userId: string, senderName: string, conversationId: string) {
+  async notifyNewMessage(userId: string, senderName: string, conversationId: string, messageId: string) {
     await this.create({
+      id: messageId,
       userId,
       type: 'MESSAGE',
       title: 'Nova mensagem',
       body: `${senderName} enviou uma mensagem`,
-      extraData: { type: 'MESSAGE', action: 'chat', conversationId },
+      extraData: { type: 'MESSAGE', action: 'chat', conversationId, messageId },
     });
   }
 

@@ -5,7 +5,7 @@ import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shar
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { StartConversationOutput } from '../dtos/chat.dto';
-import { toStartConversationOutput } from '../mappers/conversation.mapper';
+import { toStartConversationOutput } from '../dtos/conversation-response';
 
 @Injectable()
 export class StartConversationUseCase {

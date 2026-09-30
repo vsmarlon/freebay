@@ -35,6 +35,7 @@ mixin SocialRepositoryStories {
     String imagePath, {
     String? caption,
     List<StoryTextBlockEntity> textBlocks = const [],
+    StoryAudience audience = StoryAudience.everyone,
   }) async {
     try {
       final isVideo = [
@@ -55,6 +56,7 @@ mixin SocialRepositoryStories {
               ),
         if (caption != null && caption.trim().isNotEmpty)
           'caption': caption.trim(),
+        'audience': audience.wireValue,
         'textBlocks': jsonEncode(
           textBlocks.map((block) => block.toJson()).toList(),
         ),

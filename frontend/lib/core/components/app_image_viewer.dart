@@ -37,18 +37,29 @@ class _AppImageViewer extends StatelessWidget {
                 minScale: 1.0,
                 maxScale: 4.0,
                 child: Center(
-                  child: CachedNetworkImage(
-                    imageUrl: imageUrl,
-                    httpHeaders: mediaAuthHeaders(imageUrl),
-                    placeholder: (context, url) => const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
-                    errorWidget: (context, url, error) => const Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.white54,
-                      size: 64,
-                    ),
-                  ),
+                  child: isPrivateMedia(imageUrl)
+                      ? Image.network(
+                          imageUrl,
+                          headers: mediaAuthHeaders(imageUrl),
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.white54,
+                          ),
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: imageUrl,
+                          httpHeaders: mediaAuthHeaders(imageUrl),
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.white54,
+                            size: 64,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -59,16 +70,17 @@ class _AppImageViewer extends StatelessWidget {
             child: SafeArea(
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => launchUrl(Uri.parse(imageUrl)),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      margin: const EdgeInsets.only(right: 8),
-                      color: context.surfaceColor,
-                      child: Icon(Icons.download, color: context.textPrimary),
+                  if (!isPrivateMedia(imageUrl))
+                    GestureDetector(
+                      onTap: () => launchUrl(Uri.parse(imageUrl)),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        margin: const EdgeInsets.only(right: 8),
+                        color: context.surfaceColor,
+                        child: Icon(Icons.download, color: context.textPrimary),
+                      ),
                     ),
-                  ),
                   GestureDetector(
                     onTap: Navigator.of(context).pop,
                     child: Container(

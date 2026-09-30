@@ -217,6 +217,43 @@ describe('Marketplace journey (HTTP + real database)', () => {
     buyerToken = parseData<AuthData>(buyer).token;
   });
 
+  it('offers available usernames when the requested handle is taken', async () => {
+    const username = `lookup_${suffix}`.slice(0, 16);
+    const before = await get(`/auth/username-available?u=${username}`);
+    expect(before.status).toBe(200);
+    expect(parseData<{ available: boolean }>(before).available).toBe(true);
+
+    await prisma.user.create({
+      data: { email: `lookup-${suffix}@example.com`, username, displayName: 'Existing' },
+    });
+    await prisma.user.create({
+      data: { email: `lookup-reserved-${suffix}@example.com`, username: `${username}_1`, displayName: 'Reserved' },
+    });
+
+    const lookup = await get(`/auth/username-available?u=${username.toUpperCase()}`);
+    expect(lookup.status).toBe(200);
+    const result = parseData<{ available: boolean; suggestions: string[] }>(lookup);
+    expect(result.available).toBe(false);
+    expect(result.suggestions).toHaveLength(3);
+    expect(new Set(result.suggestions).size).toBe(3);
+    expect(result.suggestions).not.toContain(`${username}_1`);
+    for (const suggestion of result.suggestions) {
+      expect(suggestion).toMatch(/^[a-z0-9_]{3,20}$/);
+      expect(await prisma.user.findUnique({ where: { username: suggestion } })).toBeNull();
+    }
+
+    const chosen = result.suggestions[0];
+    const registration = await post('/auth/register', {
+      body: {
+        displayName: 'New User', username: chosen,
+        email: `suggestion-${suffix}@example.com`, password: 'password123',
+      },
+    });
+    expect(registration.status).toBe(201);
+    const after = await get(`/auth/username-available?u=${chosen}`);
+    expect(parseData<{ available: boolean }>(after).available).toBe(false);
+  });
+
   it('rejects a duplicate email without enumerating state', async () => {
     const res = await post('/auth/register', {
       body: {
@@ -459,6 +496,84 @@ describe('Marketplace journey (HTTP + real database)', () => {
     const olderPage = parseData<{ items: Array<{ post: { id: string } }> }>(next);
     expect(olderPage.items[0].post.id).toBe(older.id);
     expect(olderPage.items.map((entry) => entry.post.id)).not.toContain(foreign.id);
+  });
+
+  it('rejects a reply whose parent belongs to a different post without changing counts', async () => {
+    const seller = await prisma.user.findUniqueOrThrow({ where: { email: `e2e-seller-${suffix}@example.com` } });
+    const target = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: 'Reply target' } });
+    const other = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: 'Other thread' } });
+    const root = await post(`/social/posts/${other.id}/comments`, {
+      token: sellerToken, body: { content: 'Root comment' },
+    });
+    expect(root.status).toBe(201);
+    const parentId = parseData<{ id: string }>(root).id;
+
+    const reply = await post(`/social/posts/${target.id}/comments`, {
+      token: sellerToken, body: { content: 'Cross-post reply', parentId },
+    });
+    expect(reply.status).toBe(400);
+    expect(await prisma.comment.count({ where: { postId: target.id } })).toBe(0);
+    expect((await prisma.post.findUniqueOrThrow({ where: { id: target.id } })).commentsCount).toBe(0);
+  });
+
+  it('hides blocked accounts and their reposts across social reads in both directions', async () => {
+    const seller = await prisma.user.findUniqueOrThrow({ where: { email: `e2e-seller-${suffix}@example.com` } });
+    const buyer = await prisma.user.findUniqueOrThrow({ where: { email: `e2e-buyer-${suffix}@example.com` } });
+    const marker = `blocked-social-${suffix}`;
+    const sellerPost = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: marker } });
+    const buyerPost = await prisma.post.create({ data: { userId: buyer.id, type: 'REGULAR', content: marker } });
+    const sellerComment = await prisma.comment.create({ data: { userId: seller.id, postId: sellerPost.id, content: marker } });
+    await prisma.share.createMany({ data: [
+      { userId: buyer.id, postId: sellerPost.id },
+      { userId: seller.id, postId: buyerPost.id },
+    ] });
+
+    const before = await get(`/social/posts/search?q=${marker}`, buyerToken);
+    expect(before.status).toBe(200);
+    expect(parseData<Array<{ id: string; hasReposted: boolean }>>(before))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ id: sellerPost.id, hasReposted: true })]));
+    expect(parseData<Array<{ id: string }>>(await get(`/social/posts/${sellerPost.id}/comments`, buyerToken))).toHaveLength(1);
+
+    expect((await post(`/users/${seller.id}/block`, { token: buyerToken })).status).toBe(200);
+
+    for (const [viewerToken, hiddenPostId, hiddenOwnerId] of [
+      [buyerToken, sellerPost.id, seller.id],
+      [sellerToken, buyerPost.id, buyer.id],
+    ]) {
+      expect((await get(`/social/posts/${hiddenPostId}`, viewerToken)).status).toBe(404);
+      const comments = await get(`/social/posts/${hiddenPostId}/comments`, viewerToken);
+      expect(comments.status).toBe(200);
+      expect(parseData<Array<{ id: string }>>(comments)).toHaveLength(0);
+      for (const action of ['like', 'share', 'save']) {
+        expect((await post(`/social/posts/${hiddenPostId}/${action}`, { token: viewerToken })).status).toBe(404);
+      }
+      expect((await post(`/social/posts/${hiddenPostId}/comments`, {
+        token: viewerToken, body: { content: 'Blocked interaction' },
+      })).status).toBe(404);
+      const search = await get(`/social/posts/search?q=${marker}`, viewerToken);
+      expect(search.status).toBe(200);
+      expect(parseData<Array<{ id: string }>>(search).map((post) => post.id)).not.toContain(hiddenPostId);
+
+      const ownPosts = await get(`/social/posts/user/${hiddenOwnerId}`, viewerToken);
+      expect(ownPosts.status).toBe(200);
+      expect(parseData<{ items: Array<{ post: { id: string } }> }>(ownPosts).items).toHaveLength(0);
+
+      const timeline = await get(`/social/posts/user/${hiddenOwnerId}/timeline`, viewerToken);
+      expect(timeline.status).toBe(200);
+      expect(parseData<{ items: Array<{ post: { id: string } }> }>(timeline).items).toHaveLength(0);
+
+      const reposts = await get(`/social/posts/user/${hiddenOwnerId}/reposts`, viewerToken);
+      expect(reposts.status).toBe(200);
+      expect(parseData<Array<{ post: { id: string } }>>(reposts)).toHaveLength(0);
+    }
+
+    const buyerReposts = await get(`/social/posts/user/${buyer.id}/reposts`, buyerToken);
+    expect(buyerReposts.status).toBe(200);
+    expect(parseData<Array<{ post: { id: string } }>>(buyerReposts).map((entry) => entry.post.id))
+      .not.toContain(sellerPost.id);
+    expect((await post(`/social/comments/${sellerComment.id}/like`, { token: buyerToken })).status).toBe(404);
+    expect(await prisma.commentLike.count({ where: { userId: buyer.id, commentId: sellerComment.id } })).toBe(0);
+    expect((await get(`/social/posts/${sellerPost.id}`)).status).toBe(200);
   });
 
   it('does not claim a paid order was refunded when Stripe rejects the refund, then settles without crediting a buyer wallet', async () => {
