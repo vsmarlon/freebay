@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import type { Express } from 'express';
 import { AppModule } from '../../src/app.module';
 import { AllExceptionsFilter } from '../../src/shared/http/exception-filter';
 import { TransformInterceptor } from '../../src/shared/http/transform.interceptor';
@@ -16,8 +17,10 @@ const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 type Body = { data: Record<string, unknown>; error?: { code: string } };
 
 describe('Story audiences and safety (HTTP + real database)', () => {
-  let app: INestApplication;
+  let app: INestApplication | undefined;
   let baseUrl: string;
+  let testClientIp: string | undefined;
+  let testCaseNumber = 0;
   let actors: { owner: { id: string; token: string }; friend: { id: string; token: string }; follower: { id: string; token: string }; stranger: { id: string; token: string } };
   const suffix = Date.now().toString(36);
 
@@ -26,11 +29,14 @@ describe('Story audiences and safety (HTTP + real database)', () => {
       method,
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}),
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
     });
-    return { status: response.status, json: await response.json() as Body };
+    const json = await response.json() as Body;
+    if (response.status === 429) throw new Error(`${method} ${path} returned 429: ${JSON.stringify(json)}`);
+    return { status: response.status, json };
   }
 
   async function register(name: string) {
@@ -47,9 +53,25 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     form.append('image', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'story.png');
     form.append('audience', audience);
     const response = await fetch(`${baseUrl}/stories`, {
-      method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form,
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}) }, body: form,
     });
     return { status: response.status, json: await response.json() as Body };
+  }
+
+  async function startApplication() {
+    const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const application = module.createNestApplication();
+    app = application;
+    const expressApp: Express = application.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', 'loopback');
+    application.useGlobalPipes(createValidationPipe());
+    application.useGlobalFilters(new AllExceptionsFilter());
+    application.useGlobalInterceptors(new TransformInterceptor(), new EitherInterceptor());
+    await application.init();
+    await application.listen(0);
+    const address = application.getHttpServer().address();
+    if (!address || typeof address === 'string') throw new Error('No HTTP port');
+    baseUrl = `http://127.0.0.1:${address.port}`;
   }
 
   beforeAll(async () => {
@@ -59,16 +81,7 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     }
     await prisma.$connect();
     await cleanDatabase(prisma);
-    const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
-    app = module.createNestApplication();
-    app.useGlobalPipes(createValidationPipe());
-    app.useGlobalFilters(new AllExceptionsFilter());
-    app.useGlobalInterceptors(new TransformInterceptor(), new EitherInterceptor());
-    await app.init();
-    await app.listen(0);
-    const address = app.getHttpServer().address();
-    if (!address || typeof address === 'string') throw new Error('No HTTP port');
-    baseUrl = `http://127.0.0.1:${address.port}`;
+    await startApplication();
     actors = {
       owner: await register('owner'),
       friend: await register('friend'),
@@ -76,6 +89,10 @@ describe('Story audiences and safety (HTTP + real database)', () => {
       stranger: await register('stranger'),
     };
   }, 120000);
+
+  beforeEach(async () => {
+    testClientIp = `198.51.100.${++testCaseNumber}`;
+  });
 
   afterAll(async () => {
     await app?.close();
@@ -190,7 +207,7 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     form.append('content', 'a private memory');
     form.append('image', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'post.png');
     const createdResponse = await fetch(`${baseUrl}/social/posts`, {
-      method: 'POST', headers: { Authorization: `Bearer ${author.token}` }, body: form,
+      method: 'POST', headers: { Authorization: `Bearer ${author.token}`, ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}) }, body: form,
     });
     expect(createdResponse.status).toBe(201);
     const created = await createdResponse.json() as Body;
@@ -234,6 +251,15 @@ describe('Story audiences and safety (HTTP + real database)', () => {
 
   it('allows either connection direction and revokes only after the final edge is lost', async () => {
     const { owner, friend, follower, stranger } = actors;
+    await prisma.follow.deleteMany({ where: { OR: [
+      { followerId: owner.id, followingId: { in: [friend.id, follower.id] } },
+      { followingId: owner.id, followerId: { in: [friend.id, follower.id] } },
+    ] } });
+    await prisma.closeFriend.deleteMany({ where: { ownerId: owner.id, memberId: { in: [friend.id, follower.id] } } });
+    await prisma.block.deleteMany({ where: { OR: [
+      { blockerId: owner.id, blockedId: { in: [friend.id, follower.id] } },
+      { blockedId: owner.id, blockerId: { in: [friend.id, follower.id] } },
+    ] } });
     await prisma.follow.createMany({ data: [
       { followerId: friend.id, followingId: owner.id },
       { followerId: owner.id, followingId: friend.id },
@@ -253,14 +279,14 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     postForm.append('content', 'private connection post');
     postForm.append('image', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'post.png');
     const postResponse = await fetch(`${baseUrl}/social/posts`, {
-      method: 'POST', headers: { Authorization: `Bearer ${owner.token}` }, body: postForm,
+      method: 'POST', headers: { Authorization: `Bearer ${owner.token}`, ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}) }, body: postForm,
     });
     expect(postResponse.status).toBe(201);
     const postData = await postResponse.json() as Body;
     const privatePost = postData.data as { id: string; imageUrl: string };
     const hasStory = async (token: string) => {
       const response = await call('GET', '/stories', token);
-      expect(response.status).toBe(200);
+      if (response.status !== 200) throw new Error(`GET /stories returned ${response.status}: ${JSON.stringify(response.json)}`);
       const groups = response.json.data.stories as { stories: { id: string }[] }[];
       return groups.some((group) => group.stories.some((item) => item.id === story.id));
     };
