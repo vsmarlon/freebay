@@ -118,4 +118,49 @@ void main() {
 
     expect(appShellScaffoldKey.currentState?.isDrawerOpen, isTrue);
   });
+
+  testWidgets('a nested horizontal pager never changes the shell branch', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      initialLocation: '/b0',
+      routes: [
+        StatefulShellRoute(
+          builder: (context, state, navigationShell) => navigationShell,
+          navigatorContainerBuilder: (context, navigationShell, children) =>
+              AppShell(navigationShell: navigationShell, branches: children),
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/b0',
+                  builder: (_, _) => PageView(
+                    children: const [Text('TIMELINE A'), Text('TIMELINE B')],
+                  ),
+                ),
+              ],
+            ),
+            for (var i = 1; i < _labels.length; i++)
+              _branch('/b$i', _labels[i]),
+          ],
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await _settle(tester);
+
+    await tester.fling(find.text('TIMELINE A'), const Offset(-350, 0), 1000);
+    await _settle(tester);
+
+    expect(find.text('TIMELINE B'), findsOneWidget);
+    expect(find.text('ALPHA'), findsNothing);
+    expect(find.text('BRAVO'), findsNothing);
+  });
 }

@@ -259,6 +259,7 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       routerConfig: appRouter,
+      scrollBehavior: const _FreeBayScrollBehavior(),
       builder: (context, child) => Listener(
         onPointerDown: (_) => _sessionTimeout.touch(),
         child: DarkModeInherited(
@@ -268,4 +269,12 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
       ),
     );
   }
+}
+
+class _FreeBayScrollBehavior extends MaterialScrollBehavior {
+  const _FreeBayScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
 }

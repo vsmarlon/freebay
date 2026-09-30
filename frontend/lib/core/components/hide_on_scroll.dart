@@ -32,7 +32,10 @@ class HideOnScrollController {
     }
 
     if (notification is ScrollUpdateNotification) {
-      final delta = notification.scrollDelta ?? 0;
+      final rawDelta = notification.scrollDelta ?? 0;
+      final delta = metrics.axisDirection == AxisDirection.up
+          ? -rawDelta
+          : rawDelta;
       if (delta == 0) return false;
 
       final sameDirection =

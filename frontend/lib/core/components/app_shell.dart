@@ -112,6 +112,7 @@ class _AppShellState extends State<AppShell>
 
   bool _handleShellScroll(ScrollNotification notification) {
     if (notification.metrics.axis == Axis.horizontal) {
+      if (notification.depth != 0) return false;
       if (notification is OverscrollNotification &&
           notification.overscroll < 0 &&
           widget.navigationShell.currentIndex == 0) {
@@ -127,6 +128,7 @@ class _AppShellState extends State<AppShell>
       }
       return false;
     }
+    if (notification.depth != 0) return false;
     return _navHide.handleNotification(notification);
   }
 
