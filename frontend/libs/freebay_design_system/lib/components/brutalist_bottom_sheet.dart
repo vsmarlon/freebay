@@ -1,5 +1,4 @@
 import '../tokens/app_motion.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../tokens/app_colors.dart';
 import '../tokens/app_typography.dart';
@@ -20,9 +19,13 @@ Future<T?> showBrutalistSheet<T>({
   final Widget Function(BuildContext) effectiveBuilder =
       builder ?? ((_) => child ?? const SizedBox.shrink());
 
-  return showCupertinoModalPopup<T>(
+  return showModalBottomSheet<T>(
     context: context,
     useRootNavigator: useRootNavigator,
+    isScrollControlled: true,
+    enableDrag: true,
+    backgroundColor: Colors.transparent,
+    elevation: 0,
     builder: (sheetContext) {
       final media = MediaQuery.of(sheetContext);
       return AnimatedPadding(
@@ -32,6 +35,7 @@ Future<T?> showBrutalistSheet<T>({
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
           child: Material(
+            elevation: 0,
             color: sheetContext.isDark
                 ? AppColors.surfaceDark
                 : AppColors.white,
