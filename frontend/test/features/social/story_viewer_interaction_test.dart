@@ -1,3 +1,6 @@
+import 'dart:ui' as ui;
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -33,6 +36,7 @@ void main() {
   testWidgets(
     'a photo stays visible for seven seconds and long press pauses it',
     (tester) async {
+      await tester.runAsync(() => _primeStoryImages(tester));
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -45,6 +49,14 @@ void main() {
       expect(find.text('Alice'), findsOneWidget);
 
       final gesture = await tester.startGesture(const Offset(700, 400));
+      await tester.pump();
+      expect(
+        tester
+            .widget<StoryPage>(find.byType(StoryPage))
+            .animationController
+            .isAnimating,
+        isFalse,
+      );
       await tester.pump(const Duration(seconds: 1));
       expect(find.byKey(const ValueKey('first')), findsOneWidget);
       await tester.pump(const Duration(seconds: 8));
@@ -70,6 +82,35 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       await tester.pump();
       expect(find.byKey(const ValueKey('second')), findsOneWidget);
+      tester.binding.imageCache.clear();
     },
   );
+}
+
+Future<void> _primeStoryImages(WidgetTester tester) async {
+  final recorder = ui.PictureRecorder();
+  Canvas(recorder).drawColor(Colors.blue, BlendMode.src);
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(1, 1);
+  final png = await image.toByteData(format: ui.ImageByteFormat.png);
+  image.dispose();
+  picture.dispose();
+  final pngBytes = Uint8List.sublistView(png!.buffer.asUint8List());
+  final cacheWidth = tester.view.physicalSize.width.ceil().clamp(1, 1440);
+  for (final id in ['first', 'second']) {
+    final codec = await ui.instantiateImageCodec(pngBytes);
+    final frame = await codec.getNextFrame();
+    codec.dispose();
+    final provider = ResizeImage(
+      NetworkImage('https://example.test/$id.png'),
+      width: cacheWidth,
+    );
+    final key = await provider.obtainKey(ImageConfiguration.empty);
+    imageCache.putIfAbsent(
+      key,
+      () => OneFrameImageStreamCompleter(
+        Future.value(ImageInfo(image: frame.image)),
+      ),
+    );
+  }
 }
