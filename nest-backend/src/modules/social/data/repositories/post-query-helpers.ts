@@ -19,6 +19,7 @@ import {
   SearchFilter,
   EXPLORE_CANDIDATE_WINDOW,
   SOCIAL_DEFAULT_PAGE_SIZE,
+  ProfileTimelineKind,
 } from '../../types/social.types';
 
 export class PostQueryHelpers {
@@ -166,7 +167,7 @@ export class PostQueryHelpers {
     }, 'Erro ao buscar posts do usuário');
   }
 
-  findTimelineByUserId(query: { userId: string; viewerId?: string; limit: number; cursor?: ProfileTimelineCursor }): RepositoryResponse<CursorPage<UserPostEntry>> {
+  findTimelineByUserId(query: { userId: string; viewerId?: string; limit: number; cursor?: ProfileTimelineCursor; kind?: ProfileTimelineKind }): RepositoryResponse<CursorPage<UserPostEntry>> {
     return repositoryResponse(async () => {
       const boundary = query.cursor ? {
         OR: [
@@ -175,15 +176,16 @@ export class PostQueryHelpers {
         ],
       } : {};
       const [posts, shares] = await Promise.all([
-        this.prisma.post.findMany({
+        query.kind === ProfileTimelineKind.REPOSTS ? Promise.resolve([]) : this.prisma.post.findMany({
           where: { userId: query.userId, deletedAt: null, ...boundary,
+            ...(query.kind === ProfileTimelineKind.POSTS ? { type: PostType.REGULAR } : query.kind === ProfileTimelineKind.PRODUCTS ? { type: PostType.PRODUCT } : {}),
             AND: [postVisibilityWhere(query.viewerId)],
           },
           orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
           take: query.limit + 1,
           include: postIncludeForViewer(query.viewerId),
         }),
-        this.prisma.share.findMany({
+        query.kind === ProfileTimelineKind.POSTS || query.kind === ProfileTimelineKind.PRODUCTS ? Promise.resolve([]) : this.prisma.share.findMany({
           where: { userId: query.userId,
             post: { deletedAt: null, AND: [postVisibilityWhere(query.viewerId)] },
             ...boundary,
@@ -223,7 +225,7 @@ export class PostQueryHelpers {
         items: page.map(({ entry }) => entry),
         hasMore,
         nextCursor: hasMore && last
-          ? Buffer.from(`${query.userId}|${last.createdAt.toISOString()}|${last.id}`).toString('base64url')
+          ? Buffer.from(`${query.userId}|${last.createdAt.toISOString()}|${last.id}${query.kind ? `|${query.kind}` : ''}`).toString('base64url')
           : null,
       };
     }, 'Erro ao buscar timeline do perfil');
@@ -260,7 +262,10 @@ export function postVisibilityWhere(viewerId?: string): Prisma.PostWhereInput {
       { audience: 'CLOSE_FRIENDS', user: {
         ...visiblePostAuthor(viewerId),
         closeFriendsGiven: { some: { memberId: viewerId } },
-        followers: { some: { followerId: viewerId } },
+        OR: [
+          { following: { some: { followingId: viewerId } } },
+          { followers: { some: { followerId: viewerId } } },
+        ],
       } },
     ],
   };

@@ -44,7 +44,15 @@ export class PrismaFollowRepository extends FollowRepository {
     try {
       await this.prisma.$transaction(async (tx) => {
         await tx.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
-        await tx.closeFriend.deleteMany({ where: { ownerId: followingId, memberId: followerId } });
+        const remainingConnection = await tx.follow.findFirst({ where: { OR: [
+          { followerId, followingId }, { followerId: followingId, followingId: followerId },
+        ] }, select: { id: true } });
+        if (!remainingConnection) {
+          await tx.closeFriend.deleteMany({ where: { OR: [
+            { ownerId: followingId, memberId: followerId },
+            { ownerId: followerId, memberId: followingId },
+          ] } });
+        }
       });
       return right(undefined);
     } catch (error) {

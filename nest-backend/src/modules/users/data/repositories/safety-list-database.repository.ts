@@ -13,7 +13,11 @@ export class PrismaSafetyListRepository extends SafetyListRepository {
     return repositoryResponse(async () => {
       const users = await this.prisma.user.findMany({
         where: {
-          following: { some: { followingId: ownerId } },
+          id: { not: ownerId },
+          OR: [
+            { following: { some: { followingId: ownerId } } },
+            { followers: { some: { followerId: ownerId } } },
+          ],
           blocksGiven: { none: { blockedId: ownerId } },
           blocksReceived: { none: { blockerId: ownerId } },
           ...(selected ? { closeFriendsReceived: { some: { ownerId } } } : {}),
@@ -51,7 +55,10 @@ export class PrismaSafetyListRepository extends SafetyListRepository {
   addCloseFriend(ownerId: string, memberId: string) {
     return repositoryResponse(async () => this.prisma.$transaction(async (tx) => {
       const eligible = await tx.follow.findFirst({
-        where: { followerId: memberId, followingId: ownerId }, select: { id: true },
+        where: { OR: [
+          { followerId: memberId, followingId: ownerId },
+          { followerId: ownerId, followingId: memberId },
+        ] }, select: { id: true },
       });
       const blocked = await tx.block.findFirst({
         where: { OR: [

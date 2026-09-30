@@ -144,6 +144,7 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     expect(await hasStory(friend.token)).toBe(false);
     expect((await call('GET', '/users/blocked', owner.token)).json.data.users).toEqual(expect.arrayContaining([expect.objectContaining({ id: friend.id })]));
     expect((await call('GET', '/users/me/close-friends', owner.token)).json.data.users).toEqual([]);
+    expect((await call('PATCH', `/users/${friend.id}/unblock`, owner.token)).status).toBe(200);
   }, 120000);
 
   it('keeps restricted comments private until approved and exposes a reversible safety list', async () => {
@@ -229,5 +230,69 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${friend.token}` } })).status).toBe(404);
     expect(JSON.stringify(await readList('/social/posts/liked', friend.token))).not.toContain(post.id);
     expect(JSON.stringify(await readList('/social/posts/saved', friend.token))).not.toContain(post.id);
+  }, 120000);
+
+  it('allows either connection direction and revokes only after the final edge is lost', async () => {
+    const { owner, friend, follower, stranger } = actors;
+    await prisma.follow.createMany({ data: [
+      { followerId: friend.id, followingId: owner.id },
+      { followerId: owner.id, followingId: friend.id },
+      { followerId: owner.id, followingId: follower.id },
+    ], skipDuplicates: true });
+    const candidates = await call('GET', '/users/me/close-friends/candidates', owner.token);
+    expect((candidates.json.data.users as { id: string }[]).map(({ id }) => id)).toEqual(expect.arrayContaining([friend.id, follower.id]));
+    for (const member of [friend, follower]) {
+      expect((await call('POST', `/users/me/close-friends/${member.id}`, owner.token)).status).toBe(201);
+    }
+    expect((await call('POST', `/users/me/close-friends/${owner.id}`, owner.token)).status).toBe(400);
+    const created = await publish(owner.token, 'CLOSE_FRIENDS');
+    const story = created.json.data as { id: string };
+    const postForm = new FormData();
+    postForm.append('type', 'REGULAR');
+    postForm.append('audience', 'CLOSE_FRIENDS');
+    postForm.append('content', 'private connection post');
+    postForm.append('image', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'post.png');
+    const postResponse = await fetch(`${baseUrl}/social/posts`, {
+      method: 'POST', headers: { Authorization: `Bearer ${owner.token}` }, body: postForm,
+    });
+    expect(postResponse.status).toBe(201);
+    const postData = await postResponse.json() as Body;
+    const privatePost = postData.data as { id: string; imageUrl: string };
+    const hasStory = async (token: string) => {
+      const response = await call('GET', '/stories', token);
+      expect(response.status).toBe(200);
+      const groups = response.json.data.stories as { stories: { id: string }[] }[];
+      return groups.some((group) => group.stories.some((item) => item.id === story.id));
+    };
+    expect(await hasStory(friend.token)).toBe(true);
+    expect(await hasStory(follower.token)).toBe(true);
+    expect(await hasStory(stranger.token)).toBe(false);
+    expect((await call('GET', `/social/posts/${privatePost.id}`, friend.token)).status).toBe(200);
+    expect((await call('GET', `/social/posts/${privatePost.id}`, follower.token)).status).toBe(200);
+    expect((await call('GET', `/social/posts/${privatePost.id}`, stranger.token)).status).toBe(404);
+    const mediaPath = new URL(privatePost.imageUrl, baseUrl).pathname;
+    expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${follower.token}` } })).status).toBe(200);
+    expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${stranger.token}` } })).status).toBe(404);
+
+    expect((await call('PATCH', `/users/${owner.id}/unfollow`, friend.token)).status).toBe(200);
+    expect(await hasStory(friend.token)).toBe(true);
+    expect((await call('GET', `/social/posts/${privatePost.id}`, friend.token)).status).toBe(200);
+    expect((await call('PATCH', `/users/${friend.id}/unfollow`, owner.token)).status).toBe(200);
+    expect(await hasStory(friend.token)).toBe(false);
+    expect((await call('GET', `/social/posts/${privatePost.id}`, friend.token)).status).toBe(404);
+    expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${friend.token}` } })).status).toBe(404);
+    expect((await call('POST', `/users/${owner.id}/follow`, friend.token)).status).toBe(200);
+    expect(await hasStory(friend.token)).toBe(false);
+    expect((await call('POST', `/users/${friend.id}/block`, owner.token)).status).toBe(200);
+    expect((await call('PATCH', `/users/${friend.id}/unblock`, owner.token)).status).toBe(200);
+    expect((await call('POST', `/users/me/close-friends/${friend.id}`, owner.token)).status).toBe(400);
+    expect((await call('POST', `/users/${owner.id}/follow`, friend.token)).status).toBe(200);
+    expect(await hasStory(friend.token)).toBe(false);
+    expect((await call('POST', `/users/me/close-friends/${friend.id}`, owner.token)).status).toBe(201);
+    expect(await hasStory(friend.token)).toBe(true);
+
+    expect((await call('PATCH', `/users/${follower.id}/unfollow`, owner.token)).status).toBe(200);
+    expect(await hasStory(follower.token)).toBe(false);
+    expect((await call('POST', `/users/me/close-friends/${follower.id}`, owner.token)).status).toBe(400);
   }, 120000);
 });

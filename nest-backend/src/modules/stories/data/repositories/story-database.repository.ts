@@ -26,7 +26,10 @@ export function storyAudienceWhere(viewerId: string): Prisma.StoryWhereInput {
             audience: 'CLOSE_FRIENDS',
             user: {
               closeFriendsGiven: { some: { memberId: viewerId } },
-              followers: { some: { followerId: viewerId } },
+              OR: [
+                { following: { some: { followingId: viewerId } } },
+                { followers: { some: { followerId: viewerId } } },
+              ],
             },
           },
         ],
