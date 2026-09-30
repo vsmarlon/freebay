@@ -15,10 +15,12 @@
 |---|---|
 | Backend | NestJS vertical modules under `nest-backend/src/modules/<feature>/`. Use cases hold business decisions and return `Either<AppError, Output>` (or `void` for mutations). Concrete repositories own database access. Existing modules vary: do not add repository ports or impose uniform layers without approval. |
 | Backend HTTP | Controllers delegate, then preserve the original `AppError` when unwrapping `Either`; global interceptors/filter shape success and errors. Do not convert failures to default HTTP 400. |
-| Frontend | Feature code lives under `frontend/lib/features/`; state/API/UI remain in their existing feature seams. Domain logic may depend on entities and existing domain contracts, not concrete data repositories. Not every feature has all Clean Architecture layers. |
+| Frontend | Feature code lives under `frontend/lib/features/`; state/API/UI remain in their existing feature seams. In a logic-only domain use case, data entities are allowed; concrete data repositories are not. Keep existing domain repository abstractions where present. Not every feature has all Clean Architecture layers. |
 | Frontend HTTP | Repositories call backend endpoints through Dio and adapt results with `requestEither`; no direct database access. |
 | State/navigation | Riverpod owns shared/server/business state; `setState` is for local ephemeral UI. Use `AppRoutes` constants/builders, not route literals. |
 | Persistence | Prisma schema is `nest-backend/prisma/schema.prisma`. Money is integer cents. Follow `freebay-prisma` and `freebay-data-model` for DB work; production/test/runtime DBs are distinct evidence targets. |
+
+These are target boundaries, not a claim that a repository-wide boundary checker already enforces them. P4 in [`docs/HARDENING_PLAN.md`](docs/HARDENING_PLAN.md) is planned; report it as active only after its implementation and checks are verified.
 
 ## Type safety
 

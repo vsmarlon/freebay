@@ -15,7 +15,7 @@ This is behavior-preserving hardening except for the authorized UX track. It is 
 | D3 | Keep `EitherInterceptor`. Canonical controller form is `unwrap(await useCase.execute(...))`; preserve the original `AppError`, status, and mapping. Never wrap it in a default-400 error. |
 | D4 | `ThingDatabaseRepository` is the role-name exception. Rename class names only; repository files and provider tokens are already correct. |
 | D5 | P4 uses deterministic `--boundaries` rules and a shrinking-only baseline; it is included in no-argument checks. |
-| D6 | `AGENTS.md` is shared guidance; root `CLAUDE.md` imports it and adds Claude-only guidance. `.agents/skills` is canonical; `.claude/skills` is a symlink only if identity and git mode prove it. |
+| D6 | `AGENTS.md` is shared guidance; root `CLAUDE.md` imports it and adds Claude-only guidance. `.agents/skills` is canonical. The `.claude/skills` mirror/symlink status remains unverified in this docs slice; verify identity, git mode, and Windows `core.symlinks=true` before treating it as a symlink. |
 | D7 | P1–P9 are pure refactors unless a separately approved decision says otherwise. No API/schema/error/status/money behavior changes. UX is the prior authorized exception. |
 
 ## Operating agreement and stops
@@ -100,7 +100,7 @@ Use the already-running physical Galaxy A30. Read [`FEATURE_TRUTH.md`](FEATURE_T
 - Preserve reverse chat scrolling, keyboard, header/bottom controls, and accessible actions. Fix observed shared swipe/scroll-physics inconsistencies without changing unrelated navigation.
 - Recheck combined journeys on A30, capture evidence, and run relevant perf checks. Update `FEATURE_TRUTH.md` only for verified outcomes; the plan itself is not completion evidence.
 
-## P1 — Documentation correction
+## P1 — Documentation correction (owner decision pending)
 
 Audit root/subtree guidance, README, relevant architecture docs, and skills against code. Documentation only; stop at owner-policy conflicts.
 
@@ -108,13 +108,13 @@ Audit root/subtree guidance, README, relevant architecture docs, and skills agai
 - Verify actual feature layers; features are not uniformly data/domain/presentation and not every feature has a use case/repository.
 - Document `AppError` status mapping and `EitherInterceptor`; do not claim every error becomes 400. Controller unwrap must preserve original errors.
 - Check test suffixes and scripts in package configuration. Integration files use `*.integration-spec.ts`; E2E uses `npm run test:e2e`. Keep every example runnable.
-- Payment-provider narrative conflicts (README AbacatePay/PagBank vs current Stripe code/docs): do not infer an owner decision or rewrite payment claims until owner resolves policy. Remove unsupported migration-plan references only after checking the actual ADR/path; keep detailed payment flow in its owning docs.
+- Payment-provider narrative conflicts (README AbacatePay/PagBank vs current Stripe code/docs): do not infer an owner decision or rewrite the historical README payment section until the owner resolves policy. The code contains a Stripe implementation (`StripeProvider`, Stripe PaymentIntent/Checkout/Connect paths); that is code evidence, not provider approval or proof of real payments. Keep the prior payment text visible with an explicit pending-owner note, not hidden/deleted. Remove unsupported migration-plan references only after checking the actual ADR/path; keep detailed payment flow in its owning docs.
 - Fix stale duplicate void/dangling schema prose and vague “definition of done” with verified commands/evidence. Do not duplicate capability status owned by `FEATURE_TRUTH.md`.
 - Keep root `CLAUDE.md` concise (target 100–150 lines), importing canonical `AGENTS.md` and adding only Claude-specific guidance. Subtree guidance covers only local Either/transaction, design, keep-alive, and codegen conventions; do not duplicate payment lifecycle detail.
 - `.agents/skills` is canonical. Treat `.claude/skills` as symlinks only after identity and git mode `120000` prove it; on Windows verify `core.symlinks=true`. Claude hooks are optional only if present.
 - Preserve exactly: `FREEBAY_RELEASE_HANDOFF.md`, `docs/CODEBASE_CLEANUP_PROGRESS.md`, and `docs/FREEBAY_PRODUCTION_TRACKER.md`.
 
-After documentation edits, run the architecture script/tests and validate new Markdown paths, symbols, links, and commands against the repository. Record evidence; do not claim an audit without it.
+After documentation edits, run the architecture script/tests and validate new Markdown paths, symbols, links, and commands against the repository. Record evidence; do not claim an audit without it. P1 is not complete while the provider-policy decision remains open.
 
 ## P2 — Backend error, unwrap, and repository names
 
@@ -131,13 +131,21 @@ Move user persistence ownership to Users. Users provides/exports `UserDatabaseRe
 
 Add `--boundaries` to `scripts/ci-check.js` and run it with no arguments. Store sorted `{file, specifier, rule}` entries in `scripts/boundaries-baseline.json`. `--update-baseline` removes resolved entries only and refuses additions. Exclude `*.spec.*`, integration, and E2E. Preserve existing checks. Add phony `boundaries-check` Make target and include it in help/tests.
 
-- **B1:** Files in `modules/A` cannot import another module's `data`, `usecases`, or `services` implementation, including aliases and relative paths.
+- **B1:** Any file under `modules/A` cannot import another module's `data`, `usecases`, or `services` implementation, regardless of its own layer, including aliases and relative paths.
 - **B2:** No PrismaService imports from usecases/controllers/services/tasks, except explicitly justified repository/infrastructure/health cases; no broad directory exemptions.
 - **B3:** Controllers cannot import any Repository class.
 - **F1:** Flutter feature domain cannot import feature `data/repositories`.
 - **F2:** Flutter core cannot import feature implementations.
 
-Prove a new violation fails while known entries pass, revert it, and prove baseline update refuses growth. Reuse the 12-file F1 scan above, not the separate 20-file domain-contract metric. Keep agent rules compact and nonduplicative.
+| Importing source | Allowed direction | Restricted direction |
+|---|---|---|
+| Backend `modules/A/**` | Its own module and shared contracts/infrastructure | Another module's `data/**`, `usecases/**`, or `services/**` implementation (B1) |
+| Flutter feature `domain/**` | Domain contracts and data entities needed by logic-only use cases | Concrete feature `data/repositories/**` (F1) |
+| Flutter `core/**` | Core/shared packages | Feature implementations (F2) |
+| Backend controllers | DTOs, use cases, shared HTTP/auth contracts | Any Repository class (B3) |
+| Backend use cases/controllers/services/tasks | Feature APIs and injected dependencies | `PrismaService` directly, except narrowly enumerated repository/infrastructure/health cases (B2) |
+
+These are P4 target rules, not currently enforced guarantees at baseline `4558181`. Prove a new violation fails while known entries pass, revert it, and prove baseline update refuses growth. Reuse the 12-file F1 scan above, not the separate 20-file domain-contract metric. Keep agent rules compact and nonduplicative.
 
 ## P5 — Shared transaction runner
 
@@ -179,7 +187,7 @@ Without written approval, no P8 production-code changes.
 
 ## P9 — Optional legacy ports
 
-Remeasure and inspect the six current abstract-port files; the baseline lists six. Owner decides individually whether to keep/remove candidates. Do not add replacement abstractions/dependencies. If approved, remove one at a time with bindings, implementation, injections, and behavioral checks; preserve DI behavior and report retained ports/reasons.
+The six abstract-port files present at `4558181` are `auth/domain/repositories/magic-link.repository.ts`; `users/domain/repositories/block.repository.ts`, `follow.repository.ts`, `safety-list.repository.ts`, and `user-lookup.repository.ts`; and `wallet/domain/repositories/wallet.repository.ts`. `ReviewRepository` is not a seventh abstract port in this inventory: reviews directly inject concrete `PrismaReviewRepository`. Recheck the inventory before a P9 decision; the owner decides individually whether any existing port should remain or be removed. Do not add replacement abstractions/dependencies. If approved, remove one at a time with bindings, implementation, injections, and behavioral checks; preserve DI behavior and report retained ports/reasons.
 
 ## P10 — Migration workflow (owner only)
 

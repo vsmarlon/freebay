@@ -14,6 +14,27 @@ FreeBay é uma plataforma C2C que combina marketplace e interação social. O ap
 
 Consulte [`docs/FEATURE_TRUTH.md`](docs/FEATURE_TRUTH.md) para capacidades verificadas no código, jornadas incompletas, limites e evidências. Um endpoint ou teste isolado não comprova uma jornada completa nem prontidão de produção. O schema atual está em `nest-backend/prisma/schema.prisma`; este README não replica modelos, enums ou status que podem ficar desatualizados.
 
+### Pagamentos (`payments`)
+
+> **Decisão do owner pendente:** o texto histórico abaixo conflita com a implementação Stripe encontrada no código. A implementação não confirma, por si só, uma decisão de produto/provedor. Não trate esta tabela como afirmação atual; preserve-a até o owner resolver a divergência.
+
+| Componente | Status |
+|------------|--------|
+| Controller | ✅ Completo |
+| Use Cases | ✅ Completo |
+| Provider (AbacatePay) | ✅ Completo |
+| Repository | ❌ Não existe (lógica no use case) |
+| Tests | ✅ Unit test |
+
+- Métodos: PIX, CREDIT_CARD
+- Providers reais: **AbacatePay** (PIX), **PagBank** (payouts). O enum `PaymentProvider` ainda usa labels legados `PAGARME`/`WOOVI` por razões históricas — os adapters por trás apontam para AbacatePay/PagBank.
+- Idempotency keys para evitar duplicatas
+- PIX QR Code com expiração
+- **Backend:** `nest-backend/src/modules/payments/`
+- **Frontend:** `frontend/lib/features/payments/`
+
+O que foi observado separadamente no código em `4558181`: o módulo importa `StripeProvider`, que lê `STRIPE_SECRET_KEY`; os use cases de PaymentIntent/Checkout Session, Connect e processamento de eventos Stripe existem. Isso é evidência de implementação, não aprovação do provider pelo owner nem comprovação de pagamentos reais. Consulte `nest-backend/src/modules/payments/` e [`0001-payment-sheet-migration.md`](nest-backend/src/modules/payments/docs/adr/0001-payment-sheet-migration.md) para detalhes técnicos.
+
 ## Arquitetura
 
 ```text
@@ -40,7 +61,7 @@ cd nest-backend
 npm install
 # Configure nest-backend/.env com os valores necessários ao ambiente local.
 npm run db:sync
-npm run db:seed
+npx cross-env NODE_ENV=development npm run db:seed
 npm run start:dev
 ```
 
@@ -59,16 +80,20 @@ flutter run
 Integração e E2E usam PostgreSQL/Redis explicitamente configurados e os scripts de teste guardados; consulte `nest-backend/.env.test` e [`AGENTS.md`](AGENTS.md). Os entry points são executáveis sem Docker quando esses serviços nativos/externos estão disponíveis.
 
 ```bash
-# Backend (em nest-backend)
+cd nest-backend
 npm test
 npm run test:integration
 npm run test:e2e
+```
 
-# Flutter (em frontend)
+```bash
+cd frontend
 flutter analyze --fatal-infos lib test libs/freebay_design_system/lib
 flutter test
+```
 
-# Repositório (raiz)
+```bash
+# Run from the repository root.
 node scripts/ci-check.js
 npm run test:ci-scripts
 make test
