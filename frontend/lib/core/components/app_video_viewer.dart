@@ -8,13 +8,18 @@ import 'app_video_viewer/video_viewer_controls.dart';
 
 const videoControlsHideDelay = Duration(seconds: 3);
 
-Future<void> showFullScreenVideo(BuildContext context, String videoUrl) async {
+Future<void> showFullScreenVideo(
+  BuildContext context,
+  String videoUrl, {
+  VideoPlayerController? controller,
+}) async {
   await Navigator.of(context).push<void>(
     PageRouteBuilder<void>(
       opaque: false,
       barrierColor: Colors.black,
       transitionDuration: AppMotion.enter,
-      pageBuilder: (_, _, _) => _AppVideoViewer(videoUrl: videoUrl),
+      pageBuilder: (_, _, _) =>
+          _AppVideoViewer(videoUrl: videoUrl, controller: controller),
       transitionsBuilder: (_, animation, _, child) =>
           FadeTransition(opacity: animation, child: child),
     ),
@@ -23,8 +28,9 @@ Future<void> showFullScreenVideo(BuildContext context, String videoUrl) async {
 
 class _AppVideoViewer extends StatefulWidget {
   final String videoUrl;
+  final VideoPlayerController? controller;
 
-  const _AppVideoViewer({required this.videoUrl});
+  const _AppVideoViewer({required this.videoUrl, this.controller});
 
   @override
   State<_AppVideoViewer> createState() => _AppVideoViewerState();
@@ -40,7 +46,29 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
   @override
   void initState() {
     super.initState();
-    _initialize();
+    final controller = widget.controller;
+    if (controller == null) {
+      _initialize();
+    } else {
+      _controller = controller;
+      _attachController(controller);
+      _play(controller);
+    }
+  }
+
+  void _attachController(VideoPlayerController controller) {
+    controller.addListener(_onControllerUpdate);
+  }
+
+  Future<void> _play(VideoPlayerController controller) async {
+    try {
+      await controller.play();
+      _startHideControlsTimer();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Não foi possível carregar o vídeo.');
+      }
+    }
   }
 
   void _onControllerUpdate() {
@@ -70,10 +98,9 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
         await controller.dispose();
         return;
       }
-      controller.addListener(_onControllerUpdate);
       setState(() => _controller = controller);
-      await controller.play();
-      _startHideControlsTimer();
+      _attachController(controller);
+      await _play(controller);
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Não foi possível carregar o vídeo.');
@@ -93,7 +120,10 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
     final controller = _controller;
     controller?.removeListener(_onControllerUpdate);
     await controller?.dispose();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
+    _hideControlsTimer?.cancel();
     setState(() {
       _error = null;
       _controller = null;

@@ -22,17 +22,19 @@ class VideoSourceResolver {
       if (file.existsSync()) return _createFileController(file);
     }
 
+    VideoPlayerController? controller;
     try {
       final headers =
           await getMediaAuthHeadersAsync(resolvedUrl) ??
           const <String, String>{};
-      final controller = VideoPlayerController.networkUrl(
+      controller = VideoPlayerController.networkUrl(
         Uri.parse(resolvedUrl),
         httpHeaders: headers,
       );
       await controller.initialize();
       return controller;
     } catch (_) {
+      await controller?.dispose();
       return _downloadAndCreateController(resolvedUrl);
     }
   }

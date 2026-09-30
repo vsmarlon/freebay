@@ -27,6 +27,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   bool _loading = false;
   bool _muted = true;
   String? _error;
+  int _initialization = 0;
   final _resolver = const VideoSourceResolver();
 
   String? get _url {
@@ -44,6 +45,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   void didUpdateWidget(VideoMessageBubble oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.videoUrl != widget.videoUrl) {
+      _initialization++;
       _controller?.dispose();
       _controller = null;
       _error = null;
@@ -56,6 +58,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
     final url = _url;
     if (url == null) return;
     if (_loading) return;
+    final initialization = ++_initialization;
     setState(() {
       _loading = true;
       _error = null;
@@ -64,18 +67,20 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
       final controller = await _resolver.createController(url);
       await controller.setLooping(true);
       await controller.setVolume(_muted ? 0 : 1);
-      if (!mounted) {
+      if (!mounted || initialization != _initialization) {
         await controller.dispose();
         return;
       }
       setState(() => _controller = controller);
       if (play) await controller.play();
     } catch (_) {
-      if (mounted) {
+      if (mounted && initialization == _initialization) {
         setState(() => _error = 'Não foi possível carregar o vídeo.');
       }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && initialization == _initialization) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -91,6 +96,18 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
       await controller.play();
     }
     if (mounted) setState(() {});
+  }
+
+  Future<void> _openFullscreen(String url) async {
+    final controller = _controller;
+    if (controller != null) {
+      _controller = null;
+      setState(() {});
+    }
+    await showFullScreenVideo(context, url, controller: controller);
+    if (mounted && controller != null && widget.thumbnailUrl == null) {
+      await _initialize(play: false);
+    }
   }
 
   Future<void> _toggleMute() async {
@@ -109,6 +126,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
 
   @override
   void dispose() {
+    _initialization++;
     _controller?.dispose();
     super.dispose();
   }
@@ -131,7 +149,8 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
           alignment: Alignment.center,
           children: [
             GestureDetector(
-              onTap: () => showFullScreenVideo(context, url),
+              onTap: _loading ? null : () => _openFullscreen(url),
+              behavior: HitTestBehavior.opaque,
               child: AspectRatio(
                 aspectRatio: initialized
                     ? controller!.value.aspectRatio

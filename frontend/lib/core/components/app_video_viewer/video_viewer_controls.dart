@@ -28,14 +28,19 @@ class VideoViewerError extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        GestureDetector(
+        Semantics(
+          button: true,
+          label: 'Tentar novamente',
           onTap: onRetry,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: AppColors.primaryContainer,
-            child: Text(
-              'Tentar novamente',
-              style: AppTypography.button.copyWith(color: Colors.white),
+          child: GestureDetector(
+            onTap: onRetry,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: AppColors.primaryContainer,
+              child: Text(
+                'Tentar novamente',
+                style: AppTypography.button.copyWith(color: Colors.white),
+              ),
             ),
           ),
         ),
@@ -57,15 +62,19 @@ class VideoViewerCenterButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          color: Colors.black.withValues(alpha: 0.6),
-          child: Icon(
-            isCompleted ? Icons.replay : Icons.play_arrow,
-            color: Colors.white,
-            size: 48,
+      child: Semantics(
+        button: true,
+        label: isCompleted ? 'Reproduzir novamente' : 'Reproduzir vídeo',
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            color: Colors.black.withValues(alpha: 0.6),
+            child: Icon(
+              isCompleted ? Icons.replay : Icons.play_arrow,
+              color: Colors.white,
+              size: 48,
+            ),
           ),
         ),
       ),
@@ -90,13 +99,13 @@ class VideoViewerCloseButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              GestureDetector(
-                onTap: onClose,
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  color: Colors.black.withValues(alpha: 0.6),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+              IconButton(
+                tooltip: 'Fechar vídeo',
+                onPressed: onClose,
+                icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black.withValues(alpha: 0.6),
+                  fixedSize: const Size(44, 44),
                 ),
               ),
             ],
@@ -145,28 +154,54 @@ class VideoViewerControls extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  VideoProgressIndicator(
-                    controller,
-                    allowScrubbing: true,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    colors: const VideoProgressColors(
-                      playedColor: AppColors.primaryContainer,
-                      bufferedColor: Colors.white38,
-                      backgroundColor: Colors.white12,
+                  Semantics(
+                    slider: true,
+                    label: 'Posição do vídeo',
+                    value:
+                        '${_formatDuration(position)} de ${_formatDuration(duration)}',
+                    increasedValue: _formatDuration(
+                      _stepPosition(position, duration, true),
+                    ),
+                    decreasedValue: _formatDuration(
+                      _stepPosition(position, duration, false),
+                    ),
+                    onIncrease: () => controller.seekTo(
+                      _stepPosition(position, duration, true),
+                    ),
+                    onDecrease: () => controller.seekTo(
+                      _stepPosition(position, duration, false),
+                    ),
+                    child: VideoProgressIndicator(
+                      controller,
+                      allowScrubbing: true,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      colors: const VideoProgressColors(
+                        playedColor: AppColors.primaryContainer,
+                        bufferedColor: Colors.white38,
+                        backgroundColor: Colors.white12,
+                      ),
                     ),
                   ),
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: onTogglePlay,
-                        child: Icon(
-                          isCompleted
-                              ? Icons.replay
-                              : isPlaying
-                              ? Icons.pause
-                              : Icons.play_arrow,
-                          color: Colors.white,
-                          size: 28,
+                      Semantics(
+                        button: true,
+                        label: isCompleted
+                            ? 'Reproduzir novamente'
+                            : isPlaying
+                            ? 'Pausar vídeo'
+                            : 'Reproduzir vídeo',
+                        child: GestureDetector(
+                          onTap: onTogglePlay,
+                          child: Icon(
+                            isCompleted
+                                ? Icons.replay
+                                : isPlaying
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -179,14 +214,20 @@ class VideoViewerControls extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      GestureDetector(
-                        onTap: onToggleMute,
-                        child: Icon(
-                          controller.value.volume == 0
-                              ? Icons.volume_off
-                              : Icons.volume_up,
-                          color: Colors.white,
-                          size: 24,
+                      Semantics(
+                        button: true,
+                        label: controller.value.volume == 0
+                            ? 'Ativar som'
+                            : 'Desativar som',
+                        child: GestureDetector(
+                          onTap: onToggleMute,
+                          child: Icon(
+                            controller.value.volume == 0
+                                ? Icons.volume_off
+                                : Icons.volume_up,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                         ),
                       ),
                     ],
@@ -204,5 +245,15 @@ class VideoViewerControls extends StatelessWidget {
     final minutes = value.inMinutes.toString().padLeft(2, '0');
     final seconds = (value.inSeconds % 60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  Duration _stepPosition(Duration position, Duration duration, bool forward) {
+    const step = Duration(seconds: 5);
+    if (forward) {
+      final next = position + step;
+      return next > duration ? duration : next;
+    }
+    final previous = position - step;
+    return previous < Duration.zero ? Duration.zero : previous;
   }
 }
