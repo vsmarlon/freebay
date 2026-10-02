@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
 import { PrismaService } from './prisma.service';
 
@@ -18,6 +19,7 @@ describe('Runtime database schema', () => {
     module = await Test.createTestingModule({
       providers: [
         PrismaService,
+        UserDatabaseRepository,
         TransactionDatabaseRepository,
         { provide: ConfigService, useValue: new ConfigService({ DATABASE_URL: url.toString() }) },
       ],
@@ -32,6 +34,12 @@ describe('Runtime database schema', () => {
   });
 
   afterAll(async () => { await module?.close(); });
+
+  it('looks up Google accounts without a runtime schema error', async () => {
+    const result = await module.get(UserDatabaseRepository).findByGoogleId('__runtime_schema_probe__');
+    expect(result.isLeft() ? result.value : null).toBeNull();
+    if (result.isRight()) expect(result.value).toBeNull();
+  });
 
   it('executes the real transfer reconciliation query on the configured database', async () => {
     const result = await module.get(TransactionDatabaseRepository).findTransferFailures(null, 1);
