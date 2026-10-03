@@ -1,0 +1,18 @@
+# Cart clear HTTP regression — RED → GREEN
+
+- **Revision:** base `81e8866d980e2783dfe29a53b8eb7ca088e727f5` plus dirty working-tree changes; no commit. The only production edit is the cart route declaration order in `cart.controller.ts`.
+- **Boundary:** actual Nest `AppModule` over HTTP with the global validation pipe, auth guard, exception filter and interceptors, backed by the guarded `.env.test` PostgreSQL database. The test calls `assertSafeTestEnvironment()` and `cleanDatabase(prisma)`; it does not access the development DB or run schema synchronization. No credentials are recorded.
+- **Contract:** authenticated `PATCH /cart/clear` with no request body clears only that user's persisted `CartItem`s; repeating the request succeeds. Missing auth is rejected without changing either cart. The adjacent quantity update endpoint continues rejecting below-minimum, above-maximum, and non-integer quantities, while a valid update persists.
+- **Why current coverage misses it:** the existing cart repository integration tests cover persistence/reservation, not Nest route matching, auth or validation. The Flutter repository sends `client.patch('/cart/clear')` without a body.
+- **Fixture/reset:** the test cleans only the guarded test DB, registers two users via HTTP, creates one test category/product, and inserts one cart item for each user. No seed/schema changes.
+- **Command:** from `nest-backend`: `npx dotenv -e .env.test -- cross-env NODE_ENV=test npx jest --config jest.config.e2e.js --runInBand test/e2e/cart-clear.e2e-spec.ts`
+- **RED:** exit 1, 1 suite failed / 1 test failed. Setup completed; registrations and DB fixtures completed. Empty-body `PATCH /cart/clear` returned HTTP 400 where 200 was expected. Observed response: `{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Dados inválidos."},"requestId":null,"timestamp":"2026-10-02T22:54:41.169Z","path":"/cart/clear"}`. This is behavioral RED, not fixture/setup failure. The generic message does not name the internal validators.
+- **GREEN:** rerunning the same command after the minimal route reorder passed 1 suite / 1 test. The same real HTTP test confirmed unauthenticated clear returns 401 and leaves both rows, authenticated bodyless clear deletes only the owner's row, repeat clear succeeds, quantities `0`, `11`, and `1.5` are rejected with `VALIDATION_ERROR`, and the other user's valid quantity update to `4` persists.
+- **Focused gates:** `npx tsc --noEmit` passed; `npm run lint` passed; `npm run build` passed; `npm run test:safety` passed (5/5); cart checkout unit spec passed (21/21); cart repository integration spec passed (3/3); full `npm test -- --runInBand` passed (103 suites / 649 tests). Full unit-test logs contained expected simulated provider/DB error logging; no test failed.
+- **Test DB status:** both guarded `.env.test` HTTP and cart repository integration runs completed; the integration harness `afterEach` called `cleanDatabase`. No full integration or full E2E suite was run. No frontend, device, or production-runtime evidence is claimed. The test DB runs are complete and available for the parent's separate fixture work.
+- Safe command summaries: [`command.log`](command.log).
+
+## Diagnosis and smallest next step
+
+
+`CartController` originally declared `@PatchAuth(':productId')` before `@PatchAuth('clear')`. The broad parameter route collided with `/cart/clear`; its parameter UUID parsing/global validation path returned the observed generic 400. Moving the **entire existing** `clearCart` method above the parameter route made the regression GREEN. `ClearCartUseCase` and `CartDatabaseRepository.clear(userId)` remain unchanged and already scope deletion to the authenticated user; the frontend caller was not changed.

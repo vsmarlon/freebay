@@ -71,6 +71,11 @@ export class CartController {
     });
   }
 
+  @PatchAuth('clear', 'Clear cart')
+  async clearCart(@CurrentUserId() userId: string) {
+    return this.clearCartUseCase.execute(userId);
+  }
+
   @PatchAuth(':productId', {
     summary: 'Update cart item quantity',
     bodyType: UpdateCartItemDTO,
@@ -96,11 +101,6 @@ export class CartController {
   })
   async removeFromCart(@Param('productId', ParseUUIDPipe) productId: string, @CurrentUserId() userId: string) {
     return this.removeFromCartUseCase.execute({ userId, productId });
-  }
-
-  @PatchAuth('clear', 'Clear cart')
-  async clearCart(@CurrentUserId() userId: string) {
-    return this.clearCartUseCase.execute(userId);
   }
 }
 

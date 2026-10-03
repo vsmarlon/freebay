@@ -1,0 +1,21 @@
+Environment: guarded .env.test PostgreSQL only; no credentials recorded.
+Base revision: 81e8866d980e2783dfe29a53b8eb7ca088e727f5; local changes included.
+
+RED (before production edit)
+Command: npx dotenv -e .env.test -- cross-env NODE_ENV=test npx jest --config jest.config.e2e.js --runInBand test/e2e/cart-clear.e2e-spec.ts
+Result: exit 1; 1 suite failed, 1 test failed. Empty-body PATCH /cart/clear returned 400; expected 200. Response code VALIDATION_ERROR, message "Dados inválidos.". Fixture and HTTP setup completed.
+
+GREEN (after route-order edit; final spec includes unauthorized, min/max/int and persistence assertions)
+Command: npx dotenv -e .env.test -- cross-env NODE_ENV=test npx jest --config jest.config.e2e.js --runInBand test/e2e/cart-clear.e2e-spec.ts
+Result: exit 0; 1 suite passed, 1 test passed.
+
+Checks
+npx tsc --noEmit: exit 0.
+npm run lint: exit 0.
+npm run build: exit 0.
+npm run test:safety: exit 0; 5 passed, 0 failed.
+npx dotenv -e .env.test -- cross-env NODE_ENV=test npx jest --runInBand src/modules/cart/usecases/checkout-cart.usecase.spec.ts: exit 0; 1 suite, 21 tests passed.
+npx dotenv -e .env.test -- cross-env NODE_ENV=test npx jest --config jest.config.integration.js --runInBand --runTestsByPath src/modules/cart/data/repositories/cart-database.repository.integration-spec.ts: exit 0; 1 suite, 3 tests passed.
+npm test -- --runInBand: exit 0; 103 suites, 649 tests passed.
+
+No full integration/E2E suite, frontend, device, or production runtime check was run. The focused integration harness cleaned the guarded test DB in afterEach.
