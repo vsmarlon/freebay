@@ -10,7 +10,7 @@
   },
   "lint-staged": {
     "nest-backend/src/**/*.ts": [
-      "npx --no-install eslint --config nest-backend/eslint.config.js --fix"
+      "node nest-backend/node_modules/eslint/bin/eslint.js --config nest-backend/eslint.config.js --fix"
     ],
     "frontend/lib/**/*.dart": [
       "dart format"
