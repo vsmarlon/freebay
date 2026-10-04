@@ -7,8 +7,6 @@ import {
   IsPositive,
   IsIn,
   IsEnum,
-  IsArray,
-  ArrayMaxSize,
   Min,
   Max,
 } from 'class-validator';
@@ -23,7 +21,6 @@ export const PRODUCT_TITLE_MIN_LENGTH = 3;
 export const PRODUCT_TITLE_MAX_LENGTH = 100;
 export const PRODUCT_DESCRIPTION_MIN_LENGTH = 10;
 export const PRODUCT_DESCRIPTION_MAX_LENGTH = 5000;
-export const PRODUCT_IMAGE_MAX_COUNT = 10;
 export const PRODUCT_QUANTITY_MIN = 1;
 export const PRODUCT_SEARCH_MAX_LENGTH = 200;
 
@@ -55,13 +52,6 @@ export class CreateProductDTO {
   @ApiProperty({ example: 'category-uuid' })
   @IsString()
   readonly categoryId: string;
-
-  @ApiPropertyOptional({ example: ['https://example.com/img.jpg'], type: [String], maxItems: PRODUCT_IMAGE_MAX_COUNT })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @ArrayMaxSize(PRODUCT_IMAGE_MAX_COUNT)
-  readonly images?: string[];
 
   @ApiPropertyOptional({ example: 5, description: 'Stock quantity (default 1)' })
   @IsOptional()
@@ -176,6 +166,7 @@ export interface CreateProductInput {
   condition: Condition;
   categoryId: string;
   images: string[];
+  imageBlurHash?: string;
   quantity?: number;
 }
 
@@ -191,6 +182,7 @@ export interface CreateProductOutput {
   quantity: number;
   soldCount: number;
   createdAt: Date;
+  images: { id: string; url: string; order: number; productId: string; blurHash?: string }[];
 }
 
 export interface DeleteProductInput {

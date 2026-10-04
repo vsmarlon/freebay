@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/auth/auth.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Biometry on/off row. Owns the enroll/revoke orchestration so the
 /// settings sheet stays a pure layout widget.
@@ -34,50 +35,52 @@ class _BiometrySettingTileState extends ConsumerState<BiometrySettingTile> {
   }
 
   Future<void> _enable() async {
-    final biometryService = ref.read(biometryServiceProvider);
-    final authenticated = await biometryService.authenticate(
-      reason: 'Confirme para ativar login biométrico',
+    if (widget.userId == null) return _fail();
+    final userId = widget.userId!;
+    final stepUpToken = await StepUpAuthenticator.authorize(
+      context,
+      ref,
+      purpose: 'biometric_enroll',
     );
-    if (!authenticated) return;
+    if (stepUpToken == null || !mounted) return;
 
     try {
-      final enrollment = await ref
-          .read(authRepositoryProvider)
-          .enrollBiometricToken();
-      if (enrollment.isLeft) return _fail();
-      final token = enrollment.rightOrNull;
-      if (token == null || token.isEmpty) return _fail();
-      if (widget.userId == null) return;
-      await StorageService.saveBiometricToken(token);
-      await StorageService.saveBiometricOwner(widget.userId!);
-      await biometryService.setEnabled(true);
-      await biometryService.setHasPrompted(true);
-      await StorageService.saveRememberMe(true);
-      ref.invalidate(biometryEnabledProvider);
+      final enrolled = await ref
+          .read(authControllerProvider.notifier)
+          .enrollBiometrics(stepUpToken, expectedUserId: userId);
+      if (!enrolled) _fail();
     } catch (_) {
-      try {
-        await biometryService.clearCredentials();
-      } catch (_) {}
       _fail();
     }
   }
 
   Future<void> _disable() async {
+    var revoked = false;
     try {
       final result = await ref
           .read(authRepositoryProvider)
           .revokeBiometricToken();
-      if (result.isLeft) return _fail();
-      await ref.read(biometryServiceProvider).clearState();
-      ref.invalidate(biometryEnabledProvider);
+      revoked = result.isRight;
     } catch (_) {
-      _fail();
+      // Local disable must not depend on network availability.
+    } finally {
+      try {
+        await ref.read(biometryServiceProvider).clearState();
+      } finally {
+        ref.invalidate(biometryEnabledProvider);
+      }
+    }
+    if (!revoked && mounted) {
+      AppSnackbar.warning(
+        context,
+        l10n(context).profileBiometryRevocationPending,
+      );
     }
   }
 
   void _fail() {
     if (mounted) {
-      AppSnackbar.error(context, 'Não foi possível atualizar a biometria.');
+      AppSnackbar.error(context, l10n(context).profileBiometryUpdateFailed);
     }
   }
 
@@ -88,11 +91,14 @@ class _BiometrySettingTileState extends ConsumerState<BiometrySettingTile> {
 
     return ListTile(
       leading: Icon(Icons.fingerprint, color: context.textPrimary),
-      title: Text('Biometria', style: TextStyle(color: context.textPrimary)),
+      title: Text(
+        l10n(context).profileBiometry,
+        style: TextStyle(color: context.textPrimary),
+      ),
       subtitle: Text(
         isAvailable
-            ? 'Usar biometria para login'
-            : 'Não disponível no dispositivo',
+            ? l10n(context).profileBiometryLogin
+            : l10n(context).onboardingUnavailableOnDevice,
         style: TextStyle(color: context.textSecondary),
       ),
       trailing: isAvailable

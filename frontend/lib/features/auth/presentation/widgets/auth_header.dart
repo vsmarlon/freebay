@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Shared top bar for the login and register pages: centered massive
 /// title with an optional back button.
@@ -21,6 +22,7 @@ class AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final backButton = BrutalistIconButton(
       icon: Icons.arrow_back,
+      semanticLabel: backTooltip ?? l10n(context).accessibilityBack,
       onTap: onBack,
     );
 
@@ -38,16 +40,7 @@ class AuthHeader extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           if (showBack)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Semantics(
-                button: true,
-                label: backTooltip,
-                child: backTooltip == null
-                    ? backButton
-                    : Tooltip(message: backTooltip!, child: backButton),
-              ),
-            ),
+            Align(alignment: Alignment.centerLeft, child: backButton),
           Center(
             child: Text(
               title,

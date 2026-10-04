@@ -11,6 +11,7 @@ import 'package:freebay/features/payments/presentation/providers/payment_provide
 import 'package:freebay/features/payments/presentation/widgets/payment_view.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key});
@@ -67,6 +68,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final query = GoRouterState.of(context).uri.queryParameters;
     final productId = query['productId'];
 
@@ -76,9 +78,10 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'PAGAMENTO',
+              text: strings.paymentPageTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -86,7 +89,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               child: productId == null
                   ? Center(
                       child: Text(
-                        'Produto não informado.',
+                        strings.paymentProductMissing,
                         style: TextStyle(color: context.textPrimary),
                       ),
                     )
@@ -99,6 +102,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
   }
 
   Widget _buildProductCheckout(BuildContext context, String productId) {
+    final strings = l10n(context);
     final productAsync = ref.watch(productByIdProvider(productId));
     final checkout = ref.watch(paymentCheckoutProvider);
 
@@ -113,11 +117,9 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           ],
         ),
       ),
-      error: (err, stack) => Center(
-        child: Text(
-          'Erro ao carregar produto',
-          style: TextStyle(color: context.textPrimary),
-        ),
+      error: (err, stack) => EmptyState.error(
+        message: strings.productLoadError,
+        onRetry: () => ref.invalidate(productByIdProvider(productId)),
       ),
       data: (product) {
         if (checkout.hasResult) {
@@ -126,6 +128,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
             payment: checkout.payment,
             paymentIntentClientSecret: checkout.paymentIntentClientSecret,
             createdOrderId: checkout.createdOrderId,
+            amountCents: checkout.createdOrderAmount,
           );
         }
         return _buildForm(context, product, checkout.isSubmitting);
@@ -138,6 +141,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     ProductEntity product,
     bool isSubmitting,
   ) {
+    final strings = l10n(context);
     final isDark = context.isDark;
 
     return ListView(
@@ -151,7 +155,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'PRODUTO',
+                strings.productTitle.toUpperCase(),
                 style: AppTypography.labelSmall.copyWith(
                   color: context.textSecondary,
                 ),
@@ -169,11 +173,11 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               Spacing.vSm,
               Text(
                 CurrencyUtils.formatCents(product.price),
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
+                  color: context.textPrimary,
                 ),
               ),
             ],
@@ -188,24 +192,25 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
             children: [
               AppTextField(
                 controller: _nameController,
-                label: 'Nome completo',
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Informe o nome' : null,
+                label: strings.paymentFullName,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? strings.paymentNameRequired
+                    : null,
               ),
               Spacing.vSm,
               AppTextField(
                 controller: _emailController,
-                label: 'Email',
+                label: strings.authEmail,
                 keyboardType: TextInputType.emailAddress,
                 validator: (v) => (v == null || !ValueUtils.validateEmail(v))
-                    ? 'Informe um email válido'
+                    ? strings.authEmailInvalid
                     : null,
               ),
               if (kIsWeb) ...[
                 Spacing.vSm,
                 AppTextField(
                   controller: _taxIdController,
-                  label: 'CPF ou CNPJ',
+                  label: strings.paymentCpfCnpj,
                   keyboardType: TextInputType.number,
                   validator: (v) {
                     final d = (v ?? '').replaceAll(RegExp(r'\D'), '');
@@ -215,13 +220,15 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                     if (d.length == 14 && ValueUtils.validateCNPJ(d)) {
                       return null;
                     }
-                    return 'CPF ou CNPJ inválido';
+                    return strings.paymentInvalidCpfCnpj;
                   },
                 ),
               ],
               Spacing.vLg,
               AppButton(
-                label: 'PAGAR COM STRIPE',
+                label: kIsWeb
+                    ? strings.paymentPayWithStripe
+                    : strings.paymentContinueToWallet,
                 icon: Icons.payment,
                 isLoading: isSubmitting,
                 onPressed: () => _submit(product),
@@ -247,7 +254,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
           isWeb: kIsWeb,
         );
     if (error != null && mounted) {
-      AppSnackbar.error(context, error);
+      AppSnackbar.error(context, l10n(context).paymentCheckoutFailed);
     }
   }
 }

@@ -49,6 +49,15 @@ class ProductResultsGrid extends StatelessWidget {
       );
     }
 
+    final imageTagCounts = <String, int>{};
+    for (final product in products) {
+      imageTagCounts.update(
+        product.id,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
     return InfiniteScrollListener(
       onLoadMore: onLoadMore,
       child: GridView.builder(
@@ -65,8 +74,15 @@ class ProductResultsGrid extends StatelessWidget {
           return RepaintBoundary(
             child: AppCard(
               imageUrl: product.imageUrl,
+              imageBlurHash: product.imageBlurHash,
               title: product.title,
               priceInCents: product.price,
+              heroTag:
+                  imageTagCounts[product.id] == 1 &&
+                      product.imageUrl != null &&
+                      product.imageUrl!.isNotEmpty
+                  ? 'product-image-${product.id}'
+                  : null,
               condition: product.condition.wireValue,
               variant: AppCardVariant.compact,
               onTap: () => context.push(AppRoutes.productPath(product.id)),

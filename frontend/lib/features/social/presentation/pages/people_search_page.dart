@@ -6,6 +6,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/user_search_list.dart';
 import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PeopleSearchPage extends ConsumerStatefulWidget {
   const PeopleSearchPage({super.key});
@@ -43,6 +44,7 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final searchState = ref.watch(userSearchProvider);
     final query = _searchController.text;
 
@@ -51,9 +53,10 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
       body: Column(
         children: [
           PageHeader(
-            text: 'BUSCAR PESSOAS',
+            text: strings.socialPeopleSearchTitle,
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
             ),
           ),
@@ -62,7 +65,7 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
             child: AppTextField(
               controller: _searchController,
               label: '',
-              hint: 'Buscar por nome ou @username...',
+              hint: strings.socialPeopleSearchHint,
               prefixIcon: Icons.search,
               onChanged: _onSearchDebounced,
               onFieldSubmitted: (_) {
@@ -73,36 +76,43 @@ class _PeopleSearchPageState extends ConsumerState<PeopleSearchPage> {
               },
             ),
           ),
-          Expanded(child: _buildContent(searchState, query)),
+          Expanded(child: _buildContent(context, searchState, query)),
         ],
       ),
     );
   }
 
-  Widget _buildContent(UserSearchState searchState, String query) {
+  Widget _buildContent(
+    BuildContext context,
+    UserSearchState searchState,
+    String query,
+  ) {
     if (query.isEmpty && searchState.users.isEmpty && !searchState.isLoading) {
-      return const SingleChildScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
+              padding: const EdgeInsets.symmetric(vertical: 32),
               child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.person_search,
                     size: 64,
                     color: AppColors.mediumGray,
                   ),
                   Spacing.vMd,
                   Text(
-                    'Busque por pessoas...',
-                    style: TextStyle(color: AppColors.mediumGray, fontSize: 16),
+                    l10n(context).socialPeopleSearchEmpty,
+                    style: const TextStyle(
+                      color: AppColors.mediumGray,
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
             ),
-            SuggestionsSection(asSliver: false),
+            const SuggestionsSection(asSliver: false),
           ],
         ),
       );

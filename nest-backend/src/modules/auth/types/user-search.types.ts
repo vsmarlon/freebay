@@ -3,6 +3,7 @@ export type UserSearchResult = {
   displayName: string;
   username: string | null;
   avatarUrl: string | null;
+  avatarBlurHash: string | null;
   bio: string | null;
   isVerified: boolean;
   reputationScore: number;
@@ -31,6 +32,7 @@ export function toUserSearchResult(
     displayName: user.displayName,
     username: user.username,
     avatarUrl: user.avatarUrl,
+    avatarBlurHash: user.avatarBlurHash,
     bio: user.bio,
     isVerified: user.isVerified,
     reputationScore: user.reputationScore,

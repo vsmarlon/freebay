@@ -1,0 +1,411 @@
+ M .agents/skills/freebay-app-flows/SKILL.md
+ M .agents/skills/freebay-flutter-feature/SKILL.md
+ M docs/FEATURE_TRUTH.md
+ M docs/HARDENING_PLAN.md
+ M docs/test-runs/2026-09-30/hardening-baseline/REPORT.md
+ M docs/test-runs/2026-09-30/skills-maintenance/REPORT.md
+ M frontend/DESIGN.md
+ M frontend/android/app/src/main/AndroidManifest.xml
+ M frontend/android/app/src/main/kotlin/com/freebay/app/MainActivity.kt
+ M frontend/integration_test/perf_test.dart
+ M frontend/ios/Runner.xcodeproj/project.pbxproj
+ M frontend/ios/Runner/AppDelegate.swift
+ M frontend/ios/Runner/Runner.entitlements
+ M frontend/ios/Runner/RunnerRelease.entitlements
+ M frontend/lib/core/components/app_card.dart
+ M frontend/lib/core/components/app_card_image.dart
+ M frontend/lib/core/components/app_dialog.dart
+ M frontend/lib/core/components/app_error_widget.dart
+ M frontend/lib/core/components/app_image_viewer.dart
+ M frontend/lib/core/components/app_shell.dart
+ M frontend/lib/core/components/app_snackbar.dart
+ M frontend/lib/core/components/app_video_viewer.dart
+ M frontend/lib/core/components/app_video_viewer/video_viewer_controls.dart
+ M frontend/lib/core/components/brutalist_safe_link_dialog.dart
+ M frontend/lib/core/components/comment_input.dart
+ M frontend/lib/core/components/empty_state.dart
+ M frontend/lib/core/components/image_picker_grid.dart
+ M frontend/lib/core/components/safe_link_destination.dart
+ M frontend/lib/core/components/social_post.dart
+ M frontend/lib/core/components/social_post/post_header.dart
+ M frontend/lib/core/components/social_post/post_media.dart
+ M frontend/lib/core/components/user_avatar.dart
+ M frontend/lib/core/components/user_list_tile.dart
+ M frontend/lib/core/components/wallet_card.dart
+ M frontend/lib/core/router/app_router.dart
+ M frontend/lib/core/router/app_routes.dart
+ M frontend/lib/core/router/route_helpers.dart
+ M frontend/lib/core/router/routes/chat_routes.dart
+ M frontend/lib/core/router/routes/profile_routes.dart
+ M frontend/lib/core/router/routes/social_routes.dart
+ M frontend/lib/core/ui.dart
+ M frontend/lib/features/auth/data/entities/user_entity.dart
+ M frontend/lib/features/auth/data/entities/user_entity.freezed.dart
+ M frontend/lib/features/auth/data/entities/user_entity.g.dart
+ M frontend/lib/features/auth/presentation/controllers/auth_controller.dart
+ M frontend/lib/features/auth/presentation/pages/complete_profile_page.dart
+ M frontend/lib/features/auth/presentation/pages/login_page.dart
+ M frontend/lib/features/auth/presentation/pages/password_recovery_page.dart
+ M frontend/lib/features/auth/presentation/pages/register_page.dart
+ M frontend/lib/features/auth/presentation/pages/reset_password_page.dart
+ M frontend/lib/features/auth/presentation/pages/splash_page.dart
+ M frontend/lib/features/auth/presentation/pages/splash_widgets.dart
+ M frontend/lib/features/auth/presentation/widgets/auth_header.dart
+ M frontend/lib/features/bug_report/presentation/widgets/bug_report_sheet.dart
+ M frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart
+ M frontend/lib/features/chat/presentation/pages/archived_chats_page.dart
+ M frontend/lib/features/chat/presentation/pages/chat_conversation_actions.dart
+ M frontend/lib/features/chat/presentation/pages/chat_conversation_page.dart
+ M frontend/lib/features/chat/presentation/pages/chat_list_page.dart
+ M frontend/lib/features/chat/presentation/pages/chat_list_states.dart
+ M frontend/lib/features/chat/presentation/pages/conversation_details_page.dart
+ D frontend/lib/features/chat/presentation/pages/image_editor_page.dart
+ M frontend/lib/features/chat/presentation/pages/location_picker_page.dart
+ M frontend/lib/features/chat/presentation/pages/new_chat_page.dart
+ M frontend/lib/features/chat/presentation/widgets/attachment_bottom_sheet.dart
+ M frontend/lib/features/chat/presentation/widgets/audio_message_bubble.dart
+ M frontend/lib/features/chat/presentation/widgets/audio_recorder_bar.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_conversation_body.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_header.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_input_bar.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_media_composer.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_message_list.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_search_bar.dart
+ M frontend/lib/features/chat/presentation/widgets/chat_video_composer.dart
+ D frontend/lib/features/chat/presentation/widgets/color_filters.dart
+ M frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart
+ M frontend/lib/features/chat/presentation/widgets/conversation_menu.dart
+ M frontend/lib/features/chat/presentation/widgets/date_separator.dart
+ D frontend/lib/features/chat/presentation/widgets/draw_palette.dart
+ M frontend/lib/features/chat/presentation/widgets/forward_message_sheet.dart
+ D frontend/lib/features/chat/presentation/widgets/image_editor_models.dart
+ D frontend/lib/features/chat/presentation/widgets/image_editor_paint.dart
+ D frontend/lib/features/chat/presentation/widgets/image_editor_toolbar.dart
+ D frontend/lib/features/chat/presentation/widgets/image_editor_views.dart
+ M frontend/lib/features/chat/presentation/widgets/make_offer_dialog.dart
+ M frontend/lib/features/chat/presentation/widgets/media_grid.dart
+ M frontend/lib/features/chat/presentation/widgets/multi_select_toolbar.dart
+ M frontend/lib/features/chat/presentation/widgets/new_chat/new_chat_product_composer.dart
+ M frontend/lib/features/chat/presentation/widgets/new_chat/new_chat_user_results.dart
+ M frontend/lib/features/chat/presentation/widgets/offer_message_bubble.dart
+ M frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart
+ M frontend/lib/features/chat/presentation/widgets/video_message_bubble.dart
+ M frontend/lib/features/dispute/presentation/pages/create_dispute_page.dart
+ M frontend/lib/features/dispute/presentation/pages/dispute_detail_page.dart
+ M frontend/lib/features/dispute/presentation/pages/dispute_list_page.dart
+ M frontend/lib/features/favorites/data/repositories/favorites_repository.dart
+ M frontend/lib/features/favorites/data/services/favorites_service.dart
+ M frontend/lib/features/favorites/presentation/providers/favorites_provider.dart
+ M frontend/lib/features/help/presentation/pages/faq_page.dart
+ M frontend/lib/features/notifications/presentation/pages/notifications_page.dart
+ M frontend/lib/features/onboarding/presentation/pages/onboarding_page.dart
+ M frontend/lib/features/onboarding/presentation/pages/onboarding_slides.dart
+ M frontend/lib/features/onboarding/presentation/pages/welcome_setup_page.dart
+ M frontend/lib/features/orders/data/repositories/order_repository.dart
+ M frontend/lib/features/orders/domain/repositories/order_repository.dart
+ M frontend/lib/features/orders/domain/usecases/can_review_order_usecase.dart
+ M frontend/lib/features/orders/presentation/pages/order_detail_page.dart
+ M frontend/lib/features/orders/presentation/pages/orders_page.dart
+ M frontend/lib/features/orders/presentation/pages/orders_tab.dart
+ M frontend/lib/features/orders/presentation/providers/order_providers.dart
+ M frontend/lib/features/orders/presentation/providers/order_providers.g.dart
+ M frontend/lib/features/orders/presentation/providers/order_providers_state.dart
+ M frontend/lib/features/orders/presentation/providers/order_providers_state.freezed.dart
+ M frontend/lib/features/orders/presentation/widgets/escrow_status_card.dart
+ M frontend/lib/features/orders/presentation/widgets/order_actions.dart
+ M frontend/lib/features/orders/presentation/widgets/order_card.dart
+ M frontend/lib/features/orders/presentation/widgets/order_status_timeline.dart
+ M frontend/lib/features/orders/presentation/widgets/sales_status_filters.dart
+ M frontend/lib/features/payments/presentation/pages/payment_page.dart
+ M frontend/lib/features/payments/presentation/widgets/payment_view.dart
+ M frontend/lib/features/product/data/entities/product_entity.dart
+ M frontend/lib/features/product/data/entities/product_image_entity.dart
+ M frontend/lib/features/product/data/entities/product_image_entity.freezed.dart
+ M frontend/lib/features/product/data/entities/product_image_entity.g.dart
+ M frontend/lib/features/product/data/repositories/product_repository.dart
+ M frontend/lib/features/product/domain/usecases/get_products_usecase.dart
+ M frontend/lib/features/product/presentation/controllers/product_controller.dart
+ M frontend/lib/features/product/presentation/controllers/product_controller.g.dart
+ M frontend/lib/features/product/presentation/pages/cart_page.dart
+ M frontend/lib/features/product/presentation/pages/create_product_page.dart
+ M frontend/lib/features/product/presentation/pages/edit_product_page.dart
+ M frontend/lib/features/product/presentation/pages/explorar_page.dart
+ M frontend/lib/features/product/presentation/pages/my_products_page.dart
+ M frontend/lib/features/product/presentation/pages/product_detail_page.dart
+ M frontend/lib/features/product/presentation/pages/product_list_page.dart
+ M frontend/lib/features/product/presentation/widgets/category_filter_panel.dart
+ M frontend/lib/features/product/presentation/widgets/category_selector_field.dart
+ M frontend/lib/features/product/presentation/widgets/product_detail_bottom_sheet.dart
+ M frontend/lib/features/product/presentation/widgets/product_filter_bar.dart
+ M frontend/lib/features/product/presentation/widgets/product_form_fields.dart
+ M frontend/lib/features/product/presentation/widgets/product_preview_card.dart
+ M frontend/lib/features/product/presentation/widgets/product_results_grid.dart
+ M frontend/lib/features/profile/data/entities/follow_responses.dart
+ M frontend/lib/features/profile/data/entities/follow_responses.g.dart
+ M frontend/lib/features/profile/data/repositories/profile_repository.dart
+ M frontend/lib/features/profile/data/services/follow_service.dart
+ M frontend/lib/features/profile/presentation/controllers/profile_controller.dart
+ M frontend/lib/features/profile/presentation/controllers/profile_controller.g.dart
+ M frontend/lib/features/profile/presentation/pages/blocked_users_page.dart
+ M frontend/lib/features/profile/presentation/pages/close_friends_page.dart
+ M frontend/lib/features/profile/presentation/pages/edit_profile_page.dart
+ M frontend/lib/features/profile/presentation/pages/favorites_page.dart
+ M frontend/lib/features/profile/presentation/pages/followers_page.dart
+ M frontend/lib/features/profile/presentation/pages/following_page.dart
+ M frontend/lib/features/profile/presentation/pages/profile_page.dart
+ M frontend/lib/features/profile/presentation/pages/purchases_page.dart
+ M frontend/lib/features/profile/presentation/pages/saved_posts_page.dart
+ M frontend/lib/features/profile/presentation/pages/user_profile_page.dart
+ M frontend/lib/features/profile/presentation/providers/follow_list_provider.dart
+ M frontend/lib/features/profile/presentation/providers/follow_status_provider.dart
+ M frontend/lib/features/profile/presentation/providers/profile_timeline_provider.dart
+ M frontend/lib/features/profile/presentation/providers/profile_timeline_provider.g.dart
+ M frontend/lib/features/profile/presentation/widgets/biometry_setting_tile.dart
+ M frontend/lib/features/profile/presentation/widgets/guest_profile_view.dart
+ M frontend/lib/features/profile/presentation/widgets/phone_verification_sheet.dart
+ M frontend/lib/features/profile/presentation/widgets/profile_avatar.dart
+ M frontend/lib/features/profile/presentation/widgets/profile_header.dart
+ M frontend/lib/features/profile/presentation/widgets/profile_help_sheet.dart
+ M frontend/lib/features/profile/presentation/widgets/profile_settings_sheet.dart
+ M frontend/lib/features/profile/presentation/widgets/profile_stats.dart
+ M frontend/lib/features/profile/presentation/widgets/profile_tabs.dart
+ M frontend/lib/features/reviews/data/entities/review_user_info.dart
+ M frontend/lib/features/reviews/data/entities/review_user_info.freezed.dart
+ M frontend/lib/features/reviews/data/entities/review_user_info.g.dart
+ M frontend/lib/features/reviews/presentation/pages/create_review_page.dart
+ M frontend/lib/features/reviews/presentation/pages/user_reviews_page.dart
+ M frontend/lib/features/reviews/presentation/widgets/review_card.dart
+ M frontend/lib/features/social/data/entities/post_entity.dart
+ M frontend/lib/features/social/data/entities/post_entity.freezed.dart
+ M frontend/lib/features/social/data/entities/post_entity.g.dart
+ D frontend/lib/features/social/data/entities/story_entity.dart
+ D frontend/lib/features/social/data/entities/story_entity.freezed.dart
+ D frontend/lib/features/social/data/entities/story_entity.g.dart
+ M frontend/lib/features/social/data/entities/user_search_entity.dart
+ M frontend/lib/features/social/data/entities/user_search_entity.freezed.dart
+ M frontend/lib/features/social/data/entities/user_search_entity.g.dart
+ M frontend/lib/features/social/data/repositories/social_repository.dart
+ M frontend/lib/features/social/data/repositories/social_repository_parts/social_repository_saves.dart
+ D frontend/lib/features/social/data/repositories/social_repository_parts/social_repository_stories.dart
+ D frontend/lib/features/social/presentation/controllers/story_submission_coordinator.dart
+ M frontend/lib/features/social/presentation/pages/create_post_page.dart
+ D frontend/lib/features/social/presentation/pages/create_story_page.dart
+ M frontend/lib/features/social/presentation/pages/feed_page.dart
+ M frontend/lib/features/social/presentation/pages/liked_posts_page.dart
+ M frontend/lib/features/social/presentation/pages/my_posts_page.dart
+ D frontend/lib/features/social/presentation/pages/my_stories_page.dart
+ M frontend/lib/features/social/presentation/pages/people_search_page.dart
+ M frontend/lib/features/social/presentation/pages/post_details_page.dart
+ M frontend/lib/features/social/presentation/pages/post_search_page.dart
+ D frontend/lib/features/social/presentation/pages/story_viewer_page.dart
+ D frontend/lib/features/social/presentation/pages/story_viewer_wrapper.dart
+ M frontend/lib/features/social/presentation/providers/feed_provider.dart
+ M frontend/lib/features/social/presentation/providers/feed_provider.g.dart
+ M frontend/lib/features/social/presentation/providers/likes_provider.dart
+ M frontend/lib/features/social/presentation/providers/likes_provider.g.dart
+ M frontend/lib/features/social/presentation/providers/post_details_provider.dart
+ M frontend/lib/features/social/presentation/providers/post_details_provider.g.dart
+ M frontend/lib/features/social/presentation/providers/post_search_provider.dart
+ M frontend/lib/features/social/presentation/providers/post_search_provider.g.dart
+ M frontend/lib/features/social/presentation/providers/reposts_provider.dart
+ M frontend/lib/features/social/presentation/providers/reposts_provider.g.dart
+ M frontend/lib/features/social/presentation/providers/saves_provider.dart
+ M frontend/lib/features/social/presentation/providers/saves_provider.g.dart
+ M frontend/lib/features/social/presentation/providers/social_provider_states.dart
+ M frontend/lib/features/social/presentation/providers/social_provider_states.freezed.dart
+ D frontend/lib/features/social/presentation/providers/story_highlight_provider.dart
+ M frontend/lib/features/social/presentation/providers/user_search_provider.dart
+ M frontend/lib/features/social/presentation/providers/user_search_provider.g.dart
+ M frontend/lib/features/social/presentation/widgets/comment_item.dart
+ M frontend/lib/features/social/presentation/widgets/create_composer_sheet.dart
+ M frontend/lib/features/social/presentation/widgets/feed_drawer.dart
+ M frontend/lib/features/social/presentation/widgets/feed_drawer_footer.dart
+ M frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart
+ M frontend/lib/features/social/presentation/widgets/feed_filters.dart
+ M frontend/lib/features/social/presentation/widgets/feed_header.dart
+ M frontend/lib/features/social/presentation/widgets/feed_intro_sections.dart
+ M frontend/lib/features/social/presentation/widgets/feed_post_item.dart
+ M frontend/lib/features/social/presentation/widgets/feed_post_list.dart
+ M frontend/lib/features/social/presentation/widgets/local_image_inspector.dart
+ M frontend/lib/features/social/presentation/widgets/post_details_post_section.dart
+ D frontend/lib/features/social/presentation/widgets/stories_row.dart
+ D frontend/lib/features/social/presentation/widgets/story_canvas.dart
+ D frontend/lib/features/social/presentation/widgets/story_capture_view.dart
+ D frontend/lib/features/social/presentation/widgets/story_highlight_editor.dart
+ D frontend/lib/features/social/presentation/widgets/story_highlights_section.dart
+ D frontend/lib/features/social/presentation/widgets/story_page.dart
+ D frontend/lib/features/social/presentation/widgets/story_preview_view.dart
+ D frontend/lib/features/social/presentation/widgets/story_text_styles.dart
+ D frontend/lib/features/social/presentation/widgets/story_thumbnail.dart
+ M frontend/lib/features/wallet/presentation/pages/wallet_page.dart
+ M frontend/lib/features/wallet/presentation/widgets/wallet_error_states.dart
+ M frontend/lib/features/wallet/presentation/widgets/wallet_history.dart
+ M frontend/lib/features/wallet/presentation/widgets/wallet_payout_section.dart
+ M frontend/lib/main.dart
+ M frontend/lib/shared/config/app_config.dart
+ M frontend/lib/shared/services/http_client.dart
+ M frontend/lib/shared/services/notification_service.dart
+ M frontend/lib/shared/services/storage_service.dart
+ M frontend/lib/shared/services/upload_service.dart
+ M frontend/libs/freebay_design_system/lib/components/brutalist_icon_button.dart
+ M frontend/libs/freebay_design_system/lib/components/shimmer_skeleton.dart
+ M frontend/libs/freebay_design_system/lib/tokens/app_colors.dart
+ M frontend/libs/freebay_design_system/lib/tokens/app_motion.dart
+ M frontend/libs/freebay_design_system/lib/tokens/app_theme.dart
+ M frontend/pubspec.lock
+ M frontend/pubspec.yaml
+ M frontend/test/core/components/app_dialog_test.dart
+ M frontend/test/core/components/app_shell_test.dart
+ M frontend/test/core/components/app_video_viewer_test.dart
+ M frontend/test/core/components/empty_state_test.dart
+ M frontend/test/core/router/app_router_test.dart
+ M frontend/test/features/cart/cart_checkout_page_test.dart
+ M frontend/test/features/chat/chat_list_tile_test.dart
+ M frontend/test/features/chat/conversation_deletion_undo_test.dart
+ M frontend/test/features/chat/new_chat_page_test.dart
+ M frontend/test/features/chat/repro_conversation_open_test.dart
+ M frontend/test/features/onboarding/welcome_setup_page_test.dart
+ M frontend/test/features/orders/order_dispute_action_test.dart
+ M frontend/test/features/orders/orders_page_test.dart
+ M frontend/test/features/orders/sales_list_provider_test.dart
+ M frontend/test/features/payments/payment_page_test.dart
+ M frontend/test/features/payments/payment_view_test.dart
+ M frontend/test/features/product/category_gesture_test.dart
+ M frontend/test/features/product/product_cache_test.dart
+ M frontend/test/features/product/product_feed_refresh_test.dart
+ M frontend/test/features/product/product_filter_bar_test.dart
+ M frontend/test/features/product/product_load_more_error_test.dart
+ M frontend/test/features/profile/follow_state_test.dart
+ M frontend/test/features/profile/profile_timeline_tabs_test.dart
+ M frontend/test/features/profile/saved_posts_page_test.dart
+ D frontend/test/features/social/close_friends_story_preview_test.dart
+ D frontend/test/features/social/create_story_submission_test.dart
+ M frontend/test/features/social/deletion_undo_test.dart
+ M frontend/test/features/social/feed_append_retry_test.dart
+ M frontend/test/features/social/feed_provider_test.dart
+ M frontend/test/features/social/post_details_comments_test.dart
+ M frontend/test/features/social/post_search_error_test.dart
+ M frontend/test/features/social/saves_provider_test.dart
+ D frontend/test/features/social/story_audience_transport_test.dart
+ D frontend/test/features/social/story_canvas_test.dart
+ D frontend/test/features/social/story_entity_test.dart
+ D frontend/test/features/social/story_viewer_interaction_test.dart
+ M frontend/test/features/wallet/wallet_controller_test.dart
+ M frontend/test/refactor_regressions/product_form_fields_test.dart
+ M frontend/test/shared/services/upload_service_test.dart
+ M nest-backend/legal/delete-account.html
+ M nest-backend/package-lock.json
+ M nest-backend/package.json
+ M nest-backend/prisma/schema.prisma
+ M nest-backend/src/modules/auth/auth-web-session.controller.ts
+ M nest-backend/src/modules/auth/auth.controller.spec.ts
+ M nest-backend/src/modules/auth/auth.controller.ts
+ M nest-backend/src/modules/auth/data/repositories/magic-link-database.repository.ts
+ M nest-backend/src/modules/auth/data/repositories/user-database.repository.ts
+ M nest-backend/src/modules/auth/domain/repositories/magic-link.repository.ts
+ M nest-backend/src/modules/auth/dtos/auth.dto.ts
+ M nest-backend/src/modules/auth/dtos/magic-link.dto.ts
+ M nest-backend/src/modules/auth/services/resend.service.spec.ts
+ M nest-backend/src/modules/auth/services/resend.service.ts
+ M nest-backend/src/modules/auth/services/session-token.service.ts
+ M nest-backend/src/modules/auth/types/user-search.types.ts
+ M nest-backend/src/modules/auth/usecases/auth-usecases.module.ts
+ M nest-backend/src/modules/auth/usecases/consume-magic-link.usecase.spec.ts
+ M nest-backend/src/modules/auth/usecases/consume-magic-link.usecase.ts
+ M nest-backend/src/modules/auth/usecases/refresh-mobile-session.usecase.spec.ts
+ M nest-backend/src/modules/auth/usecases/refresh-mobile-session.usecase.ts
+ M nest-backend/src/modules/auth/usecases/refresh-web-session.usecase.spec.ts
+ M nest-backend/src/modules/auth/usecases/refresh-web-session.usecase.ts
+ M nest-backend/src/modules/auth/usecases/request-magic-link.usecase.spec.ts
+ M nest-backend/src/modules/auth/usecases/request-magic-link.usecase.ts
+ M nest-backend/src/modules/products/dtos/product.dto.ts
+ M nest-backend/src/modules/products/products.controller.ts
+ M nest-backend/src/modules/products/types/product.types.ts
+ M nest-backend/src/modules/products/usecases/create-product/create-product.usecase.ts
+ M nest-backend/src/modules/social/data/repositories/post-query-helpers.ts
+ M nest-backend/src/modules/social/dtos/social.dto.ts
+ M nest-backend/src/modules/social/social-write.controller.ts
+ M nest-backend/src/modules/social/types/social.types.ts
+ M nest-backend/src/modules/social/usecases/create-post.usecase.ts
+ M nest-backend/src/modules/social/usecases/social.usecase.spec.ts
+ M nest-backend/src/modules/upload/upload.controller.spec.ts
+ M nest-backend/src/modules/upload/upload.controller.ts
+ M nest-backend/src/modules/users/data/repositories/account-lifecycle-database.repository.ts
+ M nest-backend/src/modules/users/data/repositories/block-database.repository.ts
+ M nest-backend/src/modules/users/data/repositories/follow-database.repository.ts
+ M nest-backend/src/modules/users/data/repositories/safety-list-database.repository.ts
+ M nest-backend/src/modules/users/data/repositories/user-data-export.repository.ts
+ M nest-backend/src/modules/users/dtos/user-response.class.ts
+ M nest-backend/src/modules/users/dtos/user.dto.ts
+ M nest-backend/src/modules/users/types/account.types.ts
+ M nest-backend/src/modules/users/types/user.types.ts
+ M nest-backend/src/modules/users/usecases/cancel-account-deletion.usecase.spec.ts
+ M nest-backend/src/modules/users/usecases/cancel-account-deletion.usecase.ts
+ M nest-backend/src/modules/users/usecases/get-suggestions.usecase.ts
+ M nest-backend/src/modules/users/usecases/request-account-deletion.usecase.spec.ts
+ M nest-backend/src/modules/users/usecases/request-account-deletion.usecase.ts
+ M nest-backend/src/modules/users/usecases/search-users.usecase.ts
+ M nest-backend/src/modules/users/usecases/update-profile.usecase.ts
+ M nest-backend/src/modules/users/users-account.controller.ts
+ M nest-backend/src/shared/core/errors.ts
+ M nest-backend/src/shared/core/types.ts
+ M nest-backend/src/shared/shared.module.ts
+ M nest-backend/test/e2e/marketplace.journey.e2e-spec.ts
+ M nest-backend/test/e2e/story-audience.e2e-spec.ts
+ M opencode.json
+ M scripts/ci-check.js
+ M scripts/ci-check.test.js
+ M scripts/perf-check.js
+ M scripts/perf-check.test.js
+?? docs/FRONTEND_UX_PLAN.md
+?? docs/STORE_RELEASE_CHECKLIST.md
+?? docs/device-runs/2026-09-30/
+?? docs/device-runs/2026-10-01/
+?? docs/test-runs/2026-09-30/frontend-perf-baseline/
+?? docs/test-runs/2026-09-30/frontend-ux/
+?? docs/test-runs/2026-09-30/parallel-ux/
+?? docs/test-runs/2026-09-30/ux-integration/
+?? docs/test-runs/2026-09-30/ux1-media/stories-fixture-control.log
+?? docs/test-runs/2026-09-30/ux1-media/stories-pointer-red.log
+?? docs/test-runs/2026-10-01/
+?? frontend/AGENTS.md
+?? frontend/android/app/src/main/kotlin/com/freebay/app/NativeImageCompositor.kt
+?? frontend/integration_test/native_image_compositor_test.dart
+?? frontend/ios/Runner/NativeImageCompositor.swift
+?? frontend/l10n.yaml
+?? frontend/lib/core/components/blur_hash_placeholder.dart
+?? frontend/lib/features/media_editor/
+?? frontend/lib/features/profile/presentation/pages/privacy_page.dart
+?? frontend/lib/features/social/presentation/providers/social_override_helpers.dart
+?? frontend/lib/features/social/social.dart
+?? frontend/lib/features/stories/
+?? frontend/lib/shared/entities/
+?? frontend/lib/shared/l10n/
+?? frontend/lib/shared/pagination/
+?? frontend/lib/shared/providers/
+?? frontend/lib/shared/services/payment_sdk_service.dart
+?? frontend/lib/shared/widgets/
+?? frontend/test/core/components/blur_hash_placeholder_test.dart
+?? frontend/test/core/components/shimmer_scope_test.dart
+?? frontend/test/features/auth/login_text_scaling_test.dart
+?? frontend/test/features/favorites/
+?? frontend/test/features/media_editor/
+?? frontend/test/features/orders/order_detail_text_scaling_test.dart
+?? frontend/test/features/product/product_detail_text_scaling_test.dart
+?? frontend/test/features/product/product_hero_tag_test.dart
+?? frontend/test/features/profile/privacy_page_test.dart
+?? frontend/test/features/profile/profile_privacy_repository_test.dart
+?? frontend/test/features/social/feed_post_list_loading_test.dart
+?? frontend/test/features/social/social_action_concurrency_test.dart
+?? frontend/test/features/stories/
+?? frontend/test/shared/l10n/
+?? frontend/test/shared/services/http_client_retry_test.dart
+?? frontend/test/shared/services/storage_service_cache_test.dart
+?? nest-backend/src/modules/auth/usecases/apple-auth.usecase.spec.ts
+?? nest-backend/src/modules/auth/usecases/apple-auth.usecase.ts
+?? nest-backend/src/modules/users/data/repositories/user-data-export.repository.spec.ts
+?? nest-backend/src/shared/auth/apple-provider.service.spec.ts
+?? nest-backend/src/shared/auth/apple-provider.service.ts
+?? nest-backend/src/shared/utils/blurhash.utils.ts
+?? scripts/design-baseline.json

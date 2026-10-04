@@ -1,0 +1,8 @@
+{
+  "label": "ci-scripts",
+  "command": "npm run test:ci-scripts",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay",
+  "started": "2026-10-01T05:27:38.232Z",
+  "ended": "2026-10-01T05:27:39.047Z",
+  "exitCode": 0
+}

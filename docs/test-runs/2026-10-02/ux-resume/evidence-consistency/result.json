@@ -1,0 +1,13 @@
+{
+  "ObservedUTC": "2026-10-02T15:18:41.8901033Z",
+  "Check": "Local Markdown destinations in four owned evidence documents",
+  "Files": [
+    "docs/FEATURE_TRUTH.md",
+    "docs/test-runs/2026-10-02/ux-resume/REPORT.md",
+    "docs/test-runs/2026-10-02/ux-resume/backend-preflight-after-make/REPORT.md",
+    "docs/test-runs/2026-10-02/ux-resume/gradle-status-diagnostic/REPORT.md"
+  ],
+  "LocalLinksChecked": 16,
+  "Missing": [],
+  "Exit": 0
+}

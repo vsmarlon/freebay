@@ -1,0 +1,26 @@
+Analyzing 3 items...                                            
+
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\auth\presentation\pages\login_page.dart:210:44 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\auth\presentation\pages\login_page.dart:210:44 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\chat\presentation\widgets\chat_header.dart:107:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\chat\presentation\widgets\chat_header.dart:107:30 - prefer_const_constructors
+warning - The '!' will have no effect because the receiver can't be null. Try removing the '!' operator - lib\features\orders\presentation\pages\order_detail_page.dart:425:34 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null. Try removing the '!' operator - lib\features\orders\presentation\pages\order_detail_page.dart:425:34 - unnecessary_non_null_assertion
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\orders\presentation\pages\orders_tab.dart:177:28 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\profile\presentation\pages\blocked_users_page.dart:189:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\profile\presentation\widgets\phone_verification_sheet.dart:101:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\social\presentation\pages\my_posts_page.dart:313:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\social\presentation\pages\my_posts_page.dart:314:21 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\social\presentation\pages\my_posts_page.dart:317:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\stories\presentation\pages\my_stories_page.dart:268:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\stories\presentation\pages\my_stories_page.dart:271:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\stories\presentation\widgets\story_preview_view.dart:120:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - lib\features\stories\presentation\widgets\story_preview_view.dart:159:42 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - test\features\orders\order_detail_text_scaling_test.dart:85:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - test\features\orders\order_detail_text_scaling_test.dart:85:18 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance. Try adding the 'const' keyword to the constructor invocation - test\features\product\product_detail_text_scaling_test.dart:28:23 - prefer_const_constructors
+warning - The method doesn't override an inherited method. Try updating this class to match the superclass, or removing the override annotation - test\features\social\deletion_undo_test.dart:38:33 - override_on_non_overriding_member
+warning - The method doesn't override an inherited method. Try updating this class to match the superclass, or removing the override annotation - test\features\social\deletion_undo_test.dart:50:33 - override_on_non_overriding_member
+warning - The method doesn't override an inherited method. Try updating this class to match the superclass, or removing the override annotation - test\features\stories\story_viewer_interaction_test.dart:18:33 - override_on_non_overriding_member
+
+22 issues found. (ran in 9.7s)

@@ -45,16 +45,25 @@ class CartState {
 }
 
 class CartNotifier extends Notifier<CartState> {
+  int _sessionGeneration = 0;
+
   @override
   CartState build() => const CartState();
 
+  void resetForSessionChange() {
+    _sessionGeneration++;
+    state = const CartState();
+  }
+
   Future<void> loadCart() async {
+    final generation = _sessionGeneration;
     state = CartState(
       isLoading: true,
       cart: state.cart,
       lastCheckout: state.lastCheckout,
     );
     final result = await ref.read(cartRepositoryProvider).getCart();
+    if (!ref.mounted || generation != _sessionGeneration) return;
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -63,9 +72,11 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   Future<bool> addToCart(String productId, {int quantity = 1}) async {
+    final generation = _sessionGeneration;
     final result = await ref
         .read(cartRepositoryProvider)
         .addToCart(productId, quantity: quantity);
+    if (!ref.mounted || generation != _sessionGeneration) return false;
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -74,15 +85,17 @@ class CartNotifier extends Notifier<CartState> {
       (_) async {
         state = CartState(cart: state.cart);
         await loadCart();
-        return true;
+        return ref.mounted && generation == _sessionGeneration;
       },
     );
   }
 
   Future<bool> updateQuantity(String productId, int quantity) async {
+    final generation = _sessionGeneration;
     final result = await ref
         .read(cartRepositoryProvider)
         .updateQuantity(productId, quantity);
+    if (!ref.mounted || generation != _sessionGeneration) return false;
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -90,15 +103,17 @@ class CartNotifier extends Notifier<CartState> {
       },
       (_) async {
         await loadCart();
-        return true;
+        return ref.mounted && generation == _sessionGeneration;
       },
     );
   }
 
   Future<bool> removeFromCart(String productId) async {
+    final generation = _sessionGeneration;
     final result = await ref
         .read(cartRepositoryProvider)
         .removeFromCart(productId);
+    if (!ref.mounted || generation != _sessionGeneration) return false;
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -106,13 +121,15 @@ class CartNotifier extends Notifier<CartState> {
       },
       (_) async {
         await loadCart();
-        return true;
+        return ref.mounted && generation == _sessionGeneration;
       },
     );
   }
 
   Future<bool> clearCart() async {
+    final generation = _sessionGeneration;
     final result = await ref.read(cartRepositoryProvider).clearCart();
+    if (!ref.mounted || generation != _sessionGeneration) return false;
     return result.fold(
       (failure) {
         state = state.copyWith(error: failure.message);
@@ -120,16 +137,18 @@ class CartNotifier extends Notifier<CartState> {
       },
       (_) async {
         await loadCart();
-        return true;
+        return ref.mounted && generation == _sessionGeneration;
       },
     );
   }
 
   Future<bool> checkout() async {
+    final generation = _sessionGeneration;
     state = state.copyWith(isCheckingOut: true);
     final result = await ref
         .read(cartRepositoryProvider)
         .checkoutCart(hosted: kIsWeb);
+    if (!ref.mounted || generation != _sessionGeneration) return false;
     final success = result.fold(
       (failure) {
         state = state.copyWith(isCheckingOut: false, error: failure.message);
@@ -146,7 +165,7 @@ class CartNotifier extends Notifier<CartState> {
       ref.invalidate(myProductsProvider);
       await loadCart();
     }
-    return success;
+    return success && ref.mounted && generation == _sessionGeneration;
   }
 }
 

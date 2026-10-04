@@ -1,8 +1,9 @@
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show MaterialRouteTransitionMixin;
 import 'package:go_router/go_router.dart';
 
-/// Helper to create a fast 150ms slide + fade transition for brutalist pages.
+/// Creates a role-based slide + fade transition for brutalist pages.
 Page<T> buildSlidePage<T>({
   required BuildContext context,
   required GoRouterState state,
@@ -11,8 +12,8 @@ Page<T> buildSlidePage<T>({
   return CustomTransitionPage<T>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 150),
-    reverseTransitionDuration: const Duration(milliseconds: 150),
+    transitionDuration: AppMotion.forContext(context, AppMotion.base),
+    reverseTransitionDuration: AppMotion.forContext(context, AppMotion.base),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
@@ -55,7 +56,57 @@ Page<T> buildCupertinoPage<T>({
   required GoRouterState state,
   required Widget child,
 }) {
-  return CupertinoPage<T>(key: state.pageKey, child: child);
+  return _ThemeTransitionPage<T>(
+    key: state.pageKey,
+    child: child,
+    disableAnimations: MediaQuery.disableAnimationsOf(context),
+  );
+}
+
+class _ThemeTransitionPage<T> extends Page<T> {
+  const _ThemeTransitionPage({
+    required this.child,
+    required this.disableAnimations,
+    super.key,
+  });
+
+  final Widget child;
+  final bool disableAnimations;
+
+  @override
+  Route<T> createRoute(BuildContext context) =>
+      _ThemeTransitionRoute<T>(page: this);
+}
+
+class _ThemeTransitionRoute<T> extends PageRoute<T>
+    with MaterialRouteTransitionMixin<T> {
+  _ThemeTransitionRoute({required _ThemeTransitionPage<T> page})
+    : super(settings: page);
+
+  _ThemeTransitionPage<T>? get _page => switch (settings) {
+    _ThemeTransitionPage<T> page => page,
+    _ => null,
+  };
+
+  @override
+  Duration get transitionDuration => _page?.disableAnimations == true
+      ? Duration.zero
+      : super.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration => _page?.disableAnimations == true
+      ? Duration.zero
+      : super.reverseTransitionDuration;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  bool get fullscreenDialog => false;
+
+  @override
+  Widget buildContent(BuildContext context) =>
+      _page?.child ?? const SizedBox.shrink();
 }
 
 /// Creates a GoRoute with the default brutalist slide transition.
@@ -101,8 +152,8 @@ Page<T> buildFadePage<T>({
   return CustomTransitionPage<T>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 200),
-    reverseTransitionDuration: const Duration(milliseconds: 200),
+    transitionDuration: AppMotion.forContext(context, AppMotion.enter),
+    reverseTransitionDuration: AppMotion.forContext(context, AppMotion.enter),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
         opacity: CurvedAnimation(
@@ -141,6 +192,8 @@ Page<T> buildSharedAxisHorizontalPage<T>({
   return CustomTransitionPage<T>(
     key: state.pageKey,
     child: child,
+    transitionDuration: AppMotion.forContext(context, AppMotion.enter),
+    reverseTransitionDuration: AppMotion.forContext(context, AppMotion.enter),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,
@@ -187,6 +240,8 @@ Page<T> buildSharedAxisVerticalPage<T>({
   return CustomTransitionPage<T>(
     key: state.pageKey,
     child: child,
+    transitionDuration: AppMotion.forContext(context, AppMotion.enter),
+    reverseTransitionDuration: AppMotion.forContext(context, AppMotion.enter),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curvedAnimation = CurvedAnimation(
         parent: animation,

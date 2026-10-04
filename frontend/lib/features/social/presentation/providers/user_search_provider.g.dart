@@ -41,7 +41,7 @@ final class UserSearchProvider
   }
 }
 
-String _$userSearchHash() => r'0b7e7bfefff80ae0ecc65b620b9beabe5714e0ad';
+String _$userSearchHash() => r'3a216edf53b350e8031ab14b54db40cce524bf54';
 
 abstract class _$UserSearch extends $Notifier<UserSearchState> {
   UserSearchState build();

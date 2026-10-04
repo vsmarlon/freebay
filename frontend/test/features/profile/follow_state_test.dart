@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/shared/either/either.dart';
@@ -18,14 +21,29 @@ import '../../support/auth_test_doubles.dart';
 import '../../support/test_users.dart';
 
 class _FakeFollowService extends FollowService {
+  Completer<Either<Failure, FollowResponse>>? pendingFollow;
+  final List<Completer<Either<Failure, FollowStatusResponse>>> pendingStatuses =
+      [];
+  final List<String> statusUserIds = [];
+  int statusCalls = 0;
   Either<Failure, FollowResponse>? followResult;
   Either<Failure, FollowResponse>? unfollowResult;
   int followCalls = 0;
   int unfollowCalls = 0;
 
   @override
+  Future<Either<Failure, FollowStatusResponse>> getFollowStatus(
+    String userId, {
+    CancelToken? cancelToken,
+  }) {
+    statusUserIds.add(userId);
+    return pendingStatuses[statusCalls++].future;
+  }
+
+  @override
   Future<Either<Failure, FollowResponse>> follow(String userId) async {
     followCalls++;
+    if (pendingFollow != null) return pendingFollow!.future;
     return followResult ??
         const Right(
           FollowResponse(
@@ -83,6 +101,17 @@ class _FakeSocialRepository extends SocialRepository {
     suggestionsCalls++;
     return const Right([]);
   }
+}
+
+class _SwitchableAuthController extends AuthController {
+  _SwitchableAuthController(this._user);
+
+  final UserEntity? _user;
+
+  @override
+  AsyncValue<UserEntity?> build() => AsyncValue.data(_user);
+
+  void switchUser(UserEntity? user) => state = AsyncValue.data(user);
 }
 
 void main() {
@@ -189,6 +218,32 @@ void main() {
     });
 
     test(
+      'ignores a duplicate follow tap while the request is pending',
+      () async {
+        final response = Completer<Either<Failure, FollowResponse>>();
+        fakeFollowService.pendingFollow = response;
+        final notifier = container.read(followStateProvider.notifier);
+
+        final taps = List.generate(
+          5,
+          (_) => notifier.toggleFollow('slow-user'),
+        );
+        expect(fakeFollowService.followCalls, 1);
+        response.complete(
+          const Right(
+            FollowResponse(
+              following: true,
+              followersCount: 1,
+              followingCount: 1,
+            ),
+          ),
+        );
+        expect(await Future.wait(taps), [true, false, false, false, false]);
+        expect(notifier.getStatus('slow-user')?.isFollowing, isTrue);
+      },
+    );
+
+    test(
       'resets following feed after a successful relationship change',
       () async {
         fakeSocialRepository.feedResult = FeedPageResult(
@@ -275,5 +330,101 @@ void main() {
         expect(reRefreshedSuggestions.isLoading, isFalse);
       },
     );
+
+    test('discards a pending follow when the account changes', () async {
+      final authController = _SwitchableAuthController(
+        testUser(id: 'first-account'),
+      );
+      final service = _FakeFollowService()
+        ..pendingFollow = Completer<Either<Failure, FollowResponse>>();
+      final container = ProviderContainer(
+        overrides: [
+          authControllerProvider.overrideWith(() => authController),
+          followServiceProvider.overrideWithValue(service),
+          socialRepositoryProvider.overrideWithValue(_FakeSocialRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(followStateProvider.notifier);
+      final pending = notifier.toggleFollow('target-user');
+      expect(container.read(followsInFlightProvider), contains('target-user'));
+
+      authController.switchUser(testUser(id: 'second-account'));
+      await container.pump();
+      expect(container.read(followsInFlightProvider), isEmpty);
+      expect(notifier.getStatus('target-user'), isNull);
+
+      service.pendingFollow!.complete(
+        const Right(
+          FollowResponse(following: true, followersCount: 1, followingCount: 1),
+        ),
+      );
+      expect(await pending, isFalse);
+      expect(notifier.getStatus('target-user'), isNull);
+      expect(container.read(followsInFlightProvider), isEmpty);
+    });
+
+    test('does not seed a status after its account session changes', () async {
+      final authController = _SwitchableAuthController(
+        testUser(id: 'first-account'),
+      );
+      final service = _FakeFollowService()
+        ..pendingStatuses.addAll([
+          Completer<Either<Failure, FollowStatusResponse>>(),
+          Completer<Either<Failure, FollowStatusResponse>>(),
+        ]);
+      final container = ProviderContainer(
+        overrides: [
+          authControllerProvider.overrideWith(() => authController),
+          followServiceProvider.overrideWithValue(service),
+          socialRepositoryProvider.overrideWithValue(_FakeSocialRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final subscription = container.listen(
+        followStatusProvider('target-user'),
+        (_, _) {},
+      );
+      addTearDown(subscription.close);
+      final firstStatusFuture = container.read(
+        followStatusProvider('target-user').future,
+      );
+      const firstStatus = FollowStatusResponse(
+        isFollowing: true,
+        followersCount: 17,
+        followingCount: 4,
+      );
+      service.pendingStatuses[0].complete(const Right(firstStatus));
+      final accountSwitch = Future<void>.microtask(
+        () => authController.switchUser(testUser(id: 'second-account')),
+      );
+
+      expect(await firstStatusFuture, firstStatus);
+      await accountSwitch;
+      await container.pump();
+      expect(
+        container.read(authControllerProvider).value?.id,
+        'second-account',
+      );
+      expect(container.read(followStateProvider), isEmpty);
+      expect(service.statusCalls, 2);
+      expect(service.statusUserIds, ['target-user', 'target-user']);
+      expect(container.read(followStateProvider), isEmpty);
+
+      const secondStatus = FollowStatusResponse(
+        isFollowing: false,
+        followersCount: 29,
+        followingCount: 8,
+      );
+      service.pendingStatuses[1].complete(const Right(secondStatus));
+      expect(
+        await container.read(followStatusProvider('target-user').future),
+        secondStatus,
+      );
+      await container.pump();
+      expect(container.read(followStateProvider)['target-user'], secondStatus);
+    });
   });
 }

@@ -21,10 +21,12 @@ describe('RefreshWebSessionUseCase', () => {
     const module = await Test.createTestingModule({
       providers: [RefreshWebSessionUseCase, { provide: UserDatabaseRepository, useValue: users }, { provide: SessionTokenService, useValue: tokens }],
     }).compile();
-    const payload = { userId: 'u1', role: UserRole.USER, type: JwtTokenType.REFRESH, jti: 'j1', exp: Math.floor(Date.now() / 1000) + 60 };
+    const authenticatedAtMs = Date.now() - 6 * 60 * 1000;
+    const payload = { userId: 'u1', role: UserRole.USER, type: JwtTokenType.REFRESH, jti: 'j1', exp: Math.floor(Date.now() / 1000) + 60, authenticatedAtMs };
     const results = await Promise.all([module.get(RefreshWebSessionUseCase).execute(payload), module.get(RefreshWebSessionUseCase).execute(payload)]);
     expect(results.filter((result) => result.isRight())).toHaveLength(1);
     expect(tokens.claimRefresh).toHaveBeenCalledTimes(2);
+    expect(tokens.generate).toHaveBeenCalledWith('u1', UserRole.USER, authenticatedAtMs);
   });
 
   it('rejects suspended users before claiming the refresh token', async () => {

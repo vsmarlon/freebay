@@ -11,6 +11,7 @@ import 'package:freebay/features/auth/domain/usecases/reset_password_usecase.dar
 import 'package:freebay/features/auth/domain/usecases/verify_password_recovery_code_usecase.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/biometric_key_service.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
@@ -51,8 +52,10 @@ final biometricLoginUsecaseProvider = Provider(
   (ref) => BiometricLoginUsecase(
     ref.watch(authRepositoryProvider),
     ref.watch(biometryServiceProvider),
+    ref.watch(biometricKeyServiceProvider),
   ),
 );
+final biometricKeyServiceProvider = Provider((ref) => BiometricKeyService());
 final googleAuthUsecaseProvider = Provider(
   (ref) => GoogleAuthUsecase(ref.watch(authRepositoryProvider)),
 );

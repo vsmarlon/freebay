@@ -1,0 +1,11 @@
+{
+  "command": "flutter test integration_test/native_image_compositor_test.dart -d RX8M70JDTQV --reporter expanded",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:29:20.6305804Z",
+  "finished_utc": "2026-10-02T14:30:53.1454428Z",
+  "exit": 1,
+  "changed_manifest_rows": 5,
+  "before_sha256": "3E6013663C226FFDCE9CD976BA24B236ABF94275C6DEDFBA380BAF0B27027444",
+  "after_sha256": "3A8E0BEA07EA2568038A57E0229204EC203A80FE275ADA2D720456F5B624AEED"
+}

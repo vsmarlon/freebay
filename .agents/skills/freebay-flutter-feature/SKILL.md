@@ -12,5 +12,7 @@ Read root [`AGENTS.md`](../../../AGENTS.md), [`freebay-design-system`](../freeba
 - Use generated Freezed/JSON artifacts through build_runner, not manual generated-file edits. No `any`/unsafe type escape hatches; narrow JSON input.
 - Register routes with `AppRoutes` constants/builders; never raw route literals. Keep tab indexes, shell gestures, accessibility and keyboard behavior intact.
 - Use design-system exports/components and `frontend/DESIGN.md` tokens. Do not prescribe fixed animation milliseconds or conditional dark-mode colors.
+- Visible copy uses generated `AppLocalizations` from `lib/shared/l10n/`; leave protocol values, IDs, logs and backend contracts untranslated. Shared/server state uses Riverpod code generation (`@riverpod`), preferring `AsyncNotifier` for mutable async state and generated `FutureProvider` for read-only async values. Do not add `StateProvider`/`StateNotifier`; migrate touched legacy providers unless a documented compatibility constraint blocks it. Watch in build, read in callbacks, listen for effects, and select only needed fields.
+- Export cross-feature APIs at their owning feature boundary; never reach into another feature's presentation internals.
 
 For behavior changes, follow TDD/E2E policy and `test-audit`. Verify focused real boundary first, then applicable Flutter format/analyze/tests/build from `AGENTS.md`; save repeatable E2E/device evidence and label unavailable checks blocked.

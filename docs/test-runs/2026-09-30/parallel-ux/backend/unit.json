@@ -1,0 +1,8 @@
+{
+  "label": "unit",
+  "command": "npm test",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\nest-backend",
+  "started": "2026-09-30T13:37:10.913Z",
+  "ended": "2026-09-30T13:44:35.570Z",
+  "exitCode": 1
+}

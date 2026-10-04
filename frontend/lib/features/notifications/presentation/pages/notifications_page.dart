@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final notificationsAsync = ref.watch(notificationsProvider);
     final theme = Theme.of(context);
 
@@ -19,9 +20,10 @@ class NotificationsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: 'NOTIFICAÇÕES',
+            text: strings.notificationsTitle.toUpperCase(),
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
             ),
             actions: [
@@ -29,16 +31,20 @@ class NotificationsPage extends ConsumerWidget {
                 onTap: () {
                   ref.read(notificationsProvider.notifier).markAllAsRead();
                 },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Icon(
-                    Icons.done_all,
-                    color: theme.brightness == Brightness.dark
-                        ? AppColors.white
-                        : AppColors.onSurface,
+                child: Semantics(
+                  button: true,
+                  label: strings.notificationsMarkAllRead,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Icon(
+                      Icons.done_all,
+                      color: theme.brightness == Brightness.dark
+                          ? AppColors.white
+                          : AppColors.onSurface,
+                    ),
                   ),
                 ),
               ),
@@ -74,18 +80,16 @@ class NotificationsPage extends ConsumerWidget {
                 ),
               ),
               error: (error, _) => EmptyState.error(
-                message:
-                    'Não foi possível carregar suas notificações. Puxe para atualizar ou tente novamente em instantes.',
+                message: strings.notificationsLoadFailed,
                 onRetry: () =>
                     ref.read(notificationsProvider.notifier).refresh(),
               ),
               data: (notifications) {
                 if (notifications.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.notifications_none,
-                    title: 'NENHUMA NOTIFICAÇÃO',
-                    subtitle:
-                        'Você será notificado sobre pedidos, mensagens e muito mais.',
+                    title: strings.notificationsNone,
+                    subtitle: strings.notificationsEmptyBody,
                   );
                 }
 
@@ -121,7 +125,7 @@ class _NotificationTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final timeAgo = TimeUtils.timeAgo(notification.createdAt);
+    final timeAgo = localizedTimeAgo(context, notification.createdAt);
 
     return ListTile(
       leading: Container(

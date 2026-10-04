@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CommentInput extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final bool isSending;
   final VoidCallback onSend;
-  final String hint;
+  final String? hint;
   final bool compact;
 
   const CommentInput({
@@ -15,7 +16,7 @@ class CommentInput extends StatelessWidget {
     this.focusNode,
     required this.isSending,
     required this.onSend,
-    this.hint = 'Adicionar comentário...',
+    this.hint,
     this.compact = false,
   });
 
@@ -35,7 +36,7 @@ class CommentInput extends StatelessWidget {
             controller: controller,
             focusNode: focusNode,
             decoration: InputDecoration(
-              hintText: hint,
+              hintText: hint ?? l10n(context).feedReplyingHint,
               hintStyle: TextStyle(color: context.textSecondary),
               border: const OutlineInputBorder(borderSide: BorderSide.none),
               filled: true,
@@ -52,6 +53,7 @@ class CommentInput extends StatelessWidget {
         Spacing.hSm,
         BrutalistIconButton(
           icon: Icons.send,
+          semanticLabel: l10n(context).accessibilitySend,
           onTap: onSend,
           size: buttonSize,
           iconSize: iconSize,

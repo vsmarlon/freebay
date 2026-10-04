@@ -1,0 +1,1179 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart
+lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                 ^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                            ^^^^
+lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+      (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                ^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+        strings.walletAndEscrow,
+                ^^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowers,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowing,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileSales,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileReputation,
+                          ^^^^^^^
+lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+           strings.profileVerificationIntro,
+           ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                    strings.authForgotPassword,
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                                       ^^^^^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                 title: l10n(context).feedNoComments,
+                             ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                 title: l10n(context).feedNoComments,
+                        ^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                                ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                           ^^^^
+lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+           content: Text(strings.productFormInvalid),
+                         ^^^^^^^
+lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                 ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                       ^
+lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                       title: strings.profileNoFollowers,
+                              ^^^^^^^
+lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                       subtitle: strings.profileNoFollowersBody,
+                                 ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                         title: strings.profileNoConnections,
+                                ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowingBody,
+                                   ^^^^^^^
+lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+           _cancelReasonLabel(selectedReason),
+                              ^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+         title: strings.ordersNoDisputes,
+                ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+         subtitle: strings.ordersNoDisputesBody,
+                   ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+             Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                  ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                  hintText: strings.disputeEvidenceHint,
+                            ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                           strings.disputeSendEvidence,
+                           ^^^^^^^
+lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+ - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                  blurHash: review.reviewer?.avatarBlurHash,
+                                             ^^^^^^^^^^^^^^
+00:00 +0 -1: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                   ^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                              ^^^^
+  lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+        (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                  ^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+          strings.walletAndEscrow,
+                  ^^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowers,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowing,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileSales,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileReputation,
+                            ^^^^^^^
+  lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+             strings.profileVerificationIntro,
+             ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                      strings.authForgotPassword,
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                                         ^^^^^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                   title: l10n(context).feedNoComments,
+                               ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                   title: l10n(context).feedNoComments,
+                          ^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                                  ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                             ^^^^
+  lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+             content: Text(strings.productFormInvalid),
+                           ^^^^^^^
+  lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                   ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                         ^
+  lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                         title: strings.profileNoFollowers,
+                                ^^^^^^^
+  lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowersBody,
+                                   ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                           title: strings.profileNoConnections,
+                                  ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                           subtitle: strings.profileNoFollowingBody,
+                                     ^^^^^^^
+  lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+             _cancelReasonLabel(selectedReason),
+                                ^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+           title: strings.ordersNoDisputes,
+                  ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+           subtitle: strings.ordersNoDisputesBody,
+                     ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+               Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                    ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                    hintText: strings.disputeEvidenceHint,
+                              ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                             strings.disputeSendEvidence,
+                             ^^^^^^^
+  lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+   - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                    blurHash: review.reviewer?.avatarBlurHash,
+                                               ^^^^^^^^^^^^^^
+  .
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 1009:11   DefaultResidentCompiler._compile.<fn>
+  dart:async/zone_root.dart 48:47                  _rootRunUnary
+  dart:async/zone.dart 733:19                      _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone_root.dart 35:13                  _rootRun
+  dart:async/zone.dart 726:19                      _CustomZone.run
+  dart:async/zone.dart 625:7                       _CustomZone.runGuarded
+  dart:async/zone.dart 666:23                      _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 193:5      _RawReceivePort._handleMessage
+  
+lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+      (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                ^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+        strings.walletAndEscrow,
+                ^^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowers,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowing,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileSales,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileReputation,
+                          ^^^^^^^
+lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+           strings.profileVerificationIntro,
+           ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                    strings.authForgotPassword,
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                                       ^^^^^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                 title: l10n(context).feedNoComments,
+                             ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                 title: l10n(context).feedNoComments,
+                        ^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                                ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                           ^^^^
+lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+           content: Text(strings.productFormInvalid),
+                         ^^^^^^^
+lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                 ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                       ^
+lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                       title: strings.profileNoFollowers,
+                              ^^^^^^^
+lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                       subtitle: strings.profileNoFollowersBody,
+                                 ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                         title: strings.profileNoConnections,
+                                ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowingBody,
+                                   ^^^^^^^
+lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+           _cancelReasonLabel(selectedReason),
+                              ^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+         title: strings.ordersNoDisputes,
+                ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+         subtitle: strings.ordersNoDisputesBody,
+                   ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+             Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                  ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                  hintText: strings.disputeEvidenceHint,
+                            ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                           strings.disputeSendEvidence,
+                           ^^^^^^^
+lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+ - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                  blurHash: review.reviewer?.avatarBlurHash,
+                                             ^^^^^^^^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                 ^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                            ^^^^
+00:00 +0 -2: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+        (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                  ^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+          strings.walletAndEscrow,
+                  ^^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowers,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowing,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileSales,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileReputation,
+                            ^^^^^^^
+  lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+             strings.profileVerificationIntro,
+             ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                      strings.authForgotPassword,
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                                         ^^^^^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                   title: l10n(context).feedNoComments,
+                               ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                   title: l10n(context).feedNoComments,
+                          ^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                                  ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                             ^^^^
+  lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+             content: Text(strings.productFormInvalid),
+                           ^^^^^^^
+  lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                   ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                         ^
+  lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                         title: strings.profileNoFollowers,
+                                ^^^^^^^
+  lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowersBody,
+                                   ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                           title: strings.profileNoConnections,
+                                  ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                           subtitle: strings.profileNoFollowingBody,
+                                     ^^^^^^^
+  lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+             _cancelReasonLabel(selectedReason),
+                                ^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+           title: strings.ordersNoDisputes,
+                  ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+           subtitle: strings.ordersNoDisputesBody,
+                     ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+               Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                    ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                    hintText: strings.disputeEvidenceHint,
+                              ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                             strings.disputeSendEvidence,
+                             ^^^^^^^
+  lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+   - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                    blurHash: review.reviewer?.avatarBlurHash,
+                                               ^^^^^^^^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                   ^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                              ^^^^
+  .
+00:00 +0 -2: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart [E]
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 1009:11   DefaultResidentCompiler._compile.<fn>
+  dart:async/zone_root.dart 48:47                  _rootRunUnary
+  dart:async/zone.dart 733:19                      _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone_root.dart 35:13                  _rootRun
+  dart:async/zone.dart 726:19                      _CustomZone.run
+  dart:async/zone.dart 625:7                       _CustomZone.runGuarded
+  dart:async/zone.dart 666:23                      _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 193:5      _RawReceivePort._handleMessage
+  
+lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+      (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                ^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+        strings.walletAndEscrow,
+                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                    strings.authForgotPassword,
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                                       ^^^^^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                 title: l10n(context).feedNoComments,
+                             ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                 title: l10n(context).feedNoComments,
+                        ^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                                ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                           ^^^^
+lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+           content: Text(strings.productFormInvalid),
+                         ^^^^^^^
+lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                 ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                       ^
+lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                       title: strings.profileNoFollowers,
+                              ^^^^^^^
+lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                       subtitle: strings.profileNoFollowersBody,
+                                 ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                         title: strings.profileNoConnections,
+                                ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowingBody,
+                                   ^^^^^^^
+lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+           _cancelReasonLabel(selectedReason),
+                              ^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+         title: strings.ordersNoDisputes,
+                ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+         subtitle: strings.ordersNoDisputesBody,
+                   ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+             Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                  ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                  hintText: strings.disputeEvidenceHint,
+                            ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                           strings.disputeSendEvidence,
+                           ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowers,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowing,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileSales,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileReputation,
+                          ^^^^^^^
+lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+ - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                  blurHash: review.reviewer?.avatarBlurHash,
+                                             ^^^^^^^^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                 ^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                            ^^^^
+lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+           strings.profileVerificationIntro,
+           ^^^^^^^
+00:00 +0 -3: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+        (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                  ^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+          strings.walletAndEscrow,
+                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                      strings.authForgotPassword,
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                                         ^^^^^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                   title: l10n(context).feedNoComments,
+                               ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                   title: l10n(context).feedNoComments,
+                          ^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                                  ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                             ^^^^
+  lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+             content: Text(strings.productFormInvalid),
+                           ^^^^^^^
+  lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                   ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                         ^
+  lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                         title: strings.profileNoFollowers,
+                                ^^^^^^^
+  lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowersBody,
+                                   ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                           title: strings.profileNoConnections,
+                                  ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                           subtitle: strings.profileNoFollowingBody,
+                                     ^^^^^^^
+  lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+             _cancelReasonLabel(selectedReason),
+                                ^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+           title: strings.ordersNoDisputes,
+                  ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+           subtitle: strings.ordersNoDisputesBody,
+                     ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+               Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                    ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                    hintText: strings.disputeEvidenceHint,
+                              ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                             strings.disputeSendEvidence,
+                             ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowers,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowing,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileSales,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileReputation,
+                            ^^^^^^^
+  lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+   - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                    blurHash: review.reviewer?.avatarBlurHash,
+                                               ^^^^^^^^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                   ^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                              ^^^^
+  lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+             strings.profileVerificationIntro,
+             ^^^^^^^
+  .
+00:00 +0 -3: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart [E]
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 1009:11   DefaultResidentCompiler._compile.<fn>
+  dart:async/zone_root.dart 48:47                  _rootRunUnary
+  dart:async/zone.dart 733:19                      _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone_root.dart 35:13                  _rootRun
+  dart:async/zone.dart 726:19                      _CustomZone.run
+  dart:async/zone.dart 625:7                       _CustomZone.runGuarded
+  dart:async/zone.dart 666:23                      _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 193:5      _RawReceivePort._handleMessage
+  
+test/features/social/feed_post_list_loading_test.dart:55:9: Error: Method not found: 'ProviderScope'.
+        ProviderScope(
+        ^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+      (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                ^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+        strings.walletAndEscrow,
+                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                    strings.authForgotPassword,
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                                       ^^^^^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                 title: l10n(context).feedNoComments,
+                             ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                 title: l10n(context).feedNoComments,
+                        ^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                                ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                           ^^^^
+lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+           content: Text(strings.productFormInvalid),
+                         ^^^^^^^
+lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                 ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                       ^
+lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                       title: strings.profileNoFollowers,
+                              ^^^^^^^
+lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                       subtitle: strings.profileNoFollowersBody,
+                                 ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                         title: strings.profileNoConnections,
+                                ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowingBody,
+                                   ^^^^^^^
+lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+           _cancelReasonLabel(selectedReason),
+                              ^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+         title: strings.ordersNoDisputes,
+                ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+         subtitle: strings.ordersNoDisputesBody,
+                   ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+             Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                  ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                  hintText: strings.disputeEvidenceHint,
+                            ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                           strings.disputeSendEvidence,
+                           ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowers,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowing,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileSales,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileReputation,
+                          ^^^^^^^
+lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+ - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                  blurHash: review.reviewer?.avatarBlurHash,
+                                             ^^^^^^^^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                 ^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                            ^^^^
+lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+           strings.profileVerificationIntro,
+           ^^^^^^^
+00:00 +0 -4: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_post_list_loading_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_post_list_loading_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_post_list_loading_test.dart: test/features/social/feed_post_list_loading_test.dart:55:9: Error: Method not found: 'ProviderScope'.
+          ProviderScope(
+          ^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+        (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                  ^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+          strings.walletAndEscrow,
+                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                      strings.authForgotPassword,
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                                         ^^^^^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                   title: l10n(context).feedNoComments,
+                               ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                   title: l10n(context).feedNoComments,
+                          ^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                                  ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                             ^^^^
+  lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+             content: Text(strings.productFormInvalid),
+                           ^^^^^^^
+  lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                   ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                         ^
+  lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                         title: strings.profileNoFollowers,
+                                ^^^^^^^
+  lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowersBody,
+                                   ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                           title: strings.profileNoConnections,
+                                  ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                           subtitle: strings.profileNoFollowingBody,
+                                     ^^^^^^^
+  lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+             _cancelReasonLabel(selectedReason),
+                                ^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+           title: strings.ordersNoDisputes,
+                  ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+           subtitle: strings.ordersNoDisputesBody,
+                     ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+               Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                    ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                    hintText: strings.disputeEvidenceHint,
+                              ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                             strings.disputeSendEvidence,
+                             ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowers,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowing,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileSales,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileReputation,
+                            ^^^^^^^
+  lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+   - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                    blurHash: review.reviewer?.avatarBlurHash,
+                                               ^^^^^^^^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                   ^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                              ^^^^
+  lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+             strings.profileVerificationIntro,
+             ^^^^^^^
+  .
+00:00 +0 -4: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart [E]
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 1009:11   DefaultResidentCompiler._compile.<fn>
+  dart:async/zone_root.dart 48:47                  _rootRunUnary
+  dart:async/zone.dart 733:19                      _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone_root.dart 35:13                  _rootRun
+  dart:async/zone.dart 726:19                      _CustomZone.run
+  dart:async/zone.dart 625:7                       _CustomZone.runGuarded
+  dart:async/zone.dart 666:23                      _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 193:5      _RawReceivePort._handleMessage
+  
+lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+      (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                ^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+        strings.walletAndEscrow,
+                ^^^^^^^^^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowers,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileFollowing,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileSales,
+                          ^^^^^^^
+lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+ - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                   label: strings.profileReputation,
+                          ^^^^^^^
+lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+           strings.profileVerificationIntro,
+           ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                    strings.authForgotPassword,
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                    ^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                    strings.authSignUp.toUpperCase(),
+                                                       ^^^^^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                 title: l10n(context).feedNoComments,
+                             ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                 title: l10n(context).feedNoComments,
+                        ^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                                ^^^^^^^
+lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                 subtitle: l10n(context).feedFirstComment,
+                           ^^^^
+lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+           content: Text(strings.productFormInvalid),
+                         ^^^^^^^
+lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                 ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                       ^
+lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                       title: strings.profileNoFollowers,
+                              ^^^^^^^
+lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                       subtitle: strings.profileNoFollowersBody,
+                                 ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                         title: strings.profileNoConnections,
+                                ^^^^^^^
+lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowingBody,
+                                   ^^^^^^^
+lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+           _cancelReasonLabel(selectedReason),
+                              ^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+         title: strings.ordersNoDisputes,
+                ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+         subtitle: strings.ordersNoDisputesBody,
+                   ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+             Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                  ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                  hintText: strings.disputeEvidenceHint,
+                            ^^^^^^^
+lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+ - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                           strings.disputeSendEvidence,
+                           ^^^^^^^
+lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+ - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                  blurHash: review.reviewer?.avatarBlurHash,
+                                             ^^^^^^^^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                 ^^^^^^^
+lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                            ^^^^
+00:00 +0 -5: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart: lib/features/social/presentation/widgets/feed_drawer.dart:153:33: Error: The getter 'profileMyPosts' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileMyPosts'.
+        (Icons.grid_view, strings.profileMyPosts, AppRoutes.profilePosts),
+                                  ^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer.dart:160:17: Error: The getter 'walletAndEscrow' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'walletAndEscrow'.
+          strings.walletAndEscrow,
+                  ^^^^^^^^^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:113:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowers,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:121:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileFollowing,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:134:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileSales,
+                            ^^^^^^^
+  lib/features/social/presentation/widgets/feed_drawer_sections.dart:141:27: Error: The getter 'strings' isn't defined for the type 'FeedDrawerStats'.
+   - 'FeedDrawerStats' is from 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart' ('lib/features/social/presentation/widgets/feed_drawer_sections.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                     label: strings.profileReputation,
+                            ^^^^^^^
+  lib/features/profile/presentation/widgets/phone_verification_sheet.dart:106:12: Error: Not a constant expression.
+             strings.profileVerificationIntro,
+             ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:209:37: Error: Not a constant expression.
+                                      strings.authForgotPassword,
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:37: Error: Not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                      ^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:272:56: Error: Method invocation is not a constant expression.
+                                      strings.authSignUp.toUpperCase(),
+                                                         ^^^^^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:30: Error: Not a constant expression.
+                   title: l10n(context).feedNoComments,
+                               ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:193:25: Error: Method invocation is not a constant expression.
+                   title: l10n(context).feedNoComments,
+                          ^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:33: Error: Not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                                  ^^^^^^^
+  lib/features/social/presentation/pages/post_details_page.dart:194:28: Error: Method invocation is not a constant expression.
+                   subtitle: l10n(context).feedFirstComment,
+                             ^^^^
+  lib/features/product/presentation/pages/edit_product_page.dart:191:26: Error: Not a constant expression.
+             content: Text(strings.productFormInvalid),
+                           ^^^^^^^
+  lib/features/chat/presentation/pages/conversation_details_page.dart:164:72: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+                   ref.read(conversationMessagesProvider(widget.chatId)).otherUserName,
+                                                                         ^
+  lib/features/profile/presentation/pages/followers_page.dart:42:31: Error: Not a constant expression.
+                         title: strings.profileNoFollowers,
+                                ^^^^^^^
+  lib/features/profile/presentation/pages/followers_page.dart:43:34: Error: Not a constant expression.
+                         subtitle: strings.profileNoFollowersBody,
+                                   ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:38:33: Error: Not a constant expression.
+                           title: strings.profileNoConnections,
+                                  ^^^^^^^
+  lib/features/profile/presentation/pages/following_page.dart:39:36: Error: Not a constant expression.
+                           subtitle: strings.profileNoFollowingBody,
+                                     ^^^^^^^
+  lib/features/orders/presentation/pages/order_detail_page.dart:429:31: Error: The argument type 'String?' can't be assigned to the parameter type 'String'.
+             _cancelReasonLabel(selectedReason),
+                                ^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:87:17: Error: Not a constant expression.
+           title: strings.ordersNoDisputes,
+                  ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_list_page.dart:88:20: Error: Not a constant expression.
+           subtitle: strings.ordersNoDisputesBody,
+                     ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:128:19: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+               Text(strings.disputeSendEvidence, style: AppTypography.h3),
+                    ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:135:29: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                    hintText: strings.disputeEvidenceHint,
+                              ^^^^^^^
+  lib/features/dispute/presentation/pages/dispute_detail_page.dart:153:28: Error: The getter 'strings' isn't defined for the type '_DisputeDetailPageState'.
+   - '_DisputeDetailPageState' is from 'package:freebay/features/dispute/presentation/pages/dispute_detail_page.dart' ('lib/features/dispute/presentation/pages/dispute_detail_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'strings'.
+                             strings.disputeSendEvidence,
+                             ^^^^^^^
+  lib/features/reviews/presentation/widgets/review_card.dart:33:46: Error: The getter 'avatarBlurHash' isn't defined for the type 'ReviewUserInfo'.
+   - 'ReviewUserInfo' is from 'package:freebay/features/reviews/data/entities/review_user_info.dart' ('lib/features/reviews/data/entities/review_user_info.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'avatarBlurHash'.
+                    blurHash: review.reviewer?.avatarBlurHash,
+                                               ^^^^^^^^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:50: Error: Not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                                   ^^^^^^^
+  lib/features/orders/presentation/pages/orders_tab.dart:178:45: Error: Method invocation is not a constant expression.
+                    child: Center(child: Text(l10n(context).ordersEndOfList)),
+                                              ^^^^
+  .
+00:00 +0 -5: Some tests failed.
+
+Failing tests:
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_post_list_loading_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_post_list_loading_test.dart
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart

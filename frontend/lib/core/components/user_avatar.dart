@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:freebay/core/components/blur_hash_placeholder.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 
 enum AppAvatarSize {
@@ -16,6 +17,8 @@ class UserAvatar extends StatelessWidget {
   final bool isVerified;
   final AppAvatarSize size;
   final double? dimension;
+  final String? heroTag;
+  final String? blurHash;
 
   const UserAvatar({
     super.key,
@@ -23,6 +26,8 @@ class UserAvatar extends StatelessWidget {
     this.isVerified = false,
     this.size = AppAvatarSize.medium,
     this.dimension,
+    this.heroTag,
+    this.blurHash,
   });
 
   @override
@@ -31,6 +36,16 @@ class UserAvatar extends StatelessWidget {
     final borderColor = isVerified
         ? AppColors.primaryContainer
         : AppColors.onSurface.withValues(alpha: 0.15);
+    final image = imageUrl != null && imageUrl!.isNotEmpty
+        ? CachedNetworkImage(
+            imageUrl: imageUrl!,
+            fit: BoxFit.cover,
+            memCacheWidth: (avatarDimension * 2.5).toInt(),
+            memCacheHeight: (avatarDimension * 2.5).toInt(),
+            placeholder: (context, url) => _buildBlurHashPlaceholder(),
+            errorWidget: (context, url, error) => _buildPlaceholder(),
+          )
+        : _buildPlaceholder();
 
     return Stack(
       clipBehavior: Clip.none,
@@ -42,16 +57,7 @@ class UserAvatar extends StatelessWidget {
             color: AppColors.surfaceContainerLow,
             border: Border.all(color: borderColor, width: 2),
           ),
-          child: imageUrl != null && imageUrl!.isNotEmpty
-              ? CachedNetworkImage(
-                  imageUrl: imageUrl!,
-                  fit: BoxFit.cover,
-                  memCacheWidth: (avatarDimension * 2.5).toInt(),
-                  memCacheHeight: (avatarDimension * 2.5).toInt(),
-                  placeholder: (context, url) => _buildPlaceholder(),
-                  errorWidget: (context, url, error) => _buildPlaceholder(),
-                )
-              : _buildPlaceholder(),
+          child: _hero(image),
         ),
         if (isVerified)
           Positioned(
@@ -74,6 +80,9 @@ class UserAvatar extends StatelessWidget {
     );
   }
 
+  Widget _hero(Widget child) =>
+      heroTag == null ? child : Hero(tag: heroTag!, child: child);
+
   Widget _buildPlaceholder() {
     return Icon(
       Icons.person,
@@ -81,4 +90,7 @@ class UserAvatar extends StatelessWidget {
       size: (dimension ?? size.value) * 0.5,
     );
   }
+
+  Widget _buildBlurHashPlaceholder() =>
+      BlurHashPlaceholder(hash: blurHash, fallback: _buildPlaceholder());
 }

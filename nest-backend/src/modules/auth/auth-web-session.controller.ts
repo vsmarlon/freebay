@@ -66,6 +66,7 @@ export class AuthWebSessionController {
       ...body,
       ip: req.ip ?? 'unknown',
       userAgent: req.headers['user-agent'],
+      returnOrigin: req.headers.origin,
     });
     unwrap(result);
     return { sent: true };

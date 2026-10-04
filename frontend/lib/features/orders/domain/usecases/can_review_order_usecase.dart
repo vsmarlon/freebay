@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
@@ -9,7 +10,10 @@ class CanReviewOrderUsecase implements Usecase<CanReviewResponse, String> {
   CanReviewOrderUsecase(this._repository);
 
   @override
-  UsecaseResponse<Failure, CanReviewResponse> call(String orderId) {
-    return _repository.canReviewOrder(orderId);
+  UsecaseResponse<Failure, CanReviewResponse> call(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) {
+    return _repository.canReviewOrder(orderId, cancelToken: cancelToken);
   }
 }

@@ -62,6 +62,7 @@ class UserBrief {
   final String displayName;
   final String? username;
   final String? avatarUrl;
+  final String? avatarBlurHash;
   @JsonKey(defaultValue: false)
   final bool isVerified;
   @JsonKey(defaultValue: 0.0)
@@ -72,6 +73,7 @@ class UserBrief {
     required this.displayName,
     this.username,
     this.avatarUrl,
+    this.avatarBlurHash,
     required this.isVerified,
     required this.reputationScore,
   });

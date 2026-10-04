@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_list_provider.dart';
 import 'package:freebay/features/profile/presentation/providers/follow_status_provider.dart';
@@ -13,6 +14,7 @@ class FollowingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final followingAsync = ref.watch(followingListProvider(userId));
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -20,9 +22,10 @@ class FollowingPage extends ConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: 'SEGUINDO',
+              text: strings.profileFollowingTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
               breadcrumbs: context.breadcrumbs,
@@ -30,10 +33,10 @@ class FollowingPage extends ConsumerWidget {
             Expanded(
               child: followingAsync.when(
                 data: (following) => following.users.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.people_outline,
-                        title: 'NENHUMA CONEXÃO',
-                        subtitle: 'Não está seguindo ninguém ainda.',
+                        title: strings.profileNoConnections,
+                        subtitle: strings.profileNoFollowingBody,
                       )
                     : RefreshIndicator(
                         onRefresh: () => ref
@@ -102,7 +105,7 @@ class FollowingPage extends ConsumerWidget {
                   ),
                 ),
                 error: (error, _) => EmptyState.error(
-                  message: 'Erro ao carregar',
+                  message: strings.errorUnknown,
                   onRetry: () => ref
                       .read(followingListProvider(userId).notifier)
                       .loadMore(refresh: true),

@@ -41,7 +41,7 @@ final class PostSearchProvider
   }
 }
 
-String _$postSearchHash() => r'dbf4fcaa96dcaa31ced94e96e59e5fb0906474df';
+String _$postSearchHash() => r'9fe6e46ac163919f4e1bea7b9a497b14cadb5a7a';
 
 abstract class _$PostSearch extends $Notifier<PostSearchState> {
   PostSearchState build();

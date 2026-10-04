@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/core/router/app_routes.dart';
@@ -45,6 +47,7 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final state = ref.watch(purchasesListProvider);
 
     return Scaffold(
@@ -53,9 +56,10 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'COMPRAS',
+              text: strings.profilePurchasesTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.commonBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -75,15 +79,15 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                     )
                   : state.error != null && state.orders.isEmpty
                   ? EmptyState.error(
-                      message: state.error,
+                      message: strings.errorUnknown,
                       onRetry: () =>
                           ref.read(purchasesListProvider.notifier).refresh(),
                     )
                   : state.orders.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.shopping_bag_outlined,
-                      title: 'NENHUMA COMPRA AINDA',
-                      subtitle: 'Suas compras aparecerão aqui.',
+                      title: strings.profileNoPurchases,
+                      subtitle: strings.profilePurchasesEmpty,
                     )
                   : RefreshIndicator(
                       onRefresh: () =>
@@ -97,7 +101,9 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
                             const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           if (index == state.orders.length) {
-                            return const ShimmerBlock(height: 80);
+                            return const ShimmerScope(
+                              child: ShimmerBlock(height: 80),
+                            );
                           }
                           final order = state.orders[index];
                           return _buildOrderCard(context, order);
@@ -128,7 +134,16 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
               child: product?.imageUrl != null
                   ? CachedNetworkImage(
                       imageUrl: product!.imageUrl!,
+                      httpHeaders: mediaAuthHeaders(product.imageUrl!),
                       fit: BoxFit.cover,
+                      memCacheWidth: 180,
+                      memCacheHeight: 180,
+                      placeholder: (context, url) => BlurHashPlaceholder(
+                        hash: isPrivateMedia(url)
+                            ? null
+                            : product.imageBlurHash,
+                        fallback: ColoredBox(color: context.surfaceMidColor),
+                      ),
                     )
                   : Icon(Icons.image_outlined, color: context.textSecondary),
             ),

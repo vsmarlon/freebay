@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 
 class MakeOfferDialog extends StatefulWidget {
@@ -70,6 +71,7 @@ class _MakeOfferDialogState extends State<MakeOfferDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Dialog(
       backgroundColor: context.surfaceColor,
       child: Container(
@@ -86,7 +88,7 @@ class _MakeOfferDialogState extends State<MakeOfferDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'FAZER PROPOSTA',
+                    strings.chatMakeOffer,
                     style: TextStyle(
                       fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 16,
@@ -103,14 +105,16 @@ class _MakeOfferDialogState extends State<MakeOfferDialog> {
               ),
               Spacing.vMd,
               AppTextField(
-                label: 'PRODUTO / ITEM',
+                label: strings.chatOfferProduct,
                 controller: _titleController,
-                hint: 'Nome do produto anunciado',
+                hint: strings.chatOfferProductHint,
               ),
               Spacing.vSm,
               if (widget.initialPriceCents != null) ...[
                 Text(
-                  'Preço original: ${CurrencyUtils.formatCents(widget.initialPriceCents!)}',
+                  strings.chatOriginalPrice(
+                    CurrencyUtils.formatCents(widget.initialPriceCents!),
+                  ),
                   style: TextStyle(
                     fontSize: 12,
                     color: context.textSecondary,
@@ -120,21 +124,21 @@ class _MakeOfferDialogState extends State<MakeOfferDialog> {
                 Spacing.vSm,
               ],
               AppTextField(
-                label: r'SUA OFERTA (R$)',
+                label: strings.chatYourOfferPrice,
                 controller: _offerPriceController,
-                hint: 'Ex: 250,00',
+                hint: strings.chatOfferPriceHint,
                 keyboardType: TextInputType.number,
               ),
               Spacing.vSm,
               AppTextField(
-                label: 'MENSAGEM (OPCIONAL)',
+                label: strings.chatOfferMessage,
                 controller: _messageController,
-                hint: 'Ex: Retiro em mãos hoje mesmo...',
+                hint: strings.chatOfferMessageHint,
                 maxLines: 2,
               ),
               Spacing.vLg,
               AppButton(
-                label: 'ENVIAR PROPOSTA',
+                label: strings.chatOfferSend,
                 icon: Icons.send,
                 onPressed: _submit,
               ),

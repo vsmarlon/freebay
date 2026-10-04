@@ -51,6 +51,13 @@ export class UserDatabaseRepository {
     );
   }
 
+  async findByAppleId(appleId: string): RepositoryResponse<User | null> {
+    return repositoryResponse(
+      () => this.prisma.user.findUnique({ where: { appleId } }),
+      'Erro ao buscar usuário por Apple ID',
+    );
+  }
+
   async findTakenUsernames(candidates: string[]): RepositoryResponse<string[]> {
     return repositoryResponse(async () => {
       const users = await this.prisma.user.findMany({
@@ -75,6 +82,20 @@ export class UserDatabaseRepository {
     );
   }
 
+  async updateAppleCredential(id: string, token: string | null): RepositoryResponse<User | null> {
+    return repositoryResponse(async () => {
+      try {
+        return await this.prisma.user.update({
+          where: { id, deletedAt: null },
+          data: { appleRefreshTokenEncrypted: token },
+        });
+      } catch (error: unknown) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') return null;
+        throw error;
+      }
+    }, 'Erro ao atualizar credencial Apple');
+  }
+
   async searchUsers(query: string, limit: number, offset: number, viewerId?: string): RepositoryResponse<UserSearchResult[]> {
     return repositoryResponse(async () => {
       const q = query.trim();
@@ -94,6 +115,7 @@ export class UserDatabaseRepository {
           displayName: string;
           username: string;
           avatarUrl: string | null;
+          avatarBlurHash: string | null;
           bio: string | null;
           isVerified: boolean;
           reputationScore: number;
@@ -103,7 +125,7 @@ export class UserDatabaseRepository {
         }>
       >(Prisma.sql`
         SELECT
-          u.id, u."displayName", u.username, u."avatarUrl", u.bio, u."isVerified",
+          u.id, u."displayName", u.username, u."avatarUrl", u."avatarBlurHash", u.bio, u."isVerified",
           u."reputationScore", u."totalReviews",
           (SELECT COUNT(*) FROM "Follow" f WHERE f."followingId" = u.id) AS "followersCount",
           (SELECT COUNT(*) FROM "Follow" f WHERE f."followerId" = u.id) AS "followingCount"
@@ -145,6 +167,7 @@ export class UserDatabaseRepository {
         displayName: true,
         username: true,
         avatarUrl: true,
+        avatarBlurHash: true,
         bio: true,
         isVerified: true,
         reputationScore: true,

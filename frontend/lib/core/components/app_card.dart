@@ -4,6 +4,7 @@ import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/components/app_card_image.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 enum AppCardVariant { compact, full, skeleton }
 
@@ -16,6 +17,8 @@ class AppCard extends StatefulWidget {
   final String? category;
   final AppCardVariant variant;
   final VoidCallback? onTap;
+  final String? heroTag;
+  final String? imageBlurHash;
 
   const AppCard({
     super.key,
@@ -27,6 +30,8 @@ class AppCard extends StatefulWidget {
     this.category,
     this.variant = AppCardVariant.full,
     this.onTap,
+    this.heroTag,
+    this.imageBlurHash,
   });
 
   const AppCard.skeleton({super.key})
@@ -37,6 +42,8 @@ class AppCard extends StatefulWidget {
       score = null,
       condition = null,
       category = null,
+      heroTag = null,
+      imageBlurHash = null,
       onTap = null;
 
   @override
@@ -53,6 +60,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
     }
 
     final isDark = context.isDark;
+    final strings = l10n(context);
     final price = CurrencyUtils.formatCents(widget.priceInCents);
     final isNew =
         ProductCondition.fromLegacy(widget.condition) == ProductCondition.isNew;
@@ -92,7 +100,9 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
               children: [
                 Stack(
                   children: [
-                    _buildImage(),
+                    widget.heroTag == null
+                        ? _buildImage()
+                        : Hero(tag: widget.heroTag!, child: _buildImage()),
 
                     Positioned(
                       top: 8,
@@ -114,7 +124,9 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
                           ),
                         ),
                         child: Text(
-                          isNew ? 'NOVO' : 'USADO',
+                          isNew
+                              ? strings.productConditionNew
+                              : strings.productConditionUsed,
                           style: TextStyle(
                             fontFamily: AppTypography.headlineFontFamily,
                             fontSize: 9,
@@ -219,7 +231,11 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
 
   Widget _buildImage() {
     final height = widget.variant == AppCardVariant.compact ? 120.0 : 160.0;
-    return AppCardImage(imageUrl: widget.imageUrl, height: height);
+    return AppCardImage(
+      imageUrl: widget.imageUrl,
+      height: height,
+      blurHash: widget.imageBlurHash,
+    );
   }
 
   Widget _buildSkeleton(BuildContext context) {

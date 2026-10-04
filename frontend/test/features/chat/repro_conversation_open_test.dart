@@ -13,12 +13,17 @@ import 'package:freebay/features/chat/presentation/providers/chat_provider.dart'
 import 'package:freebay/features/chat/presentation/providers/conversation_messages_provider.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_header.dart';
 import 'package:freebay/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:freebay/features/chat/presentation/widgets/reply_preview_banner.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import '../../support/auth_test_doubles.dart';
 import '../../support/test_users.dart';
 
 class _ChatRepository extends ChatRepository {
+  _ChatRepository({this.messages});
+
+  final List<MessageEntity>? messages;
   var conversationCalls = 0;
   final conversationCallsById = <String, int>{};
 
@@ -59,15 +64,17 @@ class _ChatRepository extends ChatRepository {
     conversationCallsById[conversationId] =
         (conversationCallsById[conversationId] ?? 0) + 1;
     return Right((
-      messages: [
-        MessageEntity(
-          id: 'm-$conversationId',
-          conversationId: conversationId,
-          senderId: 'user-2',
-          content: 'Oi $conversationId',
-          createdAt: DateTime(2026),
-        ),
-      ],
+      messages:
+          messages ??
+          [
+            MessageEntity(
+              id: 'm-$conversationId',
+              conversationId: conversationId,
+              senderId: 'user-2',
+              content: 'Oi $conversationId',
+              createdAt: DateTime(2026),
+            ),
+          ],
       hasMore: false,
       nextCursor: null,
       threadType: ChatThreadType.direct,
@@ -77,6 +84,36 @@ class _ChatRepository extends ChatRepository {
       preference: null,
     ));
   }
+}
+
+List<MessageEntity> _longConversationMessages() {
+  final target = MessageEntity(
+    id: 'target',
+    conversationId: 'conv-1',
+    senderId: 'user-2',
+    content: 'old quote target',
+    createdAt: DateTime(2026),
+  );
+  return [
+    target,
+    for (var i = 1; i < 40; i++)
+      MessageEntity(
+        id: 'message-$i',
+        conversationId: 'conv-1',
+        senderId: 'user-2',
+        content: 'message $i ${'variable height ' * (i % 4 + 1)}',
+        createdAt: DateTime(2026, 1, 1, 0, i),
+      ),
+    MessageEntity(
+      id: 'reply',
+      conversationId: 'conv-1',
+      senderId: 'user-2',
+      content: 'reply trigger',
+      replyToId: target.id,
+      replyTo: target,
+      createdAt: DateTime(2026, 1, 1, 1),
+    ),
+  ];
 }
 
 void main() {
@@ -110,7 +147,12 @@ void main() {
           ),
           chatRepositoryProvider.overrideWithValue(repository),
         ],
-        child: const MaterialApp(home: ChatConversationPage(chatId: 'conv-1')),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ChatConversationPage(chatId: 'conv-1'),
+        ),
       ),
     );
     await tester.pump();
@@ -119,6 +161,100 @@ void main() {
     expect(find.text('Vendedor conv-1'), findsOneWidget);
     expect(find.text('Conversa'), findsNothing);
     expect(repository.conversationCalls, 1);
+  });
+
+  testWidgets('reply tap reveals and highlights an offscreen quoted message', (
+    tester,
+  ) async {
+    final messages = _longConversationMessages();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            () => TestAuthController(testUser(id: 'user-1')),
+          ),
+          chatRepositoryProvider.overrideWithValue(
+            _ChatRepository(messages: messages),
+          ),
+        ],
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ChatConversationPage(chatId: 'conv-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final highlightedTarget = find.byWidgetPredicate(
+      (widget) =>
+          widget is Container &&
+          widget.color == AppColors.primaryContainer.withValues(alpha: 0.18),
+    );
+    expect(highlightedTarget, findsNothing);
+    await tester.tap(find.byType(ReplyPreviewBanner));
+    await tester.pumpAndSettle();
+
+    expect(highlightedTarget, findsOneWidget);
+    expect(
+      tester
+          .getRect(highlightedTarget)
+          .overlaps(tester.getRect(find.byType(ListView))),
+      isTrue,
+    );
+    expect(
+      find.descendant(
+        of: highlightedTarget,
+        matching: find.text('old quote target', findRichText: true),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('quote traversal cancels on conversation switch and disposal', (
+    tester,
+  ) async {
+    final repository = _ChatRepository(messages: _longConversationMessages());
+    final container = ProviderContainer(
+      overrides: [
+        authControllerProvider.overrideWith(
+          () => TestAuthController(testUser(id: 'user-1')),
+        ),
+        chatRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    Future<void> showConversation(String chatId) => tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          locale: const Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ChatConversationPage(chatId: chatId),
+        ),
+      ),
+    );
+
+    await showConversation('conv-1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(ReplyPreviewBanner));
+    await showConversation('conv-2');
+    await tester.pumpAndSettle();
+    expect(find.text('Vendedor conv-2'), findsAtLeastNWidgets(1));
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byType(ReplyPreviewBanner));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: SizedBox.shrink()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('retained conversation rebinds state and refreshes its theme', (
@@ -138,7 +274,12 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: ChatConversationPage(chatId: 'conv-1')),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ChatConversationPage(chatId: 'conv-1'),
+        ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 100));
@@ -148,7 +289,12 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: ChatConversationPage(chatId: 'conv-2')),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ChatConversationPage(chatId: 'conv-2'),
+        ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 100));

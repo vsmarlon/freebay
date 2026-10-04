@@ -1,0 +1,7 @@
+
+InputObject                                                                                                                                        SideIndicator
+-----------                                                                                                                                        -------------
+frontend\lib\features\media_editor\presentation\widgets\image_editor_toolbar.dart	7FB23BE7430F3EAD97B5D87E2AAC9872A852B54BD9BC0B00D6F7ED8BE3C6A398 =>
+frontend\lib\features\media_editor\presentation\widgets\image_editor_toolbar.dart	E48C909FAA925C5AB18715C01D18360B40198F4808D90054D588C933DC3CFE77 <=
+
+

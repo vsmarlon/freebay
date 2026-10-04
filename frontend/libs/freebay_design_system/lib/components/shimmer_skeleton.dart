@@ -1,9 +1,51 @@
-import '../tokens/app_motion.dart';
 import 'package:flutter/material.dart';
-import '../tokens/app_colors.dart';
 import '../tokens/theme_extension.dart';
+import '../tokens/app_motion.dart';
 
-class ShimmerBlock extends StatefulWidget {
+class ShimmerScope extends StatefulWidget {
+  final Widget child;
+
+  const ShimmerScope({super.key, required this.child});
+
+  @override
+  State<ShimmerScope> createState() => _ShimmerScopeState();
+}
+
+class _ShimmerScopeState extends State<ShimmerScope>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _controller;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller?.dispose();
+      _controller = null;
+    } else {
+      _controller ??= AnimationController(
+        vsync: this,
+        duration: AppMotion.shimmer,
+      )..repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _ShimmerAnimation(notifier: _controller, child: widget.child);
+  }
+}
+
+class _ShimmerAnimation extends InheritedNotifier<AnimationController> {
+  const _ShimmerAnimation({required super.notifier, required super.child});
+}
+
+class ShimmerBlock extends StatelessWidget {
   final double width;
   final double height;
   final double? borderRadius;
@@ -20,51 +62,18 @@ class ShimmerBlock extends StatefulWidget {
   });
 
   @override
-  State<ShimmerBlock> createState() => _ShimmerBlockState();
-}
-
-class _ShimmerBlockState extends State<ShimmerBlock>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: AppMotion.shimmer)
-      ..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final base =
-        widget.baseColor ??
-        (context.isDark
-            ? AppColors.surfaceContainerDark
-            : AppColors.surfaceContainerLow);
-    final highlight =
-        widget.highlightColor ??
-        (context.isDark
-            ? AppColors.surfaceContainerLowDark
-            : AppColors.surfaceContainerLowest);
+    final animation = context
+        .dependOnInheritedWidgetOfExactType<_ShimmerAnimation>()
+        ?.notifier;
+    final base = baseColor ?? context.surfaceColor;
+    final highlight = highlightColor ?? context.surfaceHighColor;
+    final value = animation?.value ?? 0.5;
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: Color.lerp(base, highlight, _controller.value),
-            border: Border.all(color: AppColors.outlineVariant),
-          ),
-        );
-      },
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(color: Color.lerp(base, highlight, value)),
     );
   }
 }
@@ -83,12 +92,16 @@ class SkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    final list = ListView.builder(
       shrinkWrap: true,
       physics: physics ?? const NeverScrollableScrollPhysics(),
       itemCount: itemCount,
       itemBuilder: itemBuilder,
     );
+    return context.dependOnInheritedWidgetOfExactType<_ShimmerAnimation>() ==
+            null
+        ? ShimmerScope(child: list)
+        : list;
   }
 }
 
@@ -99,7 +112,7 @@ class SkeletonPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final page = Scaffold(
       backgroundColor: context.bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -109,5 +122,9 @@ class SkeletonPage extends StatelessWidget {
         ),
       ),
     );
+    return context.dependOnInheritedWidgetOfExactType<_ShimmerAnimation>() ==
+            null
+        ? ShimmerScope(child: page)
+        : page;
   }
 }

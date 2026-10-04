@@ -1,0 +1,8 @@
+{
+  "label": "typecheck",
+  "command": "npx tsc --noEmit",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\nest-backend",
+  "started": "2026-09-30T13:36:22.237Z",
+  "ended": "2026-09-30T13:36:39.573Z",
+  "exitCode": 0
+}

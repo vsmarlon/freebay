@@ -49,12 +49,13 @@ class ProfileRepository {
     decoder: (_) => const Right(null),
   );
 
-  Future<Either<Failure, UserEntity>> getProfile(String userId) =>
-      requestEither(
-        () => client.get('/users/$userId'),
-        decoder: (response) =>
-            Right(UserEntity.fromJson(response.data['data'])),
-      );
+  Future<Either<Failure, UserEntity>> getProfile(
+    String userId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get('/users/$userId', cancelToken: cancelToken),
+    decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
+  );
 
   Future<Either<Failure, UserStatsEntity>> getProfileStats() => requestEither(
     () => client.get('/users/me/stats'),
@@ -66,10 +67,12 @@ class ProfileRepository {
     String userId, {
     int limit = 20,
     int offset = 0,
+    CancelToken? cancelToken,
   }) => requestEither(
     () => client.get(
       '/users/$userId/followers',
       queryParameters: {'limit': limit, 'offset': offset},
+      cancelToken: cancelToken,
     ),
     decoder: (response) =>
         Right(FollowListResponse.fromJson(response.data['data'])),
@@ -79,10 +82,12 @@ class ProfileRepository {
     String userId, {
     int limit = 20,
     int offset = 0,
+    CancelToken? cancelToken,
   }) => requestEither(
     () => client.get(
       '/users/$userId/following',
       queryParameters: {'limit': limit, 'offset': offset},
+      cancelToken: cancelToken,
     ),
     decoder: (response) =>
         Right(FollowListResponse.fromJson(response.data['data'])),
@@ -163,5 +168,44 @@ class ProfileRepository {
   Future<Either<Failure, UserEntity>> verifyPhone(String code) => requestEither(
     () => client.post('/users/me/phone/verify', data: {'code': code}),
     decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
+  );
+
+  Future<Either<Failure, Map<String, dynamic>>> exportMyData({
+    required String stepUpToken,
+  }) => requestEither(
+    () => client.get(
+      '/users/me/export',
+      options: Options(headers: {'x-step-up-token': stepUpToken}),
+    ),
+    decoder: (response) =>
+        Right(Map<String, dynamic>.from(response.data['data'] as Map)),
+  );
+
+  Future<Either<Failure, DateTime>> requestAccountDeletion({
+    required String stepUpToken,
+  }) => requestEither(
+    () => client.delete(
+      '/users/me',
+      options: Options(headers: {'x-step-up-token': stepUpToken}),
+    ),
+    decoder: (response) => Right(
+      DateTime.parse(response.data['data']['deletionRequestedAt'] as String),
+    ),
+  );
+
+  Future<Either<Failure, void>> cancelAccountDeletion() => requestEither<void>(
+    () => client.patch('/users/me/deletion/cancel'),
+    decoder: (_) => const Right(null),
+  );
+
+  Future<Either<Failure, void>> reportUser(
+    String userId, {
+    required String reason,
+  }) => requestEither<void>(
+    () => client.post(
+      '/reports',
+      data: {'targetType': 'USER', 'targetId': userId, 'reason': reason},
+    ),
+    decoder: (_) => const Right(null),
   );
 }

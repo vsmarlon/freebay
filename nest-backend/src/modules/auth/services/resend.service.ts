@@ -10,22 +10,36 @@ export class ResendService {
 
   constructor(private config: ConfigService) {}
 
-  async sendMagicLink(email: string, token: string, locale: 'pt-BR' | 'en', credentialId: string): Promise<MagicLinkSendResult | null> {
+  async sendMagicLink(email: string, token: string, locale: 'pt-BR' | 'en', credentialId: string, purpose?: 'account-deletion', returnOrigin?: string): Promise<MagicLinkSendResult | null> {
     const apiKey = this.config.get<string>('RESEND_API_KEY');
     const fromEmail = this.config.get<string>('RESEND_FROM_EMAIL') || this.config.get<string>('EMAIL_FROM') || 'FreeBay <onboarding@resend.dev>';
     const appUrl = this.config.get<string>('WEB_APP_URL', this.config.get<string>('APP_URL', 'http://localhost:3000'));
-    const confirmationUrl = `${appUrl}/auth/magic-link/confirm?token=${encodeURIComponent(token)}`;
+    const confirmationUrl = purpose === 'account-deletion'
+      ? deletionConfirmationUrl(returnOrigin, token, this.config.get<string>('NODE_ENV') === 'production')
+      : `${appUrl}/auth/magic-link/confirm?token=${encodeURIComponent(token)}`;
+    if (!confirmationUrl) {
+      this.logger.warn('Account deletion email link not sent: no trusted public origin');
+      return null;
+    }
     if (!apiKey) {
       this.logger.warn('Magic-link email not sent: RESEND_API_KEY is not configured');
       return null;
     }
 
     const portuguese = locale === 'pt-BR';
-    const subject = portuguese ? 'Seu acesso ao FreeBay' : 'Your FreeBay sign-in link';
-    const title = portuguese ? 'ENTRAR NO FREEBAY' : 'SIGN IN TO FREEBAY';
-    const body = portuguese
-      ? 'Use o botão abaixo para entrar com segurança. Este link expira em 10 minutos.'
-      : 'Use the button below to sign in securely. This link expires in 10 minutes.';
+    const subject = purpose === 'account-deletion'
+      ? (portuguese ? 'Confirmar solicitação de exclusão — FreeBay' : 'Confirm account deletion request — FreeBay')
+      : (portuguese ? 'Seu acesso ao FreeBay' : 'Your FreeBay sign-in link');
+    const title = purpose === 'account-deletion'
+      ? (portuguese ? 'SOLICITAÇÃO DE EXCLUSÃO' : 'ACCOUNT DELETION REQUEST')
+      : (portuguese ? 'ENTRAR NO FREEBAY' : 'SIGN IN TO FREEBAY');
+    const body = purpose === 'account-deletion'
+      ? (portuguese
+        ? 'Use o link para autenticar sua solicitação. Abrir o link não exclui a conta: a página pedirá uma confirmação explícita. O link expira em 10 minutos.'
+        : 'Use the link to authenticate your request. Opening it does not delete the account; the page will ask for explicit confirmation. The link expires in 10 minutes.')
+      : (portuguese
+        ? 'Use o botão abaixo para entrar com segurança. Este link expira em 10 minutos.'
+        : 'Use the button below to sign in securely. This link expires in 10 minutes.');
     const resend = new Resend(apiKey);
     const { data, error } = await resend.emails.send({
         from: fromEmail,
@@ -136,5 +150,36 @@ export class ResendService {
     const payload = await response.json() as { id?: string };
     this.logger.log(`[ResendService] Recovery email dispatched to ${email} (ID: ${payload.id})`);
     return payload.id ?? null;
+  }
+
+  async sendProfileVerificationCode(email: string, code: string, locale: 'pt-BR' | 'en'): Promise<boolean> {
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    if (!apiKey) return false;
+    const fromEmail = this.config.get<string>('RESEND_FROM_EMAIL') || this.config.get<string>('EMAIL_FROM') || 'FreeBay <onboarding@resend.dev>';
+    const portuguese = locale === 'pt-BR';
+    const resend = new Resend(apiKey);
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: portuguese ? 'Confirme a altera\u00e7\u00e3o do documento - FreeBay' : 'Confirm your document change - FreeBay',
+      text: portuguese
+        ? `Seu c\u00f3digo para autorizar a altera\u00e7\u00e3o do documento \u00e9 ${code}. Ele expira em 10 minutos.`
+        : `Your code to authorize the document change is ${code}. It expires in 10 minutes.`,
+    });
+    return !error && Boolean(data?.id);
+  }
+}
+
+function deletionConfirmationUrl(origin: string | undefined, token: string, production: boolean): string | null {
+  if (!origin) return null;
+  try {
+    const parsed = new URL(origin);
+    const isLocalHttp = parsed.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(parsed.hostname);
+    if (parsed.origin !== origin || parsed.username || parsed.password || (parsed.protocol !== 'https:' && !(isLocalHttp && !production))) return null;
+    const url = new URL('/legal/delete-account.html', parsed.origin);
+    url.hash = new URLSearchParams({ token }).toString();
+    return url.toString();
+  } catch {
+    return null;
   }
 }

@@ -82,9 +82,10 @@ class FollowService {
   }
 
   Future<Either<Failure, FollowStatusResponse>> getFollowStatus(
-    String userId,
-  ) => requestEither(
-    () => client.get('/users/$userId/is-following'),
+    String userId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get('/users/$userId/is-following', cancelToken: cancelToken),
     decoder: (response) =>
         Right(FollowStatusResponse.fromJson(response.data['data'])),
   );

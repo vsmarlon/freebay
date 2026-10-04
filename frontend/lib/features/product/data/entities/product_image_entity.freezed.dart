@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ProductImageEntity {
 
- String get id; String get url; int get order; String get productId;
+ String get id; String get url; String? get blurHash; int get order; String get productId;
 /// Create a copy of ProductImageEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ProductImageEntityCopyWith<ProductImageEntity> get copyWith => _$ProductImageEn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProductImageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.url, url) || other.url == url)&&(identical(other.order, order) || other.order == order)&&(identical(other.productId, productId) || other.productId == productId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProductImageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.url, url) || other.url == url)&&(identical(other.blurHash, blurHash) || other.blurHash == blurHash)&&(identical(other.order, order) || other.order == order)&&(identical(other.productId, productId) || other.productId == productId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,url,order,productId);
+int get hashCode => Object.hash(runtimeType,id,url,blurHash,order,productId);
 
 @override
 String toString() {
-  return 'ProductImageEntity(id: $id, url: $url, order: $order, productId: $productId)';
+  return 'ProductImageEntity(id: $id, url: $url, blurHash: $blurHash, order: $order, productId: $productId)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ProductImageEntityCopyWith<$Res>  {
   factory $ProductImageEntityCopyWith(ProductImageEntity value, $Res Function(ProductImageEntity) _then) = _$ProductImageEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String url, int order, String productId
+ String id, String url, String? blurHash, int order, String productId
 });
 
 
@@ -65,11 +65,12 @@ class _$ProductImageEntityCopyWithImpl<$Res>
 
 /// Create a copy of ProductImageEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? url = null,Object? order = null,Object? productId = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? url = null,Object? blurHash = freezed,Object? order = null,Object? productId = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
-as String,order: null == order ? _self.order : order // ignore: cast_nullable_to_non_nullable
+as String,blurHash: freezed == blurHash ? _self.blurHash : blurHash // ignore: cast_nullable_to_non_nullable
+as String?,order: null == order ? _self.order : order // ignore: cast_nullable_to_non_nullable
 as int,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -156,10 +157,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String url,  int order,  String productId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String url,  String? blurHash,  int order,  String productId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProductImageEntity() when $default != null:
-return $default(_that.id,_that.url,_that.order,_that.productId);case _:
+return $default(_that.id,_that.url,_that.blurHash,_that.order,_that.productId);case _:
   return orElse();
 
 }
@@ -177,10 +178,10 @@ return $default(_that.id,_that.url,_that.order,_that.productId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String url,  int order,  String productId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String url,  String? blurHash,  int order,  String productId)  $default,) {final _that = this;
 switch (_that) {
 case _ProductImageEntity():
-return $default(_that.id,_that.url,_that.order,_that.productId);case _:
+return $default(_that.id,_that.url,_that.blurHash,_that.order,_that.productId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +198,10 @@ return $default(_that.id,_that.url,_that.order,_that.productId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String url,  int order,  String productId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String url,  String? blurHash,  int order,  String productId)?  $default,) {final _that = this;
 switch (_that) {
 case _ProductImageEntity() when $default != null:
-return $default(_that.id,_that.url,_that.order,_that.productId);case _:
+return $default(_that.id,_that.url,_that.blurHash,_that.order,_that.productId);case _:
   return null;
 
 }
@@ -212,11 +213,12 @@ return $default(_that.id,_that.url,_that.order,_that.productId);case _:
 @JsonSerializable()
 
 class _ProductImageEntity implements ProductImageEntity {
-  const _ProductImageEntity({required this.id, required this.url, this.order = 0, required this.productId});
+  const _ProductImageEntity({required this.id, required this.url, this.blurHash, this.order = 0, required this.productId});
   factory _ProductImageEntity.fromJson(Map<String, dynamic> json) => _$ProductImageEntityFromJson(json);
 
 @override final  String id;
 @override final  String url;
+@override final  String? blurHash;
 @override@JsonKey() final  int order;
 @override final  String productId;
 
@@ -233,16 +235,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProductImageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.url, url) || other.url == url)&&(identical(other.order, order) || other.order == order)&&(identical(other.productId, productId) || other.productId == productId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProductImageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.url, url) || other.url == url)&&(identical(other.blurHash, blurHash) || other.blurHash == blurHash)&&(identical(other.order, order) || other.order == order)&&(identical(other.productId, productId) || other.productId == productId));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,url,order,productId);
+int get hashCode => Object.hash(runtimeType,id,url,blurHash,order,productId);
 
 @override
 String toString() {
-  return 'ProductImageEntity(id: $id, url: $url, order: $order, productId: $productId)';
+  return 'ProductImageEntity(id: $id, url: $url, blurHash: $blurHash, order: $order, productId: $productId)';
 }
 
 
@@ -253,7 +255,7 @@ abstract mixin class _$ProductImageEntityCopyWith<$Res> implements $ProductImage
   factory _$ProductImageEntityCopyWith(_ProductImageEntity value, $Res Function(_ProductImageEntity) _then) = __$ProductImageEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String url, int order, String productId
+ String id, String url, String? blurHash, int order, String productId
 });
 
 
@@ -270,11 +272,12 @@ class __$ProductImageEntityCopyWithImpl<$Res>
 
 /// Create a copy of ProductImageEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? url = null,Object? order = null,Object? productId = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? url = null,Object? blurHash = freezed,Object? order = null,Object? productId = null,}) {
   return _then(_ProductImageEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
-as String,order: null == order ? _self.order : order // ignore: cast_nullable_to_non_nullable
+as String,blurHash: freezed == blurHash ? _self.blurHash : blurHash // ignore: cast_nullable_to_non_nullable
+as String?,order: null == order ? _self.order : order // ignore: cast_nullable_to_non_nullable
 as int,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as String,
   ));

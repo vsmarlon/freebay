@@ -1,0 +1,8 @@
+{
+  "label": "gate-safety",
+  "command": "npm run test:safety",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:43:01.709Z",
+  "ended": "2026-10-01T06:43:02.416Z",
+  "exitCode": 0
+}

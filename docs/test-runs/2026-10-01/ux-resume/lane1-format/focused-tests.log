@@ -1,0 +1,7 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+00:00 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+00:01 +2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+00:01 +3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 2.0x with long title
+00:01 +4: All tests passed!
+EXIT 0

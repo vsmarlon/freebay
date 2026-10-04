@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 Future<void> showConversationMenu({
   required BuildContext context,
@@ -9,13 +10,13 @@ Future<void> showConversationMenu({
 }) {
   return showBrutalistSheet(
     context: context,
-    title: 'OPÇÕES',
+    title: l10n(context).chatOptions,
     builder: (sheetContext) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         ListTile(
           leading: const Icon(Icons.palette_outlined),
-          title: const Text('Personalizar'),
+          title: Text(l10n(context).chatCustomize),
           onTap: () {
             Navigator.pop(sheetContext);
             onCustomize();
@@ -23,7 +24,11 @@ Future<void> showConversationMenu({
         ),
         ListTile(
           leading: const Icon(Icons.archive_outlined),
-          title: Text(isArchived ? 'Desarquivar' : 'Arquivar'),
+          title: Text(
+            isArchived
+                ? l10n(context).chatUnarchive
+                : l10n(context).chatArchive,
+          ),
           onTap: () {
             Navigator.pop(sheetContext);
             onArchive();

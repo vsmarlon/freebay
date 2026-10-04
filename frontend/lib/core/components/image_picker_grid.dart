@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/features/social/presentation/widgets/local_image_inspector.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ImagePickerGrid extends StatelessWidget {
   final List<File> images;
@@ -21,7 +22,7 @@ class ImagePickerGrid extends StatelessWidget {
 
     final source = await showBrutalistSheet<ImageSource>(
       context: context,
-      title: 'OPÇÕES DE IMAGEM',
+      title: l10n(context).imagePickerOptions,
       builder: (ctx) => ImageOptionsSheet(
         hasImage: false,
         onPickGallery: () => Navigator.of(ctx).pop(ImageSource.gallery),
@@ -49,7 +50,7 @@ class ImagePickerGrid extends StatelessWidget {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black,
-        transitionDuration: const Duration(milliseconds: 200),
+        transitionDuration: AppMotion.forContext(context, AppMotion.enter),
         pageBuilder: (_, _, _) => LocalImageFullScreen(
           path: images[index].path,
           onEdit: () {
@@ -66,7 +67,7 @@ class ImagePickerGrid extends StatelessWidget {
   void _showEditOptions(BuildContext context, int index) {
     showBrutalistSheet(
       context: context,
-      title: 'OPÇÕES DE IMAGEM',
+      title: l10n(context).imagePickerOptions,
       builder: (ctx) => ImageOptionsSheet(
         hasImage: true,
         onPickGallery: () async {

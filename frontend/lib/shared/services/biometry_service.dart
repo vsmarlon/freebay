@@ -2,15 +2,14 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/biometric_key_service.dart';
 
 const String _biometryEnabledKey = 'biometry_enabled';
 const String _biometryPromptedKey = 'biometry_prompted';
 
 class BiometryService {
   final LocalAuthentication _localAuth = LocalAuthentication();
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-  );
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   /// Check if biometrics are available on the device.
   Future<bool> isAvailable() async {
@@ -51,7 +50,10 @@ class BiometryService {
     try {
       return await _localAuth.authenticate(
         localizedReason: reason,
-        options: const AuthenticationOptions(stickyAuth: true),
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
       );
     } on PlatformException {
       return false;
@@ -70,14 +72,10 @@ class BiometryService {
   }
 
   Future<void> setEnabled(bool enabled) async {
-    try {
-      await _secureStorage.write(
-        key: _biometryEnabledKey,
-        value: enabled.toString(),
-      );
-    } catch (_) {
-      // Silently fail
-    }
+    await _secureStorage.write(
+      key: _biometryEnabledKey,
+      value: enabled.toString(),
+    );
   }
 
   Future<bool> hasPrompted() async {
@@ -105,18 +103,27 @@ class BiometryService {
   // here to check if it exists alongside the enabled flag.
 
   Future<bool> hasCredentials() async {
-    final token = await StorageService.getBiometricToken();
-    return token != null && token.isNotEmpty;
+    return StorageService.hasBiometricToken();
   }
 
   Future<void> clearCredentials() async {
-    await setEnabled(false);
-    await StorageService.clearBiometricToken();
+    try {
+      await setEnabled(false);
+    } finally {
+      await StorageService.clearBiometricToken();
+    }
   }
 
   Future<void> clearState() async {
-    await clearCredentials();
-    await setHasPrompted(false);
+    try {
+      await clearCredentials();
+    } finally {
+      try {
+        await setHasPrompted(false);
+      } finally {
+        await BiometricKeyService().delete();
+      }
+    }
   }
 }
 

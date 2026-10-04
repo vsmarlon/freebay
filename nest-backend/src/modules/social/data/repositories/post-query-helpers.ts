@@ -2,6 +2,7 @@ import { PostType, Prisma } from '@prisma/client';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage } from '@/shared/core/pagination';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
+import { isValidBlurHash } from '@/shared/utils/blurhash.utils';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import {
   FeedCursor,
@@ -273,7 +274,23 @@ export function postVisibilityWhere(viewerId?: string): Prisma.PostWhereInput {
 
 export function normalizePost(post: PostPayload): PostResponse {
   const { likes, savedBy, shares, ...response } = post;
-  return { ...response, imageUrl: post.imageUrl ?? post.product?.images[0]?.url ?? null, likesCount: post._count.likes, commentsCount: post._count.comments, sharesCount: post._count.shares, isLiked: likes.length > 0, isSaved: savedBy.length > 0, hasReposted: shares.length > 0 };
+  const { imageBlurHash, ...publicFields } = response;
+  const visibleImageHash = post.imageUrl == null
+    ? imageBlurHash ?? post.product?.images[0]?.blurHash
+    : imageBlurHash;
+  return {
+    ...publicFields,
+    ...(post.audience === 'EVERYONE' && isValidBlurHash(visibleImageHash)
+      ? { imageBlurHash: visibleImageHash }
+      : {}),
+    imageUrl: post.imageUrl ?? post.product?.images[0]?.url ?? null,
+    likesCount: post._count.likes,
+    commentsCount: post._count.comments,
+    sharesCount: post._count.shares,
+    isLiked: likes.length > 0,
+    isSaved: savedBy.length > 0,
+    hasReposted: shares.length > 0,
+  };
 }
 
 export function encodeFeedCursor(cursor: FeedCursor): string {

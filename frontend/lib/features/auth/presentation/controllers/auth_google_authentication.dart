@@ -1,23 +1,28 @@
 part of 'auth_controller.dart';
 
 mixin AuthGoogleAuthentication on Notifier<AsyncValue<UserEntity?>> {
-  void _completeCredentialAuth(Either<Failure, UserEntity> result);
+  Future<void> _completeCredentialAuth(
+    Either<Failure, UserEntity> result, {
+    required int attempt,
+  });
 
-  bool _isGoogleSignInInitialized = false;
+  static Future<void>? _googleInitialization;
 
-  Future<void> _ensureGoogleSignInInitialized() async {
-    if (_isGoogleSignInInitialized) return;
+  Future<void> ensureGoogleSignInInitialized() =>
+      _googleInitialization ??= _initializeGoogleSignIn();
+
+  Future<void> _initializeGoogleSignIn() async {
     final serverClientId = AppConfig.googleServerClientId;
     if (serverClientId.isNotEmpty) {
       await GoogleSignIn.instance.initialize(serverClientId: serverClientId);
     } else {
       await GoogleSignIn.instance.initialize();
     }
-    _isGoogleSignInInitialized = true;
   }
 
   Future<void> googleLogin() async {
-    AuthSessionCoordinator.beginAuthentication();
+    final sdkAttempt = AuthSessionCoordinator.beginAuthentication();
+    ref.read(isInitialAuthLoadingProvider.notifier).set(false);
     state = const AsyncValue.loading();
     try {
       final serverClientId = AppConfig.googleServerClientId;
@@ -30,10 +35,12 @@ mixin AuthGoogleAuthentication on Notifier<AsyncValue<UserEntity?>> {
         return;
       }
 
-      await _ensureGoogleSignInInitialized();
+      await ensureGoogleSignInInitialized();
+      if (!AuthSessionCoordinator.isCurrentAttempt(sdkAttempt)) return;
 
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
+      if (!AuthSessionCoordinator.isCurrentAttempt(sdkAttempt)) return;
       final String? idToken = googleUser.authentication.idToken;
 
       if (idToken == null || idToken.isEmpty) {
@@ -45,12 +52,17 @@ mixin AuthGoogleAuthentication on Notifier<AsyncValue<UserEntity?>> {
         return;
       }
 
-      final result = await ref.read(googleAuthUsecaseProvider)(idToken);
-      _completeCredentialAuth(result);
+      final request = ref.read(googleAuthUsecaseProvider)((
+        idToken: idToken,
+        authenticationAttempt: sdkAttempt,
+      ));
+      final attempt = sdkAttempt;
+      final result = await request;
+      if (!AuthSessionCoordinator.isCurrentAttempt(attempt)) return;
+      await _completeCredentialAuth(result, attempt: attempt);
     } on GoogleSignInException catch (e, stack) {
-      debugPrint(
-        '[GoogleSignIn] code=${e.code.name} description=${e.description}',
-      );
+      if (!AuthSessionCoordinator.isCurrentAttempt(sdkAttempt)) return;
+      debugPrint('[GoogleSignIn] code=${e.code.name}');
       if (e.code == GoogleSignInExceptionCode.canceled ||
           e.code == GoogleSignInExceptionCode.interrupted) {
         state = const AsyncValue.data(null);
@@ -59,6 +71,7 @@ mixin AuthGoogleAuthentication on Notifier<AsyncValue<UserEntity?>> {
       ErrorReporter.report('google-signin', e, stack);
       _setGoogleError();
     } catch (e, stack) {
+      if (!AuthSessionCoordinator.isCurrentAttempt(sdkAttempt)) return;
       ErrorReporter.report('google-signin', e, stack);
       _setGoogleError();
     }

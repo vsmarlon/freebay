@@ -1,0 +1,6 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:01 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:01 +2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+[HTTP] GET http://localhost:3000/stories
+00:01 +3: All tests passed!

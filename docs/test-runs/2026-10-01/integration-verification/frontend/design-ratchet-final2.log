@@ -1,0 +1,358 @@
+Design ratchet additions:
+[
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white38",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white38",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.amber",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.blue",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.cyan",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.deepOrange",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.deepPurple",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.green",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.indigo",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.lightBlue",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.lightGreen",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.lime",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.orange",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.pink",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.purple",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.red",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.teal",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.yellow",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/draw_palette.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_toolbar.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white70",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white70",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/orders_tab.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/create_story_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/create_story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/create_story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/my_stories_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/my_stories_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/story_viewer_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/story_viewer_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/story_viewer_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/story_viewer_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/story_viewer_wrapper.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/story_viewer_wrapper.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/pages/story_viewer_wrapper.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/stories_row.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/stories_row.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/stories_row.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/stories_row.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_canvas.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_canvas.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_canvas.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_capture_view.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_highlights_section.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_highlights_section.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/stories/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.white70",
+    "rule": "D3"
+  }
+]

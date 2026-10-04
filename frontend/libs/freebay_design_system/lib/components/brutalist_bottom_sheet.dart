@@ -1,6 +1,5 @@
 import '../tokens/app_motion.dart';
 import 'package:flutter/material.dart';
-import '../tokens/app_colors.dart';
 import '../tokens/app_typography.dart';
 import '../tokens/theme_extension.dart';
 import '../tokens/spacing.dart';
@@ -15,6 +14,7 @@ Future<T?> showBrutalistSheet<T>({
   bool showDragHandle = true,
   bool useRootNavigator = true,
   EdgeInsetsGeometry? padding,
+  bool scrollable = true,
 }) {
   final Widget Function(BuildContext) effectiveBuilder =
       builder ?? ((_) => child ?? const SizedBox.shrink());
@@ -23,32 +23,37 @@ Future<T?> showBrutalistSheet<T>({
     context: context,
     useRootNavigator: useRootNavigator,
     isScrollControlled: true,
+    useSafeArea: useSafeArea,
     backgroundColor: Colors.transparent,
     elevation: 0,
     builder: (sheetContext) {
       final media = MediaQuery.of(sheetContext);
-      return AnimatedPadding(
-        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        duration: AppMotion.base,
-        curve: AppMotion.enterCurve,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: media.size.height * 0.9),
-          child: Material(
-            color: sheetContext.isDark
-                ? AppColors.surfaceDark
-                : AppColors.white,
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: BrutalistSheetScaffold(
-                title: title,
-                builder: effectiveBuilder,
-                useSafeArea: useSafeArea,
-                showDragHandle: showDragHandle,
-                padding: padding,
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final availableHeight =
+              (constraints.maxHeight - media.viewInsets.bottom)
+                  .clamp(0.0, constraints.maxHeight)
+                  .toDouble();
+          return AnimatedPadding(
+            padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+            duration: AppMotion.base,
+            curve: AppMotion.enterCurve,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: availableHeight * 0.9),
+              child: Material(
+                color: backgroundColor ?? context.colors.surface,
+                child: BrutalistSheetScaffold(
+                  title: title,
+                  builder: effectiveBuilder,
+                  useSafeArea: useSafeArea,
+                  showDragHandle: showDragHandle,
+                  padding: padding,
+                  scrollable: scrollable,
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       );
     },
   );
@@ -61,6 +66,7 @@ class BrutalistSheetScaffold extends StatelessWidget {
   final bool showDragHandle;
   final Color? dragHandleColor;
   final EdgeInsetsGeometry? padding;
+  final bool scrollable;
 
   const BrutalistSheetScaffold({
     super.key,
@@ -70,17 +76,19 @@ class BrutalistSheetScaffold extends StatelessWidget {
     this.showDragHandle = true,
     this.dragHandleColor,
     this.padding,
+    this.scrollable = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final contentPadding = padding ?? const EdgeInsets.all(24);
     Widget content = Padding(
-      padding: padding ?? const EdgeInsets.all(24),
+      padding: contentPadding,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showDragHandle) ...[
+          if (showDragHandle)
             Center(
               child: Container(
                 width: 40,
@@ -90,27 +98,28 @@ class BrutalistSheetScaffold extends StatelessWidget {
                 ),
               ),
             ),
-            if (title != null) Spacing.vLg,
-          ],
+          if (showDragHandle && title != null) Spacing.vLg,
           if (title != null) ...[
             Text(
               title!,
-              style: TextStyle(
-                fontFamily: AppTypography.headlineFontFamily,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: context.textPrimary,
-              ),
+              style: AppTypography.h3.copyWith(color: context.textPrimary),
             ),
             Spacing.vLg,
           ],
-          builder(context),
+          Flexible(
+            child: scrollable
+                ? SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: builder(context),
+                  )
+                : builder(context),
+          ),
         ],
       ),
     );
 
     if (useSafeArea) {
-      return SafeArea(child: content);
+      return SafeArea(top: false, child: content);
     }
     return content;
   }

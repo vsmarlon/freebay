@@ -13,6 +13,7 @@ import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_states.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_loading_tile.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
   const ChatListPage({super.key});
@@ -70,13 +71,15 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     final result = await ref
         .read(chatRepositoryProvider)
         .archiveChat(chat.id, chat.threadType, !chat.isArchived);
-    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
+    result.fold((failure) => AppSnackbar.handleFailure(context, failure), (_) {
       ref.invalidate(chatsProvider);
       ref.invalidate(liveChatListProvider);
       ref.invalidate(archivedChatListProvider);
       AppSnackbar.success(
         context,
-        chat.isArchived ? 'Conversa restaurada' : 'Conversa arquivada',
+        chat.isArchived
+            ? l10n(context).chatConversationRestored
+            : l10n(context).chatConversationArchived,
       );
     });
   }
@@ -85,23 +88,21 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Excluir conversa'),
-        content: const Text(
-          'A conversa será ocultada para você. Você terá alguns segundos para desfazer.',
-        ),
+        title: Text(l10n(ctx).chatDeleteConversation),
+        content: Text(l10n(ctx).chatDeleteUndoExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l10n(ctx).commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               _queueDeleteChat(chat);
             },
-            child: const Text(
-              'Excluir',
-              style: TextStyle(color: AppColors.error),
+            child: Text(
+              l10n(ctx).commonDelete,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -115,10 +116,13 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
     final messenger = ScaffoldMessenger.of(context);
     AppSnackbar.undoable(
       context,
-      message: 'Conversa será excluída.',
+      message: l10n(context).chatDeleteConversationUndo,
       onUndo: () {
         if (messenger.mounted) {
-          AppSnackbar.infoOnMessenger(messenger, 'Exclusão cancelada');
+          AppSnackbar.infoOnMessenger(
+            messenger,
+            l10n(messenger.context).chatDeleteCancelled,
+          );
         }
       },
       onCommit: () async {
@@ -126,7 +130,10 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         result.fold(
           (failure) {
             if (messenger.mounted) {
-              AppSnackbar.errorOnMessenger(messenger, failure.message);
+              AppSnackbar.errorOnMessenger(
+                messenger,
+                localizedFailureMessage(messenger.context, failure),
+              );
             }
           },
           (_) {
@@ -142,13 +149,15 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   void _showContextMenu(ChatEntity chat) {
     showBrutalistSheet(
       context: context,
-      title: 'OPÇÕES DE CONVERSA',
+      title: l10n(context).chatConversationOptions,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
             leading: Icon(chat.isArchived ? Icons.unarchive : Icons.archive),
-            title: Text(chat.isArchived ? 'Restaurar' : 'Arquivar'),
+            title: Text(
+              chat.isArchived ? l10n(ctx).chatUnarchive : l10n(ctx).chatArchive,
+            ),
             enabled: _canModifyOrderChat(chat),
             onTap: () {
               Navigator.pop(ctx);
@@ -157,9 +166,9 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
           ),
           ListTile(
             leading: const Icon(Icons.delete_outline, color: AppColors.error),
-            title: const Text(
-              'Excluir',
-              style: TextStyle(color: AppColors.error),
+            title: Text(
+              l10n(ctx).commonDelete,
+              style: const TextStyle(color: AppColors.error),
             ),
             enabled: _canModifyOrderChat(chat),
             onTap: () {
@@ -171,7 +180,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
-                'Ações disponíveis apenas após o pedido ser concluído ou cancelado.',
+                l10n(ctx).chatOrderModifyRule,
                 style: TextStyle(fontSize: 12, color: context.textSecondary),
               ),
             ),
@@ -183,6 +192,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = l10n(context);
     final isDark = context.isDark;
     final authState = ref.watch(authControllerProvider);
     final user = authState.value;
@@ -192,13 +202,14 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            const ShellScrollHeader(child: PageHeader(text: 'MENSAGENS')),
+            ShellScrollHeader(
+              child: PageHeader(text: strings.chatTitle.toUpperCase()),
+            ),
             Expanded(
               child: GuestGateView(
                 icon: Icons.chat_bubble_outline,
-                title: 'MENSAGENS PRIVADAS',
-                description:
-                    'Negocie produtos, tire dúvidas e converse em tempo real com compradores e vendedores com segurança.',
+                title: strings.chatPrivateMessages,
+                description: strings.chatGuestDescription,
                 onLoginPressed: () => context.push(loginPathFrom(context)),
                 onRegisterPressed: () => context.push(AppRoutes.register),
               ),
@@ -212,7 +223,9 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          const ShellScrollHeader(child: PageHeader(text: 'MENSAGENS')),
+          ShellScrollHeader(
+            child: PageHeader(text: strings.chatTitle.toUpperCase()),
+          ),
           Expanded(
             child: Column(
               children: [
@@ -237,12 +250,12 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                     );
                   }
                   if (listState.error != null && listState.items.isEmpty) {
-                    return buildChatErrorState(ref);
+                    return buildChatErrorState(context, ref);
                   }
                   final chats = listState.items;
                   final loadingMore = listState.isLoadingMore;
                   if (chats.isEmpty) {
-                    return buildChatEmptyState(query.isNotEmpty);
+                    return buildChatEmptyState(context, query.isNotEmpty);
                   }
                   return Expanded(
                     child: AppRefreshIndicator(

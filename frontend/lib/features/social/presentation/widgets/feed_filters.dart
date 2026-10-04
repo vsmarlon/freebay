@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedContentFilterBar extends StatelessWidget {
   final FeedContentFilter currentFilter;
@@ -14,23 +15,24 @@ class FeedContentFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: 8,
       runSpacing: 8,
       children: [
         BrutalistFilterChip(
-          label: 'Tudo',
+          label: strings.feedFilterAll,
           selected: currentFilter == FeedContentFilter.all,
           onTap: () => onChanged(FeedContentFilter.all),
         ),
         BrutalistFilterChip(
-          label: 'Social',
+          label: strings.feedFilterSocial,
           selected: currentFilter == FeedContentFilter.socialOnly,
           onTap: () => onChanged(FeedContentFilter.socialOnly),
         ),
         BrutalistFilterChip(
-          label: 'Vendas',
+          label: strings.feedFilterSales,
           selected: currentFilter == FeedContentFilter.sellingOnly,
           onTap: () => onChanged(FeedContentFilter.sellingOnly),
         ),
@@ -51,6 +53,7 @@ class FeedTypeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return PopupMenuButton<FeedType>(
       initialValue: currentType,
       onSelected: onChanged,
@@ -74,7 +77,7 @@ class FeedTypeDropdown extends StatelessWidget {
               ),
               Spacing.hSm,
               Text(
-                'EXPLORE',
+                strings.feedExplore.toUpperCase(),
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
@@ -101,7 +104,7 @@ class FeedTypeDropdown extends StatelessWidget {
               ),
               Spacing.hSm,
               Text(
-                'FOLLOWING',
+                strings.feedFilterFollowing.toUpperCase(),
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
@@ -131,7 +134,9 @@ class FeedTypeDropdown extends StatelessWidget {
             ),
             Spacing.hXs,
             Text(
-              currentType == FeedType.explore ? 'EXPLORE' : 'FOLLOWING',
+              currentType == FeedType.explore
+                  ? strings.feedExplore.toUpperCase()
+                  : strings.feedFilterFollowing.toUpperCase(),
               style: TextStyle(
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 10,

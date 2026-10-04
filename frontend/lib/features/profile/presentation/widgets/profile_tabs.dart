@@ -6,10 +6,10 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
-import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
+import 'package:freebay/features/social/social.dart' show FeedPostItem;
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const _timelineKinds = <String>['posts', 'reposts', 'products'];
-const _timelineLabels = <String>['PUBLICAÇÕES', 'REPOSTS', 'ANÚNCIOS'];
 
 class ProfileTabs extends ConsumerWidget {
   const ProfileTabs({
@@ -23,6 +23,15 @@ class ProfileTabs extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
+    final viewerId = ref.watch(
+      authControllerProvider.select((auth) => auth.asData?.value?.id),
+    );
+    final labels = [
+      strings.profilePosts,
+      strings.profileRepostsTab,
+      strings.profileListingsTab,
+    ];
     return DefaultTabController(
       length: _timelineKinds.length,
       child: NestedScrollView(
@@ -33,12 +42,12 @@ class ProfileTabs extends ConsumerWidget {
             delegate: _ProfileTabHeader(
               TabBar(
                 tabs: [
-                  for (final label in _timelineLabels)
+                  for (final label in labels)
                     Tab(
                       child: Semantics(
                         label: label,
                         button: true,
-                        child: Text(label),
+                        child: Text(label.toUpperCase()),
                       ),
                     ),
                 ],
@@ -57,11 +66,12 @@ class ProfileTabs extends ConsumerWidget {
           children: [
             for (var index = 0; index < _timelineKinds.length; index++)
               _TimelineTab(
-                key: ValueKey('${user.id}:${_timelineKinds[index]}'),
+                key: ValueKey(
+                  '${user.id}:${_timelineKinds[index]}:${viewerId ?? 'anonymous'}',
+                ),
                 user: user,
                 kind: _timelineKinds[index],
-                ownProfile:
-                    ref.watch(authControllerProvider).value?.id == user.id,
+                viewerId: viewerId,
               ),
           ],
         ),
@@ -98,12 +108,12 @@ class _TimelineTab extends ConsumerStatefulWidget {
     super.key,
     required this.user,
     required this.kind,
-    required this.ownProfile,
+    required this.viewerId,
   });
 
   final UserEntity user;
   final String kind;
-  final bool ownProfile;
+  final String? viewerId;
 
   @override
   ConsumerState<_TimelineTab> createState() => _TimelineTabState();
@@ -111,55 +121,124 @@ class _TimelineTab extends ConsumerStatefulWidget {
 
 class _TimelineTabState extends ConsumerState<_TimelineTab>
     with AutomaticKeepAliveClientMixin {
+  late final ScrollController _inactiveScrollController;
+  TabController? _tabController;
+  bool _isActive = false;
+
   @override
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    _inactiveScrollController = ScrollController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = DefaultTabController.maybeOf(context);
+    if (_tabController == controller) return;
+    _tabController?.removeListener(_handleTabChange);
+    _tabController = controller;
+    _tabController?.addListener(_handleTabChange);
+    _isActive = _tabController?.index == _timelineKinds.indexOf(widget.kind);
+  }
+
+  @override
+  void didUpdateWidget(covariant _TimelineTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _isActive = _tabController?.index == _timelineKinds.indexOf(widget.kind);
+  }
+
+  void _handleTabChange() {
+    final isActive =
+        _tabController?.index == _timelineKinds.indexOf(widget.kind);
+    if (_isActive == isActive) return;
+    setState(() => _isActive = isActive);
+  }
+
+  @override
+  void dispose() {
+    _tabController?.removeListener(_handleTabChange);
+    _inactiveScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
-    final provider = profileTimelineProvider(widget.user.id, kind: widget.kind);
+    final provider = profileTimelineProvider(
+      widget.user.id,
+      kind: widget.kind,
+      viewerId: widget.viewerId,
+    );
     final timeline = ref.watch(provider);
+    final strings = l10n(context);
 
     return InfiniteScrollListener(
       threshold: 500,
-      onLoadMore: () => ref.read(provider.notifier).loadMore(),
+      onLoadMore: () {
+        if (timeline.error == null) ref.read(provider.notifier).loadMore();
+      },
       child: CustomScrollView(
         key: PageStorageKey('${widget.user.id}:${widget.kind}'),
+        controller: _isActive ? null : _inactiveScrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           if (timeline.entries.isEmpty && timeline.isLoading)
             const SliverPadding(
               padding: EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(child: ShimmerBlock(height: 160)),
+              sliver: SliverToBoxAdapter(
+                child: ShimmerScope(child: ShimmerBlock(height: 160)),
+              ),
             )
-          else if (timeline.entries.isEmpty &&
-              !timeline.hasMore &&
-              timeline.error == null)
+          else if (timeline.entries.isEmpty && timeline.error != null)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyState.error(
+                message: strings.profileLoadFailed,
+                onRetry: () => ref.read(provider.notifier).loadMore(),
+              ),
+            )
+          else if (timeline.entries.isEmpty && !timeline.hasMore)
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
                 icon: Icons.article_outlined,
-                title: widget.kind == 'products'
-                    ? 'NENHUM ANÚNCIO'
-                    : widget.kind == 'reposts'
-                    ? 'NENHUM REPOST'
-                    : 'NENHUMA PUBLICAÇÃO',
-                subtitle: widget.kind == 'products'
-                    ? 'Os anúncios deste perfil aparecerão aqui.'
-                    : widget.kind == 'reposts'
-                    ? 'Os reposts deste perfil aparecerão aqui.'
-                    : 'As publicações deste perfil aparecerão aqui.',
-                action: widget.ownProfile && widget.kind == 'posts'
+                title: switch (widget.kind) {
+                  'reposts' => strings.profileNoReposts,
+                  'products' => strings.productNoListings,
+                  _ => strings.profileNoPosts,
+                },
+                subtitle: switch (widget.kind) {
+                  'reposts' => strings.profileNoRepostsBody,
+                  'products' => strings.productListingsEmpty,
+                  _ => strings.profileNoPostsBody,
+                },
+                action:
+                    widget.viewerId == widget.user.id && widget.kind == 'posts'
                     ? AppButton(
-                        label: 'Criar post',
+                        label: strings.feedCreatePost,
                         onPressed: () => context.push(AppRoutes.createPost),
+                      )
+                    : widget.viewerId == widget.user.id &&
+                          widget.kind == 'products'
+                    ? AppButton(
+                        label: strings.productCreateListing,
+                        onPressed: () => context.push(AppRoutes.createProduct),
                       )
                     : null,
               ),
             )
           else if (timeline.entries.isNotEmpty)
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.md,
+                Spacing.sm,
+                Spacing.md,
+                Spacing.md,
+              ),
               sliver: SliverList.builder(
                 itemCount: timeline.entries.length,
                 itemBuilder: (context, index) {
@@ -175,11 +254,9 @@ class _TimelineTabState extends ConsumerState<_TimelineTab>
             SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
-                child: Text(
-                  'Carregando mais itens…',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: context.textSecondary,
-                  ),
+                child: AppButton(
+                  label: strings.profileLoadMore,
+                  onPressed: () => ref.read(provider.notifier).loadMore(),
                 ),
               ),
             ),
@@ -187,9 +264,15 @@ class _TimelineTabState extends ConsumerState<_TimelineTab>
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: AppButton(
-                  label: 'Tentar novamente',
-                  onPressed: () => ref.read(provider.notifier).loadMore(),
+                child: Column(
+                  children: [
+                    Text(strings.profileLoadFailed),
+                    Spacing.vSm,
+                    AppButton(
+                      label: strings.commonRetry,
+                      onPressed: () => ref.read(provider.notifier).loadMore(),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -197,7 +280,7 @@ class _TimelineTabState extends ConsumerState<_TimelineTab>
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(16),
-                child: ShimmerBlock(height: 96),
+                child: ShimmerScope(child: ShimmerBlock(height: 96)),
               ),
             ),
         ],

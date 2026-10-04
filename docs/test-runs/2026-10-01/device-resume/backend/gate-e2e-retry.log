@@ -1,0 +1,38 @@
+
+> nest-backend@1.0.0 test:e2e
+> npm run prisma:test:sync && dotenv -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.e2e.js --runInBand
+
+
+> nest-backend@1.0.0 prisma:test:sync
+> cross-env NODE_ENV=test dotenv -e .env.test -- node scripts/safe-prisma-db-push.js
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "freebay_test_db", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+┌─────────────────────────────────────────────────────────┐
+│  Update available 7.4.2 -> 8.0.0-rc.19                  │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+(node:30228) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use asycn/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+PASS test/e2e/marketplace.journey.e2e-spec.ts (28.548 s)
+(node:30228) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use asycn/await or an external async flow control mechanism instead.
+PASS test/e2e/story-audience.e2e-spec.ts (9.392 s)
+PASS test/e2e/chat-socket-privacy.e2e-spec.ts
+PASS test/e2e/story-highlights.e2e-spec.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       31 passed, 31 total
+Snapshots:   0 total
+Time:        46.298 s
+Ran all test suites.

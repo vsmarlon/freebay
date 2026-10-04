@@ -132,9 +132,16 @@ class _AppButtonState extends State<AppButton> {
                               ),
                               Spacing.hSm,
                             ],
-                            Text(
-                              widget.label,
-                              style: textStyle.copyWith(color: foregroundColor),
+                            Flexible(
+                              child: Text(
+                                widget.label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                semanticsLabel: widget.label,
+                                style: textStyle.copyWith(
+                                  color: foregroundColor,
+                                ),
+                              ),
                             ),
                           ],
                         ),

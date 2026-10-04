@@ -34,10 +34,12 @@ mixin SocialRepositorySaves {
     String userId, {
     int limit = 20,
     String? cursor,
+    CancelToken? cancelToken,
   }) => requestEither(
     () => client.get(
       '/social/posts/user/$userId',
       queryParameters: {'limit': limit, 'cursor': ?cursor},
+      cancelToken: cancelToken,
     ),
     decoder: (response) => Right(
       parseCursorPage<PostEntity>(
@@ -69,10 +71,12 @@ mixin SocialRepositorySaves {
     int limit = 15,
     String? cursor,
     String? kind,
+    CancelToken? cancelToken,
   }) => requestEither(
     () => client.get(
       '/social/posts/user/$userId/timeline',
       queryParameters: {'limit': limit, 'cursor': ?cursor, 'kind': ?kind},
+      cancelToken: cancelToken,
     ),
     decoder: (response) => Right(
       parseCursorPage<UserPostEntry>(

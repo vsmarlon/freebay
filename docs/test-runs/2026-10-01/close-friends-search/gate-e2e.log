@@ -1,0 +1,17 @@
+
+> nest-backend@1.0.0 test:e2e
+> npm run prisma:test:sync && dotenv -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.e2e.js --runInBand
+
+
+> nest-backend@1.0.0 prisma:test:sync
+> cross-env NODE_ENV=test dotenv -e .env.test -- node scripts/safe-prisma-db-push.js
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "freebay_test_db", schema "public" at "localhost:5432"
+
+Error: Schema engine error:
+FATAL: o sistema de banco de dados ainda n�o est� aceitando conex�es
+DETAIL: O estado de recupera��o consistente ainda n�o foi alcan�ado.
+

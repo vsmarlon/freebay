@@ -6,6 +6,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const productSearchDebounce = Duration(milliseconds: 300);
 
@@ -55,6 +56,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = l10n(context);
     final searchQuery = ref.watch(searchQueryProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -65,7 +67,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
     );
     final feedState = ref.watch(productsFeedProvider(params));
 
-    final headerHeight = MediaQuery.of(context).padding.top + 66;
+    final headerHeight = MediaQuery.paddingOf(context).top + 66;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -83,8 +85,8 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                         padding: const EdgeInsets.all(16),
                         child: AppTextField(
                           controller: _searchController,
-                          label: '',
-                          hint: 'Buscar produtos...',
+                          label: strings.productSearchHint,
+                          hint: strings.productSearchHint,
                           prefixIcon: Icons.search,
                           onFieldSubmitted: (_) => _onSearch(),
                           onChanged: _onSearchDebounced,
@@ -94,10 +96,10 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                         categoriesAsync.when(
                           data: (categories) {
                             if (categories.isEmpty) {
-                              return const EmptyState(
+                              return EmptyState(
                                 icon: Icons.category_outlined,
-                                title: 'SEM CATEGORIAS',
-                                subtitle: 'Nenhuma categoria disponível',
+                                title: strings.productNoCategories,
+                                subtitle: strings.productNoCategoriesBody,
                               );
                             }
                             return CategoryFilterPanel(
@@ -114,15 +116,18 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                           },
                           loading: () => const SizedBox(
                             height: 52,
-                            child: ShimmerBlock(height: 36),
+                            child: ShimmerScope(
+                              child: ShimmerBlock(height: 36),
+                            ),
                           ),
                           error: (err, _) => Padding(
                             padding: const EdgeInsets.all(16),
-                            child: Text(userMessageOf(err)),
+                            child: Text(localizedFailureMessage(context, err)),
                           ),
                         ),
                       Expanded(
                         child: _buildProducts(
+                          context,
                           params,
                           feedState,
                           searchQuery,
@@ -143,7 +148,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                 height: headerHeight,
                 edge: ScrollBarEdge.top,
                 child: PageHeader(
-                  text: 'EXPLORAR',
+                  text: strings.navExplore.toUpperCase(),
                   actions: [
                     IconButton(
                       icon: Icon(
@@ -168,39 +173,31 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
   }
 
   Widget _buildProducts(
+    BuildContext context,
     GetProductsParams params,
     ProductsFeedState feedState,
     String searchQuery,
     String? selectedCategory,
   ) {
+    final strings = l10n(context);
     if (feedState.isLoading) {
       return const ProductResultsGrid.skeleton();
     }
 
     if (feedState.error != null && feedState.products.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        AppDialog.showError(
-          context: context,
-          title: 'Erro ao carregar',
-          subtitle: feedState.error!,
-          onOk: () => ref.read(productsFeedProvider(params).notifier).load(),
-        );
-      });
-      return const EmptyState(
-        icon: Icons.search_off,
-        title: 'ERRO',
-        subtitle: 'Tente novamente mais tarde',
+      return EmptyState.error(
+        message: strings.errorUnknown,
+        onRetry: () => ref.read(productsFeedProvider(params).notifier).load(),
       );
     }
 
     if (feedState.products.isEmpty) {
       return EmptyState(
         icon: Icons.search_off,
-        title: 'NENHUM PRODUTO',
+        title: strings.productNoProducts,
         subtitle: searchQuery.isNotEmpty || selectedCategory != null
-            ? 'Tente limpar os filtros'
-            : 'Nenhum produto encontrado.',
+            ? strings.productClearFiltersHint
+            : strings.productNoProductsBody,
       );
     }
 

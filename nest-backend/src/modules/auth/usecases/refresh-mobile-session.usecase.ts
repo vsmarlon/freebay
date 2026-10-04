@@ -20,6 +20,6 @@ export class RefreshMobileSessionUseCase {
     if (user.value.suspendedAt) return left(new AccountSuspendedError(user.value.suspensionReason));
     if (!await this.tokens.claimRefresh(payload.jti, payload.exp)) return left(new InvalidTokenError('Sessão já renovada'));
     await this.tokens.revoke(payload.jti, payload.exp);
-    return right(this.tokens.generate(user.value.id, user.value.role));
+    return right(this.tokens.generate(user.value.id, user.value.role, payload.authenticatedAtMs ?? null));
   }
 }

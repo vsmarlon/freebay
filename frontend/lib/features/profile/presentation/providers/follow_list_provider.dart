@@ -1,20 +1,25 @@
+import 'package:dio/dio.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 import 'package:freebay/features/profile/data/entities/follower_entity.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 
 enum FollowListKind { followers, following }
 
 class FollowListNotifier extends StateNotifier<AsyncValue<FollowListResponse>> {
   FollowListNotifier(this._ref, this.userId, this.kind)
-    : super(const AsyncValue.loading()) {
+    : _cancelToken = CancelToken(),
+      super(const AsyncValue.loading()) {
+    _ref.onDispose(_cancelToken.cancel);
     loadMore();
   }
 
   final Ref _ref;
   final String userId;
   final FollowListKind kind;
+  final CancelToken _cancelToken;
   bool _loading = false;
 
   Future<void> loadMore({bool refresh = false}) async {
@@ -29,8 +34,17 @@ class FollowListNotifier extends StateNotifier<AsyncValue<FollowListResponse>> {
       final repository = _ref.read(profileRepositoryProvider);
       final offset = refresh ? 0 : current?.users.length ?? 0;
       final result = kind == FollowListKind.followers
-          ? await repository.getFollowers(userId, offset: offset)
-          : await repository.getFollowing(userId, offset: offset);
+          ? await repository.getFollowers(
+              userId,
+              offset: offset,
+              cancelToken: _cancelToken,
+            )
+          : await repository.getFollowing(
+              userId,
+              offset: offset,
+              cancelToken: _cancelToken,
+            );
+      if (!_ref.mounted) return;
       result.fold(
         (failure) => state = AsyncValue.error(failure, StackTrace.current),
         (page) {
@@ -58,40 +72,43 @@ class FollowListNotifier extends StateNotifier<AsyncValue<FollowListResponse>> {
   }
 }
 
-final followersListProvider =
-    StateNotifierProvider.family<
-      FollowListNotifier,
-      AsyncValue<FollowListResponse>,
-      String
-    >((ref, userId) {
+final followersListProvider = StateNotifierProvider.autoDispose
+    .family<FollowListNotifier, AsyncValue<FollowListResponse>, String>((
+      ref,
+      userId,
+    ) {
+      ref.watch(authControllerProvider);
       return FollowListNotifier(ref, userId, FollowListKind.followers);
     });
 
-final followingListProvider =
-    StateNotifierProvider.family<
-      FollowListNotifier,
-      AsyncValue<FollowListResponse>,
-      String
-    >((ref, userId) {
+final followingListProvider = StateNotifierProvider.autoDispose
+    .family<FollowListNotifier, AsyncValue<FollowListResponse>, String>((
+      ref,
+      userId,
+    ) {
+      ref.watch(authControllerProvider);
       return FollowListNotifier(ref, userId, FollowListKind.following);
     });
 
-final followingProvider = FutureProvider.family<List<FollowerEntity>, String>((
-  ref,
-  userId,
-) async {
-  final result = await ref.read(profileRepositoryProvider).getFollowing(userId);
-  return result.fold(
-    (failure) => throw failure,
-    (page) => page.users
-        .map(
-          (user) => FollowerEntity(
-            id: user.id,
-            displayName: user.displayName,
-            avatarUrl: user.avatarUrl,
-            isVerified: user.isVerified,
-          ),
-        )
-        .toList(),
-  );
-});
+final followingProvider = FutureProvider.autoDispose
+    .family<List<FollowerEntity>, String>((ref, userId) async {
+      ref.watch(authControllerProvider);
+      final cancelToken = CancelToken();
+      ref.onDispose(cancelToken.cancel);
+      final result = await ref
+          .read(profileRepositoryProvider)
+          .getFollowing(userId, cancelToken: cancelToken);
+      return result.fold(
+        (failure) => throw failure,
+        (page) => page.users
+            .map(
+              (user) => FollowerEntity(
+                id: user.id,
+                displayName: user.displayName,
+                avatarUrl: user.avatarUrl,
+                isVerified: user.isVerified,
+              ),
+            )
+            .toList(),
+      );
+    });

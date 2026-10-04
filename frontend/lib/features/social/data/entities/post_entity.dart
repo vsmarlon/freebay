@@ -63,6 +63,7 @@ abstract class PostEntity with _$PostEntity {
     required String userId,
     String? content,
     String? imageUrl,
+    String? imageBlurHash,
     @Default(PostType.regular) PostType type,
     @Default(PostAudience.everyone) PostAudience audience,
     @Default(0) int likesCount,

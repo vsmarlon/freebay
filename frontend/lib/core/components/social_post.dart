@@ -12,8 +12,10 @@ class SocialPost extends StatefulWidget {
   final String userId;
   final String userName;
   final String? userAvatarUrl;
+  final String? userAvatarBlurHash;
   final String? content;
   final String? imageUrl;
+  final String? imageBlurHash;
   final int likesCount;
   final int commentsCount;
   final int sharesCount;
@@ -30,17 +32,21 @@ class SocialPost extends StatefulWidget {
   final double? price;
   final bool isSelling;
   final bool isCloseFriends;
+  final String? closeFriendsLabel;
   final String? userRole;
   final bool isVerified;
   final DateTime? createdAt;
+  final String? heroTag;
 
   const SocialPost({
     super.key,
     required this.userId,
     required this.userName,
     this.userAvatarUrl,
+    this.userAvatarBlurHash,
     this.content,
     this.imageUrl,
+    this.imageBlurHash,
     this.likesCount = 0,
     this.commentsCount = 0,
     this.sharesCount = 0,
@@ -57,9 +63,11 @@ class SocialPost extends StatefulWidget {
     this.price,
     this.isSelling = false,
     this.isCloseFriends = false,
+    this.closeFriendsLabel,
     this.userRole,
     this.isVerified = false,
     this.createdAt,
+    this.heroTag,
   });
 
   @override
@@ -117,6 +125,18 @@ class _SocialPostState extends State<SocialPost> {
   @override
   Widget build(BuildContext context) {
     final hasImage = widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
+    final media = SocialPostMedia(
+      imageUrl: widget.imageUrl,
+      blurHash: widget.isCloseFriends ? null : widget.imageBlurHash,
+      showHeartBurst: _showHeartBurst,
+      isPressed: _isImagePressed,
+      onTap: () => showAppImageViewer(context, widget.imageUrl!),
+      onDoubleTap: _triggerDoubleTapLike,
+      onPressedChanged: (pressed) => setState(() => _isImagePressed = pressed),
+      priceTag: widget.price != null && widget.price! > 0
+          ? PostPriceTag(price: widget.price!)
+          : null,
+    );
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => setState(() => _isCardPressed = true),
@@ -139,37 +159,35 @@ class _SocialPostState extends State<SocialPost> {
             SocialPostHeader(
               userName: widget.userName,
               userAvatarUrl: widget.userAvatarUrl,
+              userAvatarBlurHash: widget.userAvatarBlurHash,
               isVerified: widget.isVerified,
               isSelling: widget.isSelling,
               createdAt: widget.createdAt,
               onUserTap: widget.onUserTap,
             ),
             if (widget.isCloseFriends)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 child: Row(
                   children: [
-                    Icon(Icons.group, size: 16, color: AppColors.success),
-                    SizedBox(width: 6),
-                    Text('AMIGOS PRÓXIMOS', style: AppTypography.brutalistTag),
+                    const Icon(Icons.group, size: 16, color: AppColors.success),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.closeFriendsLabel ?? 'AMIGOS PRÓXIMOS',
+                      style: AppTypography.brutalistTag,
+                    ),
                   ],
                 ),
               ),
             if (hasImage || widget.isSelling)
               Column(
                 children: [
-                  SocialPostMedia(
-                    imageUrl: widget.imageUrl,
-                    showHeartBurst: _showHeartBurst,
-                    isPressed: _isImagePressed,
-                    onTap: () => showAppImageViewer(context, widget.imageUrl!),
-                    onDoubleTap: _triggerDoubleTapLike,
-                    onPressedChanged: (pressed) =>
-                        setState(() => _isImagePressed = pressed),
-                    priceTag: widget.price != null && widget.price! > 0
-                        ? PostPriceTag(price: widget.price!)
-                        : null,
-                  ),
+                  widget.heroTag == null
+                      ? media
+                      : Hero(tag: widget.heroTag!, child: media),
                   SocialPostContent(
                     content: widget.content,
                     compact: false,

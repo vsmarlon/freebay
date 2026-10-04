@@ -9,6 +9,7 @@ import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 final likedPostsProvider = FutureProvider.autoDispose<List<PostEntity>>((
   ref,
@@ -24,6 +25,7 @@ class LikedPostsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     final postsAsync = ref.watch(likedPostsProvider);
 
@@ -32,9 +34,10 @@ class LikedPostsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: 'POSTS CURTIDOS',
+            text: strings.feedLikedPostsTitle,
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
             ),
           ),
@@ -46,10 +49,10 @@ class LikedPostsPage extends ConsumerWidget {
                     BrutalistBreadcrumb(items: [...context.breadcrumbs]),
                     Expanded(
                       child: posts.isEmpty
-                          ? const EmptyState(
+                          ? EmptyState(
                               icon: Icons.favorite_border,
-                              title: 'NENHUM POST CURTIDO',
-                              subtitle: 'Curtidas em posts aparecerão aqui.',
+                              title: strings.feedNoLikedPosts,
+                              subtitle: strings.feedLikedPostsEmpty,
                             )
                           : RefreshIndicator(
                               onRefresh: () async {
@@ -98,7 +101,7 @@ class LikedPostsPage extends ConsumerWidget {
                     ),
                     Spacing.vMd,
                     Text(
-                      'Erro ao carregar posts curtidos',
+                      strings.commonError,
                       style: TextStyle(color: context.textPrimary),
                     ),
                   ],

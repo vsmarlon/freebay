@@ -5,13 +5,15 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/chat/presentation/widgets/image_editor_models.dart';
+import 'package:freebay/features/media_editor/media_editor.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/services/error_reporter.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -36,37 +38,44 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await _imagePicker.pickImage(
-      source: source,
-      maxWidth: 1080,
-      maxHeight: 1080,
-      imageQuality: 80,
-    );
-    if (pickedFile != null && mounted) {
-      final bytes = await pickedFile.readAsBytes();
-      if (!mounted) return;
-      await context.push(
-        AppRoutes.imageEditor,
-        extra: {
-          'imageBytes': bytes,
-          'purpose': ImageEditorPurpose.post,
-          'onComplete': (ImageEditorResult result) async {
-            final editedFile = File(
-              '${Directory.systemTemp.path}${Platform.pathSeparator}freebay_post_${DateTime.now().microsecondsSinceEpoch}.png',
-            );
-            await editedFile.writeAsBytes(result.imageBytes, flush: true);
-            if (mounted) {
-              setState(() => _selectedImagePath = editedFile.path);
-              final caption = result.caption?.trim();
-              if (caption?.isNotEmpty == true &&
-                  _contentController.text.trim().isEmpty) {
-                _contentController.text = caption!;
-              }
-            }
-            return true;
-          },
-        },
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        imageQuality: 80,
       );
+      if (pickedFile != null && mounted) {
+        final bytes = await pickedFile.readAsBytes();
+        if (!mounted) return;
+        await context.push(
+          AppRoutes.imageEditor,
+          extra: {
+            'imageBytes': bytes,
+            'purpose': ImageEditorPurpose.post,
+            'onComplete': (ImageEditorResult result) async {
+              final editedFile = File(
+                '${Directory.systemTemp.path}${Platform.pathSeparator}freebay_post_${DateTime.now().microsecondsSinceEpoch}.png',
+              );
+              await editedFile.writeAsBytes(result.imageBytes, flush: true);
+              if (mounted) {
+                setState(() => _selectedImagePath = editedFile.path);
+                final caption = result.caption?.trim();
+                if (caption?.isNotEmpty == true &&
+                    _contentController.text.trim().isEmpty) {
+                  _contentController.text = caption!;
+                }
+              }
+              return true;
+            },
+          },
+        );
+      }
+    } catch (error, stackTrace) {
+      ErrorReporter.report('post-media-pick', error, stackTrace);
+      if (mounted) {
+        AppSnackbar.error(context, l10n(context).feedMediaPickFailed);
+      }
     }
   }
 
@@ -84,7 +93,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     }
 
     if (content == null && _selectedImagePath == null) {
-      AppSnackbar.warning(context, 'Adicione um texto ou imagem.');
+      AppSnackbar.warning(context, l10n(context).feedPostContentRequired);
       return;
     }
 
@@ -106,7 +115,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       final currentUser = ref.read(authControllerProvider).value;
       if (currentUser != null) {
         ref.invalidate(userPostsProvider(currentUser.id));
-        ref.invalidate(profileTimelineProvider(currentUser.id));
+        ref.invalidate(
+          profileTimelineProvider(
+            currentUser.id,
+            kind: 'posts',
+            viewerId: currentUser.id,
+          ),
+        );
       }
       context.pop();
     });
@@ -114,6 +129,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final user = ref.watch(authControllerProvider).value;
 
     return Scaffold(
@@ -122,7 +138,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'NOVA PUBLICAÇÃO',
+              text: strings.feedCreatePublication.toUpperCase(),
               leading: GestureDetector(
                 onTap: () => context.pop(),
                 child: Container(
@@ -142,7 +158,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: AppButton(
-                    label: 'PUBLICAR',
+                    label: strings.commonPublish,
                     size: AppButtonSize.compact,
                     onPressed: _isLoading ? null : _createPost,
                     isLoading: _isLoading,
@@ -161,7 +177,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         UserAvatar(imageUrl: user?.avatarUrl),
                         Spacing.hSm,
                         Text(
-                          user?.displayNameOrDefault ?? 'Meu perfil',
+                          user?.displayNameOrDefault ?? strings.commonYou,
                           style: TextStyle(
                             fontFamily: AppTypography.headlineFontFamily,
                             fontWeight: FontWeight.w700,
@@ -175,7 +191,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       children: [
                         Expanded(
                           child: AppButton(
-                            label: 'PÚBLICO',
+                            label: strings.feedAudiencePublic,
                             variant: _audience == PostAudience.everyone
                                 ? AppButtonVariant.primary
                                 : AppButtonVariant.secondary,
@@ -187,7 +203,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         Spacing.hSm,
                         Expanded(
                           child: AppButton(
-                            label: 'AMIGOS PRÓXIMOS',
+                            label: strings.feedAudienceCloseFriends,
                             variant: _audience == PostAudience.closeFriends
                                 ? AppButtonVariant.primary
                                 : AppButtonVariant.secondary,
@@ -201,13 +217,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                     if (_audience == PostAudience.closeFriends) ...[
                       Spacing.vSm,
                       Text(
-                        'Só seguidores da sua lista poderão ver este post.',
+                        strings.feedCloseFriendsPostDescription,
                         style: AppTypography.bodySmall.copyWith(
                           color: context.textSecondary,
                         ),
                       ),
                       AppButton(
-                        label: 'EDITAR LISTA',
+                        label: strings.feedEditCloseFriends,
                         variant: AppButtonVariant.ghost,
                         onPressed: () =>
                             context.push(AppRoutes.profileCloseFriends),
@@ -223,8 +239,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         minLines: 5,
                         style: TextStyle(color: context.textPrimary),
                         decoration: InputDecoration(
-                          hintText:
-                              'Compartilhe uma atualização, ideia ou bastidor…',
+                          hintText: strings.feedPostContentHint,
                           hintStyle: TextStyle(color: context.textSecondary),
                           border: InputBorder.none,
                         ),
@@ -254,7 +269,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                                   fontSize: 14,
                                 ),
                                 decoration: InputDecoration(
-                                  hintText: 'Mencionar usuário (opcional)',
+                                  hintText: strings.feedMentionUser,
                                   hintStyle: TextStyle(
                                     color: context.textSecondary,
                                     fontSize: 14,
@@ -287,10 +302,14 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 color: Colors.black.withAlpha(180),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 18,
+                                child: Semantics(
+                                  button: true,
+                                  label: strings.feedRemoveImage,
+                                  child: const Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ),
                               ),
                             ),
@@ -307,7 +326,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                             Icons.photo_library_outlined,
                             size: 18,
                           ),
-                          label: const Text('Galeria'),
+                          label: Text(strings.commonGallery),
                           style: OutlinedButton.styleFrom(
                             shape: const RoundedRectangleBorder(),
                           ),
@@ -316,7 +335,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                         OutlinedButton.icon(
                           onPressed: () => _pickImage(ImageSource.camera),
                           icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                          label: const Text('Câmera'),
+                          label: Text(strings.commonCamera),
                           style: OutlinedButton.styleFrom(
                             shape: const RoundedRectangleBorder(),
                           ),

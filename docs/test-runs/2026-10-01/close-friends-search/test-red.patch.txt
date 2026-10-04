@@ -1,0 +1,141 @@
+diff --git a/nest-backend/test/e2e/story-audience.e2e-spec.ts b/nest-backend/test/e2e/story-audience.e2e-spec.ts
+index 2c787e9..5ad2e0d 100644
+--- a/nest-backend/test/e2e/story-audience.e2e-spec.ts
++++ b/nest-backend/test/e2e/story-audience.e2e-spec.ts
+@@ -1,4 +1,6 @@
+ import { INestApplication } from '@nestjs/common';
++import { existsSync, readFileSync, rmSync } from 'node:fs';
++import { join } from 'node:path';
+ import { Test } from '@nestjs/testing';
+ import { PrismaClient } from '@prisma/client';
+ import { PrismaPg } from '@prisma/adapter-pg';
+@@ -23,6 +25,8 @@ describe('Story audiences and safety (HTTP + real database)', () => {
+   let testCaseNumber = 0;
+   let actors: { owner: { id: string; token: string }; friend: { id: string; token: string }; follower: { id: string; token: string }; stranger: { id: string; token: string } };
+   const suffix = Date.now().toString(36);
++  const createdPublicFiles: string[] = [];
++  const createdPrivateFiles: string[] = [];
+ 
+   async function call(method: string, path: string, token?: string, body?: object) {
+     const response = await fetch(`${baseUrl}${path}`, {
+@@ -99,6 +103,8 @@ describe('Story audiences and safety (HTTP + real database)', () => {
+     await cleanDatabase(prisma);
+     await prisma.$disconnect();
+     await pool.end();
++    for (const file of createdPublicFiles) rmSync(file, { force: true });
++    for (const file of createdPrivateFiles) rmSync(file, { force: true });
+   });
+ 
+   it('limits close-friends stories, highlights, views and bytes to current listed followers', async () => {
+@@ -214,12 +220,14 @@ describe('Story audiences and safety (HTTP + real database)', () => {
+     const post = created.data as { id: string; imageUrl: string; audience: string };
+     expect(post.audience).toBe('CLOSE_FRIENDS');
+     expect(post.imageUrl).toMatch(/\/media\/privatepost\//);
++    expect(post).not.toHaveProperty('imageBlurHash');
+     const publicCount = await prisma.post.count({ where: { userId: author.id, audience: 'EVERYONE', deletedAt: null } });
+     expect((await call('GET', `/users/${author.id}`, outsider.token)).json.data.postsCount).toBe(publicCount);
+     expect((await call('GET', `/users/${author.id}`, friend.token)).json.data.postsCount).toBe(publicCount + 1);
+     const postPath = `/social/posts/${post.id}`;
+     const readList = async (path: string, token: string) => (await call('GET', path, token)).json.data;
+     expect((await call('GET', postPath, friend.token)).status).toBe(200);
++    expect((await call('GET', postPath, friend.token)).json.data).not.toHaveProperty('imageBlurHash');
+     expect((await call('GET', postPath, follower.token)).status).toBe(404);
+     expect((await call('GET', postPath, outsider.token)).status).toBe(404);
+     expect((await call('GET', postPath)).status).toBe(404);
+@@ -262,14 +270,29 @@ describe('Story audiences and safety (HTTP + real database)', () => {
+     ] } });
+     await prisma.follow.createMany({ data: [
+       { followerId: friend.id, followingId: owner.id },
+-      { followerId: owner.id, followingId: friend.id },
+       { followerId: owner.id, followingId: follower.id },
+     ], skipDuplicates: true });
+-    const candidates = await call('GET', '/users/me/close-friends/candidates', owner.token);
+-    expect((candidates.json.data.users as { id: string }[]).map(({ id }) => id)).toEqual(expect.arrayContaining([friend.id, follower.id]));
+-    for (const member of [friend, follower]) {
+-      expect((await call('POST', `/users/me/close-friends/${member.id}`, owner.token)).status).toBe(201);
++    for (const [user, displayName] of [
++      [friend, 'Ux2Candidate Alpha'],
++      [follower, 'Ux2Candidate Beta'],
++      [stranger, 'Ux2Candidate Outsider'],
++    ] as const) {
++      await prisma.user.update({ where: { id: user.id }, data: { displayName } });
+     }
++    const searchCandidates = async (query: string) => {
++      const response = await call('GET', `/users/me/close-friends/candidates?q=${query}`, owner.token);
++      expect(response.status).toBe(200);
++      return (response.json.data.users as { id: string }[]).map(({ id }) => id);
++    };
++    expect(await searchCandidates('ux2candidate')).toEqual([friend.id, follower.id]);
++    expect(await searchCandidates('ux2candidate&limit=1&offset=0')).toEqual([friend.id]);
++    expect(await searchCandidates('ux2candidate&limit=1&offset=1')).toEqual([follower.id]);
++    expect(await searchCandidates('ux2candidate&limit=1&offset=2')).toEqual([]);
++    expect((await call('POST', `/users/me/close-friends/${friend.id}`, owner.token)).status).toBe(201);
++    expect(await searchCandidates('ux2candidate&selected=true')).toEqual([friend.id]);
++    expect(await searchCandidates('outsider')).toEqual([]);
++    expect((await call('POST', `/users/me/close-friends/${follower.id}`, owner.token)).status).toBe(201);
++    await prisma.follow.create({ data: { followerId: owner.id, followingId: friend.id } });
+     expect((await call('POST', `/users/me/close-friends/${owner.id}`, owner.token)).status).toBe(400);
+     const created = await publish(owner.token, 'CLOSE_FRIENDS');
+     const story = created.json.data as { id: string };
+@@ -321,4 +344,61 @@ describe('Story audiences and safety (HTTP + real database)', () => {
+     expect(await hasStory(follower.token)).toBe(false);
+     expect((await call('POST', `/users/me/close-friends/${follower.id}`, owner.token)).status).toBe(400);
+   }, 120000);
++
++  it('persists a public multipart image BlurHash through feed and detail and rejects private URL reuse', async () => {
++    const { owner } = actors;
++    const form = new FormData();
++    form.append('type', 'REGULAR');
++    form.append('content', 'public image with a compact placeholder');
++    form.append(
++      'image',
++      new Blob([
++        readFileSync(join(process.cwd(), '..', 'frontend', 'assets', 'freebay-textonly.png')),
++      ], { type: 'image/png' }),
++      'post.png',
++    );
++    const createdResponse = await fetch(`${baseUrl}/social/posts`, {
++      method: 'POST',
++      headers: { Authorization: `Bearer ${owner.token}`, ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}) },
++      body: form,
++    });
++    const created = await createdResponse.json() as Body;
++    const post = created.data as { id: string; imageUrl: string; imageBlurHash?: unknown };
++    expect(createdResponse.status).toBe(201);
++    expect(typeof post.imageBlurHash).toBe('string');
++    if (typeof post.imageBlurHash !== 'string') return;
++    const publicFile = join(process.cwd(), post.imageUrl.replace('/uploads/', 'uploads/'));
++    expect(existsSync(publicFile)).toBe(true);
++    createdPublicFiles.push(publicFile);
++
++    const detail = await call('GET', `/social/posts/${post.id}`, owner.token);
++    expect(detail.json.data.imageBlurHash).toBe(post.imageBlurHash);
++    const feed = await call('GET', '/social/feed', owner.token);
++    const posts = feed.json.data.posts as { id: string; imageBlurHash?: string }[];
++    expect(posts.find((item) => item.id === post.id)?.imageBlurHash).toBe(post.imageBlurHash);
++
++    const privateUpload = new FormData();
++    privateUpload.append('file', new Blob([
++      readFileSync(join(process.cwd(), '..', 'frontend', 'assets', 'freebay-textonly.png')),
++    ], { type: 'image/png' }), 'private.png');
++    const uploadResponse = await fetch(`${baseUrl}/uploads?context=privatepost`, {
++      method: 'POST',
++      headers: { Authorization: `Bearer ${owner.token}`, ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}) },
++      body: privateUpload,
++    });
++    expect(uploadResponse.status).toBe(201);
++    const media = (await uploadResponse.json() as Body).data as { url: string };
++    expect(media.url).toMatch(/^\/media\/privatepost\//);
++    const privateFile = join(process.cwd(), media.url.replace('/media/', 'private-uploads/'));
++    expect(existsSync(privateFile)).toBe(true);
++    createdPrivateFiles.push(privateFile);
++    const copied = await call('POST', '/social/posts', actors.stranger.token, {
++      type: 'REGULAR',
++      audience: 'CLOSE_FRIENDS',
++      content: 'attempt to attach another user private media',
++      imageUrl: media.url,
++    });
++    expect(copied.status).toBe(400);
++    expect(existsSync(privateFile)).toBe(true);
++  }, 120000);
+ });

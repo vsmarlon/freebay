@@ -1,0 +1,33 @@
+Design ratchet additions:
+[
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/orders_tab.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_tabs.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_post_list.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  }
+]

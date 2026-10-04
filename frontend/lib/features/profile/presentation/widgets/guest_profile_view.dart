@@ -5,12 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/providers/theme_provider.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class GuestProfileView extends ConsumerWidget {
   const GuestProfileView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Column(
@@ -52,7 +54,7 @@ class GuestProfileView extends ConsumerWidget {
                     ),
                     Spacing.vLg,
                     Text(
-                      'Bem-vindo ao FreeBay!',
+                      strings.profileWelcome,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -61,9 +63,9 @@ class GuestProfileView extends ConsumerWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Faça login ou cadastre-se para\nter acesso completo ao app',
-                      style: TextStyle(
+                    Text(
+                      strings.profileGuestDescription,
+                      style: const TextStyle(
                         fontSize: 16,
                         color: AppColors.mediumGray,
                       ),
@@ -73,7 +75,7 @@ class GuestProfileView extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: AppButton(
-                        label: 'Entrar',
+                        label: strings.authLogin,
                         onPressed: () => context.push(loginPathFrom(context)),
                       ),
                     ),

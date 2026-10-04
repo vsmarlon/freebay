@@ -4,9 +4,33 @@ import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/domain/usecases/biometric_login_usecase.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/auth_session_coordinator.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/services/biometric_key_service.dart';
+import 'package:flutter/services.dart';
+
+class _KeyService extends BiometricKeyService {
+  _KeyService({this.cancelSign = false});
+  final bool cancelSign;
+  String? signedChallenge;
+
+  @override
+  Future<bool> hasKey() async => true;
+
+  @override
+  Future<String> sign(String challenge) async {
+    if (cancelSign) throw PlatformException(code: 'cancelled');
+    signedChallenge = challenge;
+    return 'signature';
+  }
+}
+
+const _challenge = (
+  challengeId: 'challenge-1',
+  challenge: 'exact server bytes',
+);
 
 class _BiometryService extends BiometryService {
   int availabilityChecks = 0;
@@ -46,9 +70,20 @@ class _FailingAuthRepository extends AuthRepository {
   final Failure failure;
 
   @override
-  Future<Either<Failure, UserEntity>> biometricLogin(String biometricToken) {
+  Future<Either<Failure, UserEntity>> biometricLogin(
+    String biometricToken, {
+    required String challengeId,
+    required String signature,
+    required String expectedUserId,
+    required int authenticationAttempt,
+  }) {
     return Future.value(Left(failure));
   }
+
+  @override
+  Future<Either<Failure, ({String challengeId, String challenge})>>
+  createBiometricLoginChallenge(String biometricToken) async =>
+      Right(_challenge);
 }
 
 class _SuccessfulAuthRepository extends AuthRepository {
@@ -57,21 +92,45 @@ class _SuccessfulAuthRepository extends AuthRepository {
   ]);
 
   final UserEntity user;
+  String? receivedChallengeId;
+  String? receivedSignature;
 
   @override
-  Future<Either<Failure, UserEntity>> biometricLogin(String biometricToken) {
+  Future<Either<Failure, UserEntity>> biometricLogin(
+    String biometricToken, {
+    required String challengeId,
+    required String signature,
+    required String expectedUserId,
+    required int authenticationAttempt,
+  }) {
+    receivedChallengeId = challengeId;
+    receivedSignature = signature;
     return Future.value(Right(user));
   }
+
+  @override
+  Future<Either<Failure, ({String challengeId, String challenge})>>
+  createBiometricLoginChallenge(String biometricToken) async =>
+      Right(_challenge);
 }
 
+Future<Either<Failure, UserEntity>> _run(BiometricLoginUsecase usecase) =>
+    usecase(AuthSessionCoordinator.beginAuthentication());
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('does not check availability or prompt without consent', () async {
     final service = _BiometryService()
       ..available = true
       ..credentials = true;
-    final usecase = BiometricLoginUsecase(AuthRepository(), service);
+    final usecase = BiometricLoginUsecase(
+      AuthRepository(),
+      service,
+      _KeyService(),
+    );
 
-    final result = await usecase();
+    final result = await _run(usecase);
 
     expect(result.fold((_) => true, (_) => false), isTrue);
     expect(service.availabilityChecks, 0);
@@ -88,7 +147,9 @@ void main() {
       ..enabled = true
       ..available = true;
 
-    final result = await BiometricLoginUsecase(AuthRepository(), service)();
+    final result = await _run(
+      BiometricLoginUsecase(AuthRepository(), service, _KeyService()),
+    );
 
     expect(result.leftOrNull, isA<CacheFailure>());
     expect(service.authenticationAttempts, 0);
@@ -106,10 +167,13 @@ void main() {
       ..credentials = true
       ..authenticated = true;
 
-    final result = await BiometricLoginUsecase(
-      _FailingAuthRepository(const UnauthorizedFailure()),
-      service,
-    )();
+    final result = await _run(
+      BiometricLoginUsecase(
+        _FailingAuthRepository(const UnauthorizedFailure()),
+        service,
+        _KeyService(),
+      ),
+    );
 
     expect(result.fold((_) => true, (_) => false), isTrue);
     expect(await StorageService.getBiometricToken(), isNull);
@@ -128,13 +192,15 @@ void main() {
       ..credentials = true
       ..authenticated = true;
 
-    final result = await BiometricLoginUsecase(
-      _SuccessfulAuthRepository(),
-      service,
-    )();
+    final repository = _SuccessfulAuthRepository();
+    final key = _KeyService();
+    final result = await _run(BiometricLoginUsecase(repository, service, key));
 
     expect(result.rightOrNull?.id, 'user-1');
-    expect(service.authenticationAttempts, 1);
+    expect(key.signedChallenge, _challenge.challenge);
+    expect(repository.receivedChallengeId, _challenge.challengeId);
+    expect(repository.receivedSignature, 'signature');
+    expect(service.authenticationAttempts, 0);
     expect(await StorageService.getBiometricToken(), 'credential');
   });
 
@@ -149,16 +215,19 @@ void main() {
       ..available = true
       ..credentials = true;
 
-    final result = await BiometricLoginUsecase(
-      _SuccessfulAuthRepository(
-        const UserEntity(id: 'user-2', email: 'other@example.com'),
+    final result = await _run(
+      BiometricLoginUsecase(
+        _SuccessfulAuthRepository(
+          const UserEntity(id: 'user-2', email: 'other@example.com'),
+        ),
+        service,
+        _KeyService(cancelSign: true),
       ),
-      service,
-    )();
+    );
 
     expect(result.leftOrNull, isA<BiometryCancelledFailure>());
     expect(await StorageService.getBiometricToken(), 'credential');
-    expect(service.authenticationAttempts, 1);
+    expect(service.authenticationAttempts, 0);
   });
 
   test('preserves the credential on a transient failure', () async {
@@ -174,10 +243,13 @@ void main() {
       ..credentials = true
       ..authenticated = true;
 
-    final result = await BiometricLoginUsecase(
-      _FailingAuthRepository(const ServerFailure('offline')),
-      service,
-    )();
+    final result = await _run(
+      BiometricLoginUsecase(
+        _FailingAuthRepository(const ServerFailure('offline')),
+        service,
+        _KeyService(),
+      ),
+    );
 
     expect(result.fold((_) => true, (_) => false), isTrue);
     expect(await StorageService.getBiometricToken(), 'credential');
@@ -197,16 +269,19 @@ void main() {
       ..credentials = true
       ..authenticated = true;
 
-    final result = await BiometricLoginUsecase(
-      _SuccessfulAuthRepository(
-        const UserEntity(id: 'user-2', email: 'other@example.com'),
+    final result = await _run(
+      BiometricLoginUsecase(
+        _SuccessfulAuthRepository(
+          const UserEntity(id: 'user-2', email: 'other@example.com'),
+        ),
+        service,
+        _KeyService(),
       ),
-      service,
-    )();
+    );
 
     expect(result.leftOrNull, isA<CacheFailure>());
     expect(await StorageService.getBiometricToken(), isNull);
     expect(await service.isEnabled(), isFalse);
-    expect(service.authenticationAttempts, 1);
+    expect(service.authenticationAttempts, 0);
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/presentation/widgets/view_once_toggle.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ChatInputBar extends StatefulWidget {
   final TextEditingController controller;
@@ -53,6 +54,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -63,6 +65,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
         children: [
           BrutalistIconButton(
             icon: Icons.add,
+            semanticLabel: strings.accessibilityAttach,
             onTap: widget.onAttachment,
             size: 48,
             iconSize: 24,
@@ -93,7 +96,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                       ),
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        hintText: 'Digite uma mensagem...',
+                        hintText: strings.chatMessageHint,
                         hintStyle: TextStyle(
                           fontFamily: AppTypography.fontFamily,
                           fontSize: 14,

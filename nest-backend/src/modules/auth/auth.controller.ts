@@ -11,6 +11,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
 import { GoogleAuthUseCase } from './usecases/google-auth.usecase';
+import { AppleAuthUseCase } from './usecases/apple-auth.usecase';
 import { CompleteProfileUseCase } from './usecases/complete-profile.usecase';
 import { RefreshMobileSessionUseCase } from './usecases/refresh-mobile-session.usecase';
 import { LogoutSessionUseCase } from './usecases/logout-session.usecase';
@@ -21,7 +22,7 @@ import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
 import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
 import { EnrollBiometricUseCase } from './usecases/enroll-biometric.usecase';
 import { RevokeBiometricUseCase } from './usecases/revoke-biometric.usecase';
-import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, GoogleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
+import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, GoogleAuthDTO, AppleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -62,6 +63,7 @@ export class AuthController {
     private readonly registerUseCase: RegisterUseCase,
     private readonly loginUseCase: LoginUseCase,
     private readonly googleAuthUseCase: GoogleAuthUseCase,
+    private readonly appleAuthUseCase: AppleAuthUseCase,
     private readonly completeProfileUseCase: CompleteProfileUseCase,
     private readonly refreshMobileSessionUseCase: RefreshMobileSessionUseCase,
     private readonly logoutSessionUseCase: LogoutSessionUseCase,
@@ -142,6 +144,19 @@ export class AuthController {
   @AllowTokenTypes(JwtTokenType.REFRESH)
   async refresh(@CurrentUser() user: AuthUser) {
     return unwrap(await this.refreshMobileSessionUseCase.execute(user));
+  }
+
+  @PostPublic('apple', {
+    summary: 'Sign in with Apple',
+    description: 'Validates the Apple identity token and exchanges its single-use authorization code.',
+    bodyType: AppleAuthDTO,
+    responseType: AuthSessionResponse,
+    errors: [{ status: 401, description: 'Invalid Apple token or nonce' }, { status: 409, description: 'Email belongs to another account' }],
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
+    httpCode: HttpStatus.OK,
+  })
+  async appleAuth(@Body() body: AppleAuthDTO) {
+    return unwrap(await this.appleAuthUseCase.execute(body));
   }
 
   @PostAuth('logout', {

@@ -16,7 +16,7 @@ final class ProfileTimelineProvider
     extends $NotifierProvider<ProfileTimeline, ProfileTimelineState> {
   ProfileTimelineProvider._({
     required ProfileTimelineFamily super.from,
-    required (String, {String? kind}) super.argument,
+    required (String, {String? kind, String? viewerId}) super.argument,
   }) : super(
          retry: null,
          name: r'profileTimelineProvider',
@@ -58,7 +58,7 @@ final class ProfileTimelineProvider
   }
 }
 
-String _$profileTimelineHash() => r'5f1a4b506961575bde4cc0a3fb5045d0f141fff1';
+String _$profileTimelineHash() => r'826c0a5e1eb6871168e1c40d5fd9321cb3d815dc';
 
 final class ProfileTimelineFamily extends $Family
     with
@@ -67,7 +67,7 @@ final class ProfileTimelineFamily extends $Family
           ProfileTimelineState,
           ProfileTimelineState,
           ProfileTimelineState,
-          (String, {String? kind})
+          (String, {String? kind, String? viewerId})
         > {
   ProfileTimelineFamily._()
     : super(
@@ -78,19 +78,26 @@ final class ProfileTimelineFamily extends $Family
         isAutoDispose: true,
       );
 
-  ProfileTimelineProvider call(String userId, {String? kind}) =>
-      ProfileTimelineProvider._(argument: (userId, kind: kind), from: this);
+  ProfileTimelineProvider call(
+    String userId, {
+    String? kind,
+    String? viewerId,
+  }) => ProfileTimelineProvider._(
+    argument: (userId, kind: kind, viewerId: viewerId),
+    from: this,
+  );
 
   @override
   String toString() => r'profileTimelineProvider';
 }
 
 abstract class _$ProfileTimeline extends $Notifier<ProfileTimelineState> {
-  late final _$args = ref.$arg as (String, {String? kind});
+  late final _$args = ref.$arg as (String, {String? kind, String? viewerId});
   String get userId => _$args.$1;
   String? get kind => _$args.kind;
+  String? get viewerId => _$args.viewerId;
 
-  ProfileTimelineState build(String userId, {String? kind});
+  ProfileTimelineState build(String userId, {String? kind, String? viewerId});
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
@@ -103,6 +110,9 @@ abstract class _$ProfileTimeline extends $Notifier<ProfileTimelineState> {
               Object?,
               Object?
             >;
-    return element.handleCreate(ref, () => build(_$args.$1, kind: _$args.kind));
+    return element.handleCreate(
+      ref,
+      () => build(_$args.$1, kind: _$args.kind, viewerId: _$args.viewerId),
+    );
   }
 }

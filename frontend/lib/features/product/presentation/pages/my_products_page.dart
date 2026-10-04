@@ -8,12 +8,15 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class MyProductsPage extends ConsumerWidget {
   const MyProductsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     final productsAsync = ref.watch(myProductsProvider);
 
@@ -22,9 +25,10 @@ class MyProductsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: 'MEUS ANÚNCIOS',
+            text: strings.productMyListings.toUpperCase(),
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
             ),
             actions: [
@@ -44,10 +48,10 @@ class MyProductsPage extends ConsumerWidget {
                       child: products.isEmpty
                           ? EmptyState(
                               icon: Icons.shopping_bag_outlined,
-                              title: 'NENHUM AN\u00daNCIO',
-                              subtitle: 'Nenhum an\u00fancio ainda',
+                              title: strings.productNoListings,
+                              subtitle: strings.productListingsEmpty,
                               action: AppButton(
-                                label: 'Criar an\u00fancio',
+                                label: strings.productCreateListing,
                                 icon: Icons.add,
                                 onPressed: () =>
                                     context.push(AppRoutes.createProduct),
@@ -104,7 +108,7 @@ class MyProductsPage extends ConsumerWidget {
                     ),
                     Spacing.vMd,
                     Text(
-                      'Erro ao carregar an\u00fancios',
+                      strings.productListingsLoadFailed,
                       style: TextStyle(color: context.textPrimary),
                     ),
                   ],
@@ -148,13 +152,19 @@ class MyProductsPage extends ConsumerWidget {
                 child: product.imageUrl != null && product.imageUrl!.isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: product.imageUrl!,
+                        httpHeaders: mediaAuthHeaders(product.imageUrl!),
                         fit: BoxFit.cover,
                         memCacheWidth: 400,
                         memCacheHeight: 400,
-                        placeholder: (context, url) => Container(
-                          color: isDark
-                              ? AppColors.backgroundDark
-                              : AppColors.lightGray,
+                        placeholder: (context, url) => BlurHashPlaceholder(
+                          hash: isPrivateMedia(url)
+                              ? null
+                              : product.imageBlurHash,
+                          fallback: Container(
+                            color: isDark
+                                ? AppColors.backgroundDark
+                                : AppColors.lightGray,
+                          ),
                         ),
                         errorWidget: (context, url, error) => const Icon(
                           Icons.shopping_bag,
@@ -194,7 +204,7 @@ class MyProductsPage extends ConsumerWidget {
                           color: AppColors.primaryContainer,
                         ),
                       ),
-                      _buildStatusBadge(product.status),
+                      _buildStatusBadge(context, product.status),
                     ],
                   ),
                   Spacing.vSm,
@@ -207,10 +217,10 @@ class MyProductsPage extends ConsumerWidget {
                       color: isDark
                           ? AppColors.surfaceContainerDark
                           : AppColors.surfaceContainerHighest,
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'Editar anúncio',
-                          style: TextStyle(
+                          l10n(context).productEditListing,
+                          style: const TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontWeight: FontWeight.w700,
                             color: AppColors.onSurface,
@@ -228,7 +238,7 @@ class MyProductsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusBadge(ProductStatus status) {
+  Widget _buildStatusBadge(BuildContext context, ProductStatus status) {
     Color bgColor;
     Color textColor;
 
@@ -250,11 +260,18 @@ class MyProductsPage extends ConsumerWidget {
         textColor = AppColors.mediumGray;
     }
 
+    final strings = l10n(context);
+    final label = switch (status) {
+      ProductStatus.active => strings.productStatusActive,
+      ProductStatus.paused => strings.productStatusPaused,
+      ProductStatus.sold => strings.productStatusSold,
+      ProductStatus.deleted => strings.productStatusDeleted,
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(color: bgColor),
       child: Text(
-        status.label,
+        label,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,

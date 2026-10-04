@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class OfferMessageBubble extends StatelessWidget {
   final MessageEntity message;
@@ -17,8 +18,9 @@ class OfferMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final meta = message.metadata ?? {};
-    final title = meta['title'] as String? ?? 'Produto';
+    final title = meta['title'] as String? ?? strings.productTitle;
     final originalPrice = meta['originalPrice'] as int?;
     final offerPrice = meta['offerPrice'] as int? ?? 0;
     final note = meta['message'] as String?;
@@ -35,17 +37,17 @@ class OfferMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.local_offer,
                 size: 16,
                 color: AppColors.primaryContainer,
               ),
               Spacing.hSm,
               Text(
-                'PROPOSTA DE COMPRA',
-                style: TextStyle(
+                strings.chatPurchaseOffer,
+                style: const TextStyle(
                   fontFamily: AppTypography.headlineFontFamily,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
@@ -108,7 +110,7 @@ class OfferMessageBubble extends StatelessWidget {
               children: [
                 Expanded(
                   child: AppButton(
-                    label: 'ACEITAR',
+                    label: strings.chatOfferAccept,
                     size: AppButtonSize.compact,
                     onPressed: () {
                       HapticFeedback.mediumImpact();

@@ -159,9 +159,7 @@ class ProductPreviewCard extends StatelessWidget {
                           fontFamily: AppTypography.fontFamily,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? AppColors.onPrimaryContainer
-                              : AppColors.primary,
+                          color: context.colors.primary,
                         ),
                       ),
                       Spacing.vSm,

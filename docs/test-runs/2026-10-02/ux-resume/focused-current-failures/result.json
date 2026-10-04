@@ -1,0 +1,11 @@
+{
+  "command": "flutter test test/features/payments/payment_page_test.dart test/features/profile/profile_settings_sheet_test.dart test/features/profile/profile_timeline_tabs_test.dart --reporter expanded",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:31:06.0980565Z",
+  "finished_utc": "2026-10-02T14:31:33.6964353Z",
+  "exit": 1,
+  "changed_manifest_rows": 0,
+  "before_sha256": "3A8E0BEA07EA2568038A57E0229204EC203A80FE275ADA2D720456F5B624AEED",
+  "after_sha256": "3A8E0BEA07EA2568038A57E0229204EC203A80FE275ADA2D720456F5B624AEED"
+}

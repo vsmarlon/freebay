@@ -1,0 +1,19 @@
+
+> nest-backend@1.0.0 test:safety
+> node --test scripts/safe-prisma-db-push.test.js
+
+Refusing Prisma schema sync: NODE_ENV must be test.
+Prisma schema sync could not start.
+✔ rejects a non-test environment before spawning Prisma (1.7843ms)
+✔ the entrypoint rejects a non-test environment (34.4629ms)
+✔ accepts only the local test database URL (0.3875ms)
+✔ does not allow CLI arguments to override the validated target (453.2902ms)
+✔ returns a generic failure when Prisma cannot spawn (1.754ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2020.8886

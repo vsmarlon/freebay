@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PasswordRecoveryPage extends ConsumerStatefulWidget {
   const PasswordRecoveryPage({super.key});
@@ -34,6 +35,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
   }
 
   Future<void> _requestCode() async {
+    final strings = l10n(context);
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
@@ -50,14 +52,14 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
         if (success) {
           _step = 2;
         } else {
-          _errorMessage =
-              'Não foi possível enviar o código. Verifique o e-mail.';
+          _errorMessage = strings.authRecoveryRequestFailed;
         }
       });
     }
   }
 
   Future<void> _resetPassword() async {
+    final strings = l10n(context);
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
@@ -78,7 +80,7 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
         context.go(AppRoutes.login);
       } else {
         setState(() {
-          _errorMessage = 'Código inválido ou expirado. Tente novamente.';
+          _errorMessage = strings.authRecoveryCodeInvalid;
         });
       }
     }
@@ -86,14 +88,16 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return AppBackground(
       child: SafeArea(
         child: Column(
           children: [
             PageHeader(
-              text: 'RECUPERAR SENHA',
+              text: strings.authForgotPassword.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -106,12 +110,12 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                     children: [
                       AppTextField(
                         controller: _emailController,
-                        label: 'E-mail',
-                        hint: 'seu@email.com',
+                        label: strings.authEmail,
+                        hint: strings.authEmailExample,
                         keyboardType: TextInputType.emailAddress,
                         prefixIcon: Icons.email_outlined,
                         validator: (v) => v == null || v.isEmpty
-                            ? 'Informe seu e-mail'
+                            ? strings.authEmailRequired
                             : null,
                       ),
                       Spacing.vMd,
@@ -124,24 +128,24 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                                 children: [
                                   AppTextField(
                                     controller: _codeController,
-                                    label: 'Código',
+                                    label: strings.authVerificationCode,
                                     hint: '123456',
                                     keyboardType: TextInputType.number,
                                     prefixIcon: Icons.verified_outlined,
                                     validator: (v) => v == null || v.length != 6
-                                        ? 'Informe o código de 6 dígitos'
+                                        ? strings.authCodeSixDigitsRequired
                                         : null,
                                   ),
                                   Spacing.vMd,
                                   AppTextField(
                                     controller: _passwordController,
-                                    label: 'Nova senha',
-                                    hint: 'Mínimo 8 caracteres',
+                                    label: strings.authNewPassword,
+                                    hint: strings.authPasswordMinLength,
                                     obscureText: true,
                                     showPasswordToggle: true,
                                     prefixIcon: Icons.lock_outline,
                                     validator: (v) => v == null || v.length < 8
-                                        ? 'Senha muito curta'
+                                        ? strings.authPasswordMinLength
                                         : null,
                                   ),
                                   Spacing.vMd,
@@ -158,7 +162,9 @@ class _PasswordRecoveryPageState extends ConsumerState<PasswordRecoveryPage> {
                         Spacing.vMd,
                       ],
                       AppButton(
-                        label: _step == 2 ? 'Redefinir senha' : 'Enviar código',
+                        label: _step == 2
+                            ? strings.authResetPassword
+                            : strings.authSendCode,
                         isLoading: _isLoading,
                         onPressed: _step == 2 ? _resetPassword : _requestCode,
                       ),

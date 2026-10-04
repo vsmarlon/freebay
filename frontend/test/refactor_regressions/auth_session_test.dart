@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/shared/services/auth_session_coordinator.dart';
 
 class _Adapter implements HttpClientAdapter {
   _Adapter(this.body, {this.status = 200});
@@ -54,6 +55,7 @@ void main() {
         'person@example.com',
         'password',
         true,
+        authenticationAttempt: AuthSessionCoordinator.beginAuthentication(),
       );
 
       expect(result.isRight, isTrue);
@@ -89,6 +91,7 @@ void main() {
         'password',
         'Person',
         'person',
+        authenticationAttempt: AuthSessionCoordinator.beginAuthentication(),
       );
 
       expect(result.leftOrNull, isA<ServerFailure>());

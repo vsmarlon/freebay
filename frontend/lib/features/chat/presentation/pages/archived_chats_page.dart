@@ -5,6 +5,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ArchivedChatsPage extends ConsumerStatefulWidget {
   const ArchivedChatsPage({super.key});
@@ -39,6 +40,7 @@ class _ArchivedChatsPageState extends ConsumerState<ArchivedChatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isDark = context.isDark;
 
     return Scaffold(
@@ -47,9 +49,10 @@ class _ArchivedChatsPageState extends ConsumerState<ArchivedChatsPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'ARQUIVADAS',
+              text: strings.chatArchivedTitle.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -58,18 +61,15 @@ class _ArchivedChatsPageState extends ConsumerState<ArchivedChatsPage> {
                 final listState = ref.watch(archivedChatListProvider);
                 if (listState.isLoading) return _buildLoadingChat(context);
                 if (listState.error != null && listState.items.isEmpty) {
-                  return const Center(
-                    child: Text('Erro ao carregar conversas arquivadas'),
-                  );
+                  return Center(child: Text(strings.chatArchivedLoadError));
                 }
                 final chats = listState.items;
                 final loadingMore = listState.isLoadingMore;
                 if (chats.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.archive_outlined,
-                    title: 'NENHUMA CONVERSA ARQUIVADA',
-                    subtitle:
-                        'Arraste uma conversa para a esquerda para arquivar.',
+                    title: strings.chatNoArchived,
+                    subtitle: strings.chatArchivedEmptyBody,
                   );
                 }
                 return RefreshIndicator(
@@ -81,12 +81,14 @@ class _ArchivedChatsPageState extends ConsumerState<ArchivedChatsPage> {
                     itemCount: chats.length + (loadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == chats.length) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
+                        return const ShimmerScope(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
+                            ),
+                            child: ShimmerBlock(height: 72),
                           ),
-                          child: ShimmerBlock(height: 72),
                         );
                       }
                       return _buildArchivedItem(

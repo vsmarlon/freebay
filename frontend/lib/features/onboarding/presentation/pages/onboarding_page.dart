@@ -7,6 +7,7 @@ import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/onboarding/presentation/pages/onboarding_slides.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -37,7 +38,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isLast = _index == onboardingSlides.length - 1;
+    final slides = onboardingSlides(l10n(context));
+    final isLast = _index == slides.length - 1;
 
     return Scaffold(
       body: AppBackground(
@@ -76,7 +78,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
-                  itemCount: onboardingSlides.length,
+                  itemCount: slides.length,
                   onPageChanged: (i) {
                     HapticFeedback.selectionClick();
                     setState(() => _index = i);
@@ -84,7 +86,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   itemBuilder: (context, i) => AnimatedBuilder(
                     animation: _pageController,
                     builder: (context, _) => OnboardingSlideView(
-                      slide: onboardingSlides[i],
+                      slide: slides[i],
                       pageOffset:
                           i -
                           (_pageController.hasClients
@@ -99,7 +101,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 height: 3,
                 child: ClipRRect(
                   child: LinearProgressIndicator(
-                    value: (_index + 1) / onboardingSlides.length,
+                    value: (_index + 1) / slides.length,
                     backgroundColor: context.borderSoftColor,
                     valueColor: const AlwaysStoppedAnimation(
                       AppColors.primaryContainer,

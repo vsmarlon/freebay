@@ -59,7 +59,7 @@ export class PrismaBlockRepository extends BlockRepository {
       where: { blocksReceived: { some: { blockerId: userId } } },
       take: limit,
       skip: offset,
-      select: { id: true, displayName: true, avatarUrl: true, isVerified: true, reputationScore: true },
+      select: { id: true, displayName: true, avatarUrl: true, avatarBlurHash: true, isVerified: true, reputationScore: true },
     }), 'Failed to get blocked users');
   }
 }

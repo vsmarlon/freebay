@@ -1,0 +1,23 @@
+
+> test:ci-scripts
+> node --test scripts/ci-check.test.js scripts/perf-check.test.js
+
+✔ architecture gate rejects removed safe identifiers only (2.1878ms)
+✔ architecture gate still detects removed repository identifiers in imports (0.2215ms)
+✔ route and design gates keep their existing policy (0.464ms)
+✔ design ratchet permits baseline findings and resolved findings but rejects additions (1.6799ms)
+✔ design scanner catches only feature-level raw design tokens (1.0449ms)
+✔ design baseline keeps findings stable across completed feature moves (0.1436ms)
+✔ a real trace with both build and raster timings passes (1.6716ms)
+✔ missing frame metrics cannot be green (0.3658ms)
+✔ raster jank fails even when build timings are fast (0.1894ms)
+✔ 20% regression from a measured baseline fails below the absolute threshold (0.2083ms)
+✔ absolute frame budgets fail at the boundary (0.8136ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 70.1921

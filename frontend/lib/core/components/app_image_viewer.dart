@@ -9,7 +9,7 @@ Future<void> showAppImageViewer(BuildContext context, String imageUrl) async {
     PageRouteBuilder<void>(
       opaque: false,
       barrierColor: Colors.black,
-      transitionDuration: AppMotion.enter,
+      transitionDuration: AppMotion.forContext(context, AppMotion.enter),
       pageBuilder: (_, _, _) => _AppImageViewer(imageUrl: imageUrl),
       transitionsBuilder: (_, animation, _, child) =>
           FadeTransition(opacity: animation, child: child),

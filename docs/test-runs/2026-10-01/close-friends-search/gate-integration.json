@@ -1,0 +1,8 @@
+{
+  "label": "gate-integration",
+  "command": "npm run test:integration",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:43:02.454Z",
+  "ended": "2026-10-01T06:44:09.713Z",
+  "exitCode": 1
+}

@@ -290,7 +290,7 @@ as ProductCondition,
 /// @nodoc
 mixin _$PostEntity {
 
- String get id; String get userId; String? get content; String? get imageUrl; PostType get type; PostAudience get audience; int get likesCount; int get commentsCount; int get sharesCount; bool get isLiked; bool get isSaved; bool get hasReposted; DateTime? get repostedAt; UserEntity? get repostedBy; DateTime get createdAt; UserEntity get user; PostProductInfo? get product;
+ String get id; String get userId; String? get content; String? get imageUrl; String? get imageBlurHash; PostType get type; PostAudience get audience; int get likesCount; int get commentsCount; int get sharesCount; bool get isLiked; bool get isSaved; bool get hasReposted; DateTime? get repostedAt; UserEntity? get repostedBy; DateTime get createdAt; UserEntity get user; PostProductInfo? get product;
 /// Create a copy of PostEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -303,16 +303,16 @@ $PostEntityCopyWith<PostEntity> get copyWith => _$PostEntityCopyWithImpl<PostEnt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.content, content) || other.content == content)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.audience, audience) || other.audience == audience)&&(identical(other.likesCount, likesCount) || other.likesCount == likesCount)&&(identical(other.commentsCount, commentsCount) || other.commentsCount == commentsCount)&&(identical(other.sharesCount, sharesCount) || other.sharesCount == sharesCount)&&(identical(other.isLiked, isLiked) || other.isLiked == isLiked)&&(identical(other.isSaved, isSaved) || other.isSaved == isSaved)&&(identical(other.hasReposted, hasReposted) || other.hasReposted == hasReposted)&&(identical(other.repostedAt, repostedAt) || other.repostedAt == repostedAt)&&(identical(other.repostedBy, repostedBy) || other.repostedBy == repostedBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.product, product) || other.product == product));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PostEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.content, content) || other.content == content)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.imageBlurHash, imageBlurHash) || other.imageBlurHash == imageBlurHash)&&(identical(other.type, type) || other.type == type)&&(identical(other.audience, audience) || other.audience == audience)&&(identical(other.likesCount, likesCount) || other.likesCount == likesCount)&&(identical(other.commentsCount, commentsCount) || other.commentsCount == commentsCount)&&(identical(other.sharesCount, sharesCount) || other.sharesCount == sharesCount)&&(identical(other.isLiked, isLiked) || other.isLiked == isLiked)&&(identical(other.isSaved, isSaved) || other.isSaved == isSaved)&&(identical(other.hasReposted, hasReposted) || other.hasReposted == hasReposted)&&(identical(other.repostedAt, repostedAt) || other.repostedAt == repostedAt)&&(identical(other.repostedBy, repostedBy) || other.repostedBy == repostedBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.product, product) || other.product == product));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,content,imageUrl,type,audience,likesCount,commentsCount,sharesCount,isLiked,isSaved,hasReposted,repostedAt,repostedBy,createdAt,user,product);
+int get hashCode => Object.hash(runtimeType,id,userId,content,imageUrl,imageBlurHash,type,audience,likesCount,commentsCount,sharesCount,isLiked,isSaved,hasReposted,repostedAt,repostedBy,createdAt,user,product);
 
 @override
 String toString() {
-  return 'PostEntity(id: $id, userId: $userId, content: $content, imageUrl: $imageUrl, type: $type, audience: $audience, likesCount: $likesCount, commentsCount: $commentsCount, sharesCount: $sharesCount, isLiked: $isLiked, isSaved: $isSaved, hasReposted: $hasReposted, repostedAt: $repostedAt, repostedBy: $repostedBy, createdAt: $createdAt, user: $user, product: $product)';
+  return 'PostEntity(id: $id, userId: $userId, content: $content, imageUrl: $imageUrl, imageBlurHash: $imageBlurHash, type: $type, audience: $audience, likesCount: $likesCount, commentsCount: $commentsCount, sharesCount: $sharesCount, isLiked: $isLiked, isSaved: $isSaved, hasReposted: $hasReposted, repostedAt: $repostedAt, repostedBy: $repostedBy, createdAt: $createdAt, user: $user, product: $product)';
 }
 
 
@@ -323,7 +323,7 @@ abstract mixin class $PostEntityCopyWith<$Res>  {
   factory $PostEntityCopyWith(PostEntity value, $Res Function(PostEntity) _then) = _$PostEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String userId, String? content, String? imageUrl, PostType type, PostAudience audience, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
+ String id, String userId, String? content, String? imageUrl, String? imageBlurHash, PostType type, PostAudience audience, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
 });
 
 
@@ -340,12 +340,13 @@ class _$PostEntityCopyWithImpl<$Res>
 
 /// Create a copy of PostEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? content = freezed,Object? imageUrl = freezed,Object? type = null,Object? audience = null,Object? likesCount = null,Object? commentsCount = null,Object? sharesCount = null,Object? isLiked = null,Object? isSaved = null,Object? hasReposted = null,Object? repostedAt = freezed,Object? repostedBy = freezed,Object? createdAt = null,Object? user = null,Object? product = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? userId = null,Object? content = freezed,Object? imageUrl = freezed,Object? imageBlurHash = freezed,Object? type = null,Object? audience = null,Object? likesCount = null,Object? commentsCount = null,Object? sharesCount = null,Object? isLiked = null,Object? isSaved = null,Object? hasReposted = null,Object? repostedAt = freezed,Object? repostedBy = freezed,Object? createdAt = null,Object? user = null,Object? product = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
+as String?,imageBlurHash: freezed == imageBlurHash ? _self.imageBlurHash : imageBlurHash // ignore: cast_nullable_to_non_nullable
 as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as PostType,audience: null == audience ? _self.audience : audience // ignore: cast_nullable_to_non_nullable
 as PostAudience,likesCount: null == likesCount ? _self.likesCount : likesCount // ignore: cast_nullable_to_non_nullable
@@ -477,10 +478,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  PostType type,  PostAudience audience,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  String? imageBlurHash,  PostType type,  PostAudience audience,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PostEntity() when $default != null:
-return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_that.audience,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
+return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.imageBlurHash,_that.type,_that.audience,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
   return orElse();
 
 }
@@ -498,10 +499,10 @@ return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  PostType type,  PostAudience audience,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String userId,  String? content,  String? imageUrl,  String? imageBlurHash,  PostType type,  PostAudience audience,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)  $default,) {final _that = this;
 switch (_that) {
 case _PostEntity():
-return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_that.audience,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
+return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.imageBlurHash,_that.type,_that.audience,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -518,10 +519,10 @@ return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String? content,  String? imageUrl,  PostType type,  PostAudience audience,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String userId,  String? content,  String? imageUrl,  String? imageBlurHash,  PostType type,  PostAudience audience,  int likesCount,  int commentsCount,  int sharesCount,  bool isLiked,  bool isSaved,  bool hasReposted,  DateTime? repostedAt,  UserEntity? repostedBy,  DateTime createdAt,  UserEntity user,  PostProductInfo? product)?  $default,) {final _that = this;
 switch (_that) {
 case _PostEntity() when $default != null:
-return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_that.audience,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
+return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.imageBlurHash,_that.type,_that.audience,_that.likesCount,_that.commentsCount,_that.sharesCount,_that.isLiked,_that.isSaved,_that.hasReposted,_that.repostedAt,_that.repostedBy,_that.createdAt,_that.user,_that.product);case _:
   return null;
 
 }
@@ -533,13 +534,14 @@ return $default(_that.id,_that.userId,_that.content,_that.imageUrl,_that.type,_t
 @JsonSerializable()
 
 class _PostEntity implements PostEntity {
-  const _PostEntity({required this.id, required this.userId, this.content, this.imageUrl, this.type = PostType.regular, this.audience = PostAudience.everyone, this.likesCount = 0, this.commentsCount = 0, this.sharesCount = 0, this.isLiked = false, this.isSaved = false, this.hasReposted = false, this.repostedAt, this.repostedBy, required this.createdAt, required this.user, this.product});
+  const _PostEntity({required this.id, required this.userId, this.content, this.imageUrl, this.imageBlurHash, this.type = PostType.regular, this.audience = PostAudience.everyone, this.likesCount = 0, this.commentsCount = 0, this.sharesCount = 0, this.isLiked = false, this.isSaved = false, this.hasReposted = false, this.repostedAt, this.repostedBy, required this.createdAt, required this.user, this.product});
   factory _PostEntity.fromJson(Map<String, dynamic> json) => _$PostEntityFromJson(json);
 
 @override final  String id;
 @override final  String userId;
 @override final  String? content;
 @override final  String? imageUrl;
+@override final  String? imageBlurHash;
 @override@JsonKey() final  PostType type;
 @override@JsonKey() final  PostAudience audience;
 @override@JsonKey() final  int likesCount;
@@ -567,16 +569,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.content, content) || other.content == content)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.type, type) || other.type == type)&&(identical(other.audience, audience) || other.audience == audience)&&(identical(other.likesCount, likesCount) || other.likesCount == likesCount)&&(identical(other.commentsCount, commentsCount) || other.commentsCount == commentsCount)&&(identical(other.sharesCount, sharesCount) || other.sharesCount == sharesCount)&&(identical(other.isLiked, isLiked) || other.isLiked == isLiked)&&(identical(other.isSaved, isSaved) || other.isSaved == isSaved)&&(identical(other.hasReposted, hasReposted) || other.hasReposted == hasReposted)&&(identical(other.repostedAt, repostedAt) || other.repostedAt == repostedAt)&&(identical(other.repostedBy, repostedBy) || other.repostedBy == repostedBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.product, product) || other.product == product));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PostEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.content, content) || other.content == content)&&(identical(other.imageUrl, imageUrl) || other.imageUrl == imageUrl)&&(identical(other.imageBlurHash, imageBlurHash) || other.imageBlurHash == imageBlurHash)&&(identical(other.type, type) || other.type == type)&&(identical(other.audience, audience) || other.audience == audience)&&(identical(other.likesCount, likesCount) || other.likesCount == likesCount)&&(identical(other.commentsCount, commentsCount) || other.commentsCount == commentsCount)&&(identical(other.sharesCount, sharesCount) || other.sharesCount == sharesCount)&&(identical(other.isLiked, isLiked) || other.isLiked == isLiked)&&(identical(other.isSaved, isSaved) || other.isSaved == isSaved)&&(identical(other.hasReposted, hasReposted) || other.hasReposted == hasReposted)&&(identical(other.repostedAt, repostedAt) || other.repostedAt == repostedAt)&&(identical(other.repostedBy, repostedBy) || other.repostedBy == repostedBy)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.user, user) || other.user == user)&&(identical(other.product, product) || other.product == product));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,userId,content,imageUrl,type,audience,likesCount,commentsCount,sharesCount,isLiked,isSaved,hasReposted,repostedAt,repostedBy,createdAt,user,product);
+int get hashCode => Object.hash(runtimeType,id,userId,content,imageUrl,imageBlurHash,type,audience,likesCount,commentsCount,sharesCount,isLiked,isSaved,hasReposted,repostedAt,repostedBy,createdAt,user,product);
 
 @override
 String toString() {
-  return 'PostEntity(id: $id, userId: $userId, content: $content, imageUrl: $imageUrl, type: $type, audience: $audience, likesCount: $likesCount, commentsCount: $commentsCount, sharesCount: $sharesCount, isLiked: $isLiked, isSaved: $isSaved, hasReposted: $hasReposted, repostedAt: $repostedAt, repostedBy: $repostedBy, createdAt: $createdAt, user: $user, product: $product)';
+  return 'PostEntity(id: $id, userId: $userId, content: $content, imageUrl: $imageUrl, imageBlurHash: $imageBlurHash, type: $type, audience: $audience, likesCount: $likesCount, commentsCount: $commentsCount, sharesCount: $sharesCount, isLiked: $isLiked, isSaved: $isSaved, hasReposted: $hasReposted, repostedAt: $repostedAt, repostedBy: $repostedBy, createdAt: $createdAt, user: $user, product: $product)';
 }
 
 
@@ -587,7 +589,7 @@ abstract mixin class _$PostEntityCopyWith<$Res> implements $PostEntityCopyWith<$
   factory _$PostEntityCopyWith(_PostEntity value, $Res Function(_PostEntity) _then) = __$PostEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String userId, String? content, String? imageUrl, PostType type, PostAudience audience, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
+ String id, String userId, String? content, String? imageUrl, String? imageBlurHash, PostType type, PostAudience audience, int likesCount, int commentsCount, int sharesCount, bool isLiked, bool isSaved, bool hasReposted, DateTime? repostedAt, UserEntity? repostedBy, DateTime createdAt, UserEntity user, PostProductInfo? product
 });
 
 
@@ -604,12 +606,13 @@ class __$PostEntityCopyWithImpl<$Res>
 
 /// Create a copy of PostEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? content = freezed,Object? imageUrl = freezed,Object? type = null,Object? audience = null,Object? likesCount = null,Object? commentsCount = null,Object? sharesCount = null,Object? isLiked = null,Object? isSaved = null,Object? hasReposted = null,Object? repostedAt = freezed,Object? repostedBy = freezed,Object? createdAt = null,Object? user = null,Object? product = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? userId = null,Object? content = freezed,Object? imageUrl = freezed,Object? imageBlurHash = freezed,Object? type = null,Object? audience = null,Object? likesCount = null,Object? commentsCount = null,Object? sharesCount = null,Object? isLiked = null,Object? isSaved = null,Object? hasReposted = null,Object? repostedAt = freezed,Object? repostedBy = freezed,Object? createdAt = null,Object? user = null,Object? product = freezed,}) {
   return _then(_PostEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String?,imageUrl: freezed == imageUrl ? _self.imageUrl : imageUrl // ignore: cast_nullable_to_non_nullable
+as String?,imageBlurHash: freezed == imageBlurHash ? _self.imageBlurHash : imageBlurHash // ignore: cast_nullable_to_non_nullable
 as String?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as PostType,audience: null == audience ? _self.audience : audience // ignore: cast_nullable_to_non_nullable
 as PostAudience,likesCount: null == likesCount ? _self.likesCount : likesCount // ignore: cast_nullable_to_non_nullable

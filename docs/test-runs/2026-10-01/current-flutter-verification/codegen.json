@@ -1,0 +1,8 @@
+{
+  "label": "codegen",
+  "command": "dart run build_runner build --delete-conflicting-outputs",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "started": "2026-10-01T06:37:55.407Z",
+  "ended": "2026-10-01T06:38:10.581Z",
+  "exitCode": 0
+}

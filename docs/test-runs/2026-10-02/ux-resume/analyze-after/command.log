@@ -1,0 +1,6 @@
+Analyzing 3 items...                                            
+
+warning - Unused import: 'package:flutter_localizations/flutter_localizations.dart'. Try removing the import directive - test\features\profile\profile_settings_sheet_test.dart:2:8 - unused_import
+warning - Unused import: 'package:freebay/features/auth/data/entities/user_entity.dart'. Try removing the import directive - test\features\profile\profile_settings_sheet_test.dart:9:8 - unused_import
+
+2 issues found. (ran in 12.1s)

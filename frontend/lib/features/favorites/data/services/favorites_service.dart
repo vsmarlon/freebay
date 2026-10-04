@@ -16,8 +16,11 @@ class FavoritesService {
         decoder: (_) => const Right(null),
       );
 
-  Future<Either<Failure, bool>> isFavorited(String productId) => requestEither(
-    () => client.get('/favorites/check/$productId'),
+  Future<Either<Failure, bool>> isFavorited(
+    String productId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get('/favorites/check/$productId', cancelToken: cancelToken),
     decoder: (response) => Right(response.data['data']['isFavorited'] == true),
   );
 

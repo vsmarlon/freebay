@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class NewChatProductComposer extends StatelessWidget {
   final TextEditingController controller;
@@ -15,20 +16,21 @@ class NewChatProductComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Mensagem para o vendedor',
+            strings.chatMessageToSeller,
             style: TextStyle(color: context.textSecondary),
           ),
           Spacing.vSm,
           AppTextField(controller: controller, maxLines: 5),
           Spacing.vMd,
           AppButton(
-            label: 'ENVIAR MENSAGEM',
+            label: strings.chatSendText,
             onPressed: controller.text.trim().isEmpty ? null : onSend,
             isLoading: isSending,
           ),

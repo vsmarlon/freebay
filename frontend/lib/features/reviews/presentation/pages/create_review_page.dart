@@ -8,6 +8,7 @@ import 'package:freebay/features/reviews/data/entities/review_entity.dart';
 import 'package:freebay/features/reviews/domain/usecases/create_review_usecase.dart';
 import 'package:freebay/features/reviews/presentation/providers/review_providers.dart';
 import 'package:freebay/features/reviews/presentation/widgets/star_rating_input.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CreateReviewPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -42,8 +43,9 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
   }
 
   Future<void> _submit() async {
+    final strings = l10n(context);
     if (_score == 0) {
-      AppSnackbar.error(context, 'Selecione uma nota de 1 a 5 estrelas.');
+      AppSnackbar.error(context, strings.reviewsSelectRating);
       return;
     }
 
@@ -66,23 +68,25 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
-      AppSnackbar.success(context, 'Avaliação enviada com sucesso!');
+    result.fold((failure) => AppSnackbar.handleFailure(context, failure), (_) {
+      AppSnackbar.success(context, strings.reviewsSubmitSuccess);
       context.pop(true);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
         child: Column(
           children: [
             PageHeader(
-              text: 'AVALIAR',
+              text: strings.reviewsCreateTitle.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
               breadcrumbs: context.breadcrumbs,
@@ -120,8 +124,8 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                                 ),
                                 Text(
                                   widget.reviewType == 'SELLER_REVIEW'
-                                      ? 'Vendedor'
-                                      : 'Comprador',
+                                      ? strings.reviewsSeller
+                                      : strings.reviewsBuyer,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: context.textSecondary,
@@ -135,7 +139,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     ),
                     Spacing.vLg,
                     Text(
-                      'SUA NOTA',
+                      strings.reviewsYourRating,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -152,7 +156,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     ),
                     Spacing.vLg,
                     Text(
-                      'COMENTÁRIO (OPCIONAL)',
+                      strings.reviewsCommentOptional,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -165,7 +169,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                       controller: _commentController,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Conte como foi sua experiência...',
+                        hintText: strings.reviewsCommentHint,
                         hintStyle: TextStyle(color: context.textSecondary),
                         filled: true,
                         fillColor: context.surfaceColor,
@@ -185,7 +189,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     ),
                     Spacing.vLg,
                     Text(
-                      'FOTOS (OPCIONAL)',
+                      strings.reviewsPhotosOptional,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -201,7 +205,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     ),
                     Spacing.vXl,
                     AppButton(
-                      label: 'ENVIAR AVALIAÇÃO',
+                      label: strings.reviewsSubmit.toUpperCase(),
                       isLoading: _isSubmitting,
                       onPressed: _submit,
                     ),

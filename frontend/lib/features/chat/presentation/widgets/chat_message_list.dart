@@ -194,9 +194,15 @@ class ChatMessageList extends StatelessWidget {
                                     PageRouteBuilder(
                                       opaque: false,
                                       barrierColor: Colors.black,
-                                      transitionDuration: AppMotion.enter,
+                                      transitionDuration: AppMotion.forContext(
+                                        context,
+                                        AppMotion.enter,
+                                      ),
                                       reverseTransitionDuration:
-                                          AppMotion.enter,
+                                          AppMotion.forContext(
+                                            context,
+                                            AppMotion.enter,
+                                          ),
                                       transitionsBuilder: (_, a, _, c) =>
                                           FadeTransition(opacity: a, child: c),
                                       pageBuilder: (_, _, _) =>

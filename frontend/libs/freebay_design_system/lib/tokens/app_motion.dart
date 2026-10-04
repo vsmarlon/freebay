@@ -12,4 +12,7 @@ class AppMotion {
   static const Curve tapCurve = Curves.linear;
   static const Curve baseCurve = Curves.linear;
   static const Curve enterCurve = Curves.easeOut;
+
+  static Duration forContext(BuildContext context, Duration duration) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
 }

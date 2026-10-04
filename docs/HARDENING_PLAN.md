@@ -105,7 +105,7 @@ Use the already-running physical Galaxy A30. Read [`FEATURE_TRUTH.md`](FEATURE_T
 Audit root/subtree guidance, README, relevant architecture docs, and skills against code. Documentation only; stop at owner-policy conflicts.
 
 - Backend ports: baseline measured six port files. Inspect the current inventory before counts; do not claim every module has a port or prescribe nonexistent flat repository folders. Most concrete repositories are Prisma-backed; `ThingDatabaseRepository` is a named exception.
-- Verify actual feature layers; features are not uniformly data/domain/presentation and not every feature has a use case/repository.
+- Verify actual feature layers; favorites, help, notifications, onboarding, and profile are not uniformly data/domain/presentation, bug reporting has no data path, and not every feature has a use case/repository.
 - Document `AppError` status mapping and `EitherInterceptor`; do not claim every error becomes 400. Controller unwrap must preserve original errors.
 - Check test suffixes and scripts in package configuration. Integration files use `*.integration-spec.ts`; E2E uses `npm run test:e2e`. Keep every example runnable.
 - Payment-provider narrative conflicts (README AbacatePay/PagBank vs current Stripe code/docs): do not infer an owner decision or rewrite the historical README payment section until the owner resolves policy. The code contains a Stripe implementation (`StripeProvider`, Stripe PaymentIntent/Checkout/Connect paths); that is code evidence, not provider approval or proof of real payments. Keep the prior payment text visible with an explicit pending-owner note, not hidden/deleted. Remove unsupported migration-plan references only after checking the actual ADR/path; keep detailed payment flow in its owning docs.
@@ -118,7 +118,7 @@ After documentation edits, run the architecture script/tests and validate new Ma
 
 ## P2 — Backend error, unwrap, and repository names
 
-- Keep `Failure` as an alias of `AppError` if it adds no behavior. Repoint imports and remove the duplicate failure definition only after checking identity and callers.
+- Keep `Failure` as an alias of `AppError` in `nest-backend/src/shared/core/errors.ts` if it adds no behavior. Repoint imports and remove `nest-backend/src/shared/errors/failures/failures.ts` only after checking identity and callers.
 - Add/use the exact `shared/http/unwrap.ts` helper for auth controllers' local unwrap. Preserve the original `AppError`, status, envelope, and exception behavior.
 - Rename `Prisma*Repository` class names only to established `*DatabaseRepository` names. Files already have correct names; do not change files or provider tokens. Check imports, DI tokens, and runtime strings; stop on collisions.
 - Respect D4's role-based name exception. Run focused behavior/DI checks, then backend gates at cadence.
@@ -129,7 +129,7 @@ Move user persistence ownership to Users. Users provides/exports `UserDatabaseRe
 
 ## P4 — Stable architecture-boundary checks
 
-Add `--boundaries` to `scripts/ci-check.js` and run it with no arguments. Store sorted `{file, specifier, rule}` entries in `scripts/boundaries-baseline.json`. `--update-baseline` removes resolved entries only and refuses additions. Exclude `*.spec.*`, integration, and E2E. Preserve existing checks. Add phony `boundaries-check` Make target and include it in help/tests.
+Add `--boundaries` to `scripts/ci-check.js` and run it with no arguments. Store deterministic sorted `{file, specifier, rule}` entries in `scripts/boundaries-baseline.json`. `--update-baseline` removes resolved entries only and refuses additions. Exclude `*.spec.*`, integration, and E2E. Preserve existing checks. Add phony `boundaries-check` Make target and include it in help/tests.
 
 - **B1:** Any file under `modules/A` cannot import another module's `data`, `usecases`, or `services` implementation, regardless of its own layer, including aliases and relative paths.
 - **B2:** No PrismaService imports from usecases/controllers/services/tasks, except explicitly justified repository/infrastructure/health cases; no broad directory exemptions.

@@ -9,92 +9,163 @@
 <body>
 <header>
   <h1>Excluir minha conta</h1>
-  <p>FreeBay · Última atualização: 7 de setembro de 2026</p>
+  <p>FreeBay · Rascunho funcional — publicação depende de revisão jurídica e dados de contato</p>
 </header>
 <main>
-  <nav>
-    <a href="/legal/privacy.html">Política de Privacidade</a>
-    <a href="/legal/terms.html">Termos de Uso</a>
-  </nav>
-
   <div class="callout">
-    <strong>Antes da publicação:</strong> preencha o e-mail de contato marcado como
-    <span class="placeholder">PREENCHER</span>. A Google Play exige que esta página seja
-    acessível publicamente e sem login.
+    <strong>Rascunho — não publicar ainda.</strong> O contato do controlador/encarregado e os dados da empresa
+    continuam pendentes de confirmação pelo responsável. A operação de e-mail também depende de configuração
+    e entrega verificadas. Esta página não substitui revisão jurídica.
   </div>
 
-  <h2>Pelo aplicativo</h2>
-  <ol>
-    <li>Abra o FreeBay e entre na sua conta.</li>
-    <li>Toque em <strong>Perfil</strong>.</li>
-    <li>Toque no ícone de <strong>configurações</strong>.</li>
-    <li>Toque em <strong>Excluir conta</strong> e confirme.</li>
-  </ol>
-
-  <h2>Por e-mail</h2>
+  <h2>Solicitar exclusão pela web</h2>
   <p>
-    Se você não consegue mais entrar na conta, envie um e-mail para
-    <span class="placeholder">PREENCHER: e-mail do encarregado</span> a partir do endereço
-    cadastrado, com o assunto <strong>"Exclusão de conta"</strong>. Confirmamos sua identidade
-    e processamos o pedido em até 15 dias.
+    Informe o e-mail verificado da conta. Se a conta existir e o serviço de e-mail estiver configurado,
+    enviaremos um link de autenticação com validade de 10 minutos. A abertura do link não exclui a conta:
+    você ainda precisará confirmar o pedido nesta página. Contas Apple com e-mail privado dependem da entrega
+    ao endereço de retransmissão da Apple.
   </p>
+  <form id="request-form">
+    <label for="email">E-mail da conta</label>
+    <input id="email" name="email" type="email" autocomplete="email" required>
+    <label class="check">
+      <input id="consent" type="checkbox" required>
+      Autorizo o uso deste e-mail e dos dados técnicos da solicitação para autenticar e processar este pedido.
+    </label>
+    <button type="submit">Enviar link de autenticação</button>
+  </form>
 
-  <h2>Quando o pedido não pode ser aceito na hora</h2>
-  <p>O pedido é recusado enquanto houver pendência financeira, para proteger você e a outra parte:</p>
-  <ul>
-    <li>algum pedido em andamento, como comprador ou como vendedor;</li>
-    <li>alguma disputa aberta;</li>
-    <li>saldo a receber na carteira.</li>
-  </ul>
-  <p>
-    Conclua ou cancele essas pendências e repita o pedido. O aplicativo informa exatamente qual
-    delas está bloqueando.
-  </p>
+  <section id="authenticated" hidden>
+    <h2>Conta autenticada</h2>
+    <p id="auth-status">Nenhuma exclusão foi solicitada ainda.</p>
+    <label id="confirm-label" class="check">
+      <input id="confirm" type="checkbox">
+      Confirmo que quero iniciar o prazo de exclusão de 30 dias. Posso cancelar nesse prazo após autenticar novamente.
+    </label>
+    <button id="delete-button" type="button" disabled>Confirmar solicitação de exclusão</button>
+    <button id="cancel-button" type="button" hidden>Cancelar solicitação pendente</button>
+    <p>Cancelar o pedido não reativa anúncios pausados automaticamente.</p>
+  </section>
+
+  <p id="status" role="status" aria-live="polite"></p>
 
   <h2>O que acontece depois</h2>
-  <p><strong>Imediatamente:</strong></p>
-  <ul>
-    <li>todas as suas sessões são encerradas, em todos os aparelhos;</li>
-    <li>seus anúncios ativos são pausados e deixam de aparecer;</li>
-    <li>você para de receber notificações.</li>
-  </ul>
-  <p><strong>Após 30 dias, em definitivo:</strong></p>
-  <ul>
-    <li>apagamos nome, nome de usuário, e-mail, CPF, telefone, cidade, estado, foto de perfil, capa, biografia, senha e vínculo com a conta Google;</li>
-    <li>apagamos o token de notificação do aparelho;</li>
-    <li>removemos seguidores, bloqueios, favoritos, carrinho, itens salvos, curtidas e notificações;</li>
-    <li>seus anúncios, publicações e stories deixam de ser exibidos.</li>
-  </ul>
-
-  <h2>O que é mantido, e por quê</h2>
   <p>
-    Registros de pedidos, transações e movimentações da carteira são mantidos, já sem os dados
-    que identificam você. Há duas razões: eles são o registro fiscal e contábil da transação, que
-    a lei obriga a guardar, e são também o histórico da pessoa do outro lado da compra — que
-    continua tendo direito ao comprovante dela. Isso está previsto no art. 16, I e II da LGPD.
+    Se não houver pedidos em andamento, disputas abertas, saldo na carteira ou falha na revogação Apple,
+    a API aceita o pedido e inicia um prazo de 30 dias. As sessões são revogadas e anúncios ativos são pausados.
+    A API pode recusar o pedido enquanto houver essas pendências; resolva-as e envie uma nova solicitação.
   </p>
   <p>
-    Mensagens já enviadas permanecem na caixa de quem as recebeu, exibidas como de um usuário
-    removido, do mesmo modo que um e-mail enviado continua na caixa do destinatário.
+    Depois do prazo, o processo existente anonimiza alguns campos do perfil e remove algumas relações,
+    publicações e anúncios. Registros financeiros e mensagens podem permanecer; nem todos os dados e mídias
+    associados são removidos por esse processo. Os detalhes de retenção e os prazos legais precisam ser
+    confirmados pelo responsável antes da publicação.
   </p>
-
-  <h2>Reativar dentro dos 30 dias</h2>
-  <p>
-    Mudou de ideia? Basta entrar na conta novamente durante a janela de 30 dias: o aplicativo
-    oferece a opção de reativar. Seus anúncios precisam ser reativados manualmente, um a um.
-    Passados os 30 dias, a exclusão é irreversível.
-  </p>
-
-  <h2>Baixar seus dados antes</h2>
-  <p>
-    Antes de excluir, você pode baixar tudo que a sua conta contém em
-    <em>Perfil → Configurações → Baixar meus dados</em>. O arquivo inclui perfil, pedidos,
-    transações, movimentações da carteira, anúncios, publicações, comentários, avaliações,
-    mensagens e notificações.
-  </p>
+  <p>Para suporte ou exercício de outros direitos, o contato do controlador permanece pendente de confirmação.</p>
 </main>
-<footer>
-  FreeBay · <span class="placeholder">PREENCHER: razão social e CNPJ</span>
-</footer>
+<footer>FreeBay · <span class="placeholder">PREENCHER: razão social e CNPJ após confirmação do responsável</span></footer>
+<script>
+(() => {
+  const status = document.getElementById('status');
+  const form = document.getElementById('request-form');
+  const authenticated = document.getElementById('authenticated');
+  const confirm = document.getElementById('confirm');
+  const deleteButton = document.getElementById('delete-button');
+  const cancelButton = document.getElementById('cancel-button');
+  const authStatus = document.getElementById('auth-status');
+
+  async function request(path, method, body) {
+    const response = await fetch(path, {
+      method,
+      credentials: 'same-origin',
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await response.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch { data = {}; }
+    if (!response.ok) {
+      const error = new Error(typeof data.message === 'string' ? data.message : 'Não foi possível concluir. Tente novamente.');
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
+  function showAuthenticated(user) {
+    form.hidden = true;
+    authenticated.hidden = false;
+    if (user && user.deletionRequestedAt) {
+      authStatus.textContent = `Há um pedido pendente desde ${new Date(user.deletionRequestedAt).toLocaleString('pt-BR')}.`;
+      document.getElementById('confirm-label').hidden = true;
+      deleteButton.hidden = true;
+      cancelButton.hidden = false;
+    }
+  }
+
+  async function consumeFragmentToken() {
+    const token = new URLSearchParams(window.location.hash.slice(1)).get('token');
+    if (!token) return;
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    status.textContent = 'Validando o link…';
+    try {
+      const result = await request('/auth/web/magic-link/consume', 'POST', { token });
+      showAuthenticated(result.user);
+      status.textContent = 'Autenticação concluída. Nenhuma exclusão foi iniciada.';
+    } catch (error) {
+      if (error.status === 401) form.hidden = false;
+      status.textContent = error.message;
+    }
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    status.textContent = 'Enviando solicitação…';
+    try {
+      await request('/auth/web/magic-link/request', 'POST', {
+        email: document.getElementById('email').value,
+        consent: true,
+        locale: 'pt-BR',
+        purpose: 'account-deletion',
+      });
+      status.textContent = 'Se a conta for elegível e o serviço de e-mail estiver configurado, as instruções serão enviadas ao endereço informado.';
+    } catch (error) {
+      if (error.status === 401) form.hidden = false;
+      status.textContent = error.message;
+    }
+  });
+
+  confirm.addEventListener('change', () => { deleteButton.disabled = !confirm.checked; });
+  deleteButton.addEventListener('click', async () => {
+    if (!confirm.checked) return;
+    deleteButton.disabled = true;
+    try {
+      const state = await request('/users/me/web', 'DELETE');
+      authStatus.textContent = `Pedido aceito em ${new Date(state.deletionRequestedAt).toLocaleString('pt-BR')}. Exclusão prevista após 30 dias.`;
+      document.getElementById('confirm-label').hidden = true;
+      deleteButton.hidden = true;
+      cancelButton.hidden = false;
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = error.message;
+      deleteButton.disabled = false;
+    }
+  });
+  cancelButton.addEventListener('click', async () => {
+    cancelButton.disabled = true;
+    try {
+      await request('/users/me/web/deletion/cancel', 'PATCH');
+      authStatus.textContent = 'Solicitação cancelada. Anúncios pausados não foram reativados.';
+      cancelButton.hidden = true;
+      status.textContent = '';
+    } catch (error) {
+      status.textContent = error.message;
+      cancelButton.disabled = false;
+    }
+  });
+
+  void consumeFragmentToken();
+})();
+</script>
 </body>
 </html>

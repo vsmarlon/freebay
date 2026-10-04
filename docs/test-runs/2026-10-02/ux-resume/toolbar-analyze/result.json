@@ -1,0 +1,11 @@
+{
+  "command": "flutter analyze --fatal-infos lib/features/media_editor/presentation/widgets/image_editor_toolbar.dart integration_test/native_image_compositor_test.dart",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:34:38.2225352Z",
+  "finished_utc": "2026-10-02T14:37:13.2582519Z",
+  "exit": 0,
+  "changed_manifest_rows": 5,
+  "before_sha256": "4C9BE33C257B8A970D90710D871ACE7EF25509DB58F71850944882BBEF3FB956",
+  "after_sha256": "985520E7084B6A49E4C8A81B7E98CB1437F7764494871B9B03DEA4638963713D"
+}

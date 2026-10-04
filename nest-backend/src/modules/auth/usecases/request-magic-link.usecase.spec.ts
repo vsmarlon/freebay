@@ -4,7 +4,7 @@ import { DatabaseError } from '@/shared/core/errors';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { ResendService } from '../services/resend.service';
 import { MagicLinkRepository } from '../domain/repositories/magic-link.repository';
-import { RequestMagicLinkUseCase } from './request-magic-link.usecase';
+import { RequestMagicLinkInput, RequestMagicLinkUseCase } from './request-magic-link.usecase';
 
 describe('RequestMagicLinkUseCase', () => {
   type Mocks = {
@@ -50,7 +50,7 @@ describe('RequestMagicLinkUseCase', () => {
     expect(data.expiresAt.getTime() - data.requestedAt.getTime()).toBe(600000);
     expect(data.requestedAt.getTime()).toBeGreaterThanOrEqual(before);
     expect(mocks.resend.sendMagicLink).toHaveBeenCalledWith(
-      'user@example.com', expect.any(String), 'en', 'credential-id',
+      'user@example.com', expect.any(String), 'en', 'credential-id', undefined, undefined,
     );
     expect(mocks.repository.create.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.resend.sendMagicLink.mock.invocationCallOrder[0],
@@ -60,6 +60,26 @@ describe('RequestMagicLinkUseCase', () => {
       'credential-id', expect.any(Date), 'message-id',
     );
     expect(mocks.redis.incrementWithExpiry).toHaveBeenCalledTimes(2);
+  });
+
+  it('routes a deletion request to the fixed legal page with a purpose-marked token and trusted origin', async () => {
+    const mocks: Mocks = {
+      repository: { create: jest.fn().mockResolvedValue(right({ id: 'credential-id' })), recordSendAccepted: jest.fn() },
+      redis: { incrementWithExpiry: jest.fn().mockResolvedValue(1) },
+      resend: { sendMagicLink: jest.fn().mockResolvedValue(null) },
+    };
+    const usecase = await compileSubject(mocks);
+
+    const input: RequestMagicLinkInput & { purpose: 'account-deletion'; returnOrigin: string } = {
+      email: 'user@example.com', consent: true, locale: 'en', ip: '127.0.0.1',
+      purpose: 'account-deletion', returnOrigin: 'https://trusted.example.com',
+    };
+    await usecase.execute(input);
+
+    expect(mocks.resend.sendMagicLink).toHaveBeenCalledWith(
+      'user@example.com', expect.stringMatching(/^delete\./), 'en', 'credential-id',
+      'account-deletion', 'https://trusted.example.com',
+    );
   });
 
   it('returns generic success when either throttle bucket is exceeded', async () => {

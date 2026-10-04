@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedDrawerHeader extends StatelessWidget {
   final String name;
@@ -99,6 +100,7 @@ class FeedDrawerStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       color: context.surfaceMidColor,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -108,7 +110,7 @@ class FeedDrawerStats extends StatelessWidget {
             children: [
               Expanded(
                 child: StatColumn(
-                  label: 'Seguidores',
+                  label: strings.profileFollowers,
                   value: '$followers',
                   uppercaseLabel: true,
                   onTap: onFollowers,
@@ -116,7 +118,7 @@ class FeedDrawerStats extends StatelessWidget {
               ),
               Expanded(
                 child: StatColumn(
-                  label: 'Seguindo',
+                  label: strings.profileFollowing,
                   value: '$following',
                   uppercaseLabel: true,
                   onTap: onFollowing,
@@ -129,14 +131,14 @@ class FeedDrawerStats extends StatelessWidget {
             children: [
               Expanded(
                 child: StatColumn(
-                  label: 'Vendas',
+                  label: strings.profileSales,
                   value: '$sales',
                   uppercaseLabel: true,
                 ),
               ),
               Expanded(
                 child: StatColumn(
-                  label: 'Reputação',
+                  label: strings.profileReputation,
                   value: reputation.toStringAsFixed(1),
                   uppercaseLabel: true,
                   usePrimaryColor: true,

@@ -1,0 +1,8 @@
+{
+  "label": "red-e2e",
+  "command": "npm run test:e2e -- --runTestsByPath test/e2e/story-audience.e2e-spec.ts -t \"allows either connection direction\"",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:40:28.816Z",
+  "ended": "2026-10-01T06:40:44.897Z",
+  "exitCode": 1
+}

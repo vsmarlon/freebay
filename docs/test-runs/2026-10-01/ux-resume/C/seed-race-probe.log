@@ -1,0 +1,20 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart
+00:00 +0: FollowStateNotifier & followStatusProvider optimistically updates follow state and confirms with server
+00:00 +1: FollowStateNotifier & followStatusProvider rolls back optimistic state on server failure
+00:00 +2: FollowStateNotifier & followStatusProvider ignores a duplicate follow tap while the request is pending
+00:00 +3: FollowStateNotifier & followStatusProvider resets following feed after a successful relationship change
+00:00 +4: FollowStateNotifier & followStatusProvider invalidating suggestionsProvider after follow does not throw LateInitializationError
+00:00 +5: FollowStateNotifier & followStatusProvider discards a pending follow when the account changes
+00:00 +6: FollowStateNotifier & followStatusProvider does not seed a status after its account session changes
+00:00 +6 -1: FollowStateNotifier & followStatusProvider does not seed a status after its account session changes [E]
+  Expected: empty
+    Actual: {'target-user': Instance of 'FollowStatusResponse'}
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\features\profile\follow_state_test.dart 406:7  main.<fn>.<fn>
+  
+00:00 +6 -1: Some tests failed.
+
+Failing tests:
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider does not seed a status after its account session changes

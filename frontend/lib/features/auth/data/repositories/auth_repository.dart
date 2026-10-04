@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/http/request_either.dart';
@@ -12,18 +13,19 @@ typedef UsernameAvailability = ({bool available, List<String> suggestions});
 
 class AuthRepository {
   final Dio client;
+  @visibleForTesting
+  final Future<void> Function(String token)? afterAuthenticationSideEffects;
 
-  AuthRepository({Dio? client}) : client = client ?? HttpClient.instance;
+  AuthRepository({Dio? client, this.afterAuthenticationSideEffects})
+    : client = client ?? HttpClient.instance;
 
   Future<Either<Failure, void>> logout() async {
     String? accessToken;
     String? refreshToken;
-    String? biometricToken;
     HttpClient.suspendRefresh();
     try {
       accessToken = await StorageService.getToken();
       refreshToken = await StorageService.getRefreshToken();
-      biometricToken = await StorageService.getBiometricToken();
       final installationId = await StorageService.getPushInstallationId();
 
       final result = await requestEither<void>(
@@ -31,7 +33,6 @@ class AuthRepository {
           '/auth/logout',
           data: {
             'refreshToken': ?refreshToken,
-            'biometricToken': ?biometricToken,
             'installationId': installationId,
           },
           options: Options(
@@ -60,9 +61,12 @@ class AuthRepository {
   }
 
   Future<Either<Failure, UserEntity>> _authenticate({
+    required int attempt,
     required Future<Response> Function() request,
     required String debugLabel,
     required Failure missingDataFailure,
+    String? expectedUserId,
+    Future<void> Function()? onUserMismatch,
     Future<void> Function(dynamic data)? afterTokens,
   }) {
     return requestEither<UserEntity>(
@@ -71,13 +75,46 @@ class AuthRepository {
       decoder: (response) async {
         final data = response.data?['data'];
         if (data == null) return Left(missingDataFailure);
-        await AuthSessionCoordinator.installTokensAndEstablish(
-          () =>
-              StorageService.saveTokenPair(data['token'], data['refreshToken']),
-        );
-        await afterTokens?.call(data);
+        if (!AuthSessionCoordinator.isCurrentAttempt(attempt)) {
+          return const Left(CacheFailure('Authentication attempt superseded.'));
+        }
         final user = UserEntity.fromJson(data['user']);
-        if (user.email != null) await StorageService.saveEmail(user.email!);
+        if (expectedUserId != null && user.id != expectedUserId) {
+          await onUserMismatch?.call();
+          return const Left(
+            CacheFailure('A biometria pertence a outra conta.'),
+          );
+        }
+        final installed =
+            await AuthSessionCoordinator.installTokensAndEstablish(
+              attempt: attempt,
+              token: data['token'] as String,
+              refreshToken: data['refreshToken'] as String?,
+              afterAuthenticationSideEffects: () =>
+                  afterAuthenticationSideEffects?.call(
+                    data['token'] as String,
+                  ) ??
+                  Future<void>.value(),
+              captureRollback: () async {
+                final email = await StorageService.getEmail();
+                final rememberMe = await StorageService.getRememberMe();
+                final biometricOwner = await StorageService.getBiometricOwner();
+                return () => StorageService.restoreAuthenticationMetadata(
+                  email: email,
+                  rememberMe: rememberMe,
+                  biometricOwner: biometricOwner,
+                );
+              },
+              afterInstall: () async {
+                await afterTokens?.call(data);
+                if (user.email != null) {
+                  await StorageService.saveEmail(user.email!);
+                }
+              },
+            );
+        if (!installed) {
+          return const Left(CacheFailure('Authentication attempt superseded.'));
+        }
         return Right(user);
       },
     );
@@ -86,10 +123,11 @@ class AuthRepository {
   Future<Either<Failure, UserEntity>> login(
     String email,
     String password,
-    bool rememberMe,
-  ) async {
-    AuthSessionCoordinator.beginAuthentication();
+    bool rememberMe, {
+    required int authenticationAttempt,
+  }) async {
     final result = await _authenticate(
+      attempt: authenticationAttempt,
       request: () => client.post(
         '/auth/login',
         data: {'email': email, 'password': password},
@@ -113,10 +151,11 @@ class AuthRepository {
     String email,
     String password,
     String displayName,
-    String username,
-  ) async {
-    AuthSessionCoordinator.beginAuthentication();
+    String username, {
+    required int authenticationAttempt,
+  }) async {
     final result = await _authenticate(
+      attempt: authenticationAttempt,
       request: () => client.post(
         '/auth/register',
         data: {
@@ -128,8 +167,8 @@ class AuthRepository {
       ),
       debugLabel: 'AUTH register',
       missingDataFailure: const ServerFailure('Falha ao registrar usuário.'),
+      afterTokens: (_) => StorageService.saveRememberMe(false),
     );
-    if (result.isRight) await StorageService.saveRememberMe(false);
     return result;
   }
 
@@ -178,13 +217,27 @@ class AuthRepository {
   );
 
   Future<Either<Failure, UserEntity>> biometricLogin(
-    String biometricToken,
-  ) async {
-    AuthSessionCoordinator.beginAuthentication();
+    String biometricToken, {
+    required String challengeId,
+    required String signature,
+    required String expectedUserId,
+    required int authenticationAttempt,
+  }) async {
     return _authenticate(
+      attempt: authenticationAttempt,
+      expectedUserId: expectedUserId,
+      onUserMismatch: () => AuthSessionCoordinator.serialize(() async {
+        if (AuthSessionCoordinator.isCurrentAttempt(authenticationAttempt)) {
+          await BiometryService().clearState();
+        }
+      }),
       request: () => client.post(
         '/auth/biometric-login',
-        data: {'biometricToken': biometricToken},
+        data: {
+          'biometricToken': biometricToken,
+          'challengeId': challengeId,
+          'signature': signature,
+        },
       ),
       debugLabel: 'AUTH biometric',
       missingDataFailure: const InvalidCredentialsFailure(),
@@ -194,9 +247,69 @@ class AuthRepository {
     );
   }
 
+  Future<Either<Failure, ({String challengeId, String challenge})>>
+  createBiometricChallenge(
+    String biometricToken, {
+    required String purpose,
+    String? stepUpPurpose,
+    String? resourceId,
+  }) => requestEither(
+    () => client.post(
+      '/auth/biometric-challenge',
+      data: {
+        'biometricToken': biometricToken,
+        'purpose': purpose,
+        if (stepUpPurpose != null) 'stepUpPurpose': stepUpPurpose,
+        if (resourceId != null) 'resourceId': resourceId,
+      },
+    ),
+    decoder: (response) {
+      final data = response.data?['data'];
+      if (data is! Map<String, dynamic> ||
+          data['challengeId'] is! String ||
+          data['challenge'] is! String) {
+        return const Left(ServerFailure('Invalid biometric challenge.'));
+      }
+      return Right((
+        challengeId: data['challengeId'] as String,
+        challenge: data['challenge'] as String,
+      ));
+    },
+    debugLabel: 'AUTH biometric challenge',
+  );
+
+  Future<Either<Failure, ({String challengeId, String challenge})>>
+  createBiometricLoginChallenge(String biometricToken) =>
+      createBiometricChallenge(biometricToken, purpose: 'login');
+
+  Future<Either<Failure, String>> createStepUp({
+    required String purpose,
+    String? resourceId,
+    required Map<String, Object?> proof,
+  }) => requestEither(
+    () => client.post(
+      '/auth/step-up',
+      data: {
+        'purpose': purpose,
+        if (resourceId != null) 'resourceId': resourceId,
+        'proof': proof,
+      },
+    ),
+    decoder: (response) {
+      final token = response.data?['data']?['stepUpToken'];
+      return token is String && token.isNotEmpty
+          ? Right(token)
+          : const Left(ServerFailure('Invalid step-up response.'));
+    },
+    debugLabel: 'AUTH step-up',
+  );
+
   Future<Either<Failure, void>> revokeBiometricToken() async {
     final biometricToken = await StorageService.getBiometricToken();
-    if (biometricToken == null) return const Right(null);
+    if (biometricToken == null)
+      return const Left(
+        CacheFailure('Biometric revocation could not be confirmed.'),
+      );
     return requestEither<void>(
       () => client.patch(
         '/auth/biometric-token/revoke',
@@ -207,21 +320,56 @@ class AuthRepository {
     );
   }
 
-  Future<Either<Failure, String>> enrollBiometricToken() => requestEither(
-    () => client.post('/auth/biometric-token/enroll'),
+  Future<Either<Failure, String>> enrollBiometricToken({
+    required String stepUpToken,
+    required String publicKey,
+  }) => requestEither(
+    () => client.post(
+      '/auth/biometric-token/enroll',
+      data: {'stepUpToken': stepUpToken, 'publicKey': publicKey},
+    ),
     decoder: (response) =>
         Right(response.data['data']['biometricToken'] as String),
     debugLabel: 'AUTH enroll biometric',
   );
 
-  Future<Either<Failure, UserEntity>> googleAuth(String idToken) async {
-    AuthSessionCoordinator.beginAuthentication();
+  Future<Either<Failure, UserEntity>> googleAuth(
+    String idToken, {
+    required int authenticationAttempt,
+  }) async {
     return _authenticate(
+      attempt: authenticationAttempt,
       request: () => client.post('/auth/google', data: {'idToken': idToken}),
       debugLabel: 'AUTH google',
       missingDataFailure: const ServerFailure(
         'Falha ao autenticar com Google.',
       ),
+      afterTokens: (_) async {
+        await StorageService.saveRememberMe(true);
+      },
+    );
+  }
+
+  Future<Either<Failure, UserEntity>> appleAuth({
+    required String identityToken,
+    required String authorizationCode,
+    required String rawNonce,
+    required int authenticationAttempt,
+    String? fullName,
+  }) async {
+    return _authenticate(
+      attempt: authenticationAttempt,
+      request: () => client.post(
+        '/auth/apple',
+        data: {
+          'identityToken': identityToken,
+          'authorizationCode': authorizationCode,
+          'rawNonce': rawNonce,
+          'fullName': ?fullName,
+        },
+      ),
+      debugLabel: 'AUTH apple',
+      missingDataFailure: const ServerFailure(),
       afterTokens: (_) async {
         await StorageService.saveRememberMe(true);
       },

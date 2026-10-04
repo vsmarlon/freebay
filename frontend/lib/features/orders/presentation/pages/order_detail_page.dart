@@ -3,15 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/auth/auth.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_status_timeline.dart';
 import 'package:freebay/features/orders/presentation/widgets/escrow_status_card.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_actions.dart';
+import 'package:freebay/features/orders/presentation/widgets/order_cancellation_sheet.dart';
 import 'package:freebay/features/orders/presentation/widgets/brutalist_confirm_dialog.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
   final String orderId;
@@ -23,6 +25,7 @@ class OrderDetailPage extends ConsumerStatefulWidget {
 }
 
 class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
+  bool _isCancelPending = false;
   @override
   void initState() {
     super.initState();
@@ -45,9 +48,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'PEDIDO #$shortId',
+              text: l10n(context).ordersNumber(shortId),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: l10n(context).accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -76,7 +80,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final order = state.order;
     if (order == null) {
       return EmptyState.error(
-        message: state.error ?? 'Pedido não encontrado',
+        message: l10n(context).ordersNotFound,
         onRetry: () =>
             ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder(),
       );
@@ -205,7 +209,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   ),
                 ),
                 Text(
-                  participant?.displayNameOrDefault ?? 'Usuário',
+                  participant?.displayNameOrDefault ??
+                      l10n(context).commonUnknownUser,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -233,7 +238,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'INFORMAÇÕES',
+            l10n(context).ordersInformation.toUpperCase(),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -241,11 +246,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ),
           ),
           Spacing.vMd,
-          _row('ID do pedido', order.id),
+          _row(l10n(context).ordersOrderId, order.id),
           const SizedBox(height: 8),
           _row(
-            'Data do pedido',
-            '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+            l10n(context).ordersOrderDate,
+            localizedShortDate(context, order.createdAt),
           ),
         ],
       ),
@@ -275,12 +280,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Future<void> _handleConfirmDelivery() async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => const BrutalistConfirmDialog(
-        title: 'Confirmar Recebimento',
-        message:
-            'Ao confirmar o recebimento, o pagamento será liberado para o vendedor.',
-        confirmLabel: 'Confirmar',
-        cancelLabel: 'Cancelar',
+      builder: (_) => BrutalistConfirmDialog(
+        title: l10n(context).ordersConfirmReceipt,
+        message: l10n(context).ordersConfirmReceiptBody,
+        confirmLabel: l10n(context).commonConfirm,
+        cancelLabel: l10n(context).commonCancel,
       ),
     );
     if (ok == true) {
@@ -298,7 +302,8 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       extra: {
         'orderId': widget.orderId,
         'reviewedId': isBuyer ? order.sellerId : order.buyerId,
-        'reviewedName': user?.displayNameOrDefault ?? 'Usuário',
+        'reviewedName':
+            user?.displayNameOrDefault ?? l10n(context).commonUnknownUser,
         'reviewedAvatarUrl': user?.avatarUrl,
         'reviewType': reviewType,
       },
@@ -312,7 +317,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         .startDirectConversation(targetId);
     if (!mounted) return;
     result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
+      (failure) => AppSnackbar.handleFailure(context, failure),
       (conversationId) => context.push(AppRoutes.chatPath(conversationId)),
     );
   }
@@ -324,121 +329,49 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     }
   }
 
-  static const _cancelReasons = [
-    'Mudei de ideia',
-    'Encontrei um preço melhor',
-    'Produto incorreto',
-    'Demora na confirmação',
-    'Problemas com o vendedor',
-    'Outro motivo',
-  ];
-
   Future<void> _handleCancel() async {
-    String? selectedReason;
-
-    selectedReason = await showModalBottomSheet<String>(
+    await showBrutalistSheet<void>(
       context: context,
-      backgroundColor: context.surfaceColor,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'CANCELAR PEDIDO',
-                style: TextStyle(
-                  fontFamily: AppTypography.headlineFontFamily,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(ctx).brightness == Brightness.dark
-                      ? Colors.white
-                      : Colors.black,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Selecione o motivo do cancelamento:',
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 14,
-                  color: AppColors.mediumGray,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ..._cancelReasons.map(
-                (reason) => InkWell(
-                  onTap: () => Navigator.of(ctx).pop(reason),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
-                    margin: const EdgeInsets.only(bottom: 4),
-                    color: Theme.of(ctx).brightness == Brightness.dark
-                        ? Colors.white.withAlpha(10)
-                        : Colors.black.withAlpha(10),
-                    child: Text(
-                      reason,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        fontSize: 15,
-                        color: Theme.of(ctx).brightness == Brightness.dark
-                            ? Colors.white
-                            : Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              AppButton(
-                label: 'Voltar',
-                variant: AppButtonVariant.secondary,
-                onPressed: () => Navigator.of(ctx).pop(),
-                width: double.infinity,
-              ),
-            ],
-          ),
-        ),
-      ),
+      title: l10n(context).ordersCancel.toUpperCase(),
+      scrollable: false,
+      builder: (_) => OrderCancellationSheet(onConfirm: _cancelOrder),
     );
+  }
 
-    if (selectedReason == null || !mounted) return;
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => BrutalistConfirmDialog(
-        title: 'Confirmar Cancelamento',
-        message:
-            'Tem certeza que deseja cancelar este pedido?\n\nMotivo: $selectedReason\n\nO valor será reembolsado se já tiver sido pago.',
-        confirmLabel: 'Cancelar Pedido',
-        cancelLabel: 'Voltar',
-        isDanger: true,
-      ),
-    );
-    if (ok != true || !mounted) return;
-
-    final outcome = await ref
-        .read(orderDetailProvider(widget.orderId).notifier)
-        .cancelOrder(selectedReason);
-
-    if (!mounted) return;
-    if (outcome != null) {
-      if (outcome == 'REFUND_PENDING') {
-        AppSnackbar.info(
-          context,
-          'Reembolso solicitado. Aguarde a confirmação do pagamento.',
-        );
-      } else {
-        AppSnackbar.success(context, 'Pedido cancelado com sucesso');
+  Future<bool> _cancelOrder(String reason) async {
+    if (_isCancelPending) return false;
+    _isCancelPending = true;
+    try {
+      final stepUpToken = await StepUpAuthenticator.authorize(
+        context,
+        ref,
+        purpose: 'cancel_order',
+        resourceId: widget.orderId,
+      );
+      if (stepUpToken == null || !mounted) return false;
+      final outcome = await ref
+          .read(orderDetailProvider(widget.orderId).notifier)
+          .cancelOrder(reason, stepUpToken);
+      if (!mounted) return false;
+      if (outcome != null) {
+        if (outcome == 'REFUND_PENDING') {
+          AppSnackbar.info(context, l10n(context).ordersRefundPending);
+        } else {
+          AppSnackbar.success(context, l10n(context).ordersCancelledSuccess);
+        }
+        await ref
+            .read(orderDetailProvider(widget.orderId).notifier)
+            .loadOrder();
+        return true;
       }
-      await ref.read(orderDetailProvider(widget.orderId).notifier).loadOrder();
-    } else {
       final error = ref.read(orderDetailProvider(widget.orderId)).error;
-      AppSnackbar.error(context, error ?? 'Erro ao cancelar pedido');
+      AppSnackbar.error(context, error ?? l10n(context).errorUnknown);
+      return false;
+    } catch (_) {
+      if (mounted) AppSnackbar.error(context, l10n(context).errorUnknown);
+      return false;
+    } finally {
+      _isCancelPending = false;
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ChatHeader extends StatelessWidget {
   final String name;
@@ -32,20 +33,21 @@ class ChatHeader extends StatelessWidget {
     this.onRetry,
   });
 
-  String get _statusLabel {
-    if (isOnline) return 'Online agora';
+  String _statusLabel(BuildContext context) {
+    final strings = l10n(context);
+    if (isOnline) return strings.chatOnlineNow;
     if (lastSeenAt != null) {
       final diff = DateTime.now().difference(lastSeenAt!);
-      if (diff.inMinutes < 1) return 'Visto agora';
-      if (diff.inHours < 1) return 'Visto há ${diff.inMinutes}min';
-      if (diff.inDays < 1) return 'Visto há ${diff.inHours}h';
-      return 'Visto há ${diff.inDays}d';
+      if (diff.inMinutes < 1) return strings.chatLastSeenNow;
+      if (diff.inHours < 1) return strings.chatLastSeenMinutes(diff.inMinutes);
+      if (diff.inDays < 1) return strings.chatLastSeenHours(diff.inHours);
+      return strings.chatLastSeenDays(diff.inDays);
     }
     switch (chatType) {
       case ChatThreadType.order:
-        return 'PEDIDO';
+        return strings.chatOrderLabel;
       case ChatThreadType.direct:
-        return 'DIRETA';
+        return strings.chatDirectLabel;
     }
   }
 
@@ -53,7 +55,7 @@ class ChatHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
+        top: MediaQuery.paddingOf(context).top + 8,
         left: 16,
         right: 16,
         bottom: 8,
@@ -64,7 +66,11 @@ class ChatHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          BrutalistIconButton(icon: Icons.arrow_back, onTap: onBack),
+          BrutalistIconButton(
+            icon: Icons.arrow_back,
+            semanticLabel: l10n(context).accessibilityBack,
+            onTap: onBack,
+          ),
           const SizedBox(width: 12),
           UserAvatar(imageUrl: avatarUrl, size: AppAvatarSize.small),
           const SizedBox(width: 12),
@@ -96,9 +102,9 @@ class ChatHeader extends StatelessWidget {
                 if (hasError)
                   GestureDetector(
                     onTap: onRetry,
-                    child: const Text(
-                      'ERRO AO CARREGAR • TOCAR PARA TENTAR DE NOVO',
-                      style: TextStyle(
+                    child: Text(
+                      l10n(context).chatLoadRetry,
+                      style: const TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -109,7 +115,7 @@ class ChatHeader extends StatelessWidget {
                   )
                 else if (!isLoading)
                   Text(
-                    _statusLabel,
+                    _statusLabel(context),
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 11,
@@ -123,9 +129,17 @@ class ChatHeader extends StatelessWidget {
               ],
             ),
           ),
-          BrutalistIconButton(icon: Icons.info_outline, onTap: onInfo ?? () {}),
+          BrutalistIconButton(
+            icon: Icons.info_outline,
+            semanticLabel: l10n(context).chatConversationInfo,
+            onTap: onInfo,
+          ),
           const SizedBox(width: 4),
-          BrutalistIconButton(icon: Icons.more_vert, onTap: onConfig),
+          BrutalistIconButton(
+            icon: Icons.more_vert,
+            semanticLabel: l10n(context).chatConversationOptionsLabel,
+            onTap: onConfig,
+          ),
         ],
       ),
     );

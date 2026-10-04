@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/orders/presentation/pages/orders_tab.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 export 'orders_tab.dart';
 export '../widgets/sales_status_filters.dart';
@@ -56,15 +57,17 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: context.surfaceColor,
       body: SafeArea(
         child: Column(
           children: [
             PageHeader(
-              text: 'MEUS PEDIDOS',
+              text: strings.ordersMyOrders,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -86,9 +89,9 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.0,
                 ),
-                tabs: const [
-                  Tab(text: 'COMPRAS'),
-                  Tab(text: 'VENDAS'),
+                tabs: [
+                  Tab(text: strings.ordersPurchasesTab),
+                  Tab(text: strings.ordersSalesTab),
                 ],
               ),
             ),

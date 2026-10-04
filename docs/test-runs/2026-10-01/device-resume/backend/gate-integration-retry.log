@@ -1,0 +1,225 @@
+
+> nest-backend@1.0.0 test:integration
+> npm run prisma:test:sync && dotenv -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.integration.js
+
+
+> nest-backend@1.0.0 prisma:test:sync
+> cross-env NODE_ENV=test dotenv -e .env.test -- node scripts/safe-prisma-db-push.js
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "freebay_test_db", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+PASS src/modules/chat/usecases/send-message.usecase.integration-spec.ts (6.909 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.directMessage.create()` invocation in
+      C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\chat\data\repositories\conversation\messages.ts:48:50
+      
+        45 export async function createDirectMessage(prisma: PrismaService, data: Prisma.DirectMessageCreateInput, includeSender = false): RepositoryResponse<DirectMessage | DirectMessageWithSender> {
+        46   try {
+        47     if (includeSender) {
+      → 48       const message = await prisma.directMessage.create(
+      Unique constraint failed on the (not available)
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `this.prisma.notification.create()` invocation in
+      C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\notifications\services\notification.service.ts:22:57
+      
+        19   extraData?: Record<string, string>;
+        20 }) {
+        21   const extraData = { ...data.extraData, type: data.type };
+      → 22   const notification = await this.prisma.notification.create(
+      Unique constraint failed on the (not available)
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+PASS src/modules/payments/usecases/create-payment-session.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/social/data/repositories/feed-pagination.integration-spec.ts (10.109 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/shared/wallet/wallet-mutation.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/auth/data/repositories/magic-link-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/payments/usecases/process-webhook.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/tasks/escrow-release.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/cart/data/repositories/cart-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/orders/data/repositories/order-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/payments/data/repositories/transaction-transfer.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+(node:28740) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use asycn/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[31m[Nest] 28740  - [39m01/10/2026, 03:56:07 [31m  ERROR[39m [38;5;3m[PrismaRepository] [39m[31mErro ao criar comentário[39m
+PrismaClientKnownRequestError: 
+Invalid `tx.post.update()` invocation in
+C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\social\data\repositories\comment-database.repository.ts:147:27
+
+  144   include: COMMENT_INCLUDE,
+  145 });
+  146 if (!isHidden) {
+→ 147   await tx.post.update(
+An operation failed because it depends on one or more records that were required but not found. No record was found for an update.
+    at zr.handleRequestError (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at zr.handleAndLogRequestError (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:183:12)
+    at zr.request (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:152:12)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at a (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:808:24)
+    at C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\social\data\repositories\comment-database.repository.ts:147:13
+    at Proxy._transactionWithCallback (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:697:18)
+    at repositoryResponse (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\shared\infra\prisma\repository-response.ts:11:18)
+    at Object.<anonymous> (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\social\data\repositories\comment-database.repository.integration-spec.ts:50:20)
+PASS src/modules/social/data/repositories/comment-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/wallet/usecases/get-wallet.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/disputes/usecases/dispute.integration-spec.ts (16.657 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/reviews/usecases/create-review/create-review.usecase.integration-spec.ts (12.465 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/orders/usecases/order.usecase.integration-spec.ts (8.774 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error 
+      Invalid `tx.order.create()` invocation in
+      C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\orders\data\repositories\order-reservation.repository.ts:55:40
+      
+        52   if (reserveResult.count === 0) throw new Error(PRODUCT_UNAVAILABLE);
+        53 }
+        54 
+      → 55 const created = await tx.order.create(
+      An operation failed because it depends on one or more records that were required but not found. No 'User' record (needed to inline the relation on 'Order' record(s)) was found for a nested connect on one-to-many relation 'BuyerOrders'.
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+PASS src/modules/auth/usecases/register.usecase.integration-spec.ts (8.752 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/reviews/usecases/get-user-reviews/get-user-reviews.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/products/data/repositories/product-inventory.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+
+Test Suites: 18 passed, 18 total
+Tests:       102 passed, 102 total
+Snapshots:   0 total
+Time:        88.391 s
+Ran all test suites.

@@ -7,6 +7,8 @@ import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class CartPage extends ConsumerStatefulWidget {
   const CartPage({super.key});
@@ -24,6 +26,7 @@ class _CartPageState extends ConsumerState<CartPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final state = ref.watch(cartProvider);
     final cart = state.cart;
     final hasUnavailableItems = cart.items.any(
@@ -38,9 +41,10 @@ class _CartPageState extends ConsumerState<CartPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'CARRINHO (${cart.totalItems})',
+              text: strings.cartTitleCount(cart.totalItems).toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
               actions: [
@@ -51,10 +55,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                           .read(cartProvider.notifier)
                           .clearCart();
                       if (!context.mounted) return;
-                      if (ok) AppSnackbar.info(context, 'Carrinho limpo');
+                      if (ok) AppSnackbar.info(context, strings.cartCleared);
                     },
                     child: Text(
-                      'Limpar',
+                      strings.commonClear,
                       style: TextStyle(
                         color: context.textPrimary,
                         fontWeight: FontWeight.bold,
@@ -77,14 +81,14 @@ class _CartPageState extends ConsumerState<CartPage> {
                     )
                   : state.error != null && cart.items.isEmpty
                   ? EmptyState.error(
-                      message: state.error!,
+                      message: strings.errorUnknown,
                       onRetry: () => ref.read(cartProvider.notifier).loadCart(),
                     )
                   : cart.items.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.shopping_cart_outlined,
-                      title: 'CARRINHO VAZIO',
-                      subtitle: 'Adicione produtos para continuar.',
+                      title: strings.cartEmptyTitle.toUpperCase(),
+                      subtitle: strings.cartEmptyBody,
                     )
                   : RefreshIndicator(
                       onRefresh: () async =>
@@ -109,12 +113,23 @@ class _CartPageState extends ConsumerState<CartPage> {
                                   child: item.product.imageUrl != null
                                       ? CachedNetworkImage(
                                           imageUrl: item.product.imageUrl!,
+                                          httpHeaders: mediaAuthHeaders(
+                                            item.product.imageUrl!,
+                                          ),
                                           fit: BoxFit.cover,
                                           memCacheWidth: 200,
                                           memCacheHeight: 200,
                                           placeholder: (context, url) =>
-                                              Container(
-                                                color: context.surfaceMidColor,
+                                              BlurHashPlaceholder(
+                                                hash: isPrivateMedia(url)
+                                                    ? null
+                                                    : item
+                                                          .product
+                                                          .imageBlurHash,
+                                                fallback: Container(
+                                                  color:
+                                                      context.surfaceMidColor,
+                                                ),
                                               ),
                                           errorWidget: (context, url, error) =>
                                               const Icon(Icons.image_outlined),
@@ -130,11 +145,15 @@ class _CartPageState extends ConsumerState<CartPage> {
                                       Text(
                                         item.product.status !=
                                                 ProductStatus.active
-                                            ? '${item.product.title} (indisponível)'
+                                            ? strings.cartProductUnavailable(
+                                                item.product.title,
+                                              )
                                             : item.quantity >
                                                   item.product.quantity -
                                                       item.product.soldCount
-                                            ? '${item.product.title} (estoque insuficiente)'
+                                            ? strings.cartInsufficientStock(
+                                                item.product.title,
+                                              )
                                             : item.product.title,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -158,6 +177,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                                         children: [
                                           BrutalistIconButton(
                                             icon: Icons.remove,
+                                            semanticLabel: strings
+                                                .accessibilityDecreaseQuantity(
+                                                  item.product.title,
+                                                ),
                                             size: 24,
                                             onTap: item.quantity > 1
                                                 ? () => ref
@@ -184,6 +207,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                                           ),
                                           BrutalistIconButton(
                                             icon: Icons.add,
+                                            semanticLabel: strings
+                                                .accessibilityIncreaseQuantity(
+                                                  item.product.title,
+                                                ),
                                             size: 24,
                                             onTap:
                                                 item.quantity < 10 &&
@@ -219,6 +246,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                                 ),
                                 BrutalistIconButton(
                                   icon: Icons.close,
+                                  semanticLabel: strings
+                                      .accessibilityRemoveCartItem(
+                                        item.product.title,
+                                      ),
                                   size: 24,
                                   onTap: () async {
                                     final notifier = ref.read(
@@ -231,7 +262,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                     if (!context.mounted) return;
                                     AppSnackbar.undoable(
                                       context,
-                                      message: 'Item removido do carrinho.',
+                                      message: strings.cartItemRemoved,
                                       onUndo: () => notifier.addToCart(
                                         item.productId,
                                         quantity: quantity,
@@ -251,7 +282,7 @@ class _CartPageState extends ConsumerState<CartPage> {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  state.error!,
+                  strings.errorUnknown,
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.error,
                   ),
@@ -274,7 +305,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Total',
+                            strings.commonTotal,
                             style: TextStyle(
                               color: context.textSecondary,
                               fontSize: 12,
@@ -292,7 +323,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                       ),
                     ),
                     AppButton(
-                      label: 'CONTINUAR',
+                      label: strings.cartContinue,
                       onPressed: hasUnavailableItems
                           ? null
                           : () => context.push(AppRoutes.checkoutCart),

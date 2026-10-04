@@ -4,6 +4,7 @@ import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/domain/usecases/get_post_details_usecase.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:freebay/features/social/social.dart';
 
 part 'post_details_provider.g.dart';
 
@@ -54,7 +55,7 @@ class PostDetails extends _$PostDetails {
   @override
   PostDetailsState build(String postId) {
     Future.microtask(_loadData);
-    return PostDetailsState();
+    return PostDetailsState(isLoading: true);
   }
 
   Future<void> _loadData() async {
@@ -68,10 +69,10 @@ class PostDetails extends _$PostDetails {
     PostEntity? post;
     String? errorMessage;
 
-    postResult.fold(
-      (failure) => errorMessage = failure.message,
-      (data) => post = data,
-    );
+    postResult.fold((failure) => errorMessage = failure.message, (data) {
+      post = data;
+      reconcileSocialPosts(ref, [data]);
+    });
 
     List<CommentEntity> comments = [];
     commentsResult.fold((failure) {

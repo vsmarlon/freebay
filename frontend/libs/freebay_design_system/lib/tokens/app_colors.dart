@@ -5,8 +5,9 @@ class AppColors {
 
   static const Color primary = Color(0xFF660062);
   static const Color primaryContainer = Color(0xFF8A1083);
+  static const Color primaryForeground = Color(0xFFFF9DEE);
   static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color onPrimaryContainer = Color(0xFFFF9DEE);
+  static const Color onPrimaryContainer = onPrimary;
 
   static const Color surfaceContainerLowest = Color(0xFFFFFEF8);
   static const Color surface = Color(0xFFFCF9EE);
@@ -32,7 +33,7 @@ class AppColors {
 
   static const Color outline = onSurface;
   static const Color outlineVariant = Color(0xFFC9C1B2);
-  static const Color outlineDark = Color(0xFFF1F1F1);
+  static const Color outlineDark = primaryForeground;
   static const Color outlineVariantDark = Color(0xFF3A3A3A);
 
   static const Color secondary = Color(0xFF5E5E5E);

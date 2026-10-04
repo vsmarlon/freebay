@@ -13,12 +13,14 @@ import 'package:freebay/features/product/presentation/widgets/category_selector_
 import 'package:freebay/features/product/presentation/widgets/product_preview_card.dart';
 import 'package:freebay/features/product/presentation/widgets/product_form_fields.dart';
 import 'package:freebay/features/product/presentation/widgets/product_form_validation.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CreateProductPage extends HookConsumerWidget {
   const CreateProductPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final titleController = useTextEditingController();
     final descriptionController = useTextEditingController();
     final priceController = useTextEditingController();
@@ -55,23 +57,23 @@ class CreateProductPage extends HookConsumerWidget {
       final price = CurrencyUtils.parseReaisToCents(priceController.text) ?? 0;
 
       if (!ProductFormValidation.isTitleValid(title)) {
-        AppSnackbar.error(context, 'Informe um título válido.');
+        AppSnackbar.error(context, strings.productNameInvalid);
         return;
       }
       if (!ProductFormValidation.isDescriptionValid(description)) {
-        AppSnackbar.error(context, 'Adicione uma descrição mais completa.');
+        AppSnackbar.error(context, strings.productDescriptionIncomplete);
         return;
       }
       if (!ProductFormValidation.isPriceValid(price)) {
-        AppSnackbar.error(context, 'Informe um preço válido.');
+        AppSnackbar.error(context, strings.productPriceInvalid);
         return;
       }
       if (selectedCategoryId.value == null) {
-        AppSnackbar.error(context, 'Selecione uma categoria.');
+        AppSnackbar.error(context, strings.productCategoryRequired);
         return;
       }
       if (selectedImagePath.value == null) {
-        AppSnackbar.error(context, 'Adicione uma imagem do produto.');
+        AppSnackbar.error(context, strings.productImageRequired);
         return;
       }
 
@@ -92,12 +94,12 @@ class CreateProductPage extends HookConsumerWidget {
       if (!context.mounted) return;
       isLoading.value = false;
 
-      result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      result.fold((failure) => AppSnackbar.handleFailure(context, failure), (
         _,
       ) {
         ref.invalidate(productsFeedProvider);
         context.pop();
-        AppSnackbar.success(context, 'Anúncio criado!');
+        AppSnackbar.success(context, strings.productCreated);
       });
     }
 
@@ -107,9 +109,10 @@ class CreateProductPage extends HookConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: 'NOVO ANÚNCIO',
+              text: strings.productCreateListing.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -129,7 +132,9 @@ class CreateProductPage extends HookConsumerWidget {
                       categoryName: selectedCategory?.name,
                       imagePath: selectedImagePath.value,
                       isNew: isNewProduct.value,
-                      userName: currentUser?.displayNameOrDefault ?? 'Você',
+                      userName:
+                          currentUser?.displayNameOrDefault ??
+                          strings.commonYou,
                       userAvatarUrl: currentUser?.avatarUrl,
                     ),
                     Spacing.vLg,
@@ -137,7 +142,7 @@ class CreateProductPage extends HookConsumerWidget {
                       titleController: titleController,
                       descriptionController: descriptionController,
                       priceController: priceController,
-                      titleLabel: 'Título do anúncio',
+                      titleLabel: strings.productListingTitle,
                     ),
                     Spacing.vLg,
                     CategorySelectorField(
@@ -156,8 +161,8 @@ class CreateProductPage extends HookConsumerWidget {
                           Expanded(
                             child: Text(
                               selectedImagePath.value == null
-                                  ? 'Nenhuma foto selecionada'
-                                  : 'Foto selecionada',
+                                  ? strings.productPhotoNotSelected
+                                  : strings.productPhotoSelected,
                               style: TextStyle(
                                 color: context.textPrimary,
                                 fontSize: 13,
@@ -167,7 +172,7 @@ class CreateProductPage extends HookConsumerWidget {
                           AppButton(
                             onPressed: () => pickImage(ImageSource.gallery),
                             icon: Icons.photo_library,
-                            label: 'Galeria',
+                            label: strings.commonGallery,
                             variant: AppButtonVariant.secondary,
                             size: AppButtonSize.compact,
                           ),
@@ -175,7 +180,7 @@ class CreateProductPage extends HookConsumerWidget {
                           AppButton(
                             onPressed: () => pickImage(ImageSource.camera),
                             icon: Icons.camera_alt,
-                            label: 'Câmera',
+                            label: strings.commonCamera,
                             variant: AppButtonVariant.secondary,
                             size: AppButtonSize.compact,
                           ),
@@ -189,7 +194,7 @@ class CreateProductPage extends HookConsumerWidget {
                     ),
                     Spacing.vXl,
                     AppButton(
-                      label: 'PUBLICAR ANÚNCIO',
+                      label: strings.productPublishListing,
                       isLoading: isLoading.value,
                       onPressed: submit,
                     ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_filters.dart';
-import 'package:freebay/features/social/presentation/widgets/stories_row.dart';
+import 'package:freebay/features/stories/stories.dart';
 
 class FeedIntroSections extends StatelessWidget {
   final FeedType feedType;

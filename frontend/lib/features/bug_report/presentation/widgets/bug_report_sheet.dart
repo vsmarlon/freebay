@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/bug_report/presentation/providers/bug_report_provider.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 Future<void> showBugReportSheet(
   BuildContext context, {
@@ -12,7 +13,7 @@ Future<void> showBugReportSheet(
 }) {
   return showBrutalistSheet(
     context: context,
-    title: 'Reportar problema',
+    title: l10n(context).bugReportTitle,
     builder: (sheetContext) => _BugReportSheetContent(
       prefillDescription: prefillDescription,
       screenContext: screenContext,
@@ -55,9 +56,10 @@ class _BugReportSheetContentState
   }
 
   Future<void> _submit() async {
+    final strings = l10n(context);
     final description = _controller.text.trim();
     if (description.isEmpty) {
-      AppSnackbar.error(context, 'Descreva o problema antes de enviar.');
+      AppSnackbar.error(context, strings.bugReportDescriptionRequired);
       return;
     }
 
@@ -71,26 +73,27 @@ class _BugReportSheetContentState
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    result.fold((failure) => AppSnackbar.error(context, failure.message), (_) {
+    result.fold((failure) => AppSnackbar.handleFailure(context, failure), (_) {
       Navigator.pop(context);
-      AppSnackbar.success(context, 'Relatório enviado. Obrigado!');
+      AppSnackbar.success(context, strings.bugReportThanks);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppTextField(
-          label: 'O que aconteceu?',
+          label: strings.bugReportWhatHappened,
           controller: _controller,
           maxLines: 4,
         ),
         Spacing.vLg,
         AppButton(
-          label: 'Enviar',
+          label: strings.commonSend,
           isLoading: _isSubmitting,
           onPressed: _submit,
         ),

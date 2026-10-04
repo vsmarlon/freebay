@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 class _TimelineAdapter implements HttpClientAdapter {
   final kinds = <String?>[];
@@ -22,11 +24,39 @@ class _TimelineAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     final kind = options.queryParameters['kind'];
-    kinds.add(kind is String ? kind : null);
+    final timelineKind = kind is String ? kind : null;
+    kinds.add(timelineKind);
     return ResponseBody.fromString(
       jsonEncode({
         'success': true,
-        'data': {'items': [], 'hasMore': false, 'nextCursor': null},
+        'data': {
+          'items': [
+            for (var index = 0; index < 18; index++)
+              {
+                if (timelineKind == 'reposts') ...{
+                  'repostId': 'repost-$index',
+                  'isReposted': true,
+                },
+                'post': {
+                  'id': '$timelineKind-post-$index',
+                  'userId': 'user-1',
+                  'content': 'Timeline item $index ${'content ' * 30}',
+                  'type': timelineKind == 'products' ? 'PRODUCT' : 'REGULAR',
+                  'createdAt': '2026-10-01T00:00:00.000Z',
+                  'user': {'id': 'user-1', 'displayName': 'Profile user'},
+                  if (timelineKind == 'products')
+                    'product': {
+                      'id': 'product-$index',
+                      'title': 'Listing $index',
+                      'description': 'Fixture listing',
+                      'price': 100,
+                    },
+                },
+              },
+          ],
+          'hasMore': false,
+          'nextCursor': null,
+        },
       }),
       200,
       headers: {
@@ -76,7 +106,7 @@ void main() {
                             headerSlivers: [
                               SliverToBoxAdapter(
                                 child: SizedBox(
-                                  height: 500,
+                                  height: 240,
                                   child: Center(child: Text('PROFILE HEADER')),
                                 ),
                               ),
@@ -100,20 +130,30 @@ void main() {
             SocialRepository(client: dio),
           ),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: const Locale('pt', 'BR'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+        ),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('PUBLICAÇÕES'), findsOneWidget);
-    expect(find.text('REPOSTS'), findsOneWidget);
+    expect(find.text('REPUBLICAÇÕES'), findsOneWidget);
     expect(find.text('ANÚNCIOS'), findsOneWidget);
 
     await tester.fling(find.text('PUBLICAÇÕES'), const Offset(-350, 0), 1000);
     await tester.pumpAndSettle();
-    expect(find.text('REPOSTS'), findsOneWidget);
+    expect(find.text('REPUBLICAÇÕES'), findsOneWidget);
     expect(find.text('BRANCH 0'), findsNothing);
-    await tester.fling(find.text('REPOSTS'), const Offset(-350, 0), 1000);
+    await tester.fling(find.text('REPUBLICAÇÕES'), const Offset(-350, 0), 1000);
     await tester.pumpAndSettle();
     expect(find.text('ANÚNCIOS'), findsOneWidget);
     expect(find.text('BRANCH 0'), findsNothing);
@@ -136,15 +176,56 @@ void main() {
     expect(find.text('BRANCH 0'), findsNothing);
 
     final initialHeaderY = tester.getCenter(find.text('PROFILE HEADER')).dy;
-    await tester.drag(find.text('PROFILE HEADER'), const Offset(0, -300));
+    await tester.drag(find.text('PROFILE HEADER'), const Offset(0, -120));
     await tester.pumpAndSettle();
     final scrolledHeaderY = tester.getCenter(find.text('PROFILE HEADER')).dy;
     expect(scrolledHeaderY, lessThan(initialHeaderY));
+    final outerScroll = find
+        .descendant(
+          of: find.byType(NestedScrollView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final outerPosition = tester.state<ScrollableState>(outerScroll).position;
+    final outerOffset = outerPosition.pixels;
 
-    await _flingTabView(tester, -350, 1000);
-    expect(tester.getCenter(find.text('PROFILE HEADER')).dy, scrolledHeaderY);
-    await _flingTabView(tester, -350, 1000);
-    expect(tester.getCenter(find.text('PROFILE HEADER')).dy, scrolledHeaderY);
+    final timelineOffsets = <String, double>{};
+    for (final (index, kind) in ['posts', 'reposts', 'products'].indexed) {
+      final scrollable = find
+          .descendant(
+            of: find.byKey(PageStorageKey('user-1:$kind')),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      final initialOffset = tester
+          .state<ScrollableState>(scrollable)
+          .position
+          .pixels;
+      await tester.fling(scrollable, const Offset(0, -700), 1200);
+      await tester.pumpAndSettle();
+      final offset = tester.state<ScrollableState>(scrollable).position.pixels;
+      expect(offset, greaterThan(initialOffset));
+      timelineOffsets[kind] = offset;
+
+      if (index < 2) await _flingTabView(tester, -500, 1200);
+    }
+    expect(outerPosition.pixels, greaterThanOrEqualTo(outerOffset));
+
+    await _flingTabView(tester, 900, 1600);
+    await _flingTabView(tester, 900, 1600);
+    for (final kind in ['posts', 'reposts', 'products']) {
+      final scrollable = find
+          .descendant(
+            of: find.byKey(PageStorageKey('user-1:$kind')),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      expect(
+        tester.state<ScrollableState>(scrollable).position.pixels,
+        timelineOffsets[kind],
+      );
+      if (kind != 'products') await _flingTabView(tester, -500, 1200);
+    }
     expect(find.text('BRANCH 0'), findsNothing);
     expect(adapter.kinds, containsAll(['posts', 'reposts', 'products']));
   });

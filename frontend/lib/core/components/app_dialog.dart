@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'app_dialog/app_dialog_body.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class AppDialog extends StatelessWidget {
   final String? logoAsset;
@@ -75,7 +76,7 @@ class AppDialog extends StatelessWidget {
       if (okText != null || dismissText == null) {
         actions.add(
           BrutalistDialogAction(
-            text: (okText ?? 'OK').toUpperCase(),
+            text: (okText ?? l10n(context).commonOkay).toUpperCase(),
             isDefaultAction: true,
             isDestructiveAction: isError,
             onPressed: () {
@@ -100,7 +101,7 @@ class AppDialog extends StatelessWidget {
     required BuildContext context,
     required String title,
     String? subtitle,
-    String okText = 'Entendi',
+    String? okText,
     FutureOr<void> Function()? onOk,
     String? dismissText,
     FutureOr<void> Function()? onDismiss,
@@ -110,7 +111,7 @@ class AppDialog extends StatelessWidget {
     context: context,
     title: title,
     subtitle: subtitle,
-    okText: okText,
+    okText: okText ?? l10n(context).commonUnderstand,
     onOk: onOk,
     dismissText: dismissText,
     onDismiss: onDismiss,
@@ -125,13 +126,13 @@ class AppDialog extends StatelessWidget {
     required BuildContext context,
     required String title,
     String? subtitle,
-    String okText = 'OK',
+    String? okText,
     VoidCallback? onOk,
   }) => show<T>(
     context: context,
     title: title,
     subtitle: subtitle,
-    okText: okText,
+    okText: okText ?? l10n(context).commonOkay,
     onOk: onOk,
     isSuccess: true,
     icon: Icons.check_circle_outline,

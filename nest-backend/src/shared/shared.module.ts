@@ -6,6 +6,7 @@ import { RedisService } from './infra/redis/redis.service';
 import { JwtTokenValidatorService } from './auth/jwt-token-validator.service';
 import { SessionRevokerService } from './auth/session-revoker.service';
 import { RolesGuard } from './guards/roles.guard';
+import { AppleProviderService } from './auth/apple-provider.service';
 
 @Global()
 @Module({
@@ -25,6 +26,7 @@ import { RolesGuard } from './guards/roles.guard';
     RedisService,
     JwtTokenValidatorService,
     SessionRevokerService,
+    AppleProviderService,
     RolesGuard,
   ],
   exports: [
@@ -33,6 +35,7 @@ import { RolesGuard } from './guards/roles.guard';
     JwtModule,
     JwtTokenValidatorService,
     SessionRevokerService,
+    AppleProviderService,
     RolesGuard,
   ],
 })

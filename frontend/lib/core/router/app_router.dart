@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +18,7 @@ import 'package:freebay/core/router/routes/support_routes.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/error_reporter.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
 import 'package:freebay/features/product/presentation/pages/explorar_page.dart';
 import 'package:freebay/features/product/presentation/pages/product_list_page.dart';
@@ -100,9 +102,31 @@ final GoRouter appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
   refreshListenable: routerRefreshNotifier,
   errorBuilder: (context, state) {
-    debugPrint('[GoRouter] Error navigating to ${state.uri}: ${state.error}');
-    return Scaffold(
-      body: EmptyState.error(message: 'Não foi possível abrir esta tela.'),
+    if (kDebugMode) {
+      debugPrint('[GoRouter] Error navigating to ${state.uri}: ${state.error}');
+    }
+    final canPop =
+        appRouter.configuration.navigatorKey.currentContext?.mounted == true &&
+        appRouter.routerDelegate.currentConfiguration.matches.isNotEmpty &&
+        appRouter.canPop();
+    return AppErrorWidget(
+      details: FlutterErrorDetails(
+        exception: state.error ?? StateError('Route navigation failed'),
+      ),
+      action: canPop ? AppErrorAction.back : AppErrorAction.home,
+      onRecover: () async {
+        final navigatorContext =
+            appRouter.configuration.navigatorKey.currentContext;
+        try {
+          if (navigatorContext?.mounted == true &&
+              await appRouter.routerDelegate.popRoute()) {
+            return;
+          }
+        } catch (error, stack) {
+          ErrorReporter.report('route-error-recovery', error, stack);
+        }
+        appRouter.go(AppRoutes.feed);
+      },
     );
   },
   redirect: (context, state) {
@@ -195,7 +219,7 @@ final GoRouter appRouter = GoRouter(
           AppRoutes.explore,
           (context, state) => const ExplorarPage(),
           additionalRoutes: [
-            appSlideRoute(
+            appCupertinoRoute(
               AppRoutes.products,
               (context, state) => const ProductListPage(),
             ),

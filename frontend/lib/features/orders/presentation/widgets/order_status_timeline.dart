@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class OrderStatusTimeline extends StatelessWidget {
   final OrderStatus currentStatus;
@@ -23,10 +24,11 @@ class OrderStatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     if (currentStatus == OrderStatus.cancelled) {
       return _buildSpecialStatus(
         context,
-        'Pedido Cancelado',
+        strings.orderStatusCancelled,
         Icons.close,
         AppColors.error,
       );
@@ -35,7 +37,7 @@ class OrderStatusTimeline extends StatelessWidget {
     if (currentStatus == OrderStatus.disputed) {
       return _buildSpecialStatus(
         context,
-        'Em Disputa',
+        strings.orderStatusDisputed,
         Icons.gavel_outlined,
         AppColors.warning,
       );
@@ -48,7 +50,7 @@ class OrderStatusTimeline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'STATUS DO PEDIDO',
+            strings.orderStatusHeading.toUpperCase(),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,
@@ -79,7 +81,15 @@ class OrderStatusTimeline extends StatelessWidget {
           Spacing.vMd,
           Center(
             child: Text(
-              currentStatus.label,
+              switch (currentStatus) {
+                OrderStatus.pending => strings.orderStatusPending,
+                OrderStatus.confirmed => strings.orderStatusConfirmed,
+                OrderStatus.shipped => strings.orderStatusShipped,
+                OrderStatus.delivered => strings.orderStatusDelivered,
+                OrderStatus.completed => strings.orderStatusCompleted,
+                OrderStatus.cancelled => strings.orderStatusCancelled,
+                OrderStatus.disputed => strings.orderStatusDisputed,
+              },
               style: TextStyle(
                 fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 18,

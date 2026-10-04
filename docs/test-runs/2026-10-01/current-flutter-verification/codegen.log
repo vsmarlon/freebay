@@ -1,0 +1,12 @@
+W These options have been removed and were ignored: --delete-conflicting-outputs
+  0s riverpod_generator on 502 inputs; integration_test/native_image_compositor_test.dart
+  0s riverpod_generator on 502 inputs: 1 skipped; integration_test/perf_test.dart
+  12s riverpod_generator on 502 inputs: 197 skipped, 1 same, 8 no-op; spent 10s analyzing, 2s resolving; lib/features/orders/presentation/providers/order_providers_state.dart
+  12s riverpod_generator on 502 inputs: 472 skipped, 8 same, 22 no-op; spent 10s analyzing, 2s resolving
+  0s freezed on 502 inputs; integration_test/native_image_compositor_test.dart
+  0s freezed on 502 inputs: 472 skipped, 30 no-op
+  0s json_serializable on 1004 inputs; integration_test/native_image_compositor_test.dart
+  1s json_serializable on 1004 inputs: 745 skipped, 259 no-op
+  0s source_gen:combining_builder on 1004 inputs; integration_test/native_image_compositor_test.dart
+  0s source_gen:combining_builder on 1004 inputs: 996 skipped, 8 same
+  Built with build_runner/aot in 14s; wrote 16 outputs.

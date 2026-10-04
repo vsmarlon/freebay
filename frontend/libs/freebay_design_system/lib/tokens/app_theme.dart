@@ -88,6 +88,12 @@ class AppTheme {
         shape: _square,
         margin: EdgeInsets.zero,
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(scheme.primaryContainer),
+          foregroundColor: WidgetStatePropertyAll(scheme.onPrimaryContainer),
+        ),
+      ),
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surfaceContainerLow,
         surfaceTintColor: Colors.transparent,
@@ -187,7 +193,7 @@ class AppTheme {
   static const ColorScheme _lightScheme = ColorScheme.light(
     primary: AppColors.primary,
     primaryContainer: AppColors.primaryContainer,
-    onPrimaryContainer: AppColors.onPrimaryContainer,
+    onPrimaryContainer: AppColors.onPrimary,
     secondary: AppColors.secondary,
     onSecondary: AppColors.white,
     secondaryContainer: AppColors.secondaryContainer,
@@ -215,10 +221,10 @@ class AppTheme {
   );
 
   static const ColorScheme _darkScheme = ColorScheme.dark(
-    primary: AppColors.primaryContainer,
-    onPrimary: AppColors.onPrimary,
-    primaryContainer: AppColors.primary,
-    onPrimaryContainer: AppColors.onPrimaryContainer,
+    primary: AppColors.primaryForeground,
+    onPrimary: AppColors.onSurface,
+    primaryContainer: AppColors.primaryContainer,
+    onPrimaryContainer: AppColors.white,
     secondary: AppColors.secondary,
     onSecondary: AppColors.white,
     secondaryContainer: AppColors.surfaceContainerDark,

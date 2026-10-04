@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
 import 'package:freebay/features/product/presentation/widgets/category_filter_panel.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
+import 'package:freebay/features/product/data/entities/product_image_entity.dart';
 import 'package:freebay/features/product/presentation/widgets/product_results_grid.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 CategoryEntity _category(String id, String name) =>
     CategoryEntity(id: id, name: name, slug: id);
@@ -22,6 +24,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: PageView(
           controller: pageController,
           children: [
@@ -65,6 +70,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: CategoryFilterPanel(
           categories: [_category('category-1', 'Category 1')],
           selectedCategory: null,
@@ -93,6 +101,13 @@ void main() {
                 id: 'product-1',
                 title: 'Desk lamp',
                 sellerId: 'seller-1',
+                images: [
+                  ProductImageEntity(
+                    id: 'image-1',
+                    url: 'https://example.test/product.jpg',
+                    productId: 'product-1',
+                  ),
+                ],
               ),
             ],
             isLoadingMore: false,
@@ -106,7 +121,14 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await tester.pumpWidget(
+      MaterialApp.router(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      ),
+    );
     await tester.tap(find.text('Desk lamp'));
     await tester.pumpAndSettle();
 
@@ -125,6 +147,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: PageView(
           controller: pageController,
           children: [

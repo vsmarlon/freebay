@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/auth/auth.dart';
 import 'package:freebay/shared/services/notification_service.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Post-login setup shown once per account. Step 1 is biometry opt-in,
 /// followed by notification opt-in and a finish step.
@@ -48,39 +49,32 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
   }
 
   Future<void> _enableBiometry() async {
+    final strings = l10n(context);
     setState(() => _busy = true);
     try {
-      final biometryService = ref.read(biometryServiceProvider);
-      final authenticated = await biometryService.authenticate(
-        reason: 'Confirme para ativar login biométrico',
+      final userId = ref.read(authControllerProvider).value?.id;
+      if (userId == null) return;
+      final stepUpToken = await StepUpAuthenticator.authorize(
+        context,
+        ref,
+        purpose: 'biometric_enroll',
       );
-      if (!authenticated) return;
+      if (stepUpToken == null || !mounted) return;
 
-      final enrollment = await ref
-          .read(authRepositoryProvider)
-          .enrollBiometricToken();
-      if (enrollment.isLeft) {
+      final enrolled = await ref
+          .read(authControllerProvider.notifier)
+          .enrollBiometrics(stepUpToken, expectedUserId: userId);
+      if (!enrolled) {
         if (mounted) {
-          AppSnackbar.error(context, 'Não foi possível ativar a biometria.');
+          AppSnackbar.error(context, strings.onboardingBiometryEnableFailed);
         }
         return;
       }
-      final token = enrollment.rightOrNull;
-      if (token == null || token.isEmpty) {
-        if (mounted) {
-          AppSnackbar.error(context, 'Não foi possível ativar a biometria.');
-        }
-        return;
+      if (mounted) _next();
+    } catch (_) {
+      if (mounted) {
+        AppSnackbar.error(context, strings.onboardingBiometryEnableFailed);
       }
-      final user = ref.read(authControllerProvider).value;
-      if (user == null) return;
-      await StorageService.saveBiometricToken(token);
-      await StorageService.saveBiometricOwner(user.id);
-      await biometryService.setEnabled(true);
-      await biometryService.setHasPrompted(true);
-      await StorageService.saveRememberMe(true);
-      ref.invalidate(biometryEnabledProvider);
-      _next();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -98,6 +92,7 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isAvailable = ref.watch(biometryAvailableProvider).value ?? false;
     final isEnabled = ref.watch(biometryEnabledProvider).value ?? false;
 
@@ -110,7 +105,7 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'PASSO ${_step + 1} DE 3',
+                  strings.onboardingStepCount(_step + 1, 3),
                   style: AppTypography.brutalistTag.copyWith(
                     color: AppColors.primaryContainer,
                     fontSize: 11,
@@ -131,21 +126,23 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
                 Spacing.vLg,
                 if (_step == 0 && isAvailable && !isEnabled)
                   AppButton(
-                    label: 'Ativar biometria',
+                    label: strings.authPermissionBiometry,
                     icon: Icons.fingerprint,
                     isLoading: _busy,
                     onPressed: _enableBiometry,
                   )
                 else if (_step == 1)
                   AppButton(
-                    label: 'Ativar notificações',
+                    label: strings.authPermissionNotifications,
                     icon: Icons.notifications_outlined,
                     isLoading: _busy,
                     onPressed: _enableNotifications,
                   )
                 else
                   AppButton(
-                    label: _step == 2 ? 'Concluir' : 'Continuar',
+                    label: _step == 2
+                        ? strings.commonFinish
+                        : strings.commonContinue,
                     icon: Icons.arrow_forward,
                     onPressed: _busy ? null : _next,
                   ),
@@ -153,7 +150,9 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
                 SizedBox(
                   width: double.infinity,
                   child: AppButton(
-                    label: _step == 2 ? 'Voltar ao início' : 'Agora não',
+                    label: _step == 2
+                        ? strings.onboardingBackToStart
+                        : strings.onboardingNotNow,
                     variant: AppButtonVariant.ghost,
                     onPressed: _busy
                         ? null
@@ -175,33 +174,32 @@ class _WelcomeSetupPageState extends ConsumerState<WelcomeSetupPage> {
   }
 
   Widget _buildStep(bool isAvailable, bool isEnabled) {
+    final strings = l10n(context);
     switch (_step) {
       case 0:
         return _StepContent(
           icon: Icons.fingerprint,
-          title: 'ENTRE COM BIOMETRIA',
+          title: strings.authOnboardingBiometry,
           body: isAvailable
-              ? 'Use sua impressão digital ou Face ID para entrar rapidamente, sem digitar sua senha.'
-              : 'Seu dispositivo não suporta biometria. Você pode continuar sem ela.',
+              ? strings.onboardingBiometryBody
+              : strings.onboardingBiometryUnavailableBody,
           status: !isAvailable
-              ? 'Não disponível neste dispositivo'
+              ? strings.onboardingUnavailableOnDevice
               : isEnabled
-              ? 'Biometria já ativada'
+              ? strings.onboardingBiometryAlreadyEnabled
               : null,
         );
       case 1:
-        return const _StepContent(
+        return _StepContent(
           icon: Icons.notifications_outlined,
-          title: 'FIQUE POR DENTRO',
-          body:
-              'Receba avisos de vendas, mensagens no chat e atualizações dos seus pedidos em tempo real.',
+          title: strings.authOnboardingNotifications,
+          body: strings.onboardingNotificationsBody,
         );
       default:
-        return const _StepContent(
+        return _StepContent(
           icon: Icons.rocket_launch_outlined,
-          title: 'TUDO PRONTO',
-          body:
-              'Sua conta está configurada. Você pode mudar biometria e fundo animado quando quiser em Perfil > Configurações.',
+          title: strings.authOnboardingReady,
+          body: strings.onboardingReadyBody,
         );
     }
   }

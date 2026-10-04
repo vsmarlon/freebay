@@ -20,10 +20,10 @@ export class SessionTokenService {
     private readonly redisService: RedisService,
   ) {}
 
-  generate(userId: string, role: UserRole) {
+  generate(userId: string, role: UserRole, authenticatedAtMs: number | null = Date.now()) {
     return {
-      token: this.sign(userId, role, JwtTokenType.ACCESS, this.config.get('JWT_EXPIRES_IN', DEFAULT_ACCESS_TOKEN_TTL)),
-      refreshToken: this.sign(userId, role, JwtTokenType.REFRESH, this.config.get('JWT_REFRESH_EXPIRES_IN', DEFAULT_REFRESH_TOKEN_TTL)),
+      token: this.sign(userId, role, JwtTokenType.ACCESS, this.config.get('JWT_EXPIRES_IN', DEFAULT_ACCESS_TOKEN_TTL), authenticatedAtMs),
+      refreshToken: this.sign(userId, role, JwtTokenType.REFRESH, this.config.get('JWT_REFRESH_EXPIRES_IN', DEFAULT_REFRESH_TOKEN_TTL), authenticatedAtMs),
     };
   }
 
@@ -52,9 +52,12 @@ export class SessionTokenService {
     return this.redisService.setIfAbsent(`biometric-enrollment-claimed:${jti}`, '1', ttl);
   }
 
-  private sign(userId: string, role: UserRole, type: JwtTokenType, expiresIn: string) {
+  private sign(userId: string, role: UserRole, type: JwtTokenType, expiresIn: string, authenticatedAtMs?: number | null) {
     return this.jwtService.sign(
-      { userId, role, type, jti: randomUUID(), issuedAtMs: Date.now() } satisfies JwtPayload,
+      {
+        userId, role, type, jti: randomUUID(), issuedAtMs: Date.now(),
+        ...(authenticatedAtMs === null || authenticatedAtMs === undefined ? {} : { authenticatedAtMs }),
+      } satisfies JwtPayload,
       { expiresIn: expiresIn as JwtSignOptions['expiresIn'] },
     );
   }

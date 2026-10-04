@@ -10,7 +10,7 @@ import 'package:freebay/features/profile/presentation/widgets/profile_banner.dar
 import 'package:freebay/features/profile/presentation/widgets/profile_identity.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_media_actions.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_stats.dart';
-import 'package:freebay/features/social/presentation/widgets/story_highlights_section.dart';
+import 'package:freebay/features/stories/stories.dart';
 
 class ProfileHeader extends ConsumerWidget {
   final UserEntity user;

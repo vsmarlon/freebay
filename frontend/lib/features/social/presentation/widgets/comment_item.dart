@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
-import 'package:freebay/core/utils/time_utils.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 
@@ -101,7 +101,7 @@ class CommentItem extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            TimeUtils.timeAgo(comment.createdAt),
+                            localizedTimeAgo(context, comment.createdAt),
                             style: TextStyle(
                               fontSize: 12,
                               color: context.textSecondary,

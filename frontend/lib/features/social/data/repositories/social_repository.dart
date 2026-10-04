@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:path/path.dart' as path;
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/http/request_either.dart';
@@ -8,7 +6,6 @@ import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/data/entities/feed_page_result.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/data/entities/user_post_entry.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/entities/user_search_page_result.dart';
@@ -16,7 +13,6 @@ import 'package:freebay/features/social/data/entities/social_filters.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/shared/services/image_upload_service.dart';
 
-part 'social_repository_parts/social_repository_stories.dart';
 part 'social_repository_parts/social_repository_discovery.dart';
 part 'social_repository_parts/social_repository_feed.dart';
 part 'social_repository_parts/social_repository_saves.dart';
@@ -45,7 +41,6 @@ class SaveMutationState {
 
 class SocialRepository
     with
-        SocialRepositoryStories,
         SocialRepositoryDiscovery,
         SocialRepositoryFeed,
         SocialRepositorySaves {

@@ -5,8 +5,7 @@ import 'package:freebay/features/social/presentation/pages/create_post_page.dart
 import 'package:freebay/features/social/presentation/pages/post_details_page.dart';
 import 'package:freebay/features/social/presentation/pages/post_search_page.dart';
 import 'package:freebay/features/social/presentation/pages/people_search_page.dart';
-import 'package:freebay/features/social/presentation/pages/story_viewer_wrapper.dart';
-import 'package:freebay/features/social/presentation/pages/create_story_page.dart';
+import 'package:freebay/features/stories/stories.dart';
 import 'package:freebay/features/profile/presentation/pages/user_profile_page.dart';
 
 final List<RouteBase> socialRoutes = [
@@ -26,12 +25,12 @@ final List<RouteBase> socialRoutes = [
     AppRoutes.peopleSearch,
     (context, state) => const PeopleSearchPage(),
   ),
-  appSlideRoute(
+  appCupertinoRoute(
     AppRoutes.story,
     (context, state) =>
         StoryViewerWrapper(indexParam: state.uri.queryParameters['index']),
   ),
-  appSlideRoute(
+  appCupertinoRoute(
     AppRoutes.storyHighlight,
     (context, state) =>
         HighlightStoryViewerWrapper(id: state.pathParameters['id']!),

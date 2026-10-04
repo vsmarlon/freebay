@@ -16,6 +16,7 @@ import 'package:freebay/features/profile/presentation/pages/blocked_users_page.d
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import '../../support/auth_test_doubles.dart';
 
 class _ChatRepository extends ChatRepository {
@@ -101,7 +102,12 @@ Widget _app(NewChatPage page, _ChatRepository repository) {
       userSearchProvider.overrideWith(_UserSearch.new),
       suggestionsProvider.overrideWith(_Suggestions.new),
     ],
-    child: MaterialApp.router(routerConfig: router),
+    child: MaterialApp.router(
+      locale: const Locale('pt', 'BR'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+    ),
   );
 }
 

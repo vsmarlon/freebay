@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'new_chat_user_tile.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class NewChatUserResults extends StatelessWidget {
   final bool isSearching;
@@ -31,11 +32,12 @@ class NewChatUserResults extends StatelessWidget {
   }
 
   Widget _buildSearch(BuildContext context) {
+    final strings = l10n(context);
     if (searchUsers.isEmpty && !isLoadingSearch) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.person_search,
-        title: 'NENHUM USUÁRIO',
-        subtitle: 'Tente buscar por outro nome.',
+        title: strings.chatNoUsers,
+        subtitle: strings.chatTryAnotherName,
       );
     }
     return ListView.builder(
@@ -43,7 +45,7 @@ class NewChatUserResults extends StatelessWidget {
       itemCount: searchUsers.length + (isLoadingSearch ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == searchUsers.length) {
-          return const ShimmerBlock(height: 72);
+          return const ShimmerScope(child: ShimmerBlock(height: 72));
         }
         final user = searchUsers[index];
         return NewChatUserTile(
@@ -55,27 +57,28 @@ class NewChatUserResults extends StatelessWidget {
   }
 
   Widget _buildSuggestions(BuildContext context) {
+    final strings = l10n(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _buildSection(
           context,
-          title: 'Quem você segue',
+          title: strings.chatFollowedPeople,
           users: following,
           isLoading: isLoadingFollowing,
           emptyIcon: Icons.people_outline,
-          emptyTitle: 'NENHUM SEGUIDO',
-          emptySubtitle: 'Você ainda não segue ninguém.',
+          emptyTitle: strings.chatFollowNobodyTitle,
+          emptySubtitle: strings.chatFollowNobody,
         ),
         if (isLoadingFollowing || following.isNotEmpty) Spacing.vLg,
         _buildSection(
           context,
-          title: 'Sugestões',
+          title: strings.chatSuggestions,
           users: suggestions,
           isLoading: isLoadingSuggestions,
           emptyIcon: Icons.explore_outlined,
-          emptyTitle: 'NENHUMA SUGESTÃO',
-          emptySubtitle: 'No momento não há sugestões de usuários.',
+          emptyTitle: strings.chatNoSuggestionsTitle,
+          emptySubtitle: strings.chatNoSuggestions,
         ),
       ],
     );
@@ -106,7 +109,7 @@ class NewChatUserResults extends StatelessWidget {
           ),
         ),
         if (isLoading)
-          const ShimmerBlock(width: 20, height: 20)
+          const ShimmerScope(child: ShimmerBlock(width: 20, height: 20))
         else if (users.isEmpty)
           EmptyState(
             icon: emptyIcon,

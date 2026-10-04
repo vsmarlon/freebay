@@ -22,6 +22,7 @@ import { LogoutSessionUseCase } from './logout-session.usecase';
 import { EnrollBiometricUseCase } from './enroll-biometric.usecase';
 import { RevokeBiometricUseCase } from './revoke-biometric.usecase';
 import { SessionTokenService } from '../services/session-token.service';
+import { AppleAuthUseCase } from './apple-auth.usecase';
 
 @Module({
   providers: [
@@ -35,6 +36,7 @@ import { SessionTokenService } from '../services/session-token.service';
     CheckUsernameAvailabilityUseCase,
     BiometricLoginUseCase,
     GoogleAuthUseCase,
+    AppleAuthUseCase,
     CompleteProfileUseCase,
     ResendService,
     MagicLinkDatabaseRepository,
@@ -59,6 +61,7 @@ import { SessionTokenService } from '../services/session-token.service';
     CheckUsernameAvailabilityUseCase,
     BiometricLoginUseCase,
     GoogleAuthUseCase,
+    AppleAuthUseCase,
     CompleteProfileUseCase,
     ResendService,
     RequestMagicLinkUseCase,

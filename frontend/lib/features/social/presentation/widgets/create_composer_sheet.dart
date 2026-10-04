@@ -2,19 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CreateComposerSheet extends StatelessWidget {
   const CreateComposerSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         _CreateComposerOption(
           icon: Icons.forum_outlined,
-          title: 'Post social',
-          subtitle: 'Publicações, opiniões e interações para o feed.',
+          title: strings.feedComposerSocialTitle,
+          subtitle: strings.feedComposerSocialBody,
           onTap: () {
             Navigator.of(context).pop();
             context.push(AppRoutes.createPost);
@@ -22,8 +24,8 @@ class CreateComposerSheet extends StatelessWidget {
         ),
         _CreateComposerOption(
           icon: Icons.sell_outlined,
-          title: 'Anúncio de venda',
-          subtitle: 'Item para catálogo com preço, categoria e imagem.',
+          title: strings.feedComposerListingTitle,
+          subtitle: strings.feedComposerListingBody,
           onTap: () {
             Navigator.of(context).pop();
             context.push(AppRoutes.createProduct);

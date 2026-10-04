@@ -9,15 +9,15 @@ import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_message_list.dart';
 import 'package:freebay/features/product/presentation/pages/product_detail_page.dart';
 import 'package:freebay/features/product/presentation/widgets/product_results_grid.dart';
-import 'package:freebay/features/social/data/entities/story_entity.dart';
 import 'package:freebay/features/social/presentation/pages/feed_page.dart';
-import 'package:freebay/features/social/presentation/pages/story_viewer_page.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/features/social/presentation/widgets/story_page.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
+import 'package:freebay/features/stories/stories.dart';
 import 'package:freebay/main.dart' as app;
 import 'package:integration_test/integration_test.dart';
 
 const flow = String.fromEnvironment('PERF_FLOW');
+const _minimumFeedPosts = 30;
 
 Future<void> until(
   WidgetTester tester,
@@ -55,6 +55,94 @@ Future<void> scroll(WidgetTester tester, Finder target) async {
   }
 }
 
+Future<void> loadFeedForCoverage(ProviderContainer container) async {
+  for (var page = 0; page < 10; page++) {
+    final state = container.read(feedProvider);
+    if (state.error != null) {
+      throw StateError('Feed pagination failed: ${state.error}');
+    }
+    if (state.posts.length >= _minimumFeedPosts) return;
+    if (!state.hasMore) {
+      throw StateError(
+        'Perf fixture has only ${state.posts.length} feed posts; '
+        'need at least $_minimumFeedPosts',
+      );
+    }
+
+    final previousCount = state.posts.length;
+    await container.read(feedProvider.notifier).loadFeed();
+    final next = container.read(feedProvider);
+    if (next.error != null) {
+      throw StateError('Feed pagination failed: ${next.error}');
+    }
+    if (next.posts.length <= previousCount) {
+      throw StateError(
+        'Feed pagination made no progress at ${next.posts.length} posts',
+      );
+    }
+  }
+  final loaded = container.read(feedProvider).posts.length;
+  if (loaded >= _minimumFeedPosts) return;
+  throw StateError(
+    'Feed pagination stopped at $loaded posts; '
+    'need at least $_minimumFeedPosts',
+  );
+}
+
+Future<void> scrollFeedCoverage(
+  WidgetTester tester,
+  Finder target,
+  ProviderContainer container,
+) async {
+  final postIds = <String>{};
+  var noProgress = 0;
+  for (
+    var attempt = 0;
+    attempt < 120 && postIds.length < _minimumFeedPosts;
+    attempt++
+  ) {
+    final position = tester.state<ScrollableState>(target).position;
+    final previousOffset = position.pixels;
+    final previousCoverage = postIds.length;
+    await tester.fling(target, const Offset(0, -650), 1000);
+    await tester.pump(const Duration(milliseconds: 350));
+
+    postIds.addAll(
+      tester
+          .widgetList<FeedPostItem>(find.byType(FeedPostItem))
+          .map((item) => item.post.id),
+    );
+    final state = container.read(feedProvider);
+    if (state.error != null) {
+      throw StateError('Feed scroll pagination failed: ${state.error}');
+    }
+
+    final nextOffset = tester.state<ScrollableState>(target).position.pixels;
+    if (nextOffset == previousOffset && postIds.length == previousCoverage) {
+      noProgress++;
+      if (tester.state<ScrollableState>(target).position.extentAfter == 0 ||
+          noProgress >= 3) {
+        throw StateError(
+          'Feed scroll stopped after ${postIds.length} distinct posts',
+        );
+      }
+    } else {
+      noProgress = 0;
+    }
+  }
+
+  if (postIds.length < _minimumFeedPosts) {
+    throw StateError(
+      'Feed scroll covered ${postIds.length} distinct posts; '
+      'need at least $_minimumFeedPosts',
+    );
+  }
+  debugPrint(
+    'feed_scroll coverage: loaded=${container.read(feedProvider).posts.length}, '
+    'distinctMounted=${postIds.length}',
+  );
+}
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -88,16 +176,21 @@ void main() {
       await until(tester, () {
         final state = container.read(feedProvider);
         return !state.isLoading &&
+            !state.isRefreshing &&
+            !state.isStale &&
             state.error == null &&
             state.posts.length >= 3;
-      }, 'at least three real feed posts (seed and start backend)');
+      }, 'at least three fresh server feed posts (seed and start backend)');
+      await loadFeedForCoverage(container);
       final list = scrollableWithin(find.byType(FeedPage));
       await until(
         tester,
         () => tester.state<ScrollableState>(list).position.maxScrollExtent > 0,
         'scrollable feed with real posts',
       );
-      await binding.watchPerformance(() => scroll(tester, list));
+      await binding.watchPerformance(
+        () => scrollFeedCoverage(tester, list, container),
+      );
     } else if (flow == 'explore_scroll' || flow == 'product_detail') {
       appRouter.go(AppRoutes.explore);
       await until(tester, () {

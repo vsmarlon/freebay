@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
@@ -10,7 +9,8 @@ import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
-import 'package:freebay/shared/services/error_reporter.dart';
+import 'package:freebay/shared/widgets/platform_wallet_payment_button.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CartCheckoutPage extends HookConsumerWidget {
   const CartCheckoutPage({super.key});
@@ -18,15 +18,13 @@ class CartCheckoutPage extends HookConsumerWidget {
   Future<void> _submitCheckout(BuildContext context, WidgetRef ref) async {
     final ok = await ref.read(cartProvider.notifier).checkout();
     if (!ok && context.mounted) {
-      AppSnackbar.error(
-        context,
-        ref.read(cartProvider).error ?? 'Erro ao gerar checkout.',
-      );
+      AppSnackbar.error(context, l10n(context).cartCheckoutFailed);
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     useEffect(() {
       Future.microtask(() => ref.read(cartProvider.notifier).loadCart());
       return null;
@@ -45,9 +43,10 @@ class CartCheckoutPage extends HookConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: 'CHECKOUT',
+              text: strings.cartCheckoutTitle.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -73,10 +72,10 @@ class CartCheckoutPage extends HookConsumerWidget {
                       onRetry: () => ref.read(cartProvider.notifier).loadCart(),
                     )
                   : cart.items.isEmpty
-                  ? const EmptyState(
+                  ? EmptyState(
                       icon: Icons.shopping_cart_outlined,
-                      title: 'CARRINHO VAZIO',
-                      subtitle: 'Adicione produtos ao carrinho para continuar.',
+                      title: strings.cartEmptyTitle.toUpperCase(),
+                      subtitle: strings.cartEmptyBody,
                     )
                   : Column(
                       children: [
@@ -97,11 +96,15 @@ class CartCheckoutPage extends HookConsumerWidget {
                                       child: Text(
                                         item.product.status !=
                                                 ProductStatus.active
-                                            ? '${item.product.title} (indisponível)'
+                                            ? strings.cartProductUnavailable(
+                                                item.product.title,
+                                              )
                                             : item.quantity >
                                                   item.product.quantity -
                                                       item.product.soldCount
-                                            ? '${item.product.title} (estoque insuficiente)'
+                                            ? strings.cartInsufficientStock(
+                                                item.product.title,
+                                              )
                                             : item.product.title,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
@@ -145,7 +148,7 @@ class CartCheckoutPage extends HookConsumerWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        'Total (${cart.totalItems} itens)',
+                                        strings.cartTotalItems(cart.totalItems),
                                         style: TextStyle(
                                           color: context.textSecondary,
                                         ),
@@ -164,7 +167,7 @@ class CartCheckoutPage extends HookConsumerWidget {
                                   ),
                                 ),
                                 AppButton(
-                                  label: 'GERAR CHECKOUT',
+                                  label: strings.cartGenerateCheckout,
                                   isLoading: state.isCheckingOut,
                                   onPressed: hasUnavailableItems
                                       ? null
@@ -184,6 +187,7 @@ class CartCheckoutPage extends HookConsumerWidget {
   }
 
   Widget _buildResult(BuildContext context, CartCheckoutEntity checkout) {
+    final strings = l10n(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -194,7 +198,7 @@ class CartCheckoutPage extends HookConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'CHECKOUT GERADO',
+                strings.cartCheckoutGenerated.toUpperCase(),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -203,7 +207,7 @@ class CartCheckoutPage extends HookConsumerWidget {
               ),
               Spacing.vSm,
               Text(
-                '${checkout.totalOrders} pedidos criados',
+                strings.ordersCreatedCount(checkout.totalOrders),
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -212,33 +216,37 @@ class CartCheckoutPage extends HookConsumerWidget {
               ),
               Spacing.vSm,
               Text(
-                'Total: ${CurrencyUtils.formatCents(checkout.totalAmount)}',
+                strings.cartTotalAmount(
+                  CurrencyUtils.formatCents(checkout.totalAmount),
+                ),
                 style: TextStyle(fontSize: 16, color: context.textSecondary),
               ),
               Spacing.vMd,
               if (checkout.checkoutUrl case final url?) ...[
                 AppButton(
-                  label: 'PAGAR AGORA',
+                  label: strings.cartPayNow,
                   onPressed: () => _openCheckout(context, url),
                 ),
                 Spacing.vSm,
               ] else if (checkout.paymentIntentClientSecret
                   case final secret?) ...[
-                AppButton(
-                  label: 'PAGAR COM CARTÃO',
-                  onPressed: () => _presentPaymentSheet(context, secret),
+                PlatformWalletPaymentButton(
+                  clientSecret: secret,
+                  amountCents: checkout.totalAmount,
+                  itemLabel: strings.cartCheckoutTitle,
+                  onSubmitted: () {},
                 ),
                 Spacing.vSm,
               ],
               Text(
-                'O pagamento só será confirmado após a resposta do provedor.',
+                strings.paymentProviderConfirmationNote,
                 style: AppTypography.bodySmall.copyWith(
                   color: context.textSecondary,
                 ),
               ),
               Spacing.vSm,
               AppButton(
-                label: 'VER MEUS PEDIDOS',
+                label: strings.cartViewOrders,
                 onPressed: () => context.go(AppRoutes.orders),
               ),
             ],
@@ -251,58 +259,18 @@ class CartCheckoutPage extends HookConsumerWidget {
   Future<void> _openCheckout(BuildContext context, String url) async {
     final uri = Uri.tryParse(url);
     if (uri?.scheme != 'https' || uri?.host != 'checkout.stripe.com') {
-      AppSnackbar.error(context, 'Link de pagamento inválido');
+      AppSnackbar.error(context, l10n(context).paymentInvalidLink);
       return;
     }
     try {
       final launched = await launchUrl(uri!, mode: LaunchMode.inAppWebView);
       if (!launched && context.mounted) {
-        AppSnackbar.error(context, 'Não foi possível abrir o pagamento');
+        AppSnackbar.error(context, l10n(context).paymentOpenFailed);
       }
     } catch (_) {
       if (context.mounted) {
-        AppSnackbar.error(context, 'Não foi possível abrir o pagamento');
+        AppSnackbar.error(context, l10n(context).paymentOpenFailed);
       }
-    }
-  }
-
-  Future<void> _presentPaymentSheet(BuildContext context, String secret) async {
-    try {
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: secret,
-          merchantDisplayName: 'FreeBay',
-          returnURL: 'flutterstripe://redirect',
-          style: ThemeMode.system,
-        ),
-      );
-      await Stripe.instance.presentPaymentSheet();
-      if (context.mounted) {
-        AppSnackbar.success(
-          context,
-          'Pagamento enviado! Aguardando confirmação.',
-        );
-      }
-    } on StripeException catch (error, stack) {
-      if (error.error.code == FailureCode.Canceled) {
-        if (context.mounted) AppSnackbar.info(context, 'Pagamento cancelado');
-      } else {
-        ErrorReporter.report(
-          'cart-payment-sheet',
-          StateError(
-            'Stripe ${error.error.code.name}: ${error.error.stripeErrorCode ?? 'unknown'}',
-          ),
-          stack,
-        );
-        if (context.mounted) AppSnackbar.handleFailure(context, error);
-      }
-    } catch (error, stack) {
-      ErrorReporter.report(
-        'cart-payment-sheet',
-        StateError('PaymentSheet ${error.runtimeType}'),
-        stack,
-      );
-      if (context.mounted) AppSnackbar.handleFailure(context, error);
     }
   }
 }

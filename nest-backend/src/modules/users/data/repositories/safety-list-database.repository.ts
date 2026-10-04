@@ -3,7 +3,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { SafetyListRepository } from '../../domain/repositories/safety-list.repository';
 
-const userFields = { id: true, displayName: true, username: true, avatarUrl: true, isVerified: true, reputationScore: true } as const;
+const userFields = { id: true, displayName: true, username: true, avatarUrl: true, avatarBlurHash: true, isVerified: true, reputationScore: true } as const;
 
 @Injectable()
 export class PrismaSafetyListRepository extends SafetyListRepository {
@@ -21,10 +21,10 @@ export class PrismaSafetyListRepository extends SafetyListRepository {
           blocksGiven: { none: { blockedId: ownerId } },
           blocksReceived: { none: { blockerId: ownerId } },
           ...(selected ? { closeFriendsReceived: { some: { ownerId } } } : {}),
-          ...(search ? { OR: [
+          ...(search ? { AND: [{ OR: [
             { displayName: { contains: search, mode: 'insensitive' } },
             { username: { contains: search, mode: 'insensitive' } },
-          ] } : {}),
+          ] }] } : {}),
         },
         select: {
           ...userFields,

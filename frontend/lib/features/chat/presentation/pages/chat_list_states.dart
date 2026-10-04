@@ -5,6 +5,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_search_bar.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Search row of the chat list page.
 Widget buildChatSearchBar(
@@ -32,24 +33,26 @@ Widget buildChatSearchBar(
 }
 
 /// Empty state of the chat list page.
-Widget buildChatEmptyState(bool isSearching) {
+Widget buildChatEmptyState(BuildContext context, bool isSearching) {
+  final strings = l10n(context);
   return Expanded(
     child: EmptyState(
       icon: isSearching ? Icons.search_off : Icons.chat_bubble_outline,
-      title: isSearching ? 'NENHUM RESULTADO' : 'SEM CONVERSAS',
+      title: isSearching
+          ? strings.commonNoResults
+          : strings.chatNoConversations,
       subtitle: isSearching
-          ? 'Tente buscar por outro nome'
-          : 'Crie uma conversa ou receba uma mensagem para visualizar aqui.',
+          ? strings.chatTryAnotherName
+          : strings.chatNoConversationsBody,
     ),
   );
 }
 
 /// Error state of the chat list page.
-Widget buildChatErrorState(WidgetRef ref) {
+Widget buildChatErrorState(BuildContext context, WidgetRef ref) {
   return Expanded(
     child: EmptyState.error(
-      message:
-          'Não foi possível carregar suas conversas. Verifique sua conexão.',
+      message: l10n(context).chatLoadFailed,
       onRetry: () {
         ref.invalidate(chatsProvider);
         ref.invalidate(liveChatListProvider);

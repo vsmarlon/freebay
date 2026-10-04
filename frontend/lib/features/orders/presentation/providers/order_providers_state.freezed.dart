@@ -331,7 +331,7 @@ $CanReviewResponseCopyWith<$Res>? get canReviewResponse {
 /// @nodoc
 mixin _$PurchasesListState {
 
- bool get isLoading; bool get isLoadingMore; List<OrderEntity> get orders; String? get nextCursor; String? get error; bool get hasMore;
+ bool get isLoading; bool get isLoadingMore; bool get isRefreshing; bool get isStale; List<OrderEntity> get orders; String? get nextCursor; String? get error; bool get hasMore;
 /// Create a copy of PurchasesListState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -342,16 +342,16 @@ $PurchasesListStateCopyWith<PurchasesListState> get copyWith => _$PurchasesListS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PurchasesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&const DeepCollectionEquality().equals(other.orders, orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PurchasesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.isStale, isStale) || other.isStale == isStale)&&const DeepCollectionEquality().equals(other.orders, orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,const DeepCollectionEquality().hash(orders),nextCursor,error,hasMore);
+int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,isRefreshing,isStale,const DeepCollectionEquality().hash(orders),nextCursor,error,hasMore);
 
 @override
 String toString() {
-  return 'PurchasesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore)';
+  return 'PurchasesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, isRefreshing: $isRefreshing, isStale: $isStale, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore)';
 }
 
 
@@ -362,7 +362,7 @@ abstract mixin class $PurchasesListStateCopyWith<$Res>  {
   factory $PurchasesListStateCopyWith(PurchasesListState value, $Res Function(PurchasesListState) _then) = _$PurchasesListStateCopyWithImpl;
 @useResult
 $Res call({
- bool isLoading, bool isLoadingMore, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore
+ bool isLoading, bool isLoadingMore, bool isRefreshing, bool isStale, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore
 });
 
 
@@ -379,10 +379,12 @@ class _$PurchasesListStateCopyWithImpl<$Res>
 
 /// Create a copy of PurchasesListState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? isRefreshing = null,Object? isStale = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,}) {
   return _then(_self.copyWith(
 isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,isLoadingMore: null == isLoadingMore ? _self.isLoadingMore : isLoadingMore // ignore: cast_nullable_to_non_nullable
+as bool,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
+as bool,isStale: null == isStale ? _self.isStale : isStale // ignore: cast_nullable_to_non_nullable
 as bool,orders: null == orders ? _self.orders : orders // ignore: cast_nullable_to_non_nullable
 as List<OrderEntity>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
@@ -472,10 +474,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  bool isRefreshing,  bool isStale,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PurchasesListState() when $default != null:
-return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCursor,_that.error,_that.hasMore);case _:
+return $default(_that.isLoading,_that.isLoadingMore,_that.isRefreshing,_that.isStale,_that.orders,_that.nextCursor,_that.error,_that.hasMore);case _:
   return orElse();
 
 }
@@ -493,10 +495,10 @@ return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCurso
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  bool isRefreshing,  bool isStale,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore)  $default,) {final _that = this;
 switch (_that) {
 case _PurchasesListState():
-return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCursor,_that.error,_that.hasMore);case _:
+return $default(_that.isLoading,_that.isLoadingMore,_that.isRefreshing,_that.isStale,_that.orders,_that.nextCursor,_that.error,_that.hasMore);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -513,10 +515,10 @@ return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCurso
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isLoading,  bool isLoadingMore,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isLoading,  bool isLoadingMore,  bool isRefreshing,  bool isStale,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore)?  $default,) {final _that = this;
 switch (_that) {
 case _PurchasesListState() when $default != null:
-return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCursor,_that.error,_that.hasMore);case _:
+return $default(_that.isLoading,_that.isLoadingMore,_that.isRefreshing,_that.isStale,_that.orders,_that.nextCursor,_that.error,_that.hasMore);case _:
   return null;
 
 }
@@ -528,11 +530,13 @@ return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCurso
 
 
 class _PurchasesListState implements PurchasesListState {
-  const _PurchasesListState({this.isLoading = false, this.isLoadingMore = false, final  List<OrderEntity> orders = const [], this.nextCursor, this.error, this.hasMore = true}): _orders = orders;
+  const _PurchasesListState({this.isLoading = false, this.isLoadingMore = false, this.isRefreshing = false, this.isStale = false, final  List<OrderEntity> orders = const [], this.nextCursor, this.error, this.hasMore = true}): _orders = orders;
   
 
 @override@JsonKey() final  bool isLoading;
 @override@JsonKey() final  bool isLoadingMore;
+@override@JsonKey() final  bool isRefreshing;
+@override@JsonKey() final  bool isStale;
  final  List<OrderEntity> _orders;
 @override@JsonKey() List<OrderEntity> get orders {
   if (_orders is EqualUnmodifiableListView) return _orders;
@@ -554,16 +558,16 @@ _$PurchasesListStateCopyWith<_PurchasesListState> get copyWith => __$PurchasesLi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PurchasesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&const DeepCollectionEquality().equals(other._orders, _orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PurchasesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.isStale, isStale) || other.isStale == isStale)&&const DeepCollectionEquality().equals(other._orders, _orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,const DeepCollectionEquality().hash(_orders),nextCursor,error,hasMore);
+int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,isRefreshing,isStale,const DeepCollectionEquality().hash(_orders),nextCursor,error,hasMore);
 
 @override
 String toString() {
-  return 'PurchasesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore)';
+  return 'PurchasesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, isRefreshing: $isRefreshing, isStale: $isStale, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore)';
 }
 
 
@@ -574,7 +578,7 @@ abstract mixin class _$PurchasesListStateCopyWith<$Res> implements $PurchasesLis
   factory _$PurchasesListStateCopyWith(_PurchasesListState value, $Res Function(_PurchasesListState) _then) = __$PurchasesListStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool isLoading, bool isLoadingMore, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore
+ bool isLoading, bool isLoadingMore, bool isRefreshing, bool isStale, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore
 });
 
 
@@ -591,10 +595,12 @@ class __$PurchasesListStateCopyWithImpl<$Res>
 
 /// Create a copy of PurchasesListState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? isRefreshing = null,Object? isStale = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,}) {
   return _then(_PurchasesListState(
 isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,isLoadingMore: null == isLoadingMore ? _self.isLoadingMore : isLoadingMore // ignore: cast_nullable_to_non_nullable
+as bool,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
+as bool,isStale: null == isStale ? _self.isStale : isStale // ignore: cast_nullable_to_non_nullable
 as bool,orders: null == orders ? _self._orders : orders // ignore: cast_nullable_to_non_nullable
 as List<OrderEntity>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
@@ -609,7 +615,7 @@ as bool,
 /// @nodoc
 mixin _$SalesListState {
 
- bool get isLoading; bool get isLoadingMore; List<OrderEntity> get orders; String? get nextCursor; String? get error; bool get hasMore; OrderStatus? get selectedStatus;
+ bool get isLoading; bool get isLoadingMore; bool get isRefreshing; bool get isStale; List<OrderEntity> get orders; String? get nextCursor; String? get error; bool get hasMore; OrderStatus? get selectedStatus;
 /// Create a copy of SalesListState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -620,16 +626,16 @@ $SalesListStateCopyWith<SalesListState> get copyWith => _$SalesListStateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SalesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&const DeepCollectionEquality().equals(other.orders, orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.selectedStatus, selectedStatus) || other.selectedStatus == selectedStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SalesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.isStale, isStale) || other.isStale == isStale)&&const DeepCollectionEquality().equals(other.orders, orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.selectedStatus, selectedStatus) || other.selectedStatus == selectedStatus));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,const DeepCollectionEquality().hash(orders),nextCursor,error,hasMore,selectedStatus);
+int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,isRefreshing,isStale,const DeepCollectionEquality().hash(orders),nextCursor,error,hasMore,selectedStatus);
 
 @override
 String toString() {
-  return 'SalesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore, selectedStatus: $selectedStatus)';
+  return 'SalesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, isRefreshing: $isRefreshing, isStale: $isStale, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore, selectedStatus: $selectedStatus)';
 }
 
 
@@ -640,7 +646,7 @@ abstract mixin class $SalesListStateCopyWith<$Res>  {
   factory $SalesListStateCopyWith(SalesListState value, $Res Function(SalesListState) _then) = _$SalesListStateCopyWithImpl;
 @useResult
 $Res call({
- bool isLoading, bool isLoadingMore, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore, OrderStatus? selectedStatus
+ bool isLoading, bool isLoadingMore, bool isRefreshing, bool isStale, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore, OrderStatus? selectedStatus
 });
 
 
@@ -657,10 +663,12 @@ class _$SalesListStateCopyWithImpl<$Res>
 
 /// Create a copy of SalesListState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,Object? selectedStatus = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? isRefreshing = null,Object? isStale = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,Object? selectedStatus = freezed,}) {
   return _then(_self.copyWith(
 isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,isLoadingMore: null == isLoadingMore ? _self.isLoadingMore : isLoadingMore // ignore: cast_nullable_to_non_nullable
+as bool,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
+as bool,isStale: null == isStale ? _self.isStale : isStale // ignore: cast_nullable_to_non_nullable
 as bool,orders: null == orders ? _self.orders : orders // ignore: cast_nullable_to_non_nullable
 as List<OrderEntity>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable
@@ -751,10 +759,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore,  OrderStatus? selectedStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  bool isRefreshing,  bool isStale,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore,  OrderStatus? selectedStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SalesListState() when $default != null:
-return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCursor,_that.error,_that.hasMore,_that.selectedStatus);case _:
+return $default(_that.isLoading,_that.isLoadingMore,_that.isRefreshing,_that.isStale,_that.orders,_that.nextCursor,_that.error,_that.hasMore,_that.selectedStatus);case _:
   return orElse();
 
 }
@@ -772,10 +780,10 @@ return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCurso
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore,  OrderStatus? selectedStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool isLoading,  bool isLoadingMore,  bool isRefreshing,  bool isStale,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore,  OrderStatus? selectedStatus)  $default,) {final _that = this;
 switch (_that) {
 case _SalesListState():
-return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCursor,_that.error,_that.hasMore,_that.selectedStatus);case _:
+return $default(_that.isLoading,_that.isLoadingMore,_that.isRefreshing,_that.isStale,_that.orders,_that.nextCursor,_that.error,_that.hasMore,_that.selectedStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -792,10 +800,10 @@ return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCurso
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isLoading,  bool isLoadingMore,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore,  OrderStatus? selectedStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool isLoading,  bool isLoadingMore,  bool isRefreshing,  bool isStale,  List<OrderEntity> orders,  String? nextCursor,  String? error,  bool hasMore,  OrderStatus? selectedStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _SalesListState() when $default != null:
-return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCursor,_that.error,_that.hasMore,_that.selectedStatus);case _:
+return $default(_that.isLoading,_that.isLoadingMore,_that.isRefreshing,_that.isStale,_that.orders,_that.nextCursor,_that.error,_that.hasMore,_that.selectedStatus);case _:
   return null;
 
 }
@@ -807,11 +815,13 @@ return $default(_that.isLoading,_that.isLoadingMore,_that.orders,_that.nextCurso
 
 
 class _SalesListState implements SalesListState {
-  const _SalesListState({this.isLoading = false, this.isLoadingMore = false, final  List<OrderEntity> orders = const [], this.nextCursor, this.error, this.hasMore = true, this.selectedStatus}): _orders = orders;
+  const _SalesListState({this.isLoading = false, this.isLoadingMore = false, this.isRefreshing = false, this.isStale = false, final  List<OrderEntity> orders = const [], this.nextCursor, this.error, this.hasMore = true, this.selectedStatus}): _orders = orders;
   
 
 @override@JsonKey() final  bool isLoading;
 @override@JsonKey() final  bool isLoadingMore;
+@override@JsonKey() final  bool isRefreshing;
+@override@JsonKey() final  bool isStale;
  final  List<OrderEntity> _orders;
 @override@JsonKey() List<OrderEntity> get orders {
   if (_orders is EqualUnmodifiableListView) return _orders;
@@ -834,16 +844,16 @@ _$SalesListStateCopyWith<_SalesListState> get copyWith => __$SalesListStateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SalesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&const DeepCollectionEquality().equals(other._orders, _orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.selectedStatus, selectedStatus) || other.selectedStatus == selectedStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SalesListState&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading)&&(identical(other.isLoadingMore, isLoadingMore) || other.isLoadingMore == isLoadingMore)&&(identical(other.isRefreshing, isRefreshing) || other.isRefreshing == isRefreshing)&&(identical(other.isStale, isStale) || other.isStale == isStale)&&const DeepCollectionEquality().equals(other._orders, _orders)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.error, error) || other.error == error)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.selectedStatus, selectedStatus) || other.selectedStatus == selectedStatus));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,const DeepCollectionEquality().hash(_orders),nextCursor,error,hasMore,selectedStatus);
+int get hashCode => Object.hash(runtimeType,isLoading,isLoadingMore,isRefreshing,isStale,const DeepCollectionEquality().hash(_orders),nextCursor,error,hasMore,selectedStatus);
 
 @override
 String toString() {
-  return 'SalesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore, selectedStatus: $selectedStatus)';
+  return 'SalesListState(isLoading: $isLoading, isLoadingMore: $isLoadingMore, isRefreshing: $isRefreshing, isStale: $isStale, orders: $orders, nextCursor: $nextCursor, error: $error, hasMore: $hasMore, selectedStatus: $selectedStatus)';
 }
 
 
@@ -854,7 +864,7 @@ abstract mixin class _$SalesListStateCopyWith<$Res> implements $SalesListStateCo
   factory _$SalesListStateCopyWith(_SalesListState value, $Res Function(_SalesListState) _then) = __$SalesListStateCopyWithImpl;
 @override @useResult
 $Res call({
- bool isLoading, bool isLoadingMore, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore, OrderStatus? selectedStatus
+ bool isLoading, bool isLoadingMore, bool isRefreshing, bool isStale, List<OrderEntity> orders, String? nextCursor, String? error, bool hasMore, OrderStatus? selectedStatus
 });
 
 
@@ -871,10 +881,12 @@ class __$SalesListStateCopyWithImpl<$Res>
 
 /// Create a copy of SalesListState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,Object? selectedStatus = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? isLoading = null,Object? isLoadingMore = null,Object? isRefreshing = null,Object? isStale = null,Object? orders = null,Object? nextCursor = freezed,Object? error = freezed,Object? hasMore = null,Object? selectedStatus = freezed,}) {
   return _then(_SalesListState(
 isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,isLoadingMore: null == isLoadingMore ? _self.isLoadingMore : isLoadingMore // ignore: cast_nullable_to_non_nullable
+as bool,isRefreshing: null == isRefreshing ? _self.isRefreshing : isRefreshing // ignore: cast_nullable_to_non_nullable
+as bool,isStale: null == isStale ? _self.isStale : isStale // ignore: cast_nullable_to_non_nullable
 as bool,orders: null == orders ? _self._orders : orders // ignore: cast_nullable_to_non_nullable
 as List<OrderEntity>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,error: freezed == error ? _self.error : error // ignore: cast_nullable_to_non_nullable

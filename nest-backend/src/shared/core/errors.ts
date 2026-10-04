@@ -157,6 +157,36 @@ export class InvalidGoogleTokenError extends AppError {
   }
 }
 
+export class InvalidAppleTokenError extends AppError {
+  constructor(message = 'Token Apple inválido ou expirado') {
+    super('INVALID_APPLE_TOKEN', message, 401);
+  }
+}
+
+export class AppleEmailCollisionError extends AppError {
+  constructor() {
+    super('APPLE_EMAIL_COLLISION', 'Este e-mail já pertence a outra conta. Entre com esse método antes de vincular Apple.', 409);
+  }
+}
+
+export class AppleRevocationRequiredError extends AppError {
+  constructor(message = 'Não foi possível revogar o vínculo Apple. Tente novamente antes de excluir a conta.') {
+    super('APPLE_REVOCATION_REQUIRED', message, 409);
+  }
+}
+
+export class AppleUnavailableError extends AppError {
+  constructor() {
+    super('APPLE_UNAVAILABLE', 'O login com Apple não está configurado ou disponível', 503);
+  }
+}
+
+export class FreshAuthenticationRequiredError extends AppError {
+  constructor() {
+    super('FRESH_AUTH_REQUIRED', 'Entre novamente para cancelar a exclusão da conta', 401);
+  }
+}
+
 export class UnverifiedGoogleEmailError extends AppError {
   constructor(
     message = 'A conta Google precisa ter o e-mail verificado para ser vinculada a uma conta existente',

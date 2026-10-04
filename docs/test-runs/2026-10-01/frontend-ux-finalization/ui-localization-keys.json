@@ -1,0 +1,39 @@
+{
+  "generatedBy": "frontend UX finalization subagent",
+  "arbFilesNotEdited": [
+    "frontend/lib/shared/l10n/app_en.arb",
+    "frontend/lib/shared/l10n/app_pt_BR.arb"
+  ],
+  "keys": [
+    {
+      "key": "timeAgoNow",
+      "en": "now",
+      "ptBR": "agora",
+      "source": "SocialPostHeader timestamp fallback"
+    },
+    {
+      "key": "feedAudienceCloseFriends",
+      "en": "CLOSE FRIENDS",
+      "ptBR": "AMIGOS PRÓXIMOS",
+      "source": "SocialPost close-friends badge"
+    },
+    {
+      "key": "profileFavoritesTitle",
+      "en": "FAVORITES",
+      "ptBR": "FAVORITOS",
+      "source": "FavoritesPage heading"
+    },
+    {
+      "key": "profileFavoritesHeading",
+      "en": "FAVORITES",
+      "ptBR": "FAVORITOS",
+      "source": "FavoritesPage heading; not present in current ARBs"
+    },
+    {
+      "key": "profilePurchasesTitle",
+      "en": "PURCHASES",
+      "ptBR": "COMPRAS",
+      "source": "PurchasesPage heading; not present in current ARBs"
+    }
+  ]
+}

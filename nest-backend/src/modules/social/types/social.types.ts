@@ -31,6 +31,7 @@ export const POST_INCLUDE = {
       displayName: true,
       username: true,
       avatarUrl: true,
+      avatarBlurHash: true,
       isVerified: true,
     },
   },
@@ -73,7 +74,8 @@ export type PostPayload = Prisma.PostGetPayload<{
   include: typeof POST_INCLUDE;
 }>;
 
-export type PostResponse = Omit<PostPayload, "likes" | "shares" | "savedBy"> & {
+export type PostResponse = Omit<PostPayload, "likes" | "shares" | "savedBy" | "imageBlurHash"> & {
+  imageBlurHash?: string;
   isLiked: boolean;
   isSaved: boolean;
   hasReposted: boolean;

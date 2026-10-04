@@ -40,7 +40,7 @@ final class RepostsProvider extends $NotifierProvider<Reposts, RepostsState> {
   }
 }
 
-String _$repostsHash() => r'2fc7d25fbb5819117a4322043900714fcd732d0a';
+String _$repostsHash() => r'3f81c354dc1ec7e8db2d01f19b2a2fddd9d8489d';
 
 abstract class _$Reposts extends $Notifier<RepostsState> {
   RepostsState build();

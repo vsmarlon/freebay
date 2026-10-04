@@ -1,0 +1,2248 @@
+
+> nest-backend@1.0.0 test:integration
+> npm run prisma:test:sync && dotenv -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.integration.js
+
+
+> nest-backend@1.0.0 prisma:test:sync
+> cross-env NODE_ENV=test dotenv -e .env.test -- node scripts/safe-prisma-db-push.js
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "freebay_test_db", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+PASS src/modules/disputes/usecases/dispute.integration-spec.ts (16.317 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/reviews/usecases/create-review/create-review.usecase.integration-spec.ts (9.8 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/products/data/repositories/product-inventory.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/orders/usecases/order.usecase.integration-spec.ts (8.645 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error 
+      Invalid `tx.order.create()` invocation in
+      C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\src\modules\orders\data\repositories\order-reservation.repository.ts:55:40
+      
+        52   if (reserveResult.count === 0) throw new Error(PRODUCT_UNAVAILABLE);
+        53 }
+        54 
+      → 55 const created = await tx.order.create(
+      An operation failed because it depends on one or more records that were required but not found. No 'User' record (needed to inline the relation on 'Order' record(s)) was found for a nested connect on one-to-many relation 'BuyerOrders'.
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+PASS src/modules/auth/usecases/register.usecase.integration-spec.ts (6.677 s)
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+PASS src/modules/reviews/usecases/get-user-reviews/get-user-reviews.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+FAIL src/shared/wallet/wallet-mutation.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error Connection terminated unexpectedly
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error Connection terminated unexpectedly
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+          at async Promise.all (index 9)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● applyWalletDelta Integration › keeps the ledger equal to the balance under concurrent credits
+
+    Connection terminated unexpectedly
+
+    [0m [90m 66 |[39m     )[33m;[39m
+     [90m 67 |[39m
+    [31m[1m>[22m[39m[90m 68 |[39m     [36mawait[39m [33mPromise[39m[33m.[39mall(credits)[33m;[39m
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m 69 |[39m
+     [90m 70 |[39m     [36mconst[39m walletCount [33m=[39m [36mawait[39m prisma[33m.[39mwallet[33m.[39mcount({ where[33m:[39m { userId[33m:[39m user[33m.[39mid } })[33m;[39m
+     [90m 71 |[39m     [36mconst[39m { available } [33m=[39m [36mawait[39m balances(user[33m.[39mid)[33m;[39m[0m
+
+      at ../node_modules/pg/lib/client.js:631:17
+      at PgTransaction.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:652:22)
+      at PgTransaction.executeRaw (../node_modules/@prisma/adapter-pg/dist/index.js:641:13)
+      at n (../node_modules/@prisma/client-engine-runtime/src/transaction-manager/transaction-manager.ts:263:13)
+      at Vt.#o (../node_modules/@prisma/client-engine-runtime/src/transaction-manager/transaction-manager.ts:304:7)
+      at ../node_modules/@prisma/client-engine-runtime/src/transaction-manager/transaction-manager.ts:171:7
+      at Vt.commitTransaction (../node_modules/@prisma/client-engine-runtime/src/transaction-manager/transaction-manager.ts:169:12)
+      at e.commitTransaction (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:97:5)
+      at jt.transaction (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:444:9)
+      at Proxy._transactionWithCallback (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:700:9)
+          at async Promise.all (index 6)
+      at Object.<anonymous> (shared/wallet/wallet-mutation.integration-spec.ts:68:5)
+
+  ● applyWalletDelta Integration › keeps the ledger equal to the balance under concurrent credits
+
+    Connection terminated unexpectedly
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at ../node_modules/pg-pool/index.js:45:11
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:652:22)
+      at PrismaPgAdapter.executeRaw (../node_modules/@prisma/adapter-pg/dist/index.js:641:13)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:168:18)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● applyWalletDelta Integration › keeps concurrent credits safe when the wallet already exists
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 41 |[39m     walletData[33m:[39m { availableBalance[33m?[39m[33m:[39m number[33m;[39m pendingBalance[33m?[39m[33m:[39m number[33m;[39m totalEarned[33m?[39m[33m:[39m number } [33m=[39m {}[33m,[39m
+     [90m 42 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m[33mUser[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 43 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mcreate(overrides)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 44 |[39m
+     [90m 45 |[39m     [36mawait[39m [36mthis[39m[33m.[39mprisma[33m.[39mwallet[33m.[39mcreate({
+     [90m 46 |[39m       data[33m:[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at UserFactory.createWithWallet (../test/factories/user.factory.ts:43:18)
+      at Object.<anonymous> (shared/wallet/wallet-mutation.integration-spec.ts:83:18)
+
+  ● applyWalletDelta Integration › keeps concurrent credits safe when the wallet already exists
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● applyWalletDelta Integration › rolls the ledger entry back when the surrounding transaction fails
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 100 |[39m
+     [90m 101 |[39m   it([32m'rolls the ledger entry back when the surrounding transaction fails'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 102 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m     |[39m                  [31m[1m^[22m[39m
+     [90m 103 |[39m
+     [90m 104 |[39m     [36mawait[39m expect(
+     [90m 105 |[39m       prisma[33m.[39m$transaction([36masync[39m (tx) [33m=>[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (shared/wallet/wallet-mutation.integration-spec.ts:102:18)
+
+  ● applyWalletDelta Integration › rolls the ledger entry back when the surrounding transaction fails
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/tasks/escrow-release.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● EscrowReleaseTask Integration › releases escrow and moves the hold into the available balance
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 38 |[39m
+     [90m 39 |[39m   [36masync[39m [36mfunction[39m seedDeliveredOrder() {
+    [31m[1m>[22m[39m[90m 40 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 41 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 42 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid[33m,[39m { price[33m:[39m [35m10000[39m })[33m;[39m
+     [90m 43 |[39m     [36mconst[39m order [33m=[39m [36mawait[39m orderFactory[33m.[39mcreate(buyer[33m.[39mid[33m,[39m seller[33m.[39mid[33m,[39m product[33m.[39mid[33m,[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at seedDeliveredOrder (modules/tasks/escrow-release.integration-spec.ts:40:19)
+      at Object.<anonymous> (modules/tasks/escrow-release.integration-spec.ts:76:31)
+
+  ● EscrowReleaseTask Integration › releases escrow and moves the hold into the available balance
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● EscrowReleaseTask Integration › credits the seller exactly once when two ticks run concurrently
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 38 |[39m
+     [90m 39 |[39m   [36masync[39m [36mfunction[39m seedDeliveredOrder() {
+    [31m[1m>[22m[39m[90m 40 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 41 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 42 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid[33m,[39m { price[33m:[39m [35m10000[39m })[33m;[39m
+     [90m 43 |[39m     [36mconst[39m order [33m=[39m [36mawait[39m orderFactory[33m.[39mcreate(buyer[33m.[39mid[33m,[39m seller[33m.[39mid[33m,[39m product[33m.[39mid[33m,[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at seedDeliveredOrder (modules/tasks/escrow-release.integration-spec.ts:40:19)
+      at Object.<anonymous> (modules/tasks/escrow-release.integration-spec.ts:96:31)
+
+  ● EscrowReleaseTask Integration › credits the seller exactly once when two ticks run concurrently
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● EscrowReleaseTask Integration › leaves escrow alone while a dispute is open
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 38 |[39m
+     [90m 39 |[39m   [36masync[39m [36mfunction[39m seedDeliveredOrder() {
+    [31m[1m>[22m[39m[90m 40 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 41 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 42 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid[33m,[39m { price[33m:[39m [35m10000[39m })[33m;[39m
+     [90m 43 |[39m     [36mconst[39m order [33m=[39m [36mawait[39m orderFactory[33m.[39mcreate(buyer[33m.[39mid[33m,[39m seller[33m.[39mid[33m,[39m product[33m.[39mid[33m,[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at seedDeliveredOrder (modules/tasks/escrow-release.integration-spec.ts:40:19)
+      at Object.<anonymous> (modules/tasks/escrow-release.integration-spec.ts:111:31)
+
+  ● EscrowReleaseTask Integration › leaves escrow alone while a dispute is open
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+[31m[Nest] 26916  - [39m01/10/2026, 03:43:58 [31m  ERROR[39m [38;5;3m[PrismaRepository] [39m[31mErro ao buscar pedido[39m
+DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+    at PrismaPgAdapter.onError (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\adapter-pg\dist\index.js:687:11)
+    at PrismaPgAdapter.performIO (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\adapter-pg\dist\index.js:682:12)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at PrismaPgAdapter.queryRaw (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\adapter-pg\dist\index.js:602:30)
+    at e.interpretNode (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:186:26)
+    at e.interpretNode (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:213:41)
+    at e.interpretNode (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:128:29)
+    at e.interpretNode (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:272:41)
+    at e.run (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client-engine-runtime\src\interpreter\query-interpreter.ts:94:23)
+    at execute (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\core\engines\client\LocalExecutor.ts:81:12)
+    at jt.request (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:492:22)
+    at Object.singleLoader (C:\Users\Qiyana\Documents\GitHub\ME\freebay\nest-backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:112:26)
+FAIL src/modules/payments/usecases/create-payment-session.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● CreatePaymentSessionUseCase Integration › returns error if order not found
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "NOT_FOUND"
+    Received: "DB_ERROR"
+
+    [0m [90m 55 |[39m     })[33m;[39m
+     [90m 56 |[39m     expect(result[33m.[39misLeft())[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m     [36mif[39m (result[33m.[39misLeft()) expect(result[33m.[39mvalue[33m.[39mcode)[33m.[39mtoBe([32m'NOT_FOUND'[39m)[33m;[39m
+     [90m    |[39m                                                    [31m[1m^[22m[39m
+     [90m 58 |[39m   })[33m;[39m
+     [90m 59 |[39m
+     [90m 60 |[39m   it([32m'returns error if user does not own the order'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (modules/payments/usecases/create-payment-session.usecase.integration-spec.ts:57:52)
+
+  ● CreatePaymentSessionUseCase Integration › returns error if order not found
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● CreatePaymentSessionUseCase Integration › returns error if user does not own the order
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 59 |[39m
+     [90m 60 |[39m   it([32m'returns error if user does not own the order'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 61 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 62 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 63 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid)[33m;[39m
+     [90m 64 |[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/payments/usecases/create-payment-session.usecase.integration-spec.ts:61:19)
+
+  ● CreatePaymentSessionUseCase Integration › returns error if user does not own the order
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● CreatePaymentSessionUseCase Integration › creates payment session for valid order with CPF
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 91 |[39m
+     [90m 92 |[39m   it([32m'creates payment session for valid order with CPF'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 93 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m userFactory[33m.[39mcreate({ cpf[33m:[39m [32m'12345678901'[39m })[33m;[39m
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 94 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 95 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid)[33m;[39m
+     [90m 96 |[39m     [36mconst[39m order [33m=[39m [36mawait[39m prisma[33m.[39morder[33m.[39mcreate({[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/payments/usecases/create-payment-session.usecase.integration-spec.ts:93:19)
+
+  ● CreatePaymentSessionUseCase Integration › creates payment session for valid order with CPF
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● CreatePaymentSessionUseCase Integration › returns error if user has no CPF
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 121 |[39m
+     [90m 122 |[39m   it([32m'returns error if user has no CPF'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 123 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m userFactory[33m.[39mcreate({ cpf[33m:[39m [36mnull[39m })[33m;[39m
+     [90m     |[39m                   [31m[1m^[22m[39m
+     [90m 124 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 125 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid)[33m;[39m
+     [90m 126 |[39m     [36mconst[39m order [33m=[39m [36mawait[39m prisma[33m.[39morder[33m.[39mcreate({[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/payments/usecases/create-payment-session.usecase.integration-spec.ts:123:19)
+
+  ● CreatePaymentSessionUseCase Integration › returns error if user has no CPF
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/cart/data/repositories/cart-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● CartDatabaseRepository reservations Integration › lets only one of two concurrent buyers reserve a single-unit product
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 47 |[39m
+     [90m 48 |[39m   it([32m'lets only one of two concurrent buyers reserve a single-unit product'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 49 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                    [31m[1m^[22m[39m
+     [90m 50 |[39m     [36mconst[39m buyerA [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 51 |[39m     [36mconst[39m buyerB [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 52 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid[33m,[39m { price[33m:[39m [35m10000[39m[33m,[39m quantity[33m:[39m [35m1[39m })[33m;[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/cart/data/repositories/cart-database.repository.integration-spec.ts:49:20)
+
+  ● CartDatabaseRepository reservations Integration › lets only one of two concurrent buyers reserve a single-unit product
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● CartDatabaseRepository reservations Integration › never oversells a multi-unit product under concurrent checkouts
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 63 |[39m
+     [90m 64 |[39m   it([32m'never oversells a multi-unit product under concurrent checkouts'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 65 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                    [31m[1m^[22m[39m
+     [90m 66 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid[33m,[39m { price[33m:[39m [35m5000[39m[33m,[39m quantity[33m:[39m [35m5[39m })[33m;[39m
+     [90m 67 |[39m
+     [90m 68 |[39m     [36mconst[39m buyers [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([33mArray[39m[33m.[39m[36mfrom[39m({ length[33m:[39m [35m5[39m }[33m,[39m () [33m=>[39m userFactory[33m.[39mcreate()))[33m;[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/cart/data/repositories/cart-database.repository.integration-spec.ts:65:20)
+
+  ● CartDatabaseRepository reservations Integration › never oversells a multi-unit product under concurrent checkouts
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● CartDatabaseRepository reservations Integration › reserves the ordered quantity, not a single unit
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 80 |[39m
+     [90m 81 |[39m   it([32m'reserves the ordered quantity, not a single unit'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 82 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                    [31m[1m^[22m[39m
+     [90m 83 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m 84 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m productFactory[33m.[39mcreate(seller[33m.[39mid[33m,[39m { price[33m:[39m [35m5000[39m[33m,[39m quantity[33m:[39m [35m10[39m })[33m;[39m
+     [90m 85 |[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/cart/data/repositories/cart-database.repository.integration-spec.ts:82:20)
+
+  ● CartDatabaseRepository reservations Integration › reserves the ordered quantity, not a single unit
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/payments/usecases/process-webhook.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● ProcessWebhookUseCase Integration › succeeds without mutating anything for an unknown event
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● ProcessWebhookUseCase Integration › succeeds without mutating anything when orderId is missing
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● ProcessWebhookUseCase Integration › succeeds without mutating anything for payment_intent.succeeded with no orderId
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● ProcessWebhookUseCase Integration › succeeds without mutating anything for an unknown event even with orderId
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● ProcessWebhookUseCase Integration › skips duplicate completion when transaction is already PAID
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/orders/data/repositories/order-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● PrismaOrderRepository.refundOrder › does not debit the seller again after a Stripe transfer
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 41 |[39m     walletData[33m:[39m { availableBalance[33m?[39m[33m:[39m number[33m;[39m pendingBalance[33m?[39m[33m:[39m number[33m;[39m totalEarned[33m?[39m[33m:[39m number } [33m=[39m {}[33m,[39m
+     [90m 42 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m[33mUser[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 43 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mcreate(overrides)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 44 |[39m
+     [90m 45 |[39m     [36mawait[39m [36mthis[39m[33m.[39mprisma[33m.[39mwallet[33m.[39mcreate({
+     [90m 46 |[39m       data[33m:[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at UserFactory.createWithWallet (../test/factories/user.factory.ts:43:18)
+      at refund (modules/orders/data/repositories/order-database.repository.integration-spec.ts:30:19)
+      at Object.<anonymous> (modules/orders/data/repositories/order-database.repository.integration-spec.ts:80:20)
+
+  ● PrismaOrderRepository.refundOrder › does not debit the seller again after a Stripe transfer
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● PrismaOrderRepository.refundOrder › debits available and earned balances when released funds were not transferred
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 41 |[39m     walletData[33m:[39m { availableBalance[33m?[39m[33m:[39m number[33m;[39m pendingBalance[33m?[39m[33m:[39m number[33m;[39m totalEarned[33m?[39m[33m:[39m number } [33m=[39m {}[33m,[39m
+     [90m 42 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m[33mUser[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 43 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mcreate(overrides)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 44 |[39m
+     [90m 45 |[39m     [36mawait[39m [36mthis[39m[33m.[39mprisma[33m.[39mwallet[33m.[39mcreate({
+     [90m 46 |[39m       data[33m:[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at UserFactory.createWithWallet (../test/factories/user.factory.ts:43:18)
+      at refund (modules/orders/data/repositories/order-database.repository.integration-spec.ts:30:19)
+      at Object.<anonymous> (modules/orders/data/repositories/order-database.repository.integration-spec.ts:92:20)
+
+  ● PrismaOrderRepository.refundOrder › debits available and earned balances when released funds were not transferred
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● PrismaOrderRepository.refundOrder › debits pending escrow only and does not add entries on retry
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 41 |[39m     walletData[33m:[39m { availableBalance[33m?[39m[33m:[39m number[33m;[39m pendingBalance[33m?[39m[33m:[39m number[33m;[39m totalEarned[33m?[39m[33m:[39m number } [33m=[39m {}[33m,[39m
+     [90m 42 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m[33mUser[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 43 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mcreate(overrides)[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 44 |[39m
+     [90m 45 |[39m     [36mawait[39m [36mthis[39m[33m.[39mprisma[33m.[39mwallet[33m.[39mcreate({
+     [90m 46 |[39m       data[33m:[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at UserFactory.createWithWallet (../test/factories/user.factory.ts:43:18)
+      at refund (modules/orders/data/repositories/order-database.repository.integration-spec.ts:30:19)
+      at Object.<anonymous> (modules/orders/data/repositories/order-database.repository.integration-spec.ts:116:20)
+
+  ● PrismaOrderRepository.refundOrder › debits pending escrow only and does not add entries on retry
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/social/data/repositories/feed-pagination.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+          at async Promise.all (index 1)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+          at async Promise.all (index 2)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+          at async Promise.all (index 0)
+
+  ● Explore feed pagination (real PostgreSQL) › reaches every post beyond the first 300 without duplicates
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 21 |[39m
+     [90m 22 |[39m   it([32m'reaches every post beyond the first 300 without duplicates'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 23 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 24 |[39m       data[33m:[39m { email[33m:[39m [32m`feed-pages-${Date.now()}@example.com`[39m[33m,[39m displayName[33m:[39m [32m'Feed'[39m }[33m,[39m
+     [90m 25 |[39m     })[33m;[39m
+     [90m 26 |[39m     [36mconst[39m base [33m=[39m [36mnew[39m [33mDate[39m([32m'2026-09-28T12:00:00.000Z'[39m)[33m.[39mgetTime()[33m;[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/social/data/repositories/feed-pagination.integration-spec.ts:23:18)
+
+  ● Explore feed pagination (real PostgreSQL) › reaches every post beyond the first 300 without duplicates
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● Explore feed pagination (real PostgreSQL) › keeps the remaining window stable when engagement changes between pages
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 56 |[39m
+     [90m 57 |[39m   it([32m'keeps the remaining window stable when engagement changes between pages'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 58 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 59 |[39m       data[33m:[39m { email[33m:[39m [32m`feed-stable-${Date.now()}@example.com`[39m[33m,[39m displayName[33m:[39m [32m'Feed'[39m }[33m,[39m
+     [90m 60 |[39m     })[33m;[39m
+     [90m 61 |[39m     [36mconst[39m createdAt [33m=[39m [36mnew[39m [33mDate[39m([32m'2026-09-28T12:00:00.000Z'[39m)[33m;[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/social/data/repositories/feed-pagination.integration-spec.ts:58:18)
+
+  ● Explore feed pagination (real PostgreSQL) › keeps the remaining window stable when engagement changes between pages
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● Explore feed pagination (real PostgreSQL) › filters the Following feed without loading the entire follow graph into memory
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 79 |[39m
+     [90m 80 |[39m   it([32m'filters the Following feed without loading the entire follow graph into memory'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 81 |[39m     [36mconst[39m [viewer[33m,[39m followed[33m,[39m stranger] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([[32m'viewer'[39m[33m,[39m [32m'followed'[39m[33m,[39m [32m'stranger'[39m][33m.[39mmap((name) [33m=>[39m
+     [90m    |[39m                                          [31m[1m^[22m[39m
+     [90m 82 |[39m       prisma[33m.[39muser[33m.[39mcreate({ data[33m:[39m { email[33m:[39m [32m`feed-${name}-${Date.now()}@example.com`[39m[33m,[39m displayName[33m:[39m name } })[33m,[39m
+     [90m 83 |[39m     ))[33m;[39m
+     [90m 84 |[39m     [36mawait[39m prisma[33m.[39mfollow[33m.[39mcreate({ data[33m:[39m { followerId[33m:[39m viewer[33m.[39mid[33m,[39m followingId[33m:[39m followed[33m.[39mid } })[33m;[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+          at async Promise.all (index 1)
+      at Object.<anonymous> (modules/social/data/repositories/feed-pagination.integration-spec.ts:81:42)
+
+  ● Explore feed pagination (real PostgreSQL) › filters the Following feed without loading the entire follow graph into memory
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/auth/data/repositories/magic-link-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● MagicLinkDatabaseRepository integration › allows exactly one concurrent consumption and initializes one user and wallet
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 1
+    Received length: 0
+    Received array:  []
+
+    [0m [90m 40 |[39m     [36mconst[39m loser [33m=[39m results[33m.[39mfilter((result) [33m=>[39m result[33m.[39misRight() [33m&&[39m result[33m.[39mvalue [33m===[39m [36mnull[39m)[33m;[39m
+     [90m 41 |[39m
+    [31m[1m>[22m[39m[90m 42 |[39m     expect(successful)[33m.[39mtoHaveLength([35m1[39m)[33m;[39m
+     [90m    |[39m                        [31m[1m^[22m[39m
+     [90m 43 |[39m     expect(loser)[33m.[39mtoHaveLength([35m1[39m)[33m;[39m
+     [90m 44 |[39m     expect([36mawait[39m prisma[33m.[39muser[33m.[39mcount({ where[33m:[39m { email } }))[33m.[39mtoBe([35m1[39m)[33m;[39m
+     [90m 45 |[39m     expect([36mawait[39m prisma[33m.[39mwallet[33m.[39mcount({ where[33m:[39m { user[33m:[39m { email } } }))[33m.[39mtoBe([35m1[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (modules/auth/data/repositories/magic-link-database.repository.integration-spec.ts:42:24)
+
+  ● MagicLinkDatabaseRepository integration › allows exactly one concurrent consumption and initializes one user and wallet
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● MagicLinkDatabaseRepository integration › rejects expiry and replay while reusing an existing user
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 49 |[39m   it([32m'rejects expiry and replay while reusing an existing user'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m 50 |[39m     [36mconst[39m email [33m=[39m [32m`existing-${Date.now()}@example.com`[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 51 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({ data[33m:[39m { email[33m,[39m displayName[33m:[39m [32m'Existing'[39m } })[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 52 |[39m     [36mconst[39m tokenHash [33m=[39m createHash([32m'sha256'[39m)[33m.[39mupdate([32m'existing-token'[39m)[33m.[39mdigest([32m'hex'[39m)[33m;[39m
+     [90m 53 |[39m     [36mawait[39m repository[33m.[39mcreate({ email[33m,[39m tokenHash[33m,[39m consentGranted[33m:[39m [36mtrue[39m[33m,[39m activatedAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m expiresAt[33m:[39m [36mnew[39m [33mDate[39m([33mDate[39m[33m.[39mnow() [33m+[39m [35m600000[39m) })[33m;[39m
+     [90m 54 |[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/auth/data/repositories/magic-link-database.repository.integration-spec.ts:51:18)
+
+  ● MagicLinkDatabaseRepository integration › rejects expiry and replay while reusing an existing user
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● MagicLinkDatabaseRepository integration › does not consume an unactivated link or suspend an existing user
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 69 |[39m   it([32m'does not consume an unactivated link or suspend an existing user'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m 70 |[39m     [36mconst[39m email [33m=[39m [32m`suspended-${Date.now()}@example.com`[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 71 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({ data[33m:[39m { email[33m,[39m displayName[33m:[39m [32m'Suspended'[39m[33m,[39m suspendedAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m suspensionReason[33m:[39m [32m'fraud'[39m } })[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 72 |[39m     [36mconst[39m tokenHash [33m=[39m createHash([32m'sha256'[39m)[33m.[39mupdate([32m'undelivered-token'[39m)[33m.[39mdigest([32m'hex'[39m)[33m;[39m
+     [90m 73 |[39m     [36mawait[39m repository[33m.[39mcreate({ email[33m,[39m tokenHash[33m,[39m consentGranted[33m:[39m [36mtrue[39m[33m,[39m expiresAt[33m:[39m [36mnew[39m [33mDate[39m([33mDate[39m[33m.[39mnow() [33m+[39m [35m600000[39m) })[33m;[39m
+     [90m 74 |[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/auth/data/repositories/magic-link-database.repository.integration-spec.ts:71:18)
+
+  ● MagicLinkDatabaseRepository integration › does not consume an unactivated link or suspend an existing user
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● MagicLinkDatabaseRepository integration › rejects a delivered link for a suspended user before claiming it
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 82 |[39m   it([32m'rejects a delivered link for a suspended user before claiming it'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m 83 |[39m     [36mconst[39m email [33m=[39m [32m`locked-${Date.now()}@example.com`[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 84 |[39m     [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({ data[33m:[39m { email[33m,[39m displayName[33m:[39m [32m'Locked'[39m[33m,[39m suspendedAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m suspensionReason[33m:[39m [32m'fraud'[39m } })[33m;[39m
+     [90m    |[39m     [31m[1m^[22m[39m
+     [90m 85 |[39m     [36mconst[39m tokenHash [33m=[39m createHash([32m'sha256'[39m)[33m.[39mupdate([32m'suspended-token'[39m)[33m.[39mdigest([32m'hex'[39m)[33m;[39m
+     [90m 86 |[39m     [36mawait[39m repository[33m.[39mcreate({ email[33m,[39m tokenHash[33m,[39m consentGranted[33m:[39m [36mtrue[39m[33m,[39m activatedAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m expiresAt[33m:[39m [36mnew[39m [33mDate[39m([33mDate[39m[33m.[39mnow() [33m+[39m [35m600000[39m) })[33m;[39m
+     [90m 87 |[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/auth/data/repositories/magic-link-database.repository.integration-spec.ts:84:5)
+
+  ● MagicLinkDatabaseRepository integration › rejects a delivered link for a suspended user before claiming it
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/payments/data/repositories/transaction-transfer.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● Transaction transfer durability integration › allows only one concurrent transfer claim and never steals an active lease
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 28 |[39m
+     [90m 29 |[39m   [36masync[39m [36mfunction[39m createPendingTransfer() {
+    [31m[1m>[22m[39m[90m 30 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m users[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 31 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m users[33m.[39mcreateWithWallet({}[33m,[39m { availableBalance[33m:[39m [35m1000[39m })[33m;[39m
+     [90m 32 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m products[33m.[39mcreateWithPrice(seller[33m.[39mid[33m,[39m [35m1000[39m)[33m;[39m
+     [90m 33 |[39m     [36mconst[39m order [33m=[39m [36mawait[39m orders[33m.[39mcreate(buyer[33m.[39mid[33m,[39m seller[33m.[39mid[33m,[39m product[33m.[39mid)[33m;[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at createPendingTransfer (modules/payments/data/repositories/transaction-transfer.integration-spec.ts:30:19)
+      at Object.<anonymous> (modules/payments/data/repositories/transaction-transfer.integration-spec.ts:51:36)
+
+  ● Transaction transfer durability integration › allows only one concurrent transfer claim and never steals an active lease
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● Transaction transfer durability integration › finalizes and debits the wallet once, including replay attempts
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 28 |[39m
+     [90m 29 |[39m   [36masync[39m [36mfunction[39m createPendingTransfer() {
+    [31m[1m>[22m[39m[90m 30 |[39m     [36mconst[39m buyer [33m=[39m [36mawait[39m users[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                   [31m[1m^[22m[39m
+     [90m 31 |[39m     [36mconst[39m seller [33m=[39m [36mawait[39m users[33m.[39mcreateWithWallet({}[33m,[39m { availableBalance[33m:[39m [35m1000[39m })[33m;[39m
+     [90m 32 |[39m     [36mconst[39m product [33m=[39m [36mawait[39m products[33m.[39mcreateWithPrice(seller[33m.[39mid[33m,[39m [35m1000[39m)[33m;[39m
+     [90m 33 |[39m     [36mconst[39m order [33m=[39m [36mawait[39m orders[33m.[39mcreate(buyer[33m.[39mid[33m,[39m seller[33m.[39mid[33m,[39m product[33m.[39mid)[33m;[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at createPendingTransfer (modules/payments/data/repositories/transaction-transfer.integration-spec.ts:30:19)
+      at Object.<anonymous> (modules/payments/data/repositories/transaction-transfer.integration-spec.ts:67:44)
+
+  ● Transaction transfer durability integration › finalizes and debits the wallet once, including replay attempts
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/chat/usecases/send-message.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● SendMessageUseCase location integration › persists canonical metadata and reuses a duplicate client id
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 14 |[39m   it([32m'persists canonical metadata and reuses a duplicate client id'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+     [90m 15 |[39m     [36mconst[39m users [33m=[39m [36mnew[39m [33mUserFactory[39m(prisma)[33m;[39m
+    [31m[1m>[22m[39m[90m 16 |[39m     [36mconst[39m sender [33m=[39m [36mawait[39m users[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                    [31m[1m^[22m[39m
+     [90m 17 |[39m     [36mconst[39m receiver [33m=[39m [36mawait[39m users[33m.[39mcreate()[33m;[39m
+     [90m 18 |[39m     [36mconst[39m conversation [33m=[39m [36mawait[39m prisma[33m.[39mdirectConversation[33m.[39mcreate({
+     [90m 19 |[39m       data[33m:[39m {[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/chat/usecases/send-message.usecase.integration-spec.ts:16:20)
+
+  ● SendMessageUseCase location integration › persists canonical metadata and reuses a duplicate client id
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/social/data/repositories/comment-database.repository.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● PrismaCommentRepository comment counters › increments once for a root comment and once for its reply
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 19 |[39m
+     [90m 20 |[39m   it([32m'increments once for a root comment and once for its reply'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 21 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({ data[33m:[39m { email[33m:[39m [32m`fb08-${Date.now()}@example.com`[39m[33m,[39m displayName[33m:[39m [32m'FB-08'[39m } })[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 22 |[39m     [36mconst[39m post [33m=[39m [36mawait[39m prisma[33m.[39mpost[33m.[39mcreate({ data[33m:[39m { userId[33m:[39m user[33m.[39mid[33m,[39m type[33m:[39m [32m'REGULAR'[39m[33m,[39m content[33m:[39m [32m'post'[39m } })[33m;[39m
+     [90m 23 |[39m     [36mconst[39m root [33m=[39m [36mawait[39m repository[33m.[39mcreateWithCount(
+     [90m 24 |[39m       { content[33m:[39m [32m'root'[39m[33m,[39m user[33m:[39m { connect[33m:[39m { id[33m:[39m user[33m.[39mid } }[33m,[39m post[33m:[39m { connect[33m:[39m { id[33m:[39m post[33m.[39mid } } }[33m,[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/social/data/repositories/comment-database.repository.integration-spec.ts:21:18)
+
+  ● PrismaCommentRepository comment counters › increments once for a root comment and once for its reply
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● PrismaCommentRepository comment counters › rolls back the comment when the counter update fails
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 46 |[39m
+     [90m 47 |[39m   it([32m'rolls back the comment when the counter update fails'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 48 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({ data[33m:[39m { email[33m:[39m [32m`fb08-fail-${Date.now()}@example.com`[39m[33m,[39m displayName[33m:[39m [32m'FB-08'[39m } })[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 49 |[39m     [36mconst[39m post [33m=[39m [36mawait[39m prisma[33m.[39mpost[33m.[39mcreate({ data[33m:[39m { userId[33m:[39m user[33m.[39mid[33m,[39m type[33m:[39m [32m'REGULAR'[39m[33m,[39m content[33m:[39m [32m'post'[39m } })[33m;[39m
+     [90m 50 |[39m     [36mconst[39m result [33m=[39m [36mawait[39m repository[33m.[39mcreateWithCount(
+     [90m 51 |[39m       { content[33m:[39m [32m'not persisted'[39m[33m,[39m user[33m:[39m { connect[33m:[39m { id[33m:[39m user[33m.[39mid } }[33m,[39m post[33m:[39m { connect[33m:[39m { id[33m:[39m post[33m.[39mid } } }[33m,[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/social/data/repositories/comment-database.repository.integration-spec.ts:48:18)
+
+  ● PrismaCommentRepository comment counters › rolls back the comment when the counter update fails
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+  ● PrismaCommentRepository comment counters › decrements once when deleting a root with replies
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 60 |[39m
+     [90m 61 |[39m   it([32m'decrements once when deleting a root with replies'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 62 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m prisma[33m.[39muser[33m.[39mcreate({ data[33m:[39m { email[33m:[39m [32m`fb08-delete-${Date.now()}@example.com`[39m[33m,[39m displayName[33m:[39m [32m'FB-08'[39m } })[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 63 |[39m     [36mconst[39m post [33m=[39m [36mawait[39m prisma[33m.[39mpost[33m.[39mcreate({ data[33m:[39m { userId[33m:[39m user[33m.[39mid[33m,[39m type[33m:[39m [32m'REGULAR'[39m[33m,[39m content[33m:[39m [32m'post'[39m } })[33m;[39m
+     [90m 64 |[39m     [36mconst[39m root [33m=[39m [36mawait[39m repository[33m.[39mcreateWithCount(
+     [90m 65 |[39m       { content[33m:[39m [32m'root'[39m[33m,[39m user[33m:[39m { connect[33m:[39m { id[33m:[39m user[33m.[39mid } }[33m,[39m post[33m:[39m { connect[33m:[39m { id[33m:[39m post[33m.[39mid } } }[33m,[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/social/data/repositories/comment-database.repository.integration-spec.ts:62:18)
+
+  ● PrismaCommentRepository comment counters › decrements once when deleting a root with replies
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+FAIL src/modules/wallet/usecases/get-wallet.usecase.integration-spec.ts
+  ● Console
+
+    console.log
+      Test database connected
+
+      at Object.<anonymous> (../test/setup-integration.ts:28:13)
+
+    console.log
+      prisma:error o sistema de banco de dados est� em modo de recupera��o
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+    console.log
+      prisma:error 
+      Invalid `prisma.$executeRawUnsafe()` invocation:
+      
+      
+      Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+      at Object.ku (../node_modules/@prisma/internals/src/logger.ts:13:11)
+
+  ● GetWalletUseCase bootstrap integration › creates one zeroed wallet and no ledger entries across repeated bootstrap
+
+    DriverAdapterError: o sistema de banco de dados est� em modo de recupera��o
+
+    [0m [90m 17 |[39m
+     [90m 18 |[39m   it([32m'creates one zeroed wallet and no ledger entries across repeated bootstrap'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 19 |[39m     [36mconst[39m user [33m=[39m [36mawait[39m userFactory[33m.[39mcreate()[33m;[39m
+     [90m    |[39m                  [31m[1m^[22m[39m
+     [90m 20 |[39m
+     [90m 21 |[39m     [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m 22 |[39m       sut[33m.[39mexecute(user[33m.[39mid)[33m,[39m[0m
+
+      at PrismaPgAdapter.onError (../node_modules/@prisma/adapter-pg/dist/index.js:687:11)
+      at PrismaPgAdapter.performIO (../node_modules/@prisma/adapter-pg/dist/index.js:682:12)
+      at PrismaPgAdapter.queryRaw (../node_modules/@prisma/adapter-pg/dist/index.js:602:30)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+      at e.interpretNode (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+      at e.run (../node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+      at execute (../node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+      at jt.request (../node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:492:22)
+      at Object.singleLoader (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at Object.<anonymous> (modules/wallet/usecases/get-wallet.usecase.integration-spec.ts:19:18)
+
+  ● GetWalletUseCase bootstrap integration › creates one zeroed wallet and no ledger entries across repeated bootstrap
+
+    PrismaClientKnownRequestError: 
+    Invalid `prisma.$executeRawUnsafe()` invocation:
+
+
+    Raw query failed. Code: `57P03`. Message: `o sistema de banco de dados est� em modo de recupera��o`
+
+    [0m [90m 55 |[39m [36mexport[39m [36masync[39m [36mfunction[39m cleanDatabase(prisma[33m:[39m [33mPrismaClient[39m)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+     [90m 56 |[39m   assertSafeTestEnvironment()[33m;[39m
+    [31m[1m>[22m[39m[90m 57 |[39m   [36mawait[39m prisma[33m.[39m$executeRawUnsafe([32m`TRUNCATE TABLE[39m
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 58 |[39m [32m    "WebMagicLink", "PasswordRecoveryCode", "PhoneVerificationCode", "MessageReaction",[39m
+     [90m 59 |[39m [32m    "ConversationPreference", "DirectMessage", "DirectConversation",[39m
+     [90m 60 |[39m [32m    "ChatMessage", "ReviewImage", "Review", "Dispute",[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:808:24)
+      at cleanDatabase (../test/utils/test-helpers.ts:57:3)
+      at Object.<anonymous> (../test/setup-integration.ts:36:3)
+
+Test Suites: 12 failed, 6 passed, 18 total
+Tests:       35 failed, 67 passed, 102 total
+Snapshots:   0 total
+Time:        62.946 s
+Ran all test suites.

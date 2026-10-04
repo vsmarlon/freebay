@@ -1,0 +1,8 @@
+{
+  "label": "gate-tsc",
+  "command": "npx tsc --noEmit",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:41:43.610Z",
+  "ended": "2026-10-01T06:41:58.167Z",
+  "exitCode": 0
+}

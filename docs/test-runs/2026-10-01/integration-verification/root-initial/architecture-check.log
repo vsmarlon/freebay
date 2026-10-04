@@ -1,0 +1,3 @@
+""
+"=== Removed architecture/API identifiers ==="
+node scripts/ci-check.js --architecture

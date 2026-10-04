@@ -11,6 +11,7 @@ import 'package:freebay/features/product/presentation/controllers/product_contro
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const explorarSearchDebounce = Duration(milliseconds: 300);
 
@@ -51,7 +52,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
   void _openFilters() {
     showBrutalistSheet(
       context: context,
-      title: 'FILTROS',
+      title: l10n(context).productFilters,
       builder: (_) => Consumer(
         builder: (context, ref, _) => ProductFilterBar(
           sort: ref.watch(productSortProvider),
@@ -79,6 +80,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = l10n(context);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final hasActiveFilters =
@@ -92,7 +94,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
         children: [
           ShellScrollHeader(
             child: PageHeader(
-              text: 'EXPLORAR',
+              text: strings.navExplore.toUpperCase(),
               actions: [
                 Stack(
                   children: [
@@ -135,8 +137,8 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: AppTextField(
               controller: _searchController,
-              label: '',
-              hint: 'Buscar produtos...',
+              label: strings.productSearchHint,
+              hint: strings.productSearchHint,
               prefixIcon: Icons.search,
               onFieldSubmitted: (_) => _onSearch(),
               onChanged: _onSearchDebounced,
@@ -152,11 +154,13 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                     ref.read(selectedCategoryProvider.notifier).state = id,
               );
             },
-            loading: () =>
-                const SizedBox(height: 52, child: ShimmerBlock(height: 36)),
+            loading: () => const SizedBox(
+              height: 52,
+              child: ShimmerScope(child: ShimmerBlock(height: 36)),
+            ),
             error: (err, _) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text(userMessageOf(err)),
+              child: Text(localizedFailureMessage(context, err)),
             ),
           ),
           Expanded(child: _buildProdutosTab(selectedCategory)),
@@ -193,21 +197,23 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
         condition != null ||
         priceRange != null;
 
-    return _buildResults(params, feedState, hasActiveFilters);
+    return _buildResults(context, params, feedState, hasActiveFilters);
   }
 
   Widget _buildResults(
+    BuildContext context,
     GetProductsParams params,
     ProductsFeedState feedState,
     bool hasActiveFilters,
   ) {
+    final strings = l10n(context);
     if (feedState.isLoading) {
       return const ProductResultsGrid.skeleton();
     }
 
     if (feedState.error != null && feedState.products.isEmpty) {
       return EmptyState.error(
-        message: feedState.error ?? kGenericErrorMessage,
+        message: strings.errorUnknown,
         onRetry: () => ref.read(productsFeedProvider(params).notifier).load(),
       );
     }
@@ -221,10 +227,10 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const EmptyState(
+                EmptyState(
                   icon: Icons.search_off,
-                  title: 'NENHUM PRODUTO',
-                  subtitle: 'Nenhum produto encontrado.',
+                  title: strings.productNoProducts,
+                  subtitle: strings.productNoProductsBody,
                 ),
                 if (hasActiveFilters) ...[
                   Spacing.vSm,
@@ -237,7 +243,7 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
                       ),
                       color: context.surfaceColor,
                       child: Text(
-                        'Limpar filtros',
+                        strings.productClearFilters,
                         style: TextStyle(
                           fontFamily: AppTypography.fontFamily,
                           fontWeight: FontWeight.w700,
@@ -279,13 +285,13 @@ class _ExplorarPageState extends ConsumerState<ExplorarPage>
               children: [
                 Expanded(
                   child: Text(
-                    feedState.error!,
+                    strings.errorUnknown,
                     style: AppTypography.bodyMedium,
                   ),
                 ),
                 Spacing.hSm,
                 AppButton(
-                  label: 'TENTAR NOVAMENTE',
+                  label: l10n(context).commonRetry.toUpperCase(),
                   size: AppButtonSize.compact,
                   variant: AppButtonVariant.secondary,
                   onPressed: () => ref

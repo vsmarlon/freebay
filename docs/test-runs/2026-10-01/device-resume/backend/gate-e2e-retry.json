@@ -1,0 +1,8 @@
+{
+  "label": "gate-e2e-retry",
+  "command": "npm run test:e2e",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\nest-backend",
+  "started": "2026-10-01T06:57:17.766Z",
+  "ended": "2026-10-01T06:58:09.089Z",
+  "exitCode": 0
+}

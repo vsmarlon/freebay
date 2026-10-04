@@ -155,6 +155,8 @@ model User {
   emailVerified   Boolean   @default(false)
   passwordHash    String?
   googleId        String?   @unique
+  appleId         String?   @unique
+  appleRefreshTokenEncrypted String?
   cpfHash         String?   @unique
   cpf             String?
   phone           String?
@@ -162,6 +164,7 @@ model User {
   city            String?
   state           String?
   avatarUrl       String?
+  avatarBlurHash  String?   @db.VarChar(166)
   bannerUrl       String?
   bio             String?   @db.VarChar(150)
   isVerified      Boolean   @default(false)
@@ -370,6 +373,7 @@ model Product {
 model ProductImage {
   id        String @id @default(uuid())
   url       String
+  blurHash  String? @db.VarChar(166)
   order     Int    @default(0)
   productId String
 
@@ -382,6 +386,7 @@ model Post {
   id            String    @id @default(uuid())
   content       String?
   imageUrl      String?
+  imageBlurHash String?   @db.VarChar(166)
   type          PostType
   audience      StoryAudience @default(EVERYONE)
   userId        String

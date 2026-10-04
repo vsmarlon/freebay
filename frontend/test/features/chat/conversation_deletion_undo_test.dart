@@ -10,6 +10,7 @@ import 'package:freebay/features/chat/presentation/providers/chat_provider.dart'
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import '../../support/auth_test_doubles.dart';
 import '../../support/test_users.dart';
 
@@ -58,7 +59,12 @@ void main() {
           ),
           chatRepositoryProvider.overrideWithValue(repository),
         ],
-        child: const MaterialApp(home: ChatListPage()),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ChatListPage(),
+        ),
       ),
     );
     await tester.pump();

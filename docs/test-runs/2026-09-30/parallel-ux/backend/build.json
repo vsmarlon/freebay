@@ -1,0 +1,8 @@
+{
+  "label": "build",
+  "command": "npm run build",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\nest-backend",
+  "started": "2026-09-30T13:45:01.526Z",
+  "ended": "2026-09-30T13:47:17.446Z",
+  "exitCode": 0
+}

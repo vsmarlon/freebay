@@ -1,0 +1,11 @@
+{
+  "command": "node C:\\Users\\Qiyana\\AppData\\Local\\Temp\\opencode\\freebay-device-backend\\ux-preflight.cjs",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:30:08.1641221Z",
+  "finished_utc": "2026-10-02T14:30:18.4442241Z",
+  "exit": 1,
+  "changed_manifest_rows": 2,
+  "before_sha256": "0E6CDF9E9D4F84331AC2BCE99E26AD3C61B4F67B8C0CD688BFDD18FE96F3CEEE",
+  "after_sha256": "B494D22485331FB4C89BCC6958865C088AF0224ADDD7AF3BD4C7013E0A9501AF"
+}

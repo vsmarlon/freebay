@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import '../../support/auth_test_doubles.dart';
 
 const _labels = ['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA', 'ECHO'];
@@ -36,7 +37,12 @@ Widget _app() {
     overrides: [
       authControllerProvider.overrideWith(() => TestAuthController(null)),
     ],
-    child: MaterialApp.router(routerConfig: router),
+    child: MaterialApp.router(
+      locale: const Locale('pt', 'BR'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+    ),
   );
 }
 
@@ -85,7 +91,12 @@ Widget _scrollChromeApp({EdgeInsets viewInsets = EdgeInsets.zero}) {
       overrides: [
         authControllerProvider.overrideWith(() => TestAuthController(null)),
       ],
-      child: MaterialApp.router(routerConfig: router),
+      child: MaterialApp.router(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      ),
     ),
   );
 }
@@ -201,7 +212,12 @@ void main() {
         overrides: [
           authControllerProvider.overrideWith(() => TestAuthController(null)),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          locale: const Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
       ),
     );
     await _settle(tester);

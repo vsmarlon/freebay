@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/close_friends_provider.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
-import 'package:freebay/features/social/presentation/providers/story_highlight_provider.dart';
+import 'package:freebay/features/stories/stories.dart';
 
 class CloseFriendsPage extends ConsumerStatefulWidget {
   const CloseFriendsPage({super.key});
@@ -68,6 +68,7 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final users = ref.watch(closeFriendsProvider);
     final notifier = ref.read(closeFriendsProvider.notifier);
     return Scaffold(
@@ -76,10 +77,11 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'AMIGOS PRÓXIMOS',
+              text: strings.closeFriendsTitle.toUpperCase(),
               breadcrumbs: context.breadcrumbs,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -89,7 +91,7 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Só você pode ver sua lista. Ao remover alguém, o acesso a stories e destaques privados acaba imediatamente.',
+                    strings.closeFriendsPrivacyExplanation,
                     style: AppTypography.bodyMedium.copyWith(
                       color: context.textSecondary,
                     ),
@@ -97,7 +99,7 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
                   Spacing.vMd,
                   AppTextField(
                     controller: _searchController,
-                    hint: 'Buscar seguidores',
+                    hint: strings.profileSearchFollowers,
                     prefixIcon: Icons.search,
                     onChanged: _search,
                   ),
@@ -106,7 +108,7 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
                     children: [
                       Expanded(
                         child: AppButton(
-                          label: 'SEGUIDORES',
+                          label: strings.profileFollowers.toUpperCase(),
                           variant: _selected
                               ? AppButtonVariant.secondary
                               : AppButtonVariant.primary,
@@ -119,7 +121,7 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
                       Spacing.hSm,
                       Expanded(
                         child: AppButton(
-                          label: 'NA LISTA',
+                          label: strings.profileCloseFriendsInList,
                           variant: _selected
                               ? AppButtonVariant.primary
                               : AppButtonVariant.secondary,
@@ -136,29 +138,33 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
             ),
             Expanded(
               child: users.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      ShimmerBlock(height: 64),
-                      Spacing.vSm,
-                      ShimmerBlock(height: 64),
-                      Spacing.vSm,
-                      ShimmerBlock(height: 64),
-                    ],
+                loading: () => const ShimmerScope(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        ShimmerBlock(height: 64),
+                        Spacing.vSm,
+                        ShimmerBlock(height: 64),
+                        Spacing.vSm,
+                        ShimmerBlock(height: 64),
+                      ],
+                    ),
                   ),
                 ),
                 error: (error, _) => EmptyState.error(
-                  message: 'Não foi possível carregar a lista.',
+                  message: strings.profileLoadFailed,
                   onRetry: _reload,
                 ),
                 data: (items) => items.isEmpty
                     ? EmptyState(
                         icon: Icons.people_outline,
-                        title: _selected ? 'LISTA VAZIA' : 'NENHUM SEGUIDOR',
+                        title: _selected
+                            ? strings.profileCloseFriendsEmptyTitle
+                            : strings.profileNoFollowers,
                         subtitle: _selected
-                            ? 'Adicione seguidores para compartilhar stories reservados.'
-                            : 'Tente outra busca ou aguarde novos seguidores.',
+                            ? strings.profileCloseFriendsEmpty
+                            : strings.profileNoFollowersBody,
                       )
                     : RefreshIndicator(
                         onRefresh: _reload,
@@ -169,13 +175,16 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
                               return Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: AppButton(
-                                  label: 'CARREGAR MAIS',
+                                  label: strings.profileLoadMore,
                                   onPressed: () async {
                                     final failure = await notifier.loadMore();
                                     if (context.mounted && failure != null) {
                                       AppSnackbar.error(
                                         context,
-                                        failure.message,
+                                        localizedFailureMessage(
+                                          context,
+                                          failure,
+                                        ),
                                       );
                                     }
                                   },
@@ -194,8 +203,8 @@ class _CloseFriendsPageState extends ConsumerState<CloseFriendsPage> {
                               ),
                               trailing: AppButton(
                                 label: candidate.isCloseFriend
-                                    ? 'REMOVER'
-                                    : 'ADICIONAR',
+                                    ? strings.closeFriendsRemove
+                                    : strings.closeFriendsAdd,
                                 size: AppButtonSize.compact,
                                 variant: candidate.isCloseFriend
                                     ? AppButtonVariant.secondary

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CategoryFilterPanel extends StatelessWidget {
   final List<CategoryEntity> categories;
@@ -16,6 +17,7 @@ class CategoryFilterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     // Faixa horizontal com gesto próprio: nunca compete com a rolagem
     // vertical da grade de produtos.
     return Container(
@@ -29,7 +31,7 @@ class CategoryFilterPanel extends StatelessWidget {
         child: Row(
           children: [
             BrutalistFilterChip(
-              label: 'Todos',
+              label: strings.productAll,
               selected: selectedCategory == null,
               onTap: () => onCategorySelected(null),
             ),

@@ -1,0 +1,8 @@
+{
+  "label": "format",
+  "command": "dart format --output=none --set-exit-if-changed lib test libs/freebay_design_system/lib",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend",
+  "started": "2026-10-01T05:31:11.381Z",
+  "ended": "2026-10-01T05:31:14.773Z",
+  "exitCode": 1
+}

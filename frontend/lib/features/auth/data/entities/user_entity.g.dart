@@ -12,6 +12,7 @@ _UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => _UserEntity(
   username: json['username'] as String?,
   email: json['email'] as String?,
   avatarUrl: json['avatarUrl'] as String?,
+  avatarBlurHash: json['avatarBlurHash'] as String?,
   bannerUrl: json['bannerUrl'] as String?,
   bio: json['bio'] as String?,
   city: json['city'] as String?,
@@ -28,6 +29,9 @@ _UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => _UserEntity(
   postsCount: (json['postsCount'] as num?)?.toInt() ?? 0,
   productsCount: (json['productsCount'] as num?)?.toInt() ?? 0,
   hasActiveStory: json['hasActiveStory'] as bool? ?? false,
+  deletionRequestedAt: json['deletionRequestedAt'] == null
+      ? null
+      : DateTime.parse(json['deletionRequestedAt'] as String),
 );
 
 Map<String, dynamic> _$UserEntityToJson(_UserEntity instance) =>
@@ -37,6 +41,7 @@ Map<String, dynamic> _$UserEntityToJson(_UserEntity instance) =>
       'username': instance.username,
       'email': instance.email,
       'avatarUrl': instance.avatarUrl,
+      'avatarBlurHash': instance.avatarBlurHash,
       'bannerUrl': instance.bannerUrl,
       'bio': instance.bio,
       'city': instance.city,
@@ -53,4 +58,5 @@ Map<String, dynamic> _$UserEntityToJson(_UserEntity instance) =>
       'postsCount': instance.postsCount,
       'productsCount': instance.productsCount,
       'hasActiveStory': instance.hasActiveStory,
+      'deletionRequestedAt': instance.deletionRequestedAt?.toIso8601String(),
     };

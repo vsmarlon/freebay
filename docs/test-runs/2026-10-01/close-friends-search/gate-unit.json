@@ -1,0 +1,8 @@
+{
+  "label": "gate-unit",
+  "command": "npm test",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:42:06.995Z",
+  "ended": "2026-10-01T06:42:46.886Z",
+  "exitCode": 0
+}

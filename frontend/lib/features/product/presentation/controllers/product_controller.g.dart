@@ -58,7 +58,7 @@ final class ProductsFeedProvider
   }
 }
 
-String _$productsFeedHash() => r'6cd9e5b1274da322f6be83c82b0d77fc039dc56f';
+String _$productsFeedHash() => r'd4569db401fa84fd6d5887b4c29f2d964ebfdb82';
 
 final class ProductsFeedFamily extends $Family
     with

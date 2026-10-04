@@ -1,0 +1,30 @@
+
+> nest-backend@1.0.0 test:e2e
+> npm run prisma:test:sync && dotenv -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.e2e.js --runInBand --runTestsByPath test/e2e/story-audience.e2e-spec.ts
+
+
+> nest-backend@1.0.0 prisma:test:sync
+> cross-env NODE_ENV=test dotenv -e .env.test -- node scripts/safe-prisma-db-push.js
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "freebay_test_db", schema "public" at "localhost:5432"
+
+The database is already in sync with the Prisma schema.
+
+(node:28804) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use asycn/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+PASS test/e2e/story-audience.e2e-spec.ts (11.631 s)
+  Story audiences and safety (HTTP + real database)
+    √ limits close-friends stories, highlights, views and bytes to current listed followers (781 ms)
+    √ keeps restricted comments private until approved and exposes a reversible safety list (281 ms)
+    √ keeps close-friends posts and their media out of public discovery and revokes access (617 ms)
+    √ allows either connection direction and revokes only after the final edge is lost (322 ms)
+    √ persists a public multipart image BlurHash through feed and detail and rejects private URL reuse (51 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        11.874 s
+Ran all test suites within paths "test/e2e/story-audience.e2e-spec.ts".

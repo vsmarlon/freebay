@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/conversation_media_filter.dart';
 import 'package:freebay/features/chat/presentation/widgets/link_preview_card.dart';
@@ -15,9 +16,11 @@ class ConversationDetailsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (name == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: ShimmerBlock(width: 160, height: 24),
+      return const ShimmerScope(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: ShimmerBlock(width: 160, height: 24),
+        ),
       );
     }
     return Container(
@@ -129,12 +132,13 @@ class ConversationDetailsStarredTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final starred = messages.where((m) => starredIds.contains(m.id)).toList();
     if (starred.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.star_outline,
-        title: 'SEM FAVORITAS',
-        subtitle: 'Segure uma mensagem e toque na estrela para favoritar.',
+        title: strings.chatNoFavorites,
+        subtitle: strings.chatFavoriteHint,
       );
     }
     return ListView.builder(
@@ -174,7 +178,7 @@ class ConversationDetailsStarredTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${DateUtilsCustom.formatShortDate(message.createdAt.toLocal())} ${formatMessageTime(message.createdAt)}',
+                        '${localizedShortDate(context, message.createdAt)} ${formatMessageTime(message.createdAt)}',
                         style: TextStyle(
                           fontFamily: AppTypography.fontFamily,
                           fontSize: 11,
@@ -186,6 +190,7 @@ class ConversationDetailsStarredTab extends StatelessWidget {
                 ),
                 BrutalistIconButton(
                   icon: Icons.star,
+                  semanticLabel: strings.chatRemoveStarred,
                   iconColor: AppColors.primaryContainer,
                   onTap: () => onUnstar(message.id),
                 ),
@@ -216,27 +221,30 @@ class ConversationDetailsActionsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       children: [
         _ActionTile(
           icon: isMuted ? Icons.volume_up : Icons.volume_off,
-          title: isMuted ? 'Ativar notificações' : 'Silenciar notificações',
+          title: isMuted
+              ? strings.chatNotificationsEnabled
+              : strings.chatNotificationsMuted,
           onTap: onToggleMute,
         ),
         _ActionTile(
           icon: Icons.color_lens,
-          title: 'Tema da conversa',
+          title: strings.chatConversationTheme,
           onTap: onTheme,
         ),
         _ActionTile(
           icon: Icons.block,
-          title: 'Bloquear usuário',
+          title: strings.chatBlockUser,
           isDestructive: true,
           onTap: onBlock,
         ),
         _ActionTile(
           icon: Icons.delete_sweep,
-          title: 'Apagar conversa',
+          title: strings.chatDeleteConversation,
           isDestructive: true,
           onTap: onDelete,
         ),

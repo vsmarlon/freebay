@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:record/record.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class AudioRecording {
   final File file;
@@ -133,6 +134,7 @@ class _AudioRecorderBarState extends State<AudioRecorderBar> {
         children: [
           BrutalistIconButton(
             icon: Icons.close,
+            semanticLabel: l10n(context).chatCancelRecording,
             onTap: () => _finish(send: false),
             size: 48,
             iconSize: 24,
@@ -166,6 +168,7 @@ class _AudioRecorderBarState extends State<AudioRecorderBar> {
           Spacing.hSm,
           BrutalistIconButton(
             icon: Icons.send,
+            semanticLabel: l10n(context).chatSendAudio,
             onTap: () => _finish(send: true),
             size: 48,
             iconSize: 24,

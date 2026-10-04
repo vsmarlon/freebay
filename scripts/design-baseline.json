@@ -1,0 +1,2752 @@
+[
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/complete_profile_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/complete_profile_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/login_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/login_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/login_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/reset_password_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/reset_password_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/reset_password_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/reset_password_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/pages/splash_widgets.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/widgets/auth_header.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/widgets/auth_header.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/widgets/google_auth_button.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/auth/presentation/widgets/google_auth_button.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/cart/presentation/pages/cart_checkout_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/data/entities/conversation_preference.dart",
+    "specifier": "#16A34A",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/data/entities/conversation_preference.dart",
+    "specifier": "#2563EB",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/data/entities/conversation_preference.dart",
+    "specifier": "#64748B",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/data/entities/conversation_preference.dart",
+    "specifier": "#8A1083",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/data/entities/conversation_preference.dart",
+    "specifier": "#D97706",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/data/entities/conversation_preference.dart",
+    "specifier": "#DC2626",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/archived_chats_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/archived_chats_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/archived_chats_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/archived_chats_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/archived_chats_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/archived_chats_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/chat_list_page.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/chat_list_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/conversation_details_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white38",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "Colors.white38",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/image_editor_page.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/location_picker_page.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/location_picker_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/pages/location_picker_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/attachment_bottom_sheet.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/attachment_bottom_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/audio_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/audio_recorder_bar.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_conversation_body.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_header.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_header.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_header.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_header.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_header.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_header.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_input_bar.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_input_bar.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_input_bar.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_input_bar.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_input_bar.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_loading_tile.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_list_tile.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "Colors.white24",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_media_gallery_viewer.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_message_list.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_theme_picker.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_theme_picker.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_video_composer.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_video_composer.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_video_composer.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_video_composer.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/chat_video_composer.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/date_separator.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/date_separator.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.amber",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.blue",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.cyan",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.deepOrange",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.deepPurple",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.green",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.indigo",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.lightBlue",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.lightGreen",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.lime",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.orange",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.pink",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.purple",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.red",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.teal",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "Colors.yellow",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/draw_palette.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/forward_message_sheet.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/forward_message_sheet.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/forward_message_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/forward_message_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/forward_message_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/forward_message_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_toolbar.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white70",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_editor_views.dart",
+    "specifier": "Colors.white70",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/image_message_bubble.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/link_preview_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/link_preview_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/link_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/link_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/link_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/location_message_bubble.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/location_message_bubble.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/location_message_bubble.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/location_message_bubble.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/location_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/location_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/location_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/make_offer_dialog.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/make_offer_dialog.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/make_offer_dialog.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/media_grid.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/media_grid.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/media_grid.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/media_grid.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/media_grid.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/media_grid.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble/expandable_text_message.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/message_bubble/expandable_text_message.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/multi_select_toolbar.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/multi_select_toolbar.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/new_chat/new_chat_user_results.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/new_chat/new_chat_user_results.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/new_chat/new_chat_user_tile.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/offer_message_bubble.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/offer_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/offer_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/offer_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/offer_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/offer_message_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_card_bubble.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_card_bubble.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_card_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_card_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_card_bubble.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/product_picker_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reaction_bar.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reaction_bar.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reply_composer_banner.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reply_composer_banner.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reply_composer_banner.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reply_preview_banner.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reply_preview_banner.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reply_preview_banner.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/reply_preview_banner.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/typing_indicator_bubble.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/who_reacted_sheet.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/who_reacted_sheet.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/who_reacted_sheet.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/who_reacted_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/chat/presentation/widgets/who_reacted_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_list_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_list_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_list_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_list_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/dispute/presentation/pages/dispute_list_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/help/presentation/pages/faq_page.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/help/presentation/pages/faq_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/help/presentation/pages/faq_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/help/presentation/pages/faq_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/help/presentation/pages/faq_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/notifications/presentation/pages/notifications_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/notifications/presentation/pages/notifications_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/notifications/presentation/pages/notifications_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/onboarding/presentation/pages/onboarding_page.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/onboarding/presentation/pages/onboarding_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/onboarding/presentation/pages/onboarding_slides.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/onboarding/presentation/pages/onboarding_slides.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/onboarding/presentation/pages/welcome_setup_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/order_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/orders_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/pages/orders_tab.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/brutalist_confirm_dialog.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/brutalist_confirm_dialog.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/brutalist_confirm_dialog.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/brutalist_confirm_dialog.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/escrow_status_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/escrow_status_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/escrow_status_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/escrow_status_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/escrow_status_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_actions.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_actions.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_actions.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_actions.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_actions.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_card.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_status_timeline.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_status_timeline.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_status_timeline.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_status_timeline.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/order_status_timeline.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/orders/presentation/widgets/sales_status_filters.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/pages/payment_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/pages/payment_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/pages/payment_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/pages/payment_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/payments/presentation/widgets/payment_view.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/cart_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/create_product_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/create_product_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/create_product_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/edit_product_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/edit_product_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/edit_product_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/explorar_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/my_products_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/my_products_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/pages/product_detail_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/category_filter_panel.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/category_selector_field.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/category_selector_field.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/category_selector_field.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/category_selector_field.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/escrow_trust_banner.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/escrow_trust_banner.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/escrow_trust_banner.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/escrow_trust_banner.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_detail_bottom_sheet.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_detail_bottom_sheet.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_detail_bottom_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_detail_bottom_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_filter_bar.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_filter_bar.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_form_fields.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/product/presentation/widgets/product_preview_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/blocked_users_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/blocked_users_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/blocked_users_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/blocked_users_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/blocked_users_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/blocked_users_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/followers_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/followers_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/followers_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/following_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/following_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/profile_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/profile_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/profile_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/profile_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/profile_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/purchases_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/purchases_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/purchases_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/purchases_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/purchases_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/purchases_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/purchases_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/user_profile_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/user_profile_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/user_profile_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/user_profile_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/pages/user_profile_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/guest_profile_view.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/guest_profile_view.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/guest_profile_view.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/guest_profile_view.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/guest_profile_view.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/phone_verification_sheet.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/phone_verification_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/phone_verification_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/phone_verification_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/phone_verification_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_avatar.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_banner.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_banner.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_header.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_header.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_help_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_help_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_identity.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_identity.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_identity.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_identity.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_settings_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_settings_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/profile/presentation/widgets/profile_tabs.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/create_review_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/create_review_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/create_review_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/create_review_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/create_review_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/create_review_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/user_reviews_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/user_reviews_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/user_reviews_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/pages/user_reviews_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/reviews/presentation/widgets/review_card.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_post_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_post_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_post_page.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_post_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_post_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_story_page.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/create_story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/liked_posts_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/my_posts_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/my_posts_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/my_posts_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/my_posts_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/my_stories_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/my_stories_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/people_search_page.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/people_search_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/post_details_page.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/post_details_page.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/post_details_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/story_viewer_page.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/story_viewer_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/story_viewer_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/story_viewer_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/story_viewer_wrapper.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/story_viewer_wrapper.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/pages/story_viewer_wrapper.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/comment_item.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/comment_item.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/comment_item.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/comment_item.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/comment_item.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/comment_item.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/create_composer_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/create_composer_sheet.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_footer.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_drawer_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_filters.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_filters.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_filters.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_filters.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_header.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_header.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_header.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_intro_sections.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_intro_sections.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_intro_sections.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_intro_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_intro_sections.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_post_item.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/feed_post_list.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "Colors.white70",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/local_image_inspector.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/post_details_skeleton.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/post_details_skeleton.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/post_details_skeleton.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/post_details_skeleton.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/post_details_skeleton.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/post_details_skeleton.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/stories_row.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/stories_row.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/stories_row.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/stories_row.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_canvas.dart",
+    "specifier": "Colors.black",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_canvas.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_canvas.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_capture_view.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_highlights_section.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_highlights_section.dart",
+    "specifier": "EdgeInsets.only",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_page.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_page.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.black54",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.white",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/story_preview_view.dart",
+    "specifier": "Colors.white70",
+    "rule": "D3"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "EdgeInsets.fromLTRB",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/suggestions_section.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/user_search_list.dart",
+    "specifier": "EdgeInsets.symmetric",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/user_search_list.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/user_search_list.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/user_search_list.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/user_search_list.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/user_search_list.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/social/presentation/widgets/user_search_list.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/pages/wallet_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/pages/wallet_page.dart",
+    "specifier": "SizedBox",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/widgets/wallet_content.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/widgets/wallet_history.dart",
+    "specifier": "EdgeInsets.all",
+    "rule": "D4"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/widgets/wallet_history.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/widgets/wallet_history.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/widgets/wallet_history.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/widgets/wallet_payout_section.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  },
+  {
+    "file": "frontend/lib/features/wallet/presentation/widgets/wallet_payout_section.dart",
+    "specifier": "fontSize",
+    "rule": "D2"
+  }
+]

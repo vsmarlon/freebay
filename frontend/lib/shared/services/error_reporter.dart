@@ -5,20 +5,20 @@ import 'package:freebay/shared/config/app_config.dart';
 class ErrorReporter {
   const ErrorReporter._();
 
-  static bool get isEnabled => AppConfig.sentryDsn.isNotEmpty;
+  static bool get isEnabled => Sentry.isEnabled;
 
-  static Future<void> run(Future<void> Function() body) async {
-    if (!isEnabled) {
-      await body();
+  static Future<void> initialize() async {
+    if (AppConfig.sentryDsn.isEmpty) {
       return;
     }
     await SentryFlutter.init((options) {
       options.dsn = AppConfig.sentryDsn;
-    }, appRunner: body);
+      options.debug = kDebugMode;
+    });
   }
 
   static void report(String context, Object error, [StackTrace? stackTrace]) {
-    debugPrint('[$context] $error');
+    if (kDebugMode) debugPrint('[$context] $error');
     if (!isEnabled) return;
     Sentry.captureException(
       error,

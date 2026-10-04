@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class WalletHistoryList extends StatelessWidget {
   const WalletHistoryList({
@@ -17,14 +18,18 @@ class WalletHistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     if (state.error != null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(state.error!, style: TextStyle(color: context.textSecondary)),
+          Text(
+            strings.errorUnknown,
+            style: TextStyle(color: context.textSecondary),
+          ),
           Spacing.vSm,
           AppButton(
-            label: 'TENTAR NOVAMENTE',
+            label: strings.commonRetry.toUpperCase(),
             variant: AppButtonVariant.secondary,
             onPressed: onRetry,
           ),
@@ -32,10 +37,10 @@ class WalletHistoryList extends StatelessWidget {
       );
     }
     if (state.transactions.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.receipt_long_outlined,
-        title: 'SEM TRANSAÇÕES',
-        subtitle: 'Suas transações aparecerão aqui.',
+        title: strings.walletEmptyTransactions,
+        subtitle: strings.walletTransactionsEmpty,
       );
     }
 
@@ -89,7 +94,7 @@ class WalletHistoryList extends StatelessWidget {
                     ),
                   )
                 : AppButton(
-                    label: 'CARREGAR MAIS',
+                    label: strings.profileLoadMore,
                     variant: AppButtonVariant.secondary,
                     onPressed: onLoadMore,
                   ),

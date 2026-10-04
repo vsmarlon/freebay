@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/favorites/presentation/providers/favorites_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
 
@@ -22,6 +23,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     final state = ref.watch(favoritesProvider);
 
@@ -31,9 +33,10 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'FAVORITOS',
+              text: strings.profileFavoritesTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.commonBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -56,11 +59,10 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                             const AppCard.skeleton(),
                       )
                     : state.products.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.favorite_border,
-                        title: 'SEM FAVORITOS',
-                        subtitle:
-                            'Toque no coração dos produtos para salvar aqui.',
+                        title: strings.profileNoFavorites,
+                        subtitle: strings.profileFavoritesEmpty,
                       )
                     : GridView.builder(
                         padding: const EdgeInsets.all(16),
@@ -81,6 +83,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                                   title: product.title,
                                   priceInCents: product.price,
                                   imageUrl: product.imageUrl,
+                                  imageBlurHash: product.imageBlurHash,
                                   variant: AppCardVariant.compact,
                                   onTap: () => context.push(
                                     AppRoutes.productPath(product.id),

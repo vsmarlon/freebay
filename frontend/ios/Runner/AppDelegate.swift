@@ -12,5 +12,7 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    NativeImageCompositor.register(messenger: engineBridge.applicationRegistrar.messenger)
+    NativeBiometricKey.register(messenger: engineBridge.applicationRegistrar.messenger)
   }
 }

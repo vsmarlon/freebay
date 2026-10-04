@@ -1,0 +1,1271 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (108.0.0 available)
+  _flutterfire_internals 1.3.73 (1.3.77 available)
+  analyzer 12.1.0 (14.4.0 available)
+  analyzer_buffer 0.3.3 (0.3.4 available)
+  archive 4.0.9 (4.3.0 available)
+  build 4.0.6 (4.0.11 available)
+  build_config 1.3.0 (1.3.3 available)
+  build_daemon 4.1.1 (4.1.6 available)
+  build_runner 2.15.0 (2.16.1 available)
+  built_collection 5.1.1 (5.1.2 available)
+  built_value 8.12.6 (8.13.0 available)
+  cached_network_image 3.4.1 (4.0.3 available)
+  cached_network_image_platform_interface 4.1.1 (5.0.2 available)
+  cached_network_image_web 1.3.1 (2.0.3 available)
+  camera 0.12.0+1 (0.12.1 available)
+  camera_android_camerax 0.7.3 (0.7.5 available)
+  camera_avfoundation 0.10.1 (0.11.0 available)
+  camera_platform_interface 2.13.0 (2.14.0 available)
+  camera_web 0.3.5+4 (0.3.5+6 available)
+  clock 1.1.2 (1.1.3 available)
+  code_assets 1.2.1 (2.1.0 available)
+  code_builder 4.11.1 (4.12.0 available)
+  connectivity_plus 6.1.5 (7.3.1 available)
+  crop_your_image 2.0.0 (2.0.1 available)
+  cross_file 0.3.5+4 (0.4.0 available)
+  dart_style 3.1.8 (3.1.13 available)
+  dbus 0.7.14 (0.8.0 available)
+  diffutil_dart 4.0.1 (5.0.0 available)
+  dio 5.10.0 (5.11.1 available)
+  dio_web_adapter 2.2.0 (2.2.2 available)
+  equatable 2.1.0 (3.0.0 available)
+  file_selector_linux 0.9.4 (0.9.4+1 available)
+  file_selector_macos 0.9.5 (0.9.5+1 available)
+  file_selector_windows 0.9.3+5 (0.9.3+6 available)
+  firebase_core 4.11.0 (4.15.0 available)
+  firebase_core_platform_interface 7.1.0 (8.1.1 available)
+  firebase_core_web 3.9.0 (3.12.0 available)
+  firebase_messaging 16.4.1 (16.7.0 available)
+  firebase_messaging_platform_interface 4.9.0 (4.10.0 available)
+  firebase_messaging_web 4.2.1 (4.2.5 available)
+  flutter_cache_manager 3.4.1 (3.4.5 available)
+  flutter_dotenv 5.2.1 (6.0.1 available)
+  flutter_local_notifications 19.5.0 (22.3.1 available)
+  flutter_local_notifications_linux 6.0.0 (8.0.1 available)
+  flutter_local_notifications_platform_interface 9.1.0 (12.2.0 available)
+  flutter_local_notifications_windows 1.0.3 (3.1.1 available)
+  flutter_map 7.0.2 (8.3.2 available)
+  flutter_riverpod 3.3.2 (3.4.3 available)
+  flutter_secure_storage 10.3.1 (11.2.0 available)
+  flutter_secure_storage_darwin 0.3.2 (0.4.3 available)
+  flutter_secure_storage_linux 3.0.1 (3.0.3 available)
+  flutter_secure_storage_platform_interface 2.0.1 (2.1.1 available)
+  flutter_stripe 13.1.0 (14.1.0 available)
+  freezed 3.2.6-dev.1 (4.0.2 available)
+  geolocator 13.0.4 (14.1.1 available)
+  geolocator_android 4.6.2 (5.1.1 available)
+  geolocator_platform_interface 4.2.8 (4.4.0 available)
+  glob 2.1.3 (2.2.0 available)
+  go_router 15.1.3 (18.0.2 available)
+  google_sign_in_android 7.2.16 (7.2.17 available)
+  google_sign_in_ios 6.3.0 (6.3.6 available)
+  hooks 2.0.2 (2.2.0 available)
+  hooks_riverpod 3.3.2 (3.4.3 available)
+  image 4.8.0 (4.10.1 available)
+  image_picker_android 0.8.13+19 (0.8.13+23 available)
+  image_picker_ios 0.8.13+6 (0.8.13+8 available)
+  intl 0.20.2 (0.20.3 available)
+  io 1.0.5 (1.1.0 available)
+  jni 0.14.2 (1.0.3 available)
+  json_serializable 6.14.0 (6.14.1 available)
+  latlong2 0.9.1 (0.10.1 available)
+  local_auth 2.3.0 (3.0.2 available)
+  local_auth_android 1.0.56 (2.2.0 available)
+  local_auth_darwin 1.6.1 (2.0.4 available)
+  local_auth_windows 1.0.11 (2.0.2 available)
+  logger 2.7.0 (2.8.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mgrs_dart 2.0.0 (3.0.0 available)
+  mime 2.0.0 (2.1.0 available)
+  mockito 5.6.4 (5.8.1 available)
+  nm 0.5.0 (0.6.0 available)
+  objective_c 9.4.1 (9.6.0 available)
+  octo_image 2.1.0 (2.1.1 available)
+  package_config 2.2.0 (3.0.0 available)
+  path_provider_android 2.2.23 (2.3.1 available)
+  permission_handler 11.4.0 (13.0.2 available)
+  permission_handler_android 12.1.0 (14.1.0 available)
+  permission_handler_apple 9.4.10 (9.6.2 available)
+  permission_handler_html 0.1.3+5 (0.1.4+1 available)
+  permission_handler_platform_interface 4.3.0 (4.4.1 available)
+  permission_handler_windows 0.2.1 (0.2.2 available)
+  petitparser 7.0.2 (7.1.0 available)
+  platform 3.1.6 (3.2.0 available)
+  pool 1.5.2 (1.5.3 available)
+  posix 6.5.0 (6.5.2 available)
+  process 5.0.5 (5.0.6 available)
+  proj4dart 2.1.0 (3.0.0 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  pubspec_parse 1.5.0 (1.6.0 available)
+  record_android 2.1.2 (2.2.0 available)
+  record_linux 2.1.1 (2.1.2 available)
+  record_use 0.6.0 (1.1.1 available)
+  record_web 2.1.2 (2.1.3 available)
+  record_windows 2.2.3 (2.3.0 available)
+  riverpod 3.3.2 (3.4.3 available)
+  riverpod_analyzer_utils 1.0.0-dev.10 (1.0.0-dev.12 available)
+  riverpod_annotation 4.0.3 (4.0.7 available)
+  riverpod_generator 4.0.4 (4.0.9 available)
+  sentry 9.27.0 (9.30.1 available)
+  sentry_flutter 9.27.0 (9.30.1 available)
+  share_plus 13.2.0 (13.3.0 available)
+  share_plus_platform_interface 7.1.0 (7.2.0 available)
+  shared_preferences_android 2.4.26 (2.4.28 available)
+  shared_preferences_foundation 2.5.6 (2.5.7 available)
+  source_gen 4.2.3 (4.3.0 available)
+  source_helper 1.3.12 (1.3.13 available)
+  source_maps 0.10.13 (0.10.14 available)
+  sqflite 2.4.3 (2.4.4 available)
+  sqflite_android 2.4.3 (2.4.4 available)
+  sqflite_common 2.5.11 (2.5.13 available)
+  sqflite_darwin 2.4.3+1 (2.4.4 available)
+  sqflite_platform_interface 2.4.1 (2.4.2 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  stream_transform 2.1.1 (2.1.2 available)
+  stripe_android 13.1.0 (14.1.0 available)
+  stripe_ios 13.1.0 (14.1.0 available)
+  stripe_platform_interface 13.1.0 (14.1.0 available)
+  synchronized 3.4.1 (3.4.2 available)
+  test 1.31.0 (1.32.0 available)
+  test_api 0.7.11 (0.7.14 available)
+  test_core 0.6.17 (0.6.20 available)
+  timezone 0.10.1 (0.11.1 available)
+  unicode 0.3.1 (1.1.9 available)
+  url_launcher_android 6.3.32 (6.3.33 available)
+  url_launcher_ios 6.4.1 (6.4.2 available)
+  url_launcher_linux 3.2.2 (3.2.3 available)
+  url_launcher_macos 3.2.5 (3.2.6 available)
+  url_launcher_windows 3.1.5 (3.1.6 available)
+  uuid 4.5.3 (4.6.0 available)
+  vector_math 2.2.0 (2.4.3 available)
+  vm_service 15.2.0 (15.3.0 available)
+  webdriver 3.1.0 (3.2.0 available)
+  win32 6.3.0 (6.4.0 available)
+  xml 6.6.1 (7.1.0 available)
+  yaml 3.1.3 (3.1.4 available)
+Got dependencies!
+147 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_dialog_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_dialog_test.dart: a non-dismissible dialog ignores back navigation
+lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                              if (!kIsWeb &&
+                                   ^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                  ^^^^^^^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+00:00 +0 -1: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                                if (!kIsWeb &&
+                                     ^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                    defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+00:01 +0 -2: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_dialog_test.dart [E]
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 1009:11   DefaultResidentCompiler._compile.<fn>
+  dart:async/zone_root.dart 48:47                  _rootRunUnary
+  dart:async/zone.dart 733:19                      _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone_root.dart 35:13                  _rootRun
+  dart:async/zone.dart 726:19                      _CustomZone.run
+  dart:async/zone.dart 625:7                       _CustomZone.runGuarded
+  dart:async/zone.dart 666:23                      _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 193:5      _RawReceivePort._handleMessage
+  
+lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                              if (!kIsWeb &&
+                                   ^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                  ^^^^^^^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+00:12 +1 -3: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_video_viewer_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_video_viewer_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_video_viewer_test.dart: lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                                if (!kIsWeb &&
+                                     ^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                    defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+00:14 +1 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/blur_hash_placeholder_test.dart: renders BlurHash for valid image metadata
+00:14 +2 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/blur_hash_placeholder_test.dart: uses a static fallback for malformed or missing hashes
+lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                              if (!kIsWeb &&
+                                   ^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                  ^^^^^^^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+00:23 +3 -4: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/brutalist_highlighted_text_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/brutalist_highlighted_text_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/brutalist_highlighted_text_test.dart: lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                                if (!kIsWeb &&
+                                     ^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                    defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+00:26 +3 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/empty_state_test.dart: error state invokes retry action
+00:27 +4 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/guest_gate_view_test.dart: guest gate keeps its content inside a brutalist card
+00:27 +5 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/hide_on_scroll_test.dart: reversed chat scroll hides away from bottom and reveals back
+00:28 +6 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: a skeleton list shares one repeating animation ticker
+00:28 +7 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: a skeleton list shares one repeating animation ticker
+00:29 +8 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: nested skeleton page and list reuse the page clock
+00:29 +9 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: a skeleton outside a scope does not animate
+00:29 +10 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: reduced motion disables the shared shimmer clock
+00:29 +11 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: dark primary foreground and action fill keep separate roles
+00:29 +12 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: icon button is exposed as an accessible button
+00:30 +13 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/providers/background_provider_test.dart: uses a still aurora until animation is explicitly enabled
+00:30 +14 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/providers/background_provider_test.dart: explicitly enabled animation survives a new container
+lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                              if (!kIsWeb &&
+                                   ^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                  ^^^^^^^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+00:43 +15 -5: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                                if (!kIsWeb &&
+                                     ^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                    defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+00:45 +15 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/currency_utils_test.dart: parses create and edit pt-BR price input as integer cents
+00:45 +16 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/currency_utils_test.dart: rejects empty and negative prices
+00:46 +17 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer normalizes www. prefix to https://
+00:46 +18 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer identifies safe external https links
+00:46 +19 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer identifies dangerous javascript: scheme and blocks it
+00:46 +20 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer identifies file: and data: schemes as dangerous
+00:46 +21 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer identifies localhost and private IP addresses as dangerous (SSRF/local network protection)
+00:46 +22 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer identifies executable extensions as dangerous malware risk
+00:46 +23 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer identifies phishing keywords as dangerous
+00:46 +24 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/url_safety_analyzer_test.dart: UrlSafetyAnalyzer identifies unencrypted HTTP as suspicious
+00:46 +25 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail accepts a plain email
+00:46 +26 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail accepts subdomains
+00:46 +27 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail accepts plus-addressing
+00:46 +28 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail trims surrounding whitespace
+00:46 +29 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail rejects missing @
+00:46 +30 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail rejects missing domain
+00:46 +31 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail rejects missing TLD
+00:46 +32 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateEmail rejects empty string
+00:46 +33 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateCPF accepts a valid CPF
+00:46 +34 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateCPF rejects repeated digits
+00:46 +35 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateCPF rejects wrong length
+00:46 +36 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateCPF rejects an invalid checksum
+00:46 +37 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateCNPJ rejects repeated digits
+00:46 +38 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateCNPJ rejects wrong length
+00:46 +39 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateUsername accepts valid usernames
+00:46 +40 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateUsername rejects too short or too long
+00:46 +41 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateUsername rejects uppercase letters
+00:46 +42 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateUsername rejects spaces
+00:46 +43 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateUsername rejects special characters including user requested hacky set
+00:46 +44 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateUsername rejects unicode and accented letters in usernames
+00:46 +45 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateDisplayName accepts valid display names with letters, numbers, and accents
+00:46 +46 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateDisplayName rejects names that are too short or too long
+00:46 +47 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateDisplayName rejects hacky names containing prohibited symbols
+00:46 +48 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/utils/value_utils_test.dart: ValueUtils.validateDisplayName rejects consecutive spaces and empty strings
+00:47 +49 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:48 +50 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:48 +51 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:55 +52 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/apple_auth_repository_test.dart: Apple authentication posts the backend contract and installs its session
+[AUTH apple] status: 200
+00:56 +53 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: does not check availability or prompt without consent
+00:56 +54 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: does not prompt when no biometric credential is enrolled
+00:56 +55 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: clears all biometric state when biometric login fails
+00:56 +56 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: returns the authenticated user after biometric success
+00:56 +57 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: preserves the credential when the user cancels the prompt
+00:56 +58 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: preserves the credential on a transient failure
+00:56 +59 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: clears credentials when the biometric owner does not match
+00:56 +60 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometry_owner_wiring_test.dart: only welcome owns post-auth biometric enrollment
+lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                              if (!kIsWeb &&
+                                   ^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                  ^^^^^^^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+01:04 +61 -6: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                                if (!kIsWeb &&
+                                     ^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                    defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                              if (!kIsWeb &&
+                                   ^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                  ^^^^^^^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+01:12 +61 -7: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/logout_clears_biometric_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/logout_clears_biometric_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/logout_clears_biometric_test.dart: lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                                if (!kIsWeb &&
+                                     ^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                    defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                              if (!kIsWeb &&
+                                   ^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+ - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                  defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                  ^^^^^^^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+01:20 +61 -8: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/social_session_isolation_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/social_session_isolation_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/social_session_isolation_test.dart: lib/features/auth/presentation/pages/login_page.dart:245:36: Error: The getter 'kIsWeb' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'kIsWeb'.
+                                if (!kIsWeb &&
+                                     ^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:246:35: Error: The getter 'defaultTargetPlatform' isn't defined for the type '_LoginPageState'.
+   - '_LoginPageState' is from 'package:freebay/features/auth/presentation/pages/login_page.dart' ('lib/features/auth/presentation/pages/login_page.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'defaultTargetPlatform'.
+                                    defaultTargetPlatform == TargetPlatform.iOS) ...[
+                                    ^^^^^^^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/login_page.dart:249:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+01:27 +61 -9: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/username_field_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/username_field_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/username_field_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+01:35 +61 -10: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+01:39 +61 -10: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_repository_test.dart: sends the cart quantity to the endpoint
+01:39 +62 -10: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_repository_test.dart: decodes the payment details returned by cart checkout
+01:39 +63 -10: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_date_parsing_test.dart: keeps message and nested reply instants; display localizes
+01:39 +64 -10: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_date_parsing_test.dart: keeps chat and nested last message instants
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+01:47 +65 -11: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_state_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_state_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_state_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+01:59 +65 -12: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_tile_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_tile_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_tile_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+02:02 +65 -12: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_repository_test.dart: parses active chats with direct and order product context
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+02:07 +66 -13: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/conversation_deletion_undo_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/conversation_deletion_undo_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/conversation_deletion_undo_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+02:25 +66 -14: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/location_message_bubble_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/location_message_bubble_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/location_message_bubble_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+02:38 +66 -15: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/message_bubble_view_once_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/message_bubble_view_once_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/message_bubble_view_once_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+02:47 +66 -16: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+02:54 +66 -17: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                  text: strings.authSignInApple,
+                                                ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                text: strings.authSignUpApple,
+                                              ^^^^^^^^^^^^^^^
+lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                     : strings.paymentContinueToWallet,
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+03:02 +66 -18: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/favorites/favorite_action_concurrency_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/favorites/favorite_action_concurrency_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/favorites/favorite_action_concurrency_test.dart: lib/features/auth/presentation/pages/login_page.dart:250:49: Error: The getter 'authSignInApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignInApple'.
+                                    text: strings.authSignInApple,
+                                                  ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:112:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/auth/presentation/pages/register_page.dart:244:47: Error: The getter 'authSignUpApple' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'authSignUpApple'.
+                                  text: strings.authSignUpApple,
+                                                ^^^^^^^^^^^^^^^
+  lib/features/payments/presentation/pages/payment_page.dart:231:32: Error: The getter 'paymentContinueToWallet' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'paymentContinueToWallet'.
+                       : strings.paymentContinueToWallet,
+                                 ^^^^^^^^^^^^^^^^^^^^^^^
+  .
+03:06 +66 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/media_editor/image_editor_export_test.dart: export flattens a drawn stroke into PNG pixels
+03:06 +67 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/media_editor/image_editor_export_test.dart: native compositor receives source pixels and editor operations
+03:13 +68 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+03:14 +69 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+03:15 +70 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: exposes accessible All and every seller status control
+03:16 +71 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+03:17 +72 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+03:17 +73 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+03:17 +74 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+03:17 +75 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+03:17 +76 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+03:18 +77 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_dispute_action_test.dart: dispute action follows the states accepted by the dispute API
+03:18 +78 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loads only the visible order tab and loads the other once
+03:18 +79 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loads only the visible order tab and loads the other once
+03:18 +80 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loads sales when the page opens on the sales tab
+03:18 +81 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:19 +82 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:21 +83 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:21 +84 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:21 +85 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:21 +86 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:21 +87 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:22 +88 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:22 +89 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+03:22 +90 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:22 +91 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:23 +92 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:23 +92 -18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: FlutterError:<A RenderFlex overflowed by 98 pixels on the right.>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart:152:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart line 152
+The test description was:
+  loaded checkout fits at 1.5x with long details
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+03:23 +92 -19: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:23 +92 -19: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details [E]
+  Test failed. See exception logs above.
+  The test description was: loaded checkout fits at 1.5x with long details
+  
+03:23 +93 -19: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:23 +94 -19: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:23 +94 -19: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: FlutterError:<A RenderFlex overflowed by 361 pixels on the right.>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart:152:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart line 152
+The test description was:
+  loaded checkout fits at 2.0x with long details
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+03:23 +94 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:23 +94 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details [E]
+  Test failed. See exception logs above.
+  The test description was: loaded checkout fits at 2.0x with long details
+  
+03:24 +95 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:24 +96 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+03:25 +97 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: applies a changed price range only after tapping Apply
+03:25 +98 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: applies a changed price range only after tapping Apply
+03:26 +99 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+03:26 +100 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+03:26 +101 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+03:26 +102 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+03:26 +103 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+03:26 +104 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+03:27 +105 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+03:27 +106 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:27 +107 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:27 +108 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:27 +109 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:27 +110 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:28 +111 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:28 +112 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:28 +113 -20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:28 +113 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+03:28 +114 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: keeps catalog results and offers retry when pagination fails
+03:28 +114 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider does not seed a status after its account session changes [E]
+  Expected: <2>
+    Actual: <3>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\features\profile\follow_state_test.dart 411:7  main.<fn>.<fn>
+  
+03:28 +115 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/privacy_page_test.dart: deletion requires confirmation and clears the session on success
+03:29 +116 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/privacy_page_test.dart: deletion requires confirmation and clears the session on success
+03:31 +117 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+03:33 +118 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+03:33 +119 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+03:33 +120 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+03:33 +121 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+03:34 +122 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+03:34 +123 -21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "PROFILE HEADER": []" (used in a call to "getCenter()") could
+not find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart:200:21)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  profile tabs page independently without changing shell branch
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+03:35 +123 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/deletion_undo_test.dart: undo keeps a confirmed story and sends no delete request
+03:35 +123 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch [E]
+  Test failed. See exception logs above.
+  The test description was: profile tabs page independently without changing shell branch
+  
+03:37 +124 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:37 +125 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:37 +126 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:37 +127 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:37 +128 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:37 +129 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:37 +130 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:38 +131 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:38 +132 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:38 +133 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+03:38 +134 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+[HTTP] GET http://localhost:3000/stories
+03:39 +135 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_details_comments_test.dart: PostDetailsState & Comments Count incrementCommentCount increments and clamps commentsCount correctly
+03:39 +136 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_details_comments_test.dart: LikesProvider & Feed Sync toggleLike updates feedProvider and likesProvider overrides
+03:39 +137 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_details_comments_test.dart: CommentItem replies indicator shows simple Responder text when comment has no replies
+03:40 +138 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_error_test.dart: shows a retryable error instead of an empty result after search fails
+03:40 +139 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_error_test.dart: shows a retryable error instead of an empty result after search fails
+03:40 +140 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_error_test.dart: shows a retryable error instead of an empty result after search fails
+03:40 +141 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_error_test.dart: shows a retryable error instead of an empty result after search fails
+03:41 +142 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_error_test.dart: shows a retryable error instead of an empty result after search fails
+03:41 +143 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+03:41 +144 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+03:41 +145 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+03:42 +146 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+03:42 +147 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+03:43 +148 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+03:43 +149 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+03:43 +150 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+03:43 +151 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+03:44 +152 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+03:45 +153 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_canvas_test.dart: renders and moves a selected text block
+03:45 +154 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_canvas_test.dart: renders and moves a selected text block
+03:45 +155 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_canvas_test.dart: renders and moves a selected text block
+03:46 +156 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart: a photo stays visible for seven seconds and long press pauses it
+03:49 +157 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: refresh superseding loadMore clears the pagination loading state
+03:49 +158 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: keeps the newest account wallet when an older request finishes later
+03:49 +159 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: exposes failure and allows a retry to replace it with zero balance
+03:49 +160 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: reset clears wallet state and ignores an in-flight logout response
+03:49 +161 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders a deterministic zero balance and empty history
+03:49 +161 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/auth_session_test.dart: installs the shared session and preserves login remember-me behavior
+[AUTH login] status: 200
+03:49 +162 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders a deterministic zero balance and empty history
+03:49 +162 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/auth_session_test.dart: returns the endpoint-specific missing-data failure without installing tokens
+[AUTH register] status: 200
+03:49 +163 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders a deterministic zero balance and empty history
+03:50 +164 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders an actionable action for every Connect status
+03:51 +165 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/chat_refresh_test.dart: fetchMore appends only new conversations when the page overlaps
+03:52 +166 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/conversation_reload_test.dart: successful silent reload clears the previous load error
+03:59 +167 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/product_form_fields_test.dart: keeps extracted field controllers, labels, and condition callbacks
+04:00 +168 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/product_form_fields_test.dart: keeps extracted field controllers, labels, and condition callbacks
+04:00 +169 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/product_form_fields_test.dart: keeps extracted field controllers, labels, and condition callbacks
+04:00 +170 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/product_form_fields_test.dart: keeps extracted field controllers, labels, and condition callbacks
+04:00 +171 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/product_form_fields_test.dart: keeps extracted field controllers, labels, and condition callbacks
+04:00 +172 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/product_form_fields_test.dart: keeps extracted field controllers, labels, and condition callbacks
+04:20 +173 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/either/either_test.dart: fold and nullable accessors select only the matching side
+04:20 +174 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/either/either_test.dart: when and unwrapOrHandle preserve the selected value
+04:23 +175 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: never surfaces the server message, whatever the status
+04:23 +176 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: maps a known code to its local copy
+04:23 +177 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: falls back to the status generic for an unknown code
+04:23 +178 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: userMessageOf hides anything that is not a Failure
+04:23 +179 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: awaits an asynchronous decoder
+04:23 +180 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: preserves an explicit decoder failure
+04:23 +181 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: maps non-2xx responses to a server failure
+04:23 +182 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: maps request and asynchronous decoder errors
+04:24 +183 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale selects English for English device locales
+04:24 +184 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale selects Brazilian Portuguese for pt-BR
+04:24 +185 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale falls back to pt-BR when no supported language is requested
+04:24 +186 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale continues through device preferences to a supported locale
+04:25 +187 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: disconnect invalidates a pending token read
+04:25 +188 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: concurrent connects share one pending handshake
+04:25 +189 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: old socket callbacks are ignored after token replacement
+04:25 +190 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: disconnect permits a fresh account connection
+04:25 +191 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: rooms rejoin on reconnect and leave on provider-style cleanup
+04:37 +192 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_logout_test.dart: logout preserves the captured bearer and does not refresh on 401
+[HTTP] POST http://localhost:3000/auth/logout
+[HTTP ERROR] 401 http://localhost:3000/auth/logout
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+[AUTH logout] DioException: DioExceptionType.badResponse This exception was thrown because the response has a status code of 401 and RequestOptions.validateStatus was configured to throw for this status code.
+The status code of 401 has the following meaning: "Client error - the request contains bad syntax or cannot be fulfilled"
+Read more about status codes at https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+In order to resolve this exception you typically have either to verify and fix your request code or you have to fix the server code.
+
+04:38 +193 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: retries transient GET failures at most twice
+[HTTP] GET http://localhost:3000/retryable
+[HTTP ERROR] 503 http://localhost:3000/retryable
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+[HTTP] GET http://localhost:3000/retryable
+[HTTP ERROR] 503 http://localhost:3000/retryable
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+[HTTP] GET http://localhost:3000/retryable
+[HTTP] 200 http://localhost:3000/retryable
+04:39 +194 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: never replays a mutation after a transient failure
+[HTTP] POST http://localhost:3000/mutation
+[HTTP ERROR] 503 http://localhost:3000/mutation
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+04:39 +195 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: does not retry a GET after its session generation changes
+[HTTP] GET http://localhost:3000/session-bound
+[HTTP ERROR] 503 http://localhost:3000/session-bound
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+04:39 +196 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: retries GET connection timeouts
+[HTTP] GET http://localhost:3000/timeout-retry
+[HTTP ERROR] null http://localhost:3000/timeout-retry
+[HTTP ERROR TYPE] DioExceptionType.connectionTimeout
+[HTTP] GET http://localhost:3000/timeout-retry
+[HTTP] 200 http://localhost:3000/timeout-retry
+04:39 +197 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: does not retry a canceled GET
+[HTTP] GET http://localhost:3000/cancel-retry
+[HTTP ERROR] null http://localhost:3000/cancel-retry
+[HTTP ERROR TYPE] DioExceptionType.cancel
+04:43 +198 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/session_timeout_test.dart: suppresses duplicate expiry notifications
+04:44 +199 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: (setUpAll)
+04:44 +199 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: cached JSON is isolated by user and removed on logout cleanup
+04:45 +200 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: a pending write cannot restore user cache after purge
+04:45 +201 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: logout purges persisted cache when its Hive box is closed
+04:45 +202 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: (tearDownAll)
+04:53 +202 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService drops malformed optional BlurHash but keeps the uploaded URL
+04:53 +203 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService parses an optional BlurHash from the upload response envelope
+04:53 +204 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService accepts legacy upload responses without a hash
+04:53 +205 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService rejects upload responses with no valid URL
+04:54 +206 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/date_utils_test.dart: formats an older chat date without locale initialization
+04:54 +207 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/date_utils_test.dart: parses a server instant in local time without changing the instant
+04:54 +208 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/date_utils_test.dart: throws for malformed server dates
+04:54 +209 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl prefixes the api base url onto an upload path
+04:54 +210 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl leaves absolute urls untouched
+04:54 +211 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl leaves legacy data uris untouched
+04:54 +212 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl leaves unrelated paths untouched
+04:54 +213 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl absolutizes a private media path
+04:54 +214 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl is idempotent on an already absolute media url
+04:54 +215 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null for public uploads
+04:54 +216 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null for a foreign host
+04:54 +217 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when a foreign host smuggles the api origin in a fragment
+04:54 +218 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when a foreign host smuggles the api origin in a query
+04:54 +219 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when the api origin is only a path segment elsewhere
+04:54 +220 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null for a lookalike host that merely starts with the api origin
+04:54 +221 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when no token is cached
+04:54 +222 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: absolutizeMediaUrls rewrites upload paths nested in maps and lists
+04:54 +223 -22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: absolutizeMediaUrls passes through non-json payloads
+04:56 +224 -22: Some tests failed.
+
+Failing tests:
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_dialog_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_dialog_test.dart
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_video_viewer_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_video_viewer_test.dart
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/brutalist_highlighted_text_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/brutalist_highlighted_text_test.dart
+  ... and 18 more
+EXIT_CODE=1

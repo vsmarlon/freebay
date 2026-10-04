@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/core/utils/time_utils.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -74,7 +74,11 @@ class ChatListTile extends StatelessWidget {
                         ),
                         Spacing.hXs,
                         Text(
-                          TimeUtils.timeAgoCompact(chat.timestamp),
+                          localizedTimeAgo(
+                            context,
+                            chat.timestamp,
+                            compact: true,
+                          ),
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 12,
@@ -99,9 +103,9 @@ class ChatListTile extends StatelessWidget {
                         color: isDark
                             ? AppColors.surfaceContainerLowDark
                             : AppColors.surfaceContainerHighest,
-                        child: const Text(
-                          'PEDIDO',
-                          style: TextStyle(
+                        child: Text(
+                          l10n(context).chatOrderLabel,
+                          style: const TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 10,
                             fontWeight: FontWeight.w700,

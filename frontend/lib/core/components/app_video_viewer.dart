@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:video_player/video_player.dart';
 import 'app_video_viewer/video_source_resolver.dart';
 import 'app_video_viewer/video_viewer_controls.dart';
@@ -17,7 +18,7 @@ Future<void> showFullScreenVideo(
     PageRouteBuilder<void>(
       opaque: false,
       barrierColor: Colors.black,
-      transitionDuration: AppMotion.enter,
+      transitionDuration: AppMotion.forContext(context, AppMotion.enter),
       pageBuilder: (_, _, _) =>
           _AppVideoViewer(videoUrl: videoUrl, controller: controller),
       transitionsBuilder: (_, animation, _, child) =>
@@ -66,7 +67,7 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
       _startHideControlsTimer();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível carregar o vídeo.');
+        setState(() => _error = l10n(context).errorUnknown);
       }
     }
   }
@@ -103,7 +104,7 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
       await _play(controller);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível carregar o vídeo.');
+        setState(() => _error = l10n(context).errorUnknown);
       }
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoViewerError extends StatelessWidget {
@@ -30,7 +31,7 @@ class VideoViewerError extends StatelessWidget {
         const SizedBox(height: 16),
         Semantics(
           button: true,
-          label: 'Tentar novamente',
+          label: l10n(context).commonRetry,
           onTap: onRetry,
           child: GestureDetector(
             onTap: onRetry,
@@ -38,7 +39,7 @@ class VideoViewerError extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               color: AppColors.primaryContainer,
               child: Text(
-                'Tentar novamente',
+                l10n(context).commonRetry,
                 style: AppTypography.button.copyWith(color: Colors.white),
               ),
             ),
@@ -64,7 +65,9 @@ class VideoViewerCenterButton extends StatelessWidget {
     return Center(
       child: Semantics(
         button: true,
-        label: isCompleted ? 'Reproduzir novamente' : 'Reproduzir vídeo',
+        label: isCompleted
+            ? l10n(context).accessibilityReplayVideo
+            : l10n(context).accessibilityPlayVideo,
         child: GestureDetector(
           onTap: onTap,
           child: Container(
@@ -100,7 +103,7 @@ class VideoViewerCloseButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               IconButton(
-                tooltip: 'Fechar vídeo',
+                tooltip: l10n(context).accessibilityClose,
                 onPressed: onClose,
                 icon: const Icon(Icons.close, color: Colors.white, size: 24),
                 style: IconButton.styleFrom(
@@ -156,7 +159,7 @@ class VideoViewerControls extends StatelessWidget {
                 children: [
                   Semantics(
                     slider: true,
-                    label: 'Posição do vídeo',
+                    label: l10n(context).accessibilityVideoPosition,
                     value:
                         '${_formatDuration(position)} de ${_formatDuration(duration)}',
                     increasedValue: _formatDuration(
@@ -187,10 +190,10 @@ class VideoViewerControls extends StatelessWidget {
                       Semantics(
                         button: true,
                         label: isCompleted
-                            ? 'Reproduzir novamente'
+                            ? l10n(context).accessibilityReplayVideo
                             : isPlaying
-                            ? 'Pausar vídeo'
-                            : 'Reproduzir vídeo',
+                            ? l10n(context).accessibilityPauseVideo
+                            : l10n(context).accessibilityPlayVideo,
                         child: GestureDetector(
                           onTap: onTogglePlay,
                           child: Icon(
@@ -217,8 +220,8 @@ class VideoViewerControls extends StatelessWidget {
                       Semantics(
                         button: true,
                         label: controller.value.volume == 0
-                            ? 'Ativar som'
-                            : 'Desativar som',
+                            ? l10n(context).accessibilityUnmuteVideo
+                            : l10n(context).accessibilityMuteVideo,
                         child: GestureDetector(
                           onTap: onToggleMute,
                           child: Icon(

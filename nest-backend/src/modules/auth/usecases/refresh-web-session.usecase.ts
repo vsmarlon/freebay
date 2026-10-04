@@ -20,7 +20,7 @@ export class RefreshWebSessionUseCase {
     if (user.value.suspendedAt) return left(new AccountSuspendedError(user.value.suspensionReason));
     if (!payload.jti || !payload.exp) return left(new InvalidTokenError());
     if (!await this.tokens.claimRefresh(payload.jti, payload.exp)) return left(new InvalidTokenError('Sessão já renovada'));
-    const generated = this.tokens.generate(user.value.id, user.value.role);
+    const generated = this.tokens.generate(user.value.id, user.value.role, payload.authenticatedAtMs ?? null);
     return right({ token: generated.token, refreshToken: generated.refreshToken });
   }
 }

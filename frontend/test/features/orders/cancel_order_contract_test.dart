@@ -13,6 +13,7 @@ class _CancelAdapter implements HttpClientAdapter {
     expect(options.method, 'PATCH');
     expect(options.path, '/orders/order-1/cancel');
     expect(options.data, {'reason': 'Mudei de ideia'});
+    expect(options.headers['x-step-up-token'], 'fresh-proof');
     return ResponseBody.fromString(
       '{"success":true}',
       200,
@@ -34,7 +35,11 @@ void main() {
         ..httpClientAdapter = _CancelAdapter();
       final result = await OrderRepositoryImpl(
         client: client,
-      ).cancelOrder('order-1', reason: 'Mudei de ideia');
+      ).cancelOrder(
+        'order-1',
+        reason: 'Mudei de ideia',
+        stepUpToken: 'fresh-proof',
+      );
       expect(result.isRight, isTrue);
     },
   );

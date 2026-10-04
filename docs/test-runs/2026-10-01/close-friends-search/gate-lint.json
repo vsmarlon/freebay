@@ -1,0 +1,8 @@
+{
+  "label": "gate-lint",
+  "command": "npm run lint",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:41:58.271Z",
+  "ended": "2026-10-01T06:42:06.929Z",
+  "exitCode": 0
+}

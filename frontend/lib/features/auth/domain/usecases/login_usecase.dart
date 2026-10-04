@@ -7,10 +7,12 @@ class LoginParams {
   final String email;
   final String password;
   final bool rememberMe;
+  final int authenticationAttempt;
 
   LoginParams({
     required this.email,
     required this.password,
+    required this.authenticationAttempt,
     this.rememberMe = false,
   });
 }
@@ -26,6 +28,7 @@ class LoginUsecase implements Usecase<UserEntity, LoginParams> {
       params.email,
       params.password,
       params.rememberMe,
+      authenticationAttempt: params.authenticationAttempt,
     );
   }
 }

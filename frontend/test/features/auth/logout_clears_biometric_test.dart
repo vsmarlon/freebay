@@ -24,8 +24,9 @@ class _SwitchingAuthRepository extends AuthRepository {
   Future<Either<Failure, UserEntity>> login(
     String email,
     String password,
-    bool rememberMe,
-  ) async => Right(user);
+    bool rememberMe, {
+    required int authenticationAttempt,
+  }) async => Right(user);
 }
 
 void main() {
@@ -89,13 +90,32 @@ void main() {
     await container
         .read(authControllerProvider.notifier)
         .login('next@example.com', 'password123', rememberMe: true);
-    await Future<void>.delayed(const Duration(milliseconds: 100));
 
     expect(container.read(authControllerProvider).value?.id, nextUser.id);
     expect(await StorageService.getBiometricToken(), isNull);
     expect(await StorageService.getBiometricOwner(), isNull);
     expect(await BiometryService().isEnabled(), isFalse);
     expect(await BiometryService().hasPrompted(), isFalse);
+  });
+
+  test('profile user updates are synchronous session edits', () async {
+    const user = UserEntity(id: 'user-1', email: 'person@example.com');
+    final container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(
+          _SwitchingAuthRepository(user),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    await container
+        .read(authControllerProvider.notifier)
+        .login('person@example.com', 'password123');
+    container.read(authControllerProvider.notifier).setUser(user);
+
+    expect(container.read(authControllerProvider).value, user);
   });
 
   test('logout remains unauthenticated when server logout fails', () async {

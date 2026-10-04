@@ -20,7 +20,8 @@ import {
   CurrentUserId,
 } from '@/shared/decorators';
 import { validateImageFile, MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
-import { saveUpload } from '@/shared/utils/file.utils';
+import { deleteUpload, saveUpload } from '@/shared/utils/file.utils';
+import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
 import { left } from '@/shared/core/either';
 import { BadRequestError } from '@/shared/core/errors';
 import { CreateProductUseCase } from './usecases/create-product/create-product.usecase';
@@ -96,17 +97,26 @@ export class ProductsController {
       return left(new BadRequestError('Imagem do produto é obrigatória'));
     }
 
-    const mimeError = validateImageFile(file);
-    if (mimeError) {
-      return left(new BadRequestError(mimeError));
+    if (file) {
+      const mimeError = validateImageFile(file);
+      if (mimeError) return left(new BadRequestError(mimeError));
     }
 
     const imageUrl = saveUpload(file, 'product');
-    return this.createProductUseCase.execute({
-      sellerId,
-      ...body,
-      images: [imageUrl],
-    });
+    const imageBlurHash = await generateImageBlurHash(file.buffer);
+    try {
+      const result = await this.createProductUseCase.execute({
+        sellerId,
+        ...body,
+        images: [imageUrl],
+        imageBlurHash,
+      });
+      if (result.isLeft()) deleteUpload(imageUrl);
+      return result;
+    } catch (error) {
+      deleteUpload(imageUrl);
+      throw error;
+    }
   }
 
   @PatchAuth(':id/delete', {

@@ -7,6 +7,7 @@ import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import '../../support/auth_test_doubles.dart';
 import '../../support/test_users.dart';
 
@@ -32,7 +33,12 @@ Future<void> _pumpRouter(WidgetTester tester, UserEntity? user) async {
         ),
         authControllerProvider.overrideWith(() => TestAuthController(user)),
       ],
-      child: MaterialApp.router(routerConfig: appRouter),
+      child: MaterialApp.router(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: appRouter,
+      ),
     ),
   );
 
@@ -154,7 +160,7 @@ void main() {
 
     expect(find.text('COMPLETAR PERFIL'), findsOneWidget);
 
-    final backButton = find.byTooltip('Voltar ao login');
+    final backButton = find.bySemanticsLabel('Voltar ao login');
     expect(backButton, findsOneWidget);
     await tester.tap(backButton);
     await tester.pumpAndSettle();

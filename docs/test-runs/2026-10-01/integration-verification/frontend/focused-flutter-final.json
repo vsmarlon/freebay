@@ -1,0 +1,8 @@
+{
+  "label": "focused-flutter-final",
+  "command": "flutter test test/features/orders/orders_page_test.dart test/features/profile/profile_timeline_tabs_test.dart test/features/social/feed_append_retry_test.dart test/features/social/feed_post_list_loading_test.dart test/features/stories/story_viewer_interaction_test.dart",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend",
+  "started": "2026-10-01T05:44:09.425Z",
+  "ended": "2026-10-01T05:45:04.926Z",
+  "exitCode": 1
+}

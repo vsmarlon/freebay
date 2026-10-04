@@ -1,0 +1,27 @@
+Tested HEAD: c9808b106c3d53f07837542e93f25fd52c6bfbe5
+Working tree: shared and dirty; no credentials, database URLs, tokens, CPF, or fixture email recorded.
+
+Preflight command (nest-backend): load .env.test with NODE_ENV=test, validate DATABASE_URL using scripts/safe-prisma-db-push.js, connect using PrismaPg, then query current_database/current_schema. The command printed only:
+{"nodeEnv":"test","database":"freebay_test_db","schema":"public"}
+Exit 0.
+
+Attempt 1:
+`npm run test:e2e -- --runTestsByPath profile-identity.e2e-spec.ts`
+Exit 1: guarded schema sync succeeded on freebay_test_db/public; Jest found no test files because the path was not rooted as required by this config. No E2E test ran.
+
+Attempt 2:
+`npm run test:e2e -- --runTestsByPath test/e2e/profile-identity.e2e-spec.ts`
+Exit 1: guarded schema sync succeeded on freebay_test_db/public; Jest selected the suite but app construction stopped with `STRIPE_SECRET_KEY has an invalid prefix`. This was setup failure, not behavioral RED. Secret value intentionally omitted.
+
+Test-only adjustment: reused the established E2E sentinel pattern from story-audience.e2e-spec.ts, assigning an obviously fake `sk_test_profile_identity_e2e_not_real` key only when the existing sentinel is present. The flow never calls Stripe.
+
+Attempt 3 (approved focused RED):
+`npm run test:e2e -- --runTestsByPath test/e2e/profile-identity.e2e-spec.ts`
+Exit 1, intended assertion failure:
+`Expected: 403`
+`Received: 200`
+Jest: 1 suite failed, 1 test failed; failure at `profile-identity.e2e-spec.ts:108` (HTTP status expectation). The request completed through the authenticated HTTP app and actual guarded Postgres database. The later error-code expectation was not evaluated after the status mismatch.
+
+Diff hygiene:
+`git diff --check -- nest-backend/test/e2e/profile-identity.e2e-spec.ts docs/test-runs/2026-10-01/ux-resume/profile-identity/backend-red`
+Exit 0, no whitespace errors reported.

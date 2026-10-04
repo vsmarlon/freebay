@@ -9,6 +9,7 @@ import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
 import 'package:freebay/core/utils/value_utils.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CompleteProfilePage extends ConsumerStatefulWidget {
   const CompleteProfilePage({super.key});
@@ -49,15 +50,15 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
   }
 
   Future<void> _confirmCancel() async {
+    final strings = l10n(context);
     await AppDialog.show(
       context: context,
       icon: Icons.logout,
       iconColor: AppColors.error,
-      title: 'Cancelar cadastro?',
-      subtitle:
-          'Se você sair agora, seu perfil não será concluído e você voltará para a tela de login.',
-      dismissText: 'Continuar perfil',
-      okText: 'Sair para o login',
+      title: strings.authCancelRegistrationTitle,
+      subtitle: strings.authCancelRegistrationBody,
+      dismissText: strings.authContinueProfile,
+      okText: strings.authExitToLogin,
       isError: true,
       onOk: () async {
         await ref.read(authControllerProvider.notifier).logout();
@@ -84,6 +85,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final authState = ref.watch(authControllerProvider);
 
     ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
@@ -113,9 +115,9 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
             child: Column(
               children: [
                 AuthHeader(
-                  title: 'COMPLETAR PERFIL',
+                  title: strings.authCompleteProfileTitle.toUpperCase(),
                   onBack: _confirmCancel,
-                  backTooltip: 'Voltar ao login',
+                  backTooltip: strings.authBackToLogin,
                 ),
                 Expanded(
                   child: CenteredFormWrapper(
@@ -134,7 +136,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                 horizontal: 4,
                               ),
                               child: Text(
-                                'Escolha seu @username e preencha seus dados.',
+                                strings.authCompleteProfileBody,
                                 style: TextStyle(
                                   fontFamily: AppTypography.fontFamily,
                                   fontSize: 14,
@@ -150,18 +152,18 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             end: 0.43,
                             child: AppTextField(
                               controller: _nameController,
-                              label: 'Nome de exibição',
-                              hint: 'Seu apelido na plataforma',
+                              label: strings.authDisplayName,
+                              hint: strings.authDisplayNameHint,
                               prefixIcon: Icons.person_outline,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  return 'Informe seu nome';
+                                  return strings.authNameRequired;
                                 }
                                 if (v.trim().length < 2) {
-                                  return 'Nome muito curto';
+                                  return strings.authNameTooShort;
                                 }
                                 if (!ValueUtils.validateDisplayName(v)) {
-                                  return 'Nome contém caracteres inválidos';
+                                  return strings.authNameInvalid;
                                 }
                                 return null;
                               },
@@ -174,7 +176,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             end: 0.57,
                             child: UsernameField(
                               controller: _usernameController,
-                              label: '@ Username',
+                              label: strings.authUsernameLabel,
                             ),
                           ),
                           Spacing.vMd,
@@ -184,8 +186,8 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             end: 0.65,
                             child: AppTextField(
                               controller: _cityController,
-                              label: 'Cidade (opcional)',
-                              hint: 'Sua cidade',
+                              label: strings.authCityOptional,
+                              hint: strings.authCityHint,
                               prefixIcon: Icons.location_city_outlined,
                             ),
                           ),
@@ -195,7 +197,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             begin: 0.49,
                             end: 0.77,
                             child: AppButton(
-                              label: 'FINALIZAR',
+                              label: strings.commonFinish.toUpperCase(),
                               size: AppButtonSize.large,
                               isLoading: authState.isLoading,
                               onPressed: _handleComplete,
@@ -211,7 +213,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                                 color: context.textSecondary,
                               ),
                               label: Text(
-                                'Sair e escolher outra conta',
+                                strings.authSwitchAccount,
                                 style: TextStyle(
                                   fontFamily: AppTypography.fontFamily,
                                   fontSize: 13,

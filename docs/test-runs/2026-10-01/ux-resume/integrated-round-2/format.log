@@ -1,0 +1,5 @@
+Changed lib\features\auth\presentation\controllers\auth_controller.dart
+Changed test\features\auth\apple_auth_repository_test.dart
+Formatted 612 files (2 changed) in 1.92 seconds.
+Formatted 1 file (0 changed) in 0.01 seconds.
+EXIT_CODE=1 NATIVE_EXIT_CODE=0

@@ -8,6 +8,7 @@ import { right } from '@/shared/core/either';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
 import { GoogleAuthUseCase } from './usecases/google-auth.usecase';
+import { AppleAuthUseCase } from './usecases/apple-auth.usecase';
 import { CompleteProfileUseCase } from './usecases/complete-profile.usecase';
 import { RefreshMobileSessionUseCase } from './usecases/refresh-mobile-session.usecase';
 import { LogoutSessionUseCase } from './usecases/logout-session.usecase';
@@ -110,6 +111,7 @@ describe('AuthController web session endpoints', () => {
         { provide: RegisterUseCase, useValue: { execute: jest.fn() } },
         { provide: LoginUseCase, useValue: { execute: jest.fn() } },
         { provide: GoogleAuthUseCase, useValue: { execute: jest.fn() } },
+        { provide: AppleAuthUseCase, useValue: { execute: jest.fn() } },
         { provide: CompleteProfileUseCase, useValue: { execute: jest.fn() } },
         { provide: RefreshMobileSessionUseCase, useValue: { execute: jest.fn() } },
         { provide: LogoutSessionUseCase, useValue: { execute: jest.fn() } },
@@ -147,6 +149,20 @@ describe('AuthController web session endpoints', () => {
     expect(JSON.parse(response.body)).toEqual({ sent: true });
     expect(JSON.parse(response.body)).not.toHaveProperty('user');
     expect(JSON.parse(response.body)).not.toHaveProperty('account');
+  });
+
+  it('forwards the trusted origin and deletion purpose for the public web deletion flow', async () => {
+    authService.requestMagicLink.mockClear();
+
+    const response = await post({
+      method: 'POST', path: '/auth/web/magic-link/request', origin: 'https://app.example.com',
+      body: { email: 'user@example.com', consent: true, locale: 'en', purpose: 'account-deletion' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(authService.requestMagicLink).toHaveBeenCalledWith(expect.objectContaining({
+      purpose: 'account-deletion', returnOrigin: 'https://app.example.com',
+    }));
   });
 
   it('enrolls a biometric token from the authenticated access-token user', async () => {

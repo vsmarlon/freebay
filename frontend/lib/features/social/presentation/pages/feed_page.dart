@@ -6,6 +6,7 @@ import 'package:freebay/features/social/presentation/widgets/create_composer_she
 import 'package:freebay/features/social/presentation/widgets/feed_header.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_intro_sections.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_list.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({super.key});
@@ -89,7 +90,7 @@ class _FeedPageState extends ConsumerState<FeedPage>
   void _openComposer() {
     showBrutalistSheet(
       context: context,
-      title: 'CRIAR PUBLICAÇÃO',
+      title: l10n(context).feedCreatePost,
       child: const CreateComposerSheet(),
     );
   }
@@ -101,6 +102,18 @@ class _FeedPageState extends ConsumerState<FeedPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = l10n(context);
+    ref.listen<FeedState>(feedProvider, (previous, next) {
+      if (next.error != null &&
+          next.posts.isNotEmpty &&
+          previous?.error != next.error) {
+        AppSnackbar.error(
+          context,
+          strings.feedRefreshFailedShowingPosts,
+          action: SnackBarAction(label: strings.commonRetry, onPressed: _retry),
+        );
+      }
+    });
     final feedState = ref.watch(feedProvider);
     final feedType = ref.watch(feedTypeProvider);
     final contentFilter = ref.watch(feedContentFilterProvider);
@@ -133,19 +146,17 @@ class _FeedPageState extends ConsumerState<FeedPage>
                 state: feedState,
                 onRetry: _retry,
                 emptyState: contentFilter == FeedContentFilter.all
-                    ? EmptyState.noPosts()
-                    : EmptyState.noResults(
-                        subtitle:
-                            'Troque entre posts sociais e vendas quando quiser.',
+                    ? EmptyState(
+                        icon: Icons.article_outlined,
+                        title: strings.feedNoPosts,
+                        subtitle: strings.feedNoPostsBody,
+                      )
+                    : EmptyState(
+                        icon: Icons.search_off,
+                        title: strings.feedNoResults,
+                        subtitle: strings.feedNoResultsBody,
                       ),
               ),
-              if (feedState.hasMore && feedState.error == null)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                ),
             ],
           ),
         ),

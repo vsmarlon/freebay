@@ -56,7 +56,8 @@ export class AccountLifecycleDatabaseRepository {
         const claimed = await tx.user.updateMany({ where: { id: userId, deletedAt: null, deletionRequestedAt: { not: null } }, data: {
           deletedAt: purgedAt, deletionRequestedAt: null, email: `deleted-${userId}@deleted.invalid`, username: `deleted_${userId.replace(/-/g, '').slice(0, 16)}`,
           displayName: 'Usuário removido', emailVerified: false, phoneVerified: false, isVerified: false, passwordHash: null, googleId: null,
-          cpf: null, cpfHash: null, phone: null, city: null, state: null, avatarUrl: null, bannerUrl: null, bio: null, fcmToken: null, notificationPrefs: Prisma.DbNull,
+          appleId: null, appleRefreshTokenEncrypted: null,
+          cpf: null, cpfHash: null, phone: null, city: null, state: null, avatarUrl: null, avatarBlurHash: null, bannerUrl: null, bio: null, fcmToken: null, notificationPrefs: Prisma.DbNull,
         } });
         if (claimed.count === 0) return;
         await tx.pushDevice.deleteMany({ where: { userId } });

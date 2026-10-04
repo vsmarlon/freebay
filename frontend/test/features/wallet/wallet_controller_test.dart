@@ -14,6 +14,7 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import '../../support/auth_test_doubles.dart';
 import '../../support/test_users.dart';
 
@@ -202,7 +203,12 @@ void main() {
             _RenderingWalletRepository(),
           ),
         ],
-        child: const MaterialApp(home: WalletPage()),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: WalletPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -237,7 +243,12 @@ void main() {
               ),
             ),
           ],
-          child: MaterialApp(home: WalletPage(key: ValueKey(testCase.$1))),
+          child: MaterialApp(
+            locale: const Locale('pt', 'BR'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: WalletPage(key: ValueKey(testCase.$1)),
+          ),
         ),
       );
       await tester.pump();

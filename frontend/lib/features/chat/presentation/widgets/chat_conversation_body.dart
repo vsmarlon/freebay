@@ -3,6 +3,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_message_list.dart';
 import 'package:freebay/shared/utils/media_url.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Message area of the conversation page: skeleton, error, empty state,
 /// or the scrollable message list over the optional background.
@@ -58,6 +59,7 @@ class ChatConversationBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final errorMessage = loadError;
     final backgroundUrl = bgUrl;
     return Expanded(
@@ -75,10 +77,10 @@ class ChatConversationBody extends StatelessWidget {
                     ),
                   ))
           : messages.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               icon: Icons.chat_bubble_outline,
-              title: 'NENHUMA MENSAGEM',
-              subtitle: 'Envie a primeira mensagem para iniciar a conversa.',
+              title: strings.chatNoMessages,
+              subtitle: strings.chatFirstMessage,
             )
           : Container(
               decoration: backgroundUrl != null && backgroundUrl.isNotEmpty

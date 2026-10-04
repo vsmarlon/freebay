@@ -84,6 +84,16 @@ nest-backend/src/modules/tasks/tasks.module.ts
 
 The 13 exported class names are `PrismaOrderRepository`, `PrismaReviewRepository`, `PrismaConversationPreferenceRepository`, `PrismaDisputeRepository`, `PrismaSafetyListRepository`, `PrismaFollowRepository`, `PrismaBlockRepository`, `PrismaPostRepository`, `PrismaCommentRepository`, `PrismaLikeRepository`, `PrismaSavedPostRepository`, `PrismaShareRepository`, and `PrismaStoryRepository`.
 
+## Corrected Flutter domain-to-data boundary metric
+
+The earlier 20-file count above measures frontend files importing a feature `domain/repositories` contract; it does **not** measure domain importing data repositories. The requested P0 boundary scan was rerun exactly as follows:
+
+```bash
+rg --files-with-matches --glob '**/domain/**/*.dart' '^import .*/data/repositories/' frontend/lib/features
+```
+
+Result: **12 files** — 9 under auth, 2 under product, and 1 under social. Use this as the F1 baseline. Keep the original 20-file result as historical evidence for its separate metric; do not substitute it for F1.
+
 ## Follow-up boundary
 
 The format failure was limited to `frontend/test/features/payments/payment_view_test.dart`; only that file was formatted. The exact root format gate now passes. Analyze remains green and `node scripts/ci-check.js` remains green.

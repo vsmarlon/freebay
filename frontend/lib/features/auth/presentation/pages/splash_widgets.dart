@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class SplashGetStartedButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -36,12 +37,12 @@ class _SplashGetStartedButtonState extends State<SplashGetStartedButton> {
               : AppDepth.hard(AppColors.primaryContainer),
         ),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'GET STARTED',
-              style: TextStyle(
+              l10n(context).commonGetStarted.toUpperCase(),
+              style: const TextStyle(
                 fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -49,7 +50,7 @@ class _SplashGetStartedButtonState extends State<SplashGetStartedButton> {
                 color: Colors.black,
               ),
             ),
-            Icon(Icons.arrow_forward, size: 22, color: Colors.black),
+            const Icon(Icons.arrow_forward, size: 22, color: Colors.black),
           ],
         ),
       ),

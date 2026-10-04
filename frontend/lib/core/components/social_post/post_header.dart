@@ -2,12 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay/core/components/social_post/post_labels.dart';
-import 'package:freebay/core/utils/time_utils.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/core/components/blur_hash_placeholder.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class SocialPostHeader extends StatelessWidget {
   final String userName;
   final String? userAvatarUrl;
+  final String? userAvatarBlurHash;
   final bool isVerified;
   final bool isSelling;
   final DateTime? createdAt;
@@ -17,6 +19,7 @@ class SocialPostHeader extends StatelessWidget {
     super.key,
     required this.userName,
     required this.userAvatarUrl,
+    this.userAvatarBlurHash,
     required this.isVerified,
     required this.isSelling,
     required this.createdAt,
@@ -49,10 +52,13 @@ class SocialPostHeader extends StatelessWidget {
                       fit: BoxFit.cover,
                       memCacheWidth: 120,
                       memCacheHeight: 120,
-                      placeholder: (_, _) => const Icon(
-                        Icons.person,
-                        color: AppColors.onPrimary,
-                        size: 20,
+                      placeholder: (_, _) => BlurHashPlaceholder(
+                        hash: userAvatarBlurHash,
+                        fallback: const Icon(
+                          Icons.person,
+                          color: AppColors.onPrimary,
+                          size: 20,
+                        ),
                       ),
                       errorWidget: (_, _, _) => const Icon(
                         Icons.person,
@@ -101,7 +107,9 @@ class SocialPostHeader extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  createdAt != null ? TimeUtils.timeAgo(createdAt!) : 'agora',
+                  createdAt != null
+                      ? localizedTimeAgo(context, createdAt!)
+                      : l10n(context).timeAgoNow,
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     fontSize: 10,

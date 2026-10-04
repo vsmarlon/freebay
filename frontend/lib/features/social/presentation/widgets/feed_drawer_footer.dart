@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedDrawerFooter extends StatelessWidget {
   final bool isDark;
@@ -19,6 +20,7 @@ class FeedDrawerFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       decoration: BoxDecoration(
         color: context.surfaceMidColor,
@@ -35,22 +37,24 @@ class FeedDrawerFooter extends StatelessWidget {
               isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
               color: context.textPrimary,
             ),
-            tooltip: isDark ? 'Modo claro' : 'Modo escuro',
+            tooltip: isDark
+                ? strings.profileSwitchToLight
+                : strings.profileSwitchToDark,
             onPressed: onToggleTheme,
           ),
           IconButton(
             icon: Icon(Icons.bug_report_outlined, color: context.textSecondary),
-            tooltip: 'Reportar problema',
+            tooltip: strings.feedReportProblem,
             onPressed: onReportBug,
           ),
           IconButton(
             icon: Icon(Icons.settings_outlined, color: context.textSecondary),
-            tooltip: 'Configurações',
+            tooltip: strings.profileSettings,
             onPressed: onSettings,
           ),
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.error),
-            tooltip: 'Sair',
+            tooltip: strings.authLogout,
             onPressed: onLogout,
           ),
         ],

@@ -26,6 +26,7 @@ import 'package:freebay/features/chat/presentation/widgets/who_reacted_sheet.dar
 import 'package:freebay/features/chat/presentation/widgets/conversation_menu.dart';
 import 'package:freebay/shared/services/upload_service.dart';
 import 'package:freebay/shared/utils/date_utils.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 part 'chat_conversation_selection.dart';
 part 'chat_conversation_lifecycle.dart';
@@ -78,6 +79,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
   bool _scrollPostFrameQueued = false;
   @override
   bool _scrollAnimating = false;
+  @override
+  bool _isQuoteNavigationActive = false;
   @override
   int _conversationGeneration = 0;
   bool _keyboardWasOpen = false;
@@ -132,6 +135,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.chatId == widget.chatId) return;
 
+    _cancelQuotedScroll();
     _messageSubscription?.close();
     _messageSubscription = null;
     _messageKeys.clear();
@@ -164,6 +168,7 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
 
   @override
   void dispose() {
+    _cancelQuotedScroll();
     _messageSubscription?.close();
     _typingDebounceTimer?.cancel();
     _messageController.removeListener(_onTextChanged);
@@ -278,7 +283,9 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                       starredIds: body.starredIds,
                       isSelecting: _isSelecting,
                       selectedMessageIds: _selectedMessageIds,
-                      onLoadMore: _notifier.loadOlder,
+                      onLoadMore: () {
+                        if (!_isQuoteNavigationActive) _notifier.loadOlder();
+                      },
                       onRetry: () => _notifier.refresh(),
                       onToggleSelection: (id) => setState(() {
                         if (_selectedMessageIds.contains(id)) {
@@ -300,14 +307,15 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                       onReactionTap: (msgId, emoji) => ref
                           .read(chatRepositoryProvider)
                           .reactToMessage(widget.chatId, msgId, emoji),
-                      onReactionLongPress: (msg, emoji) => showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => WhoReactedSheet(
-                          reactions: msg.reactions,
-                          initialEmoji: emoji,
-                        ),
-                      ),
+                      onReactionLongPress: (msg, emoji) =>
+                          showBrutalistSheet<void>(
+                            context: context,
+                            padding: const EdgeInsets.all(16),
+                            builder: (_) => WhoReactedSheet(
+                              reactions: msg.reactions,
+                              initialEmoji: emoji,
+                            ),
+                          ),
                       onViewOnceReveal: (msgId) async {
                         final generation = _conversationGeneration;
                         final result = await _notifier.revealViewOnce(msgId);

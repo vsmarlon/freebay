@@ -1,0 +1,26 @@
+
+> test:ci-scripts
+> node --test scripts/ci-check.test.js scripts/perf-check.test.js
+
+Ô£ö architecture gate rejects removed safe identifiers only (1.3574ms)
+Ô£ö architecture gate still detects removed repository identifiers in imports (0.1434ms)
+Ô£ö route and design gates keep their existing policy (0.2908ms)
+Ô£ö design ratchet permits baseline findings and resolved findings but rejects additions (1.0908ms)
+Ô£ö design scanner catches only feature-level raw design tokens (0.721ms)
+Ô£ö design baseline keeps findings stable across completed feature moves (0.0876ms)
+Ô£ö a real trace with both build and raster timings passes (0.9989ms)
+Ô£ö missing frame metrics cannot be green (0.1923ms)
+Ô£ö raster jank fails even when build timings are fast (0.1025ms)
+Ô£ö 20% regression from a measured baseline fails below the absolute threshold (0.1679ms)
+Ô£ö absolute frame budgets fail at the boundary (0.1818ms)
+Ô£ö Android perf run preserves existing reverse to API port and leaves other mappings alone (3.5984ms)
+Ô£ö Android perf run adds the default reverse only when API port is unmapped (1.0308ms)
+Ô£ö Android perf run fails closed when reverse inspection errors or fails (2.3332ms)
+Ôä╣ tests 14
+Ôä╣ suites 0
+Ôä╣ pass 14
+Ôä╣ fail 0
+Ôä╣ cancelled 0
+Ôä╣ skipped 0
+Ôä╣ todo 0
+Ôä╣ duration_ms 68.0799

@@ -9,6 +9,7 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/profile/presentation/widgets/biometry_setting_tile.dart';
 import 'package:freebay/features/profile/presentation/widgets/phone_verification_sheet.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_help_sheet.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 void showProfileSettingsSheet(BuildContext context) {
   final rootNavigator = Navigator.of(context, rootNavigator: true);
@@ -16,7 +17,7 @@ void showProfileSettingsSheet(BuildContext context) {
   var logoutBusy = false;
   showBrutalistSheet(
     context: context,
-    title: 'Configurações',
+    title: l10n(context).profileSettings,
     builder: (sheetContext) {
       return Consumer(
         builder: (consumerContext, consumerRef, _) {
@@ -40,15 +41,15 @@ void showProfileSettingsSheet(BuildContext context) {
                   color: consumerContext.textPrimary,
                 ),
                 title: Text(
-                  'Tema',
+                  l10n(consumerContext).profileTheme,
                   style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 subtitle: Text(
                   currentThemeMode == ThemeMode.dark
-                      ? 'Escuro'
+                      ? l10n(consumerContext).profileThemeDark
                       : currentThemeMode == ThemeMode.light
-                      ? 'Claro'
-                      : 'Sistema',
+                      ? l10n(consumerContext).profileThemeLight
+                      : l10n(consumerContext).profileThemeSystem,
                   style: TextStyle(color: consumerContext.textSecondary),
                 ),
                 trailing: Row(
@@ -87,13 +88,13 @@ void showProfileSettingsSheet(BuildContext context) {
                   color: AppColors.success,
                 ),
                 title: Text(
-                  'Amigos próximos',
+                  l10n(consumerContext).closeFriendsTitle,
                   style: AppTypography.bodyMedium.copyWith(
                     color: consumerContext.textPrimary,
                   ),
                 ),
                 subtitle: Text(
-                  'Escolha quem vê seus stories privados',
+                  l10n(consumerContext).profileCloseFriendsDescription,
                   style: AppTypography.bodySmall.copyWith(
                     color: consumerContext.textSecondary,
                   ),
@@ -109,15 +110,35 @@ void showProfileSettingsSheet(BuildContext context) {
               ),
               ListTile(
                 leading: Icon(
+                  Icons.privacy_tip_outlined,
+                  color: consumerContext.textPrimary,
+                ),
+                title: Text(
+                  l10n(consumerContext).privacyTitle,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: consumerContext.textPrimary,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(consumerContext);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (rootNavigator.mounted) {
+                      router.push(AppRoutes.profilePrivacy);
+                    }
+                  });
+                },
+              ),
+              ListTile(
+                leading: Icon(
                   backgroundAnimated ? Icons.animation : Icons.block_outlined,
                   color: consumerContext.textPrimary,
                 ),
                 title: Text(
-                  'Fundo animado',
+                  l10n(consumerContext).profileAnimatedBackground,
                   style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 subtitle: Text(
-                  'Desligue para usar fundo estático',
+                  l10n(consumerContext).profileStaticBackgroundDescription,
                   style: TextStyle(color: context.textSecondary),
                 ),
                 trailing: BrutalistSwitch(
@@ -133,7 +154,7 @@ void showProfileSettingsSheet(BuildContext context) {
               ListTile(
                 leading: Icon(Icons.edit, color: consumerContext.textPrimary),
                 title: Text(
-                  'Editar perfil',
+                  l10n(consumerContext).profileEdit,
                   style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 onTap: () {
@@ -151,13 +172,13 @@ void showProfileSettingsSheet(BuildContext context) {
                   color: consumerContext.textPrimary,
                 ),
                 title: Text(
-                  'Verificação da conta',
+                  l10n(consumerContext).profileVerification,
                   style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 subtitle: Text(
                   (user?.isVerified ?? false)
-                      ? 'Conta verificada'
-                      : 'Solicitar selo de verificação',
+                      ? l10n(consumerContext).profileVerified
+                      : l10n(consumerContext).profileRequestVerification,
                   style: TextStyle(
                     color: consumerContext.textSecondary,
                     fontSize: 12,
@@ -176,7 +197,7 @@ void showProfileSettingsSheet(BuildContext context) {
                     if (user?.isVerified ?? false) {
                       AppSnackbar.success(
                         rootNavigator.context,
-                        'Seu perfil já está verificado!',
+                        l10n(rootNavigator.context).profileAlreadyVerified,
                       );
                     } else {
                       showPhoneVerificationSheet(rootNavigator.context);
@@ -190,7 +211,7 @@ void showProfileSettingsSheet(BuildContext context) {
                   color: consumerContext.textPrimary,
                 ),
                 title: Text(
-                  'Ajuda e suporte',
+                  l10n(consumerContext).profileHelpSupport,
                   style: TextStyle(color: consumerContext.textPrimary),
                 ),
                 onTap: () {
@@ -207,9 +228,9 @@ void showProfileSettingsSheet(BuildContext context) {
               Spacing.vSm,
               ListTile(
                 leading: const Icon(Icons.logout, color: AppColors.error),
-                title: const Text(
-                  'Sair da conta',
-                  style: TextStyle(
+                title: Text(
+                  l10n(consumerContext).authLogout,
+                  style: const TextStyle(
                     color: AppColors.error,
                     fontWeight: FontWeight.w600,
                   ),

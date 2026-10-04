@@ -47,8 +47,13 @@ class WalletRepository {
         Right(response.data['data']['onboardingUrl'] as String),
   );
 
-  Future<Either<Failure, String>> getConnectDashboardLink() => requestEither(
-    () => client.post('/payments/connect/dashboard'),
+  Future<Either<Failure, String>> getConnectDashboardLink({
+    required String stepUpToken,
+  }) => requestEither(
+    () => client.post(
+      '/payments/connect/dashboard',
+      options: Options(headers: {'x-step-up-token': stepUpToken}),
+    ),
     decoder: (response) =>
         Right(response.data['data']['dashboardUrl'] as String),
   );

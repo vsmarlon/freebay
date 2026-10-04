@@ -4,6 +4,7 @@ import 'package:freebay/core/components/app_snackbar.dart';
 import 'package:freebay/core/components/safe_link_destination.dart';
 import 'package:freebay/core/utils/url_safety_analyzer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class BrutalistSafeLinkDialog extends StatelessWidget {
   final String rawUrl;
@@ -16,17 +17,15 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
   });
 
   Future<void> _handleProceed(BuildContext context) async {
+    final strings = l10n(context);
     if (safetyResult.isBlocked) {
-      AppSnackbar.error(
-        context,
-        'Este link foi bloqueado por motivos de segurança.',
-      );
+      AppSnackbar.error(context, strings.safeLinkBlocked);
       return;
     }
 
     final uri = Uri.tryParse(safetyResult.normalizedUrl);
     if (uri == null) {
-      AppSnackbar.error(context, 'Endereço inválido.');
+      AppSnackbar.error(context, strings.safeLinkInvalid);
       return;
     }
 
@@ -38,17 +37,18 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && context.mounted) {
-        AppSnackbar.error(context, 'Não foi possível abrir o navegador.');
+        AppSnackbar.error(context, strings.safeLinkBrowserFailed);
       }
     } catch (e) {
       if (context.mounted) {
-        AppSnackbar.error(context, 'Não foi possível abrir o link.');
+        AppSnackbar.error(context, strings.safeLinkOpenFailed);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     final risk = safetyResult.riskLevel;
     final isDangerous =
@@ -57,17 +57,19 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
 
     final headerColor = isDangerous
         ? AppColors.error
-        : (isSuspicious ? AppColors.warning : AppColors.primary);
+        : (isSuspicious ? AppColors.warning : context.colors.primary);
 
     final titleText = isDangerous
-        ? '⚠️ LINK BLOQUEADO'
+        ? strings.safeLinkBlockedTitle
         : (isSuspicious
-              ? '⚠️ AVISO DE LINK SUSPEITO'
-              : 'AVISO DE LINK EXTERNO');
+              ? strings.safeLinkSuspiciousTitle
+              : strings.safeLinkExternalTitle);
 
     final badgeText = isDangerous
-        ? 'PERIGOSO / NÃO PERMITIDO'
-        : (isSuspicious ? 'ATENÇÃO: NÃO VERIFICADO' : 'LINK EXTERNO');
+        ? strings.safeLinkDangerBadge
+        : (isSuspicious
+              ? strings.safeLinkUnverifiedBadge
+              : strings.safeLinkExternalBadge);
 
     final badgeColor = isDangerous
         ? AppColors.error
@@ -116,7 +118,7 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
                   icon: const Icon(Icons.close, size: 20),
                   onPressed: () =>
                       Navigator.of(context, rootNavigator: true).pop(),
-                  tooltip: 'Fechar',
+                  tooltip: strings.commonClose,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -202,8 +204,8 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
 
             Text(
               isDangerous
-                  ? 'Este link foi classificado como perigoso e não pode ser aberto diretamente pelo FreeBay para proteger sua conta e dispositivo.'
-                  : 'Você está saindo da plataforma FreeBay. Nunca forneça suas senhas, dados de cartão ou faça pagamentos fora da nossa garantia de escrow.',
+                  ? strings.safeLinkDangerExplanation
+                  : strings.safeLinkExternalExplanation,
               style: TextStyle(
                 fontFamily: AppTypography.fontFamily,
                 fontSize: 12,
@@ -217,14 +219,14 @@ class BrutalistSafeLinkDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppButton(
-                  label: 'VOLTAR COM SEGURANÇA',
+                  label: strings.safeLinkReturnSafely,
                   onPressed: () =>
                       Navigator.of(context, rootNavigator: true).pop(),
                 ),
                 if (!isDangerous) ...[
                   const SizedBox(height: 8),
                   AppButton(
-                    label: 'CONTINUAR PARA O SITE EXTERNO',
+                    label: strings.safeLinkContinueExternal,
                     onPressed: () => _handleProceed(context),
                     variant: AppButtonVariant.secondary,
                   ),

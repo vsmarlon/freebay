@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/providers/last_error_provider.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
-import 'package:freebay/shared/errors/error_messages.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 enum AppSnackbarType { success, error, warning, info }
 
@@ -127,10 +127,9 @@ class AppSnackbar {
     _recordError(context, message);
   }
 
-  /// Renders the generic copy for [failure]. Never surfaces raw exception text:
-  /// anything that is not a [Failure] falls back to [kGenericErrorMessage].
+  /// Renders localized copy without exposing arbitrary server error text.
   static void handleFailure(BuildContext context, Object? failure) =>
-      error(context, userMessageOf(failure));
+      error(context, localizedFailureMessage(context, failure));
 
   /// Keep the delete pending until the undo window expires. A snackbar with an
   /// action may stay visible indefinitely with accessibility navigation enabled.
@@ -159,7 +158,7 @@ class AppSnackbar {
           });
         },
         action: SnackBarAction(
-          label: 'DESFAZER',
+          label: l10n(context).commonUndo,
           textColor: AppColors.onPrimaryContainer,
           onPressed: () {
             if (resolved) return;

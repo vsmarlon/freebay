@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class LocationPickerPage extends StatefulWidget {
   const LocationPickerPage({super.key});
@@ -32,23 +33,25 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
       _errorMsg = null;
     });
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) {
-        _setError('Ative o serviço de localização para continuar.');
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
+      if (!serviceEnabled) {
+        _setError(l10n(context).locationServiceRequired);
         return;
       }
 
       var permission = await Geolocator.checkPermission();
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
+        if (!mounted) return;
       }
       if (permission == LocationPermission.deniedForever) {
-        _setError(
-          'Permissão negada permanentemente. Ative-a nas configurações.',
-        );
+        _setError(l10n(context).locationPermissionDeniedForever);
         return;
       }
       if (permission == LocationPermission.denied) {
-        _setError('Permissão de localização negada.');
+        _setError(l10n(context).locationPermissionDenied);
         return;
       }
 
@@ -66,7 +69,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         _initialZoom,
       );
     } catch (_) {
-      _setError('Não foi possível obter sua localização. Tente novamente.');
+      if (mounted) _setError(l10n(context).locationUnavailable);
     }
   }
 
@@ -111,7 +114,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         queryParameters: {
           'lat': position.latitude,
           'lon': position.longitude,
-          'lang': 'pt',
+          'lang': Localizations.localeOf(context).languageCode,
         },
       );
       if (response.statusCode == 200) {
@@ -153,6 +156,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final position = _position;
     final center = position == null
         ? null
@@ -164,9 +168,10 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'LOCALIZAÇÃO',
+              text: strings.chatLocation,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => Navigator.pop(context),
               ),
             ),
@@ -189,15 +194,13 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
               ),
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryContainer,
-                      ),
+                  ? const ShimmerScope(
+                      child: ShimmerBlock(height: double.infinity),
                     )
                   : center == null
                   ? Center(
                       child: AppButton(
-                        label: 'TENTAR NOVAMENTE',
+                        label: strings.commonRetry.toUpperCase(),
                         onPressed: _determinePosition,
                       ),
                     )
@@ -236,6 +239,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                           bottom: 16,
                           child: BrutalistIconButton(
                             icon: Icons.my_location,
+                            semanticLabel: strings.locationUseCurrent,
                             size: 48,
                             onTap: _determinePosition,
                           ),
@@ -260,7 +264,9 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Text(
-                          'Precisão do provedor: ${_position!.accuracy.toStringAsFixed(0)} m',
+                          strings.locationAccuracy(
+                            _position!.accuracy.toStringAsFixed(0),
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: context.textSecondary,
@@ -268,7 +274,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                         ),
                       ),
                     AppButton(
-                      label: 'CONFIRMAR E ENVIAR LOCALIZAÇÃO',
+                      label: strings.chatConfirmSendLocation,
                       onPressed: _position != null && !_isLoading
                           ? _sendLocation
                           : null,

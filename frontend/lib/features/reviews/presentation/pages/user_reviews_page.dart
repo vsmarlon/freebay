@@ -8,6 +8,7 @@ import 'package:freebay/features/reviews/presentation/providers/review_providers
 import 'package:freebay/features/reviews/presentation/widgets/review_card.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 final userReviewsProvider = FutureProvider.family<ReviewListResponse, String>((
   ref,
@@ -74,6 +75,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -81,10 +83,11 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'AVALIAÇÕES',
+              text: strings.reviewsTitle.toUpperCase(),
               subtitle: widget.userName,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -93,7 +96,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
               child: RefreshIndicator(
                 onRefresh: _refresh,
                 color: AppColors.primaryContainer,
-                child: _buildContent(isDark),
+                child: _buildContent(isDark, context),
               ),
             ),
           ],
@@ -102,7 +105,8 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
     );
   }
 
-  Widget _buildContent(bool isDark) {
+  Widget _buildContent(bool isDark, BuildContext context) {
+    final strings = l10n(context);
     if (_reviews.isEmpty && _isLoading) {
       return SkeletonPage(
         child: SkeletonList(
@@ -144,10 +148,10 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
     }
 
     if (_reviews.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.rate_review_outlined,
-        title: 'NENHUMA AVALIAÇÃO',
-        subtitle: 'Este usuário ainda não recebeu avaliações.',
+        title: strings.reviewsEmptyTitle,
+        subtitle: strings.reviewsEmptyBody,
       );
     }
 
@@ -157,9 +161,11 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
       itemBuilder: (context, index) {
         if (index >= _reviews.length) {
           _loadReviews();
-          return const Padding(
-            padding: EdgeInsets.all(16),
-            child: ShimmerBlock(height: 60),
+          return const ShimmerScope(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: ShimmerBlock(height: 60),
+            ),
           );
         }
 

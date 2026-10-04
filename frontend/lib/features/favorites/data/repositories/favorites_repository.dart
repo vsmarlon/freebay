@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/features/favorites/data/services/favorites_service.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
@@ -12,8 +13,11 @@ class FavoritesRepository {
     return _service.toggleFavorite(productId);
   }
 
-  Future<Either<Failure, bool>> isFavorited(String productId) {
-    return _service.isFavorited(productId);
+  Future<Either<Failure, bool>> isFavorited(
+    String productId, {
+    CancelToken? cancelToken,
+  }) {
+    return _service.isFavorited(productId, cancelToken: cancelToken);
   }
 
   Future<Either<Failure, List<ProductEntity>>> getFavorites() {

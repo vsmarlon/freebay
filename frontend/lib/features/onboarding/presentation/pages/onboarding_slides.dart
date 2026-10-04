@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 class OnboardingSlide {
   final IconData icon;
@@ -19,44 +20,41 @@ class OnboardingSlide {
   });
 }
 
-const onboardingSlides = [
+List<OnboardingSlide> onboardingSlides(AppLocalizations strings) => [
   OnboardingSlide(
     icon: Icons.storefront_outlined,
-    stepTag: 'FASE 01 // SOCIAL COMMERCE',
-    title: 'COMPRE E VENDA',
-    subtitle: 'FEED HÍBRIDO & ANÚNCIOS',
-    body:
-        'Descubra produtos incríveis direto do feed social, acompanhe seus criadores favoritos e anuncie em segundos.',
+    stepTag: strings.onboardingStepSocial,
+    title: strings.onboardingShopAndSell,
+    subtitle: strings.onboardingSocialFeed,
+    body: strings.onboardingSocialBody,
     highlights: [
-      'ANUNCIE SEUS PRODUTOS',
-      'FEED PERSONALIZADO',
-      'ALCANCE LOCAL & GLOBAL',
+      strings.onboardingHighlightListings,
+      strings.onboardingHighlightFeed,
+      strings.onboardingHighlightReach,
     ],
   ),
   OnboardingSlide(
     icon: Icons.chat_bubble_outline_rounded,
-    stepTag: 'FASE 02 // NEGOCIAÇÃO DIRETA',
-    title: 'CONVERSA & ESCROW',
-    subtitle: '100% DE PROTEÇÃO',
-    body:
-        'Negocie propostas em tempo real via chat direto com envio de fotos e segurança integral garantida por custódia.',
+    stepTag: strings.onboardingStepNegotiation,
+    title: strings.onboardingChatAndEscrow,
+    subtitle: strings.onboardingProtection,
+    body: strings.onboardingNegotiationBody,
     highlights: [
-      'CHAT CRIPTOGRAFADO',
-      'PAGAMENTO RETIDO',
-      'MEDIAÇÃO DE CONFLITOS',
+      strings.onboardingHighlightChat,
+      strings.onboardingHighlightHeldPayment,
+      strings.onboardingHighlightDisputes,
     ],
   ),
   OnboardingSlide(
     icon: Icons.account_balance_wallet_outlined,
-    stepTag: 'FASE 03 // CARTEIRA & REPUTAÇÃO',
-    title: 'SAQUES INSTANTÂNEOS',
-    subtitle: 'SEU DINHEIRO EM CONTROLE',
-    body:
-        'Receba pelas suas vendas com total transparência, saque quando quiser e construa sua reputação com reviews verificadas.',
+    stepTag: strings.onboardingStepWallet,
+    title: strings.onboardingPayouts,
+    subtitle: strings.onboardingMoneyControl,
+    body: strings.onboardingWalletBody,
     highlights: [
-      'SAQUE VIA PIX / STRIPE',
-      'AVALIAÇÕES REAIS',
-      'EXTRATO EM TEMPO REAL',
+      strings.onboardingHighlightPayout,
+      strings.onboardingHighlightReviews,
+      strings.onboardingHighlightStatement,
     ],
   ),
 ];

@@ -1,0 +1,8 @@
+{
+  "label": "backend-e2e",
+  "command": "npm run test:e2e",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T05:31:32.421Z",
+  "ended": "2026-10-01T05:32:34.789Z",
+  "exitCode": 0
+}

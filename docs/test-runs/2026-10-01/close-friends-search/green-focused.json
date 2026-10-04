@@ -1,0 +1,8 @@
+{
+  "label": "green-focused",
+  "command": "npm run test:e2e -- --runTestsByPath test/e2e/story-audience.e2e-spec.ts -t \"allows either connection direction\"",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:40:57.253Z",
+  "ended": "2026-10-01T06:41:12.206Z",
+  "exitCode": 0
+}

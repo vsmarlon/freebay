@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/auth/auth.dart';
+import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/utils/value_utils.dart';
 
@@ -26,11 +28,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   bool _isLoading = false;
   String _originalMaskedCpf = '';
   String _originalUsername = '';
+  String? _ownerId;
+  String? _seededOwnerId;
+  bool _profileLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadProfileData();
+    _ownerId = ref.read(authControllerProvider).asData?.value?.id;
     _cpfController.addListener(_onCpfChanged);
   }
 
@@ -56,18 +61,34 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     }
   }
 
-  void _loadProfileData() {
-    final profileAsync = ref.read(profileFutureProvider('me'));
-    profileAsync.whenData((user) {
-      _displayNameController.text = user.displayName ?? '';
-      _originalUsername = (user.username ?? '').toLowerCase();
-      _usernameController.text = _originalUsername;
-      _bioController.text = user.bio ?? '';
-      _cityController.text = user.city ?? '';
-      _stateController.text = user.state ?? '';
-      _originalMaskedCpf = user.cpf ?? '';
-      _cpfController.text = _originalMaskedCpf;
-    });
+  void _clearProfileData(String? ownerId) {
+    _ownerId = ownerId;
+    _seededOwnerId = null;
+    _profileLoaded = false;
+    _originalUsername = '';
+    _originalMaskedCpf = '';
+    _displayNameController.clear();
+    _usernameController.clear();
+    _bioController.clear();
+    _cityController.clear();
+    _stateController.clear();
+    _cpfController.clear();
+  }
+
+  void _seedProfileData(UserEntity user, String ownerId) {
+    if (!mounted || _ownerId != ownerId || user.id != ownerId) return;
+    if (_seededOwnerId == ownerId) return;
+    _seededOwnerId = ownerId;
+    _profileLoaded = true;
+    _displayNameController.text = user.displayName ?? '';
+    _originalUsername = (user.username ?? '').toLowerCase();
+    _usernameController.text = _originalUsername;
+    _bioController.text = user.bio ?? '';
+    _cityController.text = user.city ?? '';
+    _stateController.text = user.state ?? '';
+    _originalMaskedCpf = user.cpf ?? '';
+    _cpfController.text = _originalMaskedCpf;
+    setState(() {});
   }
 
   @override
@@ -82,7 +103,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+    final ownerId = _ownerId;
+    if (!_profileLoaded ||
+        ownerId == null ||
+        !_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -110,18 +136,19 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         cpf: cpfDigits?.isEmpty == true ? null : cpfDigits,
       );
 
-      result.fold(
-        (failure) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(failure.message)));
-        },
-        (updatedUser) {
-          ref.read(authControllerProvider.notifier).setUser(updatedUser);
-          ref.invalidate(profileFutureProvider('me'));
-          context.pop();
-        },
-      );
+      if (!mounted ||
+          ref.read(authControllerProvider).asData?.value?.id != ownerId) {
+        return;
+      }
+
+      result.fold((failure) => AppSnackbar.handleFailure(context, failure), (
+        updatedUser,
+      ) {
+        if (updatedUser.id != ownerId) return;
+        ref.read(authControllerProvider.notifier).setUser(updatedUser);
+        ref.invalidate(profileFutureProvider('me'));
+        context.pop();
+      });
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -131,6 +158,21 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
+    final auth = ref.watch(authControllerProvider);
+    final currentOwnerId = auth.asData?.value?.id;
+    ref.listen(authControllerProvider, (_, next) {
+      final nextOwnerId = next.asData?.value?.id;
+      if (_ownerId == nextOwnerId) return;
+      _clearProfileData(nextOwnerId);
+      if (mounted) setState(() {});
+    });
+    ref.listen(profileFutureProvider('me'), (_, next) {
+      final user = next.asData?.value;
+      final ownerId = ref.read(authControllerProvider).asData?.value?.id;
+      if (user != null && ownerId != null) _seedProfileData(user, ownerId);
+    });
+    if (_ownerId != currentOwnerId) _clearProfileData(currentOwnerId);
     final profileAsync = ref.watch(profileFutureProvider('me'));
 
     return Scaffold(
@@ -139,14 +181,15 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'EDITAR PERFIL',
+              text: strings.profileEdit.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
               actions: [
                 InkWell(
-                  onTap: _isLoading ? null : _saveProfile,
+                  onTap: _isLoading || !_profileLoaded ? null : _saveProfile,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -154,9 +197,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ),
                     child: _isLoading
                         ? const ShimmerBlock(width: 80, height: 80)
-                        : const Text(
-                            'Salvar',
-                            style: TextStyle(
+                        : Text(
+                            strings.commonSave,
+                            style: const TextStyle(
                               color: AppColors.primaryContainer,
                               fontWeight: FontWeight.bold,
                             ),
@@ -178,18 +221,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         Spacing.vMd,
                         AppTextField(
                           controller: _displayNameController,
-                          label: 'Nome',
-                          hint: 'Seu nome',
+                          label: strings.profileName,
+                          hint: strings.profileNameHint,
                           maxLength: 50,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Nome é obrigatório';
+                              return strings.authNameRequired;
                             }
                             if (value.trim().length < 2) {
-                              return 'Nome deve ter pelo menos 2 caracteres';
+                              return strings.profileNameMinLength;
                             }
                             if (!ValueUtils.validateDisplayName(value)) {
-                              return 'Nome contém caracteres inválidos';
+                              return strings.authNameInvalid;
                             }
                             return null;
                           },
@@ -202,29 +245,28 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         Spacing.vLg,
                         AppTextField(
                           controller: _bioController,
-                          label: 'Bio',
-                          hint: 'Conte um pouco sobre você',
+                          label: strings.profileBio,
+                          hint: strings.profileBioHint,
                           maxLines: 3,
                           maxLength: 150,
                         ),
                         Spacing.vLg,
                         AppTextField(
                           controller: _cityController,
-                          label: 'Cidade',
-                          hint: 'Sua cidade',
+                          label: strings.profileCity,
+                          hint: strings.profileCityHint,
                         ),
                         Spacing.vLg,
                         AppTextField(
                           controller: _stateController,
-                          label: 'Estado',
-                          hint: 'Seu estado',
+                          label: strings.profileState,
+                          hint: strings.profileStateHint,
                         ),
                         Spacing.vLg,
                         AppTextField(
                           controller: _cpfController,
-                          label: 'CPF / CNPJ',
-                          hint:
-                              'Digite seu CPF (11 dígitos) ou CNPJ (14 dígitos)',
+                          label: strings.profileTaxId,
+                          hint: strings.profileTaxIdHint,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.allow(
@@ -239,14 +281,14 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                             final digits = value.replaceAll(RegExp(r'\D'), '');
                             if (digits.length == 11) {
                               if (!ValueUtils.validateCPF(digits)) {
-                                return 'CPF inválido';
+                                return strings.paymentInvalidCpfCnpj;
                               }
                             } else if (digits.length == 14) {
                               if (!ValueUtils.validateCNPJ(digits)) {
-                                return 'CNPJ inválido';
+                                return strings.paymentInvalidCpfCnpj;
                               }
                             } else {
-                              return 'CPF deve ter 11 dígitos, CNPJ 14 dígitos';
+                              return strings.profileTaxIdLengthInvalid;
                             }
                             return null;
                           },
@@ -268,7 +310,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       ),
                       Spacing.vMd,
                       Text(
-                        'Erro ao carregar perfil',
+                        strings.profileEditLoadError,
                         style: TextStyle(color: context.textPrimary),
                       ),
                     ],

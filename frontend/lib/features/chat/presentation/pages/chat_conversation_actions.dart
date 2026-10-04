@@ -8,14 +8,21 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
   set _scrollPostFrameQueued(bool value);
   bool get _scrollAnimating;
   set _scrollAnimating(bool value);
+  bool get _isQuoteNavigationActive;
   void _scrollToBottom([int? generation]) {
     final expectedGeneration = generation ?? _conversationGeneration;
-    if (!mounted || _scrollPostFrameQueued || _scrollAnimating) return;
+    if (!mounted ||
+        _isQuoteNavigationActive ||
+        _scrollPostFrameQueued ||
+        _scrollAnimating) {
+      return;
+    }
     _scrollPostFrameQueued = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollPostFrameQueued = false;
       if (!mounted ||
           expectedGeneration != _conversationGeneration ||
+          _isQuoteNavigationActive ||
           !_scrollController.hasClients ||
           !_scrollController.position.hasContentDimensions) {
         return;
@@ -162,9 +169,9 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
       result.fold(
         (failure) => AppSnackbar.error(
           context,
-          failure.message,
+          localizedFailureMessage(context, failure),
           action: SnackBarAction(
-            label: 'TENTAR NOVAMENTE',
+            label: l10n(context).commonRetry.toUpperCase(),
             onPressed: () => _sendLocation(
               metadata: metadata,
               replyToId: replyToId,
@@ -208,7 +215,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
             viewOnce: viewOnce,
           );
       if (!mounted || generation != _conversationGeneration) return;
-      result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      result.fold((failure) => AppSnackbar.handleFailure(context, failure), (
         sent,
       ) {
         _notifier.confirmSent(sent.id, sent);
@@ -244,9 +251,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
     });
     AppSnackbar.undoable(
       context,
-      message: ids.length == 1
-          ? 'Mensagem apagada.'
-          : '${ids.length} mensagens apagadas.',
+      message: l10n(context).chatDeletedMessages(ids.length),
       onUndo: () {
         if (!mounted || widget.chatId != chatId) return;
         final current = ref.read(conversationMessagesProvider(chatId)).messages;
@@ -265,7 +270,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
           if (messenger.mounted) {
             AppSnackbar.errorOnMessenger(
               messenger,
-              'Não foi possível apagar algumas mensagens',
+              l10n(messenger.context).chatDeleteSomeFailed,
             );
           }
         }
@@ -287,7 +292,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
             .read(chatRepositoryProvider)
             .archiveChat(widget.chatId, _threadType, !isArchived);
         if (!mounted) return;
-        result.fold((failure) => AppSnackbar.error(context, failure.message), (
+        result.fold((failure) => AppSnackbar.handleFailure(context, failure), (
           _,
         ) {
           final current = ref
@@ -314,7 +319,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
         'DEFAULT';
     showBrutalistSheet(
       context: context,
-      title: 'TEMA',
+      title: l10n(context).chatThemeTitle,
       builder: (_) => ChatThemePicker(
         initialApiValue: initialTheme,
         onSelected: (t) async {

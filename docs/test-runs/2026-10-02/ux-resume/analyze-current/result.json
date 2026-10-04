@@ -1,0 +1,7 @@
+{
+  "command": "flutter analyze --fatal-infos lib test libs/freebay_design_system/lib",
+  "status": "BLOCKED",
+  "timeout_ms": 180000,
+  "exit": null,
+  "reason": "Harness timed out before analysis output; no gate pass claimed; rerun recorded separately."
+}

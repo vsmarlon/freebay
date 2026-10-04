@@ -133,6 +133,11 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
                   : _playing
                   ? Icons.pause
                   : Icons.play_arrow,
+              semanticLabel: _loading
+                  ? 'Baixando áudio'
+                  : _playing
+                  ? 'Pausar áudio'
+                  : 'Reproduzir áudio',
               onTap: _toggle,
               iconColor: AppColors.primaryContainer,
               borderColor: context.borderColor,

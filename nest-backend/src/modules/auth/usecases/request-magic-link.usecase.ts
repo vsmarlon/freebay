@@ -14,6 +14,7 @@ export const MAGIC_LINK_TTL_SECONDS = 10 * 60;
 export class RequestMagicLinkInput extends RequestMagicLinkDTO {
   ip: string;
   userAgent?: string;
+  returnOrigin?: string;
 }
 
 @Injectable()
@@ -34,7 +35,9 @@ export class RequestMagicLinkUseCase {
     ]);
     if (emailCount > 5 || ipCount > 20) return right({ sent: true });
 
-    const token = randomBytes(32).toString('base64url');
+    const token = input.purpose === 'account-deletion'
+      ? `delete.${randomBytes(32).toString('base64url')}`
+      : randomBytes(32).toString('base64url');
     const tokenHash = createHash('sha256').update(token).digest('hex');
     const now = new Date();
     const created = await this.repository.create({
@@ -51,7 +54,7 @@ export class RequestMagicLinkUseCase {
     if (created.isLeft()) return left(created.value);
 
     try {
-      const sent = await this.resend.sendMagicLink(email, token, input.locale, created.value.id);
+      const sent = await this.resend.sendMagicLink(email, token, input.locale, created.value.id, input.purpose, input.returnOrigin);
       if (sent) {
         const recorded = await this.repository.recordSendAccepted(created.value.id, new Date(), sent.id);
         if (recorded.isLeft()) this.logger.warn('Magic-link send metadata could not be recorded');

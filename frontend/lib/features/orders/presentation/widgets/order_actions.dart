@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class OrderActions extends StatelessWidget {
   final OrderEntity order;
@@ -30,7 +31,7 @@ class OrderActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actions = _buildActionsList();
+    final actions = _buildActionsList(context);
 
     if (actions.isEmpty) return const SizedBox.shrink();
 
@@ -41,7 +42,7 @@ class OrderActions extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'AÇÕES',
+            l10n(context).ordersActions.toUpperCase(),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,
@@ -57,13 +58,14 @@ class OrderActions extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildActionsList() {
+  List<Widget> _buildActionsList(BuildContext context) {
+    final strings = l10n(context);
     final List<Widget> actions = [];
 
     if (isBuyer && order.status == OrderStatus.delivered) {
       actions.add(
         AppButton(
-          label: 'Confirmar Recebimento',
+          label: strings.ordersConfirmReceipt,
           icon: Icons.check,
           isLoading: isLoading,
           onPressed: onConfirmDelivery,
@@ -74,7 +76,9 @@ class OrderActions extends StatelessWidget {
     }
 
     if (canReview && reviewType != null) {
-      final reviewLabel = isBuyer ? 'Avaliar Vendedor' : 'Avaliar Comprador';
+      final reviewLabel = isBuyer
+          ? strings.reviewsSeller
+          : strings.reviewsBuyer;
       actions.add(
         AppButton(
           label: reviewLabel,
@@ -91,7 +95,7 @@ class OrderActions extends StatelessWidget {
 
     actions.add(
       AppButton(
-        label: 'Enviar Mensagem',
+        label: strings.chatSendText,
         icon: Icons.chat_outlined,
         variant: AppButtonVariant.secondary,
         onPressed: onChat,
@@ -103,7 +107,7 @@ class OrderActions extends StatelessWidget {
       actions.add(const SizedBox(height: 12));
       actions.add(
         AppButton(
-          label: 'Abrir Disputa',
+          label: strings.ordersDispute,
           icon: Icons.gavel_outlined,
           variant: AppButtonVariant.danger,
           onPressed: onDispute,
@@ -116,7 +120,7 @@ class OrderActions extends StatelessWidget {
       actions.add(const SizedBox(height: 12));
       actions.add(
         AppButton(
-          label: 'Cancelar Pedido',
+          label: strings.ordersCancel,
           icon: Icons.close,
           variant: AppButtonVariant.danger,
           isLoading: isLoading,

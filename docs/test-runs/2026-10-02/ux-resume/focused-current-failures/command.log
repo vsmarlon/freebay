@@ -1,0 +1,115 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+00:02 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+00:02 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: FlutterError:<A RenderFlex overflowed by 98 pixels on the right.>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart:152:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart line 152
+The test description was:
+  loaded checkout fits at 1.5x with long details
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:02 +1 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+00:02 +1 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details [E]
+  Test failed. See exception logs above.
+  The test description was: loaded checkout fits at 1.5x with long details
+  
+00:02 +1 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: FlutterError:<A RenderFlex overflowed by 361 pixels on the right.>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart:152:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart line 152
+The test description was:
+  loaded checkout fits at 2.0x with long details
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:02 +1 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+00:02 +1 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details [E]
+  Test failed. See exception logs above.
+  The test description was: loaded checkout fits at 2.0x with long details
+  
+00:02 +1 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+[HTTP] GET http://localhost:3000/stories/highlights/user/settings-owner
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: a value greater than <60.0>
+  Actual: <60.0>
+   Which: is not a value greater than <60.0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart:106:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart line 106
+The test description was:
+  profile settings sheet tracks drag, scrolls, and handles taps
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:02 +1 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+00:02 +1 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps [E]
+  Test failed. See exception logs above.
+  The test description was: profile settings sheet tracks drag, scrolls, and handles taps
+  
+00:04 +1 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "PROFILE HEADER": []" (used in a call to "getCenter()") could
+not find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart:200:21)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  profile tabs page independently without changing shell branch
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:04 +1 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch [E]
+  Test failed. See exception logs above.
+  The test description was: profile tabs page independently without changing shell branch
+  
+00:04 +1 -4: Some tests failed.
+
+Failing tests:
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch

@@ -5,12 +5,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/features/auth/auth.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/wallet/presentation/controllers/wallet_controller.dart'
     hide ConnectStatus;
 import 'package:freebay/features/wallet/presentation/widgets/wallet_content.dart';
 import 'package:freebay/features/wallet/presentation/widgets/wallet_error_states.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class WalletPage extends ConsumerStatefulWidget {
   const WalletPage({super.key});
@@ -55,6 +56,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final strings = l10n(context);
     final authState = ref.watch(authControllerProvider);
     final walletState = ref.watch(walletProvider);
     final historyState = ref.watch(walletHistoryProvider);
@@ -67,12 +69,14 @@ class _WalletPageState extends ConsumerState<WalletPage>
 
     // Auth still loading — show skeleton, not guest view
     if (authState.isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            ShellScrollHeader(child: PageHeader(text: 'CARTEIRA')),
-            Expanded(
+            ShellScrollHeader(
+              child: PageHeader(text: strings.walletTitleBrutalist),
+            ),
+            const Expanded(
               child: SkeletonPage(
                 child: Column(
                   children: [
@@ -96,13 +100,14 @@ class _WalletPageState extends ConsumerState<WalletPage>
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            const ShellScrollHeader(child: PageHeader(text: 'CARTEIRA')),
+            ShellScrollHeader(
+              child: PageHeader(text: strings.walletTitleBrutalist),
+            ),
             Expanded(
               child: GuestGateView(
                 icon: Icons.account_balance_wallet_outlined,
-                title: 'CARTEIRA',
-                description:
-                    'Acompanhe seu saldo e configure seus recebimentos.',
+                title: strings.walletTitleBrutalist,
+                description: strings.walletGuestDescription,
                 onLoginPressed: () => context.push(loginPathFrom(context)),
                 onRegisterPressed: () => context.push(AppRoutes.register),
               ),
@@ -121,7 +126,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
         children: [
           ShellScrollHeader(
             child: PageHeader(
-              text: 'CARTEIRA',
+              text: strings.walletTitleBrutalist,
               actions: [
                 IconButton(
                   icon: Icon(Icons.help_outline, color: context.textPrimary),
@@ -133,7 +138,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
           Expanded(
             child: walletState.hasError
                 ? WalletErrorState(
-                    message: walletState.error.toString(),
+                    message: strings.errorUnknown,
                     onRetry: () => _loadWallet(user.id),
                   )
                 : walletState.isLoading
@@ -200,18 +205,24 @@ class _WalletPageState extends ConsumerState<WalletPage>
         .startConnectOnboarding();
     if (!mounted) return;
     result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
+      (failure) => AppSnackbar.handleFailure(context, failure),
       _openExternal,
     );
   }
 
   Future<void> _openDashboard() async {
+    final stepUpToken = await StepUpAuthenticator.authorize(
+      context,
+      ref,
+      purpose: 'connect_dashboard',
+    );
+    if (stepUpToken == null || !mounted) return;
     final result = await ref
         .read(walletRepositoryProvider)
-        .getConnectDashboardLink();
+        .getConnectDashboardLink(stepUpToken: stepUpToken);
     if (!mounted) return;
     result.fold(
-      (failure) => AppSnackbar.error(context, failure.message),
+      (failure) => AppSnackbar.handleFailure(context, failure),
       _openExternal,
     );
   }
@@ -221,7 +232,7 @@ class _WalletPageState extends ConsumerState<WalletPage>
     if (uri == null) return;
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && mounted) {
-      AppSnackbar.error(context, 'Não foi possível abrir o Stripe.');
+      AppSnackbar.error(context, l10n(context).walletStripeOpenFailed);
       return;
     }
     if (mounted) {

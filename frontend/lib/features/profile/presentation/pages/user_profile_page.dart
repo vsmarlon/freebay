@@ -11,6 +11,8 @@ import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_header.dart';
 import 'package:freebay/features/profile/presentation/widgets/profile_tabs.dart';
+import 'package:freebay/features/profile/data/repositories/profile_repository.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class UserProfilePage extends ConsumerWidget {
   final String userId;
@@ -19,7 +21,6 @@ class UserProfilePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = context.isDark;
     final profileAsync = ref.watch(profileFutureProvider(userId));
 
     return Scaffold(
@@ -29,9 +30,10 @@ class UserProfilePage extends ConsumerWidget {
           children: [
             ShellScrollHeader(
               child: PageHeader(
-                text: 'PERFIL',
+                text: l10n(context).navProfile,
                 leading: BrutalistIconButton(
                   icon: Icons.arrow_back,
+                  semanticLabel: l10n(context).commonBack,
                   onTap: () => context.pop(),
                 ),
               ),
@@ -39,9 +41,12 @@ class UserProfilePage extends ConsumerWidget {
             Expanded(
               child: profileAsync.when(
                 data: (profileUser) =>
-                    _buildProfileContent(context, ref, isDark, profileUser),
-                loading: () =>
-                    const Center(child: ShimmerBlock(width: 60, height: 60)),
+                    _buildProfileContent(context, ref, profileUser),
+                loading: () => const Center(
+                  child: ShimmerScope(
+                    child: ShimmerBlock(width: 60, height: 60),
+                  ),
+                ),
                 error: (error, _) => Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -53,7 +58,7 @@ class UserProfilePage extends ConsumerWidget {
                       ),
                       Spacing.vMd,
                       Text(
-                        'Erro ao carregar perfil',
+                        l10n(context).profileLoadFailed,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -62,12 +67,8 @@ class UserProfilePage extends ConsumerWidget {
                       ),
                       Spacing.vSm,
                       Text(
-                        'Não foi possível carregar as informações do usuário. Tente novamente.',
-                        style: TextStyle(
-                          color: isDark
-                              ? context.textSecondary
-                              : context.textSecondary,
-                        ),
+                        l10n(context).commonTryAgainLater,
+                        style: TextStyle(color: context.textSecondary),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -84,7 +85,6 @@ class UserProfilePage extends ConsumerWidget {
   Widget _buildProfileContent(
     BuildContext context,
     WidgetRef ref,
-    bool isDark,
     UserEntity user,
   ) {
     final authState = ref.watch(authControllerProvider);
@@ -131,8 +131,8 @@ class UserProfilePage extends ConsumerWidget {
                         width: double.infinity,
                         child: AppButton(
                           label: (status?.isFollowing ?? false)
-                              ? 'Seguindo'
-                              : 'Seguir',
+                              ? l10n(context).profileUnfollow
+                              : l10n(context).profileFollow,
                           variant: (status?.isFollowing ?? false)
                               ? AppButtonVariant.ghost
                               : AppButtonVariant.primary,
@@ -150,15 +150,23 @@ class UserProfilePage extends ConsumerWidget {
                     ),
                     loading: () => const Padding(
                       padding: EdgeInsets.only(bottom: 16),
-                      child: ShimmerBlock(height: 48),
+                      child: ShimmerScope(child: ShimmerBlock(height: 48)),
                     ),
                     error: (_, _) => const SizedBox.shrink(),
                   )
                 else if (!isOwnProfile)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildFollowPrompt(context, isDark),
+                    child: _buildFollowPrompt(context),
                   ),
+                if (!isOwnProfile && currentUser != null) ...[
+                  AppButton(
+                    label: l10n(context).profileReportUser,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => _reportUser(context, user.id),
+                  ),
+                  Spacing.vMd,
+                ],
                 if (user.reputationScore > 0)
                   Center(
                     child: GestureDetector(
@@ -188,7 +196,7 @@ class UserProfilePage extends ConsumerWidget {
                             ),
                             Spacing.hSm,
                             Text(
-                              '${user.reputationScore.toStringAsFixed(1)} (${user.totalReviews} ${user.totalReviews == 1 ? 'avaliação' : 'avaliações'})',
+                              '${user.reputationScore.toStringAsFixed(1)} · ${l10n(context).profileReviewCount(user.totalReviews)}',
                               style: TextStyle(
                                 fontFamily: AppTypography.headlineFontFamily,
                                 fontSize: 14,
@@ -212,7 +220,7 @@ class UserProfilePage extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Text(
-                        'Sem avaliações ainda',
+                        l10n(context).profileNoReviews,
                         style: TextStyle(color: context.textSecondary),
                       ),
                     ),
@@ -226,11 +234,46 @@ class UserProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildFollowPrompt(BuildContext context, bool isDark) {
+  Future<void> _reportUser(BuildContext context, String userId) async {
+    final strings = l10n(context);
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(strings.profileReportUser),
+        children: [
+          for (final (value, label) in [
+            ('SPAM', strings.profileReportSpam),
+            ('FRAUD', strings.profileReportFraud),
+            ('HARASSMENT', strings.profileReportHarassment),
+            ('FAKE_ACCOUNT', strings.profileReportFakeAccount),
+            ('IMPERSONATING', strings.profileReportImpersonation),
+            ('NUDITY', strings.profileReportNudity),
+            ('BLACKMAIL', strings.profileReportBlackmail),
+            ('FALSE_ADVERTISING', strings.profileReportFalseAdvertising),
+            ('OTHER', strings.profileReportOther),
+          ])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, value),
+              child: Text(label),
+            ),
+        ],
+      ),
+    );
+    if (reason == null || !context.mounted) return;
+
+    final result = await ProfileRepository().reportUser(userId, reason: reason);
+    if (!context.mounted) return;
+    result.fold(
+      (failure) => AppSnackbar.handleFailure(context, failure),
+      (_) => AppSnackbar.success(context, strings.profileReportSubmitted),
+    );
+  }
+
+  Widget _buildFollowPrompt(BuildContext context) {
     return Column(
       children: [
         Text(
-          'Entre para seguir este usuário',
+          l10n(context).profileLoginToFollow,
           style: TextStyle(color: context.textSecondary),
         ),
         Spacing.vMd,
@@ -245,10 +288,10 @@ class UserProfilePage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.primaryContainer),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'Entrar',
-                    style: TextStyle(
+                    l10n(context).authLogin,
+                    style: const TextStyle(
                       color: AppColors.primaryContainer,
                       fontWeight: FontWeight.w700,
                     ),
@@ -258,7 +301,7 @@ class UserProfilePage extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
             AppButton(
-              label: 'Cadastrar',
+              label: l10n(context).authSignUp,
               onPressed: () => context.push(AppRoutes.register),
             ),
           ],

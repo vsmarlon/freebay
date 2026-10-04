@@ -15,6 +15,8 @@ import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
 import 'package:freebay/features/product/presentation/widgets/escrow_trust_banner.dart';
 import 'package:freebay/features/product/presentation/widgets/product_detail_bottom_sheet.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/utils/media_url.dart';
 
 class ProductDetailPage extends ConsumerWidget {
   final String productId;
@@ -23,6 +25,7 @@ class ProductDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final productAsync = ref.watch(productByIdProvider(productId));
 
     return Scaffold(
@@ -40,7 +43,7 @@ class ProductDetailPage extends ConsumerWidget {
           ),
         ),
         error: (err, _) => EmptyState.error(
-          message: 'Erro ao carregar produto',
+          message: strings.productLoadError,
           onRetry: () => ref.invalidate(productByIdProvider(productId)),
         ),
       ),
@@ -52,6 +55,7 @@ class ProductDetailPage extends ConsumerWidget {
     WidgetRef ref,
     ProductEntity product,
   ) {
+    final strings = l10n(context);
     final priceFormatted = CurrencyUtils.formatCents(product.price);
     final isFavorited =
         ref.watch(isFavoritedProvider(product.id)).value ??
@@ -73,23 +77,29 @@ class ProductDetailPage extends ConsumerWidget {
                       onTap: () => unawaited(
                         showAppImageViewer(context, product.imageUrl!),
                       ),
-                      child: CachedNetworkImage(
-                        imageUrl: product.imageUrl!,
-                        fit: BoxFit.cover,
-                        memCacheWidth:
-                            (MediaQuery.sizeOf(context).width *
-                                    MediaQuery.devicePixelRatioOf(context))
-                                .ceil()
-                                .clamp(1, 1080),
-                        placeholder: (context, url) =>
-                            Container(color: context.surfaceMidColor),
-                        errorWidget: (context, url, error) => Container(
-                          color: context.surfaceMidColor,
-                          child: const Center(
-                            child: Icon(
-                              Icons.image,
-                              size: 64,
-                              color: AppColors.mediumGray,
+                      child: Hero(
+                        tag: 'product-image-${product.id}',
+                        child: CachedNetworkImage(
+                          imageUrl: product.imageUrl!,
+                          fit: BoxFit.cover,
+                          httpHeaders: mediaAuthHeaders(product.imageUrl!),
+                          memCacheWidth:
+                              (MediaQuery.sizeOf(context).width *
+                                      MediaQuery.devicePixelRatioOf(context))
+                                  .ceil()
+                                  .clamp(1, 1080),
+                          placeholder: (context, url) => BlurHashPlaceholder(
+                            hash: product.imageBlurHash,
+                            fallback: Container(color: context.surfaceMidColor),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: context.surfaceMidColor,
+                            child: const Center(
+                              child: Icon(
+                                Icons.image,
+                                size: 64,
+                                color: AppColors.mediumGray,
+                              ),
                             ),
                           ),
                         ),
@@ -108,43 +118,44 @@ class ProductDetailPage extends ConsumerWidget {
             ),
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
+              semanticLabel: strings.commonBack,
               onTap: () => Navigator.pop(context),
               iconColor: context.textPrimary,
               borderColor: context.borderColor,
             ),
             actions: [
-              Semantics(
-                label: 'Carrinho, $cartItemCount itens',
-                button: true,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    BrutalistIconButton(
-                      icon: Icons.shopping_cart_outlined,
-                      borderColor: context.borderColor,
-                      onTap: () => context.push(AppRoutes.cart),
-                    ),
-                    if (cartItemCount > 0)
-                      Positioned(
-                        top: -5,
-                        right: -5,
-                        child: Container(
-                          color: AppColors.primaryContainer,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text(
-                            '$cartItemCount',
-                            style: AppTypography.labelSmall.copyWith(
-                              color: Colors.white,
-                            ),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  BrutalistIconButton(
+                    icon: Icons.shopping_cart_outlined,
+                    semanticLabel: strings.productCartLabel(cartItemCount),
+                    borderColor: context.borderColor,
+                    onTap: () => context.push(AppRoutes.cart),
+                  ),
+                  if (cartItemCount > 0)
+                    Positioned(
+                      top: -5,
+                      right: -5,
+                      child: Container(
+                        color: AppColors.primaryContainer,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          '$cartItemCount',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
               const SizedBox(width: 8),
               BrutalistIconButton(
                 icon: isFavorited ? Icons.favorite : Icons.favorite_border,
+                semanticLabel: isFavorited
+                    ? strings.productFavoriteRemove
+                    : strings.productFavoriteAdd,
                 iconColor: isFavorited ? AppColors.error : context.textPrimary,
                 borderColor: context.borderColor,
                 onTap: () async {
@@ -157,11 +168,14 @@ class ProductDetailPage extends ConsumerWidget {
               const SizedBox(width: 8),
               BrutalistIconButton(
                 icon: Icons.share,
+                semanticLabel: strings.commonShare,
                 borderColor: context.borderColor,
                 onTap: () => SharePlus.instance.share(
                   ShareParams(
-                    text:
-                        'Confira: ${product.title}\nhttps://freebay.app/products/${product.id}',
+                    text: strings.productShareMessage(
+                      product.title,
+                      'https://freebay.app/products/${product.id}',
+                    ),
                   ),
                 ),
               ),
@@ -212,8 +226,8 @@ class ProductDetailPage extends ConsumerWidget {
                         ),
                         child: Text(
                           product.condition == ProductCondition.isNew
-                              ? 'NOVO'
-                              : 'USADO',
+                              ? strings.productConditionNew
+                              : strings.productConditionUsed,
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 11,
@@ -241,26 +255,31 @@ class ProductDetailPage extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        UserAvatar(imageUrl: product.seller?.avatarUrl),
+                        UserAvatar(
+                          imageUrl: product.seller?.avatarUrl,
+                          blurHash: product.seller?.avatarBlurHash,
+                        ),
                         Spacing.hSm,
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                product.seller?.displayName ?? 'Vendedor',
+                                product.seller?.displayName ??
+                                    strings.productSeller,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: context.textPrimary,
                                 ),
                               ),
-                              Text(
-                                '@${product.seller?.username ?? 'usuario'}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: context.textSecondary,
+                              if (product.seller?.username?.isNotEmpty == true)
+                                Text(
+                                  '@${product.seller!.username!}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: context.textSecondary,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ),
@@ -276,14 +295,14 @@ class ProductDetailPage extends ConsumerWidget {
                               Icons.chat_bubble_outline,
                               size: 16,
                             ),
-                            label: const Text('Conversar'),
+                            label: Text(strings.productChatWithSeller),
                           ),
                       ],
                     ),
                   ),
                   Spacing.vMd,
                   Text(
-                    'DESCRIÇÃO',
+                    strings.productDescription.toUpperCase(),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -293,7 +312,7 @@ class ProductDetailPage extends ConsumerWidget {
                   Spacing.vSm,
                   Text(
                     product.description.isEmpty
-                        ? 'Sem descrição.'
+                        ? strings.productNoDescription
                         : product.description,
                     style: TextStyle(
                       fontSize: 14,

@@ -9,7 +9,6 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
 import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
 import 'package:freebay/features/social/presentation/providers/post_details_provider.dart';
 import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
@@ -19,6 +18,7 @@ import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
 import 'package:freebay/features/social/presentation/widgets/post_details_comment_tree.dart';
 import 'package:freebay/features/social/presentation/widgets/post_details_post_section.dart';
 import 'package:freebay/features/social/presentation/widgets/post_details_skeleton.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostDetailsPage extends ConsumerStatefulWidget {
   final String postId;
@@ -95,12 +95,13 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(postDetailsProvider(widget.postId));
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
         child: Column(
           children: [
-            const PageHeader(text: 'POST'),
+            PageHeader(text: strings.feedPostTitle),
             BrutalistBreadcrumb(items: context.breadcrumbs),
             Expanded(child: _buildBody(context, state)),
           ],
@@ -119,13 +120,29 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
       );
     }
     if (state.post == null) {
-      return const Center(child: Text('Post não encontrado'));
+      return Center(child: Text(l10n(context).feedPostNotFound));
     }
 
     final post = state.post!;
-    final likes = ref.watch(likesProvider);
-    final saves = ref.watch(savesProvider);
-    final reposts = ref.watch(repostsProvider);
+    final likes = ref.watch(
+      likesProvider.select(
+        (state) => (
+          isLiked: state.getLikedOverride(post.id),
+          count: state.getCountOverride(post.id),
+        ),
+      ),
+    );
+    final isSaved = ref.watch(
+      savesProvider.select((state) => state.getSavedOverride(post.id)),
+    );
+    final reposts = ref.watch(
+      repostsProvider.select(
+        (state) => (
+          isReposted: state.getRepostedOverride(post.id),
+          count: state.getCountOverride(post.id),
+        ),
+      ),
+    );
     final tree = _buildTree(state.comments);
     return RefreshIndicator(
       onRefresh: () =>
@@ -135,13 +152,11 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           SliverToBoxAdapter(
             child: PostDetailsPostSection(
               post: post,
-              likesCount: likes.getCountOverride(post.id) ?? post.likesCount,
-              sharesCount:
-                  reposts.getCountOverride(post.id) ?? post.sharesCount,
-              isLiked: likes.getLikedOverride(post.id) ?? post.isLiked,
-              isSaved: saves.getSavedOverride(post.id) ?? post.isSaved,
-              isReposted:
-                  reposts.getRepostedOverride(post.id) ?? post.hasReposted,
+              likesCount: likes.count ?? post.likesCount,
+              sharesCount: reposts.count ?? post.sharesCount,
+              isLiked: likes.isLiked ?? post.isLiked,
+              isSaved: isSaved ?? post.isSaved,
+              isReposted: reposts.isReposted ?? post.hasReposted,
               onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
               onLike: () => _toggleLike(post.id, post.isLiked, post.likesCount),
               onSave: () => _toggleSave(post.id, post.isSaved),
@@ -155,7 +170,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                'Comentários',
+                l10n(context).feedComments,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -175,19 +190,19 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
             ),
           ),
           if (state.comments.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
                 icon: Icons.chat_bubble_outline,
-                title: 'NENHUM COMENTÁRIO',
-                subtitle: 'Seja o primeiro a comentar!',
+                title: l10n(context).feedNoComments,
+                subtitle: l10n(context).feedFirstComment,
               ),
             )
           else
             SliverToBoxAdapter(
               child: PostDetailsCommentTree(
                 tree: tree,
-                height: MediaQuery.of(context).size.height * 0.6,
+                height: MediaQuery.sizeOf(context).height * 0.6,
                 itemBuilder: _buildCommentNode,
               ),
             ),
@@ -199,28 +214,18 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   Future<bool> _toggleLike(String id, bool initial, int count) async {
     final user = ref.read(authControllerProvider).value;
     if (user == null) {
-      if (mounted) AppSnackbar.warning(context, 'Faça login para curtir');
+      if (mounted) AppSnackbar.warning(context, l10n(context).feedLoginToLike);
       return false;
     }
     final success = await ref
         .read(likesProvider.notifier)
         .toggleLike(id, initialIsLiked: initial, initialCount: count);
-    if (success) {
-      final next = ref.read(likesProvider);
-      ref
-          .read(feedProvider.notifier)
-          .updatePostLike(
-            id,
-            next.getLikedOverride(id) ?? initial,
-            next.getCountOverride(id) ?? count,
-          );
-    }
     return success;
   }
 
   Future<bool> _toggleSave(String id, bool initial) async {
     if (ref.read(authControllerProvider).value == null) {
-      if (mounted) AppSnackbar.warning(context, 'Faça login para salvar');
+      if (mounted) AppSnackbar.warning(context, l10n(context).feedLoginToSave);
       return false;
     }
     return ref
@@ -230,33 +235,29 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
 
   Future<bool> _toggleRepost(String id, bool initial, int count) async {
     if (ref.read(authControllerProvider).value == null) {
-      if (mounted) AppSnackbar.warning(context, 'Faça login para repostar');
+      if (mounted) {
+        AppSnackbar.warning(context, l10n(context).feedLoginToRepost);
+      }
       return false;
     }
     final success = await ref
         .read(repostsProvider.notifier)
         .toggleRepost(id, initialIsReposted: initial, initialCount: count);
-    if (success) {
-      ref
-          .read(feedProvider.notifier)
-          .updateSharesCount(
-            id,
-            ref.read(repostsProvider).getCountOverride(id) ?? count,
-          );
-    }
     return success;
   }
 
   Future<void> _sharePost(BuildContext context, String id) async {
     if (ref.read(authControllerProvider).value == null) {
-      if (mounted) AppSnackbar.warning(context, 'Faça login para compartilhar');
+      if (mounted) {
+        AppSnackbar.warning(context, l10n(context).feedLoginToShare);
+      }
       return;
     }
     final result = await ref.read(socialRepositoryProvider).sharePost(id, null);
     if (!context.mounted) return;
     result.fold(
-      (_) => AppSnackbar.error(context, 'Não foi possível compartilhar'),
-      (_) => AppSnackbar.success(context, 'Compartilhado no seu perfil'),
+      (_) => AppSnackbar.error(context, l10n(context).feedShareFailed),
+      (_) => AppSnackbar.success(context, l10n(context).feedShareSuccess),
     );
   }
 
@@ -274,7 +275,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
           onLike: () async {
             if (ref.read(authControllerProvider).value == null) {
               if (context.mounted) {
-                AppSnackbar.warning(context, 'Faça login para curtir');
+                AppSnackbar.warning(context, l10n(context).feedLoginToLike);
               }
               return;
             }
@@ -298,7 +299,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               focusNode: _replyFocusNode,
               isSending: _isReplySending,
               onSend: _sendComment,
-              hint: 'Respondendo...',
+              hint: l10n(context).feedReplyingHint,
               compact: true,
             ),
           ),

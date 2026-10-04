@@ -1,19 +1,11 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:freebay/shared/config/app_config.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const base = 'https://api.freebay.example.com';
-
-  setUp(() {
-    dotenv.testLoad(fileInput: 'API_BASE_URL=$base');
-  });
-
-  tearDown(() {
-    dotenv.clean();
-  });
+  final base = AppConfig.apiBaseUrl;
 
   group('mediaUrl', () {
     test('prefixes the api base url onto an upload path', () {

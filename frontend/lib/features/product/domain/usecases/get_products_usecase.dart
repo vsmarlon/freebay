@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/templates/usecase.dart';
@@ -56,8 +57,9 @@ class GetProductsUsecase
 
   @override
   UsecaseResponse<Failure, ProductPageResult> call(
-    GetProductsParams params,
-  ) async {
+    GetProductsParams params, {
+    CancelToken? cancelToken,
+  }) async {
     return await _repository.getProducts(
       search: params.search,
       category: params.category,
@@ -66,6 +68,7 @@ class GetProductsUsecase
       cursor: params.cursor,
       condition: params.condition,
       sort: params.sort.wireValue,
+      cancelToken: cancelToken,
     );
   }
 }

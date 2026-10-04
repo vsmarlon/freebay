@@ -19,6 +19,7 @@ import {
   VerifyPhoneUseCase,
   GetProfileUseCase,
   UpdateProfileUseCase,
+  RequestProfileVerificationUseCase,
   UpdateFcmTokenUseCase,
   RequestAccountDeletionUseCase,
   CancelAccountDeletionUseCase,
@@ -30,9 +31,15 @@ import {
   PatchAuth,
   DeleteAuth,
   CurrentUserId,
+  CurrentUser,
+  StrictOrigin,
 } from "@/shared/decorators";
+import { AuthUser, JwtTokenType } from '@/shared/core/types';
+import { AllowTokenTypes } from '@/modules/auth/guards/token-types.decorator';
+import { WebCookieAuth } from '@/modules/auth/guards/web-cookie-auth.decorator';
 import {
   UpdateProfileDTO,
+  RequestProfileVerificationDTO,
   UpdateFcmTokenDTO,
   RegisterPhoneDTO,
   VerifyPhoneDTO,
@@ -47,7 +54,8 @@ import {
   toUserResponse,
 } from "./dtos/user-response.class";
 import { validateImageFile } from "@/shared/utils/image-upload.utils";
-import { saveUpload } from "@/shared/utils/file.utils";
+import { deleteUpload, saveUpload } from "@/shared/utils/file.utils";
+import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
 
 @ApiTags("Users")
 @Controller("users")
@@ -59,6 +67,7 @@ export class UsersAccountController {
     private readonly verifyPhoneUseCase: VerifyPhoneUseCase,
     private readonly getProfileUseCase: GetProfileUseCase,
     private readonly updateProfileUseCase: UpdateProfileUseCase,
+    private readonly requestProfileVerification: RequestProfileVerificationUseCase,
     private readonly updateFcmTokenUseCase: UpdateFcmTokenUseCase,
     private readonly requestAccountDeletionUseCase: RequestAccountDeletionUseCase,
     private readonly cancelAccountDeletionUseCase: CancelAccountDeletionUseCase,
@@ -119,9 +128,9 @@ export class UsersAccountController {
   }
 
   @GetAuth("me/export", {
-    summary: "Export all personal data",
+    summary: "Export selected account data",
     description:
-      "Returns every record tied to the account as a single JSON document (LGPD data portability).",
+      "Returns the listed profile, listing, social, order, payment, wallet, message and notification fields. The response includes explicit scope and exclusions; it is not a complete archive of all server-held data.",
     throttle: { limit: 3, ttl: 3600000 },
     errors: [{ status: 404, description: "User not found" }],
   })
@@ -147,15 +156,36 @@ export class UsersAccountController {
     return this.requestAccountDeletionUseCase.execute({ userId });
   }
 
+  @DeleteAuth('me/web', {
+    summary: 'Request account deletion from the public web flow',
+    responseType: AccountDeletionResponse,
+    errors: [{ status: 409, description: 'Account deletion is blocked by open orders, disputes, wallet balance, or Apple revocation' }],
+  })
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  @WebCookieAuth()
+  @StrictOrigin()
+  async requestWebAccountDeletion(@CurrentUser() user: AuthUser) {
+    return this.requestAccountDeletionUseCase.execute({ userId: user.userId });
+  }
+
   @PatchAuth("me/deletion/cancel", {
     summary: "Cancel a pending account deletion",
     errors: [
       { status: 400, description: "No pending deletion" },
+      { status: 401, description: "A fresh authenticated session is required" },
       { status: 404, description: "User not found" },
     ],
   })
-  async cancelAccountDeletion(@CurrentUserId() userId: string) {
-    return this.cancelAccountDeletionUseCase.execute({ userId });
+  async cancelAccountDeletion(@CurrentUser() user: AuthUser) {
+    return this.cancelAccountDeletionUseCase.execute({ userId: user.userId, authenticatedAtMs: user.authenticatedAtMs });
+  }
+
+  @PatchAuth('me/web/deletion/cancel', { summary: 'Cancel deletion using a fresh same-origin web session' })
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  @WebCookieAuth()
+  @StrictOrigin()
+  async cancelWebAccountDeletion(@CurrentUser() user: AuthUser) {
+    return this.cancelAccountDeletionUseCase.execute({ userId: user.userId, authenticatedAtMs: user.authenticatedAtMs });
   }
 
   @PatchAuth("me", {
@@ -169,6 +199,14 @@ export class UsersAccountController {
     @Body() body: UpdateProfileDTO,
   ) {
     return this.updateProfileUseCase.execute({ userId, ...body });
+  }
+
+  @PostAuth('me/profile-verification', { summary: 'Request email code to authorize a profile document change', bodyType: RequestProfileVerificationDTO, httpCode: HttpStatus.OK })
+  async requestProfileVerificationCode(
+    @CurrentUserId() userId: string,
+    @Body() body: RequestProfileVerificationDTO,
+  ) {
+    return this.requestProfileVerification.request({ userId, cpf: body.cpf, locale: body.locale ?? 'pt-BR' });
   }
 
   @PostAuth("me/avatar", {
@@ -265,16 +303,29 @@ export class UsersAccountController {
     field: "avatar" | "banner",
     maxSizeBytes: number,
   ) {
+    if (file) {
+      const mimeError = validateImageFile(file, maxSizeBytes);
+      if (mimeError) throw new BadRequestException(mimeError);
+    }
     if (!file) throw new BadRequestException("Imagem é obrigatória");
-    const mimeError = validateImageFile(file, maxSizeBytes);
-    if (mimeError) throw new BadRequestException(mimeError);
-
     const imageUrl = saveUpload(file, field);
-    const updateResult =
-      field === "avatar"
-        ? await this.userRepository.update(userId, { avatarUrl: imageUrl })
+
+    const blurHash = field === 'avatar'
+      ? await generateImageBlurHash(file.buffer)
+      : undefined;
+    try {
+      const updateResult = field === "avatar"
+        ? await this.userRepository.update(userId, {
+            avatarUrl: imageUrl,
+            avatarBlurHash: blurHash ?? null,
+          })
         : await this.userRepository.update(userId, { bannerUrl: imageUrl });
-    if (updateResult.isLeft()) return updateResult;
-    return toUserResponse(updateResult.value, undefined, true);
+      if (updateResult.isLeft()) deleteUpload(imageUrl);
+      if (updateResult.isLeft()) return updateResult;
+      return toUserResponse(updateResult.value, undefined, true);
+    } catch (error) {
+      deleteUpload(imageUrl);
+      throw error;
+    }
   }
 }

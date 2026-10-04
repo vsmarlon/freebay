@@ -12,6 +12,7 @@ import 'package:freebay/features/social/presentation/providers/feed_provider.dar
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/shared/utils/media_url.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 final userPostsProvider = FutureProvider.family<List<PostEntity>, String>((
   ref,
@@ -29,6 +30,7 @@ class MyPostsPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final postsAsync = ref.watch(userPostsProvider(userId));
     final hiddenPosts = useState(<String>{});
     final currentUserId = ref.watch(authControllerProvider).value?.id;
@@ -38,9 +40,10 @@ class MyPostsPage extends HookConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: 'MEUS POSTS',
+            text: strings.feedMyPostsTitle,
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
             ),
             actions: [
@@ -63,10 +66,10 @@ class MyPostsPage extends HookConsumerWidget {
                       child: visiblePosts.isEmpty
                           ? EmptyState(
                               icon: Icons.grid_view,
-                              title: 'NENHUM POST AINDA',
-                              subtitle: 'Crie seu primeiro post!',
+                              title: strings.profileNoPosts,
+                              subtitle: strings.feedNoPostsBody,
                               action: AppButton(
-                                label: 'Criar post',
+                                label: strings.feedCreatePost,
                                 icon: Icons.add,
                                 onPressed: () =>
                                     context.push(AppRoutes.createPost),
@@ -153,7 +156,7 @@ class MyPostsPage extends HookConsumerWidget {
                     ),
                     Spacing.vMd,
                     Text(
-                      'Erro ao carregar posts',
+                      strings.commonError,
                       style: TextStyle(color: context.textPrimary),
                     ),
                   ],
@@ -172,21 +175,22 @@ class MyPostsPage extends HookConsumerWidget {
     PostEntity post,
     ValueNotifier<Set<String>> hiddenPosts,
   ) {
+    final strings = l10n(context);
     final repository = ref.read(socialRepositoryProvider);
     final container = ProviderScope.containerOf(context, listen: false);
     final messenger = ScaffoldMessenger.of(context);
     showBrutalistSheet(
       context: context,
-      title: 'PUBLICAÇÃO',
+      title: strings.feedPostTitle.toUpperCase(),
       builder: (sheetContext) => AppButton(
-        label: 'Excluir post',
+        label: strings.feedDeletePost,
         variant: AppButtonVariant.danger,
         onPressed: () {
           Navigator.pop(sheetContext);
           hiddenPosts.value = {...hiddenPosts.value, post.id};
           AppSnackbar.undoable(
             context,
-            message: 'Post será excluído.',
+            message: strings.feedPostDeletePending,
             onUndo: () {
               if (context.mounted) {
                 hiddenPosts.value = {...hiddenPosts.value}..remove(post.id);
@@ -205,7 +209,15 @@ class MyPostsPage extends HookConsumerWidget {
                 },
                 (_) {
                   container.invalidate(userPostsProvider(userId));
-                  container.invalidate(profileTimelineProvider(userId));
+                  container.invalidate(
+                    profileTimelineProvider(
+                      userId,
+                      kind: post.type == PostType.product
+                          ? 'products'
+                          : 'posts',
+                      viewerId: userId,
+                    ),
+                  );
                   container.read(feedProvider.notifier).removePost(post.id);
                 },
               );
@@ -295,14 +307,18 @@ class MyPostsPage extends HookConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppColors.primaryContainer.withAlpha(204),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.repeat, size: 10, color: AppColors.onPrimary),
-                    SizedBox(width: 2),
+                    const Icon(
+                      Icons.repeat,
+                      size: 10,
+                      color: AppColors.onPrimary,
+                    ),
+                    const SizedBox(width: 2),
                     Text(
-                      'Reposted',
-                      style: TextStyle(
+                      l10n(context).feedRepostedBadge,
+                      style: const TextStyle(
                         fontSize: 8,
                         fontWeight: FontWeight.bold,
                         color: AppColors.onPrimary,

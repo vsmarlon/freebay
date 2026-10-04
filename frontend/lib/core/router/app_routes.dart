@@ -41,6 +41,7 @@ class AppRoutes {
   static const String profilePurchases = '/profile/purchases';
   static const String profilePayment = '/profile/payment';
   static const String profileEdit = '/profile/edit';
+  static const String profilePrivacy = '/profile/privacy';
   static const String profileFollowers = '/profile/followers';
   static const String profileFollowing = '/profile/following';
   static const String cart = '/cart';

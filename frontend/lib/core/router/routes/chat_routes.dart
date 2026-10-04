@@ -5,8 +5,7 @@ import 'package:freebay/features/chat/presentation/pages/new_chat_page.dart';
 import 'package:freebay/features/chat/presentation/pages/archived_chats_page.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
 import 'package:freebay/features/chat/presentation/pages/conversation_details_page.dart';
-import 'package:freebay/features/chat/presentation/pages/image_editor_page.dart';
-import 'package:freebay/features/chat/presentation/widgets/image_editor_models.dart';
+import 'package:freebay/features/media_editor/media_editor.dart';
 import 'dart:typed_data';
 
 final List<RouteBase> chatRoutes = [

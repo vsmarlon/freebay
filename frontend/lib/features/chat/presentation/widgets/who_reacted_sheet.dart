@@ -55,66 +55,62 @@ class _WhoReactedSheetState extends State<WhoReactedSheet> {
       orElse: () => activeReactions.first,
     );
 
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Emoji tab row
-          Row(
-            children: activeReactions
-                .map(
-                  (r) => GestureDetector(
-                    onTap: () => setState(() => _selected = r.emoji),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      color: _selected == r.emoji
-                          ? AppColors.surfaceContainerHighest
-                          : Colors.transparent,
-                      child: Text(
-                        '${r.emoji} ${r.count}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Emoji tab row
+        Row(
+          children: activeReactions
+              .map(
+                (r) => GestureDetector(
+                  onTap: () => setState(() => _selected = r.emoji),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    color: _selected == r.emoji
+                        ? AppColors.surfaceContainerHighest
+                        : Colors.transparent,
+                    child: Text(
+                      '${r.emoji} ${r.count}',
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 12),
-          // User list
-          ...current.userIds.map(
-            (uid) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    color: AppColors.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.person,
-                      color: context.textSecondary,
-                      size: 20,
-                    ),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 12),
+        // User list
+        ...current.userIds.map(
+          (uid) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  color: AppColors.surfaceContainerHighest,
+                  child: Icon(
+                    Icons.person,
+                    color: context.textSecondary,
+                    size: 20,
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _userNames[uid] ?? 'Carregando...',
-                    style: const TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 13,
-                    ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  _userNames[uid] ?? 'Carregando...',
+                  style: const TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: 13,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

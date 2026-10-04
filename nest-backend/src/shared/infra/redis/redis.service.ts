@@ -53,4 +53,10 @@ export class RedisService implements OnModuleDestroy {
   async ping(): Promise<string> {
     return this.redis.ping();
   }
+
+  async eval(script: string, keys: string[], args: string[]): Promise<number> {
+    const result: unknown = await this.redis.eval(script, keys.length, ...keys, ...args);
+    if (typeof result !== 'number') throw new Error('Unexpected Redis script result');
+    return result;
+  }
 }

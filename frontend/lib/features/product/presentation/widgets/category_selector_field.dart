@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/category_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CategorySelectorField extends StatelessWidget {
   final AsyncValue<List<CategoryEntity>> categoriesAsync;
@@ -19,7 +20,7 @@ class CategorySelectorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
+    final strings = l10n(context);
     return categoriesAsync.when(
       data: (categories) => InkWell(
         onTap: () => _showCategoryPicker(
@@ -45,19 +46,17 @@ class CategorySelectorField extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Categoria',
+                      strings.productCategory,
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: isDark
-                            ? AppColors.onPrimaryContainer
-                            : AppColors.primary,
+                        color: context.colors.primary,
                       ),
                     ),
                     Spacing.vXs,
                     Text(
-                      selectedCategory?.name ?? 'Selecionar categoria',
+                      selectedCategory?.name ?? strings.productSelectCategory,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -88,7 +87,7 @@ class CategorySelectorField extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Não foi possível carregar categorias agora.',
+                strings.productCategoriesLoadFailed,
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   color: context.textPrimary,
@@ -97,7 +96,7 @@ class CategorySelectorField extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             AppButton(
-              label: 'Tentar',
+              label: strings.commonRetry,
               size: AppButtonSize.compact,
               onPressed: onRetry,
             ),
@@ -113,10 +112,10 @@ class CategorySelectorField extends StatelessWidget {
     String? selectedCategoryId,
     void Function(String) onSelected,
   ) async {
-    final isDark = context.isDark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     await showBrutalistSheet<void>(
       context: context,
-      title: 'ESCOLHER CATEGORIA',
+      title: l10n(context).productChooseCategory,
       builder: (ctx) {
         return ListView.separated(
           shrinkWrap: true,

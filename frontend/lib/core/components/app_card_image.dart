@@ -1,13 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:freebay/core/components/blur_hash_placeholder.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 
 /// Product image for [AppCard] with a branded placeholder fallback.
 class AppCardImage extends StatelessWidget {
-  const AppCardImage({super.key, required this.imageUrl, required this.height});
+  const AppCardImage({
+    super.key,
+    required this.imageUrl,
+    required this.height,
+    this.blurHash,
+  });
 
   final String? imageUrl;
   final double height;
+  final String? blurHash;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +29,10 @@ class AppCardImage extends StatelessWidget {
       fit: BoxFit.cover,
       memCacheWidth: 400,
       memCacheHeight: 400,
-      placeholder: (context, url) => _AppCardPlaceholder(height: height),
+      placeholder: (context, url) => BlurHashPlaceholder(
+        hash: blurHash,
+        fallback: _AppCardPlaceholder(height: height),
+      ),
       errorWidget: (context, url, error) => _AppCardPlaceholder(height: height),
     );
   }

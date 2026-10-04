@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ChatSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -23,6 +24,7 @@ class ChatSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       padding: const EdgeInsets.all(16),
       color: context.bgColor,
@@ -33,7 +35,7 @@ class ChatSearchBar extends StatelessWidget {
               controller: controller,
               onChanged: onChanged,
               decoration: InputDecoration(
-                hintText: 'Buscar conversas...',
+                hintText: strings.chatSearchHint,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: hasQuery
                     ? IconButton(
@@ -56,12 +58,14 @@ class ChatSearchBar extends StatelessWidget {
           Spacing.hSm,
           BrutalistIconButton(
             icon: Icons.archive,
+            semanticLabel: strings.chatArchivedTitle,
             size: 48,
             onTap: onArchiveTap,
           ),
           Spacing.hSm,
           BrutalistIconButton(
             icon: Icons.edit,
+            semanticLabel: strings.chatNewConversation,
             size: 48,
             iconColor: AppColors.onPrimary,
             gradient: AppColors.brutalistGradient,

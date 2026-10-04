@@ -17,7 +17,8 @@ export class ConsumeMagicLinkUseCase {
 
   async execute(input: ConsumeMagicLinkDTO): Promise<Either<AppError, { user: AuthSessionResponse['user']; tokens: { token: string; refreshToken: string } }>> {
     const tokenHash = createHash('sha256').update(input.token).digest('hex');
-    const consumed = await this.repository.consume(tokenHash, new Date());
+    const deletionPurpose = input.token.startsWith('delete.');
+    const consumed = await this.repository.consume(tokenHash, new Date(), !deletionPurpose);
     if (consumed.isLeft()) return left(consumed.value);
     if (!consumed.value) return left(new InvalidTokenError('Link inválido ou expirado'));
     const session = issueSession(consumed.value, this.sessionTokens);

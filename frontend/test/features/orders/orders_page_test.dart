@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,9 @@ import 'package:freebay/features/orders/presentation/pages/orders_page.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import '../../support/auth_test_doubles.dart';
 
 class _PageRepository implements OrderRepository {
   final responses = <Future<Either<Failure, CursorPage<OrderEntity>>>>[];
@@ -27,8 +31,10 @@ class _PageRepository implements OrderRepository {
   }
 
   @override
-  Future<Either<Failure, OrderEntity>> getOrder(String orderId) =>
-      throw UnimplementedError();
+  Future<Either<Failure, OrderEntity>> getOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => throw UnimplementedError();
 
   @override
   Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) =>
@@ -42,11 +48,14 @@ class _PageRepository implements OrderRepository {
   Future<Either<Failure, String>> cancelOrder(
     String orderId, {
     String? reason,
+    required String stepUpToken,
   }) => throw UnimplementedError();
 
   @override
-  Future<Either<Failure, CanReviewResponse>> canReviewOrder(String orderId) =>
-      throw UnimplementedError();
+  Future<Either<Failure, CanReviewResponse>> canReviewOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => throw UnimplementedError();
 
   @override
   Future<Either<Failure, CursorPage<OrderEntity>>> getMySales({
@@ -79,6 +88,9 @@ Future<void> _pumpStatusFilters(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('pt', 'BR'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: SalesStatusFilters(selected: selected, onChanged: onChanged),
       ),
@@ -137,8 +149,14 @@ void main() {
         ProviderScope(
           overrides: [
             orderRepositoryProvider.overrideWithValue(emptyRepository),
+            authControllerProvider.overrideWith(() => TestAuthController(null)),
           ],
-          child: const MaterialApp(home: OrdersTab(isSeller: true)),
+          child: const MaterialApp(
+            locale: Locale('pt', 'BR'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: OrdersTab(isSeller: true),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -151,8 +169,14 @@ void main() {
         ProviderScope(
           overrides: [
             orderRepositoryProvider.overrideWithValue(emptyRepository),
+            authControllerProvider.overrideWith(() => TestAuthController(null)),
           ],
-          child: const MaterialApp(home: OrdersPage()),
+          child: const MaterialApp(
+            locale: Locale('pt', 'BR'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: OrdersPage(),
+          ),
         ),
       );
       expect(find.text('VENDAS'), findsOneWidget);
@@ -170,8 +194,16 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [orderRepositoryProvider.overrideWithValue(repository)],
-        child: const MaterialApp(home: OrdersPage()),
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: OrdersPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -198,8 +230,16 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [orderRepositoryProvider.overrideWithValue(repository)],
-        child: const MaterialApp(home: OrdersPage(initialTabIndex: 1)),
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: OrdersPage(initialTabIndex: 1),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -236,7 +276,12 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: OrdersTab(isSeller: true)),
+          child: const MaterialApp(
+            locale: Locale('pt', 'BR'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: OrdersTab(isSeller: true),
+          ),
         ),
       );
       await tester.pumpAndSettle();

@@ -1,0 +1,9 @@
+Analyzing 3 items...                                            
+
+  error - The name 'Failure' isn't a type, so it can't be used as a type argument. Try correcting the name to an existing type, or defining a type named 'Failure' - test\features\profile\profile_settings_sheet_test.dart:25:17 - non_type_as_type_argument
+  error - The name 'Failure' isn't a type, so it can't be used as a type argument. Try correcting the name to an existing type, or defining a type named 'Failure' - test\features\profile\profile_settings_sheet_test.dart:30:17 - non_type_as_type_argument
+  error - Undefined class 'CancelToken'. Try changing the name to the name of an existing class, or creating a class with the name 'CancelToken' - test\features\profile\profile_settings_sheet_test.dart:35:5 - undefined_class
+  error - The named parameter 'navigatorContainerBuilder' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'navigatorContainerBuilder' - test\features\profile\profile_settings_sheet_test.dart:52:11 - undefined_named_parameter
+  error - 'ProviderScope' doesn't conform to the bound 'InheritedWidget' of the type parameter 'T'. Try using a type that is or is a subclass of 'InheritedWidget' - test\features\profile\profile_settings_sheet_test.dart:131:50 - type_argument_not_matching_bounds
+
+5 issues found. (ran in 27.6s)

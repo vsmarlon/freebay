@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -13,6 +15,7 @@ import 'package:freebay/features/profile/presentation/providers/profile_timeline
 import 'package:freebay/features/profile/presentation/widgets/profile_settings_sheet.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/suggestions_section.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -43,15 +46,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   Widget build(BuildContext context) {
     super.build(context);
     final authState = ref.watch(authControllerProvider);
+    final strings = l10n(context);
 
     // Auth still loading — show skeleton, not guest view
     if (authState.isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            ShellScrollHeader(child: PageHeader(text: 'PERFIL')),
-            Expanded(
+            ShellScrollHeader(child: PageHeader(text: strings.navProfile)),
+            const Expanded(
               child: SkeletonPage(
                 child: Column(
                   children: [
@@ -73,7 +77,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     }
 
     final userId = authState.value!.id;
-    final profileAsync = ref.watch(profileFutureProvider(userId));
+    final profileAsync = ref.watch(profileFirstPaintProvider('me'));
     final statsAsync = ref.watch(profileStatsProvider);
 
     return Scaffold(
@@ -82,14 +86,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         children: [
           ShellScrollHeader(
             child: PageHeader(
-              text: 'PERFIL',
+              text: strings.navProfile,
               actions: [
                 IconButton(
                   icon: Icon(
                     Icons.add_box_outlined,
                     color: context.textPrimary,
                   ),
-                  tooltip: 'Criar post',
+                  tooltip: strings.feedCreatePost,
                   onPressed: () => context.push(AppRoutes.createPost),
                 ),
                 IconButton(
@@ -97,6 +101,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     Icons.settings_outlined,
                     color: context.textPrimary,
                   ),
+                  tooltip: strings.profileSettings,
                   onPressed: () => showProfileSettingsSheet(context),
                 ),
                 IconButton(
@@ -104,6 +109,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     context.isDark ? Icons.light_mode : Icons.brightness_6,
                     color: context.textPrimary,
                   ),
+                  tooltip: context.isDark
+                      ? strings.profileSwitchToLight
+                      : strings.profileSwitchToDark,
                   onPressed: () {
                     ref.read(themeModeProvider.notifier).toggleTheme();
                   },
@@ -113,17 +121,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           ),
           Expanded(
             child: profileAsync.when(
-              data: (profileUser) {
-                final u = profileUser;
+              data: (firstPaint) {
+                final u = firstPaint.user;
                 return AppRefreshIndicator(
                   onRefresh: () async {
                     for (final kind in ['posts', 'reposts', 'products']) {
                       ref.invalidate(
-                        profileTimelineProvider(userId, kind: kind),
+                        profileTimelineProvider(
+                          userId,
+                          kind: kind,
+                          viewerId: userId,
+                        ),
                       );
                     }
-                    ref.invalidate(profileFutureProvider(userId));
-                    await ref.read(profileFutureProvider(userId).future);
+                    await _refreshProfile();
                   },
                   child: ProfileTabs(
                     user: u,
@@ -142,6 +153,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                           ),
                         ),
                       ),
+                      if (firstPaint.isStale)
+                        SliverToBoxAdapter(
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Container(
+                              color: context.surfaceMidColor,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Spacing.md,
+                                vertical: Spacing.sm,
+                              ),
+                              child: Text(
+                                firstPaint.error == null
+                                    ? l10n(context).profileCacheRefreshing
+                                    : l10n(context).profileCacheRefreshFailed,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: context.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       const SliverToBoxAdapter(child: SizedBox(height: 8)),
                       const SuggestionsSection(),
                     ],
@@ -207,40 +239,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ],
                 ),
               ),
-              error: (err, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: AppColors.error,
-                      ),
-                      Spacing.vMd,
-                      Text(
-                        'Erro ao carregar perfil',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
-                        ),
-                      ),
-                      Spacing.vSm,
-                      const Text(
-                        'Não foi possível carregar suas informações. Verifique sua conexão.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.mediumGray),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (_, _) => EmptyState.error(
+                message: l10n(context).profileLoadError,
+                onRetry: _refreshProfile,
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _refreshProfile() async {
+    final provider = profileFirstPaintProvider('me');
+    final refreshed = Completer<void>();
+    final subscription = ref.listenManual<AsyncValue<ProfileFirstPaint>>(
+      provider,
+      (_, next) {
+        final data = next.asData?.value;
+        if (next.hasError ||
+            (data != null && (!data.isStale || data.error != null))) {
+          if (!refreshed.isCompleted) refreshed.complete();
+        }
+      },
+    );
+    ref.invalidate(provider);
+    try {
+      await refreshed.future;
+    } finally {
+      subscription.close();
+    }
   }
 }

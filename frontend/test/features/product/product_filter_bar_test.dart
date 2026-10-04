@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/presentation/widgets/product_filter_bar.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 void main() {
   testWidgets('applies a changed price range only after tapping Apply', (
@@ -11,6 +12,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
             child: ProductFilterBar(
@@ -47,6 +51,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: SingleChildScrollView(
             child: ProductFilterBar(
@@ -76,6 +83,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ProductFilterBar(
             sort: ProductSort.recent,
@@ -109,10 +119,31 @@ void main() {
       onClear: () {},
     );
 
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: bar)));
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: bar),
+      ),
+    );
     await tester.drag(find.byType(RangeSlider), const Offset(80, 0));
-    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: bar)));
+    await tester.pumpWidget(
+      const MaterialApp(
+        locale: Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox.shrink(),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: bar),
+      ),
+    );
 
     expect(
       tester.widget<RangeSlider>(find.byType(RangeSlider)).values,

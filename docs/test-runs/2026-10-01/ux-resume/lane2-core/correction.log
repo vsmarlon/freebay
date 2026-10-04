@@ -1,0 +1,14 @@
+API inspection (Dart MCP `read_package_uris`):
+- `package:flutter/semantics.dart` re-exports `src/semantics/semantics.dart`.
+- `package:flutter/src/semantics/semantics.dart` imports `Tristate` from `dart:ui` and `SemanticsFlags.isEnabled` has that typed value.
+- Confirmed typed comparison available; no string conversion or deprecated `hasFlag` required.
+
+From frontend, after formatting:
+`dart format --output=none --set-exit-if-changed test/core/components/shimmer_scope_test.dart`
+Exit 0: Formatted 1 file (0 changed) in 0.01 seconds.
+
+`flutter analyze --fatal-infos test/core/components/shimmer_scope_test.dart`
+Exit 0: No issues found! (ran in 2.3s)
+
+`flutter test test/core/components/shimmer_scope_test.dart`
+Exit 0: 6 tests passed, including `icon button is exposed as an accessible button`.

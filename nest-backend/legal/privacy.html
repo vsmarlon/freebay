@@ -45,6 +45,7 @@
   <table>
     <tr><th>Dado</th><th>Quando é coletado</th><th>Por quê</th></tr>
     <tr><td>Nome de exibição, nome de usuário, e-mail e senha</td><td>Cadastro</td><td>Criar e autenticar sua conta</td></tr>
+    <tr><td>Identificador Apple e, quando fornecido, e-mail verificado; credencial de revogação Apple cifrada</td><td>Ao entrar com Apple</td><td>Vincular a autenticação à conta e permitir revogar a autorização Apple durante a exclusão</td></tr>
     <tr><td>CPF ou CNPJ</td><td>Antes da primeira compra ou venda</td><td>Exigência do processador de pagamentos e da legislação fiscal</td></tr>
     <tr><td>Telefone</td><td>Verificação opcional de telefone</td><td>Confirmar que o número é seu, por SMS</td></tr>
     <tr><td>Cidade e estado</td><td>Perfil (opcional)</td><td>Mostrar a região de anúncios e compradores</td></tr>
@@ -88,6 +89,7 @@
     <tr><th>Operador</th><th>Finalidade</th><th>Dados</th></tr>
     <tr><td>Stripe</td><td>Processar pagamentos, repassar valores a vendedores, tratar estornos e disputas</td><td>Nome, e-mail, CPF/CNPJ, valores das transações</td></tr>
     <tr><td>Google Firebase</td><td>Entregar notificações push e login com Google</td><td>Token do dispositivo, identificador da conta Google, e-mail</td></tr>
+    <tr><td>Apple</td><td>Autenticação com Apple</td><td>Dados de autenticação enviados para validar o login e revogar a autorização quando solicitado</td></tr>
     <tr><td>Sentry</td><td>Diagnosticar erros do aplicativo</td><td>Dados técnicos de falha e do dispositivo</td></tr>
     <tr><td>Twilio</td><td>Enviar o código de verificação por SMS</td><td>Número de telefone</td></tr>
     <tr><td>Resend</td><td>Enviar e-mails transacionais</td><td>E-mail</td></tr>
@@ -122,12 +124,17 @@
     <li>opor-se a um tratamento e pedir revisão de decisões automatizadas.</li>
   </ul>
   <p>
-    <strong>Acesso e portabilidade no aplicativo:</strong> abra <em>Perfil → Configurações →
-    Baixar meus dados</em>. Você recebe um arquivo JSON com todo o conteúdo da sua conta.
+    <strong>Exportação disponível no aplicativo:</strong> abra <em>Perfil → Configurações →
+    Baixar meus dados</em>. O JSON lista o escopo incluído e o que fica de fora: projeções de perfil,
+    anúncios, publicações e comentários próprios, pedidos, valores de pagamento/carteira, avaliações,
+    mensagens próprias, notificações, categorias de denúncias, datas de disputas e relações sociais.
+    Não é um arquivo completo de todos os dados ou mídias mantidos pelo serviço; não inclui credenciais,
+    identificadores de provedores, dados de contato de outras pessoas, payloads de pagamento, decisões
+    internas de moderação, evidências privadas de disputas ou registros de acesso.
   </p>
   <p>
     Para os demais pedidos, escreva para
-    <span class="placeholder">PREENCHER: e-mail do encarregado</span>. Respondemos em até 15 dias.
+    <span class="placeholder">PREENCHER: e-mail do encarregado e prazo de resposta confirmados pelo responsável</span>.
   </p>
 
   <h2>7. Exclusão da conta</h2>
@@ -136,21 +143,22 @@
     Excluir conta</em>, ou pela página <a href="/legal/delete-account.html">Excluir minha conta</a>.
   </p>
   <p>
-    O pedido só é aceito quando não há pendências financeiras: nenhum pedido em andamento,
-    nenhuma disputa aberta e saldo zero na carteira. Isso protege você e a outra parte de uma
-    transação interrompida no meio.
+    O pedido só é aceito quando não há pedidos em andamento, disputas abertas ou saldo na carteira.
+    Para contas vinculadas à Apple, o serviço também precisa conseguir revogar a autorização Apple;
+    se não conseguir, o pedido não é aceito e pode ser tentado novamente.
   </p>
   <p>
-    Aceito o pedido, encerramos suas sessões imediatamente e pausamos seus anúncios. Após
-    <strong>30 dias</strong>, apagamos em definitivo seu nome, e-mail, CPF, telefone, foto,
-    capa, biografia, vínculo com o Google, senha, token de notificação e localização, e removemos
-    seguidores, bloqueios, favoritos, carrinho, itens salvos e notificações. Dentro desses 30 dias
-    você pode reativar a conta apenas entrando nela novamente.
+    Aceito o pedido, encerramos as sessões e pausamos os anúncios ativos. A conta entra em uma janela de
+    <strong>30 dias</strong> durante a qual o titular pode cancelar após autenticação recente. Após essa janela,
+    a rotina existente anonimiza campos do perfil, remove identificadores de login Google/Apple e a credencial
+    Apple cifrada, remove algumas relações e oculta publicações, stories e anúncios. Anúncios pausados não são
+    reativados automaticamente ao cancelar. Esse processo não apaga todos os registros, mensagens ou arquivos
+    de mídia associados à conta.
   </p>
   <p>
-    Registros de pedidos, transações e movimentações da carteira <strong>são mantidos</strong>,
-    já desvinculados de você, porque são o registro fiscal e contábil da transação e também o
-    histórico da outra parte — hipótese prevista no art. 16, I e II da LGPD.
+    O sistema mantém registros de pedidos, transações e movimentações da carteira após a anonimização do
+    perfil. O prazo aplicável e a base legal para cada categoria precisam ser validados pelo responsável;
+    este texto não afirma que todos esses registros estejam totalmente desvinculados de toda identificação.
   </p>
 
   <h2>8. Segurança</h2>

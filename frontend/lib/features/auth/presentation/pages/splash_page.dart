@@ -5,6 +5,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/auth/presentation/pages/splash_widgets.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -88,6 +89,7 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: AppColors.surfaceContainerLowestDark,
       body: AppBackground(
@@ -104,9 +106,9 @@ class _SplashPageState extends State<SplashPage>
                     children: [
                       FadeTransition(
                         opacity: _logoOpacity,
-                        child: const Text(
-                          'THE MARKETPLACE REBUILT',
-                          style: TextStyle(
+                        child: Text(
+                          strings.splashEyebrow,
+                          style: const TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -137,9 +139,9 @@ class _SplashPageState extends State<SplashPage>
                         position: _taglineSlide,
                         child: FadeTransition(
                           opacity: _taglineOpacity,
-                          child: const Text(
-                            'TRADE YOUR WORLD',
-                            style: TextStyle(
+                          child: Text(
+                            strings.splashTagline,
+                            style: const TextStyle(
                               fontFamily: AppTypography.fontFamily,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -173,26 +175,26 @@ class _SplashPageState extends State<SplashPage>
                         position: _statsSlide,
                         child: FadeTransition(
                           opacity: _statsOpacity,
-                          child: const Row(
+                          child: Row(
                             children: [
                               Expanded(
                                 child: SplashStatBlock(
                                   value: '0%',
-                                  label: 'Trading Fees',
+                                  label: strings.splashTradingFees,
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: SplashStatBlock(
-                                  value: 'Instant',
-                                  label: 'Verification',
+                                  value: strings.splashInstant,
+                                  label: strings.splashVerification,
                                 ),
                               ),
-                              SizedBox(width: 16),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: SplashStatBlock(
-                                  value: 'Global',
-                                  label: 'Reach Access',
+                                  value: strings.splashGlobal,
+                                  label: strings.splashReach,
                                 ),
                               ),
                             ],

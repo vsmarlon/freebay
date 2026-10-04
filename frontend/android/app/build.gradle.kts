@@ -5,6 +5,17 @@ val keystoreProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
+val releaseSigningPreflight = tasks.register("validateReleaseSigning") {
+    doLast {
+        val required = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+        val missing = required.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
+        val storePath = keystoreProperties.getProperty("storeFile")
+        if (missing.isNotEmpty() || storePath == null || !project.file(storePath).isFile) {
+            throw GradleException("Release signing is not configured: ${missing.joinToString()}")
+        }
+    }
+}
+
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
@@ -25,12 +36,10 @@ android {
     signingConfigs {
         create("release") {
             val storePath = keystoreProperties.getProperty("storeFile")
-            if (storePath != null) {
-                storeFile = file(storePath)
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-            }
+            if (storePath != null) storeFile = file(storePath)
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
         }
     }
 
@@ -45,12 +54,15 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystoreProperties.getProperty("storeFile") != null) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
+    }
+}
+
+tasks.configureEach {
+    if (name.contains("Release", ignoreCase = true) &&
+        (name.startsWith("assemble") || name.startsWith("bundle") || name.startsWith("package"))) {
+        dependsOn(releaseSigningPreflight)
     }
 }
 

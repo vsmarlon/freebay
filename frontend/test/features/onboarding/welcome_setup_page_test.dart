@@ -8,6 +8,7 @@ import 'package:freebay/features/onboarding/presentation/pages/welcome_setup_pag
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import '../../support/auth_test_doubles.dart';
 import '../../support/test_users.dart';
 
@@ -62,16 +63,24 @@ void main() {
             biometryAvailableProvider.overrideWith((ref) async => true),
             biometryEnabledProvider.overrideWith((ref) async => false),
           ],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            locale: const Locale('pt', 'BR'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: router,
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Agora não'));
+      final strings = AppLocalizations.of(
+        tester.element(find.byType(WelcomeSetupPage)),
+      );
+      await tester.tap(find.text(strings.onboardingNotNow));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Agora não'));
+      await tester.tap(find.text(strings.onboardingNotNow));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Concluir'));
+      await tester.tap(find.text(strings.commonFinish));
       await tester.pumpAndSettle();
 
       expect(biometry.authenticationAttempts, 0);

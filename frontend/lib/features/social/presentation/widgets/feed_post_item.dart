@@ -5,11 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
 import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
 import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedPostItem extends ConsumerStatefulWidget {
   final PostEntity post;
@@ -25,6 +25,12 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
+    final strings = l10n(context);
+    final routePath = GoRouter.maybeOf(context)?.state.uri.path;
+    final canHeroToPostDetail =
+        routePath == AppRoutes.feed ||
+        routePath == AppRoutes.profileLiked ||
+        routePath == AppRoutes.profileSaved;
     final price = post.product?.price != null && post.product!.price > 0
         ? post.product!.price / 100
         : null;
@@ -62,7 +68,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
-                  '${post.repostedBy!.displayNameOrDefault} repostou',
+                  strings.feedRepostedBy(post.repostedBy!.displayNameOrDefault),
                   style: AppTypography.labelSmall.copyWith(
                     color: context.textSecondary,
                   ),
@@ -72,8 +78,12 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               userId: post.user.id,
               userName: post.user.displayNameOrDefault,
               userAvatarUrl: post.user.avatarUrl,
+              userAvatarBlurHash: post.user.avatarBlurHash,
               content: post.content,
               imageUrl: post.imageUrl,
+              imageBlurHash: post.audience == PostAudience.everyone
+                  ? post.imageBlurHash
+                  : null,
               likesCount: likesCount,
               commentsCount: post.commentsCount,
               sharesCount: sharesCount,
@@ -82,16 +92,18 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               isReposted: isReposted,
               isVerified: post.user.isVerified,
               createdAt: post.createdAt,
+              heroTag: canHeroToPostDetail ? 'post-media-${post.id}' : null,
               price: price,
               isSelling: post.type == PostType.product,
               isCloseFriends: post.audience == PostAudience.closeFriends,
+              closeFriendsLabel: strings.feedAudienceCloseFriends,
               onTap: () => context.push(AppRoutes.postPath(post.id)),
               onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
               onSave: () async {
                 final user = ref.read(authControllerProvider).value;
                 if (user == null) {
                   if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para salvar');
+                    AppSnackbar.warning(context, strings.feedLoginToSave);
                   }
                   return false;
                 }
@@ -105,7 +117,7 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
                 final user = ref.read(authControllerProvider).value;
                 if (user == null) {
                   if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para curtir');
+                    AppSnackbar.warning(context, strings.feedLoginToLike);
                   }
                   return false;
                 }
@@ -116,24 +128,13 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
                       initialIsLiked: post.isLiked,
                       initialCount: post.likesCount,
                     );
-                if (success && context.mounted) {
-                  final newLikesState = ref.read(likesProvider);
-                  ref
-                      .read(feedProvider.notifier)
-                      .updatePostLike(
-                        post.id,
-                        newLikesState.getLikedOverride(post.id) ?? post.isLiked,
-                        newLikesState.getCountOverride(post.id) ??
-                            post.likesCount,
-                      );
-                }
                 return success;
               },
               onRepost: () async {
                 final user = ref.read(authControllerProvider).value;
                 if (user == null) {
                   if (context.mounted) {
-                    AppSnackbar.warning(context, 'Faça login para repostar');
+                    AppSnackbar.warning(context, strings.feedLoginToRepost);
                   }
                   return false;
                 }
@@ -145,15 +146,13 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
                       initialCount: post.sharesCount,
                     );
                 if (success && context.mounted) {
-                  final newRepostsState = ref.read(repostsProvider);
-                  ref.invalidate(profileTimelineProvider(user.id));
-                  ref
-                      .read(feedProvider.notifier)
-                      .updateSharesCount(
-                        post.id,
-                        newRepostsState.getCountOverride(post.id) ??
-                            post.sharesCount,
-                      );
+                  ref.invalidate(
+                    profileTimelineProvider(
+                      user.id,
+                      kind: 'reposts',
+                      viewerId: user.id,
+                    ),
+                  );
                 }
                 return success;
               },

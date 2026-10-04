@@ -5,6 +5,7 @@ import { PostType, StoryAudience } from '@prisma/client';
 import { PrismaPostRepository } from '../data/repositories/post-database.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
+import { isValidBlurHash } from '@/shared/utils/blurhash.utils';
 
 @Injectable()
 export class CreatePostUseCase {
@@ -23,6 +24,11 @@ export class CreatePostUseCase {
     const result = await this.postRepository.create({
       content: input.content ?? null,
       imageUrl: input.imageUrl ?? null,
+      imageBlurHash: input.imageUrl != null &&
+          input.audience !== StoryAudience.CLOSE_FRIENDS &&
+          isValidBlurHash(input.imageBlurHash)
+        ? input.imageBlurHash
+        : null,
       type: input.type,
       audience: input.audience ?? StoryAudience.EVERYONE,
       user: { connect: { id: input.userId } },
@@ -49,6 +55,9 @@ export class CreatePostUseCase {
       id: post.id,
       content: post.content,
       imageUrl: post.imageUrl,
+      ...(post.audience !== StoryAudience.CLOSE_FRIENDS && isValidBlurHash(post.imageBlurHash)
+        ? { imageBlurHash: post.imageBlurHash }
+        : {}),
       type: post.type,
       audience: post.audience,
       userId: post.userId,

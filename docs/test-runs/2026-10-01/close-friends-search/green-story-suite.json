@@ -1,0 +1,8 @@
+{
+  "label": "green-story-suite",
+  "command": "npm run test:e2e -- --runTestsByPath test/e2e/story-audience.e2e-spec.ts",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:41:17.546Z",
+  "ended": "2026-10-01T06:41:32.924Z",
+  "exitCode": 0
+}

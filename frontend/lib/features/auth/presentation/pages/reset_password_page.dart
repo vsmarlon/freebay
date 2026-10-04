@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   final String token;
@@ -33,6 +34,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   }
 
   Future<void> _submit() async {
+    final strings = l10n(context);
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _isLoading = true;
@@ -53,8 +55,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
         context.go(AppRoutes.login);
       } else {
         setState(() {
-          _errorMessage =
-              'Não foi possível redefinir sua senha. Tente novamente.';
+          _errorMessage = strings.authResetPasswordFailed;
         });
       }
     }
@@ -62,15 +63,17 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
         child: Column(
           children: [
             PageHeader(
-              text: 'REDEFINIR SENHA',
+              text: strings.authResetPassword.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -82,7 +85,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Crie uma nova senha',
+                        strings.authCreateNewPassword,
                         style: TextStyle(
                           fontFamily: AppTypography.headlineFontFamily,
                           fontSize: 24,
@@ -92,7 +95,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       ),
                       Spacing.vSm,
                       Text(
-                        'Escolha uma senha forte com pelo menos 8 caracteres.',
+                        strings.authStrongPasswordHint,
                         style: TextStyle(
                           fontFamily: AppTypography.fontFamily,
                           fontSize: 14,
@@ -102,33 +105,35 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       Spacing.vXl,
                       AppTextField(
                         controller: _passwordController,
-                        label: 'Nova senha',
-                        hint: 'Mínimo 8 caracteres',
+                        label: strings.authNewPassword,
+                        hint: strings.authPasswordMinLength,
                         obscureText: true,
                         showPasswordToggle: true,
                         prefixIcon: Icons.lock_outline,
                         validator: (v) {
                           if (v == null || v.isEmpty) {
-                            return 'Informe a nova senha';
+                            return strings.authNewPasswordRequired;
                           }
-                          if (v.length < 8) return 'Mínimo 8 caracteres';
+                          if (v.length < 8) {
+                            return strings.authPasswordMinLength;
+                          }
                           return null;
                         },
                       ),
                       Spacing.vMd,
                       AppTextField(
                         controller: _confirmController,
-                        label: 'Confirmar nova senha',
-                        hint: 'Repita a nova senha',
+                        label: strings.authConfirmNewPassword,
+                        hint: strings.authRepeatNewPassword,
                         obscureText: true,
                         showPasswordToggle: true,
                         prefixIcon: Icons.lock_outline,
                         validator: (v) {
                           if (v == null || v.isEmpty) {
-                            return 'Confirme a nova senha';
+                            return strings.authConfirmNewPasswordRequired;
                           }
                           if (v != _passwordController.text) {
-                            return 'As senhas não coincidem';
+                            return strings.authPasswordMismatch;
                           }
                           return null;
                         },
@@ -146,7 +151,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       ],
                       Spacing.vLg,
                       AppButton(
-                        label: 'Redefinir senha',
+                        label: strings.authResetPassword,
                         isLoading: _isLoading,
                         onPressed: _submit,
                       ),

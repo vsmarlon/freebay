@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/payments/presentation/widgets/payment_view.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
+import 'package:freebay/shared/widgets/platform_wallet_payment_button.dart';
 
 const _testProduct = ProductEntity(
   id: 'p1',
@@ -24,7 +27,12 @@ PaymentEntity _testPayment() => PaymentEntity(
   expiresAt: _expiresAtDate,
 );
 
-Widget _wrap(PaymentView view) => MaterialApp(home: Scaffold(body: view));
+Widget _wrap(PaymentView view) => MaterialApp(
+  locale: const Locale('pt', 'BR'),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: view),
+);
 
 void main() {
   group('PaymentView web branch (payment != null)', () {
@@ -71,7 +79,7 @@ void main() {
 
   group('PaymentView mobile branch (payment == null)', () {
     testWidgets(
-      'renders the PaymentSheet button without touching payment fields (null-safety)',
+      'shows the unavailable wallet state without rendering card checkout',
       (tester) async {
         await tester.pumpWidget(
           _wrap(
@@ -80,11 +88,28 @@ void main() {
               payment: null,
               paymentIntentClientSecret: 'pi_test_123_secret_abc',
               createdOrderId: null,
+              amountCents: 8675,
             ),
           ),
         );
+        await tester.pump();
 
-        expect(find.text('Pagar com cartão'), findsOneWidget);
+        expect(
+          tester
+              .widget<PlatformWalletPaymentButton>(
+                find.byType(PlatformWalletPaymentButton),
+              )
+              .amountCents,
+          8675,
+        );
+
+        expect(
+          find.text(
+            'Apple Pay ou Google Pay indisponível neste dispositivo ou não configurado.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.byType(PlatformPayButton), findsNothing);
         // The checkout URL box must not render on mobile.
         expect(find.byType(SelectableText), findsNothing);
         expect(find.textContaining('Expira em'), findsNothing);

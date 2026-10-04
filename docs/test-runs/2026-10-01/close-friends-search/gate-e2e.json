@@ -1,0 +1,8 @@
+{
+  "label": "gate-e2e",
+  "command": "npm run test:e2e",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:44:24.165Z",
+  "ended": "2026-10-01T06:44:32.585Z",
+  "exitCode": 1
+}

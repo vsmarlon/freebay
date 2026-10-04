@@ -1,0 +1,11 @@
+{
+  "command": "dart format --output=none --set-exit-if-changed lib/features/media_editor/presentation/widgets/image_editor_toolbar.dart integration_test/native_image_compositor_test.dart",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:47:31.1276935Z",
+  "finished_utc": "2026-10-02T14:47:34.9390998Z",
+  "exit": 0,
+  "changed_manifest_rows": 0,
+  "before_sha256": "1DF0DA18355EA39DF5FE7063FAAF6A4403B16236AD8ED85651AA6073D8C245E7",
+  "after_sha256": "1DF0DA18355EA39DF5FE7063FAAF6A4403B16236AD8ED85651AA6073D8C245E7"
+}

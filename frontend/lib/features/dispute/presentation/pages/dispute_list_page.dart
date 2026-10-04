@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/features/dispute/presentation/providers/dispute_providers.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/router/app_routes.dart';
 
@@ -24,15 +25,17 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final state = ref.watch(disputeListProvider);
 
     return Scaffold(
       body: Column(
         children: [
           PageHeader(
-            text: 'MINHAS DISPUTAS',
+            text: strings.disputesMyTitle,
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
+              semanticLabel: strings.accessibilityBack,
               onTap: () => context.pop(),
             ),
           ),
@@ -44,6 +47,7 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
   }
 
   Widget _buildBody(DisputeListState state) {
+    final strings = l10n(context);
     if (state.isLoading) {
       return SkeletonPage(
         child: SkeletonList(
@@ -79,10 +83,10 @@ class _DisputeListPageState extends ConsumerState<DisputeListPage> {
     }
 
     if (state.disputes.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.verified_user_outlined,
-        title: 'Nenhuma disputa',
-        subtitle: 'Você ainda não abriu nenhuma disputa',
+        title: strings.ordersNoDisputes,
+        subtitle: strings.ordersNoDisputesBody,
       );
     }
 

@@ -1,0 +1,11 @@
+{
+  "command": "dart format lib/features/media_editor/presentation/widgets/image_editor_toolbar.dart",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:39:57.3958596Z",
+  "finished_utc": "2026-10-02T14:39:59.2663808Z",
+  "exit": 0,
+  "changed_manifest_rows": 2,
+  "before_sha256": "95CC242D296EDE6DF0199094D0908575F2D890931D35D1B08AC41779FD7AA66A",
+  "after_sha256": "69E3135B97873E08F0C4F45CBCDE4025B25F6BC82F7F5EBFA78F335FABA411B6"
+}

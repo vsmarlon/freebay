@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Full-screen viewer for a local file image with zoom + edit button.
 class LocalImageFullScreen extends StatefulWidget {
@@ -42,6 +43,7 @@ class _LocalImageFullScreenState extends State<LocalImageFullScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -77,10 +79,14 @@ class _LocalImageFullScreenState extends State<LocalImageFullScreen> {
                         width: 40,
                         height: 40,
                         color: AppColors.onSurface.withValues(alpha: 0.7),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 22,
+                        child: Semantics(
+                          button: true,
+                          label: strings.accessibilityClose,
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
                       ),
                     ),
@@ -92,14 +98,18 @@ class _LocalImageFullScreenState extends State<LocalImageFullScreen> {
                           vertical: 10,
                         ),
                         color: AppColors.primaryContainer,
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.edit, color: Colors.white, size: 16),
-                            SizedBox(width: 6),
+                            const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
                             Text(
-                              'EDITAR',
-                              style: TextStyle(
+                              strings.commonEdit.toUpperCase(),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -127,9 +137,9 @@ class _LocalImageFullScreenState extends State<LocalImageFullScreen> {
                   vertical: 6,
                 ),
                 color: Colors.black54,
-                child: const Text(
-                  'DUPLO TOQUE PARA ZOOM',
-                  style: TextStyle(
+                child: Text(
+                  strings.imageDoubleTapToZoom,
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -164,6 +174,7 @@ class ImageOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final fg = context.textPrimary;
 
     return Column(
@@ -171,27 +182,31 @@ class ImageOptionsSheet extends StatelessWidget {
       children: [
         SheetTile(
           icon: Icons.photo_library_outlined,
-          label: hasImage ? 'Trocar — galeria' : 'Adicionar da galeria',
+          label: hasImage
+              ? strings.imageReplaceFromGallery
+              : strings.imageAddFromGallery,
           color: fg,
           onTap: onPickGallery,
         ),
         SheetTile(
           icon: Icons.camera_alt_outlined,
-          label: hasImage ? 'Trocar — câmera' : 'Adicionar pela câmera',
+          label: hasImage
+              ? strings.imageReplaceFromCamera
+              : strings.imageAddFromCamera,
           color: fg,
           onTap: onPickCamera,
         ),
         if (onView != null)
           SheetTile(
             icon: Icons.zoom_in,
-            label: 'Ampliar / inspecionar',
+            label: strings.feedInspectImage,
             color: fg,
             onTap: onView!,
           ),
         if (onRemove != null)
           SheetTile(
             icon: Icons.delete_outline,
-            label: 'Remover imagem',
+            label: strings.feedRemoveImage,
             color: AppColors.error,
             onTap: onRemove!,
           ),

@@ -36,4 +36,6 @@ abstract class ProductEntity with _$ProductEntity {
   String? get sellerAvatar => seller?.avatarUrl;
   String? get imageUrl =>
       (images != null && images!.isNotEmpty) ? images!.first.url : null;
+  String? get imageBlurHash =>
+      (images != null && images!.isNotEmpty) ? images!.first.blurHash : null;
 }

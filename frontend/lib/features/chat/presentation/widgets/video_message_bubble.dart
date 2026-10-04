@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/shared/utils/media_url.dart';
 import 'package:video_player/video_player.dart';
 import 'package:freebay/core/components/app_video_viewer.dart';
@@ -27,6 +28,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   bool _loading = false;
   bool _muted = true;
   String? _error;
+  bool _thumbnailFailed = false;
   int _initialization = 0;
   final _resolver = const VideoSourceResolver();
 
@@ -35,10 +37,22 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
     return value == null || value.isEmpty ? null : mediaUrl(value);
   }
 
+  String? get _thumbnailUrl {
+    final value = widget.thumbnailUrl?.trim();
+    if (value == null || value.isEmpty) return null;
+    final resolved = mediaUrl(value);
+    final uri = Uri.tryParse(resolved);
+    return uri != null &&
+            (uri.scheme == 'http' || uri.scheme == 'https') &&
+            uri.host.isNotEmpty
+        ? resolved
+        : null;
+  }
+
   @override
   void initState() {
     super.initState();
-    if (widget.thumbnailUrl == null) _initialize(play: false);
+    if (_thumbnailUrl == null) _initialize(play: false);
   }
 
   @override
@@ -49,8 +63,14 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
       _controller?.dispose();
       _controller = null;
       _error = null;
+      _thumbnailFailed = false;
       _loading = false;
-      if (widget.thumbnailUrl == null) _initialize(play: false);
+      if (_thumbnailUrl == null) _initialize(play: false);
+    } else if (oldWidget.thumbnailUrl != widget.thumbnailUrl) {
+      _thumbnailFailed = false;
+      if (_thumbnailUrl == null && _controller == null) {
+        _initialize(play: false);
+      }
     }
   }
 
@@ -75,7 +95,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
       if (play) await controller.play();
     } catch (_) {
       if (mounted && initialization == _initialization) {
-        setState(() => _error = 'Não foi possível carregar o vídeo.');
+        setState(() => _error = l10n(context).errorUnknown);
       }
     } finally {
       if (mounted && initialization == _initialization) {
@@ -105,7 +125,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
       setState(() {});
     }
     await showFullScreenVideo(context, url, controller: controller);
-    if (mounted && controller != null && widget.thumbnailUrl == null) {
+    if (mounted && controller != null && _thumbnailUrl == null) {
       await _initialize(play: false);
     }
   }
@@ -116,6 +136,15 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
     _muted = !_muted;
     await controller.setVolume(_muted ? 0 : 1);
     if (mounted) setState(() {});
+  }
+
+  void _onThumbnailError() {
+    if (!mounted || _thumbnailFailed) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _thumbnailFailed) return;
+      setState(() => _thumbnailFailed = true);
+      _initialize(play: false);
+    });
   }
 
   String _duration(Duration duration) {
@@ -136,6 +165,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
     final url = _url;
     if (url == null) return const SizedBox.shrink();
 
+    final thumbnailUrl = _thumbnailUrl;
     final controller = _controller;
     final initialized = controller?.value.isInitialized == true;
     return ConstrainedBox(
@@ -157,20 +187,23 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
                     : 16 / 9,
                 child: initialized && controller != null
                     ? VideoPlayer(controller)
-                    : widget.thumbnailUrl == null
+                    : thumbnailUrl == null || _thumbnailFailed
                     ? ColoredBox(color: context.surfaceMidColor)
                     : CachedNetworkImage(
-                        imageUrl: mediaUrl(widget.thumbnailUrl!),
-                        httpHeaders: mediaAuthHeaders(
-                          mediaUrl(widget.thumbnailUrl!),
-                        ),
+                        imageUrl: thumbnailUrl,
+                        httpHeaders: mediaAuthHeaders(thumbnailUrl),
                         fit: BoxFit.cover,
+                        errorWidget: (context, url, error) {
+                          _onThumbnailError();
+                          return ColoredBox(color: context.surfaceMidColor);
+                        },
                       ),
               ),
             ),
             if (!initialized || !(controller?.value.isPlaying ?? false))
               IconButton(
                 onPressed: _loading ? null : _togglePlayback,
+                tooltip: l10n(context).accessibilityPlayVideo,
                 icon: Icon(
                   _loading ? Icons.downloading : Icons.play_arrow,
                   color: context.textPrimary,
@@ -180,10 +213,18 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
             if (_error != null)
               Positioned.fill(
                 child: Center(
-                  child: TextButton.icon(
-                    onPressed: _loading ? null : () => _initialize(play: false),
-                    icon: const Icon(Icons.refresh),
-                    label: Text(_error!, textAlign: TextAlign.center),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_error!, textAlign: TextAlign.center),
+                      TextButton.icon(
+                        onPressed: _loading
+                            ? null
+                            : () => _initialize(play: false),
+                        icon: const Icon(Icons.refresh),
+                        label: Text(l10n(context).commonRetry),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -204,6 +245,9 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
                 bottom: 4,
                 child: BrutalistIconButton(
                   icon: _muted ? Icons.volume_off : Icons.volume_up,
+                  semanticLabel: _muted
+                      ? l10n(context).accessibilityUnmuteVideo
+                      : l10n(context).accessibilityMuteVideo,
                   iconColor: context.textPrimary,
                   onTap: _toggleMute,
                 ),

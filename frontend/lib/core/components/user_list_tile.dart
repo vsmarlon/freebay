@@ -39,7 +39,10 @@ class UserListTile extends StatelessWidget {
         onTap: () => context.push(AppRoutes.userPath(user.id)),
         child: Row(
           children: [
-            UserAvatar(imageUrl: user.avatarUrl),
+            UserAvatar(
+              imageUrl: user.avatarUrl,
+              heroTag: 'profile-avatar-${user.id}',
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

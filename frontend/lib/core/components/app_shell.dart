@@ -13,10 +13,11 @@ import 'package:freebay/core/components/hide_on_scroll.dart';
 import 'package:freebay/core/components/shell_scroll_chrome.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_drawer.dart';
+import 'package:freebay/shared/providers/connectivity_status_provider.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const double kNavBarContentHeight = 64;
 
-const Duration kShellPageDuration = Duration(milliseconds: 150);
 const double kDrawerOverswipeThreshold = 56;
 
 class AppShell extends StatefulWidget {
@@ -98,11 +99,16 @@ class _AppShellState extends State<AppShell>
     }
 
     if (_pageController.hasClients) {
-      _pageController.animateToPage(
-        index,
-        duration: kShellPageDuration,
-        curve: AppMotion.baseCurve,
-      );
+      final duration = AppMotion.forContext(context, AppMotion.base);
+      if (duration == Duration.zero) {
+        _pageController.jumpToPage(index);
+      } else {
+        _pageController.animateToPage(
+          index,
+          duration: duration,
+          curve: AppMotion.baseCurve,
+        );
+      }
     } else {
       widget.navigationShell.goBranch(index);
     }
@@ -176,8 +182,9 @@ class _AppShellState extends State<AppShell>
         final navBarHeight = kNavBarContentHeight;
         final navBottom = MediaQuery.paddingOf(context).bottom + 8;
         final fab = _fabFor(context, selectedIndex);
+        final connectivity = ref.watch(connectivityStatusProvider);
 
-        final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+        final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
         if (isKeyboardOpen || !shellIsCurrent) _navHide.showImmediately();
 
         return Scaffold(
@@ -194,38 +201,67 @@ class _AppShellState extends State<AppShell>
                 Positioned.fill(
                   child: NotificationListener<ScrollNotification>(
                     onNotification: _handleShellScroll,
-                    child: MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        padding: MediaQuery.of(context).padding.copyWith(
-                          bottom: isKeyboardOpen ? 0 : navBarHeight + navBottom,
+                    child: Builder(
+                      builder: (mediaContext) => MediaQuery(
+                        data: MediaQuery.of(mediaContext).copyWith(
+                          padding: MediaQuery.paddingOf(mediaContext).copyWith(
+                            bottom: isKeyboardOpen
+                                ? 0
+                                : navBarHeight + navBottom,
+                          ),
                         ),
-                      ),
-                      child: PageView(
-                        controller: _pageController,
-                        onPageChanged: _onPageChanged,
-                        physics: const ClampingScrollPhysics(),
-                        // The custom PageView must mute kept-alive branches,
-                        // including when a root route covers the entire shell.
-                        children: [
-                          for (final (index, branch) in widget.branches.indexed)
-                            RepaintBoundary(
-                              child: Offstage(
-                                offstage: !_visitedTabs.contains(index),
-                                child: TickerMode(
-                                  enabled:
-                                      shellIsCurrent && index == selectedIndex,
-                                  child: ShellScrollChromeScope(
-                                    animation: _navHide.animation,
-                                    child: branch,
+                        child: PageView(
+                          controller: _pageController,
+                          onPageChanged: _onPageChanged,
+                          physics: const ClampingScrollPhysics(),
+                          // The custom PageView must mute kept-alive branches,
+                          // including when a root route covers the entire shell.
+                          children: [
+                            for (final (index, branch)
+                                in widget.branches.indexed)
+                              RepaintBoundary(
+                                child: Offstage(
+                                  offstage: !_visitedTabs.contains(index),
+                                  child: TickerMode(
+                                    enabled:
+                                        shellIsCurrent &&
+                                        index == selectedIndex,
+                                    child: ShellScrollChromeScope(
+                                      animation: _navHide.animation,
+                                      child: branch,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
+                if (connectivity.asData?.value == false)
+                  Positioned(
+                    top: MediaQuery.paddingOf(context).top + 8,
+                    left: 16,
+                    right: 16,
+                    child: Semantics(
+                      liveRegion: true,
+                      label: l10n(context).commonOffline,
+                      child: Container(
+                        color: context.surfaceColor,
+                        padding: const EdgeInsets.all(8),
+                        child: ExcludeSemantics(
+                          child: Text(
+                            l10n(context).commonOffline.toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: AppTypography.labelSmall.copyWith(
+                              color: context.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 if (fab != null && !isKeyboardOpen)
                   Positioned(
                     right: 16,
@@ -284,21 +320,21 @@ class _BrutalistNavBar extends StatelessWidget {
             _NavItem(
               icon: Icons.home_outlined,
               selectedIcon: Icons.home,
-              label: 'FREEBAY!',
+              label: l10n(context).navHome,
               isSelected: selectedIndex == 0,
               onTap: () => onDestinationSelected(0),
             ),
             _NavItem(
               icon: Icons.search,
               selectedIcon: Icons.search,
-              label: 'EXPLORAR',
+              label: l10n(context).navExplore,
               isSelected: selectedIndex == 1,
               onTap: () => onDestinationSelected(1),
             ),
             _NavItem(
               icon: Icons.account_balance_wallet_outlined,
               selectedIcon: Icons.account_balance_wallet,
-              label: 'CARTEIRA',
+              label: l10n(context).walletTitleBrutalist,
               isSelected: selectedIndex == 2,
               onTap: () => onDestinationSelected(2),
               isWallet: true,
@@ -306,14 +342,14 @@ class _BrutalistNavBar extends StatelessWidget {
             _NavItem(
               icon: Icons.chat_bubble_outline,
               selectedIcon: Icons.chat_bubble,
-              label: 'MENSAGENS',
+              label: l10n(context).navMessages,
               isSelected: selectedIndex == 3,
               onTap: () => onDestinationSelected(3),
             ),
             _NavItem(
               icon: Icons.person_outline,
               selectedIcon: Icons.person,
-              label: 'PERFIL',
+              label: l10n(context).navProfile,
               isSelected: selectedIndex == 4,
               onTap: () => onDestinationSelected(4),
             ),
@@ -343,7 +379,6 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -360,10 +395,8 @@ class _NavItem extends StatelessWidget {
               Icon(
                 isSelected ? selectedIcon : icon,
                 color: isSelected
-                    ? AppColors.primaryContainer
-                    : (isDark
-                          ? AppColors.inverseOnSurface
-                          : AppColors.onSurface),
+                    ? context.colors.primary
+                    : context.textPrimary,
                 size: 22,
               ),
               if (isSelected)
@@ -385,10 +418,8 @@ class _NavItem extends StatelessWidget {
                   fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
                   letterSpacing: 0.6,
                   color: isSelected
-                      ? AppColors.primaryContainer
-                      : (isDark
-                            ? AppColors.inverseOnSurface
-                            : AppColors.onSurface),
+                      ? context.colors.primary
+                      : context.textPrimary,
                 ),
               ),
             ],

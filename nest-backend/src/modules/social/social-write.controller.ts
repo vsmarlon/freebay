@@ -24,6 +24,7 @@ import {
 import { left } from "@/shared/core/either";
 import { BadRequestError } from "@/shared/core/errors";
 import { StoryAudience } from '@prisma/client';
+import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
 
 // Direct UseCases
 import { CreatePostUseCase } from "./usecases/create-post.usecase";
@@ -81,10 +82,26 @@ export class SocialWriteController {
       const mimeError = validateImageFile(file);
       if (mimeError) return left(new BadRequestError(mimeError));
     }
-    const imageUrl = file ? saveUpload(file, body.audience === StoryAudience.CLOSE_FRIENDS ? 'privatepost' : 'post') : body.imageUrl;
-    const result = await this.createPostUseCase.execute({ userId, ...body, imageUrl });
-    if (result.isLeft() && file) deleteUpload(imageUrl);
-    return result;
+    const closeFriends = body.audience === StoryAudience.CLOSE_FRIENDS;
+    const imageUrl = file
+      ? saveUpload(file, closeFriends ? 'privatepost' : 'post')
+      : undefined;
+    const imageBlurHash = file
+      ? closeFriends ? undefined : await generateImageBlurHash(file.buffer)
+      : undefined;
+    try {
+      const result = await this.createPostUseCase.execute({
+        userId,
+        ...body,
+        imageUrl,
+        imageBlurHash,
+      });
+      if (result.isLeft() && file && imageUrl) deleteUpload(imageUrl);
+      return result;
+    } catch (error) {
+      if (file && imageUrl) deleteUpload(imageUrl);
+      throw error;
+    }
   }
 
   @PatchAuth("posts/:id/delete", {

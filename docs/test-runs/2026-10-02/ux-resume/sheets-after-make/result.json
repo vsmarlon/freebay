@@ -1,0 +1,11 @@
+{
+  "command": "flutter test --no-pub test/design_system/brutalist_bottom_sheet_test.dart test/features/profile/profile_settings_sheet_test.dart --reporter expanded",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T15:11:55.0988541Z",
+  "finished_utc": "2026-10-02T15:12:33.4547964Z",
+  "exit": 0,
+  "changed_manifest_rows": 0,
+  "before_sha256": "9488DBA4DEFFD7072769C00BB9A5A7E3E56FA99C8BA7405EC2EAEA3ABC95EDA6",
+  "after_sha256": "9488DBA4DEFFD7072769C00BB9A5A7E3E56FA99C8BA7405EC2EAEA3ABC95EDA6"
+}

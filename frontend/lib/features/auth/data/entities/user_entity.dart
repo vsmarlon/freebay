@@ -13,6 +13,7 @@ abstract class UserEntity with _$UserEntity {
     String? username,
     String? email,
     String? avatarUrl,
+    String? avatarBlurHash,
     String? bannerUrl,
     String? bio,
     String? city,
@@ -29,6 +30,7 @@ abstract class UserEntity with _$UserEntity {
     @Default(0) int postsCount,
     @Default(0) int productsCount,
     @Default(false) bool hasActiveStory,
+    DateTime? deletionRequestedAt,
   }) = _UserEntity;
 
   factory UserEntity.fromJson(Map<String, dynamic> json) =>

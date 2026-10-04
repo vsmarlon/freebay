@@ -6,6 +6,7 @@ import 'package:freebay/features/chat/presentation/widgets/view_once_toggle.dart
 import 'package:freebay/shared/services/upload_service.dart';
 import 'package:video_player/video_player.dart';
 import 'package:freebay/features/chat/data/entities/message_type.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 Future<void> showChatVideoComposer({
   required BuildContext context,
@@ -20,7 +21,7 @@ Future<void> showChatVideoComposer({
 }) {
   return showBrutalistSheet<void>(
     context: context,
-    title: 'ENVIAR VÍDEO',
+    title: l10n(context).chatVideoSend,
     builder: (_) => _ChatVideoComposer(videoFile: videoFile, onSend: onSend),
   );
 }
@@ -122,114 +123,108 @@ class _ChatVideoComposerState extends State<_ChatVideoComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final controller = _controller;
     final initialized = controller?.value.isInitialized == true;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          GestureDetector(
-            onTap: _togglePreview,
-            child: Container(
-              height: 280,
-              color: context.surfaceColor,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (initialized && controller != null)
-                    AspectRatio(
-                      aspectRatio: controller.value.aspectRatio,
-                      child: VideoPlayer(controller),
-                    )
-                  else
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  if (initialized && !(controller?.value.isPlaying ?? false))
-                    Icon(
-                      Icons.play_arrow,
-                      color: context.textPrimary,
-                      size: 42,
-                    ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Pré-visualização com som desligado',
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: 12,
-                    color: context.textSecondary,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          onTap: _togglePreview,
+          child: Container(
+            height: 280,
+            color: context.surfaceColor,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (initialized && controller != null)
+                  AspectRatio(
+                    aspectRatio: controller.value.aspectRatio,
+                    child: VideoPlayer(controller),
+                  )
+                else
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                ),
-              ),
-              ViewOnceToggle(
-                enabled: _viewOnce,
-                onTap: () => setState(() => _viewOnce = !_viewOnce),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _captionController,
-            minLines: 1,
-            maxLines: 3,
-            textCapitalization: TextCapitalization.sentences,
-            style: AppTypography.bodyMedium.copyWith(
-              color: context.textPrimary,
+                if (initialized && !(controller?.value.isPlaying ?? false))
+                  Icon(Icons.play_arrow, color: context.textPrimary, size: 42),
+              ],
             ),
-            decoration: InputDecoration(
-              hintText: 'ADICIONAR LEGENDA',
-              hintStyle: AppTypography.bodySmall.copyWith(
-                color: context.textSecondary,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: context.borderColor, width: 2),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: AppColors.primaryContainer,
-                  width: 2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Pré-visualização com som desligado',
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 12,
+                  color: context.textSecondary,
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _isBusy ? null : _send,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+            ViewOnceToggle(
+              enabled: _viewOnce,
+              onTap: () => setState(() => _viewOnce = !_viewOnce),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _captionController,
+          minLines: 1,
+          maxLines: 3,
+          textCapitalization: TextCapitalization.sentences,
+          style: AppTypography.bodyMedium.copyWith(color: context.textPrimary),
+          decoration: InputDecoration(
+            hintText: strings.chatVideoCaption,
+            hintStyle: AppTypography.bodySmall.copyWith(
+              color: context.textSecondary,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: context.borderColor, width: 2),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderSide: BorderSide(
                 color: AppColors.primaryContainer,
-                child: _isBusy
-                    ? const Center(
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : Text(
-                        'SEND',
-                        textAlign: TextAlign.center,
-                        style: AppTypography.button.copyWith(
-                          color: AppColors.onPrimary,
-                        ),
-                      ),
+                width: 2,
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _isBusy ? null : _send,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              color: AppColors.primaryContainer,
+              child: _isBusy
+                  ? const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : Text(
+                      'SEND',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.button.copyWith(
+                        color: AppColors.onPrimary,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

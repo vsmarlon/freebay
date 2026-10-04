@@ -1,0 +1,6 @@
+{
+  "Command": "jcmd.exe 43120 Thread.print",
+  "Exit": 0,
+  "ObservedUTC": "2026-10-02T15:12:40.8755612Z",
+  "Artifact": "daemon-43120-threads.log"
+}

@@ -128,9 +128,15 @@ function run(flow, id, update) {
     throw new Error(`${flow}: baseline is for ${config.device}, not ${device}; use matching hardware or --update-baseline`);
   }
   if (device.includes(' | android')) {
-    const reverse = command('adb', ['-s', id, 'reverse', 'tcp:3000', 'tcp:3000']);
-    if (reverse.error || reverse.status !== 0) {
-      throw new Error(`adb reverse failed: ${reverse.error?.message ?? reverse.stderr}`);
+    const mappings = command('adb', ['-s', id, 'reverse', '--list']);
+    if (mappings.error || mappings.status !== 0) {
+      throw new Error(`adb reverse inspection failed: ${mappings.error?.message ?? mappings.stderr}`);
+    }
+    if (!mappings.stdout.split(/\r?\n/).some((line) => line.trim().split(/\s+/)[1] === 'tcp:3000')) {
+      const reverse = command('adb', ['-s', id, 'reverse', 'tcp:3000', 'tcp:3000']);
+      if (reverse.error || reverse.status !== 0) {
+        throw new Error(`adb reverse failed: ${reverse.error?.message ?? reverse.stderr}`);
+      }
     }
   }
   const previous = config.baseline;

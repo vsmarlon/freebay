@@ -7,7 +7,7 @@ import 'package:freebay/features/profile/presentation/pages/blocked_users_page.d
 import 'package:freebay/features/profile/presentation/pages/close_friends_page.dart';
 import 'package:freebay/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:freebay/features/social/presentation/pages/my_posts_page.dart';
-import 'package:freebay/features/social/presentation/pages/my_stories_page.dart';
+import 'package:freebay/features/stories/stories.dart';
 import 'package:freebay/features/product/presentation/pages/my_products_page.dart';
 import 'package:freebay/features/social/presentation/pages/liked_posts_page.dart';
 import 'package:freebay/features/profile/presentation/pages/favorites_page.dart';
@@ -15,10 +15,12 @@ import 'package:freebay/features/profile/presentation/pages/saved_posts_page.dar
 import 'package:freebay/features/profile/presentation/pages/purchases_page.dart';
 import 'package:freebay/features/payments/presentation/pages/payment_page.dart';
 import 'package:freebay/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:freebay/features/profile/presentation/pages/privacy_page.dart';
 import 'package:freebay/features/profile/presentation/pages/followers_page.dart';
 import 'package:freebay/features/profile/presentation/pages/following_page.dart';
 import 'package:freebay/features/reviews/presentation/pages/user_reviews_page.dart';
 import 'package:freebay/features/reviews/presentation/pages/create_review_page.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 final List<RouteBase> profileRoutes = [
   appCupertinoRoute(
@@ -72,6 +74,10 @@ final List<RouteBase> profileRoutes = [
     (context, state) => const EditProfilePage(),
   ),
   appCupertinoRoute(
+    AppRoutes.profilePrivacy,
+    (context, state) => const PrivacyPage(),
+  ),
+  appCupertinoRoute(
     AppRoutes.profileFollowers,
     (context, state) =>
         FollowersPage(userId: state.uri.queryParameters['userId'] ?? 'me'),
@@ -104,7 +110,7 @@ final List<RouteBase> profileRoutes = [
       );
     }
     return Scaffold(
-      body: EmptyState.error(message: 'Não foi possível abrir esta avaliação.'),
+      body: EmptyState.error(message: l10n(context).reviewsOpenFailed),
     );
   }),
 ];

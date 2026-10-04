@@ -1,0 +1,49 @@
+Working directory: C:\Users\Qiyana\Documents\GitHub\ME\freebay\frontend
+HEAD: c9808b106c3d53f07837542e93f25fd52c6bfbe5 (shared dirty tree; see REPORT.md)
+
+Command sequence:
+for each file below, run `flutter test <file>` and stop on first nonzero exit.
+
+=== test/core/components/app_dialog_test.dart (exit 0) ===
+00:00 +0: a non-dismissible dialog ignores back navigation
+00:01 +1: All tests passed!
+
+=== test/core/components/app_shell_test.dart (exit 0) ===
+00:00 +0: starts on the first branch
+00:00 +1: dragging left advances one branch, not several
+00:00 +2: a slow drag right goes back, never forward
+00:01 +3: tapping a nav destination switches branch
+00:01 +4: over-swiping right on the first branch opens the drawer
+00:01 +5: a nested horizontal pager never changes the shell branch
+00:01 +6: shell chrome hides on a user drag and returns on reverse drag
+00:01 +7: keyboard layout keeps shell header visible during scroll
+00:01 +8: All tests passed!
+
+=== test/core/components/app_video_viewer_test.dart (exit 0) ===
+00:00 +0: chat preview stays paused and is handed to fullscreen
+00:00 +1: fullscreen controls expose position, playback, mute and retry
+00:00 +2: fullscreen retries a failed source and keeps retry available
+00:01 +3: All tests passed!
+
+=== test/core/components/empty_state_test.dart (exit 0) ===
+00:00 +0: error state invokes retry action
+00:01 +1: All tests passed!
+
+=== test/core/components/shimmer_scope_test.dart (exit 0) ===
+00:00 +0: a skeleton list shares one repeating animation ticker
+00:00 +1: nested skeleton page and list reuse the page clock
+00:00 +2: a skeleton outside a scope does not animate
+00:00 +3: reduced motion disables the shared shimmer clock
+00:00 +4: dark primary foreground and action fill keep separate roles
+00:00 +5: icon button is exposed as an accessible button
+00:00 +6: All tests passed!
+
+=== test/core/router/app_router_test.dart (exit 0) ===
+00:00 +0: chat product route encodes both typed identifiers
+00:00 +1: User without username (Google login) stays on completeProfile without redirect loop
+00:00 +2: User with username and incomplete welcome setup redirects to welcome page
+00:01 +3: User with username and completed welcome setup redirects to feed
+00:01 +4: Unauthenticated user accessing completeProfile redirects directly to login
+00:01 +5: Tapping back on CompleteProfilePage shows confirmation dialog
+00:01 +6: Confirming exit on CompleteProfilePage logs out and navigates to login
+00:02 +7: All tests passed!

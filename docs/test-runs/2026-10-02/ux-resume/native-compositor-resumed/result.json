@@ -1,0 +1,10 @@
+{
+  "command": "flutter test integration_test/native_image_compositor_test.dart -d RX8M70JDTQV --no-pub --no-uninstall --timeout 120s --reporter expanded",
+  "status": "BLOCKED",
+  "exit": null,
+  "timeout_ms": 420000,
+  "reason": "Harness timed out during Gradle assembleDebug, before build/install/test verdict; no native GREEN established.",
+  "recovery_observed_utc": "2026-10-02T14:59:11.7003418Z",
+  "recovery_changed_flutter_manifest_rows": 6,
+  "source_after_note": "Recovery snapshot, not an exact timeout-window boundary. Comparison filters the before manifest to Flutter roots."
+}

@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ReviewUserInfo {
 
- String get id; String? get displayName; String? get avatarUrl;
+ String get id; String? get displayName; String? get avatarUrl; String? get avatarBlurHash;
 /// Create a copy of ReviewUserInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ReviewUserInfoCopyWith<ReviewUserInfo> get copyWith => _$ReviewUserInfoCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReviewUserInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReviewUserInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.avatarBlurHash, avatarBlurHash) || other.avatarBlurHash == avatarBlurHash));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,displayName,avatarUrl);
+int get hashCode => Object.hash(runtimeType,id,displayName,avatarUrl,avatarBlurHash);
 
 @override
 String toString() {
-  return 'ReviewUserInfo(id: $id, displayName: $displayName, avatarUrl: $avatarUrl)';
+  return 'ReviewUserInfo(id: $id, displayName: $displayName, avatarUrl: $avatarUrl, avatarBlurHash: $avatarBlurHash)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ReviewUserInfoCopyWith<$Res>  {
   factory $ReviewUserInfoCopyWith(ReviewUserInfo value, $Res Function(ReviewUserInfo) _then) = _$ReviewUserInfoCopyWithImpl;
 @useResult
 $Res call({
- String id, String? displayName, String? avatarUrl
+ String id, String? displayName, String? avatarUrl, String? avatarBlurHash
 });
 
 
@@ -65,11 +65,12 @@ class _$ReviewUserInfoCopyWithImpl<$Res>
 
 /// Create a copy of ReviewUserInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? displayName = freezed,Object? avatarUrl = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? displayName = freezed,Object? avatarUrl = freezed,Object? avatarBlurHash = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,avatarBlurHash: freezed == avatarBlurHash ? _self.avatarBlurHash : avatarBlurHash // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -155,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? avatarUrl)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? avatarUrl,  String? avatarBlurHash)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ReviewUserInfo() when $default != null:
-return $default(_that.id,_that.displayName,_that.avatarUrl);case _:
+return $default(_that.id,_that.displayName,_that.avatarUrl,_that.avatarBlurHash);case _:
   return orElse();
 
 }
@@ -176,10 +177,10 @@ return $default(_that.id,_that.displayName,_that.avatarUrl);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? avatarUrl)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? displayName,  String? avatarUrl,  String? avatarBlurHash)  $default,) {final _that = this;
 switch (_that) {
 case _ReviewUserInfo():
-return $default(_that.id,_that.displayName,_that.avatarUrl);case _:
+return $default(_that.id,_that.displayName,_that.avatarUrl,_that.avatarBlurHash);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +197,10 @@ return $default(_that.id,_that.displayName,_that.avatarUrl);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? displayName,  String? avatarUrl)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? displayName,  String? avatarUrl,  String? avatarBlurHash)?  $default,) {final _that = this;
 switch (_that) {
 case _ReviewUserInfo() when $default != null:
-return $default(_that.id,_that.displayName,_that.avatarUrl);case _:
+return $default(_that.id,_that.displayName,_that.avatarUrl,_that.avatarBlurHash);case _:
   return null;
 
 }
@@ -211,12 +212,13 @@ return $default(_that.id,_that.displayName,_that.avatarUrl);case _:
 @JsonSerializable()
 
 class _ReviewUserInfo extends ReviewUserInfo {
-  const _ReviewUserInfo({required this.id, this.displayName, this.avatarUrl}): super._();
+  const _ReviewUserInfo({required this.id, this.displayName, this.avatarUrl, this.avatarBlurHash}): super._();
   factory _ReviewUserInfo.fromJson(Map<String, dynamic> json) => _$ReviewUserInfoFromJson(json);
 
 @override final  String id;
 @override final  String? displayName;
 @override final  String? avatarUrl;
+@override final  String? avatarBlurHash;
 
 /// Create a copy of ReviewUserInfo
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +233,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReviewUserInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReviewUserInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.avatarBlurHash, avatarBlurHash) || other.avatarBlurHash == avatarBlurHash));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,displayName,avatarUrl);
+int get hashCode => Object.hash(runtimeType,id,displayName,avatarUrl,avatarBlurHash);
 
 @override
 String toString() {
-  return 'ReviewUserInfo(id: $id, displayName: $displayName, avatarUrl: $avatarUrl)';
+  return 'ReviewUserInfo(id: $id, displayName: $displayName, avatarUrl: $avatarUrl, avatarBlurHash: $avatarBlurHash)';
 }
 
 
@@ -251,7 +253,7 @@ abstract mixin class _$ReviewUserInfoCopyWith<$Res> implements $ReviewUserInfoCo
   factory _$ReviewUserInfoCopyWith(_ReviewUserInfo value, $Res Function(_ReviewUserInfo) _then) = __$ReviewUserInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? displayName, String? avatarUrl
+ String id, String? displayName, String? avatarUrl, String? avatarBlurHash
 });
 
 
@@ -268,11 +270,12 @@ class __$ReviewUserInfoCopyWithImpl<$Res>
 
 /// Create a copy of ReviewUserInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? displayName = freezed,Object? avatarUrl = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? displayName = freezed,Object? avatarUrl = freezed,Object? avatarBlurHash = freezed,}) {
   return _then(_ReviewUserInfo(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,avatarBlurHash: freezed == avatarBlurHash ? _self.avatarBlurHash : avatarBlurHash // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

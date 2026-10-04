@@ -6,6 +6,7 @@ import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/last_message_info.dart';
 import 'package:freebay/features/chat/data/entities/order_info.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 ChatEntity _chat({
   required String id,
@@ -17,7 +18,7 @@ ChatEntity _chat({
   id: id,
   threadType: threadType,
   otherUser: UserEntity(id: '$id-user', displayName: name),
-  lastMessageInfo: LastMessageInfo(content: preview, createdAt: DateTime(2020)),
+  lastMessageInfo: LastMessageInfo(content: preview, createdAt: DateTime.now()),
   createdAt: DateTime(2020),
   orderInfo: threadType == ChatThreadType.order
       ? OrderInfo(status: 'PAID', productTitle: productTitle)
@@ -34,6 +35,9 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: ThemeData.dark(),
         home: SizedBox(
           width: 320,
@@ -89,6 +93,9 @@ void main() {
     expect(find.text('Produto direto'), findsOneWidget);
     expect(find.text('Produto pedido'), findsOneWidget);
     expect(find.text('7'), findsNWidgets(2));
-    expect(find.text('1/1'), findsNWidgets(2));
+    final strings = AppLocalizations.of(
+      tester.element(find.byType(ChatListTile).first),
+    );
+    expect(find.text(strings.timeAgoNow), findsNWidgets(2));
   });
 }

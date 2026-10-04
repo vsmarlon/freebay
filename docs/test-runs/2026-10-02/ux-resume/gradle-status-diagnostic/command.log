@@ -1,0 +1,14 @@
+   PID STATUS   INFO
+ 43120 BUSY     8.14
+ 12028 STOPPED  (other compatible daemons were started and after being idle for 9 minutes and not recently used)
+  4656 STOPPED  (by user or operating system)
+ 19436 STOPPED  (by user or operating system)
+ 20196 STOPPED  (by user or operating system)
+  6384 STOPPED  (by user or operating system)
+ 38548 STOPPED  (by user or operating system)
+ 40420 STOPPED  (by user or operating system)
+ 23708 STOPPED  (by user or operating system)
+ 22568 STOPPED  (by user or operating system)
+ 49608 STOPPED  (by user or operating system)
+
+Only Daemons for the current Gradle version are displayed. For more on this, please refer to https://docs.gradle.org/8.14/userguide/gradle_daemon.html#sec:status in the Gradle documentation.

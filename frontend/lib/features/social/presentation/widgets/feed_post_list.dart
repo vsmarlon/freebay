@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedPostList extends StatelessWidget {
   final FeedState state;
@@ -21,13 +22,36 @@ class FeedPostList extends StatelessWidget {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: EmptyState.error(
-          message: 'Verifique sua conexão e tente novamente',
+          message: l10n(context).commonTryAgainLater,
           onRetry: onRetry,
         ),
       );
     }
     if (state.posts.isEmpty && !state.isLoading) {
       return SliverFillRemaining(hasScrollBody: false, child: emptyState);
+    }
+    if (state.posts.isEmpty && state.isLoading) {
+      return ShimmerScope(
+        child: SliverList.builder(
+          itemCount: 3,
+          itemBuilder: (context, index) => const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: Spacing.md,
+              vertical: Spacing.sm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerBlock(height: 52),
+                Spacing.vSm,
+                ShimmerBlock(height: 200),
+                Spacing.vSm,
+                ShimmerBlock(height: 44),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     return SliverMainAxisGroup(
       slivers: [
@@ -47,7 +71,10 @@ class FeedPostList extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: AppButton(label: 'TENTAR NOVAMENTE', onPressed: onRetry),
+              child: AppButton(
+                label: l10n(context).commonRetry,
+                onPressed: onRetry,
+              ),
             ),
           ),
       ],

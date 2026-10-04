@@ -19,6 +19,7 @@ export class SearchUsersUseCase {
       displayName: u.displayName,
       username: u.username,
       avatarUrl: u.avatarUrl,
+      avatarBlurHash: u.avatarBlurHash,
       bio: u.bio,
       isVerified: u.isVerified,
       reputationScore: u.reputationScore,

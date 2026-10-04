@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ProductBasicFields extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
   final TextEditingController priceController;
-  final String titleLabel;
-  final String descriptionHint;
+  final String? titleLabel;
+  final String? descriptionHint;
   final TextInputType priceKeyboardType;
 
   const ProductBasicFields({
@@ -14,8 +15,8 @@ class ProductBasicFields extends StatelessWidget {
     required this.titleController,
     required this.descriptionController,
     required this.priceController,
-    this.titleLabel = 'Título',
-    this.descriptionHint = 'Detalhes do estado, acessórios, tempo de uso...',
+    this.titleLabel,
+    this.descriptionHint,
     this.priceKeyboardType = const TextInputType.numberWithOptions(
       decimal: true,
     ),
@@ -23,27 +24,28 @@ class ProductBasicFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AppTextField(
           controller: titleController,
-          label: titleLabel,
-          hint: 'Ex: iPhone 13 Pro Max 256GB',
+          label: titleLabel ?? strings.productTitleLabel,
+          hint: strings.productTitleExample,
           maxLength: 100,
         ),
         Spacing.vMd,
         AppTextField(
           controller: descriptionController,
-          label: 'Descrição',
-          hint: descriptionHint,
+          label: strings.productDescription,
+          hint: descriptionHint ?? strings.productDescriptionHint,
           maxLines: 4,
         ),
         Spacing.vMd,
         AppTextField(
           controller: priceController,
-          label: 'Preço (R\$)',
-          hint: '0,00',
+          label: strings.productPriceLabel,
+          hint: strings.productPriceHint,
           keyboardType: priceKeyboardType,
         ),
       ],
@@ -54,28 +56,29 @@ class ProductBasicFields extends StatelessWidget {
 class ProductConditionSelector extends StatelessWidget {
   final bool isNew;
   final ValueChanged<bool> onChanged;
-  final String label;
-  final String newLabel;
-  final String usedLabel;
+  final String? label;
+  final String? newLabel;
+  final String? usedLabel;
   final TextStyle? labelStyle;
 
   const ProductConditionSelector({
     super.key,
     required this.isNew,
     required this.onChanged,
-    this.label = 'CONDIÇÃO',
-    this.newLabel = 'NOVO',
-    this.usedLabel = 'USADO',
+    this.label,
+    this.newLabel,
+    this.usedLabel,
     this.labelStyle,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          label,
+          (label ?? strings.productConditionLabel).toUpperCase(),
           style:
               labelStyle ??
               TextStyle(
@@ -89,7 +92,7 @@ class ProductConditionSelector extends StatelessWidget {
           children: [
             Expanded(
               child: AppButton(
-                label: newLabel,
+                label: (newLabel ?? strings.productNew).toUpperCase(),
                 variant: isNew
                     ? AppButtonVariant.primary
                     : AppButtonVariant.ghost,
@@ -99,7 +102,7 @@ class ProductConditionSelector extends StatelessWidget {
             Spacing.hSm,
             Expanded(
               child: AppButton(
-                label: usedLabel,
+                label: (usedLabel ?? strings.productUsed).toUpperCase(),
                 variant: isNew
                     ? AppButtonVariant.ghost
                     : AppButtonVariant.primary,

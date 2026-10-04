@@ -1,0 +1,14 @@
+# Galaxy A30 integration verification — 2026-10-01
+
+**Status: BLOCKED after rediscovery — authenticated fixture and live source identity unavailable.** A safe screen observation succeeded, but requested feature flows could not be exercised.
+
+- Repository checkout: `feat/production-hardening`, `c9808b106c3d53f07837542e93f25fd52c6bfbe5`; working tree was already extensively dirty. This is not proof of the installed app's source revision.
+- Device chronology: initial discovery returned no devices; read-only `adb devices -l` listed none. On owner steering, fresh discovery found physical Galaxy A30 `RX8M70JDTQV`, model `SM-A305GT`, Android 11, online. The first parallel inspection timed out listing apps via the on-device agent at port 53747; after mobile tools recovered, individual list calls succeeded. No remote device was requested or used.
+- Installed `com.freebay.app` was launched. The screen showed **“SESSÃO EXPIRADA — Por segurança, entre novamente para continuar.”** and options “CONTINUAR COMO CONVIDADO” / “FAZER LOGIN”. No credentials were available through a verified-safe path, and no guest route was entered. Therefore no authenticated media/story/profile/chat fixture was available.
+- Flutter process inspection found tool processes but no live-app VM-service/DTD flags or safe URI. The installed app launch is not source reload confirmation; no hot restart occurred. `frontend/build/start_up_info.json` contains startup timings only. The `.env.test` file exists, but its values were not read; its existence does not establish that the running app/backend uses guarded `freebay_test_db`.
+- Requested chat-video paused-preview/viewer controls/retry; story pointer/load/progress/retry/skip; native sheet drag; profile Posts/Reposts/Anúncios swipes; chat reverse scroll/keyboard/header/composer; and all five shell tabs remain **unverified**.
+- Perf gate not run: no authenticated representative fixture, verified live backend identity, or reachable app VM. No baseline was updated; missing metrics are not a pass.
+- Evidence: `docs/device-runs/2026-10-01/integration-verification/session-expired.png` captures the expired-session screen. Filtered FreeBay error log `docs/device-runs/2026-10-01/integration-verification/freebay-errors.log` contains 0 entries. Device crash inventory showed one `com.samsung.android.forest` report at `2026-10-01 00:00:54.213`; this is not attributed to FreeBay. No payment/provider/financial action or non-test database setup/write was attempted.
+- The Close Friends candidate-search eligibility issue flagged by owner was not exercised.
+
+**Unblock:** restore an authenticated existing test session and verifiable guarded test-runtime identity; expose the existing app VM/DTD URI so the integrated source can be hot-restarted and confirmed; and provide existing chat-video/story media fixtures. Then rerun the matrix with per-flow outcomes, logs/crash state, and artifacts.

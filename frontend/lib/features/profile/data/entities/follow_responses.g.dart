@@ -41,6 +41,7 @@ UserBrief _$UserBriefFromJson(Map<String, dynamic> json) => UserBrief(
   displayName: json['displayName'] as String,
   username: json['username'] as String?,
   avatarUrl: json['avatarUrl'] as String?,
+  avatarBlurHash: json['avatarBlurHash'] as String?,
   isVerified: json['isVerified'] as bool? ?? false,
   reputationScore: (json['reputationScore'] as num?)?.toDouble() ?? 0.0,
 );
@@ -50,6 +51,7 @@ Map<String, dynamic> _$UserBriefToJson(UserBrief instance) => <String, dynamic>{
   'displayName': instance.displayName,
   'username': instance.username,
   'avatarUrl': instance.avatarUrl,
+  'avatarBlurHash': instance.avatarBlurHash,
   'isVerified': instance.isVerified,
   'reputationScore': instance.reputationScore,
 };

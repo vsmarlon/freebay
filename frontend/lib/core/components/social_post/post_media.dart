@@ -1,10 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/core/components/blur_hash_placeholder.dart';
 import 'package:freebay/shared/utils/media_url.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class SocialPostMedia extends StatelessWidget {
   final String? imageUrl;
+  final String? blurHash;
   final bool showHeartBurst;
   final bool isPressed;
   final VoidCallback onTap;
@@ -15,6 +18,7 @@ class SocialPostMedia extends StatelessWidget {
   const SocialPostMedia({
     super.key,
     required this.imageUrl,
+    this.blurHash,
     required this.showHeartBurst,
     required this.isPressed,
     required this.onTap,
@@ -25,6 +29,7 @@ class SocialPostMedia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final decodeWidth =
         (MediaQuery.sizeOf(context).width *
                 MediaQuery.devicePixelRatioOf(context))
@@ -65,8 +70,12 @@ class SocialPostMedia extends StatelessWidget {
                             width: double.infinity,
                             height: double.infinity,
                             memCacheWidth: decodeWidth,
-                            placeholder: (context, url) =>
-                                Container(color: context.surfaceMidColor),
+                            placeholder: (context, url) => BlurHashPlaceholder(
+                              hash: blurHash,
+                              fallback: Container(
+                                color: context.surfaceMidColor,
+                              ),
+                            ),
                             errorWidget: (context, error, stackTrace) =>
                                 Container(
                                   color: context.surfaceMidColor,
@@ -79,7 +88,7 @@ class SocialPostMedia extends StatelessWidget {
                           )
                   : Center(
                       child: Text(
-                        'VENDA',
+                        strings.productForSaleBadge,
                         style: AppTypography.h2.copyWith(
                           color: context.textSecondary,
                         ),

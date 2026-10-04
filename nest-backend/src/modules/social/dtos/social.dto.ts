@@ -5,7 +5,6 @@ import {
   IsOptional,
   IsUUID,
   IsEnum,
-  IsUrl,
   IsInt,
   Min,
   Max,
@@ -27,11 +26,6 @@ export class CreatePostDTO {
   @IsString()
   @SanitizeText()
   readonly content?: string;
-
-  @ApiPropertyOptional({ example: "https://example.com/image.jpg" })
-  @IsOptional()
-  @IsUrl({ require_protocol: true, protocols: ["https"] })
-  readonly imageUrl?: string;
 
   @ApiProperty({ enum: PostType, example: PostType.REGULAR })
   @IsEnum(PostType)
@@ -174,6 +168,7 @@ export interface CreatePostInput {
   userId: string;
   content?: string;
   imageUrl?: string;
+  imageBlurHash?: string;
   type: PostType;
   audience?: StoryAudience;
   mentionIds?: string[];
@@ -183,6 +178,7 @@ export interface CreatePostOutput {
   id: string;
   content: string | null;
   imageUrl: string | null;
+  imageBlurHash?: string;
   type: PostType;
   audience: StoryAudience;
   userId: string;

@@ -1,0 +1,27 @@
+{
+  "ObservedUTC": "2026-10-02T15:13:09.8385366Z",
+  "Processes": [
+    {
+      "PID": 33788,
+      "ParentPID": 45956,
+      "Executable": "C:\\Users\\Qiyana\\fvm\\default\\bin\\cache\\dart-sdk\\bin\\dart.exe",
+      "StartedUTC": "2026-10-02T14:58:56.2718190Z",
+      "Role": "Shared normal-app Flutter build"
+    },
+    {
+      "PID": 46460,
+      "ParentPID": 21048,
+      "Executable": "C:\\Program Files\\Android\\Android Studio\\jbr\\bin\\java.exe",
+      "StartedUTC": "2026-10-02T14:58:57.5671500Z",
+      "Role": "Shared normal-app Gradle build"
+    },
+    {
+      "PID": 43120,
+      "ParentPID": 46460,
+      "Executable": "C:\\Program Files\\Android\\Android Studio\\jbr\\bin\\java.exe",
+      "StartedUTC": "2026-10-02T14:58:59.7910270Z",
+      "Role": "Shared Gradle daemon"
+    }
+  ],
+  "Action": "Read-only inspection; no process stopped and no competing build started"
+}

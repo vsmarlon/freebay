@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostDetailsPostSection extends StatelessWidget {
   final PostEntity post;
@@ -38,9 +39,14 @@ class PostDetailsPostSection extends StatelessWidget {
       userId: post.user.id,
       userName: post.user.displayNameOrDefault,
       userAvatarUrl: post.user.avatarUrl,
+      userAvatarBlurHash: post.user.avatarBlurHash,
       content: post.content,
       imageUrl: post.imageUrl,
+      imageBlurHash: post.audience == PostAudience.everyone
+          ? post.imageBlurHash
+          : null,
       isCloseFriends: post.audience == PostAudience.closeFriends,
+      closeFriendsLabel: l10n(context).feedAudienceCloseFriends,
       likesCount: likesCount,
       commentsCount: post.commentsCount,
       sharesCount: sharesCount,
@@ -49,6 +55,7 @@ class PostDetailsPostSection extends StatelessWidget {
       isReposted: isReposted,
       isVerified: post.user.isVerified,
       createdAt: post.createdAt,
+      heroTag: 'post-media-${post.id}',
       onUserTap: onUserTap,
       onLike: onLike,
       onSave: onSave,

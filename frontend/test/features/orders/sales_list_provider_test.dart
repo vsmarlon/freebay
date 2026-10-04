@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,8 @@ import 'package:freebay/features/orders/presentation/providers/order_providers.d
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 import 'package:freebay/shared/models/cursor_page.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import '../../support/auth_test_doubles.dart';
 
 class _SalesRepository implements OrderRepository {
   final responses = <Future<Either<Failure, CursorPage<OrderEntity>>>>[];
@@ -24,8 +27,10 @@ class _SalesRepository implements OrderRepository {
   }
 
   @override
-  Future<Either<Failure, OrderEntity>> getOrder(String orderId) =>
-      throw UnimplementedError();
+  Future<Either<Failure, OrderEntity>> getOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => throw UnimplementedError();
 
   @override
   Future<Either<Failure, CursorPage<OrderEntity>>> getMyPurchases({
@@ -46,11 +51,14 @@ class _SalesRepository implements OrderRepository {
   Future<Either<Failure, String>> cancelOrder(
     String orderId, {
     String? reason,
+    required String stepUpToken,
   }) => throw UnimplementedError();
 
   @override
-  Future<Either<Failure, CanReviewResponse>> canReviewOrder(String orderId) =>
-      throw UnimplementedError();
+  Future<Either<Failure, CanReviewResponse>> canReviewOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => throw UnimplementedError();
 }
 
 OrderEntity _order(String id) => OrderEntity(
@@ -83,7 +91,10 @@ void main() {
       );
       repository.responses.add(_page([]));
       final container = ProviderContainer(
-        overrides: [orderRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
       );
       addTearDown(container.dispose);
       final notifier = container.read(salesListProvider.notifier);
@@ -122,7 +133,10 @@ void main() {
       );
       repository.responses.add(_page([_order('order-3')]));
       final container = ProviderContainer(
-        overrides: [orderRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
       );
       addTearDown(container.dispose);
       final notifier = container.read(salesListProvider.notifier);
@@ -157,7 +171,10 @@ void main() {
       repository.responses.add(initial.future);
       repository.responses.add(more.future);
       final container = ProviderContainer(
-        overrides: [orderRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
       );
       addTearDown(container.dispose);
       final notifier = container.read(salesListProvider.notifier);

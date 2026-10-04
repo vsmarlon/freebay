@@ -66,7 +66,7 @@ magenta and makes it read as decoration rather than signal.
 |---|---|---|---|
 | Primary text | `#11100E` | `#F1F1F1` | `context.textPrimary` |
 | Muted text | `#403C34` | `#A0A0A0` | `context.textSecondary` |
-| Hard border | `#11100E` | `#F1F1F1` | `context.borderColor` |
+| Hard border | `#11100E` | `#FF9DEE` | `context.borderColor` |
 | Soft border | `#C9C1B2` | `#3A3A3A` | `context.borderSoftColor` |
 
 The hard border is ink, not grey. A brutalist outline that apologises is just a box.
@@ -76,15 +76,18 @@ The hard border is ink, not grey. A brutalist outline that apologises is just a 
 | Token | Value | Use |
 |---|---|---|
 | `AppColors.primary` | `#660062` | Gradient start, hard shadow under primary buttons |
-| `AppColors.primaryContainer` | `#8A1083` | The magenta. Primary actions, focus, active state |
+| `AppColors.primaryForeground` | `#FF9DEE` | Dark-mode foreground accent and hard border |
+| `AppColors.primaryContainer` | `#8A1083` | The magenta. Primary action fills, focus surfaces |
 | `AppColors.brutalistGradient` | `#660062 → #8A1083` | Primary button fill only |
 | `AppColors.success` | `#10B981` | Escrow released, verified |
 | `AppColors.warning` | `#F59E0B` | Escrow held, pending |
 | `AppColors.error` | `#BA1A1A` | Disputes, destructive actions, validation |
 | `AppColors.info` | `#3B82F6` | Neutral informational state |
 
-Note `primary` and `primaryContainer` are not swapped by accident: `primary` is the
-darker gradient stop, `primaryContainer` is the signature magenta you actually see.
+In dark mode, `ColorScheme.primary` is the accessible `#FF9DEE` foreground/accent;
+`primaryContainer` remains the `#8A1083` action fill and `onPrimaryContainer` remains
+white on that fill. `AppColors.primaryForeground` names the contrast foreground token;
+the palette `primary` remains the darker `#660062` gradient stop.
 
 ## Type
 
@@ -151,6 +154,10 @@ Roles, not milliseconds. `AppMotion`:
 Linear for anything the finger drives — easing a press makes it feel laggy. `easeOut`
 only for arrivals, because things entering decelerate. Nothing eases in, and nothing
 overshoots.
+
+When the platform requests reduced motion, `AppMotion.forContext` returns zero for
+route and shell-page transitions; skeleton scopes stop their repeating clock. Keep
+state changes and haptic feedback functional.
 
 ## Depth
 

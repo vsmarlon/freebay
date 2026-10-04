@@ -41,8 +41,9 @@ Aggregate reduction: **83.3% bytes**, **82.7% whitespace words**, approximately 
 ## Verification record
 
 - Before edits, complete `.agents/skills` and `.claude/skills` file-path sets and SHA-256 content hashes matched; no differing files were found.
-- Tested actual PowerShell `New-Item -ItemType SymbolicLink` after verifying `.claude` parent and `.agents/skills` target. It created `.claude/skills -> ..\.agents\skills` as a filesystem symbolic link while the persistent `core.symlinks` setting remained `false`.
-- The logical Claude mirror resolves all 19 `SKILL.md` files through the link. `git -c core.symlinks=true add -A -- .agents/skills .claude/skills docs/test-runs/2026-09-30/skills-maintenance/REPORT.md` staged the genuine symbolic link as mode `120000` (`.claude/skills`, blob `2b7a412b8fa0fb7e985b0793321bd4e698f2b6cd`); persistent `core.symlinks=false` remains unchanged.
+- Tested actual PowerShell `New-Item -ItemType SymbolicLink` after verifying `.claude` parent and `.agents/skills` target. It created `.claude/skills -> ..\.agents\skills` as a filesystem symbolic link in the isolated worktree. On main integration with `core.symlinks=false`, checkout materialized Git's link-target blob as a regular one-line file; confirmed its contents were exactly `../.agents/skills`, then replaced that materialization with the real filesystem symlink. No other content was removed.
+- The main Claude mirror now resolves all 19 `SKILL.md` files through the link. `git -c core.symlinks=true ls-files --stage .claude/skills` reports mode `120000`; persistent `core.symlinks=false` remains unchanged. The existing integration commits are retained; no commit was made during unresolved user WIP conflicts.
+- Main working tree has unresolved conflicts in unrelated media/profile files. They were not edited, staged, or resolved. Do not run broad staging/commit commands during this WIP.
 - Relative Markdown links in all canonical skill bodies resolve. `git diff --check` and `git diff --cached --check` completed without whitespace errors. Git emitted LF-to-CRLF working-copy warnings for the edited Markdown files; contents and staging succeeded.
 
 ## Deviations and limits
@@ -51,3 +52,4 @@ Aggregate reduction: **83.3% bytes**, **82.7% whitespace words**, approximately 
 - P2/P4/P5/P10 are explicitly described as pending plan decisions, not completed work. This report records the skill-maintenance changes only, not completion of the hardening plan.
 - The `connect-required-verification-information` body now defers detailed response-field/table rendering to live Stripe documentation because the former long mapping duplicated changing API response structure; validated prerequisite ordering and current-response requirements remain.
 - No application code/tests were changed; no Flutter/Nest application suite was run. This is documentation-only validation.
+- During integration, `git status` showed unrelated staged/unstaged changes and `UU` conflicts (including app shell/video/profile and tests); those remain untouched.

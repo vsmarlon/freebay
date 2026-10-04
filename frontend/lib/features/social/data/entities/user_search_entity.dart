@@ -10,6 +10,7 @@ abstract class UserSearchEntity with _$UserSearchEntity {
     required String displayName,
     String? username,
     String? avatarUrl,
+    String? avatarBlurHash,
     String? bio,
     @Default(false) bool isVerified,
     @Default(0.0) double reputationScore,

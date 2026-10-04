@@ -1,4 +1,5 @@
 export * from './get-profile.usecase';
+export * from './request-profile-verification.usecase';
 export * from './get-user-stats.usecase';
 export * from './update-profile.usecase';
 export * from './update-fcm-token.usecase';

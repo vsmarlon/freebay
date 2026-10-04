@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/components/app_snackbar.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Destination box of the safe-link dialog: host, full URL and copy action.
 class SafeLinkDestination extends StatelessWidget {
@@ -16,11 +17,12 @@ class SafeLinkDestination extends StatelessWidget {
 
   void _copyUrl(BuildContext context) {
     Clipboard.setData(ClipboardData(text: normalizedUrl));
-    AppSnackbar.success(context, 'Link copiado para a área de transferência');
+    AppSnackbar.success(context, l10n(context).safeLinkCopied);
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     return Container(
       padding: const EdgeInsets.all(12),
@@ -34,7 +36,7 @@ class SafeLinkDestination extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'DESTINO:',
+            strings.safeLinkDestination.toUpperCase(),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 10,
@@ -72,7 +74,7 @@ class SafeLinkDestination extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.copy, size: 16),
                 onPressed: () => _copyUrl(context),
-                tooltip: 'Copiar link',
+                tooltip: strings.safeLinkCopy,
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(),
               ),

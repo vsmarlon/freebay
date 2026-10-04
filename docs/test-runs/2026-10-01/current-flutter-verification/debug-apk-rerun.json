@@ -1,0 +1,8 @@
+{
+  "label": "debug-apk-rerun",
+  "command": "flutter build apk --debug",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "started": "2026-10-01T06:43:40.415Z",
+  "ended": "2026-10-01T06:49:58.527Z",
+  "exitCode": 0
+}

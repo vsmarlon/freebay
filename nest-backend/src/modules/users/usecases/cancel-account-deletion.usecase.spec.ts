@@ -36,16 +36,35 @@ describe('CancelAccountDeletionUseCase', () => {
   });
 
   it('deve cancelar quando existe um pedido de exclusão pendente', async () => {
-    const result = await sut.execute({ userId: 'user-1' });
+    const input = { userId: 'user-1', authenticatedAtMs: Date.now() };
+    const result = await sut.execute(input);
 
     expect(result.isRight()).toBe(true);
     expect(mockAccountLifecycleRepository.cancelDeletion).toHaveBeenCalledWith('user-1');
   });
 
+  it('rejects an old authenticated session even when a deletion is pending', async () => {
+    const input = { userId: 'user-1', authenticatedAtMs: Date.now() - 6 * 60 * 1000 };
+    const result = await sut.execute(input);
+
+    expect(result.isLeft()).toBe(true);
+    expect(result.value).toMatchObject({ code: 'FRESH_AUTH_REQUIRED', statusCode: 401 });
+    expect(mockAccountLifecycleRepository.cancelDeletion).not.toHaveBeenCalled();
+  });
+
+  it('does not treat a missing auth-time claim as fresh', async () => {
+    const input = { userId: 'user-1', authenticatedAtMs: null };
+    const result = await sut.execute(input);
+
+    expect(result.isLeft()).toBe(true);
+    expect(result.value).toMatchObject({ code: 'FRESH_AUTH_REQUIRED', statusCode: 401 });
+    expect(mockAccountLifecycleRepository.cancelDeletion).not.toHaveBeenCalled();
+  });
+
   it('deve retornar UserNotFoundError quando o usuário não existe', async () => {
     mockUserRepository.findById.mockResolvedValue(right(null));
 
-    const result = await sut.execute({ userId: 'user-1' });
+    const result = await sut.execute({ userId: 'user-1', authenticatedAtMs: Date.now() });
 
     expect(result.isLeft()).toBe(true);
     expect(result.value).toBeInstanceOf(UserNotFoundError);
@@ -57,7 +76,7 @@ describe('CancelAccountDeletionUseCase', () => {
       right({ id: 'user-1', deletionRequestedAt: null }),
     );
 
-    const result = await sut.execute({ userId: 'user-1' });
+    const result = await sut.execute({ userId: 'user-1', authenticatedAtMs: Date.now() });
 
     expect(result.isLeft()).toBe(true);
     expect(result.value).toBeInstanceOf(BadRequestError);

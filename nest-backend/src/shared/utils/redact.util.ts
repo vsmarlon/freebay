@@ -17,6 +17,8 @@ const SENSITIVE_KEYS = new Set([
   'idToken',
   'authorization',
   'code',
+  'profileVerificationCode',
+  'otp',
   'cpf',
   'cpfHash',
   'clientSecret',

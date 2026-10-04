@@ -1,0 +1,8 @@
+{
+  "label": "flutter-version",
+  "command": "flutter --version",
+  "cwd": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "started": "2026-10-01T06:37:54.424Z",
+  "ended": "2026-10-01T06:37:55.371Z",
+  "exitCode": 0
+}

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freebay/shared/config/app_config.dart';
@@ -8,10 +10,12 @@ import 'package:freebay/shared/utils/media_url.dart';
 const httpRequestTimeout = Duration(seconds: 10);
 
 class LoggingInterceptor extends Interceptor {
+  String _safeUri(Uri uri) => uri.replace(query: '', fragment: '').toString();
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     if (kDebugMode) {
-      debugPrint('[HTTP] ${options.method} ${options.uri}');
+      debugPrint('[HTTP] ${options.method} ${_safeUri(options.uri)}');
     }
     handler.next(options);
   }
@@ -20,7 +24,7 @@ class LoggingInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (kDebugMode) {
       debugPrint(
-        '[HTTP] ${response.statusCode} ${response.requestOptions.uri}',
+        '[HTTP] ${response.statusCode} ${_safeUri(response.requestOptions.uri)}',
       );
     }
     handler.next(response);
@@ -30,7 +34,7 @@ class LoggingInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (kDebugMode) {
       debugPrint(
-        '[HTTP ERROR] ${err.response?.statusCode} ${err.requestOptions.uri}',
+        '[HTTP ERROR] ${err.response?.statusCode} ${_safeUri(err.requestOptions.uri)}',
       );
       debugPrint('[HTTP ERROR TYPE] ${err.type}');
       if (err.type == DioExceptionType.connectionError) {
@@ -102,6 +106,48 @@ class HttpClient {
       ),
     );
 
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (error, handler) async {
+          final options = error.requestOptions;
+          final retries = options.extra['transient_retry_count'];
+          final retryCount = retries is int ? retries : 0;
+          final status = error.response?.statusCode;
+          final retryableStatus =
+              status == 502 || status == 503 || status == 504;
+          final retryableFailure =
+              error.type == DioExceptionType.connectionError ||
+              error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.sendTimeout ||
+              error.type == DioExceptionType.receiveTimeout;
+          final generationValue = options.extra[_originGenerationKey];
+          final generation = generationValue is int
+              ? generationValue
+              : _sessionGeneration;
+          if (options.method.toUpperCase() != 'GET' ||
+              retryCount >= 2 ||
+              !(retryableStatus || retryableFailure) ||
+              options.cancelToken?.isCancelled == true ||
+              !_isCurrent(generation)) {
+            return handler.next(error);
+          }
+
+          final delayMs = 200 * (1 << retryCount) + Random().nextInt(100);
+          options.extra['transient_retry_count'] = retryCount + 1;
+          await Future<void>.delayed(Duration(milliseconds: delayMs));
+          if (options.cancelToken?.isCancelled == true ||
+              !_isCurrent(generation)) {
+            return handler.next(error);
+          }
+          try {
+            handler.resolve(await dio.fetch<Object?>(options));
+          } on DioException catch (retryError) {
+            handler.next(retryError);
+          }
+        },
+      ),
+    );
+
     // Auth interceptor — inject JWT token + refresh on 401
     dio.interceptors.add(
       QueuedInterceptorsWrapper(
@@ -126,6 +172,8 @@ class HttpClient {
               options.extra[_originGenerationKey] == generation &&
               token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+          } else {
+            options.headers.remove('Authorization');
           }
           handler.next(options);
         },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +12,9 @@ import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
 import 'package:freebay/features/auth/presentation/widgets/google_auth_button.dart';
+import 'package:freebay/features/auth/presentation/widgets/apple_auth_button.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -71,6 +74,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final authState = ref.watch(authControllerProvider);
 
     ref.listen<AsyncValue<UserEntity?>>(authControllerProvider, (_, next) {
@@ -102,7 +106,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           child: Column(
             children: [
               AuthHeader(
-                title: 'ENTRAR',
+                title: strings.authLogin.toUpperCase(),
                 showBack: context.canPop(),
                 onBack: () => context.pop(),
               ),
@@ -130,15 +134,15 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           end: 0.43,
                           child: AppTextField(
                             controller: _emailController,
-                            label: 'E-mail',
-                            hint: 'seu@email.com',
+                            label: strings.authEmail,
+                            hint: strings.authEmailExample,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             prefixIcon: Icons.email_outlined,
                             validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'Informe seu e-mail'
+                                ? strings.authEmailRequired
                                 : (!ValueUtils.validateEmail(v)
-                                      ? 'E-mail inválido'
+                                      ? strings.authEmailInvalid
                                       : null),
                           ),
                         ),
@@ -149,16 +153,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           end: 0.57,
                           child: AppTextField(
                             controller: _passwordController,
-                            label: 'Senha',
-                            hint: '*********',
+                            label: strings.authPassword,
+                            hint: strings.authPasswordMask,
                             obscureText: true,
                             showPasswordToggle: true,
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _handleLogin(),
                             prefixIcon: Icons.lock_outline,
                             validator: (v) => (v == null || v.isEmpty)
-                                ? 'Informe sua senha'
-                                : (v.length < 8 ? 'Mínimo 8 caracteres' : null),
+                                ? strings.authPasswordRequired
+                                : (v.length < 8
+                                      ? strings.authPasswordMinLength
+                                      : null),
                           ),
                         ),
                         Spacing.vSm,
@@ -180,7 +186,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                     ),
                                     Flexible(
                                       child: Text(
-                                        'Lembrar',
+                                        strings.authRememberMe,
                                         style: TextStyle(
                                           fontFamily: AppTypography.fontFamily,
                                           fontWeight: FontWeight.w600,
@@ -196,14 +202,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               InkWell(
                                 onTap: () =>
                                     context.push(AppRoutes.recoverPassword),
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
                                     horizontal: 4,
                                     vertical: 6,
                                   ),
                                   child: Text(
-                                    'Esqueceu a senha?',
-                                    style: TextStyle(
+                                    strings.authForgotPassword,
+                                    style: const TextStyle(
                                       fontFamily: AppTypography.fontFamily,
                                       color: AppColors.primaryContainer,
                                       fontWeight: FontWeight.w700,
@@ -224,19 +230,31 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               AppButton(
-                                label: 'ENTRAR NA CONTA',
+                                label: strings.authEnterAccount.toUpperCase(),
                                 size: AppButtonSize.large,
                                 isLoading: authState.isLoading,
                                 onPressed: _handleLogin,
                               ),
                               Spacing.vMd,
                               GoogleAuthButton(
-                                label: 'ENTRAR COM GOOGLE',
+                                label: strings.authSignInGoogle.toUpperCase(),
                                 loading: authState.isLoading,
                                 onTap: () => ref
                                     .read(authControllerProvider.notifier)
                                     .googleLogin(),
                               ),
+                              if (!kIsWeb &&
+                                  defaultTargetPlatform ==
+                                      TargetPlatform.iOS) ...[
+                                Spacing.vSm,
+                                AppleAuthButton(
+                                  text: strings.authSignInApple,
+                                  loading: authState.isLoading,
+                                  onPressed: () => ref
+                                      .read(authControllerProvider.notifier)
+                                      .appleLogin(),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -245,11 +263,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           animation: _anim,
                           begin: 0.6,
                           end: 0.86,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
                             children: [
                               Text(
-                                'NÃO TEM UMA CONTA? ',
+                                strings.authNoAccountQuestion.toUpperCase(),
                                 style: TextStyle(
                                   fontFamily: AppTypography.fontFamily,
                                   fontSize: 12,
@@ -259,14 +277,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               ),
                               InkWell(
                                 onTap: () => context.push(AppRoutes.register),
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
                                     horizontal: 6,
                                     vertical: 4,
                                   ),
                                   child: Text(
-                                    'CRIAR CONTA',
-                                    style: TextStyle(
+                                    strings.authSignUp.toUpperCase(),
+                                    style: const TextStyle(
                                       fontFamily:
                                           AppTypography.headlineFontFamily,
                                       color: AppColors.primaryContainer,

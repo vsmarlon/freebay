@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
@@ -13,6 +14,7 @@ import 'package:freebay/features/cart/presentation/pages/cart_checkout_page.dart
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/pages/cart_page.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 class _CheckoutReadyCart extends CartNotifier {
   @override
@@ -75,18 +77,29 @@ class _AddAdapter implements HttpClientAdapter {
 }
 
 void main() {
-  testWidgets('a created cart payment can be completed with PaymentSheet', (
+  testWidgets('a created cart payment offers wallets or an unavailable state', (
     tester,
   ) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [cartProvider.overrideWith(_CheckoutReadyCart.new)],
-        child: const MaterialApp(home: CartCheckoutPage()),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CartCheckoutPage(),
+        ),
       ),
     );
     await tester.pump();
 
-    expect(find.text('PAGAR COM CARTÃO'), findsOneWidget);
+    expect(
+      find.text(
+        'Apple Pay ou Google Pay indisponível neste dispositivo ou não configurado.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(PlatformPayButton), findsNothing);
     expect(find.text('CHECKOUT GERADO'), findsOneWidget);
   });
 
@@ -96,7 +109,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [cartProvider.overrideWith(_OutOfStockCart.new)],
-        child: const MaterialApp(home: CartPage()),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CartPage(),
+        ),
       ),
     );
     await tester.pump();

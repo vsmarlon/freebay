@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
+import { StoryAudience } from '@prisma/client';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { CreatePostUseCase } from './create-post.usecase';
 import { LikePostUseCase } from './like-post.usecase';
@@ -27,6 +28,7 @@ describe('CreatePostUseCase', () => {
         id: 'post-123',
         content: data.content ?? null,
         imageUrl: data.imageUrl ?? null,
+        imageBlurHash: data.imageBlurHash ?? null,
         type: data.type,
         userId: data.user?.connect?.id ?? 'user-123',
         likesCount: 0,
@@ -73,6 +75,20 @@ describe('CreatePostUseCase', () => {
 
     expect(post.imageUrl).toBe('http://example.com/image.jpg');
     expect(post.type).toBe('PRODUCT');
+  });
+
+  it('does not persist or return image hashes for close-friends posts', async () => {
+    const result = await sut.execute(createPostInput({
+      imageUrl: '/media/privatepost/123e4567-e89b-12d3-a456-426614174000.jpg',
+      imageBlurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
+      audience: StoryAudience.CLOSE_FRIENDS,
+    }));
+
+    expect(mockPostRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+      imageBlurHash: null,
+      audience: StoryAudience.CLOSE_FRIENDS,
+    }));
+    expect(expectRight(result)).not.toHaveProperty('imageBlurHash');
   });
 
   it('creates PostMention rows for each mentionId', async () => {

@@ -1,65 +1,107 @@
 part of 'auth_controller.dart';
 
 mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
-  Future<void> _initAuth() async {
+  Future<void> _initAuth(int attempt) async {
     if (!ref.mounted) return;
+    // Close HTTP auth before any asynchronous consent/storage lookup can run.
+    HttpClient.suspendRefresh();
     state = const AsyncValue.loading();
     ref.read(isInitialAuthLoadingProvider.notifier).set(true);
 
     try {
       final hasSeenOnboarding = StorageService.hasSeenOnboardingSync();
-      if (!ref.mounted) return;
+      if (!_isCurrentAuthAttempt(attempt)) return;
       ref.read(hasSeenOnboardingProvider.notifier).set(hasSeenOnboarding);
 
       final rememberMe = await StorageService.getRememberMe();
-      if (!ref.mounted) return;
+      if (!_isCurrentAuthAttempt(attempt)) return;
       if (!rememberMe) {
-        await StorageService.clearTokens();
-        if (!ref.mounted) return;
+        await _clearTokensForAttempt(attempt);
+        if (!_isCurrentAuthAttempt(attempt)) return;
         state = const AsyncValue.data(null);
         return;
       }
 
+      final biometryEnabled = await ref
+          .read(biometryServiceProvider)
+          .isEnabled();
+      if (!_isCurrentAuthAttempt(attempt)) return;
+      if (biometryEnabled) {
+        await _clearTokensForAttempt(attempt);
+        if (!_isCurrentAuthAttempt(attempt)) return;
+        await _tryBiometricLogin(attempt);
+        return;
+      }
       final token = await StorageService.getToken();
-      if (!ref.mounted) return;
+      if (!_isCurrentAuthAttempt(attempt)) return;
       if (token == null) {
-        await _tryBiometricLogin();
+        await _tryBiometricLogin(attempt);
         return;
       }
 
+      final admitted = await AuthSessionCoordinator.establishSession(
+        canEstablish: () => _isCurrentAuthAttempt(attempt),
+      );
+      if (!admitted || !_isCurrentAuthAttempt(attempt)) return;
       final result = await ref.read(getCurrentUserUsecaseProvider)();
-      if (!ref.mounted) return;
+      if (!_isCurrentAuthAttempt(attempt)) return;
       await result.fold(
         (failure) async {
-          await StorageService.clearTokens();
-          if (!ref.mounted) return;
+          if (!_isCurrentAuthAttempt(attempt)) return;
+          await _clearTokensForAttempt(attempt);
+          if (!_isCurrentAuthAttempt(attempt)) return;
           state = const AsyncValue.data(null);
         },
         (user) async {
-          if (!ref.mounted) return;
-          await AuthSessionCoordinator.establishSession();
-          state = AsyncValue.data(user);
+          if (!_isCurrentAuthAttempt(attempt)) return;
+          await _establishAuthenticatedSession(user, attempt: attempt);
         },
       );
     } catch (_) {
-      await StorageService.clearTokens();
-      if (!ref.mounted) return;
+      if (!_isCurrentAuthAttempt(attempt)) return;
+      await _clearTokensForAttempt(attempt);
+      if (!_isCurrentAuthAttempt(attempt)) return;
       state = const AsyncValue.data(null);
     } finally {
-      if (ref.mounted) {
+      if (_isCurrentAuthAttempt(attempt)) {
         ref.read(isInitialAuthLoadingProvider.notifier).set(false);
         routerRefreshNotifier.value++;
       }
     }
   }
 
-  Future<void> _tryBiometricLogin() async {
-    final result = await ref.read(biometricLoginUsecaseProvider)();
-    if (!ref.mounted) return;
-    result.fold(
-      (failure) => state = const AsyncValue.data(null),
-      (user) => state = AsyncValue.data(user),
+  Future<void> _tryBiometricLogin(int attempt) async {
+    final request = ref.read(biometricLoginUsecaseProvider)(attempt);
+    final result = await request;
+    if (!_isCurrentAuthAttempt(attempt)) return;
+    await result.fold<Future<void>>((failure) async {
+      HttpClient.suspendRefresh();
+      await _clearTokensForAttempt(attempt);
+      if (_isCurrentAuthAttempt(attempt)) state = const AsyncValue.data(null);
+    }, (user) => _establishAuthenticatedSession(user, attempt: attempt));
+  }
+
+  bool _isCurrentAuthAttempt(int attempt) =>
+      ref.mounted && AuthSessionCoordinator.isCurrentAttempt(attempt);
+
+  Future<void> _clearTokensForAttempt(int attempt) =>
+      AuthSessionCoordinator.serialize(() async {
+        if (_isCurrentAuthAttempt(attempt)) await StorageService.clearTokens();
+      });
+
+  Future<void> _establishAuthenticatedSession(
+    UserEntity user, {
+    required int attempt,
+  }) async {
+    final established = await AuthSessionCoordinator.establishSession(
+      canEstablish: () => _isCurrentAuthAttempt(attempt),
     );
+    if (!established || !_isCurrentAuthAttempt(attempt)) return;
+    ref.read(cartProvider.notifier).resetForSessionChange();
+    state = AsyncValue.data(user);
+    try {
+      await ref.read(cartProvider.notifier).loadCart();
+    } catch (_) {}
   }
 
   void _invalidateUserProviders() {
@@ -77,7 +119,7 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
     ref.invalidate(walletProvider);
     ref.invalidate(walletHistoryProvider);
     ref.invalidate(connectStatusProvider);
-    ref.invalidate(cartProvider);
+    ref.read(cartProvider.notifier).resetForSessionChange();
     ref.invalidate(disputeListProvider);
     ref.invalidate(purchasesListProvider);
     ref.invalidate(salesListProvider);
@@ -98,35 +140,56 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
     ref.invalidate(userStoriesProvider);
   }
 
-  Future<void> logout() => AuthSessionCoordinator.serialize(() async {
-    HttpClient.suspendRefresh();
-    final rememberMe = await StorageService.getRememberMe();
-    if (!ref.mounted) return;
-    state = const AsyncValue.loading();
-    final result = await ref.read(authRepositoryProvider).logout();
+  Future<void> logout() {
+    AuthSessionCoordinator.beginAuthentication();
+    ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+    state = const AsyncValue.data(null);
+    _invalidateUserProviders();
+    routerRefreshNotifier.value++;
+    return AuthSessionCoordinator.serialize(() async {
+      final rememberMe = await StorageService.getRememberMe();
+      if (!ref.mounted) return;
+      final result = await ref.read(authRepositoryProvider).logout();
 
-    await result.fold((failure) async {
-      await _clearLocalAuthState(clearSavedEmail: !rememberMe);
-      ErrorReporter.report('logout', failure);
-    }, (_) async => _clearLocalAuthState(clearSavedEmail: !rememberMe));
-  });
+      await result.fold((failure) async {
+        await _clearLocalAuthState(clearSavedEmail: !rememberMe);
+        ErrorReporter.report('logout', failure);
+      }, (_) async => _clearLocalAuthState(clearSavedEmail: !rememberMe));
+    });
+  }
 
-  Future<void> forceLogout() =>
-      AuthSessionCoordinator.serialize(_clearLocalAuthState);
+  Future<void> forceLogout() {
+    AuthSessionCoordinator.beginAuthentication();
+    ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+    state = const AsyncValue.data(null);
+    _invalidateUserProviders();
+    routerRefreshNotifier.value++;
+    return AuthSessionCoordinator.serialize(_clearLocalAuthState);
+  }
 
-  Future<void> expireSession() async {
-    HttpClient.suspendRefresh();
-    await AuthSessionCoordinator.serialize(
+  Future<void> expireSession() {
+    AuthSessionCoordinator.beginAuthentication();
+    ref.read(isInitialAuthLoadingProvider.notifier).set(false);
+    state = const AsyncValue.data(null);
+    _invalidateUserProviders();
+    routerRefreshNotifier.value++;
+    return AuthSessionCoordinator.serialize(
       () => _clearLocalAuthState(clearBiometric: false),
     );
   }
 
-  Future<void> _clearBiometryIfAccountSwitch(UserEntity user) async {
+  Future<void> _clearBiometryIfAccountSwitch(
+    UserEntity user, {
+    required int attempt,
+  }) => AuthSessionCoordinator.serialize(() async {
+    if (!_isCurrentAuthAttempt(attempt)) return;
     final ownerId = await StorageService.getBiometricOwner();
-    if (ownerId != null && ownerId != user.id) {
+    if (_isCurrentAuthAttempt(attempt) &&
+        ownerId != null &&
+        ownerId != user.id) {
       await BiometryService().clearState();
     }
-  }
+  });
 
   Future<void> _clearLocalAuthState({
     bool clearBiometric = true,

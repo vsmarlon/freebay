@@ -1,0 +1,6 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:02 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: the handle dismisses a sheet with scrollable content
+00:14 +2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+[HTTP] GET http://localhost:3000/stories/highlights/user/settings-owner
+00:16 +3: All tests passed!

@@ -3,12 +3,14 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/features/profile/presentation/pages/saved_posts_page.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../support/auth_test_doubles.dart';
 import '../../support/test_users.dart';
@@ -66,7 +68,17 @@ void main() {
             SocialRepository(client: dio),
           ),
         ],
-        child: const MaterialApp(home: SavedPostsPage()),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SavedPostsPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -106,7 +118,17 @@ void main() {
             () => TestAuthController(testUser(id: 'user-1')),
           ),
         ],
-        child: const MaterialApp(home: SavedPostsPage()),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SavedPostsPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

@@ -36,6 +36,8 @@ class NotificationService {
         });
         await _handleForegroundMessages();
         _handleNotificationOpens();
+        final token = await getToken();
+        if (token != null) await onTokenChanged?.call(token);
       } catch (e) {
         debugPrint('[NotificationService] FCM init skipped: $e');
       }

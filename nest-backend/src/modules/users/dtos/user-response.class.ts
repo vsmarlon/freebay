@@ -19,6 +19,9 @@ export class UserResponse {
   avatarUrl: string | null;
 
   @ApiPropertyOptional({ example: null, nullable: true })
+  avatarBlurHash?: string | null;
+
+  @ApiPropertyOptional({ example: null, nullable: true })
   bannerUrl: string | null;
 
   @ApiPropertyOptional({ example: null, nullable: true })
@@ -111,6 +114,9 @@ export class SearchUserResponse {
   avatarUrl: string | null;
 
   @ApiPropertyOptional({ nullable: true })
+  avatarBlurHash?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
   bio: string | null;
 
   @ApiProperty({ example: false })
@@ -151,6 +157,9 @@ export class SuggestionResponse {
   avatarUrl: string | null;
 
   @ApiPropertyOptional({ nullable: true })
+  avatarBlurHash?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
   bio: string | null;
 
   @ApiProperty({ example: false })
@@ -185,6 +194,7 @@ export const toUserBrief = (user: UserBrief) => ({
   displayName: user.displayName,
   username: user.username ?? null,
   avatarUrl: user.avatarUrl,
+  avatarBlurHash: user.avatarBlurHash,
   isVerified: user.isVerified,
   reputationScore: user.reputationScore,
 });
@@ -198,6 +208,7 @@ export const toUserResponse = (
   displayName: user.displayName,
   username: user.username,
   avatarUrl: user.avatarUrl,
+  avatarBlurHash: user.avatarBlurHash,
   bannerUrl: user.bannerUrl,
   bio: user.bio,
   city: user.city,

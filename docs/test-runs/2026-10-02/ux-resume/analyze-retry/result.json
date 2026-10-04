@@ -1,0 +1,11 @@
+{
+  "command": "flutter analyze --fatal-infos lib test libs/freebay_design_system/lib",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:21:22.1999412Z",
+  "finished_utc": "2026-10-02T14:21:51.9644423Z",
+  "exit": 1,
+  "changed_manifest_rows": 0,
+  "before_sha256": "18BA29650796D7B08CCDE505C93F568348443F06D8C654582A86DE6DDAD80BFA",
+  "after_sha256": "18BA29650796D7B08CCDE505C93F568348443F06D8C654582A86DE6DDAD80BFA"
+}

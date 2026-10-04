@@ -2,22 +2,23 @@ import 'package:freebay/core/ui.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/router/app_router.dart';
 import 'core/router/app_routes.dart';
 import 'core/providers/theme_provider.dart';
-import 'shared/config/app_config.dart';
 import 'shared/services/http_client.dart';
 import 'shared/services/error_reporter.dart';
 import 'shared/services/notification_service.dart';
 import 'core/router/app_link.dart';
 import 'shared/services/storage_service.dart';
 import 'shared/services/session_timeout.dart';
+import 'shared/services/payment_sdk_service.dart';
 import 'shared/services/auth_session_coordinator.dart';
+import 'shared/l10n/generated/app_localizations.dart';
+import 'shared/l10n/app_locale_resolution.dart';
+import 'shared/l10n/app_localizations_context.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/data/entities/user_entity.dart';
 import 'features/notifications/presentation/providers/notifications_provider.dart';
@@ -25,48 +26,104 @@ import 'features/notifications/presentation/providers/notifications_provider.dar
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    ErrorWidget.builder = (details) => AppErrorWidget(
+      details: details,
+      action: _canPopRouter() ? AppErrorAction.back : AppErrorAction.home,
+      onRecover: _recoverFromError,
+    );
 
     FlutterError.onError = (details) {
-      ErrorReporter.report('flutter', details.exception, details.stack);
-      if (kDebugMode) FlutterError.presentError(details);
+      if (!ErrorReporter.isEnabled) {
+        ErrorReporter.report('flutter', details.exception, details.stack);
+      }
+      if (kDebugMode) {
+        FlutterError.presentError(details);
+      }
     };
     PlatformDispatcher.instance.onError = (error, stack) {
-      ErrorReporter.report('platform', error, stack);
+      if (!ErrorReporter.isEnabled) {
+        ErrorReporter.report('platform', error, stack);
+      }
       return true;
     };
 
     try {
-      await dotenv.load();
-    } catch (e) {
-      debugPrint('[AppConfig] Info: No .env asset loaded from bundle ($e)');
+      await ErrorReporter.initialize();
+    } catch (error, stack) {
+      ErrorReporter.report('sentry-init', error, stack);
     }
-    await ErrorReporter.run(_bootstrap);
+    try {
+      await _bootstrap();
+    } catch (error, stack) {
+      ErrorReporter.report('bootstrap', error, stack);
+      _showStartupFailure(error, stack);
+    }
   }, (e, s) => ErrorReporter.report('uncaught', e, s));
 }
 
 Future<void> _bootstrap() async {
-  await StorageService.init();
-  if (!kIsWeb && AppConfig.stripePublishableKey.isNotEmpty) {
+  await Future.wait([
+    StorageService.init(),
+    Hive.initFlutter().catchError((Object error, StackTrace stack) {
+      ErrorReporter.report('hive-init', error, stack);
+    }),
+  ]);
+  StorageService.enableCacheStore();
+  runApp(const ProviderScope(child: FreeBayApp()));
+}
+
+Future<void> _recoverFromError() async {
+  final navigatorContext = appRouter.configuration.navigatorKey.currentContext;
+  if (navigatorContext?.mounted == true) {
     try {
-      Stripe.publishableKey = AppConfig.stripePublishableKey;
-      await Stripe.instance.applySettings();
-    } catch (e, s) {
-      ErrorReporter.report('stripe-init', e, s);
+      if (await appRouter.routerDelegate.popRoute()) return;
+    } catch (error, stack) {
+      ErrorReporter.report('error-navigation-recovery', error, stack);
     }
+    runApp(ProviderScope(key: UniqueKey(), child: const FreeBayApp()));
+  } else {
+    await _bootstrap();
   }
-  await Hive.initFlutter();
-  try {
-    await Firebase.initializeApp();
-  } catch (e, s) {
-    ErrorReporter.report('firebase-init', e, s);
-  }
+  appRouter.go(AppRoutes.feed);
+}
+
+bool _canPopRouter() =>
+    appRouter.configuration.navigatorKey.currentContext?.mounted == true &&
+    appRouter.routerDelegate.currentConfiguration.matches.isNotEmpty &&
+    appRouter.canPop();
+
+void _showStartupFailure(Object error, StackTrace stack) {
+  runApp(
+    MaterialApp(
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localeListResolutionCallback: (locales, _) => resolveAppLocale(locales),
+      home: AppErrorWidget(
+        details: FlutterErrorDetails(exception: error, stack: stack),
+        onRecover: _bootstrap,
+      ),
+    ),
+  );
+}
+
+Future<void> _initializeDeferredServices() async {
+  await Future.wait([PaymentSdkService.ensureReady(), _initializeFirebase()]);
   try {
     await NotificationService().initialize();
+    await NotificationService().consumeLaunchNotification();
   } catch (e, s) {
     ErrorReporter.report('notifications-init', e, s);
   }
-  ErrorWidget.builder = (d) => AppErrorWidget(details: d);
-  runApp(const ProviderScope(child: FreeBayApp()));
+}
+
+Future<void> _initializeFirebase() async {
+  try {
+    if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+  } catch (error, stack) {
+    ErrorReporter.report('firebase-init', error, stack);
+  }
 }
 
 class FreeBayApp extends ConsumerStatefulWidget {
@@ -108,7 +165,7 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(NotificationService().consumeLaunchNotification());
+      unawaited(_initializeDeferredServices());
     });
     _sessionTimeout = SessionTimeout(
       onExpired: _expireSession,
@@ -119,6 +176,10 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
 
     ref.listenManual(authControllerProvider, (previous, next) {
       final user = next.value;
+      final previousUser = previous?.value;
+      if (previousUser != null && previousUser.id != user?.id) {
+        unawaited(StorageService.clearUserCache(userId: previousUser.id));
+      }
       if (user == null || previous?.value?.id == user.id) return;
       _sessionTimeout.touch();
       unawaited(_registerPushToken());
@@ -172,11 +233,13 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
 
       final dialog = AppDialog.showError<void>(
         context: context,
-        title: 'Sessão expirada',
-        subtitle: 'Por segurança, entre novamente para continuar.',
-        okText: biometricAvailable ? 'Usar biometria' : 'Fazer login',
+        title: l10n(context).authSessionExpired,
+        subtitle: l10n(context).authSessionExpiredBody,
+        okText: biometricAvailable
+            ? l10n(context).authUseBiometrics
+            : l10n(context).authLogin,
         onOk: () => _reauthenticateAfterExpiry(interrupted, biometricAvailable),
-        dismissText: 'Continuar como convidado',
+        dismissText: l10n(context).authContinueAsGuest,
         onDismiss: () => appRouter.go(AppRoutes.feed),
         barrierDismissible: false,
         preventBack: true,
@@ -259,6 +322,9 @@ class _FreeBayAppState extends ConsumerState<FreeBayApp>
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       routerConfig: appRouter,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localeListResolutionCallback: (locales, _) => resolveAppLocale(locales),
       scrollBehavior: const _FreeBayScrollBehavior(),
       builder: (context, child) => Listener(
         onPointerDown: (_) => _sessionTimeout.touch(),

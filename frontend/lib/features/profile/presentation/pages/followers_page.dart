@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
@@ -15,6 +16,7 @@ class FollowersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final followersAsync = ref.watch(followersListProvider(userId));
 
     return Scaffold(
@@ -23,9 +25,10 @@ class FollowersPage extends ConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: 'SEGUIDORES',
+              text: strings.profileFollowersTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
               breadcrumbs: context.breadcrumbs,
@@ -34,10 +37,10 @@ class FollowersPage extends ConsumerWidget {
               child: followersAsync.when(
                 data: (followers) {
                   if (followers.users.isEmpty) {
-                    return const EmptyState(
+                    return EmptyState(
                       icon: Icons.people_outline,
-                      title: 'NENHUM SEGUIDOR',
-                      subtitle: 'Nenhum seguidor ainda.',
+                      title: strings.profileNoFollowers,
+                      subtitle: strings.profileNoFollowersBody,
                     );
                   }
                   final currentUserId = ref
@@ -140,7 +143,7 @@ class FollowersPage extends ConsumerWidget {
                   ),
                 ),
                 error: (error, _) => EmptyState.error(
-                  message: 'Erro ao carregar',
+                  message: strings.errorUnknown,
                   onRetry: () => ref
                       .read(followersListProvider(userId).notifier)
                       .loadMore(refresh: true),

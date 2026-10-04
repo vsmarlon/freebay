@@ -1,0 +1,8 @@
+{
+  "label": "diff-check",
+  "command": "git diff --check",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay",
+  "started": "2026-10-01T05:27:54.474Z",
+  "ended": "2026-10-01T05:27:55.077Z",
+  "exitCode": 0
+}

@@ -1,0 +1,8 @@
+{
+  "command": "flutter test integration_test/native_image_compositor_test.dart -d RX8M70JDTQV --reporter expanded",
+  "status": "CANCELLED",
+  "exit": null,
+  "reason": "OpenCode server restarted; harness reported cancellation. Build/install completed and first test began, but no test verdict was captured.",
+  "recovery_observed_utc": "2026-10-02T14:49:03.1224263Z",
+  "source_after_note": "Flutter-only recovery snapshot; not an exact cancellation-window boundary."
+}

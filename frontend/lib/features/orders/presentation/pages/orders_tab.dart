@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_card.dart';
@@ -11,6 +12,8 @@ import 'package:freebay/features/orders/presentation/widgets/sales_status_filter
 typedef OrderListView = ({
   bool isLoading,
   bool isLoadingMore,
+  bool isRefreshing,
+  bool isStale,
   bool hasMore,
   List<OrderEntity> orders,
   String? error,
@@ -46,6 +49,8 @@ class OrdersTab extends ConsumerWidget {
     return (
       isLoading: state.isLoading,
       isLoadingMore: state.isLoadingMore,
+      isRefreshing: state.isRefreshing,
+      isStale: state.isStale,
       hasMore: state.hasMore,
       orders: state.orders,
       error: state.error,
@@ -61,6 +66,8 @@ class OrdersTab extends ConsumerWidget {
     return (
       isLoading: state.isLoading,
       isLoadingMore: state.isLoadingMore,
+      isRefreshing: state.isRefreshing,
+      isStale: state.isStale,
       hasMore: state.hasMore,
       orders: state.orders,
       error: state.error,
@@ -72,11 +79,13 @@ class OrdersTab extends ConsumerWidget {
 
   Widget _buildState(BuildContext context, OrderListView view) {
     if (view.isLoading && view.orders.isEmpty) {
-      return ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: 4,
-        separatorBuilder: (context, index) => Spacing.vSm,
-        itemBuilder: (context, index) => const ShimmerBlock(height: 110),
+      return ShimmerScope(
+        child: ListView.separated(
+          padding: const EdgeInsets.all(Spacing.md),
+          itemCount: 4,
+          separatorBuilder: (context, index) => Spacing.vSm,
+          itemBuilder: (context, index) => const ShimmerBlock(height: 110),
+        ),
       );
     }
 
@@ -115,9 +124,10 @@ class OrdersTab extends ConsumerWidget {
           return false;
         },
         child: ListView.separated(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(Spacing.md),
           itemCount:
               view.orders.length +
+              (view.isRefreshing || view.isStale ? 1 : 0) +
               (view.isLoadingMore ? 1 : 0) +
               (view.error != null ? 1 : 0) +
               (!view.hasMore && view.error == null && !view.isLoadingMore
@@ -125,20 +135,36 @@ class OrdersTab extends ConsumerWidget {
                   : 0),
           separatorBuilder: (context, index) => Spacing.vSm,
           itemBuilder: (context, index) {
-            if (index == view.orders.length) {
+            final hasStatus = view.isRefreshing || view.isStale;
+            if (hasStatus && index == 0) {
+              return Container(
+                color: context.surfaceMidColor,
+                padding: const EdgeInsets.all(Spacing.md),
+                child: Text(
+                  view.error != null
+                      ? 'Não foi possível atualizar. Exibindo os pedidos salvos.'
+                      : view.isRefreshing
+                      ? l10n(context).ordersRefreshing
+                      : l10n(context).ordersShowingCached,
+                  style: TextStyle(color: context.textPrimary),
+                ),
+              );
+            }
+            final orderIndex = index - (hasStatus ? 1 : 0);
+            if (orderIndex == view.orders.length) {
               if (view.error != null) {
                 return Container(
                   color: context.surfaceMidColor,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(Spacing.md),
                   child: Column(
                     children: [
                       Text(
-                        view.error!,
+                        l10n(context).errorUnknown,
                         style: TextStyle(color: context.textPrimary),
                       ),
                       Spacing.vSm,
                       AppButton(
-                        label: 'TENTAR NOVAMENTE',
+                        label: l10n(context).commonRetry.toUpperCase(),
                         size: AppButtonSize.compact,
                         onPressed: view.loadMore,
                       ),
@@ -147,17 +173,20 @@ class OrdersTab extends ConsumerWidget {
                 );
               }
               if (!view.hasMore) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: Text('FIM DA LISTA')),
+                return Padding(
+                  padding: const EdgeInsets.all(Spacing.md),
+                  child: Center(child: Text(l10n(context).ordersEndOfList)),
                 );
               }
               return const Padding(
-                padding: EdgeInsets.all(16),
+                padding: EdgeInsets.all(Spacing.md),
                 child: Center(child: ShimmerBlock(height: 48)),
               );
             }
-            return OrderCard(order: view.orders[index], isSeller: isSeller);
+            return OrderCard(
+              order: view.orders[orderIndex],
+              isSeller: isSeller,
+            );
           },
         ),
       ),

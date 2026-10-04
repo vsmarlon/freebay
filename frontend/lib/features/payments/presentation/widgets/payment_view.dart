@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
-import 'package:freebay/shared/services/error_reporter.dart';
+import 'package:freebay/shared/widgets/platform_wallet_payment_button.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PaymentSectionLabel extends StatelessWidget {
   final String text;
@@ -32,6 +34,7 @@ class PaymentView extends StatelessWidget {
   final PaymentEntity? payment;
   final String? paymentIntentClientSecret;
   final String? createdOrderId;
+  final int? amountCents;
 
   const PaymentView({
     super.key,
@@ -39,64 +42,33 @@ class PaymentView extends StatelessWidget {
     required this.payment,
     required this.paymentIntentClientSecret,
     required this.createdOrderId,
+    this.amountCents,
   });
 
   Future<void> _openCheckout(BuildContext context) async {
     final uri = Uri.parse(payment!.checkoutUrl);
-    final launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
-    if (!launched && context.mounted) {
-      AppSnackbar.error(context, 'Nao foi possivel abrir o checkout');
+    if (uri.scheme != 'https' || uri.host != 'checkout.stripe.com') {
+      AppSnackbar.error(context, l10n(context).paymentOpenFailed);
+      return;
     }
-  }
-
-  Future<void> _presentPaymentSheet(BuildContext context) async {
-    try {
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: paymentIntentClientSecret!,
-          merchantDisplayName: 'FreeBay',
-          returnURL: 'flutterstripe://redirect',
-          style: ThemeMode.system,
-        ),
-      );
-      await Stripe.instance.presentPaymentSheet();
-      if (!context.mounted) return;
-      AppSnackbar.success(
-        context,
-        'Pagamento enviado! Estamos confirmando com o provedor.',
-      );
-      if (createdOrderId != null) {
-        context.go(AppRoutes.orderPath(createdOrderId!));
-      }
-    } on StripeException catch (e, stack) {
-      if (e.error.code == FailureCode.Canceled) {
-        if (context.mounted) AppSnackbar.info(context, 'Pagamento cancelado');
-      } else {
-        ErrorReporter.report(
-          'order-payment-sheet',
-          StateError(
-            'Stripe ${e.error.code.name}: ${e.error.stripeErrorCode ?? 'unknown'}',
-          ),
-          stack,
-        );
-        if (context.mounted) AppSnackbar.handleFailure(context, e);
-      }
-    } catch (error, stack) {
-      ErrorReporter.report(
-        'order-payment-sheet',
-        StateError('PaymentSheet ${error.runtimeType}'),
-        stack,
-      );
-      if (context.mounted) AppSnackbar.handleFailure(context, error);
+    final launched = await launchUrl(
+      uri,
+      mode: kIsWeb ? LaunchMode.inAppWebView : LaunchMode.externalApplication,
+    );
+    if (!launched && context.mounted) {
+      AppSnackbar.error(context, l10n(context).paymentOpenFailed);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final isDark = context.isDark;
-    final String? expiresAt = payment == null
+    final expiresAt = payment == null
         ? null
-        : '${payment!.expiresAt.day.toString().padLeft(2, '0')}/${payment!.expiresAt.month.toString().padLeft(2, '0')} ${payment!.expiresAt.hour.toString().padLeft(2, '0')}:${payment!.expiresAt.minute.toString().padLeft(2, '0')}';
+        : DateFormat.yMd(
+            Localizations.localeOf(context).toString(),
+          ).add_Hm().format(payment!.expiresAt.toLocal());
 
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -110,14 +82,12 @@ class PaymentView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'PAGAMENTO GERADO',
+                strings.paymentGenerated.toUpperCase(),
                 style: TextStyle(
                   fontFamily: AppTypography.fontFamily,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? AppColors.onPrimaryContainer
-                      : AppColors.primary,
+                  color: context.colors.primary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -133,7 +103,7 @@ class PaymentView extends StatelessWidget {
               if (payment != null) ...[
                 Spacing.vSm,
                 Text(
-                  'Expira em $expiresAt',
+                  strings.paymentExpiresAt(expiresAt!),
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
                     color: isDark
@@ -147,7 +117,7 @@ class PaymentView extends StatelessWidget {
         ),
         Spacing.vLg,
         if (payment != null) ...[
-          const PaymentSectionLabel('CHECKOUT STRIPE'),
+          PaymentSectionLabel(strings.paymentStripeCheckout.toUpperCase()),
           const SizedBox(height: 12),
           Container(
             color: isDark
@@ -166,18 +136,24 @@ class PaymentView extends StatelessWidget {
           ),
           Spacing.vMd,
           AppButton(
-            label: 'Pagar agora',
+            label: strings.paymentPayNow,
             onPressed: () => _openCheckout(context),
           ),
         ] else if (paymentIntentClientSecret != null) ...[
-          AppButton(
-            label: 'Pagar com cartão',
-            onPressed: () => _presentPaymentSheet(context),
+          PlatformWalletPaymentButton(
+            clientSecret: paymentIntentClientSecret!,
+            amountCents: amountCents ?? 0,
+            itemLabel: product.title,
+            onSubmitted: () {
+              if (createdOrderId != null) {
+                context.go(AppRoutes.orderPath(createdOrderId!));
+              }
+            },
           ),
         ],
         const SizedBox(height: 12),
         AppButton(
-          label: 'Ver pedido',
+          label: strings.paymentViewOrder,
           onPressed: createdOrderId == null
               ? null
               : () => context.go(AppRoutes.orderPath(createdOrderId!)),

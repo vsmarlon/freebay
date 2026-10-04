@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/core/utils/date_utils.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class DateSeparator extends StatelessWidget {
   final DateTime date;
@@ -21,7 +21,7 @@ class DateSeparator extends StatelessWidget {
             border: Border.all(color: context.borderColor.withAlpha(40)),
           ),
           child: Text(
-            formatDateSeparator(date),
+            localizedDateSeparator(context, date),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 11,

@@ -1,0 +1,8 @@
+{
+  "label": "backend-lint",
+  "command": "npm run lint",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T05:28:33.699Z",
+  "ended": "2026-10-01T05:28:43.191Z",
+  "exitCode": 0
+}

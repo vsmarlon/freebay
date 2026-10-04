@@ -1,0 +1,6 @@
+Changed lib\features\auth\presentation\pages\login_page.dart
+Changed lib\features\chat\presentation\widgets\chat_header.dart
+Changed lib\features\orders\presentation\pages\order_detail_page.dart
+Changed lib\features\stories\presentation\widgets\stories_row.dart
+Changed test\features\orders\order_detail_text_scaling_test.dart
+Formatted 605 files (5 changed) in 1.80 seconds.

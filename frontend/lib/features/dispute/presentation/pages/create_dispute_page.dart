@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/shared/services/http_client.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class CreateDisputePage extends ConsumerStatefulWidget {
   final String orderId;
@@ -26,15 +27,17 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
         child: Column(
           children: [
             PageHeader(
-              text: 'ABRIR DISPUTA',
+              text: strings.disputeOpen.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -46,10 +49,13 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
                   children: [
                     BrutalistBreadcrumb(items: context.breadcrumbs),
                     Spacing.vMd,
-                    const Text('Descreva o problema', style: AppTypography.h3),
+                    Text(
+                      strings.disputeDescribeProblem,
+                      style: AppTypography.h3,
+                    ),
                     Spacing.vSm,
-                    const Text(
-                      'Explique detalhadamente o que houve de errado com o pedido',
+                    Text(
+                      strings.disputeDescribeProblemHint,
                       style: AppTypography.bodySmall,
                     ),
                     Spacing.vMd,
@@ -57,9 +63,8 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
                       child: TextField(
                         controller: _reasonController,
                         maxLines: 6,
-                        decoration: const InputDecoration(
-                          hintText:
-                              'Ex: Produto diferente do anunciado, não recebi o produto...',
+                        decoration: InputDecoration(
+                          hintText: strings.disputeReasonHint,
                           border: InputBorder.none,
                         ),
                       ),
@@ -78,8 +83,8 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
                               child: Center(
                                 child: _isSubmitting
                                     ? const ShimmerBlock(width: 20, height: 20)
-                                    : const Text(
-                                        'Abrir Disputa',
+                                    : Text(
+                                        strings.disputeOpen,
                                         style: AppTypography.button,
                                       ),
                               ),
@@ -99,11 +104,12 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
   }
 
   Future<void> _createDispute() async {
+    final strings = l10n(context);
     final reason = _reasonController.text.trim();
     if (reason.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Descreva o motivo da disputa')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.disputeReasonRequired)));
       return;
     }
 
@@ -118,18 +124,18 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
       if (!mounted) return;
 
       if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Disputa aberta com sucesso')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.disputeOpenedSuccess)));
         context.pop();
       } else {
-        AppSnackbar.error(context, 'Não foi possível abrir a disputa.');
+        AppSnackbar.error(context, strings.disputeOpenFailed);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao conectar com o servidor')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(strings.errorConnectionServer)));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { request as httpRequest, IncomingMessage } from 'http';
-import { rmSync } from 'fs';
+import { existsSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { Pool } from 'pg';
 import { AppModule } from '../../src/app.module';
@@ -72,13 +72,14 @@ describe('Marketplace journey (HTTP + real database)', () => {
   let productId = '';
   let orderId = '';
   let sellerToken = '';
+  let sellerId = '';
   let buyerToken = '';
   const stripe = { refundPayment: jest.fn(), cancelPendingPayment: jest.fn() };
 
   const http = (
     method: 'GET' | 'POST' | 'PATCH',
     path: string,
-    options: { token?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer } } = {},
+    options: { token?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer; fieldName?: string; mimeType?: string; fileName?: string } } = {},
   ): Promise<{ status: number; json: Envelope }> => {
     const address = app.getHttpServer().address();
     if (address === null || typeof address === 'string') {
@@ -100,7 +101,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
         }
         parts.push(
           Buffer.from(
-            `--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="product.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`,
+              `--${boundary}\r\nContent-Disposition: form-data; name="${options.multipart.fieldName ?? 'image'}"; filename="${options.multipart.fileName ?? 'product.jpg'}"\r\nContent-Type: ${options.multipart.mimeType ?? 'image/jpeg'}\r\n\r\n`,
           ),
         );
         parts.push(options.multipart.file);
@@ -136,7 +137,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
 
   const post = (
     path: string,
-    options?: { token?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer } },
+    options?: { token?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer; fieldName?: string; mimeType?: string; fileName?: string } },
   ): Promise<{ status: number; json: Envelope }> =>
     http('POST', path, options).then(async (res) => {
       await sleep(150);
@@ -204,6 +205,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
     expect(typeof sellerData.token).toBe('string');
     expect(typeof sellerData.refreshToken).toBe('string');
     sellerToken = sellerData.token;
+    sellerId = sellerData.user.id;
 
     const buyer = await post('/auth/register', {
       body: {
@@ -306,18 +308,76 @@ describe('Marketplace journey (HTTP + real database)', () => {
           condition: 'USED',
           categoryId,
         },
-        file: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]),
+        file: readFileSync(join(process.cwd(), '..', 'frontend', 'assets', 'freebay-textonly.png')),
+        fieldName: 'image',
+        mimeType: 'image/png',
+        fileName: 'product.png',
       },
     });
     expect(res.status).toBe(201);
     const product = parseData<{
       id: string;
       price: number;
+      images: { url: string; blurHash?: string }[];
     }>(res);
     expect(product.price).toBe(10990);
     expect(typeof product.id).toBe('string');
     expect(product.id).not.toHaveLength(0);
     productId = product.id;
+    expect(product.images?.[0]?.blurHash).toEqual(expect.any(String));
+    createdUploads.push(product.images[0].url);
+  });
+
+  it('persists an uploaded avatar BlurHash through the public profile response', async () => {
+    const res = await post('/users/me/avatar', {
+      token: sellerToken,
+      multipart: {
+        fields: {},
+        file: readFileSync(join(process.cwd(), '..', 'frontend', 'assets', 'freebay-textonly.png')),
+        fieldName: 'avatar',
+        mimeType: 'image/png',
+        fileName: 'avatar.png',
+      },
+    });
+    expect(res.status).toBe(200);
+    const updated = parseData<{ avatarUrl: string; avatarBlurHash?: string }>(res);
+    createdUploads.push(updated.avatarUrl);
+    expect(updated.avatarBlurHash).toEqual(expect.any(String));
+
+    const profile = await get(`/users/${sellerId}`);
+    expect(parseData<{ avatarBlurHash?: string }>(profile).avatarBlurHash).toBe(updated.avatarBlurHash);
+  });
+
+  it('rejects another seller’s product and avatar files without deleting their files', async () => {
+    const productImage = parseData<{ product: { images: Array<{ url: string }> } }>(
+      await get(`/products/${productId}`),
+    ).product.images[0].url;
+    const productFile = join(process.cwd(), productImage.replace('/uploads/', 'uploads/'));
+    expect(existsSync(productFile)).toBe(true);
+
+    const productCopy = await post('/products', {
+      token: buyerToken,
+      body: {
+        title: 'Copied product image',
+        description: 'An image owned by another seller',
+        price: 1000,
+        condition: 'USED',
+        categoryId: 'missing-category-id',
+        images: [productImage],
+      },
+    });
+    expect(productCopy.status).toBe(400);
+    expect(existsSync(productFile)).toBe(true);
+
+    const avatar = parseData<{ avatarUrl: string }>(await get(`/users/${sellerId}`));
+    const avatarFile = join(process.cwd(), avatar.avatarUrl.replace('/uploads/', 'uploads/'));
+    expect(existsSync(avatarFile)).toBe(true);
+    const avatarCopy = await post('/users/me/avatar', {
+      token: buyerToken,
+      body: { avatarUrl: avatar.avatarUrl },
+    });
+    expect(avatarCopy.status).toBe(400);
+    expect(existsSync(avatarFile)).toBe(true);
   });
 
   it('rejects an invalid product payload through the validation pipe', async () => {

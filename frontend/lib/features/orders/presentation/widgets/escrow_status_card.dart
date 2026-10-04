@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 class EscrowStatusCard extends StatelessWidget {
   final EscrowStatus escrowStatus;
@@ -21,6 +23,7 @@ class EscrowStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       color: context.surfaceMidColor,
       padding: const EdgeInsets.all(24),
@@ -47,7 +50,7 @@ class EscrowStatusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'PAGAMENTO',
+                      strings.paymentPageTitle.toUpperCase(),
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 12,
@@ -58,7 +61,11 @@ class EscrowStatusCard extends StatelessWidget {
                     ),
                     Spacing.vXs,
                     Text(
-                      escrowStatus.label,
+                      switch (escrowStatus) {
+                        EscrowStatus.held => strings.escrowStatusHeld,
+                        EscrowStatus.released => strings.escrowStatusReleased,
+                        EscrowStatus.refunded => strings.escrowStatusRefunded,
+                      },
                       style: TextStyle(
                         fontFamily: AppTypography.headlineFontFamily,
                         fontSize: 18,
@@ -79,21 +86,21 @@ class EscrowStatusCard extends StatelessWidget {
               children: [
                 _buildRow(
                   context,
-                  'Valor total',
+                  strings.ordersTotalAmount,
                   CurrencyUtils.formatCents(amount),
                 ),
                 if (!isBuyer) ...[
                   const SizedBox(height: 12),
                   _buildRow(
                     context,
-                    'Taxa da plataforma (10%)',
+                    strings.ordersPlatformFee,
                     '- ${CurrencyUtils.formatCents(platformFee)}',
                     valueColor: AppColors.error,
                   ),
                   Spacing.vMd,
                   _buildRow(
                     context,
-                    'Você recebe',
+                    strings.ordersSellerReceives,
                     CurrencyUtils.formatCents(sellerAmount),
                     isBold: true,
                     valueColor: AppColors.success,
@@ -104,7 +111,7 @@ class EscrowStatusCard extends StatelessWidget {
           ),
           Spacing.vMd,
           Text(
-            _getStatusDescription(),
+            _getStatusDescription(strings),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 14,
@@ -171,20 +178,18 @@ class EscrowStatusCard extends StatelessWidget {
     }
   }
 
-  String _getStatusDescription() {
+  String _getStatusDescription(AppLocalizations strings) {
     switch (escrowStatus) {
       case EscrowStatus.held:
-        return isBuyer
-            ? 'O pagamento está retido em custódia até você confirmar o recebimento do produto.'
-            : 'O pagamento está retido em custódia. Será liberado quando o comprador confirmar o recebimento.';
+        return isBuyer ? strings.escrowHeldBuyer : strings.escrowHeldSeller;
       case EscrowStatus.released:
         return isBuyer
-            ? 'Pagamento liberado para o vendedor.'
-            : 'Pagamento liberado! O valor será creditado na sua carteira.';
+            ? strings.escrowReleasedBuyer
+            : strings.escrowReleasedSeller;
       case EscrowStatus.refunded:
         return isBuyer
-            ? 'Valor reembolsado para sua carteira.'
-            : 'Valor reembolsado ao comprador.';
+            ? strings.escrowRefundedBuyer
+            : strings.escrowRefundedSeller;
     }
   }
 }

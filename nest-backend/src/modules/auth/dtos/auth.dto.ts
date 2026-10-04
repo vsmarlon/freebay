@@ -69,6 +69,33 @@ export class GoogleAuthDTO {
   readonly idToken: string;
 }
 
+export class AppleAuthDTO {
+  @ApiProperty({ description: 'Apple identity token' })
+  @IsString()
+  @MaxLength(8192)
+  readonly identityToken: string;
+
+  @ApiProperty({ description: 'Single-use Apple authorization code' })
+  @IsString()
+  @MaxLength(4096)
+  readonly authorizationCode: string;
+
+  @ApiProperty({ description: 'Original cryptographically random nonce used to request Apple credentials' })
+  @IsString()
+  @MinLength(32)
+  @MaxLength(256)
+  readonly rawNonce: string;
+
+  @ApiPropertyOptional({ description: 'Optional display label supplied by Apple on first authorization' })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  @Matches(DISPLAY_NAME_REGEX)
+  @SanitizeText()
+  readonly fullName?: string;
+}
+
 export class CompleteProfileDTO {
   @ApiProperty({ example: 'john_doe', minLength: 3, maxLength: 20, description: '3-20 chars, lowercase letters/numbers/underscore only' })
   @IsString()

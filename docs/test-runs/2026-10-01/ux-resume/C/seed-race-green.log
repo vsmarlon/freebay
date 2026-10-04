@@ -1,0 +1,128 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart
+lib/features/profile/presentation/pages/user_profile_page.dart:164:42: Error: The getter 'profileReportUser' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportUser'.
+                    label: l10n(context).profileReportUser,
+                                         ^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:245:29: Error: The getter 'profileReportUser' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportUser'.
+        title: Text(strings.profileReportUser),
+                            ^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:248:30: Error: The getter 'profileReportSpam' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportSpam'.
+            ('SPAM', strings.profileReportSpam),
+                             ^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:249:31: Error: The getter 'profileReportFraud' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportFraud'.
+            ('FRAUD', strings.profileReportFraud),
+                              ^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:250:36: Error: The getter 'profileReportHarassment' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportHarassment'.
+            ('HARASSMENT', strings.profileReportHarassment),
+                                   ^^^^^^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:251:38: Error: The getter 'profileReportFakeAccount' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportFakeAccount'.
+            ('FAKE_ACCOUNT', strings.profileReportFakeAccount),
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:252:39: Error: The getter 'profileReportImpersonation' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportImpersonation'.
+            ('IMPERSONATING', strings.profileReportImpersonation),
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:253:32: Error: The getter 'profileReportNudity' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportNudity'.
+            ('NUDITY', strings.profileReportNudity),
+                               ^^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:254:35: Error: The getter 'profileReportBlackmail' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportBlackmail'.
+            ('BLACKMAIL', strings.profileReportBlackmail),
+                                  ^^^^^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:255:43: Error: The getter 'profileReportFalseAdvertising' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportFalseAdvertising'.
+            ('FALSE_ADVERTISING', strings.profileReportFalseAdvertising),
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:256:31: Error: The getter 'profileReportOther' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportOther'.
+            ('OTHER', strings.profileReportOther),
+                              ^^^^^^^^^^^^^^^^^^
+lib/features/profile/presentation/pages/user_profile_page.dart:271:51: Error: The getter 'profileReportSubmitted' isn't defined for the type 'AppLocalizations'.
+ - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportSubmitted'.
+      (_) => AppSnackbar.success(context, strings.profileReportSubmitted),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^
+00:00 +0 -1: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart [E]
+  Failed to load "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart":
+  Compilation failed for testPath=C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: lib/features/profile/presentation/pages/user_profile_page.dart:164:42: Error: The getter 'profileReportUser' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportUser'.
+                      label: l10n(context).profileReportUser,
+                                           ^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:245:29: Error: The getter 'profileReportUser' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportUser'.
+          title: Text(strings.profileReportUser),
+                              ^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:248:30: Error: The getter 'profileReportSpam' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportSpam'.
+              ('SPAM', strings.profileReportSpam),
+                               ^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:249:31: Error: The getter 'profileReportFraud' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportFraud'.
+              ('FRAUD', strings.profileReportFraud),
+                                ^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:250:36: Error: The getter 'profileReportHarassment' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportHarassment'.
+              ('HARASSMENT', strings.profileReportHarassment),
+                                     ^^^^^^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:251:38: Error: The getter 'profileReportFakeAccount' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportFakeAccount'.
+              ('FAKE_ACCOUNT', strings.profileReportFakeAccount),
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:252:39: Error: The getter 'profileReportImpersonation' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportImpersonation'.
+              ('IMPERSONATING', strings.profileReportImpersonation),
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:253:32: Error: The getter 'profileReportNudity' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportNudity'.
+              ('NUDITY', strings.profileReportNudity),
+                                 ^^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:254:35: Error: The getter 'profileReportBlackmail' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportBlackmail'.
+              ('BLACKMAIL', strings.profileReportBlackmail),
+                                    ^^^^^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:255:43: Error: The getter 'profileReportFalseAdvertising' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportFalseAdvertising'.
+              ('FALSE_ADVERTISING', strings.profileReportFalseAdvertising),
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:256:31: Error: The getter 'profileReportOther' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportOther'.
+              ('OTHER', strings.profileReportOther),
+                                ^^^^^^^^^^^^^^^^^^
+  lib/features/profile/presentation/pages/user_profile_page.dart:271:51: Error: The getter 'profileReportSubmitted' isn't defined for the type 'AppLocalizations'.
+   - 'AppLocalizations' is from 'package:freebay/shared/l10n/generated/app_localizations.dart' ('lib/shared/l10n/generated/app_localizations.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'profileReportSubmitted'.
+        (_) => AppSnackbar.success(context, strings.profileReportSubmitted),
+                                                    ^^^^^^^^^^^^^^^^^^^^^^
+  .
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart

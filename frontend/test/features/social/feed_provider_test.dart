@@ -8,6 +8,8 @@ import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/feed_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import '../../support/auth_test_doubles.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
@@ -40,10 +42,14 @@ PostEntity _post(String id) => PostEntity(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   test('Explore appends with the server cursor instead of an offset', () async {
     final repository = _FakeSocialRepository();
     final container = ProviderContainer(
-      overrides: [socialRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        socialRepositoryProvider.overrideWithValue(repository),
+        authControllerProvider.overrideWith(() => TestAuthController(null)),
+      ],
     );
     addTearDown(container.dispose);
     final feed = container.read(feedProvider.notifier);
@@ -60,8 +66,10 @@ void main() {
     );
     await first;
     final second = feed.loadFeed();
+    final duplicatePage = feed.loadFeed();
     expect(repository.cursors, [null, 'explore-1']);
     expect(repository.offsets, [null, null]);
+    await duplicatePage;
     repository.requests[1].complete(
       Right(FeedPageResult(posts: [_post('second')], hasMore: false)),
     );
@@ -77,7 +85,10 @@ void main() {
     () async {
       final repository = _FakeSocialRepository();
       final container = ProviderContainer(
-        overrides: [socialRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          socialRepositoryProvider.overrideWithValue(repository),
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
       );
       addTearDown(container.dispose);
       final notifier = container.read(feedProvider.notifier);
@@ -123,7 +134,10 @@ void main() {
   test('preserves a failed cursor for retry', () async {
     final repository = _FakeSocialRepository();
     final container = ProviderContainer(
-      overrides: [socialRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        socialRepositoryProvider.overrideWithValue(repository),
+        authControllerProvider.overrideWith(() => TestAuthController(null)),
+      ],
     );
     addTearDown(container.dispose);
     final notifier = container.read(feedProvider.notifier);
@@ -155,4 +169,40 @@ void main() {
     );
     await retried;
   });
+
+  test(
+    'refresh keeps the populated feed visible while requesting page one',
+    () async {
+      final repository = _FakeSocialRepository();
+      final container = ProviderContainer(
+        overrides: [
+          socialRepositoryProvider.overrideWithValue(repository),
+          authControllerProvider.overrideWith(() => TestAuthController(null)),
+        ],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(feedProvider.notifier);
+
+      final initial = notifier.loadFeed(refresh: true);
+      repository.requests[0].complete(
+        Right(FeedPageResult(posts: [_post('visible')], hasMore: true)),
+      );
+      await initial;
+
+      final refresh = notifier.refresh();
+      expect(container.read(feedProvider).posts.map((post) => post.id), [
+        'visible',
+      ]);
+      expect(container.read(feedProvider).isLoading, isFalse);
+      expect(container.read(feedProvider).isRefreshing, isTrue);
+
+      repository.requests[1].complete(const Left(ServerFailure('offline')));
+      await refresh;
+      expect(container.read(feedProvider).posts.map((post) => post.id), [
+        'visible',
+      ]);
+      expect(container.read(feedProvider).isRefreshing, isFalse);
+      expect(container.read(feedProvider).error, 'offline');
+    },
+  );
 }

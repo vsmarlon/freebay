@@ -16,6 +16,7 @@ import 'package:freebay/features/profile/presentation/pages/blocked_users_page.d
 import 'package:freebay/features/profile/presentation/providers/follow_list_provider.dart';
 import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// New-conversation picker. Every list comes from a provider — following via
 /// [followingProvider], suggestions via [suggestionsProvider], blocked ids
@@ -29,10 +30,11 @@ class NewChatPage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final searchController = useTextEditingController();
     final draftController = useTextEditingController(
       text: targetUserId != null && productId != null
-          ? 'Oi, ainda está disponível?'
+          ? l10n(context).chatMessageProductAvailability
           : null,
     );
     final clientMessageId = useRef<String?>(null);
@@ -111,7 +113,7 @@ class NewChatPage extends HookConsumerWidget {
       if (conversationId == null) {
         AppSnackbar.error(
           context,
-          result.leftOrNull?.message ?? 'Erro ao iniciar conversa',
+          result.leftOrNull?.message ?? strings.chatStartFailed,
         );
         return;
       }
@@ -172,9 +174,10 @@ class NewChatPage extends HookConsumerWidget {
           child: Column(
             children: [
               PageHeader(
-                text: 'FALAR SOBRE PRODUTO',
+                text: strings.chatProductContactTitle,
                 leading: BrutalistIconButton(
                   icon: Icons.arrow_back,
+                  semanticLabel: strings.accessibilityBack,
                   onTap: () {
                     if (context.canPop()) context.pop();
                   },
@@ -198,9 +201,10 @@ class NewChatPage extends HookConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: 'NOVA CONVERSA',
+              text: strings.chatNewTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -212,7 +216,7 @@ class NewChatPage extends HookConsumerWidget {
                     child: TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        hintText: 'Buscar usuários...',
+                        hintText: strings.chatSearchPeopleHint,
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: isSearching
                             ? IconButton(

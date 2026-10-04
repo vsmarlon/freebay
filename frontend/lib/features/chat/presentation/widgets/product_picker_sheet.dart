@@ -1,18 +1,22 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/shared/utils/media_url.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Shows a bottom sheet for picking a product to share as a PRODUCT_CARD message.
 Future<void> showProductPickerSheet({
   required BuildContext context,
   required void Function(Map<String, dynamic> metadata) onProductSelected,
 }) {
-  return showModalBottomSheet(
+  return showBrutalistSheet<void>(
     context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
+    title: l10n(context).chatChooseProduct.toUpperCase(),
+    padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+    scrollable: false,
     builder: (_) => _ProductPickerSheet(onProductSelected: onProductSelected),
   );
 }
@@ -39,136 +43,88 @@ class _ProductPickerSheetState extends ConsumerState<_ProductPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final productsAsync = ref.watch(myProductsProvider);
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.55,
-      decoration: BoxDecoration(
-        color: context.bgColor,
-        border: Border(top: BorderSide(color: context.borderColor, width: 2)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 8),
-            width: 32,
-            height: 4,
-            color: context.textSecondary,
-          ),
-          const SizedBox(height: 16),
-          // Title
-          Text(
-            'ESCOLHER PRODUTO',
-            style: TextStyle(
-              fontFamily: AppTypography.headlineFontFamily,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: context.textPrimary,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Search input
+        AppTextField(
+          controller: _searchController,
+          hint: strings.chatSearchProductHint,
+          prefixIcon: Icons.search,
+          onChanged: (value) =>
+              setState(() => _searchQuery = value.toLowerCase()),
+        ),
+        const SizedBox(height: 16),
+        // Product list
+        Expanded(
+          child: productsAsync.when(
+            loading: () =>
+                const Center(child: ShimmerBlock(width: 200, height: 40)),
+            error: (err, _) => Center(
+              child: Text(
+                strings.errorUnknown,
+                style: TextStyle(color: context.textSecondary, fontSize: 13),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          // Search input
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Buscar produto...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                filled: true,
-                fillColor: context.isDark
-                    ? AppColors.surfaceContainerDark
-                    : AppColors.lightGray,
-                border: const OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.outline),
-                ),
-                enabledBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.outline),
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: AppColors.primaryContainer,
-                    width: 2,
+            data: (products) {
+              if (products.isEmpty) {
+                return Center(
+                  child: Text(
+                    strings.productNoProductsBody,
+                    style: TextStyle(
+                      color: context.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-              ),
-              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Product list
-          Expanded(
-            child: productsAsync.when(
-              loading: () =>
-                  const Center(child: ShimmerBlock(width: 200, height: 40)),
-              error: (err, _) => Center(
-                child: Text(
-                  'Erro ao carregar produtos',
-                  style: TextStyle(color: context.textSecondary, fontSize: 13),
-                ),
-              ),
-              data: (products) {
-                if (products.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Nenhum produto encontrado',
-                      style: TextStyle(
-                        color: context.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                  );
-                }
-
-                final filtered = _searchQuery.isEmpty
-                    ? products
-                    : products
-                          .where(
-                            (p) => p.title.toLowerCase().contains(_searchQuery),
-                          )
-                          .toList();
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Nenhum produto encontrado',
-                      style: TextStyle(
-                        color: context.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filtered.length,
-                  itemBuilder: (ctx, i) {
-                    final product = filtered[i];
-                    return _ProductPickerItem(
-                      product: product,
-                      onTap: () {
-                        widget.onProductSelected({
-                          'productId': product.id,
-                          'title': product.title,
-                          'price': product.price,
-                          'imageUrl': product.imageUrl,
-                        });
-                        Navigator.of(context).pop();
-                      },
-                    );
-                  },
                 );
-              },
-            ),
+              }
+
+              final filtered = _searchQuery.isEmpty
+                  ? products
+                  : products
+                        .where(
+                          (p) => p.title.toLowerCase().contains(_searchQuery),
+                        )
+                        .toList();
+
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Text(
+                    strings.productNoProductsBody,
+                    style: TextStyle(
+                      color: context.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: filtered.length,
+                itemBuilder: (ctx, i) {
+                  final product = filtered[i];
+                  return _ProductPickerItem(
+                    product: product,
+                    onTap: () {
+                      widget.onProductSelected({
+                        'productId': product.id,
+                        'title': product.title,
+                        'price': product.price,
+                        'imageUrl': product.imageUrl,
+                      });
+                      Navigator.of(context).pop();
+                    },
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -200,10 +156,19 @@ class _ProductPickerItem extends StatelessWidget {
                 border: Border.all(color: AppColors.outlineVariant),
               ),
               child: product.imageUrl != null
-                  ? Image.network(
-                      product.imageUrl!,
+                  ? CachedNetworkImage(
+                      imageUrl: product.imageUrl!,
+                      httpHeaders: mediaAuthHeaders(product.imageUrl!),
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _buildPlaceholder(),
+                      memCacheWidth: 140,
+                      memCacheHeight: 140,
+                      placeholder: (context, url) => BlurHashPlaceholder(
+                        hash: isPrivateMedia(url)
+                            ? null
+                            : product.imageBlurHash,
+                        fallback: _buildPlaceholder(),
+                      ),
+                      errorWidget: (_, _, _) => _buildPlaceholder(),
                     )
                   : _buildPlaceholder(),
             ),

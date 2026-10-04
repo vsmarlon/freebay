@@ -1,0 +1,78 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_tile_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_tile_test.dart: renders context, preview, timestamp, and unread count
+00:00 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/conversation_deletion_undo_test.dart: deleting a conversation can be undone before its request
+00:02 +2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart: shows the exact editable product draft
+00:02 +3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart: shows the exact editable product draft
+00:03 +4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:03 +5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:04 +6: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:04 +7: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+00:04 +8: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+00:04 +9: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+00:04 +10: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+00:04 +11: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: retained conversation rebinds state and refreshes its theme
+00:04 +12: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal category drag scrolls the strip, not the page
+00:05 +13: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal category drag scrolls the strip, not the page
+00:05 +14: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal category drag scrolls the strip, not the page
+00:05 +15: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: applies a changed price range only after tapping Apply
+00:05 +16: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: applies a changed price range only after tapping Apply
+00:06 +17: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: applies a changed price range only after tapping Apply
+00:06 +18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: applies a changed price range only after tapping Apply
+00:06 +19: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:07 +20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:07 +21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:07 +22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:07 +23: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:07 +24: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:07 +25: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:07 +26: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:07 +27: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:07 +28: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:08 +29: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders a deterministic zero balance and empty history
+00:08 +30: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders a deterministic zero balance and empty history
+00:08 +31: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders an actionable action for every Connect status
+00:09 +31: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: retries transient GET failures at most twice
+[HTTP] GET http://localhost:3000/retryable
+[HTTP ERROR] 503 http://localhost:3000/retryable
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+00:09 +32: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: retries transient GET failures at most twice
+[HTTP] GET http://localhost:3000/retryable
+[HTTP ERROR] 503 http://localhost:3000/retryable
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+[HTTP] GET http://localhost:3000/retryable
+[HTTP] 200 http://localhost:3000/retryable
+00:09 +33: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:09 +33: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: never replays a mutation after a transient failure
+[HTTP] POST http://localhost:3000/mutation
+[HTTP ERROR] 503 http://localhost:3000/mutation
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+00:09 +34: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:09 +34: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: does not retry a GET after its session generation changes
+[HTTP] GET http://localhost:3000/session-bound
+[HTTP ERROR] 503 http://localhost:3000/session-bound
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+00:09 +35: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:09 +35: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: retries GET connection timeouts
+[HTTP] GET http://localhost:3000/timeout-retry
+[HTTP ERROR] null http://localhost:3000/timeout-retry
+[HTTP ERROR TYPE] DioExceptionType.connectionTimeout
+[HTTP] GET http://localhost:3000/timeout-retry
+[HTTP] 200 http://localhost:3000/timeout-retry
+00:10 +36: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:10 +36: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: does not retry a canceled GET
+[HTTP] GET http://localhost:3000/cancel-retry
+00:10 +37: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:10 +37: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: does not retry a canceled GET
+[HTTP ERROR] null http://localhost:3000/cancel-retry
+[HTTP ERROR TYPE] DioExceptionType.cancel
+00:10 +38: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:10 +39: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:10 +40: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:10 +41: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+00:11 +42: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_canvas_test.dart: renders and moves a selected text block
+00:12 +43: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_canvas_test.dart: renders and moves a selected text block
+00:12 +44: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_canvas_test.dart: renders and moves a selected text block
+00:12 +45: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart: a photo stays visible for seven seconds and long press pauses it
+00:13 +46: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart: a photo stays visible for seven seconds and long press pauses it
+00:13 +47: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart: a photo stays visible for seven seconds and long press pauses it
+00:13 +48: All tests passed!

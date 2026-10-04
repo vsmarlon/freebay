@@ -30,6 +30,12 @@ describe('UpdateProfileDTO', () => {
     expect(errors.length).toBe(0);
   });
 
+  it('rejects null document and verification code instead of treating them as omitted', async () => {
+    const dto = plainToClass(UpdateProfileDTO, { cpf: null, profileVerificationCode: null });
+    const errors = await validate(dto);
+    expect(errors.map((error) => error.property).sort()).toEqual(['cpf', 'profileVerificationCode']);
+  });
+
   it('rejects invalid avatar URL', async () => {
     const dto = plainToClass(UpdateProfileDTO, { avatarUrl: 'not-a-url' });
     const errors = await validate(dto);

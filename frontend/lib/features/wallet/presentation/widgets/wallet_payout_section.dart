@@ -18,7 +18,9 @@ class WalletPayoutSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) return const ShimmerBlock(height: 56);
+    if (isLoading) {
+      return const ShimmerScope(child: ShimmerBlock(height: 56));
+    }
 
     final current = status;
     final effectiveStatus = current?.status ?? ConnectStatus.onboardingRequired;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// The selection-mode toolbar that replaces the [ChatHeader] when one or more
 /// messages are long-pressed in the chat conversation.
@@ -30,9 +31,10 @@ class MultiSelectToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 4,
+        top: MediaQuery.paddingOf(context).top + 4,
         left: 4,
         right: 4,
         bottom: 4,
@@ -51,13 +53,13 @@ class MultiSelectToolbar extends StatelessWidget {
           _ToolbarButton(
             icon: Icons.close,
             onTap: onClose,
-            tooltip: 'Cancelar seleção',
+            tooltip: strings.chatCancelSelection,
           ),
           const SizedBox(width: 8),
           // Selected count badge
           Expanded(
             child: Text(
-              '$selectedCount selecionada${selectedCount == 1 ? '' : 's'}',
+              strings.chatSelectedCount(selectedCount),
               style: TextStyle(
                 fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 16,
@@ -70,32 +72,32 @@ class MultiSelectToolbar extends StatelessWidget {
           _ToolbarButton(
             icon: Icons.content_copy_outlined,
             onTap: onCopy,
-            tooltip: 'Copiar',
+            tooltip: strings.chatCopy,
           ),
           _ToolbarButton(
             icon: Icons.reply,
             onTap: selectedCount == 1 ? onReply : null,
-            tooltip: 'Responder',
+            tooltip: strings.chatReply,
           ),
           _ToolbarButton(
             icon: Icons.star_outline,
             onTap: onStar,
-            tooltip: 'Favoritar',
+            tooltip: strings.chatFavorite,
           ),
           _ToolbarButton(
             icon: Icons.share_outlined,
             onTap: onShare,
-            tooltip: 'Compartilhar',
+            tooltip: strings.commonShare,
           ),
           _ToolbarButton(
             icon: Icons.forward,
             onTap: onForward,
-            tooltip: 'Encaminhar',
+            tooltip: strings.chatForward,
           ),
           _ToolbarButton(
             icon: Icons.delete_outline,
             onTap: onDelete,
-            tooltip: 'Apagar',
+            tooltip: strings.chatDelete,
             color: AppColors.error,
           ),
         ],

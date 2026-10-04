@@ -1,0 +1,260 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:00 +0 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:00 +0 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider optimistically updates follow state and confirms with server [E]
+  'package:riverpod/src/core/element.dart': Failed assertion: line 796 pos 7: '_debugCurrentlyBuildingElement == null ||
+            _debugCurrentlyBuildingElement == this': Providers are not allowed to modify other providers during their initialization.
+  
+  The provider NotifierProvider<FollowStateNotifier, Map<String, FollowStatusResponse>>#5afda modified NotifierProvider<FollowsInFlightNotifier, Set<String>>#4fa9f while building.
+  
+  dart:core                                                                                   _AssertionError._throwNew
+  package:riverpod/src/core/element.dart 796:7                                                ProviderElement._debugAssertNotificationAllowed
+  package:riverpod/src/core/element.dart 854:38                                               ProviderElement._notifyListeners
+  package:riverpod/src/core/element.dart 478:7                                                ProviderElement.setValue
+  package:riverpod/src/core/element.dart 66:18                                                ElementWithFuture.asyncTransition
+  package:riverpod/src/core/element.dart 145:22                                               ElementWithFuture.onData
+  package:riverpod/src/core/async_value.dart 158:20                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/core/element.dart 1422:43                                              SyncProviderElement.setValueFromState
+  package:riverpod/src/core/provider/notifier_provider.dart 93:18                             AnyNotifier.state=
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 167:19  FollowsInFlightNotifier.clear
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 27:50   FollowStateNotifier.build
+  package:riverpod/src/providers/notifier.dart 93:31                                          $NotifierProviderElement.handleCreate
+  package:riverpod/src/providers/notifier/orphan.dart 69:47                                   Notifier.runBuild
+  package:riverpod/src/core/provider/notifier_provider.dart 569:43                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 124:14                                         main.<fn>.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                                                  _Completer.completeError
+  package:riverpod/src/core/element.dart 127:11                                               ElementWithFuture.onError
+  package:riverpod/src/core/async_value.dart 160:21                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/providers/notifier.dart 89:7                                           $NotifierProviderElement.handleError
+  package:riverpod/src/core/provider/notifier_provider.dart 572:11                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 124:14                                         main.<fn>.<fn>
+  
+00:00 +0 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:00 +0 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider rolls back optimistic state on server failure [E]
+  'package:riverpod/src/core/element.dart': Failed assertion: line 796 pos 7: '_debugCurrentlyBuildingElement == null ||
+            _debugCurrentlyBuildingElement == this': Providers are not allowed to modify other providers during their initialization.
+  
+  The provider NotifierProvider<FollowStateNotifier, Map<String, FollowStatusResponse>>#5afda modified NotifierProvider<FollowsInFlightNotifier, Set<String>>#4fa9f while building.
+  
+  dart:core                                                                                   _AssertionError._throwNew
+  package:riverpod/src/core/element.dart 796:7                                                ProviderElement._debugAssertNotificationAllowed
+  package:riverpod/src/core/element.dart 854:38                                               ProviderElement._notifyListeners
+  package:riverpod/src/core/element.dart 478:7                                                ProviderElement.setValue
+  package:riverpod/src/core/element.dart 66:18                                                ElementWithFuture.asyncTransition
+  package:riverpod/src/core/element.dart 145:22                                               ElementWithFuture.onData
+  package:riverpod/src/core/async_value.dart 158:20                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/core/element.dart 1422:43                                              SyncProviderElement.setValueFromState
+  package:riverpod/src/core/provider/notifier_provider.dart 93:18                             AnyNotifier.state=
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 167:19  FollowsInFlightNotifier.clear
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 27:50   FollowStateNotifier.build
+  package:riverpod/src/providers/notifier.dart 93:31                                          $NotifierProviderElement.handleCreate
+  package:riverpod/src/providers/notifier/orphan.dart 69:47                                   Notifier.runBuild
+  package:riverpod/src/core/provider/notifier_provider.dart 569:43                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 168:12                                         main.<fn>.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                                                  _Completer.completeError
+  package:riverpod/src/core/element.dart 127:11                                               ElementWithFuture.onError
+  package:riverpod/src/core/async_value.dart 160:21                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/providers/notifier.dart 89:7                                           $NotifierProviderElement.handleError
+  package:riverpod/src/core/provider/notifier_provider.dart 572:11                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 168:12                                         main.<fn>.<fn>
+  
+00:00 +0 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:00 +0 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider ignores a duplicate follow tap while the request is pending [E]
+  'package:riverpod/src/core/element.dart': Failed assertion: line 796 pos 7: '_debugCurrentlyBuildingElement == null ||
+            _debugCurrentlyBuildingElement == this': Providers are not allowed to modify other providers during their initialization.
+  
+  The provider NotifierProvider<FollowStateNotifier, Map<String, FollowStatusResponse>>#5afda modified NotifierProvider<FollowsInFlightNotifier, Set<String>>#4fa9f while building.
+  
+  dart:core                                                                                   _AssertionError._throwNew
+  package:riverpod/src/core/element.dart 796:7                                                ProviderElement._debugAssertNotificationAllowed
+  package:riverpod/src/core/element.dart 854:38                                               ProviderElement._notifyListeners
+  package:riverpod/src/core/element.dart 478:7                                                ProviderElement.setValue
+  package:riverpod/src/core/element.dart 66:18                                                ElementWithFuture.asyncTransition
+  package:riverpod/src/core/element.dart 145:22                                               ElementWithFuture.onData
+  package:riverpod/src/core/async_value.dart 158:20                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/core/element.dart 1422:43                                              SyncProviderElement.setValueFromState
+  package:riverpod/src/core/provider/notifier_provider.dart 93:18                             AnyNotifier.state=
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 167:19  FollowsInFlightNotifier.clear
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 27:50   FollowStateNotifier.build
+  package:riverpod/src/providers/notifier.dart 93:31                                          $NotifierProviderElement.handleCreate
+  package:riverpod/src/providers/notifier/orphan.dart 69:47                                   Notifier.runBuild
+  package:riverpod/src/core/provider/notifier_provider.dart 569:43                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 199:36                                         main.<fn>.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                                                  _Completer.completeError
+  package:riverpod/src/core/element.dart 127:11                                               ElementWithFuture.onError
+  package:riverpod/src/core/async_value.dart 160:21                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/providers/notifier.dart 89:7                                           $NotifierProviderElement.handleError
+  package:riverpod/src/core/provider/notifier_provider.dart 572:11                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 199:36                                         main.<fn>.<fn>
+  
+  Expected: <1>
+    Actual: <0>
+  
+  package:matcher                                     expect
+  package:flutter_test/src/widget_tester.dart 473:18  expect
+  test\features\profile\follow_state_test.dart 205:9  main.<fn>.<fn>
+  
+00:00 +0 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:00 +0 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider resets following feed after a successful relationship change [E]
+  'package:riverpod/src/core/element.dart': Failed assertion: line 796 pos 7: '_debugCurrentlyBuildingElement == null ||
+            _debugCurrentlyBuildingElement == this': Providers are not allowed to modify other providers during their initialization.
+  
+  The provider NotifierProvider<FollowStateNotifier, Map<String, FollowStatusResponse>>#5afda modified NotifierProvider<FollowsInFlightNotifier, Set<String>>#4fa9f while building.
+  
+  dart:core                                                                                   _AssertionError._throwNew
+  package:riverpod/src/core/element.dart 796:7                                                ProviderElement._debugAssertNotificationAllowed
+  package:riverpod/src/core/element.dart 854:38                                               ProviderElement._notifyListeners
+  package:riverpod/src/core/element.dart 478:7                                                ProviderElement.setValue
+  package:riverpod/src/core/element.dart 66:18                                                ElementWithFuture.asyncTransition
+  package:riverpod/src/core/element.dart 145:22                                               ElementWithFuture.onData
+  package:riverpod/src/core/async_value.dart 158:20                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/core/element.dart 1422:43                                              SyncProviderElement.setValueFromState
+  package:riverpod/src/core/provider/notifier_provider.dart 93:18                             AnyNotifier.state=
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 167:19  FollowsInFlightNotifier.clear
+  package:freebay/features/profile/presentation/providers/follow_status_provider.dart 27:50   FollowStateNotifier.build
+  package:riverpod/src/providers/notifier.dart 93:31                                          $NotifierProviderElement.handleCreate
+  package:riverpod/src/providers/notifier/orphan.dart 69:47                                   Notifier.runBuild
+  package:riverpod/src/core/provider/notifier_provider.dart 569:43                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 242:14                                         main.<fn>.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                                                  _Completer.completeError
+  package:riverpod/src/core/element.dart 127:11                                               ElementWithFuture.onError
+  package:riverpod/src/core/async_value.dart 160:21                                           AsyncValueExtensions.map
+  package:riverpod/src/core/element.dart 74:18                                                ElementWithFuture.setValue
+  package:riverpod/src/providers/notifier.dart 89:7                                           $NotifierProviderElement.handleError
+  package:riverpod/src/core/provider/notifier_provider.dart 572:11                            $ClassProviderElement.create
+  package:riverpod/src/core/element.dart 743:28                                               ProviderElement.buildState
+  package:riverpod/src/core/element.dart 587:7                                                ProviderElement.mount
+  package:riverpod/src/core/element.dart 699:7                                                ProviderElement.flush
+  package:riverpod/src/core/provider/provider.dart 119:24                                     $ProviderBaseImpl._addListener
+  package:riverpod/src/core/proxy_provider_listenable.dart 106:31                             ProviderElementProxy._addListener
+  package:riverpod/src/core/provider_container.dart 1102:26                                   ProviderContainer.listen
+  package:riverpod/src/core/provider_container.dart 1028:17                                   ProviderContainer.read
+  test\features\profile\follow_state_test.dart 242:14                                         main.<fn>.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                                                  _CustomZone.registerUnaryCallback
+  test\features\profile\follow_state_test.dart 235:9                                          main.<fn>.<fn>
+  
+00:00 +1 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:01 +2 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:01 +2 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 2.0x
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: FlutterError:<A RenderFlex overflowed by 10.0 pixels on the right.>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart:56:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart line 56
+The test description was:
+  login form remains scrollable and readable at 2.0x
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:01 +2 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:01 +2 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 2.0x [E]
+  Test failed. See exception logs above.
+  The test description was: login form remains scrollable and readable at 2.0x
+  
+00:01 +3 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: failed append keeps posts and offers a deliberate retry
+00:02 +4 -5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: failed append keeps posts and offers a deliberate retry
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "TENTAR NOVAMENTE": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart:55:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart line 55
+The test description was:
+  failed append keeps posts and offers a deliberate retry
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:02 +4 -6: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: failed append keeps posts and offers a deliberate retry [E]
+  Test failed. See exception logs above.
+  The test description was: failed append keeps posts and offers a deliberate retry
+  
+00:02 +4 -6: Some tests failed.
+
+Failing tests:
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 2.0x
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider ignores a duplicate follow tap while the request is pending
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider optimistically updates follow state and confirms with server
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider resets following feed after a successful relationship change
+  ... and 2 more
+EXIT_CODE=1

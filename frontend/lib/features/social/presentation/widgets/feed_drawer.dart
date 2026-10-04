@@ -10,6 +10,7 @@ import 'package:freebay/features/profile/presentation/widgets/profile_settings_s
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_drawer_footer.dart';
 import 'package:freebay/features/social/presentation/widgets/feed_drawer_sections.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class FeedDrawer extends ConsumerWidget {
   const FeedDrawer({super.key});
@@ -34,10 +35,10 @@ class FeedDrawer extends ConsumerWidget {
       context: navigator.context,
       icon: Icons.logout,
       iconColor: AppColors.error,
-      title: 'Sair da conta?',
-      subtitle: 'Você precisará entrar novamente para acessar sua conta.',
-      dismissText: 'Cancelar',
-      okText: 'Sair',
+      title: l10n(navigator.context).feedLogOutTitle,
+      subtitle: l10n(navigator.context).feedLogOutBody,
+      dismissText: l10n(navigator.context).commonCancel,
+      okText: l10n(navigator.context).authLogout,
       isError: true,
       onOk: () async {
         if (ref.read(authControllerProvider).isLoading) return;
@@ -50,6 +51,7 @@ class FeedDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final user = ref.watch(authControllerProvider).value;
     final stats = ref.watch(profileStatsProvider).value;
     void action(String route) {
@@ -65,7 +67,7 @@ class FeedDrawer extends ConsumerWidget {
     return RepaintBoundary(
       child: Drawer(
         elevation: 0,
-        width: MediaQuery.of(context).size.width * 0.78,
+        width: MediaQuery.sizeOf(context).width * 0.78,
         backgroundColor: Colors.transparent,
         child: AppBackground(
           child: Container(
@@ -87,7 +89,8 @@ class FeedDrawer extends ConsumerWidget {
                       children: [
                         RepaintBoundary(
                           child: FeedDrawerHeader(
-                            name: user?.displayName ?? 'Usuário',
+                            name:
+                                user?.displayName ?? strings.commonUnknownUser,
                             avatarUrl: user?.avatarUrl,
                             isVerified: user?.isVerified ?? false,
                             onTap: () => _afterDrawer(
@@ -146,20 +149,29 @@ class FeedDrawer extends ConsumerWidget {
   }
 
   Widget _menu(BuildContext context, void Function(String route) action) {
-    const entries = [
-      (Icons.grid_view, 'Meus posts', AppRoutes.profilePosts),
-      (Icons.shopping_bag_outlined, 'Meus anúncios', AppRoutes.profileProducts),
-      (Icons.bookmark_outline, 'Salvos', AppRoutes.profileSaved),
-      (Icons.shopping_cart_outlined, 'Carrinho', AppRoutes.cart),
-      (Icons.receipt_long_outlined, 'Meus pedidos', AppRoutes.orders),
+    final strings = l10n(context);
+    final entries = [
+      (Icons.grid_view, strings.profilePosts, AppRoutes.profilePosts),
+      (
+        Icons.shopping_bag_outlined,
+        strings.productMyListings,
+        AppRoutes.profileProducts,
+      ),
+      (Icons.bookmark_outline, strings.profileSaved, AppRoutes.profileSaved),
+      (Icons.shopping_cart_outlined, strings.cartTitle, AppRoutes.cart),
+      (Icons.receipt_long_outlined, strings.ordersTitle, AppRoutes.orders),
       (
         Icons.account_balance_wallet_outlined,
-        'Carteira e custódia',
+        strings.walletTitle,
         AppRoutes.wallet,
       ),
-      (Icons.notifications_outlined, 'Notificações', AppRoutes.notifications),
-      (Icons.settings_outlined, 'Configurações', ''),
-      (Icons.help_outline, 'Ajuda e suporte', AppRoutes.faq),
+      (
+        Icons.notifications_outlined,
+        strings.notificationsTitle,
+        AppRoutes.notifications,
+      ),
+      (Icons.settings_outlined, strings.profileSettings, ''),
+      (Icons.help_outline, strings.profileHelpSupport, AppRoutes.faq),
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

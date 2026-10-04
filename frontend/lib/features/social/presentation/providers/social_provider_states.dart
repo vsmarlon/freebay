@@ -8,6 +8,8 @@ abstract class FeedState with _$FeedState {
   const factory FeedState({
     @Default([]) List<PostEntity> posts,
     @Default(false) bool isLoading,
+    @Default(false) bool isRefreshing,
+    @Default(false) bool isStale,
     @Default(true) bool hasMore,
     String? cursor,
     String? error,

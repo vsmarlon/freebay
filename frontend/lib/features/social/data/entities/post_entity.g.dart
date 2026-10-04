@@ -31,6 +31,7 @@ _PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => _PostEntity(
   userId: json['userId'] as String,
   content: json['content'] as String?,
   imageUrl: json['imageUrl'] as String?,
+  imageBlurHash: json['imageBlurHash'] as String?,
   type:
       $enumDecodeNullable(_$PostTypeEnumMap, json['type']) ?? PostType.regular,
   audience:
@@ -61,6 +62,7 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
       'userId': instance.userId,
       'content': instance.content,
       'imageUrl': instance.imageUrl,
+      'imageBlurHash': instance.imageBlurHash,
       'type': _$PostTypeEnumMap[instance.type]!,
       'audience': _$PostAudienceEnumMap[instance.audience]!,
       'likesCount': instance.likesCount,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,8 +9,11 @@ import 'package:freebay/features/product/data/repositories/product_repository.da
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/domain/usecases/get_products_usecase.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import '../../support/auth_test_doubles.dart';
+import '../../support/test_users.dart';
 
 class _DelayedProducts extends ProductRepository {
   final cursors = <String?>[];
@@ -24,6 +28,7 @@ class _DelayedProducts extends ProductRepository {
     String? cursor,
     ProductCondition? condition,
     String? sort,
+    CancelToken? cancelToken,
   }) {
     cursors.add(cursor);
     final response = Completer<Either<Failure, ProductPageResult>>();
@@ -42,7 +47,12 @@ void main() {
   test('a refreshed catalog ignores an older load-more response', () async {
     final repository = _DelayedProducts();
     final container = ProviderContainer(
-      overrides: [productRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        productRepositoryProvider.overrideWithValue(repository),
+        authControllerProvider.overrideWith(
+          () => TestAuthController(testUser(id: 'catalog-user')),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     const params = GetProductsParams();

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   GetProfileUseCase,
   UpdateProfileUseCase,
+  RequestProfileVerificationUseCase,
   FollowUserUseCase,
   UnfollowUserUseCase,
   BlockUserUseCase,
@@ -51,6 +52,7 @@ const compileSubject = async (): Promise<TestingModule> => Test.createTestingMod
   providers: [
     GetProfileUseCase,
     UpdateProfileUseCase,
+    { provide: RequestProfileVerificationUseCase, useValue: { consume: jest.fn().mockResolvedValue(right(undefined)) } },
     FollowUserUseCase,
     UnfollowUserUseCase,
     BlockUserUseCase,

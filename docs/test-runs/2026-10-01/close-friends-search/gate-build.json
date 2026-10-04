@@ -1,0 +1,8 @@
+{
+  "label": "gate-build",
+  "command": "npm run build",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/nest-backend",
+  "started": "2026-10-01T06:42:47.175Z",
+  "ended": "2026-10-01T06:43:01.668Z",
+  "exitCode": 0
+}

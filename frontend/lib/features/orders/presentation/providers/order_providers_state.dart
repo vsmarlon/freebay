@@ -23,6 +23,8 @@ abstract class PurchasesListState with _$PurchasesListState {
   const factory PurchasesListState({
     @Default(false) bool isLoading,
     @Default(false) bool isLoadingMore,
+    @Default(false) bool isRefreshing,
+    @Default(false) bool isStale,
     @Default([]) List<OrderEntity> orders,
     String? nextCursor,
     String? error,
@@ -35,6 +37,8 @@ abstract class SalesListState with _$SalesListState {
   const factory SalesListState({
     @Default(false) bool isLoading,
     @Default(false) bool isLoadingMore,
+    @Default(false) bool isRefreshing,
+    @Default(false) bool isStale,
     @Default([]) List<OrderEntity> orders,
     String? nextCursor,
     String? error,

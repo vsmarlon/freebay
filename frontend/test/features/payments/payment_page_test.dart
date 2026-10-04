@@ -9,6 +9,7 @@ import 'package:freebay/features/payments/presentation/providers/payment_provide
 import 'package:freebay/features/product/data/entities/product_entity.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/presentation/controllers/product_controller.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 const _product = ProductEntity(
   id: 'product-1',
@@ -60,7 +61,11 @@ void main() {
               'product-1',
             ).overrideWith((_) async => _product),
           ],
-          child: MaterialApp.router(routerConfig: router),
+          child: MaterialApp.router(
+            routerConfig: router,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -94,4 +99,57 @@ void main() {
       expect(container.read(paymentCheckoutProvider).hasResult, isFalse);
     },
   );
+
+  for (final scale in [1.5, 2.0]) {
+    testWidgets('loaded checkout fits at ${scale}x with long details', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        initialLocation: '/payment?productId=product-1',
+        routes: [
+          GoRoute(path: '/payment', builder: (_, _) => const PaymentPage()),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              () => _TestAuthController(
+                const UserEntity(
+                  id: 'buyer',
+                  displayName:
+                      'Nome extremamente extenso para validar o formulário',
+                  email: 'buyer.with.a.long.address@example.com',
+                ),
+              ),
+            ),
+            productByIdProvider('product-1').overrideWith(
+              (_) async => const ProductEntity(
+                id: 'product-1',
+                title:
+                    'Produto com título excepcionalmente longo para testar leitura acessível',
+                description: 'Produto usado em ótimo estado.',
+                price: 10000,
+                condition: ProductCondition.used,
+                sellerId: 'seller-1',
+              ),
+            ),
+          ],
+          child: MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+            child: MaterialApp.router(
+              routerConfig: router,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('excepcionalmente longo'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

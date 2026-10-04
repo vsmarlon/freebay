@@ -8,12 +8,14 @@ class RegisterParams {
   final String password;
   final String displayName;
   final String username;
+  final int authenticationAttempt;
 
   RegisterParams({
     required this.email,
     required this.password,
     required this.displayName,
     required this.username,
+    required this.authenticationAttempt,
   });
 }
 
@@ -29,6 +31,7 @@ class RegisterUsecase implements Usecase<UserEntity, RegisterParams> {
       params.password,
       params.displayName,
       params.username,
+      authenticationAttempt: params.authenticationAttempt,
     );
   }
 }

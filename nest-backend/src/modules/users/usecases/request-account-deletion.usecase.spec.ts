@@ -3,9 +3,11 @@ import { RequestAccountDeletionUseCase } from './request-account-deletion.usecas
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
+import { AppleProviderService } from '@/shared/auth/apple-provider.service';
 import { left, right } from '@/shared/core/either';
 import {
   AccountDeletionBlockedError,
+  AppleRevocationRequiredError,
   DatabaseError,
   UserNotFoundError,
 } from '@/shared/core/errors';
@@ -22,6 +24,7 @@ const mockAccountLifecycleRepository = {
 const mockSessionRevoker = {
   revokeAllSessions: jest.fn(),
 };
+const mockAppleProvider = { revokeRefreshToken: jest.fn() };
 
 const noBlockers = {
   openOrdersAsBuyer: 0,
@@ -42,6 +45,7 @@ describe('RequestAccountDeletionUseCase', () => {
         { provide: UserDatabaseRepository, useValue: mockUserRepository },
         { provide: AccountLifecycleDatabaseRepository, useValue: mockAccountLifecycleRepository },
         { provide: SessionRevokerService, useValue: mockSessionRevoker },
+        { provide: AppleProviderService, useValue: mockAppleProvider },
       ],
     }).compile();
 
@@ -55,6 +59,7 @@ describe('RequestAccountDeletionUseCase', () => {
       Promise.resolve(right(requestedAt)),
     );
     mockSessionRevoker.revokeAllSessions.mockResolvedValue(undefined);
+    mockAppleProvider.revokeRefreshToken.mockResolvedValue(undefined);
   });
 
   it('deve retornar UserNotFoundError quando o usuário não existe', async () => {
@@ -205,5 +210,28 @@ describe('RequestAccountDeletionUseCase', () => {
 
     expect(result.isLeft()).toBe(true);
     expect(mockSessionRevoker.revokeAllSessions).not.toHaveBeenCalled();
+  });
+
+  it('preserves the account when Apple revocation fails', async () => {
+    mockUserRepository.findById.mockResolvedValue(right({ id: 'user-1', deletionRequestedAt: null, appleId: 'apple-sub', appleRefreshTokenEncrypted: 'ciphertext' }));
+    mockAppleProvider.revokeRefreshToken.mockRejectedValue(new Error('provider unavailable'));
+
+    const result = await sut.execute({ userId: 'user-1' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(result.value).toBeInstanceOf(AppleRevocationRequiredError);
+    expect(mockAccountLifecycleRepository.requestDeletion).not.toHaveBeenCalled();
+    expect(mockSessionRevoker.revokeAllSessions).not.toHaveBeenCalled();
+  });
+
+  it('does not skip revocation for an Apple-linked account without a revocable credential', async () => {
+    mockUserRepository.findById.mockResolvedValue(right({ id: 'user-1', deletionRequestedAt: null, appleId: 'apple-sub', appleRefreshTokenEncrypted: null }));
+
+    const result = await sut.execute({ userId: 'user-1' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(result.value).toBeInstanceOf(AppleRevocationRequiredError);
+    expect(mockAppleProvider.revokeRefreshToken).not.toHaveBeenCalled();
+    expect(mockAccountLifecycleRepository.requestDeletion).not.toHaveBeenCalled();
   });
 });

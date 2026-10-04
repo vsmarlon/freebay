@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/orders/presentation/widgets/order_actions.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 OrderEntity _order(OrderStatus status) => OrderEntity(
   id: 'order-1',
@@ -23,6 +24,9 @@ void main() {
     for (final status in [OrderStatus.confirmed, OrderStatus.delivered]) {
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: OrderActions(
               order: _order(status),
@@ -32,11 +36,14 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Abrir Disputa'), findsOneWidget);
+      expect(find.text('Abrir uma disputa'), findsOneWidget);
     }
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('pt', 'BR'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: OrderActions(
             order: _order(OrderStatus.shipped),
@@ -46,6 +53,6 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Abrir Disputa'), findsNothing);
+    expect(find.text('Abrir uma disputa'), findsNothing);
   });
 }

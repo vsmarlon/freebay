@@ -1,0 +1,444 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_dialog_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_dialog_test.dart: a non-dismissible dialog ignores back navigation
+00:01 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: starts on the first branch
+00:02 +2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: starts on the first branch
+00:02 +3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: starts on the first branch
+00:02 +4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: starts on the first branch
+00:02 +5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: starts on the first branch
+00:03 +6: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: starts on the first branch
+00:04 +7: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: dragging left advances one branch, not several
+00:04 +8: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: a slow drag right goes back, never forward
+00:05 +9: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/brutalist_highlighted_text_test.dart: BrutalistHighlightedText renders plain text cleanly
+00:05 +10: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/brutalist_highlighted_text_test.dart: BrutalistHighlightedText renders plain text cleanly
+00:05 +11: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/empty_state_test.dart: error state invokes retry action
+00:05 +12: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/empty_state_test.dart: error state invokes retry action
+00:05 +13: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/empty_state_test.dart: error state invokes retry action
+00:05 +14: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/empty_state_test.dart: error state invokes retry action
+00:05 +15: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/empty_state_test.dart: error state invokes retry action
+00:06 +16: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/empty_state_test.dart: error state invokes retry action
+00:06 +17: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: over-swiping right on the first branch opens the drawer
+[HTTP] GET http://localhost:3000/users/me/stats
+00:08 +18: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: a nested horizontal pager never changes the shell branch
+00:08 +19: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: shell chrome hides on a user drag and returns on reverse drag
+00:09 +20: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/app_shell_test.dart: keyboard layout keeps shell header visible during scroll
+00:09 +21: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/hide_on_scroll_test.dart: reversed chat scroll hides away from bottom and reveals back
+00:09 +22: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: a skeleton list shares one repeating animation ticker
+00:10 +23: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: a skeleton list shares one repeating animation ticker
+00:11 +24: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: nested skeleton page and list reuse the page clock
+00:11 +25: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: a skeleton outside a scope does not animate
+00:11 +26: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/providers/background_provider_test.dart: uses a still aurora until animation is explicitly enabled
+00:11 +27: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/providers/background_provider_test.dart: uses a still aurora until animation is explicitly enabled
+00:11 +28: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/providers/background_provider_test.dart: uses a still aurora until animation is explicitly enabled
+00:11 +29: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/components/shimmer_scope_test.dart: icon button is exposed as an accessible button
+00:11 +30: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/providers/background_provider_test.dart: explicitly enabled animation survives a new container
+00:11 +31: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: chat product route encodes both typed identifiers
+00:11 +32: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +33: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +34: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +35: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +36: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +37: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +38: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +39: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +40: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +41: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:12 +42: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User without username (Google login) stays on completeProfile without redirect loop
+00:13 +43: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and incomplete welcome setup redirects to welcome page
+00:13 +44: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +45: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +46: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +47: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +48: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +49: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +50: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +51: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +52: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +53: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +54: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +55: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +56: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +57: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +58: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +59: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +60: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +61: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +62: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +63: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +64: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +65: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +66: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +67: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+00:13 +68: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: User with username and completed welcome setup redirects to feed
+[HTTP] GET http://localhost:3000/stories
+[HTTP] GET http://localhost:3000/social/feed?limit=20&type=explore&contentFilter=all
+00:13 +69: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: Unauthenticated user accessing completeProfile redirects directly to login
+[HTTP] GET http://localhost:3000/stories
+[HTTP] GET http://localhost:3000/social/feed?limit=20&type=explore&contentFilter=all
+00:14 +70: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/core/router/app_router_test.dart: Tapping back on CompleteProfilePage shows confirmation dialog
+00:14 +71: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:14 +72: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:14 +73: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:14 +74: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/design_system/brutalist_bottom_sheet_test.dart: dragging the sheet down dismisses it
+00:15 +75: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/apple_auth_repository_test.dart: Apple authentication posts the backend contract and installs its session
+[AUTH apple] status: 200
+00:15 +76: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: does not check availability or prompt without consent
+00:15 +77: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: does not prompt when no biometric credential is enrolled
+00:15 +78: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: clears all biometric state when biometric login fails
+00:15 +79: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: returns the authenticated user after biometric success
+00:15 +80: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: preserves the credential when the user cancels the prompt
+00:15 +81: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: preserves the credential on a transient failure
+00:15 +82: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometric_login_usecase_test.dart: clears credentials when the biometric owner does not match
+00:15 +83: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/biometry_owner_wiring_test.dart: only welcome owns post-auth biometric enrollment
+00:16 +84: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:16 +85: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:16 +86: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:17 +87: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:17 +88: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:17 +89: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:17 +89: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/logout_clears_biometric_test.dart: logout remains unauthenticated when server logout fails
+[logout] Instance of 'ServerFailure'
+00:17 +90: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 1.5x
+00:17 +91: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/social_session_isolation_test.dart: a pending feed cannot restore old results after logout
+00:17 +92: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/logout_clears_biometric_test.dart: logout clears saved email when remember me is disabled
+[logout] Instance of 'ServerFailure'
+00:17 +93: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 2.0x
+00:17 +94: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 2.0x
+00:17 +94: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/logout_clears_biometric_test.dart: logout retains saved email when remember me is enabled
+[logout] Instance of 'ServerFailure'
+00:17 +95: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart: login form remains scrollable and readable at 2.0x
+00:17 +96: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/social_session_isolation_test.dart: logout discards a pending personalized people search
+00:17 +97: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/social_session_isolation_test.dart: a newer people search replaces an older in-flight query
+00:17 +98: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/username_field_test.dart: a slow lookup cannot replace the current username result
+00:18 +99: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/username_field_test.dart: a slow lookup cannot replace the current username result
+00:18 +100: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/username_field_test.dart: a slow lookup cannot replace the current username result
+00:18 +101: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart: a created cart payment offers wallets or an unavailable state
+00:19 +102: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/username_field_test.dart: a taken username offers selectable available alternatives
+00:19 +103: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart: cart blocks checkout when an item no longer has stock
+00:19 +104: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart: adding a new product clears the previous checkout result
+00:19 +105: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_date_parsing_test.dart: keeps message and nested reply instants; display localizes
+00:19 +106: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_date_parsing_test.dart: keeps chat and nested last message instants
+00:19 +107: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_state_test.dart: discards a slow response from the previous query
+00:19 +108: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_state_test.dart: keeps a live update while fetchMore is pending
+00:19 +109: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_state_test.dart: coalesces burst refreshes and permits retry after failure
+00:20 +110: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_list_tile_test.dart: renders context, preview, timestamp, and unread count
+00:21 +111: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/chat_repository_test.dart: parses active chats with direct and order product context
+00:21 +112: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/conversation_deletion_undo_test.dart: deleting a conversation can be undone before its request
+00:22 +113: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/conversation_deletion_undo_test.dart: deleting a conversation can be undone before its request
+00:22 +114: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/message_bubble_view_once_test.dart: locked view-once messages hide their content
+00:23 +115: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart: shows the exact editable product draft
+00:23 +116: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart: shows the exact editable product draft
+00:23 +117: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart: shows the exact editable product draft
+00:23 +118: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +119: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +120: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +121: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +122: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +123: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +124: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +125: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +126: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: opens a conversation without throwing
+00:24 +127: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/new_chat_page_test.dart: changed draft after failed send gets a new client id
+00:24 +128: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: retained conversation rebinds state and refreshes its theme
+00:24 +129: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/chat/repro_conversation_open_test.dart: retained conversation rebinds state and refreshes its theme
+00:25 +130: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+00:25 +131: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/onboarding/welcome_setup_page_test.dart: declining welcome setup never prompts and completion stays user-keyed
+00:26 +132: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: exposes accessible All and every seller status control
+00:26 +133: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: status action uses the provider and keeps products out of Vendas
+00:26 +134: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: renders Vendas surface empty state and keeps products separate
+00:26 +135: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loads only the visible order tab and loads the other once
+00:27 +136: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loads sales when the page opens on the sales tab
+00:27 +137: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: shows loading more and retries the append with the preserved cursor
+00:27 +138: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+00:27 +139: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+00:27 +140: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+00:27 +141: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 1.5x with long title
+00:28 +142: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_dispute_action_test.dart: dispute action follows the states accepted by the dispute API
+00:28 +143: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_detail_text_scaling_test.dart: loaded order detail fits at 2.0x with long title
+00:28 +144: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+00:29 +145: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+00:29 +146: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: resets checkout fields and state when authenticated identity changes
+00:30 +147: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal category drag scrolls the strip, not the page
+00:30 +148: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal category drag scrolls the strip, not the page
+00:30 +149: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal category drag scrolls the strip, not the page
+00:30 +150: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal category drag scrolls the strip, not the page
+00:30 +151: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details
+00:30 +152: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: FlutterError:<A RenderFlex overflowed by 98 pixels on the right.>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart:152:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart line 152
+The test description was:
+  loaded checkout fits at 1.5x with long details
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:30 +152 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: product tap keeps the existing product destination
+00:30 +152 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details [E]
+  Test failed. See exception logs above.
+  The test description was: loaded checkout fits at 1.5x with long details
+  
+00:30 +153 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: product tap keeps the existing product destination
+00:30 +153 -1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: null
+  Actual: FlutterError:<A RenderFlex overflowed by 361 pixels on the right.>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart:152:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart line 152
+The test description was:
+  loaded checkout fits at 2.0x with long details
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:30 +153 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: product tap keeps the existing product destination
+00:30 +153 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details [E]
+  Test failed. See exception logs above.
+  The test description was: loaded checkout fits at 2.0x with long details
+  
+00:30 +154 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/category_gesture_test.dart: horizontal swipe outside the category panel changes page
+00:30 +155 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+00:31 +156 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 1.5x text scale
+00:31 +157 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_detail_text_scaling_test.dart: loaded product detail fits at 2.0x text scale
+00:32 +158 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filters_test.dart: keeps product condition and status wire values aligned with backend
+00:32 +159 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filters_test.dart: preserves legacy card labels at the compatibility seam
+00:32 +160 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: applies a changed price range only after tapping Apply
+00:33 +161 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_filter_bar_test.dart: Limpar forwards to onClear without applying the draft
+00:33 +162 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:33 +163 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:33 +164 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:34 +165 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:34 +166 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:34 +167 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_hero_tag_test.dart: duplicate product cells do not register duplicate Hero tags
+00:34 +168 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:34 +169 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: empty catalog error exposes an inline retry
+00:34 +170 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/product/product_load_more_error_test.dart: keeps catalog results and offers retry when pagination fails
+00:34 +171 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider optimistically updates follow state and confirms with server
+00:34 +172 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider rolls back optimistic state on server failure
+00:34 +173 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider ignores a duplicate follow tap while the request is pending
+00:34 +174 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider resets following feed after a successful relationship change
+00:34 +175 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider invalidating suggestionsProvider after follow does not throw LateInitializationError
+00:34 +176 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider discards a pending follow when the account changes
+00:34 +177 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/follow_state_test.dart: FollowStateNotifier & followStatusProvider does not seed a status after its account session changes
+00:34 +178 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/privacy_page_test.dart: deletion requires confirmation and clears the session on success
+00:35 +179 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/privacy_page_test.dart: deletion requires confirmation and clears the session on success
+00:36 +180 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+00:37 +181 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+00:37 +182 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+00:37 +183 -2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+[HTTP] GET http://localhost:3000/stories/highlights/user/settings-owner
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following TestFailure was thrown running a test:
+Expected: a value greater than <60.0>
+  Actual: <60.0>
+   Which: is not a value greater than <60.0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart:106:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart line 106
+The test description was:
+  profile settings sheet tracks drag, scrolls, and handles taps
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:38 +183 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+00:38 +183 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps [E]
+  Test failed. See exception logs above.
+  The test description was: profile settings sheet tracks drag, scrolls, and handles taps
+  
+00:38 +184 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+00:38 +185 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+00:38 +186 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+00:40 +187 -3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch
+ÔòÉÔòÉÔòí EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK Ôò×ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "PROFILE HEADER": []" (used in a call to "getCenter()") could
+not find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      main.<anonymous closure> (file:///C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart:200:21)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  profile tabs page independently without changing shell branch
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+00:41 +187 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:41 +187 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch [E]
+  Test failed. See exception logs above.
+  The test description was: profile tabs page independently without changing shell branch
+  
+00:41 +188 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:41 +189 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:41 +190 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:41 +191 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:41 +192 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:41 +193 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:41 +194 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:42 +195 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:42 +196 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+00:42 +197 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/feed_append_retry_test.dart: append retry keeps posts and retries the current cursor
+[HTTP] GET http://localhost:3000/stories
+00:42 +198 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_details_comments_test.dart: PostDetailsState & Comments Count incrementCommentCount increments and clamps commentsCount correctly
+00:43 +199 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_details_comments_test.dart: LikesProvider & Feed Sync toggleLike updates feedProvider and likesProvider overrides
+00:43 +200 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_details_comments_test.dart: CommentItem replies indicator shows simple Responder text when comment has no replies
+00:43 +201 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_error_test.dart: shows a retryable error instead of an empty result after search fails
+00:43 +202 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_error_test.dart: shows a retryable error instead of an empty result after search fails
+00:44 +203 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_race_test.dart: a newer search wins even if an older request finishes last
+00:44 +204 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/post_search_race_test.dart: clearing a search invalidates its in-flight response
+00:45 +205 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: restores a failed unsave and retries successfully
+00:45 +206 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+00:46 +207 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+00:46 +208 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+00:46 +209 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+00:46 +210 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/social/saves_provider_test.dart: saved list removes a post unsaved from its detail screen
+00:50 +211 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/close_friends_story_preview_test.dart: a story creator can choose the close-friends audience
+01:17 +212 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/create_story_submission_test.dart: ignores a concurrent submission while the first is pending
+01:17 +213 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/create_story_submission_test.dart: invalidates both story providers once using the returned user id
+01:17 +214 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/create_story_submission_test.dart: surfaces failure without invalidating and allows one retry
+01:20 +215 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_audience_transport_test.dart: publishes private video with its audience in the multipart request
+01:23 +216 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_canvas_test.dart: renders and moves a selected text block
+01:27 +217 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_entity_test.dart: parses story media metadata independently
+01:27 +218 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_entity_test.dart: round-trips text block position, style, color, and layer
+01:28 +219 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/stories/story_viewer_interaction_test.dart: a photo stays visible for seven seconds and long press pauses it
+01:34 +220 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: refresh superseding loadMore clears the pagination loading state
+01:34 +221 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: keeps the newest account wallet when an older request finishes later
+01:34 +222 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: exposes failure and allows a retry to replace it with zero balance
+01:34 +223 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: reset clears wallet state and ignores an in-flight logout response
+01:34 +224 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders a deterministic zero balance and empty history
+01:35 +225 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/wallet/wallet_controller_test.dart: renders an actionable action for every Connect status
+01:36 +226 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/auth_session_test.dart: installs the shared session and preserves login remember-me behavior
+[AUTH login] status: 200
+01:36 +227 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/auth_session_test.dart: returns the endpoint-specific missing-data failure without installing tokens
+[AUTH register] status: 200
+01:36 +228 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/chat_refresh_test.dart: fetchMore appends only new conversations when the page overlaps
+01:37 +229 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/conversation_reload_test.dart: successful silent reload clears the previous load error
+01:39 +230 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/product_form_fields_test.dart: keeps extracted field controllers, labels, and condition callbacks
+02:07 +231 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/social_response_test.dart: getPost accepts wrapped and unwrapped response shapes
+02:07 +232 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/social_response_test.dart: getPost returns a failure for an invalid response shape
+02:07 +233 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/refactor_regressions/social_response_test.dart: getPostComments accepts wrapped and unwrapped response shapes
+02:31 +234 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/config/app_config_test.dart: AppConfig with dotenv reads values from loaded dotenv when define is not set
+02:31 +235 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/config/app_config_test.dart: AppConfig with dotenv returns default fallback when dotenv is empty
+02:35 +236 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/either/either_test.dart: fold and nullable accessors select only the matching side
+02:35 +237 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/either/either_test.dart: when and unwrapOrHandle preserve the selected value
+02:47 +238 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: never surfaces the server message, whatever the status
+02:47 +239 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: maps a known code to its local copy
+02:48 +240 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: falls back to the status generic for an unknown code
+02:48 +241 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/errors/error_messages_test.dart: userMessageOf hides anything that is not a Failure
+03:10 +242 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: awaits an asynchronous decoder
+03:10 +243 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: preserves an explicit decoder failure
+03:10 +244 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: maps non-2xx responses to a server failure
+03:10 +245 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/http/request_either_test.dart: maps request and asynchronous decoder errors
+03:12 +246 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale selects English for English device locales
+03:12 +247 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale selects Brazilian Portuguese for pt-BR
+03:12 +248 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale falls back to pt-BR when no supported language is requested
+03:12 +249 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/l10n/app_locale_resolution_test.dart: resolveAppLocale continues through device preferences to a supported locale
+03:13 +250 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: disconnect invalidates a pending token read
+03:13 +251 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: concurrent connects share one pending handshake
+03:13 +252 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: old socket callbacks are ignored after token replacement
+03:13 +253 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: disconnect permits a fresh account connection
+03:13 +254 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/chat_socket_service_lifecycle_test.dart: rooms rejoin on reconnect and leave on provider-style cleanup
+03:14 +255 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_logout_test.dart: logout preserves the captured bearer and does not refresh on 401
+[HTTP] POST http://localhost:3000/auth/logout
+[HTTP ERROR] 401 http://localhost:3000/auth/logout
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+[AUTH logout] DioException: DioExceptionType.badResponse This exception was thrown because the response has a status code of 401 and RequestOptions.validateStatus was configured to throw for this status code.
+The status code of 401 has the following meaning: "Client error - the request contains bad syntax or cannot be fulfilled"
+Read more about status codes at https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+In order to resolve this exception you typically have either to verify and fix your request code or you have to fix the server code.
+
+03:16 +256 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: retries transient GET failures at most twice
+[HTTP] GET http://localhost:3000/retryable
+[HTTP ERROR] 503 http://localhost:3000/retryable
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+[HTTP] GET http://localhost:3000/retryable
+[HTTP ERROR] 503 http://localhost:3000/retryable
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+[HTTP] GET http://localhost:3000/retryable
+[HTTP] 200 http://localhost:3000/retryable
+03:16 +257 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: never replays a mutation after a transient failure
+[HTTP] POST http://localhost:3000/mutation
+[HTTP ERROR] 503 http://localhost:3000/mutation
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+03:16 +258 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: does not retry a GET after its session generation changes
+[HTTP] GET http://localhost:3000/session-bound
+[HTTP ERROR] 503 http://localhost:3000/session-bound
+[HTTP ERROR TYPE] DioExceptionType.badResponse
+03:16 +259 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: retries GET connection timeouts
+[HTTP] GET http://localhost:3000/timeout-retry
+[HTTP ERROR] null http://localhost:3000/timeout-retry
+[HTTP ERROR TYPE] DioExceptionType.connectionTimeout
+[HTTP] GET http://localhost:3000/timeout-retry
+[HTTP] 200 http://localhost:3000/timeout-retry
+03:17 +260 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/http_client_retry_test.dart: does not retry a canceled GET
+[HTTP] GET http://localhost:3000/cancel-retry
+[HTTP ERROR] null http://localhost:3000/cancel-retry
+[HTTP ERROR TYPE] DioExceptionType.cancel
+03:17 +261 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/session_timeout_test.dart: suppresses duplicate expiry notifications
+03:18 +262 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: (setUpAll)
+03:18 +262 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: cached JSON is isolated by user and removed on logout cleanup
+03:18 +263 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: a pending write cannot restore user cache after purge
+03:18 +264 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: logout purges persisted cache when its Hive box is closed
+03:18 +265 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/storage_service_cache_test.dart: (tearDownAll)
+03:19 +265 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService drops malformed optional BlurHash but keeps the uploaded URL
+03:19 +266 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService parses an optional BlurHash from the upload response envelope
+03:19 +267 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService accepts legacy upload responses without a hash
+03:19 +268 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/services/upload_service_test.dart: UploadService rejects upload responses with no valid URL
+03:45 +269 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/date_utils_test.dart: formats an older chat date without locale initialization
+03:45 +270 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/date_utils_test.dart: parses a server instant in local time without changing the instant
+03:45 +271 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/date_utils_test.dart: throws for malformed server dates
+04:00 +272 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl prefixes the api base url onto an upload path
+04:00 +273 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl leaves absolute urls untouched
+04:00 +274 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl leaves legacy data uris untouched
+04:00 +275 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl leaves unrelated paths untouched
+04:00 +276 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl absolutizes a private media path
+04:00 +277 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaUrl is idempotent on an already absolute media url
+04:00 +278 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null for public uploads
+04:00 +279 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null for a foreign host
+04:00 +280 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when a foreign host smuggles the api origin in a fragment
+04:00 +281 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when a foreign host smuggles the api origin in a query
+04:00 +282 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when the api origin is only a path segment elsewhere
+04:00 +283 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null for a lookalike host that merely starts with the api origin
+04:00 +284 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: mediaAuthHeaders returns null when no token is cached
+04:00 +285 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: absolutizeMediaUrls rewrites upload paths nested in maps and lists
+04:00 +286 -4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/shared/utils/media_url_test.dart: absolutizeMediaUrls passes through non-json payloads
+04:00 +287 -4: Some tests failed.
+
+Failing tests:
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 1.5x with long details
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_page_test.dart: loaded checkout fits at 2.0x with long details
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_settings_sheet_test.dart: profile settings sheet tracks drag, scrolls, and handles taps
+  C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/profile/profile_timeline_tabs_test.dart: profile tabs page independently without changing shell branch

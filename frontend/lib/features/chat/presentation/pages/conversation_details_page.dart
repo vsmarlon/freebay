@@ -10,6 +10,7 @@ import 'package:freebay/features/chat/presentation/providers/chat_provider.dart'
 import 'package:freebay/features/chat/presentation/providers/conversation_messages_provider.dart';
 import 'package:freebay/features/chat/presentation/widgets/conversation_details/conversation_details_sections.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class ConversationDetailsPage extends ConsumerStatefulWidget {
   final String chatId;
@@ -61,9 +62,10 @@ class _ConversationDetailsPageState
         child: Column(
           children: [
             PageHeader(
-              text: 'DETALHES',
+              text: l10n(context).chatDetailsTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: l10n(context).accessibilityBack,
                 onTap: () => context.pop(),
               ),
             ),
@@ -82,10 +84,10 @@ class _ConversationDetailsPageState
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
               ),
-              tabs: const [
-                Tab(text: 'Mídia'),
-                Tab(text: 'Favoritas'),
-                Tab(text: 'Ações'),
+              tabs: [
+                Tab(text: l10n(context).chatMediaTab),
+                Tab(text: l10n(context).chatFavoritesTab),
+                Tab(text: l10n(context).chatActionsTab),
               ],
             ),
             Expanded(
@@ -142,29 +144,36 @@ class _ConversationDetailsPageState
     setState(() => _isMuted = !_isMuted);
     AppSnackbar.info(
       context,
-      _isMuted ? 'Notificações silenciadas' : 'Notificações ativadas',
+      _isMuted
+          ? l10n(context).chatNotificationsMuted
+          : l10n(context).chatNotificationsEnabled,
     );
   }
 
   void _showBlockSheet() {
     showBrutalistSheet(
       context: context,
-      title: 'BLOQUEAR USUÁRIO',
+      title: l10n(context).chatBlockTitle,
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Tem certeza que deseja bloquear ${ref.read(conversationMessagesProvider(widget.chatId)).otherUserName}? Você não receberá mais mensagens deste usuário.',
+              l10n(ctx).chatBlockConfirmation(
+                ref
+                        .read(conversationMessagesProvider(widget.chatId))
+                        .otherUserName ??
+                    l10n(ctx).commonUnknownUser,
+              ),
               style: TextStyle(color: context.textPrimary),
             ),
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.block, color: AppColors.error),
-              title: const Text(
-                'Confirmar Bloqueio',
-                style: TextStyle(
+              title: Text(
+                l10n(ctx).chatConfirmBlock,
+                style: const TextStyle(
                   color: AppColors.error,
                   fontWeight: FontWeight.bold,
                 ),
@@ -177,7 +186,7 @@ class _ConversationDetailsPageState
                 if (targetId == null) return;
                 await ref.read(chatRepositoryProvider).blockUser(targetId);
                 if (mounted) {
-                  AppSnackbar.success(context, 'Usuário bloqueado');
+                  AppSnackbar.success(context, l10n(context).chatUserBlocked);
                   context.pop();
                 }
               },
@@ -191,22 +200,22 @@ class _ConversationDetailsPageState
   void _showDeleteSheet() {
     showBrutalistSheet(
       context: context,
-      title: 'APAGAR CONVERSA',
+      title: l10n(context).chatDeleteTitle,
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Deseja apagar todas as mensagens desta conversa?',
+              l10n(ctx).chatDeleteAllMessagesConfirmation,
               style: TextStyle(color: context.textPrimary),
             ),
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.delete_forever, color: AppColors.error),
-              title: const Text(
-                'Confirmar e Apagar',
-                style: TextStyle(
+              title: Text(
+                l10n(ctx).chatConfirmDelete,
+                style: const TextStyle(
                   color: AppColors.error,
                   fontWeight: FontWeight.bold,
                 ),
@@ -226,12 +235,12 @@ class _ConversationDetailsPageState
                 final threadType = _threadType(conv);
                 AppSnackbar.undoable(
                   context,
-                  message: 'Conversa será excluída.',
+                  message: l10n(context).chatDeleteConversationUndo,
                   onUndo: () {
                     if (messenger.mounted) {
                       AppSnackbar.infoOnMessenger(
                         messenger,
-                        'Exclusão cancelada',
+                        l10n(messenger.context).chatDeleteCancelled,
                       );
                     }
                   },
@@ -245,7 +254,7 @@ class _ConversationDetailsPageState
                         if (messenger.mounted) {
                           AppSnackbar.errorOnMessenger(
                             messenger,
-                            failure.message,
+                            localizedFailureMessage(messenger.context, failure),
                           );
                         }
                       },
@@ -269,7 +278,7 @@ class _ConversationDetailsPageState
   void _showThemeSheet() {
     showBrutalistSheet(
       context: context,
-      title: 'TEMA DA CONVERSA',
+      title: l10n(context).chatConversationTheme.toUpperCase(),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -279,14 +288,14 @@ class _ConversationDetailsPageState
               ctx,
               Icons.circle,
               AppColors.primaryContainer,
-              'Padrão Magenta FreeBay',
+              l10n(ctx).chatThemeDefault,
               'DEFAULT',
             ),
             _themeTile(
               ctx,
               Icons.circle,
               AppColors.info,
-              'Azul Oceano',
+              l10n(ctx).chatThemeOcean,
               'OCEAN',
             ),
           ],
@@ -311,7 +320,9 @@ class _ConversationDetailsPageState
         await ref
             .read(chatRepositoryProvider)
             .setTheme(widget.chatId, _threadType(conv), theme);
-        if (mounted) AppSnackbar.success(context, 'Tema atualizado');
+        if (mounted) {
+          AppSnackbar.success(context, l10n(context).chatThemeUpdated);
+        }
       },
     );
   }

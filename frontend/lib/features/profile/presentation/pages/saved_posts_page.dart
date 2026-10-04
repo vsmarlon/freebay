@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
@@ -67,9 +68,10 @@ class _SavedPostsPageState extends ConsumerState<SavedPostsPage> {
         child: Column(
           children: [
             PageHeader(
-              text: 'POSTS SALVOS',
+              text: l10n(context).profileSavedPostsTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: l10n(context).accessibilityBack,
                 onTap: context.pop,
               ),
             ),
@@ -81,26 +83,27 @@ class _SavedPostsPageState extends ConsumerState<SavedPostsPage> {
   }
 
   Widget _body(BuildContext context) {
+    final strings = l10n(context);
     final saves = ref.watch(savesProvider);
     final visiblePosts = _posts
         .where((post) => saves.getSavedOverride(post.id) ?? true)
         .toList();
     if (_loading && _posts.isEmpty) {
-      return const Center(child: ShimmerBlock(height: 180));
+      return const Center(
+        child: ShimmerScope(child: ShimmerBlock(height: 180)),
+      );
     }
     if (_error != null && _posts.isEmpty) {
-      return Center(
-        child: AppButton(
-          label: 'TENTAR NOVAMENTE',
-          onPressed: () => _load(refresh: true),
-        ),
+      return EmptyState.error(
+        message: strings.errorUnknown,
+        onRetry: () => _load(refresh: true),
       );
     }
     if (visiblePosts.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.bookmark_outline,
-        title: 'NENHUM POST SALVO',
-        subtitle: 'Posts salvos aparecerão aqui.',
+        title: strings.profileNoSavedPosts,
+        subtitle: strings.profileSavedPostsEmpty,
       );
     }
     return RefreshIndicator(
@@ -111,9 +114,11 @@ class _SavedPostsPageState extends ConsumerState<SavedPostsPage> {
         itemBuilder: (context, index) {
           if (index == visiblePosts.length) {
             Future.microtask(() => _load(refresh: false));
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: ShimmerBlock(height: 120),
+            return const ShimmerScope(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: ShimmerBlock(height: 120),
+              ),
             );
           }
           final post = visiblePosts[index];

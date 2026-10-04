@@ -13,12 +13,14 @@ class OrderRepositoryImpl implements OrderRepository {
   OrderRepositoryImpl({Dio? client}) : client = client ?? HttpClient.instance;
 
   @override
-  Future<Either<Failure, OrderEntity>> getOrder(String orderId) =>
-      requestEither(
-        () => client.get('/orders/$orderId'),
-        decoder: (response) =>
-            Right(OrderEntity.fromJson(response.data['data']['order'])),
-      );
+  Future<Either<Failure, OrderEntity>> getOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get('/orders/$orderId', cancelToken: cancelToken),
+    decoder: (response) =>
+        Right(OrderEntity.fromJson(response.data['data']['order'])),
+  );
 
   @override
   Future<Either<Failure, CursorPage<OrderEntity>>> getMyPurchases({
@@ -78,26 +80,33 @@ class OrderRepositoryImpl implements OrderRepository {
   Future<Either<Failure, String>> cancelOrder(
     String orderId, {
     String? reason,
+    required String stepUpToken,
   }) => requestEither(
     () => client.patch(
       '/orders/$orderId/cancel',
       data: {'reason': reason ?? 'Cancelado pelo usuário'},
+      options: Options(headers: {'x-step-up-token': stepUpToken}),
     ),
     decoder: (response) =>
         Right(response.data['data'] as String? ?? 'CANCELLED'),
   );
 
   @override
-  Future<Either<Failure, CanReviewResponse>> canReviewOrder(String orderId) =>
-      requestEither(
-        () => client.get('/reviews/orders/$orderId/can-review'),
-        decoder: (response) {
-          final data = response.data['data'];
-          return Right(
-            data is Map<String, dynamic>
-                ? CanReviewResponse.fromJson(data)
-                : const CanReviewResponse(),
-          );
-        },
+  Future<Either<Failure, CanReviewResponse>> canReviewOrder(
+    String orderId, {
+    CancelToken? cancelToken,
+  }) => requestEither(
+    () => client.get(
+      '/reviews/orders/$orderId/can-review',
+      cancelToken: cancelToken,
+    ),
+    decoder: (response) {
+      final data = response.data['data'];
+      return Right(
+        data is Map<String, dynamic>
+            ? CanReviewResponse.fromJson(data)
+            : const CanReviewResponse(),
       );
+    },
+  );
 }

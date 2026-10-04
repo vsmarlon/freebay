@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AccountDeletionBlockedError, AppError, UserNotFoundError } from '@/shared/core/errors';
+import { AccountDeletionBlockedError, AppError, AppleRevocationRequiredError, UserNotFoundError } from '@/shared/core/errors';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
+import { AppleProviderService } from '@/shared/auth/apple-provider.service';
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { AccountDeletionState } from '../types/account.types';
@@ -14,6 +15,7 @@ export class RequestAccountDeletionUseCase {
     private readonly userRepository: UserDatabaseRepository,
     private readonly accountLifecycleRepository: AccountLifecycleDatabaseRepository,
     private readonly sessionRevoker: SessionRevokerService,
+    private readonly appleProvider: AppleProviderService,
   ) {}
 
   async execute(input: { userId: string }): Promise<Either<AppError, AccountDeletionState>> {
@@ -44,6 +46,17 @@ export class RequestAccountDeletionUseCase {
     }
     if (reasons.length > 0) {
       return left(new AccountDeletionBlockedError(reasons));
+    }
+
+    if (userResult.value.appleId) {
+      if (!userResult.value.appleRefreshTokenEncrypted) {
+        return left(new AppleRevocationRequiredError('Entre novamente com a Apple para renovar a autorização antes de excluir a conta.'));
+      }
+      try {
+        await this.appleProvider.revokeRefreshToken(userResult.value.appleRefreshTokenEncrypted);
+      } catch {
+        return left(new AppleRevocationRequiredError());
+      }
     }
 
     const requestResult = await this.accountLifecycleRepository.requestDeletion(

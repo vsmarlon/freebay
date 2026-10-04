@@ -7,6 +7,7 @@ import 'package:freebay/features/social/presentation/providers/post_search_provi
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostSearchPage extends ConsumerStatefulWidget {
   const PostSearchPage({super.key});
@@ -56,6 +57,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final searchState = ref.watch(postSearchProvider);
 
     return Scaffold(
@@ -63,36 +65,37 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
       body: AppBackground(
         child: Column(
           children: [
-            const PageHeader(text: 'BUSCAR POSTS'),
+            PageHeader(text: strings.feedSearchHint.toUpperCase()),
             BrutalistBreadcrumb(
               items: [
-                BreadcrumbItem(label: 'Feed', onTap: () => context.pop()),
-                const BreadcrumbItem(label: 'Buscar'),
+                BreadcrumbItem(
+                  label: strings.feedTitle,
+                  onTap: () => context.pop(),
+                ),
+                BreadcrumbItem(label: strings.commonSearch),
               ],
             ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: AppTextField(
                 controller: _searchController,
-                hint: 'Buscar posts...',
+                hint: strings.feedSearchHint,
                 prefixIcon: Icons.search,
                 suffixIcon: _searchController.text.isNotEmpty
-                    ? Tooltip(
-                        message: 'Limpar busca',
-                        child: BrutalistIconButton(
-                          icon: Icons.clear,
-                          onTap: () {
-                            _debounceTimer?.cancel();
-                            _searchController.clear();
-                            ref
-                                .read(postSearchProvider.notifier)
-                                .search(
-                                  query: '',
-                                  filter: _selectedFilter,
-                                  refresh: true,
-                                );
-                          },
-                        ),
+                    ? BrutalistIconButton(
+                        icon: Icons.clear,
+                        semanticLabel: strings.commonClear,
+                        onTap: () {
+                          _debounceTimer?.cancel();
+                          _searchController.clear();
+                          ref
+                              .read(postSearchProvider.notifier)
+                              .search(
+                                query: '',
+                                filter: _selectedFilter,
+                                refresh: true,
+                              );
+                        },
                       )
                     : null,
                 onChanged: (query) {
@@ -108,17 +111,17 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                 runSpacing: 8,
                 children: [
                   BrutalistFilterChip(
-                    label: 'Todos',
+                    label: strings.feedFilterAll,
                     selected: _selectedFilter == PostSearchFilter.all,
                     onTap: () => _onFilterChanged(PostSearchFilter.all),
                   ),
                   BrutalistFilterChip(
-                    label: 'Seguindo',
+                    label: strings.feedFilterFollowing,
                     selected: _selectedFilter == PostSearchFilter.following,
                     onTap: () => _onFilterChanged(PostSearchFilter.following),
                   ),
                   BrutalistFilterChip(
-                    label: 'Seguidores',
+                    label: strings.feedFilterFollowers,
                     selected: _selectedFilter == PostSearchFilter.followers,
                     onTap: () => _onFilterChanged(PostSearchFilter.followers),
                   ),
@@ -127,7 +130,11 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
             ),
             Spacing.vMd,
             Expanded(
-              child: _buildContent(searchState, ref.watch(likesProvider)),
+              child: _buildContent(
+                context,
+                searchState,
+                ref.watch(likesProvider),
+              ),
             ),
           ],
         ),
@@ -135,7 +142,11 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
     );
   }
 
-  Widget _buildContent(PostSearchState state, LikesState likesState) {
+  Widget _buildContent(
+    BuildContext context,
+    PostSearchState state,
+    LikesState likesState,
+  ) {
     if (state.error != null && state.posts.isEmpty && !state.isLoading) {
       return EmptyState.error(
         message: state.error,
@@ -145,10 +156,10 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
       );
     }
     if (state.posts.isEmpty && !state.isLoading) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.search_off,
-        title: 'NENHUM RESULTADO',
-        subtitle: 'Tente alterar os filtros ou buscar por outro termo.',
+        title: l10n(context).feedNoResults,
+        subtitle: l10n(context).feedNoResultsBody,
       );
     }
 
@@ -187,11 +198,16 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
                 likesState.getCountOverride(post.id) ?? post.likesCount;
             return SocialPost(
               userId: post.user.id,
-              userName: post.user.displayName ?? 'Unknown',
+              userName:
+                  post.user.displayName ?? l10n(context).commonUnknownUser,
               userAvatarUrl: post.user.avatarUrl,
               content: post.content,
               imageUrl: post.imageUrl,
+              imageBlurHash: post.audience == PostAudience.everyone
+                  ? post.imageBlurHash
+                  : null,
               isCloseFriends: post.audience == PostAudience.closeFriends,
+              closeFriendsLabel: l10n(context).feedAudienceCloseFriends,
               likesCount: likesCount,
               commentsCount: post.commentsCount,
               sharesCount: post.sharesCount,

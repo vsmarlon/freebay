@@ -9,6 +9,7 @@ import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/features/product/presentation/widgets/product_form_fields.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
 import 'package:freebay/features/product/presentation/widgets/product_form_validation.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class EditProductPage extends ConsumerStatefulWidget {
   final String productId;
@@ -39,6 +40,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final productAsync = ref.watch(productByIdProvider(widget.productId));
 
     return Scaffold(
@@ -46,7 +48,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
       body: AppBackground(
         child: Column(
           children: [
-            const PageHeader(text: 'EDITAR ANÚNCIO'),
+            PageHeader(text: strings.productEditListing.toUpperCase()),
             Expanded(
               child: productAsync.when(
                 loading: () => const SkeletonPage(
@@ -69,7 +71,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
                 ),
                 error: (_, _) => Center(
                   child: Text(
-                    'Não foi possível carregar o anúncio.',
+                    strings.productLoadError,
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       color: context.textPrimary,
@@ -106,6 +108,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
   }
 
   Widget _buildForm(BuildContext context, ProductEntity product) {
+    final strings = l10n(context);
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -115,14 +118,14 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           titleController: _titleController,
           descriptionController: _descriptionController,
           priceController: _priceController,
-          descriptionHint: 'Detalhes do produto',
+          descriptionHint: strings.productDescriptionHint,
           priceKeyboardType: TextInputType.number,
         ),
         Spacing.vLg,
         ProductConditionSelector(
-          label: 'Condição',
-          newLabel: 'Novo',
-          usedLabel: 'Usado',
+          label: strings.productConditionLabel,
+          newLabel: strings.productNew,
+          usedLabel: strings.productUsed,
           labelStyle: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
@@ -133,7 +136,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
         ),
         Spacing.vLg,
         Text(
-          'Status',
+          strings.productStatusLabel,
           style: TextStyle(
             fontFamily: AppTypography.headlineFontFamily,
             fontWeight: FontWeight.w700,
@@ -145,7 +148,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
           children: [
             Expanded(
               child: AppButton(
-                label: 'Ativo',
+                label: strings.productStatusActive,
                 variant: _status == ProductStatus.active
                     ? AppButtonVariant.primary
                     : AppButtonVariant.ghost,
@@ -155,7 +158,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
             Spacing.hSm,
             Expanded(
               child: AppButton(
-                label: 'Pausado',
+                label: strings.productStatusPaused,
                 variant: _status == ProductStatus.paused
                     ? AppButtonVariant.primary
                     : AppButtonVariant.ghost,
@@ -166,7 +169,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
         ),
         Spacing.vXl,
         AppButton(
-          label: 'Salvar alterações',
+          label: strings.productSaveChanges,
           isLoading: _isLoading,
           onPressed: () => _submit(context, product),
         ),
@@ -175,6 +178,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
   }
 
   Future<void> _submit(BuildContext context, ProductEntity product) async {
+    final strings = l10n(context);
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
     final price = CurrencyUtils.parseReaisToCents(_priceController.text) ?? 0;
@@ -183,8 +187,8 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
         !ProductFormValidation.isDescriptionValid(description) ||
         !ProductFormValidation.isPriceValid(price)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha título, descrição e preço corretamente.'),
+        SnackBar(
+          content: Text(strings.productFormInvalid),
           backgroundColor: AppColors.error,
         ),
       );
@@ -214,7 +218,7 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(failure.message),
+            content: Text(localizedFailureMessage(context, failure)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -223,9 +227,9 @@ class _EditProductPageState extends ConsumerState<EditProductPage> {
         ref.invalidate(productByIdProvider(widget.productId));
         setState(() => _isLoading = false);
         context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Anúncio atualizado com sucesso.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(strings.productUpdated)));
       },
     );
   }

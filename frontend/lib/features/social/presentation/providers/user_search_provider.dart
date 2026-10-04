@@ -3,23 +3,21 @@ import 'package:freebay/features/social/data/entities/user_search_entity.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:freebay/shared/pagination/paginated_state.dart';
 
 part 'user_search_provider.g.dart';
 
-class UserSearchState {
-  final List<UserSearchEntity> users;
-  final bool isLoading;
-  final bool hasMore;
-  final int offset;
-  final String? error;
-
+class UserSearchState extends PaginatedState<UserSearchEntity, int> {
   const UserSearchState({
-    this.users = const [],
-    this.isLoading = false,
-    this.hasMore = true,
-    this.offset = 0,
-    this.error,
-  });
+    List<UserSearchEntity> users = const [],
+    super.isLoading,
+    super.hasMore,
+    int offset = 0,
+    super.error,
+  }) : super(items: users, cursor: offset);
+
+  List<UserSearchEntity> get users => items;
+  int get offset => cursor ?? 0;
 
   UserSearchState copyWith({
     List<UserSearchEntity>? users,
@@ -40,7 +38,7 @@ class UserSearchState {
 
 @Riverpod(keepAlive: true)
 class UserSearch extends _$UserSearch {
-  int _requestId = 0;
+  final PageRequestGuard _requestGuard = PageRequestGuard();
   SocialRepository get _repository => ref.read(socialRepositoryProvider);
 
   @override
@@ -51,7 +49,7 @@ class UserSearch extends _$UserSearch {
   Future<void> search({String? query, bool refresh = false}) async {
     if (!refresh && (state.isLoading || !state.hasMore)) return;
 
-    final requestId = ++_requestId;
+    final requestId = _requestGuard.begin();
     final offset = refresh ? 0 : state.offset;
 
     state = UserSearchState(
@@ -61,7 +59,7 @@ class UserSearch extends _$UserSearch {
     );
 
     final result = await _repository.searchUsers(query: query, offset: offset);
-    if (!ref.mounted || requestId != _requestId) return;
+    if (!ref.mounted || !_requestGuard.isCurrent(requestId)) return;
 
     result.fold(
       (failure) =>
@@ -76,7 +74,7 @@ class UserSearch extends _$UserSearch {
   }
 
   void clear() {
-    _requestId++;
+    _requestGuard.invalidate();
     state = const UserSearchState();
   }
 }

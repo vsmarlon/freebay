@@ -1,0 +1,31 @@
+{
+  "ObservedUTC": "2026-10-02T15:20:15.0184898Z",
+  "Branch": "feat/production-hardening",
+  "Revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "StatusPaths": 436,
+  "StashCount": 2,
+  "Stashes": [
+    "stash@{0} 383fe223196b0b50db6606d3512f60526aac3f8e",
+    "stash@{1} 83e6fefdfbbe0fcbad6572847fa5f7c7f824eeda"
+  ],
+  "OwnedEvidenceFiles": [
+    {
+      "Path": "docs/FEATURE_TRUTH.md",
+      "SHA256": "716F6D73ACE8D18CF251BDF47A0C5217C374A44255A24E13A86802EF69DDFD85"
+    },
+    {
+      "Path": "docs/test-runs/2026-10-02/ux-resume/REPORT.md",
+      "SHA256": "318148EFCC4EE1411D8BC2C7A9D622523B0C2F6F7289F773A493D80D1A6744AA"
+    },
+    {
+      "Path": "docs/test-runs/2026-10-02/ux-resume/backend-preflight-after-make/REPORT.md",
+      "SHA256": "98F494EA0D86FE5C061F2AFC34BC5AE8160A60B0B8604444C2FBE0DEE1287EF4"
+    },
+    {
+      "Path": "docs/test-runs/2026-10-02/ux-resume/gradle-status-diagnostic/REPORT.md",
+      "SHA256": "B0DC6795B6228BC53D7AF8DA431ABF481F1E73A18CB04784830AF9D8EC55F23E"
+    }
+  ],
+  "ToolbarSHA256": "7FB23BE7430F3EAD97B5D87E2AAC9872A852B54BD9BC0B00D6F7ED8BE3C6A398",
+  "Claim": "Not integrated GREEN; no commit/push/reset/reprovision or competing Android build in this continuation"
+}

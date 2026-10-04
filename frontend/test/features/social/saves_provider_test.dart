@@ -3,12 +3,14 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/features/profile/presentation/pages/saved_posts_page.dart';
 import 'package:freebay/features/social/data/repositories/social_repository.dart';
 import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 class _Adapter implements HttpClientAdapter {
   final List<ResponseBody Function(RequestOptions)> responses = [];
@@ -102,7 +104,17 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: SavedPostsPage()),
+        child: const MaterialApp(
+          locale: Locale('pt', 'BR'),
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SavedPostsPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -116,6 +128,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('A saved post', findRichText: true), findsNothing);
-    expect(find.text('NENHUM POST SALVO'), findsOneWidget);
+    expect(find.text('NENHUMA PUBLICAÇÃO SALVA'), findsOneWidget);
   });
 }

@@ -1,0 +1,8 @@
+{
+  "label": "test-suite",
+  "command": "flutter test",
+  "cwd": "C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend",
+  "started": "2026-10-01T05:32:15.279Z",
+  "ended": "2026-10-01T05:39:23.683Z",
+  "exitCode": 1
+}

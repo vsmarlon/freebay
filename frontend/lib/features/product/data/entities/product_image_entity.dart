@@ -8,6 +8,7 @@ abstract class ProductImageEntity with _$ProductImageEntity {
   const factory ProductImageEntity({
     required String id,
     required String url,
+    String? blurHash,
     @Default(0) int order,
     required String productId,
   }) = _ProductImageEntity;

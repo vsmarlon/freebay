@@ -25,8 +25,8 @@ import { USERNAME_REGEX, DISPLAY_NAME_REGEX } from '@/modules/auth/dtos/auth.dto
 
 @ValidatorConstraint({ name: 'cpfOrCnpj', async: false })
 export class IsCpfOrCnpjConstraint implements ValidatorConstraintInterface {
-  validate(value: string) {
-    return isValidCpfOrCnpj(value);
+  validate(value: unknown) {
+    return typeof value === 'string' && isValidCpfOrCnpj(value);
   }
 
   defaultMessage() {
@@ -77,9 +77,28 @@ export class UpdateProfileDTO {
   readonly avatarUrl?: string;
 
   @ApiPropertyOptional({ example: '529.982.247-25' })
-  @IsOptional()
+  @ValidateIf((_input, value) => value !== undefined)
+  @IsString()
   @Validate(IsCpfOrCnpjConstraint)
   readonly cpf?: string;
+
+  @ApiPropertyOptional({ example: '123456', description: 'One-time code sent to the current account email' })
+  @ValidateIf((_input, value) => value !== undefined)
+  @IsString()
+  @Matches(/^\d{6}$/)
+  readonly profileVerificationCode?: string;
+}
+
+export class RequestProfileVerificationDTO {
+  @ApiProperty({ example: '529.982.247-25' })
+  @IsString()
+  @Validate(IsCpfOrCnpjConstraint)
+  readonly cpf: string;
+
+  @ApiPropertyOptional({ enum: ['pt-BR', 'en'] })
+  @ValidateIf((_input, value) => value !== undefined)
+  @IsIn(['pt-BR', 'en'])
+  readonly locale?: 'pt-BR' | 'en';
 }
 
 export class RegisterPhoneDTO {
@@ -199,8 +218,9 @@ export interface GetUserStatsInput {
   userId: string;
 }
 
-export interface UpdateProfileInput extends UpdateProfileDTO {
+export interface UpdateProfileInput extends Omit<UpdateProfileDTO, 'profileVerificationCode'> {
   userId: string;
+  profileVerificationCode?: string;
 }
 
 export interface UpdateFcmTokenInput extends UpdateFcmTokenDTO {

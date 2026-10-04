@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/core/components/app_video_viewer.dart';
 import 'package:freebay/core/components/app_video_viewer/video_viewer_controls.dart';
 import 'package:freebay/features/chat/presentation/widgets/video_message_bubble.dart';
+import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 
@@ -16,33 +17,43 @@ void main() {
     final platform = _FakeVideoPlatform();
     VideoPlayerPlatform.instance = platform;
     await tester.pumpWidget(
-      const MaterialApp(
+      _localizedApp(
         home: Scaffold(
-          body: VideoMessageBubble(
-            videoUrl: 'https://media.example/video.mp4',
-            isMe: false,
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final thumbnailUrl in <String?>[
+                null,
+                '',
+                'not-a-thumbnail-url',
+              ])
+                VideoMessageBubble(
+                  videoUrl: 'https://media.example/video.mp4',
+                  isMe: false,
+                  thumbnailUrl: thumbnailUrl,
+                ),
+            ],
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(platform.createCount, 1);
+    expect(platform.createCount, 3);
     expect(platform.playCount, 0);
+    final videos = tester.widgetList<VideoPlayer>(find.byType(VideoPlayer));
+    expect(videos, hasLength(3));
     expect(
-      tester
-          .widget<VideoPlayer>(find.byType(VideoPlayer))
-          .controller
-          .value
-          .isInitialized,
+      videos.every((video) => video.controller.value.isInitialized),
       isTrue,
     );
-    final videoTopLeft = tester.getTopLeft(find.byType(VideoPlayer));
+    expect(videos.every((video) => !video.controller.value.isPlaying), isTrue);
+    final videoTopLeft = tester.getTopLeft(find.byType(VideoPlayer).first);
     await tester.tapAt(videoTopLeft + const Offset(12, 12));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
 
-    expect(platform.createCount, 1);
+    expect(platform.createCount, 3);
     expect(find.byType(VideoViewerControls), findsOneWidget);
     expect(platform.playCount, 1);
     expect(find.text('00:00 / 00:10'), findsOneWidget);
@@ -55,7 +66,7 @@ void main() {
     final platform = _FakeVideoPlatform();
     VideoPlayerPlatform.instance = platform;
     await tester.pumpWidget(
-      MaterialApp(
+      _localizedApp(
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () =>
@@ -72,7 +83,7 @@ void main() {
     expect(find.text('00:00 / 00:10'), findsOneWidget);
     expect(find.bySemanticsLabel('Posição do vídeo'), findsOneWidget);
     expect(find.bySemanticsLabel('Pausar vídeo'), findsOneWidget);
-    expect(find.bySemanticsLabel('Desativar som'), findsOneWidget);
+    expect(find.bySemanticsLabel('Silenciar vídeo'), findsOneWidget);
 
     platform.position = const Duration(seconds: 3);
     await tester.pump(const Duration(milliseconds: 120));
@@ -81,10 +92,10 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Pausar vídeo'));
     await tester.pump();
     expect(platform.pauseCount, greaterThan(0));
-    await tester.tap(find.bySemanticsLabel('Desativar som'));
+    await tester.tap(find.bySemanticsLabel('Silenciar vídeo'));
     await tester.pump();
     expect(platform.volumes.last, 0);
-    await tester.tap(find.bySemanticsLabel('Ativar som'));
+    await tester.tap(find.bySemanticsLabel('Ativar som do vídeo'));
     await tester.pump();
     expect(platform.volumes.last, 1);
 
@@ -100,7 +111,10 @@ void main() {
     await tester.pump();
     platform.position = const Duration(seconds: 10);
     await tester.pump(const Duration(milliseconds: 120));
-    expect(find.bySemanticsLabel('Reproduzir novamente'), findsNWidgets(2));
+    expect(
+      find.bySemanticsLabel('Reproduzir vídeo novamente'),
+      findsNWidgets(2),
+    );
     semantics.dispose();
   });
 
@@ -108,7 +122,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      _localizedApp(
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () => showFullScreenVideo(
@@ -133,6 +147,13 @@ void main() {
     expect(find.text('Tentar novamente'), findsOneWidget);
   });
 }
+
+Widget _localizedApp({required Widget home}) => MaterialApp(
+  locale: const Locale('pt', 'BR'),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: home,
+);
 
 class _FakeVideoPlatform extends VideoPlayerPlatform {
   int createCount = 0;

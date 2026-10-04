@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
-import 'package:freebay/features/chat/presentation/widgets/image_editor_models.dart';
+import 'package:freebay/features/media_editor/media_editor.dart';
 import 'package:freebay/shared/services/upload_service.dart';
 import 'package:freebay/features/chat/data/entities/message_type.dart';
 

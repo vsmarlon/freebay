@@ -3,6 +3,7 @@ import 'package:freebay_design_system/freebay_design_system.dart';
 import 'package:freebay/core/components/app_background.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class WalletCard extends StatefulWidget {
   final int availableBalanceInCents;
@@ -79,7 +80,7 @@ class _WalletCardState extends State<WalletCard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'SALDO TOTAL',
+                      l10n(context).walletTotalBalance.toUpperCase(),
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         color: AppColors.onPrimary.withValues(alpha: 0.70),
@@ -116,7 +117,7 @@ class _WalletCardState extends State<WalletCard> {
                   children: [
                     Expanded(
                       child: _buildBalanceItem(
-                        'DISPONÍVEL',
+                        l10n(context).walletAvailable.toUpperCase(),
                         _masked(available),
                         solid: true,
                       ),
@@ -124,7 +125,7 @@ class _WalletCardState extends State<WalletCard> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildBalanceItem(
-                        'PENDENTE',
+                        l10n(context).walletPending.toUpperCase(),
                         _masked(pending),
                         solid: false,
                       ),
@@ -163,7 +164,10 @@ class _WalletCardState extends State<WalletCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Saldo', style: AppTypography.bodySmall),
+                  Text(
+                    l10n(context).walletBalanceLabel,
+                    style: AppTypography.bodySmall,
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     _masked(

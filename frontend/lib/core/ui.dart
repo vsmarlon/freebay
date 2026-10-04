@@ -4,6 +4,7 @@ export 'package:freebay/shared/errors/error_messages.dart';
 export 'package:freebay/shared/errors/failures/failures.dart';
 
 export 'components/app_background.dart';
+export 'components/blur_hash_placeholder.dart';
 export 'components/app_card.dart';
 export 'components/app_card_image.dart';
 export 'components/app_dialog.dart';

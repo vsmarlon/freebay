@@ -1,0 +1,5 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/auth/login_text_scaling_test.dart
+00:00 +0: login form remains scrollable and readable at 1.5x
+00:01 +1: login form remains scrollable and readable at 2.0x
+00:01 +2: All tests passed!
+EXIT 0

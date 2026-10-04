@@ -1,0 +1,14 @@
+[
+  {
+    "file": "frontend/lib/features/media_editor/presentation/widgets/image_editor_toolbar.dart",
+    "sha256": "7FB23BE7430F3EAD97B5D87E2AAC9872A852B54BD9BC0B00D6F7ED8BE3C6A398"
+  },
+  {
+    "file": "frontend/integration_test/native_image_compositor_test.dart",
+    "sha256": "0E8E8C9B59AAA314AFD3CEE4694CDB400D2DB897F675D9187E1B68422AD9F18E"
+  },
+  {
+    "file": "frontend/test/features/profile/follow_state_test.dart",
+    "sha256": "F154F659B65FDFADC6805024E558D7291FF576EA695540751A208D08E9084B9D"
+  }
+]

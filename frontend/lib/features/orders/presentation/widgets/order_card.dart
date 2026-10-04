@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 
@@ -33,6 +34,7 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final status = order.status;
     final color = _statusColor(status);
     final product = order.product;
@@ -77,7 +79,8 @@ class OrderCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          product?.title ?? 'Item #${order.shortId}',
+                          product?.title ??
+                              strings.ordersItemNumber(order.shortId),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -98,7 +101,19 @@ class OrderCard extends StatelessWidget {
                           border: Border.all(color: color),
                         ),
                         child: Text(
-                          status.label.toUpperCase(),
+                          switch (status) {
+                            OrderStatus.pending => strings.orderStatusPending,
+                            OrderStatus.confirmed =>
+                              strings.orderStatusConfirmed,
+                            OrderStatus.shipped => strings.orderStatusShipped,
+                            OrderStatus.delivered =>
+                              strings.orderStatusDelivered,
+                            OrderStatus.completed =>
+                              strings.orderStatusCompleted,
+                            OrderStatus.cancelled =>
+                              strings.orderStatusCancelled,
+                            OrderStatus.disputed => strings.orderStatusDisputed,
+                          }.toUpperCase(),
                           style: TextStyle(
                             fontFamily: AppTypography.fontFamily,
                             fontSize: 9,
@@ -112,7 +127,11 @@ class OrderCard extends StatelessWidget {
                   ),
                   Spacing.vXs,
                   Text(
-                    '${isSeller ? 'Comprador' : 'Vendedor'}: ${otherUser?.displayNameOrDefault ?? 'Anônimo'}',
+                    strings.ordersOtherParty(
+                      isSeller ? strings.reviewsBuyer : strings.reviewsSeller,
+                      otherUser?.displayNameOrDefault ??
+                          strings.commonUnknownUser,
+                    ),
                     style: TextStyle(
                       fontFamily: AppTypography.fontFamily,
                       fontSize: 12,

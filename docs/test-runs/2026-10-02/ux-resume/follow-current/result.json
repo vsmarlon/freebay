@@ -1,0 +1,11 @@
+{
+  "command": "flutter test test/features/profile/follow_state_test.dart --reporter expanded",
+  "workdir": "C:\\Users\\Qiyana\\Documents\\GitHub\\ME\\freebay\\frontend",
+  "revision": "c9808b106c3d53f07837542e93f25fd52c6bfbe5",
+  "started_utc": "2026-10-02T14:15:31.6975767Z",
+  "finished_utc": "2026-10-02T14:15:42.3738917Z",
+  "exit": 0,
+  "changed_manifest_rows": 0,
+  "before_sha256": "30CE4EF000665587E5BBEF0D07EBAF5A6CAD9E84F26E4A2BA52B92F8C600C4ED",
+  "after_sha256": "30CE4EF000665587E5BBEF0D07EBAF5A6CAD9E84F26E4A2BA52B92F8C600C4ED"
+}

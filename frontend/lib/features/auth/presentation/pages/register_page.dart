@@ -1,6 +1,7 @@
 // ignore_for_file: sort_child_properties_last
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -13,12 +14,15 @@ import 'package:freebay/core/utils/value_utils.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_header.dart';
 import 'package:freebay/features/auth/presentation/widgets/auth_stagger.dart';
 import 'package:freebay/features/auth/presentation/widgets/google_auth_button.dart';
+import 'package:freebay/features/auth/presentation/widgets/apple_auth_button.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class RegisterPage extends HookConsumerWidget {
   const RegisterPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final nameController = useTextEditingController();
     final usernameController = useTextEditingController();
     final emailController = useTextEditingController();
@@ -61,7 +65,10 @@ class RegisterPage extends HookConsumerWidget {
           child: Column(
             children: [
               // Top Bar with centered massive header (100% larger)
-              AuthHeader(title: 'CRIAR CONTA', onBack: () => context.pop()),
+              AuthHeader(
+                title: strings.authSignUp.toUpperCase(),
+                onBack: () => context.pop(),
+              ),
 
               Expanded(
                 child: SingleChildScrollView(
@@ -77,18 +84,18 @@ class RegisterPage extends HookConsumerWidget {
                           AuthStagger(
                             child: AppTextField(
                               controller: nameController,
-                              label: 'Nome de exibição',
-                              hint: 'Seu apelido na plataforma',
+                              label: strings.authDisplayName,
+                              hint: strings.authDisplayNameHint,
                               prefixIcon: Icons.person_outline,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  return 'Informe seu nome';
+                                  return strings.authNameRequired;
                                 }
                                 if (v.trim().length < 2) {
-                                  return 'Nome muito curto';
+                                  return strings.authNameTooShort;
                                 }
                                 if (!ValueUtils.validateDisplayName(v)) {
-                                  return 'Nome contém caracteres inválidos';
+                                  return strings.authNameInvalid;
                                 }
                                 return null;
                               },
@@ -97,6 +104,22 @@ class RegisterPage extends HookConsumerWidget {
                             begin: 0.0,
                             end: 0.25,
                           ),
+                          if (!kIsWeb &&
+                              defaultTargetPlatform == TargetPlatform.iOS) ...[
+                            Spacing.vSm,
+                            AuthStagger(
+                              child: AppleAuthButton(
+                                text: strings.authSignUpApple,
+                                loading: authState.isLoading,
+                                onPressed: () => ref
+                                    .read(authControllerProvider.notifier)
+                                    .appleLogin(),
+                              ),
+                              animation: animController,
+                              begin: 0.72,
+                              end: 0.95,
+                            ),
+                          ],
                           Spacing.vMd,
                           AuthStagger(
                             child: UsernameField(
@@ -110,16 +133,16 @@ class RegisterPage extends HookConsumerWidget {
                           AuthStagger(
                             child: AppTextField(
                               controller: emailController,
-                              label: 'E-mail',
-                              hint: 'seu@email.com',
+                              label: strings.authEmail,
+                              hint: strings.authEmailExample,
                               keyboardType: TextInputType.emailAddress,
                               prefixIcon: Icons.email_outlined,
                               validator: (v) {
                                 if (v == null || v.trim().isEmpty) {
-                                  return 'Informe seu e-mail';
+                                  return strings.authEmailRequired;
                                 }
                                 if (!ValueUtils.validateEmail(v)) {
-                                  return 'E-mail inválido';
+                                  return strings.authEmailInvalid;
                                 }
                                 return null;
                               },
@@ -132,17 +155,17 @@ class RegisterPage extends HookConsumerWidget {
                           AuthStagger(
                             child: AppTextField(
                               controller: passwordController,
-                              label: 'Senha',
-                              hint: 'Mínimo 8 caracteres',
+                              label: strings.authPassword,
+                              hint: strings.authPasswordMinLength,
                               obscureText: true,
                               showPasswordToggle: true,
                               prefixIcon: Icons.lock_outline,
                               validator: (v) {
                                 if (v == null || v.isEmpty) {
-                                  return 'Informe sua senha';
+                                  return strings.authPasswordRequired;
                                 }
                                 if (v.length < 8) {
-                                  return 'Mínimo 8 caracteres';
+                                  return strings.authPasswordMinLength;
                                 }
                                 return null;
                               },
@@ -155,17 +178,17 @@ class RegisterPage extends HookConsumerWidget {
                           AuthStagger(
                             child: AppTextField(
                               controller: confirmPasswordController,
-                              label: 'Confirmar Senha',
-                              hint: 'Digite a senha novamente',
+                              label: strings.authConfirmPassword,
+                              hint: strings.authRepeatPassword,
                               obscureText: true,
                               showPasswordToggle: true,
                               prefixIcon: Icons.lock_outline,
                               validator: (v) {
                                 if (v == null || v.isEmpty) {
-                                  return 'Confirme sua senha';
+                                  return strings.authConfirmPasswordRequired;
                                 }
                                 if (v != passwordController.text) {
-                                  return 'As senhas não coincidem';
+                                  return strings.authPasswordMismatch;
                                 }
                                 return null;
                               },
@@ -177,7 +200,8 @@ class RegisterPage extends HookConsumerWidget {
                           Spacing.vLg,
                           AuthStagger(
                             child: AppButton(
-                              label: 'FINALIZAR CADASTRO',
+                              label: strings.authFinishRegistration
+                                  .toUpperCase(),
                               size: AppButtonSize.large,
                               isLoading: authState.isLoading,
                               onPressed: () {
@@ -202,7 +226,7 @@ class RegisterPage extends HookConsumerWidget {
                           Spacing.vMd,
                           AuthStagger(
                             child: GoogleAuthButton(
-                              label: 'CRIAR COM GOOGLE',
+                              label: strings.authSignUpGoogle.toUpperCase(),
                               loading: authState.isLoading,
                               onTap: () => ref
                                   .read(authControllerProvider.notifier)
@@ -212,6 +236,22 @@ class RegisterPage extends HookConsumerWidget {
                             begin: 0.65,
                             end: 0.9,
                           ),
+                          if (!kIsWeb &&
+                              defaultTargetPlatform == TargetPlatform.iOS) ...[
+                            Spacing.vSm,
+                            AuthStagger(
+                              child: AppleAuthButton(
+                                text: strings.authSignUpApple,
+                                loading: authState.isLoading,
+                                onPressed: () => ref
+                                    .read(authControllerProvider.notifier)
+                                    .appleLogin(),
+                              ),
+                              animation: animController,
+                              begin: 0.72,
+                              end: 0.95,
+                            ),
+                          ],
                           Spacing.vLg,
                         ],
                       ),

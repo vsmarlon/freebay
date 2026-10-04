@@ -25,7 +25,7 @@ export class MagicLinkDatabaseRepository implements MagicLinkRepository {
     }
   }
 
-  async consume(tokenHash: string, now: Date): Promise<Either<DatabaseError, User | null>> {
+  async consume(tokenHash: string, now: Date, allowRegistration = true): Promise<Either<DatabaseError, User | null>> {
     try {
       const user = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const link = await tx.webMagicLink.findFirst({ where: { tokenHash, consumedAt: null, activatedAt: { not: null }, expiresAt: { gt: now } } });
@@ -34,7 +34,7 @@ export class MagicLinkDatabaseRepository implements MagicLinkRepository {
           const existing = lockedUsers[0]
             ? await tx.user.findUnique({ where: { id: lockedUsers[0].id } })
             : null;
-         if (existing?.suspendedAt) return null;
+          if (existing?.suspendedAt || existing?.deletedAt || (!existing && !allowRegistration)) return null;
          const claimed = await tx.webMagicLink.updateMany({
            where: { tokenHash, consumedAt: null, activatedAt: { not: null }, expiresAt: { gt: now } },
           data: { consumedAt: now },

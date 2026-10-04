@@ -1,0 +1,24 @@
+00:00 +0: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart
+00:00 +0: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart: a created cart payment can be completed with PaymentSheet
+00:02 +1: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart: cart blocks checkout when an item no longer has stock
+00:02 +2: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/cart/cart_checkout_page_test.dart: adding a new product clears the previous checkout result
+00:02 +3: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart
+00:04 +3: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: exposes accessible All and every seller status control
+00:05 +4: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: status action uses the provider and keeps products out of Vendas
+00:06 +5: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: renders Vendas surface empty state and keeps products separate
+00:06 +6: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loads only the visible order tab and loads the other once
+00:07 +7: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: loads sales when the page opens on the sales tab
+00:07 +8: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/orders_page_test.dart: shows loading more and retries the append with the preserved cursor
+00:07 +9: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_dispute_action_test.dart
+00:08 +9: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/order_dispute_action_test.dart: dispute action follows the states accepted by the dispute API
+00:09 +10: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/sales_list_provider_test.dart
+00:10 +10: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/sales_list_provider_test.dart: owns status and resets to a first-page request when it changes
+00:10 +11: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/sales_list_provider_test.dart: deduplicates appended IDs and retries a failed append with its cursor
+00:10 +12: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/orders/sales_list_provider_test.dart: transitions through initial loading, loading more, error, empty, and terminal states
+00:10 +13: loading C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_view_test.dart
+00:12 +13: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_view_test.dart: PaymentView web branch (payment != null) renders the checkout URL box and expiry date
+00:13 +14: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_view_test.dart: PaymentView web branch (payment != null) prefers the web branch when both payment and client secret are set
+00:13 +15: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_view_test.dart: PaymentView mobile branch (payment == null) renders the PaymentSheet button without touching payment fields (null-safety)
+00:13 +16: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_view_test.dart: PaymentView mobile branch (payment == null) renders only a disabled "Ver pedido" when neither branch is ready
+00:13 +17: C:/Users/Qiyana/Documents/GitHub/ME/freebay/frontend/test/features/payments/payment_view_test.dart: PaymentView mobile branch (payment == null) enables "Ver pedido" once the order id is available
+00:13 +18: All tests passed!

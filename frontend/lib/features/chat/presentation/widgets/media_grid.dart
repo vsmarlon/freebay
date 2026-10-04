@@ -204,7 +204,7 @@ class _FullscreenImageDialog extends StatelessWidget {
               ),
             ),
             Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
+              top: MediaQuery.paddingOf(context).top + 8,
               left: 8,
               child: IconButton(
                 icon: const Icon(Icons.close, color: Colors.white),

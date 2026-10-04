@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freebay/features/orders/presentation/providers/order_providers.dart';
 import 'package:freebay/features/payments/data/entities/payment_entity.dart';
 import 'package:freebay/features/payments/data/repositories/payment_repository.dart';
@@ -6,6 +7,8 @@ import 'package:freebay/features/payments/domain/repositories/payment_repository
 import 'package:freebay/features/payments/domain/usecases/create_payment_session_usecase.dart';
 import 'package:freebay/features/payments/domain/usecases/create_payment_intent_usecase.dart';
 import 'package:freebay/shared/services/http_client.dart';
+
+part 'payment_providers.g.dart';
 
 final paymentRepositoryProvider = Provider<PaymentRepository>(
   (ref) => PaymentRepositoryImpl(client: HttpClient.instance),
@@ -26,12 +29,14 @@ final createPaymentIntentUsecaseProvider = Provider(
 class PaymentCheckoutState {
   final bool isSubmitting;
   final String? createdOrderId;
+  final int? createdOrderAmount;
   final PaymentEntity? payment;
   final String? paymentIntentClientSecret;
 
   const PaymentCheckoutState({
     this.isSubmitting = false,
     this.createdOrderId,
+    this.createdOrderAmount,
     this.payment,
     this.paymentIntentClientSecret,
   });
@@ -41,12 +46,14 @@ class PaymentCheckoutState {
   PaymentCheckoutState copyWith({
     bool? isSubmitting,
     String? createdOrderId,
+    int? createdOrderAmount,
     PaymentEntity? payment,
     String? paymentIntentClientSecret,
   }) {
     return PaymentCheckoutState(
       isSubmitting: isSubmitting ?? this.isSubmitting,
       createdOrderId: createdOrderId ?? this.createdOrderId,
+      createdOrderAmount: createdOrderAmount ?? this.createdOrderAmount,
       payment: payment ?? this.payment,
       paymentIntentClientSecret:
           paymentIntentClientSecret ?? this.paymentIntentClientSecret,
@@ -54,7 +61,8 @@ class PaymentCheckoutState {
   }
 }
 
-class PaymentCheckoutNotifier extends Notifier<PaymentCheckoutState> {
+@riverpod
+class PaymentCheckout extends _$PaymentCheckout {
   @override
   PaymentCheckoutState build() => const PaymentCheckoutState();
 
@@ -77,7 +85,10 @@ class PaymentCheckoutNotifier extends Notifier<PaymentCheckoutState> {
         return orderResult.leftOrNull?.message ?? 'Erro ao criar pedido.';
       }
       final order = orderResult.rightOrNull!;
-      state = state.copyWith(createdOrderId: order.id);
+      state = state.copyWith(
+        createdOrderId: order.id,
+        createdOrderAmount: order.amount,
+      );
 
       if (isWeb) {
         final sessionResult =
@@ -109,8 +120,3 @@ class PaymentCheckoutNotifier extends Notifier<PaymentCheckoutState> {
     }
   }
 }
-
-final paymentCheckoutProvider =
-    NotifierProvider.autoDispose<PaymentCheckoutNotifier, PaymentCheckoutState>(
-      PaymentCheckoutNotifier.new,
-    );

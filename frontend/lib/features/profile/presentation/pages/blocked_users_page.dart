@@ -5,6 +5,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/profile/data/services/block_service.dart';
 import 'package:freebay/features/profile/data/entities/block_responses.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 final blockServiceProvider = Provider<BlockService>((ref) {
   return BlockService();
@@ -21,6 +22,7 @@ class BlockedUsersPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final strings = l10n(context);
     final isDark = context.isDark;
     final blockedUsersAsync = ref.watch(blockedUsersProvider);
 
@@ -30,9 +32,10 @@ class BlockedUsersPage extends ConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: 'USUÁRIOS BLOQUEADOS',
+              text: strings.profileBlockedUsersTitle,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
+                semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
               breadcrumbs: context.breadcrumbs,
@@ -54,7 +57,7 @@ class BlockedUsersPage extends ConsumerWidget {
                               ),
                               Spacing.vMd,
                               Text(
-                                'Você não bloqueou nenhum usuário',
+                                strings.profileNoBlockedUsers,
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: isDark
@@ -106,8 +109,7 @@ class BlockedUsersPage extends ConsumerWidget {
                 loading: () =>
                     const Center(child: ShimmerBlock(width: 20, height: 20)),
                 error: (err, stack) => EmptyState.error(
-                  message:
-                      'Não foi possível carregar a lista. Verifique sua conexão.',
+                  message: strings.profileLoadFailed,
                   onRetry: () => ref.invalidate(blockedUsersProvider),
                 ),
               ),
@@ -181,10 +183,10 @@ class _BlockedUserTile extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.primaryContainer),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'Desbloquear',
-                  style: TextStyle(
+                  l10n(context).profileUnblock,
+                  style: const TextStyle(
                     color: AppColors.primaryContainer,
                     fontWeight: FontWeight.w700,
                   ),

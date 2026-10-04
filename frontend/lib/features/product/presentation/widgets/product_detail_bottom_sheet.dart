@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/features/cart/presentation/providers/cart_provider.dart';
 import 'package:freebay/features/product/data/entities/product_entity.dart';
@@ -23,6 +24,7 @@ class _ProductDetailBottomSheetState
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     final product = widget.product;
     final isDark = context.isDark;
     final available = product.quantity - product.soldCount;
@@ -109,7 +111,9 @@ class _ProductDetailBottomSheetState
                       ),
                       child: Center(
                         child: Text(
-                          canAdd ? 'Adicionar ao carrinho' : 'Indisponível',
+                          canAdd
+                              ? strings.productAddToCart
+                              : strings.productUnavailableLabel,
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontWeight: FontWeight.w600,
@@ -127,7 +131,7 @@ class _ProductDetailBottomSheetState
                 const SizedBox(width: 12),
                 Expanded(
                   child: AppButton(
-                    label: 'Comprar agora',
+                    label: strings.productBuyNow,
                     onPressed: canAdd
                         ? () {
                             context.push(

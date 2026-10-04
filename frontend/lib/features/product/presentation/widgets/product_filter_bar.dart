@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/core/utils/currency_utils.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const _priceDivisions = 50;
 
@@ -53,6 +54,7 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = l10n(context);
     return Container(
       width: double.infinity,
       color: context.isDark
@@ -62,7 +64,7 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const EyebrowLabel('Ordenar por'),
+          EyebrowLabel(strings.productSortBy),
           const SizedBox(height: 8),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -70,7 +72,12 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
               children: [
                 for (final option in ProductSort.values) ...[
                   BrutalistFilterChip(
-                    label: option.label,
+                    label: switch (option) {
+                      ProductSort.recent => strings.productSortRecent,
+                      ProductSort.priceAsc => strings.productSortPriceLowHigh,
+                      ProductSort.priceDesc => strings.productSortPriceHighLow,
+                      ProductSort.popular => strings.productSortPopular,
+                    },
                     selected: widget.sort == option,
                     onTap: () => widget.onSortChanged(option),
                   ),
@@ -80,19 +87,21 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
             ),
           ),
           Spacing.vMd,
-          const EyebrowLabel('Condição'),
+          EyebrowLabel(strings.productConditionLabel),
           const SizedBox(height: 8),
           Row(
             children: [
               BrutalistFilterChip(
-                label: 'Todos',
+                label: strings.productAll,
                 selected: widget.condition == null,
                 onTap: () => widget.onConditionChanged(null),
               ),
               Spacing.hSm,
               for (final option in ProductCondition.values) ...[
                 BrutalistFilterChip(
-                  label: option.label,
+                  label: option == ProductCondition.isNew
+                      ? strings.productNew
+                      : strings.productUsed,
                   selected: widget.condition == option,
                   onTap: () => widget.onConditionChanged(option),
                 ),
@@ -104,7 +113,7 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const EyebrowLabel('Preço'),
+              EyebrowLabel(strings.productPriceLabel),
               Text(
                 '${CurrencyUtils.formatReais(_draftRange.start)} — '
                 '${CurrencyUtils.formatReais(_draftRange.end)}'
@@ -136,7 +145,7 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
             children: [
               Expanded(
                 child: AppButton(
-                  label: 'Limpar',
+                  label: strings.commonClear,
                   variant: AppButtonVariant.secondary,
                   size: AppButtonSize.compact,
                   onPressed: widget.onClear,
@@ -145,7 +154,7 @@ class _ProductFilterBarState extends State<ProductFilterBar> {
               Spacing.hSm,
               Expanded(
                 child: AppButton(
-                  label: 'Aplicar',
+                  label: strings.commonApply,
                   size: AppButtonSize.compact,
                   onPressed: () {
                     final isFullRange =
