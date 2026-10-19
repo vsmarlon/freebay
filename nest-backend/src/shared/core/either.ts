@@ -1,4 +1,4 @@
-import { Failure } from '../errors/failures/failures';
+import type { Failure } from './errors';
 
 export type Either<L, R> = Left<L, R> | Right<L, R>;
 

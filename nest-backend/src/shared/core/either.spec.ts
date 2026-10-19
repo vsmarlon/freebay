@@ -1,14 +1,14 @@
 import { Either, left, Left, right, Right } from './either';
-import { Failure, Failures } from '../errors/failures/failures';
+import { AppError, type Failure } from './errors';
 
 describe('Either', () => {
   it('deve retornar sucessos quando for Left', () => {
-    const either: Either<Failure, boolean> = left(Failures.default());
+    const either: Either<Failure, boolean> = left(new AppError('DEFAULT_FAILURE', 'Default failure'));
     expect(either).toBeInstanceOf(Left);
     expect(either.isLeft()).toBeTruthy();
     expect(either.isRight()).toBeFalsy();
     expect(either.value).toBeDefined();
-    expect(either.value).toBeInstanceOf(Failure);
+    expect(either.value).toBeInstanceOf(AppError);
   });
 
   it('deve retornar sucessos quando for Right', () => {
@@ -31,9 +31,9 @@ describe('Either', () => {
   });
 
   it('isLeft typechecking', () => {
-    const either: Either<Failure, { name: string; age: number }> = left(Failures.default());
+    const either: Either<Failure, { name: string; age: number }> = left(new AppError('DEFAULT_FAILURE', 'Default failure'));
     if (either.isLeft()) {
-      expect(either.value).toBeInstanceOf(Failure);
+      expect(either.value).toBeInstanceOf(AppError);
     }
   });
 });
