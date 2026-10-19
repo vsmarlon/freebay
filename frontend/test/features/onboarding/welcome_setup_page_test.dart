@@ -38,7 +38,7 @@ void main() {
     (tester) async {
       final user = testUser(id: 'welcome-user', email: 'user@example.com');
       SharedPreferences.setMockInitialValues({});
-      await StorageService.init();
+      await tester.runAsync(StorageService.init);
       final biometry = _MockBiometryService();
       final router = GoRouter(
         initialLocation: AppRoutes.welcome,

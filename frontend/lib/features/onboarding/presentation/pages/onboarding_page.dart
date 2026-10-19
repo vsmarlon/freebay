@@ -61,9 +61,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     ),
                     GestureDetector(
                       onTap: _finish,
-                      child: const Text(
-                        'PULAR',
-                        style: TextStyle(
+                      child: Text(
+                        l10n(context).onboardingSkip,
+                        style: const TextStyle(
                           fontFamily: AppTypography.fontFamily,
                           color: AppColors.primaryContainer,
                           fontWeight: FontWeight.w600,
@@ -116,7 +116,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   vertical: 16,
                 ),
                 child: AppButton(
-                  label: isLast ? 'COMEÇAR AGORA' : 'PRÓXIMO',
+                  label: isLast
+                      ? l10n(context).onboardingGetStarted
+                      : l10n(context).onboardingNext,
                   icon: isLast
                       ? Icons.rocket_launch_outlined
                       : Icons.arrow_forward,
