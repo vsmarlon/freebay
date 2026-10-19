@@ -37,7 +37,7 @@ Use Flutter SDK `flutter_localizations` and generated `gen-l10n` output from com
 ## Operating agreement and hardening protocol
 
 - Work only in the authorized UX scope; no commits, pushes, resets, migrations, destructive operations, or edits to unrelated user work.
-- Read `FEATURE_TRUTH.md`, `DESIGN.md`, the applicable `.agents/skills` (and test-audit for tests) before edits. Follow behavior test-first where an actual behavioral regression is being fixed; do not manufacture a RED from missing generated code, broken fixtures, or tool availability.
+- Read `FEATURE_TRUTH.md`, `DESIGN.md`, the applicable `.agents/skills` (and test-audit for tests) before edits. Verify behavioral fixes with focused checks; distinguish behavior failures from missing generated code, broken fixtures, or tool availability.
 - Keep independent UI/content changes separate from backend/API/schema and pure hardening refactors. Preserve routes, money units, privacy, account isolation, and existing design-system contracts.
 - Run focused checks after each coherent slice. Run the full verification gates only after all parallel work is integrated and dependencies/code generation are settled. Capture exact commands, working-tree identity, environment without secrets, statuses, logs, and evidence in the report. Unknown or blocked means blocked, not passed.
 - Update `FEATURE_TRUTH.md` only when implementation evidence changes and name the exact boundary and verification. This plan alone is not evidence.

@@ -2,7 +2,7 @@
 
 **Audience:** code agent and repository owner on `feat/production-hardening`.
 **Base audit:** `f48a5be` (2026-09-26). **Status:** plan, not a completion report.
-**Baseline:** [`docs/test-runs/2026-09-30/hardening-baseline/REPORT.md`](test-runs/2026-09-30/hardening-baseline/REPORT.md), at `4558181`; the full Flutter suite is green (234 tests).
+**Baseline histórica:** [`docs/test-runs/2026-09-30/hardening-baseline/REPORT.md`](test-runs/2026-09-30/hardening-baseline/REPORT.md), revisão `4558181`; números descrevem aquele snapshot, não gates atuais.
 
 This is behavior-preserving hardening except for the authorized UX track. It is not a production-readiness claim. Read [`FEATURE_TRUTH.md`](FEATURE_TRUTH.md) before product claims and [`FREEBAY_PRODUCTION_TRACKER.md`](FREEBAY_PRODUCTION_TRACKER.md) for release risks. Preserve historical baseline failures and follow-up evidence.
 
@@ -10,18 +10,19 @@ This is behavior-preserving hardening except for the authorized UX track. It is 
 
 | ID | Decision |
 |---|---|
-| D1 | Backend use cases use concrete database repositories. Add no backend repository ports except P5 `TransactionRunner`. P9 considers existing ports for optional removal. |
+| D1 | Backend follows the selective modular policy in [ADR 0004](adr/0004-selective-modular-backend-architecture.md), complemented by [ADR 0005](adr/0005-module-template-public-api-uow-events.md): tiers/template, public API via `index.ts`, and current ALS transaction access via `TransactionHost.tx`. UnitOfWork/TxContext and DomainEvents are revoked. Own concrete repository is permitted only for Tier B CRUD within its module. This does not authorize migrations or owner-gated slices. |
 | D2 | Flutter logic-only domain use cases may import data entities, not data repositories. Keep existing domain repository interfaces. |
 | D3 | Keep `EitherInterceptor`. Canonical controller form is `unwrap(await useCase.execute(...))`; preserve the original `AppError`, status, and mapping. Never wrap it in a default-400 error. |
 | D4 | `ThingDatabaseRepository` is the role-name exception. Rename class names only; repository files and provider tokens are already correct. |
 | D5 | P4 uses deterministic `--boundaries` rules and a shrinking-only baseline; it is included in no-argument checks. |
-| D6 | `AGENTS.md` is shared guidance; root `CLAUDE.md` imports it and adds Claude-only guidance. `.agents/skills` is canonical. The `.claude/skills` mirror/symlink status remains unverified in this docs slice; verify identity, git mode, and Windows `core.symlinks=true` before treating it as a symlink. |
-| D7 | P1–P9 are pure refactors unless a separately approved decision says otherwise. No API/schema/error/status/money behavior changes. UX is the prior authorized exception. |
+| D6 | `AGENTS.md` is shared guidance; root `CLAUDE.md` imports it and adds Claude-only guidance. `.agents/skills` is canonical. In a new checkout, verify `.claude/skills` identity and git mode `120000`, and check Windows `core.symlinks` before treating it as a link; edit only the canonical path. |
+| D7 | Refactors preserve API/schema/error/status/money behavior unless separately approved. The infra-only batch is implemented and focused lifecycle/rollback/isolation evidence exists; full E2E passed 8 suites/50 tests with test keys. See [dated report](test-runs/2026-10-18/backend-infra/REPORT.md). No broader financial migration/schema/search-index change. |
 
 ## Operating agreement and stops
 
-- Stay on `feat/production-hardening`; make atomic commits per logical part. No new branch, force-push, push to `main`, or PR unless requested.
-- Complete UX1–UX3 before P1. Behavior changes are test-first and separate from pure-refactor commits. Full branch gates run after each three phases and at the end; focused behavior and structural checks run per slice. Record evidence under `docs/test-runs/<date>/`, including tested revision/dirty state, environment without credentials, exact commands and exit codes, and logs. A blocked gate is not a pass.
+- Stay on `feat/production-hardening`; do not commit/push unless requested. Preserve pre-existing dirty work.
+- Complete UX1–UX3 before production P1 work. Documentation-only consolidation is allowed before UX completion; it does not change phase order or complete P1. **Owner exceptions:** ARCH-02/P4 + PERF-01/PERF-03 have historical focused E2E evidence (2026-10-16); the separate Prisma/ALS batch has focused lifecycle/rollback/isolation evidence. Full E2E follow-up passed 50/50 with ephemeral test CPF keys; exact status/gates live in the [dated report](test-runs/2026-10-18/backend-infra/REPORT.md). Neither exception authorizes further financial refactors, DB/schema changes, dependencies or migrations.
+- P4 is a limited static baseline, not cycle detection. Historical search gates are not fresh/performance evidence. Do not repeat either as current proof; consult the linked report for the infrastructure batch.
 - Database tests use `.env.test` and guarded `freebay_test_db` only. P10 migrations are owner-only. No non-test DB setup, schema push, or seed.
 - No dependencies, type escapes (`any`, `as any`, `as unknown as`), lint suppressions, or weakened assertions. Preserve behavior, contracts, schema, errors/statuses, and money semantics. Money code is read-only except P5 and P8 after written owner approval.
 - Stop for `forwardRef`, casts/suppressions, weakened tests, unapproved behavior/schema/API/dependency changes, or unresolved owner policy. Characterize uncovered behavior before refactoring. Never report a planned phase as completed.
@@ -34,15 +35,15 @@ Counts are static source-inspection leads, not runtime defect counts. Reuse the 
 |---|---|---|
 | P0 | Reproducible source counts and gate evidence | Evidence only; no readiness claim |
 | UX | Stories, Close Friends, feed/profile timeline usability | Approved behavior scope; physical Galaxy A30 evidence |
-| P1 | Documentation agrees with code | Stop at owner-policy conflicts |
-| P2 | Error alias, controller unwrap, repository class names | Preserve DI and HTTP status |
-| P3 | Users owns user persistence | Stable auth token/import; no cycle |
+| P1 | Documentation agrees with code | Stop at owner-policy conflicts; D1's former blanket port ban was superseded by owner decision 2026-10-16 (ADR 0004), without authorizing implementation. |
+| P2 | Error alias, controller unwrap, repository class names | Preserve DI and HTTP status. Parcial entregue 2026-10-16: helper único `shared/http/unwrap.ts` usado pelos controllers de auth; alias `Failure = AppError` único (`failures.ts` removido); classes `Prisma*Repository` → `*DatabaseRepository` com DI preservado. **Segundo corte:** wrappers de desembrulho puro removidos (`reports.service.ts`, `category.service.ts` — controllers chamando use cases + `unwrap`); `reviews.service.ts` e `stories.service.ts` preservados (têm lógica além do unwrap; ficam para o corte D3). |
+| P3 | Users owns user persistence (approved target) | Provider/API migration remains incomplete; resolve DA-04 without cycle and verify app boot/auth-user flows |
 | P4 | Architecture-boundary regression gates | New violations fail; baseline cannot grow |
-| P5 | Explicit transaction ownership | Owner reviews money-sensitive slices |
+| P5 | Explicit transaction ownership | Current pattern in ADR 0005; per-slice approval/evidence remains required |
 | P6 | Measured type-safety ratchet | One lint group at a time; zero before enable |
 | P7 | Remove proven pass-through use cases only | Preserve contracts and meaningful behavior |
 | P8 | Webhook event model proposal | Written owner approval before implementation |
-| P9 | Optional legacy-port removals | Owner decides each port |
+| P9 | Optional legacy-port removals | Assess each legacy port under D1; owner decides individually. Retention is the default absent approval; no blanket removal or replacement is implied. |
 | P10 | Migration workflow | Owner only; no agent migration work |
 
 Baseline measures: 99 backend `*.spec.ts`; zero backend type-escape matches in its defined non-test scope; 15 `$transaction` sites in 12 non-repository files; 30 non-test `PrismaService` import files outside repository/infra exclusions; 13 exported `Prisma*Repository` names; 158 non-generated Flutter `dynamic` match lines; 6 backend abstract-repository-port files; 45 Prisma models. The report's 20 files importing feature `domain/repositories` contracts is a different scan, not the P0 boundary count.
@@ -100,21 +101,21 @@ Use the already-running physical Galaxy A30. Read [`FEATURE_TRUTH.md`](FEATURE_T
 - Preserve reverse chat scrolling, keyboard, header/bottom controls, and accessible actions. Fix observed shared swipe/scroll-physics inconsistencies without changing unrelated navigation.
 - Recheck combined journeys on A30, capture evidence, and run relevant perf checks. Update `FEATURE_TRUTH.md` only for verified outcomes; the plan itself is not completion evidence.
 
-## P1 — Documentation correction (owner decision pending)
+## P1 — Documentation correction (provider policy pending)
 
-Audit root/subtree guidance, README, relevant architecture docs, and skills against code. Documentation only; stop at owner-policy conflicts.
+Audit root/subtree guidance, README, relevant architecture docs, and skills against code. Documentation only; stop at owner-policy conflicts. Current documentation cleanup is authorized, but production P1 remains incomplete until provider policy is decided.
 
-- Backend ports: baseline measured six port files. Inspect the current inventory before counts; do not claim every module has a port or prescribe nonexistent flat repository folders. Most concrete repositories are Prisma-backed; `ThingDatabaseRepository` is a named exception.
+- Backend architecture follows [ADR 0004](adr/0004-selective-modular-backend-architecture.md) and [ADR 0005](adr/0005-module-template-public-api-uow-events.md); iteration scope/status and pending performance decisions live in [the backend plan](BACKEND_ARCHITECTURE_PLAN.md). DA-05 is resolved as `TransactionHost.tx`; the current batch is limited to shared infrastructure and two existing consumers, not general transaction migration.
 - Verify actual feature layers; favorites, help, notifications, onboarding, and profile are not uniformly data/domain/presentation, bug reporting has no data path, and not every feature has a use case/repository.
 - Document `AppError` status mapping and `EitherInterceptor`; do not claim every error becomes 400. Controller unwrap must preserve original errors.
 - Check test suffixes and scripts in package configuration. Integration files use `*.integration-spec.ts`; E2E uses `npm run test:e2e`. Keep every example runnable.
-- Payment-provider narrative conflicts (README AbacatePay/PagBank vs current Stripe code/docs): do not infer an owner decision or rewrite the historical README payment section until the owner resolves policy. The code contains a Stripe implementation (`StripeProvider`, Stripe PaymentIntent/Checkout/Connect paths); that is code evidence, not provider approval or proof of real payments. Keep the prior payment text visible with an explicit pending-owner note, not hidden/deleted. Remove unsupported migration-plan references only after checking the actual ADR/path; keep detailed payment flow in its owning docs.
+- Payment-provider narrative conflicts (README AbacatePay/PagBank vs current Stripe code/docs): do not infer an owner decision or rewrite historical payment guidance until owner resolves policy. Stripe source is not provider approval or proof of real payments. Keep the conflict visible as pending; detailed payment flow remains in its owning docs.
 - Fix stale duplicate void/dangling schema prose and vague “definition of done” with verified commands/evidence. Do not duplicate capability status owned by `FEATURE_TRUTH.md`.
-- Keep root `CLAUDE.md` concise (target 100–150 lines), importing canonical `AGENTS.md` and adding only Claude-specific guidance. Subtree guidance covers only local Either/transaction, design, keep-alive, and codegen conventions; do not duplicate payment lifecycle detail.
+- Keep root `CLAUDE.md` concise: import canonical `AGENTS.md` and add only Claude-specific guidance. Subtree guidance covers local Either/transaction, design, keep-alive, and codegen conventions; do not duplicate payment lifecycle detail.
 - `.agents/skills` is canonical. Treat `.claude/skills` as symlinks only after identity and git mode `120000` prove it; on Windows verify `core.symlinks=true`. Claude hooks are optional only if present.
 - Preserve exactly: `FREEBAY_RELEASE_HANDOFF.md`, `docs/CODEBASE_CLEANUP_PROGRESS.md`, and `docs/FREEBAY_PRODUCTION_TRACKER.md`.
 
-After documentation edits, run the architecture script/tests and validate new Markdown paths, symbols, links, and commands against the repository. Record evidence; do not claim an audit without it. P1 is not complete while the provider-policy decision remains open.
+After documentation edits, run the existing architecture script and tests; validate new Markdown paths, symbols, links, and commands against the repository. Record evidence; do not claim an audit without it. P1 is not complete while the provider-policy decision remains open.
 
 ## P2 — Backend error, unwrap, and repository names
 
@@ -125,11 +126,15 @@ After documentation edits, run the architecture script/tests and validate new Ma
 
 ## P3 — User-repository ownership
 
-Move user persistence ownership to Users. Users provides/exports `UserDatabaseRepository`; Auth imports it from Users with the injection token unchanged. Do not leave Auth as owner/provider. Preserve behavior/API. If this creates a module cycle, do not use `forwardRef`: report at least two inexpensive arrangements and wait. Verify app boot and auth/user E2E.
+Approved target: Users owns user persistence; source for `UserDatabaseRepository` is already under Users. P3 is **not complete**: Auth still registers the concrete provider, Users still imports Auth, and Auth/usecase consumers still depend on the concrete class. DA-04 remains open for public API/provider composition and email-verification ownership, not for whether Users is the target owner. The users barrel's concrete repository export is a transition exception.
 
-## P4 — Stable architecture-boundary checks
+Repository file placement is not provider ownership. Preserve injection behavior and token; resolve a cycle without `forwardRef`. No P3 provider move is part of the current infra-only batch; future execution requires its own approved arrangement and app-boot/auth-user verification.
 
-Add `--boundaries` to `scripts/ci-check.js` and run it with no arguments. Store deterministic sorted `{file, specifier, rule}` entries in `scripts/boundaries-baseline.json`. `--update-baseline` removes resolved entries only and refuses additions. Exclude `*.spec.*`, integration, and E2E. Preserve existing checks. Add phony `boundaries-check` Make target and include it in help/tests.
+## P4 — Architecture-boundary checks (limited static rules)
+
+**Snapshot (2026-10-18):** the existing gate has 242 findings under its current definitions (F1 12, F2 64, **B1 61**, B2 18, B3 5, **B4 80**, B5 2). Dated counts are not a promise about later trees. B1 catches direct imports and reexports targeting configured `data`/`usecases`/`services` paths; it does not follow exports transitively through a barrel or detect all cycles. B4 role/path detection includes configured usecase/controller names, not every `application`/query path. B5 checks direct forbidden imports in `domain/**`, not transitive dependencies. Inspect/extend tests before relying on broader guarantees; never clear debt by renaming or hiding imports behind barrels.
+
+The gate is already present in `scripts/ci-check.js`; use `--boundaries` and the no-argument invocation to verify it. Baseline entries are deterministic `{file, specifier, rule}`; update may remove resolved debt but must refuse additions. Preserve existing checks and tests. This status does not imply broader rules than the script currently implements.
 
 - **B1:** Any file under `modules/A` cannot import another module's `data`, `usecases`, or `services` implementation, regardless of its own layer, including aliases and relative paths.
 - **B2:** No PrismaService imports from usecases/controllers/services/tasks, except explicitly justified repository/infrastructure/health cases; no broad directory exemptions.
@@ -145,25 +150,23 @@ Add `--boundaries` to `scripts/ci-check.js` and run it with no arguments. Store 
 | Backend controllers | DTOs, use cases, shared HTTP/auth contracts | Any Repository class (B3) |
 | Backend use cases/controllers/services/tasks | Feature APIs and injected dependencies | `PrismaService` directly, except narrowly enumerated repository/infrastructure/health cases (B2) |
 
-These are P4 target rules, not currently enforced guarantees at baseline `4558181`. Prove a new violation fails while known entries pass, revert it, and prove baseline update refuses growth. Reuse the 12-file F1 scan above, not the separate 20-file domain-contract metric. Keep agent rules compact and nonduplicative.
+The bullets above are intended boundaries, not all guarantees enforced by today's implementation. Before cosmetic moves, make the relevant rule explicit and test its false-positive/false-negative limits. Keep the baseline monotonic, and reuse the 12-file F1 definition above rather than the separate 20-file metric.
 
-## P5 — Shared transaction runner
+## P5 — ALS transaction spans
 
-Add exactly two shared files: `TransactionRunner` abstraction and `PrismaTransactionRunner` implementation. Bind/export from `SharedModule` using `{ provide: TransactionRunner, useClass: PrismaTransactionRunner }`.
+**Implementação e evidência:** spans curtos `@Transactional()` usam `TransactionHost<TransactionalAdapterPrisma>.tx`, sem proxy/injection proxy/UoW; SharedModule é o único class provider de Prisma. Lifecycle AppModule, rollback P2025/readback, isolamento concorrente e mutation control estão registrados no [relatório](test-runs/2026-10-18/backend-infra/REPORT.md). Hook 1/1 não mede pools/conexões ativas. Reviews mantém nested create e reputação externa; demais transações permanecem legadas. Full E2E passou 8 suites/50 tests com chaves de teste; ver relatório datado.
 
-```ts
-run<T>(work: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T>
-```
+The callback/`Prisma.TransactionClient` sketch in the earlier P5 design is superseded and must not be implemented. `TransactionHost.tx` is the approved access shape, not blanket permission to migrate other slices. Further slices require explicit approval and evidence:
 
-Use `$transaction` defaults; add no options (isolation, max-wait, timeout). Migrate one logical slice per commit, in order:
+Reviews uses nested Prisma create for review+images (reputation remains outside); disputes withdraw/resolve already use ALS spans. These are not pending migrations. Current infra batch verifies/sanitizes their shared runtime and transaction client access, without changing their business queries.
 
-1. `reviews/usecases/create-review/create-review.usecase.ts`.
-2. Disputes: withdraw, then resolve.
-3. Task cleanup and escrow release.
-4. Cart checkout: reservation, compensation, main checkout (three slices).
-5. Payments: webhook/expiry use cases, then seller payout.
+Remaining candidates, each requiring its own owner go and focused rollback/behavior evidence:
 
-Do not invent dispute-create migration. Change injection/orchestration only; preserve callback query order/behavior byte-for-byte in effect and use `tx` for transaction queries. Stop on root-Prisma calls in callbacks or option changes. If at least three specs need the same fake, use one shared typed fake under `test/helpers`; retain rollback/atomicity assertions. Recheck boundaries per slice.
+1. Task cleanup and escrow release.
+2. Cart checkout: reservation, compensation, main checkout (three slices).
+3. Payments: webhook/expiry use cases, then seller payout.
+
+Do not invent dispute-create migration. In the approved infra batch, do not alter financial query order/rules, claims, wallet behavior, or external calls. Verify real rollback after a later write fails and concurrent ALS context isolation; callback-only fakes are not rollback evidence. Recheck the actual boundary gate; no next feature slice is implied.
 
 ## P6 — Type-safety ratchet
 
@@ -187,7 +190,7 @@ Without written approval, no P8 production-code changes.
 
 ## P9 — Optional legacy ports
 
-The six abstract-port files present at `4558181` are `auth/domain/repositories/magic-link.repository.ts`; `users/domain/repositories/block.repository.ts`, `follow.repository.ts`, `safety-list.repository.ts`, and `user-lookup.repository.ts`; and `wallet/domain/repositories/wallet.repository.ts`. `ReviewRepository` is not a seventh abstract port in this inventory: reviews directly inject concrete `PrismaReviewRepository`. Recheck the inventory before a P9 decision; the owner decides individually whether any existing port should remain or be removed. Do not add replacement abstractions/dependencies. If approved, remove one at a time with bindings, implementation, injections, and behavioral checks; preserve DI behavior and report retained ports/reasons.
+The six abstract-port files present at `4558181` are `auth/domain/repositories/magic-link.repository.ts`; `users/domain/repositories/block.repository.ts`, `follow.repository.ts`, `safety-list.repository.ts`, and `user-lookup.repository.ts`; and `wallet/domain/repositories/wallet.repository.ts`. `ReviewRepository` is not a seventh abstract port in this inventory: reviews directly inject concrete `PrismaReviewRepository`. Recheck inventory before P9. Assess each existing port under accepted D1; owner decides individually whether it remains or is removed. Do not add replacement abstractions/dependencies mechanically. Any approved removal is one at a time with binding, implementation, injection, and behavior checks; retention is valid where the boundary is justified.
 
 ## P10 — Migration workflow (owner only)
 
@@ -196,10 +199,10 @@ The agent never creates or runs migrations. When owner takes this phase, verify 
 ## Explicitly deferred
 
 - No EitherInterceptor migration (roughly 26 controllers return Either directly); preserve original error/status and never default-400 wrap.
-- Direct Prisma access and chat/social module splits are deferred. Audit leads: 86 chat files and 82 social files, not read-query counts.
+- Broad direct-Prisma cleanup outside approved planned slices and chat/social module splits are deferred. Audit leads: 86 chat files and 82 social files, not read-query counts.
 - Payments-module splitting is optional/deferred, not required P8 work.
 - Preserve the three trackers named in P1. Provider narrative, module splits, API/schema changes, migrations, new dependencies, and security/privacy semantics need explicit owner decision.
 
 ## Phase evidence record
 
-For every phase/logical commit record branch and commit range; tested revision and dirty-tree identity; environment without credentials; preserved/changed behavior; files/responsibilities; focused RED/GREEN commands and outcomes; full gates and exit codes or reason not run; identical-definition before/after counts; device/perf evidence; removed assertions and equivalent evidence; deviations; unresolved decisions; and stop conditions. A commit message, clean diff, or green subset is not completion evidence.
+For every phase/logical commit record branch and commit range; tested revision and dirty-tree identity; environment without credentials; preserved/changed behavior; files/responsibilities; focused verification commands and outcomes; full gates and exit codes or reason not run; identical-definition before/after counts; device/perf evidence; removed assertions and equivalent evidence; deviations; unresolved decisions; and stop conditions. A commit message, clean diff, or green subset is not completion evidence.
