@@ -6,14 +6,12 @@ import {
   BadRequestException,
   HttpStatus,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import { ApiTags } from '@nestjs/swagger';
-import { PostAuth } from '@/shared/decorators';
+import { BoundedMultipartInterceptor } from '@/shared/interceptors/bounded-multipart.interceptor';
+import { CurrentUserId, PostAuth } from '@/shared/decorators';
 import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
 import {
   MAX_MEDIA_SIZE,
-  MIMETYPE_EXTENSIONS,
   validateMediaFile,
 } from '@/shared/utils/image-upload.utils';
 import {
@@ -40,17 +38,12 @@ export function isValidContext(context: unknown): context is (typeof VALID_CONTE
 export class UploadController {
   @PostAuth({ summary: 'Upload a file (image, audio, video)', responseStatus: 201, httpCode: HttpStatus.CREATED })
   @UseInterceptors(
-    FileInterceptor('file', {
-      storage: memoryStorage(),
-      limits: { fileSize: MAX_MEDIA_SIZE },
-      fileFilter: (_req, file, cb) => {
-        cb(null, file.mimetype in MIMETYPE_EXTENSIONS);
-      },
-    }),
+    BoundedMultipartInterceptor('file', 1, MAX_MEDIA_SIZE + 512 * 1024, 4 * 1024, MAX_MEDIA_SIZE),
   )
   async upload(
     @UploadedFile() file: Express.Multer.File | undefined,
     @Query('context') context: string,
+    @CurrentUserId() userId: string,
   ): Promise<{ url: string; blurHash?: string }> {
     if (!file) {
       throw new BadRequestException(
@@ -68,7 +61,7 @@ export class UploadController {
       throw new BadRequestException(validationError);
     }
 
-    const url = saveUpload(file, context);
+    const url = saveUpload(file, context, userId);
     const blurHash = file.mimetype.startsWith('image/') && !isPrivateContext(context)
       ? await generateImageBlurHash(file.buffer)
       : undefined;

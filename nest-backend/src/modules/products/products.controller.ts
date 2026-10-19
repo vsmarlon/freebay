@@ -9,9 +9,8 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
-import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO } from './dtos/product.dto';
+import { BoundedMultipartInterceptor } from '@/shared/interceptors/bounded-multipart.interceptor';
+import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO, PRODUCT_DESCRIPTION_MAX_LENGTH } from './dtos/product.dto';
 import {
   GetAuth,
   GetPublic,
@@ -83,10 +82,7 @@ export class ProductsController {
     httpCode: HttpStatus.CREATED,
   })
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-      limits: { fileSize: MAX_IMAGE_SIZE },
-    }),
+    BoundedMultipartInterceptor('image', 1, MAX_IMAGE_SIZE + 512 * 1024, PRODUCT_DESCRIPTION_MAX_LENGTH * 4, MAX_IMAGE_SIZE),
   )
   async create(
     @CurrentUserId() sellerId: string,

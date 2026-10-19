@@ -8,6 +8,7 @@ import { readFileSync, rmSync } from "fs";
 import { join } from "path";
 import { UploadController, isValidContext } from "./upload.controller";
 import { JwtAuthGuard } from "@/modules/auth/guards/jwt-auth.guard";
+import { deleteUpload } from "@/shared/utils/file.utils";
 
 class MockJwtGuard implements CanActivate {
   canActivate(_context: ExecutionContext): boolean {
@@ -39,6 +40,7 @@ describe("UploadController", () => {
         size: buffer.length,
       } as Express.Multer.File,
       "avatar",
+      "user-1",
     );
 
     expect(result).toHaveProperty("blurHash", expect.any(String));
@@ -56,6 +58,7 @@ describe("UploadController", () => {
     const result = await sut.upload(
       { mimetype: 'image/png', buffer, size: buffer.length } as Express.Multer.File,
       'privatepost',
+      'user-1',
     );
 
     expect(result.url).toMatch(/^\/media\/privatepost\/[0-9a-f-]{36}\.png$/);
@@ -70,12 +73,10 @@ describe("UploadController", () => {
       size: 3,
     } as Express.Multer.File;
 
-    const result = await sut.upload(file, "chat");
+    const result = await sut.upload(file, "chat", "user-1");
 
     expect(result.url).toMatch(/^\/media\/chat\/[0-9a-f-]{36}\.jpg$/);
-    rmSync(
-      join(process.cwd(), result.url.replace("/media/", "private-uploads/")),
-    );
+    deleteUpload(result.url);
   });
 
   it("stores a MOV video attachment privately", async () => {
@@ -87,12 +88,10 @@ describe("UploadController", () => {
       size: 12,
     } as Express.Multer.File;
 
-    const result = await sut.upload(file, "chat");
+    const result = await sut.upload(file, "chat", "user-1");
 
     expect(result.url).toMatch(/^\/media\/chat\/[0-9a-f-]{36}\.mov$/);
-    rmSync(
-      join(process.cwd(), result.url.replace("/media/", "private-uploads/")),
-    );
+    deleteUpload(result.url);
   });
 
   it("stores a public context under /uploads", async () => {
@@ -102,24 +101,24 @@ describe("UploadController", () => {
       size: 3,
     } as Express.Multer.File;
 
-    const result = await sut.upload(file, "avatar");
+    const result = await sut.upload(file, "avatar", "user-1");
 
     expect(result.url).toMatch(/^\/uploads\/avatar\/[0-9a-f-]{36}\.jpg$/);
     rmSync(join(process.cwd(), result.url.replace("/uploads/", "uploads/")));
   });
 
   it("throws BadRequestException when no file", async () => {
-    await expect(sut.upload(undefined, "chat")).rejects.toThrow(BadRequestException);
+    await expect(sut.upload(undefined, "chat", "user-1")).rejects.toThrow(BadRequestException);
   });
 
   it("throws BadRequestException for invalid context", async () => {
     const file = { filename: "abc.jpg" } as Express.Multer.File;
-    await expect(sut.upload(file, "invalid")).rejects.toThrow(BadRequestException);
+    await expect(sut.upload(file, "invalid", "user-1")).rejects.toThrow(BadRequestException);
   });
 
   it("throws BadRequestException for path-traversal context", async () => {
     const file = { filename: "abc.jpg" } as Express.Multer.File;
-    await expect(sut.upload(file, "../../etc")).rejects.toThrow(BadRequestException);
+    await expect(sut.upload(file, "../../etc", "user-1")).rejects.toThrow(BadRequestException);
   });
 
   describe("isValidContext", () => {
