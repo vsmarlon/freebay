@@ -99,6 +99,24 @@ abstract class AppLocalizations {
     Locale('pt', 'BR'),
   ];
 
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Start now'**
+  String get onboardingGetStarted;
+
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
@@ -464,6 +482,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Comments'**
   String get feedComments;
+
+  /// No description provided for @socialCommentsRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get socialCommentsRecent;
+
+  /// No description provided for @socialCommentsPopular.
+  ///
+  /// In en, this message translates to:
+  /// **'Most liked'**
+  String get socialCommentsPopular;
+
+  /// No description provided for @socialCommentsLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get socialCommentsLoadMore;
 
   /// No description provided for @feedSavePost.
   ///
@@ -2319,6 +2355,30 @@ abstract class AppLocalizations {
   /// **'Verification code sent by SMS.'**
   String get profileVerificationCodeSent;
 
+  /// No description provided for @profileDocumentVerificationCodeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'A verification code was sent to your account email.'**
+  String get profileDocumentVerificationCodeSent;
+
+  /// No description provided for @profileDocumentVerificationCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'You can request another code in {seconds} seconds.'**
+  String profileDocumentVerificationCooldown(int seconds);
+
+  /// No description provided for @profileDocumentVerificationExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'The code expires in {seconds} seconds.'**
+  String profileDocumentVerificationExpiry(int seconds);
+
+  /// No description provided for @socialCommentApprovePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve pending comment'**
+  String get socialCommentApprovePending;
+
   /// No description provided for @profileVerificationIntro.
   ///
   /// In en, this message translates to:
@@ -2444,6 +2504,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'CPF / CNPJ'**
   String get profileTaxId;
+
+  /// No description provided for @profileEditIdentitySection.
+  ///
+  /// In en, this message translates to:
+  /// **'IDENTITY'**
+  String get profileEditIdentitySection;
+
+  /// No description provided for @profileEditLocationSection.
+  ///
+  /// In en, this message translates to:
+  /// **'LOCATION'**
+  String get profileEditLocationSection;
+
+  /// No description provided for @profileEditDocumentSection.
+  ///
+  /// In en, this message translates to:
+  /// **'DOCUMENT'**
+  String get profileEditDocumentSection;
 
   /// No description provided for @profileHelpSupport.
   ///
@@ -6110,6 +6188,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report submitted for review.'**
   String get profileReportSubmitted;
+
+  /// No description provided for @socialQuoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'QUOTED SOURCE'**
+  String get socialQuoteLabel;
+
+  /// No description provided for @socialQuoteUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This quoted content is no longer available.'**
+  String get socialQuoteUnavailable;
 }
 
 class _AppLocalizationsDelegate

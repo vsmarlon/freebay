@@ -20,6 +20,12 @@ class ServerFailure extends Failure {
   const ServerFailure([super.message = 'Erro ao se comunicar com o servidor.']);
 }
 
+class GoogleSignInFailure extends Failure {
+  const GoogleSignInFailure([
+    super.message = 'Não foi possível entrar com o Google. Tente novamente.',
+  ]);
+}
+
 class NetworkFailure extends Failure {
   const NetworkFailure([super.message = 'Sem conexão com a internet.']);
 }

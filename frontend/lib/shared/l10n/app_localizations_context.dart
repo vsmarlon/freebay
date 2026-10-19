@@ -20,6 +20,7 @@ String localizedFailureMessage(BuildContext context, Object? error) {
     ValidationFailure() => strings.errorValidation,
     NotFoundFailure() => strings.errorNotFound,
     BiometryCancelledFailure() => strings.authBiometryCancelled,
+    GoogleSignInFailure() => strings.authGoogleUnavailable,
     ServerFailure() => strings.errorServer,
     UnknownFailure() => strings.errorUnknown,
     Failure() => strings.errorUnknown,

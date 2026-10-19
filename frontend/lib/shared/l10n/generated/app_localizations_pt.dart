@@ -9,6 +9,15 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get onboardingSkip => 'Pular';
+
+  @override
+  String get onboardingNext => 'Próximo';
+
+  @override
+  String get onboardingGetStarted => 'Começar agora';
+
+  @override
   String get appName => 'FreeBay';
 
   @override
@@ -192,6 +201,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get feedComments => 'Comentários';
+
+  @override
+  String get socialCommentsRecent => 'Recentes';
+
+  @override
+  String get socialCommentsPopular => 'Mais curtidos';
+
+  @override
+  String get socialCommentsLoadMore => 'Carregar mais';
 
   @override
   String get feedSavePost => 'Salvar publicação';
@@ -1196,6 +1214,23 @@ class AppLocalizationsPt extends AppLocalizations {
       'Código de verificação enviado por SMS.';
 
   @override
+  String get profileDocumentVerificationCodeSent =>
+      'Um código de verificação foi enviado para o e-mail da sua conta.';
+
+  @override
+  String profileDocumentVerificationCooldown(int seconds) {
+    return 'Você poderá solicitar outro código em $seconds segundos.';
+  }
+
+  @override
+  String profileDocumentVerificationExpiry(int seconds) {
+    return 'O código expira em $seconds segundos.';
+  }
+
+  @override
+  String get socialCommentApprovePending => 'Aprovar comentário pendente';
+
+  @override
   String get profileVerificationIntro =>
       'Verifique sua conta para obter o selo de verificação e passar mais segurança na plataforma.';
 
@@ -1263,6 +1298,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileTaxId => 'CPF / CNPJ';
+
+  @override
+  String get profileEditIdentitySection => 'IDENTIDADE';
+
+  @override
+  String get profileEditLocationSection => 'LOCALIZAÇÃO';
+
+  @override
+  String get profileEditDocumentSection => 'DOCUMENTO';
 
   @override
   String get profileHelpSupport => 'Ajuda e suporte';
@@ -3369,6 +3413,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get profileReportSubmitted => 'Denúncia enviada para análise.';
+
+  @override
+  String get socialQuoteLabel => 'CONTEÚDO CITADO';
+
+  @override
+  String get socialQuoteUnavailable =>
+      'Este conteúdo citado não está mais disponível.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -3376,6 +3427,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   AppLocalizationsPtBr() : super('pt_BR');
 
   @override
+  String get onboardingSkip => 'Pular';
+
+  @override
+  String get onboardingNext => 'Próximo';
+
+  @override
+  String get onboardingGetStarted => 'Começar agora';
+
+  @override
   String get appName => 'FreeBay';
 
   @override
@@ -3559,6 +3619,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get feedComments => 'Comentários';
+
+  @override
+  String get socialCommentsRecent => 'Recentes';
+
+  @override
+  String get socialCommentsPopular => 'Mais curtidos';
+
+  @override
+  String get socialCommentsLoadMore => 'Carregar mais';
 
   @override
   String get feedSavePost => 'Salvar publicação';
@@ -4563,6 +4632,23 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Código de verificação enviado por SMS.';
 
   @override
+  String get profileDocumentVerificationCodeSent =>
+      'Um código de verificação foi enviado para o e-mail da sua conta.';
+
+  @override
+  String profileDocumentVerificationCooldown(int seconds) {
+    return 'Você poderá solicitar outro código em $seconds segundos.';
+  }
+
+  @override
+  String profileDocumentVerificationExpiry(int seconds) {
+    return 'O código expira em $seconds segundos.';
+  }
+
+  @override
+  String get socialCommentApprovePending => 'Aprovar comentário pendente';
+
+  @override
   String get profileVerificationIntro =>
       'Verifique sua conta para obter o selo de verificação e passar mais segurança na plataforma.';
 
@@ -4630,6 +4716,15 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileTaxId => 'CPF / CNPJ';
+
+  @override
+  String get profileEditIdentitySection => 'IDENTIDADE';
+
+  @override
+  String get profileEditLocationSection => 'LOCALIZAÇÃO';
+
+  @override
+  String get profileEditDocumentSection => 'DOCUMENTO';
 
   @override
   String get profileHelpSupport => 'Ajuda e suporte';
@@ -6736,4 +6831,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get profileReportSubmitted => 'Denúncia enviada para análise.';
+
+  @override
+  String get socialQuoteLabel => 'CONTEÚDO CITADO';
+
+  @override
+  String get socialQuoteUnavailable =>
+      'Este conteúdo citado não está mais disponível.';
 }

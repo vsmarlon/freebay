@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingGetStarted => 'Start now';
+
+  @override
   String get appName => 'FreeBay';
 
   @override
@@ -191,6 +200,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedComments => 'Comments';
+
+  @override
+  String get socialCommentsRecent => 'Recent';
+
+  @override
+  String get socialCommentsPopular => 'Most liked';
+
+  @override
+  String get socialCommentsLoadMore => 'Load more';
 
   @override
   String get feedSavePost => 'Save post';
@@ -1190,6 +1208,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileVerificationCodeSent => 'Verification code sent by SMS.';
 
   @override
+  String get profileDocumentVerificationCodeSent =>
+      'A verification code was sent to your account email.';
+
+  @override
+  String profileDocumentVerificationCooldown(int seconds) {
+    return 'You can request another code in $seconds seconds.';
+  }
+
+  @override
+  String profileDocumentVerificationExpiry(int seconds) {
+    return 'The code expires in $seconds seconds.';
+  }
+
+  @override
+  String get socialCommentApprovePending => 'Approve pending comment';
+
+  @override
   String get profileVerificationIntro =>
       'Verify your account to receive a verified badge and build trust on the platform.';
 
@@ -1257,6 +1292,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTaxId => 'CPF / CNPJ';
+
+  @override
+  String get profileEditIdentitySection => 'IDENTITY';
+
+  @override
+  String get profileEditLocationSection => 'LOCATION';
+
+  @override
+  String get profileEditDocumentSection => 'DOCUMENT';
 
   @override
   String get profileHelpSupport => 'Help and support';
@@ -3356,4 +3400,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileReportSubmitted => 'Report submitted for review.';
+
+  @override
+  String get socialQuoteLabel => 'QUOTED SOURCE';
+
+  @override
+  String get socialQuoteUnavailable =>
+      'This quoted content is no longer available.';
 }
