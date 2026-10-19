@@ -9,6 +9,7 @@ import 'package:freebay/features/profile/data/entities/user_stats_entity.dart';
 import 'package:freebay/features/profile/data/entities/follow_responses.dart';
 
 typedef CloseFriendCandidate = ({UserBrief user, bool isCloseFriend});
+typedef ProfileVerificationChallenge = ({int expiresIn, int resendAfter});
 
 class ProfileRepository {
   final Dio client;
@@ -122,6 +123,7 @@ class ProfileRepository {
     String? city,
     String? state,
     String? cpf,
+    String? profileVerificationCode,
   }) => requestEither(
     () => client.patch(
       '/users/me',
@@ -132,10 +134,27 @@ class ProfileRepository {
         'city': ?city,
         'state': ?state,
         'cpf': ?cpf,
+        'profileVerificationCode': ?profileVerificationCode,
       },
     ),
     decoder: (response) => Right(UserEntity.fromJson(response.data['data'])),
   );
+
+  Future<Either<Failure, ProfileVerificationChallenge>>
+  requestProfileVerification({required String cpf, String? locale}) =>
+      requestEither(
+        () => client.post(
+          '/users/me/profile-verification',
+          data: {'cpf': cpf, 'locale': ?locale},
+        ),
+        decoder: (response) {
+          final data = Map<String, dynamic>.from(response.data['data'] as Map);
+          return Right((
+            expiresIn: data['expiresIn'] as int,
+            resendAfter: data['resendAfter'] as int,
+          ));
+        },
+      );
 
   Future<Either<Failure, UserEntity>> updateBanner(String imagePath) async {
     try {

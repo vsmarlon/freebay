@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -25,12 +27,17 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
   final _cpfController = TextEditingController();
+  final _verificationCodeController = TextEditingController();
   bool _isLoading = false;
+  String? _challengeCpf;
+  DateTime? _challengeExpiresAt;
+  DateTime? _challengeResendAt;
   String _originalMaskedCpf = '';
   String _originalUsername = '';
   String? _ownerId;
   String? _seededOwnerId;
   bool _profileLoaded = false;
+  Timer? _challengeTimer;
 
   @override
   void initState() {
@@ -41,6 +48,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   void _onCpfChanged() {
     final text = _cpfController.text;
+    final currentDigits = text.replaceAll(RegExp(r'\D'), '');
+    if (_challengeCpf != null && currentDigits != _challengeCpf) {
+      _clearChallenge();
+      if (mounted) setState(() {});
+    }
     if (text.contains('*')) return; // Don't format the masked CPF
     final digits = text.replaceAll(RegExp(r'\D'), '');
 
@@ -61,10 +73,20 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     }
   }
 
+  void _clearChallenge() {
+    _challengeTimer?.cancel();
+    _challengeTimer = null;
+    _challengeCpf = null;
+    _challengeExpiresAt = null;
+    _challengeResendAt = null;
+    _verificationCodeController.clear();
+  }
+
   void _clearProfileData(String? ownerId) {
     _ownerId = ownerId;
     _seededOwnerId = null;
     _profileLoaded = false;
+    _clearChallenge();
     _originalUsername = '';
     _originalMaskedCpf = '';
     _displayNameController.clear();
@@ -99,6 +121,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _cityController.dispose();
     _stateController.dispose();
     _cpfController.dispose();
+    _verificationCodeController.dispose();
+    _challengeTimer?.cancel();
     super.dispose();
   }
 
@@ -120,6 +144,58 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ? null
           : cpfText.replaceAll(RegExp(r'\D'), '');
 
+      if (cpfDigits != null && cpfDigits.isNotEmpty) {
+        final challengeValid =
+            _challengeCpf == cpfDigits &&
+            _challengeExpiresAt != null &&
+            _challengeExpiresAt!.isAfter(DateTime.now()) &&
+            RegExp(r'^\d{6}$').hasMatch(_verificationCodeController.text);
+        if (!challengeValid) {
+          if (_challengeCpf == cpfDigits &&
+              _challengeResendAt != null &&
+              _challengeResendAt!.isAfter(DateTime.now()) &&
+              _challengeExpiresAt!.isAfter(DateTime.now())) {
+            return;
+          }
+          final challenge = await repository.requestProfileVerification(
+            cpf: cpfDigits,
+            locale: Localizations.localeOf(context).languageCode == 'en'
+                ? 'en'
+                : 'pt-BR',
+          );
+          if (!mounted ||
+              ref.read(authControllerProvider).asData?.value?.id != ownerId ||
+              _cpfController.text.replaceAll(RegExp(r'\D'), '') != cpfDigits) {
+            return;
+          }
+          var requested = false;
+          challenge.fold(
+            (failure) => AppSnackbar.handleFailure(context, failure),
+            (value) {
+              requested = true;
+              setState(() {
+                _challengeCpf = cpfDigits;
+                _challengeExpiresAt = DateTime.now().add(
+                  Duration(seconds: value.expiresIn),
+                );
+                _challengeResendAt = DateTime.now().add(
+                  Duration(seconds: value.resendAfter),
+                );
+              });
+              _challengeTimer?.cancel();
+              _challengeTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+                if (_challengeExpiresAt?.isAfter(DateTime.now()) != true) {
+                  _challengeTimer?.cancel();
+                }
+                if (mounted) setState(() {});
+              });
+            },
+          );
+          if (!requested) _clearChallenge();
+          return;
+        }
+      }
+
       final usernameText = _usernameController.text.trim().toLowerCase();
       final result = await repository.updateProfile(
         displayName: _displayNameController.text.trim(),
@@ -134,6 +210,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ? null
             : _stateController.text.trim(),
         cpf: cpfDigits?.isEmpty == true ? null : cpfDigits,
+        profileVerificationCode: cpfDigits == null || cpfDigits.isEmpty
+            ? null
+            : _verificationCodeController.text,
       );
 
       if (!mounted ||
@@ -147,6 +226,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         if (updatedUser.id != ownerId) return;
         ref.read(authControllerProvider.notifier).setUser(updatedUser);
         ref.invalidate(profileFutureProvider('me'));
+        if (cpfDigits != null && cpfDigits.isNotEmpty) _clearChallenge();
         context.pop();
       });
     } finally {
@@ -187,26 +267,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 semanticLabel: strings.accessibilityBack,
                 onTap: () => context.pop(),
               ),
-              actions: [
-                InkWell(
-                  onTap: _isLoading || !_profileLoaded ? null : _saveProfile,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: _isLoading
-                        ? const ShimmerBlock(width: 80, height: 80)
-                        : Text(
-                            strings.commonSave,
-                            style: const TextStyle(
-                              color: AppColors.primaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
               breadcrumbs: context.breadcrumbs,
             ),
             Expanded(
@@ -218,81 +278,142 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Spacing.vMd,
-                        AppTextField(
-                          controller: _displayNameController,
-                          label: strings.profileName,
-                          hint: strings.profileNameHint,
-                          maxLength: 50,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return strings.authNameRequired;
-                            }
-                            if (value.trim().length < 2) {
-                              return strings.profileNameMinLength;
-                            }
-                            if (!ValueUtils.validateDisplayName(value)) {
-                              return strings.authNameInvalid;
-                            }
-                            return null;
-                          },
-                        ),
-                        Spacing.vLg,
-                        UsernameField(
-                          controller: _usernameController,
-                          initialUsername: _originalUsername,
-                        ),
-                        Spacing.vLg,
-                        AppTextField(
-                          controller: _bioController,
-                          label: strings.profileBio,
-                          hint: strings.profileBioHint,
-                          maxLines: 3,
-                          maxLength: 150,
-                        ),
-                        Spacing.vLg,
-                        AppTextField(
-                          controller: _cityController,
-                          label: strings.profileCity,
-                          hint: strings.profileCityHint,
-                        ),
-                        Spacing.vLg,
-                        AppTextField(
-                          controller: _stateController,
-                          label: strings.profileState,
-                          hint: strings.profileStateHint,
-                        ),
-                        Spacing.vLg,
-                        AppTextField(
-                          controller: _cpfController,
-                          label: strings.profileTaxId,
-                          hint: strings.profileTaxIdHint,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[\d\-./*]'),
+                        Spacing.vSm,
+                        _profileSection(
+                          title: strings.profileEditIdentitySection,
+                          children: [
+                            AppTextField(
+                              controller: _displayNameController,
+                              label: strings.profileName,
+                              hint: strings.profileNameHint,
+                              maxLength: 50,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return strings.authNameRequired;
+                                }
+                                if (value.trim().length < 2) {
+                                  return strings.profileNameMinLength;
+                                }
+                                if (!ValueUtils.validateDisplayName(value)) {
+                                  return strings.authNameInvalid;
+                                }
+                                return null;
+                              },
                             ),
-                            LengthLimitingTextInputFormatter(18),
+                            if (_challengeCpf != null) ...[
+                              Text(strings.profileDocumentVerificationCodeSent),
+                              if (_challengeExpiresAt != null)
+                                Text(
+                                  strings.profileDocumentVerificationExpiry(
+                                    _challengeExpiresAt!
+                                        .difference(DateTime.now())
+                                        .inSeconds
+                                        .clamp(0, 1 << 31),
+                                  ),
+                                ),
+                              if (_challengeResendAt != null &&
+                                  _challengeResendAt!.isAfter(DateTime.now()))
+                                Text(
+                                  strings.profileDocumentVerificationCooldown(
+                                    _challengeResendAt!
+                                        .difference(DateTime.now())
+                                        .inSeconds
+                                        .clamp(0, 1 << 31),
+                                  ),
+                                )
+                              else
+                                AppButton(
+                                  label: strings.commonRetry,
+                                  variant: AppButtonVariant.ghost,
+                                  size: AppButtonSize.compact,
+                                  onPressed: _isLoading ? null : _saveProfile,
+                                ),
+                              Spacing.vMd,
+                              AppTextField(
+                                key: const ValueKey(
+                                  'profileVerificationCodeField',
+                                ),
+                                controller: _verificationCodeController,
+                                label: strings.profileVerificationCode,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(6),
+                                ],
+                              ),
+                            ],
+                            Spacing.vMd,
+                            UsernameField(
+                              controller: _usernameController,
+                              initialUsername: _originalUsername,
+                            ),
+                            Spacing.vMd,
+                            AppTextField(
+                              controller: _bioController,
+                              label: strings.profileBio,
+                              hint: strings.profileBioHint,
+                              maxLines: 3,
+                              maxLength: 150,
+                            ),
                           ],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return null;
-                            if (value == _originalMaskedCpf) return null;
-
-                            final digits = value.replaceAll(RegExp(r'\D'), '');
-                            if (digits.length == 11) {
-                              if (!ValueUtils.validateCPF(digits)) {
-                                return strings.paymentInvalidCpfCnpj;
-                              }
-                            } else if (digits.length == 14) {
-                              if (!ValueUtils.validateCNPJ(digits)) {
-                                return strings.paymentInvalidCpfCnpj;
-                              }
-                            } else {
-                              return strings.profileTaxIdLengthInvalid;
-                            }
-                            return null;
-                          },
                         ),
+                        Spacing.vMd,
+                        _profileSection(
+                          title: strings.profileEditLocationSection,
+                          children: [
+                            AppTextField(
+                              controller: _cityController,
+                              label: strings.profileCity,
+                              hint: strings.profileCityHint,
+                            ),
+                            Spacing.vMd,
+                            AppTextField(
+                              controller: _stateController,
+                              label: strings.profileState,
+                              hint: strings.profileStateHint,
+                            ),
+                          ],
+                        ),
+                        Spacing.vMd,
+                        _profileSection(
+                          title: strings.profileEditDocumentSection,
+                          children: [
+                            AppTextField(
+                              controller: _cpfController,
+                              label: strings.profileTaxId,
+                              hint: strings.profileTaxIdHint,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[\d\-./*]'),
+                                ),
+                                LengthLimitingTextInputFormatter(18),
+                              ],
+                              validator: (value) {
+                                if (value == null || value.isEmpty) return null;
+                                if (value == _originalMaskedCpf) return null;
+
+                                final digits = value.replaceAll(
+                                  RegExp(r'\D'),
+                                  '',
+                                );
+                                if (digits.length == 11) {
+                                  if (!ValueUtils.validateCPF(digits)) {
+                                    return strings.paymentInvalidCpfCnpj;
+                                  }
+                                } else if (digits.length == 14) {
+                                  if (!ValueUtils.validateCNPJ(digits)) {
+                                    return strings.paymentInvalidCpfCnpj;
+                                  }
+                                } else {
+                                  return strings.profileTaxIdLengthInvalid;
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                        Spacing.vSm,
                       ],
                     ),
                   ),
@@ -318,9 +439,43 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 ),
               ),
             ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.md,
+                  Spacing.sm,
+                  Spacing.md,
+                  Spacing.md,
+                ),
+                child: AppButton(
+                  label: strings.commonSave,
+                  width: double.infinity,
+                  isLoading: _isLoading,
+                  onPressed: _isLoading || !_profileLoaded
+                      ? null
+                      : _saveProfile,
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+
+  Widget _profileSection({
+    required String title,
+    required List<Widget> children,
+  }) => BrutalistBox(
+    backgroundColor: context.surfaceColor,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTypography.labelLarge.weight(700)),
+        Spacing.vMd,
+        ...children,
+      ],
+    ),
+  );
 }
