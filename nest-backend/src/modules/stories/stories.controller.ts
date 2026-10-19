@@ -8,8 +8,7 @@ import {
   ParseUUIDPipe,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { memoryStorage } from "multer";
+import { BoundedMultipartInterceptor } from "@/shared/interceptors/bounded-multipart.interceptor";
 import { deleteUpload, saveUpload } from "@/shared/utils/file.utils";
 import { StoriesService } from "./stories.service";
 import {
@@ -86,10 +85,7 @@ export class StoriesController {
     httpCode: HttpStatus.CREATED,
   })
   @UseInterceptors(
-    FileInterceptor("image", {
-      storage: memoryStorage(),
-      limits: { fileSize: MAX_MEDIA_SIZE },
-    }),
+    BoundedMultipartInterceptor("image", 1, MAX_MEDIA_SIZE + 512 * 1024, STORY_TEXT_BLOCKS_PAYLOAD_MAX_LENGTH * 4, MAX_MEDIA_SIZE),
   )
   async createStory(
     @CurrentUserId() userId: string,
