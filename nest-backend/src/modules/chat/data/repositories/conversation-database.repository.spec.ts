@@ -198,6 +198,8 @@ describe('ConversationDatabaseRepository', () => {
       readAt: null,
       replyToId: null,
       viewOnce: false,
+      viewOnceOpeningHash: null,
+      viewOnceClosedAt: null,
       deletedAt: null,
       createdAt: new Date(),
       sender: { id: 'sender-1', displayName: 'Sender', avatarUrl: null },
@@ -218,5 +220,65 @@ describe('ConversationDatabaseRepository', () => {
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) expect(result.value.map(({ id }) => id)).toEqual(['message-2', 'message-1']);
+  });
+
+  it.each([
+    { model: ChatThreadType.DIRECT, count: 2 },
+    { model: ChatThreadType.ORDER, count: 1 },
+    { model: ChatThreadType.DIRECT, count: 0 },
+  ])('returns the persisted read count for $model', async ({ model, count }) => {
+    const updateMany = jest.fn().mockResolvedValue({ count });
+    const module = await Test.createTestingModule({
+      providers: [
+        ConversationDatabaseRepository,
+        { provide: PrismaService, useValue: { directMessage: { updateMany }, chatMessage: { updateMany } } },
+      ],
+    }).compile();
+    const repository = module.get(ConversationDatabaseRepository);
+
+    const result = model === ChatThreadType.ORDER
+      ? await repository.markChatMessagesRead('thread-1', 'reader-1')
+      : await repository.markMessagesRead('thread-1', 'reader-1');
+
+    expect(result).toEqual(expect.objectContaining({ value: count }));
+    expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ viewOnce: false }) }));
+  });
+
+  it('keeps a failed mark-read update as a repository failure', async () => {
+    const updateMany = jest.fn().mockRejectedValue(new Error('database unavailable'));
+    const module = await Test.createTestingModule({
+      providers: [ConversationDatabaseRepository, { provide: PrismaService, useValue: { directMessage: { updateMany } } }],
+    }).compile();
+
+    const result = await module.get(ConversationDatabaseRepository).markMessagesRead('thread-1', 'reader-1');
+
+    expect(result.isLeft()).toBe(true);
+  });
+
+  it('claims an unread view-once message with compare-and-set and retries the same key without resetting readAt', async () => {
+    const readAt = new Date('2026-10-09T12:00:00.000Z');
+    const findFirst = jest.fn()
+      .mockResolvedValueOnce({ readAt: null, attachmentUrl: '/media/chat/media.jpg', viewOnceOpeningHash: null, viewOnceClosedAt: null })
+      .mockResolvedValueOnce({ readAt, attachmentUrl: '/media/chat/media.jpg' })
+      .mockResolvedValueOnce({ readAt, attachmentUrl: '/media/chat/media.jpg', viewOnceOpeningHash: 'a'.repeat(64), viewOnceClosedAt: null });
+    const updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const module = await Test.createTestingModule({
+      providers: [
+        ConversationDatabaseRepository,
+        { provide: PrismaService, useValue: { directMessage: { findFirst, updateMany } } },
+      ],
+    }).compile();
+    const repository = module.get(ConversationDatabaseRepository);
+
+    const first = await repository.claimViewOnce('message-1', 'direct-1', 'reader-1', ChatThreadType.DIRECT, 'a'.repeat(64));
+    const retry = await repository.claimViewOnce('message-1', 'direct-1', 'reader-1', ChatThreadType.DIRECT, 'a'.repeat(64));
+
+    expect(first).toEqual(expect.objectContaining({ value: { readAt, attachmentUrl: '/media/chat/media.jpg' } }));
+    expect(retry).toEqual(expect.objectContaining({ value: { readAt, attachmentUrl: '/media/chat/media.jpg' } }));
+    expect(updateMany).toHaveBeenCalledTimes(1);
+    expect(updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ readAt: null, viewOnceOpeningHash: null, viewOnceClosedAt: null, senderId: { not: 'reader-1' } }),
+      data: expect.objectContaining({ readAt: expect.any(Date), deliveredAt: expect.any(Date), viewOnceOpeningHash: 'a'.repeat(64) }),
+    }));
   });
 });

@@ -4,17 +4,22 @@ import { UserFactory } from '../../../../test/factories';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { OgScraperService } from '../services/og-scraper.service';
+import { OG_HTML_FETCHER, OgScraperService } from '../services/og-scraper.service';
+import { UrlSafetyService } from '../services/url-safety.service';
 import { SendMessageUseCase } from './send-message.usecase';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { FcmService } from '@/modules/notifications/fcm.service';
+import { NotificationsGateway } from '@/modules/notifications/notifications.gateway';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
 
 describe('SendMessageUseCase location integration', () => {
   it('persists canonical metadata and reuses a duplicate client id', async () => {
     const users = new UserFactory(prisma);
     const sender = await users.create();
     const receiver = await users.create();
+    const sendFcm = jest.fn();
+    const sendNotification = jest.fn();
     const conversation = await prisma.directConversation.create({
       data: {
         user1Id: sender.id < receiver.id ? sender.id : receiver.id,
@@ -27,10 +32,14 @@ describe('SendMessageUseCase location integration', () => {
         SendMessageUseCase,
         ConversationDatabaseRepository,
         BlockDatabaseRepository,
+        UrlSafetyService,
         OgScraperService,
+        { provide: OG_HTML_FETCHER, useValue: async () => '' },
         ChatThreadAccessService,
+        ConversationPreferenceDatabaseRepository,
         NotificationService,
-        { provide: FcmService, useValue: { sendNotification: jest.fn() } },
+        { provide: FcmService, useValue: { sendNotification: sendFcm } },
+        { provide: NotificationsGateway, useValue: { sendNotification } },
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
@@ -60,6 +69,11 @@ describe('SendMessageUseCase location integration', () => {
 
     expect(first.isRight()).toBe(true);
     expect(second.isRight()).toBe(true);
+    if (first.isLeft() || second.isLeft()) throw new Error('Message send failed');
+    expect(second.value.message.id).toBe(first.value.message.id);
+    expect(await prisma.notification.count({ where: { id: first.value.message.id, userId: receiver.id } })).toBe(1);
+    expect(sendNotification).toHaveBeenCalledTimes(1);
+    expect(sendFcm).toHaveBeenCalledTimes(1);
     const persisted = await prisma.directMessage.findMany({
       where: { conversationId: conversation.id, clientMessageId: 'location-integration-1' },
     });

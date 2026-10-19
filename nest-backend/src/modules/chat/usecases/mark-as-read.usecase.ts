@@ -12,7 +12,7 @@ export class MarkAsReadUseCase {
     private readonly conversationRepository: ConversationDatabaseRepository,
   ) {}
 
-  async execute(conversationId: string, userId: string, messageId?: string): Promise<Either<AppError, void>> {
+  async execute(conversationId: string, userId: string, messageId?: string): Promise<Either<AppError, number>> {
     const resolved = await this.threadAccess.resolveThread(userId, conversationId);
     if (resolved.isLeft()) return left(resolved.value);
 
@@ -31,6 +31,6 @@ export class MarkAsReadUseCase {
       return messageId ? this.conversationRepository.markMessagesRead(directConversationId, userId, messageId) : this.conversationRepository.markMessagesRead(directConversationId, userId);
     }
 
-    return right(undefined);
+    return right(0);
   }
 }

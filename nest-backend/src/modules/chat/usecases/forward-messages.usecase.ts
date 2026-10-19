@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
+import { AppError, BadRequestError, ForbiddenError, InternalServerError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
-import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { ChatThreadAccessService, ResolvedChatThread } from '../services/chat-thread-access.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ForwardMessagesInput, ForwardMessagesOutput, SendMessageOutput } from '../dtos/chat.dto';
 import { Prisma, MessageType } from '@prisma/client';
+import { copyOwnedChatUpload, deleteUpload, isOwnedUpload } from '@/shared/utils/file.utils';
 
 @Injectable()
 export class ForwardMessagesUseCase {
@@ -42,6 +43,7 @@ export class ForwardMessagesUseCase {
       content: string | null;
       type: MessageType;
       attachmentUrl: string | null;
+      senderId: string;
       metadata: Prisma.JsonValue;
       sender: { displayName: string } | null;
       viewOnce: boolean;
@@ -71,6 +73,9 @@ export class ForwardMessagesUseCase {
           new ForbiddenError('Mensagens de visualização única não podem ser encaminhadas'),
         );
       }
+      if (sourceMsg.attachmentUrl && !isOwnedUpload(sourceMsg.attachmentUrl, sourceMsg.senderId, 'chat')) {
+        return left(new ForbiddenError('Anexo de origem inválido ou sem comprovação de propriedade'));
+      }
     }
 
 
@@ -82,7 +87,7 @@ export class ForwardMessagesUseCase {
 
     const createdOutputs: SendMessageOutput[] = [];
 
-
+    const preparedTargets: ResolvedChatThread[] = [];
     for (const targetConvId of input.targetConversationIds) {
       const threadRes = await this.threadAccess.resolveThread(input.userId, targetConvId);
       if (threadRes.isLeft()) {
@@ -92,8 +97,22 @@ export class ForwardMessagesUseCase {
       const thread = threadRes.value;
       const blockCheck = await this.assertNotBlocked(input.userId, thread.otherUserId);
       if (blockCheck) return left(blockCheck);
+      preparedTargets.push(thread);
+    }
 
+    for (const thread of preparedTargets) {
       for (const sourceMsg of sortedMessages) {
+        let forwardedAttachmentUrl: string | null = null;
+        if (sourceMsg.attachmentUrl) {
+          try {
+            forwardedAttachmentUrl = copyOwnedChatUpload(sourceMsg.attachmentUrl, sourceMsg.senderId, input.userId);
+          } catch {
+            return left(new InternalServerError('Não foi possível copiar o anexo encaminhado'));
+          }
+          if (!forwardedAttachmentUrl) {
+            return left(new ForbiddenError('Anexo de origem inválido ou sem comprovação de propriedade'));
+          }
+        }
         const originalMetadata = (sourceMsg.metadata as Record<string, unknown>) ?? {};
         const forwardedMetadata: Record<string, unknown> = {
           ...originalMetadata,
@@ -102,17 +121,26 @@ export class ForwardMessagesUseCase {
         };
 
         if (thread.directConversationId) {
-          const createRes = await this.conversationRepository.createDirectMessage({
-            conversation: { connect: { id: thread.directConversationId } },
-            sender: { connect: { id: input.userId } },
-            content: sourceMsg.content,
-            type: sourceMsg.type,
-            attachmentUrl: sourceMsg.attachmentUrl,
-            metadata: forwardedMetadata as Prisma.InputJsonValue,
-            viewOnce: false,
-          }, true);
+          let createRes: Awaited<ReturnType<ConversationDatabaseRepository['createDirectMessage']>>;
+          try {
+            createRes = await this.conversationRepository.createDirectMessage({
+              conversation: { connect: { id: thread.directConversationId } },
+              sender: { connect: { id: input.userId } },
+              content: sourceMsg.content,
+              type: sourceMsg.type,
+              attachmentUrl: forwardedAttachmentUrl,
+              metadata: forwardedMetadata as Prisma.InputJsonValue,
+              viewOnce: false,
+            }, true);
+          } catch {
+            deleteUpload(forwardedAttachmentUrl);
+            return left(new InternalServerError('Não foi possível encaminhar a mensagem'));
+          }
 
-          if (createRes.isLeft()) return left(createRes.value);
+          if (createRes.isLeft()) {
+            deleteUpload(forwardedAttachmentUrl);
+            return left(createRes.value);
+          }
 
           await this.conversationRepository.updateDirectConversation(thread.directConversationId, {
             lastMessageAt: new Date(),
@@ -133,17 +161,26 @@ export class ForwardMessagesUseCase {
             createdAt: msg.createdAt,
           });
         } else if (thread.orderId) {
-          const createRes = await this.conversationRepository.createChatMessage({
-            order: { connect: { id: thread.orderId } },
-            sender: { connect: { id: input.userId } },
-            content: sourceMsg.content,
-            type: sourceMsg.type,
-            attachmentUrl: sourceMsg.attachmentUrl,
-            metadata: forwardedMetadata as Prisma.InputJsonValue,
-            viewOnce: false,
-          }, true);
+          let createRes: Awaited<ReturnType<ConversationDatabaseRepository['createChatMessage']>>;
+          try {
+            createRes = await this.conversationRepository.createChatMessage({
+              order: { connect: { id: thread.orderId } },
+              sender: { connect: { id: input.userId } },
+              content: sourceMsg.content,
+              type: sourceMsg.type,
+              attachmentUrl: forwardedAttachmentUrl,
+              metadata: forwardedMetadata as Prisma.InputJsonValue,
+              viewOnce: false,
+            }, true);
+          } catch {
+            deleteUpload(forwardedAttachmentUrl);
+            return left(new InternalServerError('Não foi possível encaminhar a mensagem'));
+          }
 
-          if (createRes.isLeft()) return left(createRes.value);
+          if (createRes.isLeft()) {
+            deleteUpload(forwardedAttachmentUrl);
+            return left(createRes.value);
+          }
 
           const msg = createRes.value;
           createdOutputs.push({

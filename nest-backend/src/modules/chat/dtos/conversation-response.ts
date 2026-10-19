@@ -51,7 +51,7 @@ export interface UnifiedConversationResponse {
   unreadCount: number;
   status: string;
   createdAt: string;
-  preference: { isArchived: boolean; theme: string; backgroundUrl: string | null } | null;
+  preference: { isArchived: boolean; theme: string; backgroundUrl: string | null; muted: boolean } | null;
 }
 
 type UnifiedUser = Pick<User, 'id' | 'displayName' | 'avatarUrl' | 'isVerified'>;
@@ -64,7 +64,9 @@ function unifiedConversationFields(otherUser: UnifiedUser, lastMsg: UnifiedLastM
     unreadCount,
     status,
     createdAt: createdAt.toISOString(),
-    preference: preference ? { isArchived: preference.isArchived, theme: preference.theme, backgroundUrl: preference.backgroundUrl } : null,
+    preference: preference
+      ? { isArchived: preference.isArchived, theme: preference.theme, backgroundUrl: preference.backgroundUrl, muted: preference.muted }
+      : { isArchived: false, theme: 'DEFAULT', backgroundUrl: null, muted: false },
   };
 }
 

@@ -19,6 +19,7 @@ import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
 import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
 import { ChatThreadAccessService } from './services/chat-thread-access.service';
 import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { configuredAllowedOrigins, isAllowedOrigin } from '@/shared/http/origin-policy';
 
 interface AuthenticatedUser {
   userId: string;
@@ -26,7 +27,10 @@ interface AuthenticatedUser {
 }
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: {
+    origin: (origin, callback) => callback(null, isAllowedOrigin(origin, configuredAllowedOrigins())),
+  },
+  allowRequest: (request, callback) => callback(null, isAllowedOrigin(request.headers.origin, configuredAllowedOrigins())),
   namespace: '/chat',
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -178,6 +182,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   broadcastNewMessage(conversationId: string, message: unknown) {
     this.server.to(`conversation:${conversationId}`).emit('new_message', message);
+  }
+
+  broadcastMessagesRead(conversationId: string, readerId: string) {
+    this.server.to(`conversation:${conversationId}`).emit('messages_read', {
+      conversationId,
+      readerId,
+    });
   }
 
   @SubscribeMessage('typing')

@@ -23,10 +23,12 @@ import { GetConversationMediaUseCase } from './get-conversation-media.usecase';
 import { VerifyUrlSafetyUseCase } from './verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './forward-messages.usecase';
 import { MarkAsReadUseCase } from './mark-as-read.usecase';
+import { ViewOnceUseCase } from './view-once.usecase';
 
 @Module({
   providers: [
     MarkAsReadUseCase,
+    ViewOnceUseCase,
     ConversationDatabaseRepository,
     ConversationPreferenceDatabaseRepository,
     ChatThreadAccessService,
@@ -53,6 +55,7 @@ import { MarkAsReadUseCase } from './mark-as-read.usecase';
   ],
   exports: [
     MarkAsReadUseCase,
+    ViewOnceUseCase,
     ConversationDatabaseRepository,
     ChatThreadAccessService,
     BlockDatabaseRepository,

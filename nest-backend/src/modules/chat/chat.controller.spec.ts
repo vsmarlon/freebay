@@ -19,9 +19,10 @@ import { GetStarredMessagesUseCase } from './usecases/get-starred-messages.useca
 import { VerifyUrlSafetyUseCase } from './usecases/verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './usecases/forward-messages.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
+import { ViewOnceUseCase } from './usecases/view-once.usecase';
 import { ChatGateway } from './chat.gateway';
 import { SendMessageDTO, StartConversationDTO, StartConversationOutput } from './dtos/chat.dto';
-import { Either, right } from '@/shared/core/either';
+import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 
@@ -59,6 +60,7 @@ describe('ChatController.startConversation', () => {
         { provide: VerifyUrlSafetyUseCase, useValue: {} },
         { provide: ForwardMessagesUseCase, useValue: {} },
         { provide: MarkAsReadUseCase, useValue: {} },
+        { provide: ViewOnceUseCase, useValue: {} },
         { provide: ChatGateway, useValue: {} },
         { provide: Reflector, useValue: {} },
         { provide: JwtTokenValidatorService, useValue: {} },
@@ -106,6 +108,8 @@ describe('ChatController.sendMessage', () => {
       senderName: 'Sender',
     }));
     const broadcastNewMessage = jest.fn();
+    const broadcastMessagesRead = jest.fn();
+    const markReadExecute = jest.fn().mockResolvedValue(right(2));
     const module = await Test.createTestingModule({
       controllers: [ChatController],
       providers: [
@@ -126,8 +130,9 @@ describe('ChatController.sendMessage', () => {
         { provide: GetStarredMessagesUseCase, useValue: {} },
         { provide: VerifyUrlSafetyUseCase, useValue: {} },
         { provide: ForwardMessagesUseCase, useValue: {} },
-        { provide: MarkAsReadUseCase, useValue: {} },
-        { provide: ChatGateway, useValue: { broadcastNewMessage } },
+        { provide: MarkAsReadUseCase, useValue: { execute: markReadExecute } },
+        { provide: ChatGateway, useValue: { broadcastNewMessage, broadcastMessagesRead } },
+        { provide: ViewOnceUseCase, useValue: {} },
         { provide: Reflector, useValue: {} },
         { provide: JwtTokenValidatorService, useValue: {} },
       ],
@@ -143,5 +148,16 @@ describe('ChatController.sendMessage', () => {
 
     expect(broadcastNewMessage).toHaveBeenCalledWith('conversation-1', message);
     expect(result).toEqual(message);
+
+    expect(await controller.markAsRead('order-id', 'reader-id')).toEqual(right(undefined));
+    expect(broadcastMessagesRead).toHaveBeenCalledTimes(1);
+    expect(broadcastMessagesRead).toHaveBeenCalledWith('order-id', 'reader-id');
+    markReadExecute.mockResolvedValueOnce(right(0));
+    expect(await controller.markAsRead('direct-id', 'reader-id')).toEqual(right(undefined));
+    expect(broadcastMessagesRead).toHaveBeenCalledTimes(1);
+    const failure = new AppError('READ_FAILED', 'read failed');
+    markReadExecute.mockResolvedValueOnce(left(failure));
+    expect(await controller.markAsRead('direct-id', 'reader-id')).toEqual(left(failure));
+    expect(broadcastMessagesRead).toHaveBeenCalledTimes(1);
   });
 });

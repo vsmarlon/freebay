@@ -5,6 +5,7 @@ import { ConversationDatabaseRepository } from '../data/repositories/conversatio
 import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { SendMessageInput, SendMessageInternalOutput, SendMessageOutput } from '../dtos/chat.dto';
 import { Prisma, DirectMessage, ChatMessage, MessageType, ChatThreadType } from '@prisma/client';
@@ -13,6 +14,7 @@ import {
   readCanonicalLocationMetadata,
   validateLocationMetadata,
 } from './location-message-metadata';
+import { isOwnedUpload } from '@/shared/utils/file.utils';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -23,6 +25,7 @@ export class SendMessageUseCase {
     private readonly blockRepository: BlockDatabaseRepository,
     private readonly ogScraper: OgScraperService,
     private readonly threadAccess: ChatThreadAccessService,
+    private readonly preferenceRepository: ConversationPreferenceDatabaseRepository,
     private readonly notifications: NotificationService,
   ) {}
 
@@ -39,17 +42,37 @@ export class SendMessageUseCase {
     });
     if (result.isLeft()) return result;
 
+    let suppressPush = true;
+    try {
+      const preference = await this.preferenceRepository.findByUserAndThread(
+        result.value.recipientId,
+        result.value.message.conversationId,
+        isOrder ? ChatThreadType.ORDER : ChatThreadType.DIRECT,
+      );
+      if (preference.isRight()) suppressPush = preference.value?.muted ?? false;
+      else this.logMutePreferenceFailure(preference.value);
+    } catch {
+      this.logMutePreferenceFailure();
+    }
+
     try {
       await this.notifications.notifyNewMessage(
         result.value.recipientId,
         result.value.senderName,
         result.value.message.conversationId,
         result.value.message.id,
+        { suppressPush },
       );
     } catch (error) {
       this.logger.warn(`Chat notification failed: ${String(error)}`);
     }
     return result;
+  }
+
+  private logMutePreferenceFailure(error?: AppError): void {
+    const code = error?.code;
+    const safeCode = code && /^[A-Z0-9_]{1,64}$/.test(code) ? code : 'PREFERENCE_LOOKUP_FAILED';
+    this.logger.warn(`Chat mute preference lookup failed (${safeCode}); suppressing push`);
   }
 
   // ponytail: single shared pipeline for direct/order sends; only persistence branches.
@@ -61,6 +84,9 @@ export class SendMessageUseCase {
     if (blockCheck) return left(blockCheck);
 
     const messageType = input.type ?? MessageType.TEXT;
+    if (input.attachmentUrl && !isOwnedUpload(input.attachmentUrl, input.senderId, 'chat')) {
+      return left(new BadRequestError('Anexo inválido ou não pertence ao usuário'));
+    }
 
     const locationMetadata = validateLocationMetadata(messageType, input.metadata);
     if (locationMetadata.isLeft()) return left(locationMetadata.value);

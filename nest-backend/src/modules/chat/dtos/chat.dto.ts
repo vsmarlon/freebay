@@ -11,6 +11,10 @@ import {
   IsInt,
   Max,
   Min,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
@@ -63,6 +67,12 @@ export class MarkMessagesReadDTO {
   @IsOptional()
   @IsUUID('4')
   readonly messageId?: string;
+}
+
+export class ViewOnceOpeningDTO {
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
+  @IsUUID('4')
+  readonly openingKey: string;
 }
 
 export class SendMessageDTO {
@@ -247,16 +257,39 @@ export interface AcceptConversationInput {
   userId: string;
 }
 
+@ValidatorConstraint({ name: 'hasPreferenceField', async: false })
+class HasPreferenceFieldConstraint implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments): boolean {
+    const preference: unknown = args.object;
+    return typeof preference === 'object' && preference !== null &&
+      ('theme' in preference && preference.theme !== undefined || 'muted' in preference && preference.muted !== undefined);
+  }
+
+  defaultMessage(): string {
+    return 'At least one of theme or muted must be provided';
+  }
+}
+
 export class UpdatePreferenceDTO {
-  @ApiProperty({ enum: ChatTheme, example: ChatTheme.DEFAULT })
+  @ApiProperty({ enum: ChatTheme, example: ChatTheme.DEFAULT, required: false })
+  @IsOptional()
   @IsEnum(ChatTheme)
-  readonly theme: ChatTheme;
+  readonly theme?: ChatTheme;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  readonly muted?: boolean;
+
+  @Validate(HasPreferenceFieldConstraint)
+  private readonly preferencePatchValid?: boolean;
 }
 
 export interface ConversationPreferenceSummary {
   isArchived: boolean;
   theme: string;
   backgroundUrl: string | null;
+  muted: boolean;
 }
 
 export interface ConversationOtherUserSummary {

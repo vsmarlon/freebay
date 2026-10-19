@@ -16,7 +16,8 @@ export class SetConversationThemeUseCase {
   async execute(
     userId: string,
     conversationId: string,
-    theme?: string,
+    theme?: ChatTheme,
+    muted?: boolean,
   ): Promise<Either<AppError, ConversationPreference>> {
     const resolved = await this.threadAccess.resolveThread(userId, conversationId);
     if (resolved.isLeft()) {
@@ -29,7 +30,8 @@ export class SetConversationThemeUseCase {
       userId,
       orderId,
       directConversationId,
-      theme: theme as ChatTheme,
+      theme,
+      muted,
     });
     if (result.isLeft()) return left(result.value);
 

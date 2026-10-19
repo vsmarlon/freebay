@@ -9,7 +9,7 @@ import {
   PAGINATION_QUERIES,
 } from '@/shared/decorators';
 import { PageQuery } from '@/shared/core/pagination';
-import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO, VerifyUrlDTO, ForwardMessagesDTO } from './dtos/chat.dto';
+import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO, VerifyUrlDTO, ForwardMessagesDTO, ViewOnceOpeningDTO } from './dtos/chat.dto';
 import { GetUnifiedConversationsUseCase } from './usecases/get-unified-conversations.usecase';
 import { GetConversationsUseCase } from './usecases/get-conversations.usecase';
 import { StartConversationUseCase } from './usecases/start-conversation.usecase';
@@ -31,6 +31,8 @@ import { ForwardMessagesUseCase } from './usecases/forward-messages.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { ChatGateway } from './chat.gateway';
 import { MessageType } from '@prisma/client';
+import { ViewOnceUseCase } from './usecases/view-once.usecase';
+import { right } from '@/shared/core/either';
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -55,6 +57,7 @@ export class ChatController {
     private readonly forwardMessagesUseCase: ForwardMessagesUseCase,
     private readonly markAsReadUseCase: MarkAsReadUseCase,
     private readonly chatGateway: ChatGateway,
+    private readonly viewOnceUseCase: ViewOnceUseCase,
   ) {}
 
   @GetAuth('conversations', {
@@ -179,12 +182,35 @@ export class ChatController {
     @CurrentUserId() userId: string,
     @Body() body: MarkMessagesReadDTO = {},
   ) {
-    return this.markAsReadUseCase.execute(id, userId, body.messageId);
+    const result = await this.markAsReadUseCase.execute(id, userId, body.messageId);
+    if (result.isLeft()) return result;
+    if (result.value > 0) this.chatGateway.broadcastMessagesRead(id, userId);
+    return right(undefined);
+  }
+
+  @PostAuth('conversations/:conversationId/messages/:messageId/view-once/open', { summary: 'Open view-once message media', bodyType: ViewOnceOpeningDTO })
+  async openViewOnce(
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Param('messageId', ParseUUIDPipe) messageId: string,
+    @CurrentUserId() userId: string,
+    @Body() body: ViewOnceOpeningDTO,
+  ) {
+    return this.viewOnceUseCase.open(conversationId, messageId, userId, body.openingKey);
+  }
+
+  @PostAuth('conversations/:conversationId/messages/:messageId/view-once/close', { summary: 'Close view-once message media', bodyType: ViewOnceOpeningDTO })
+  async closeViewOnce(
+    @Param('conversationId', ParseUUIDPipe) conversationId: string,
+    @Param('messageId', ParseUUIDPipe) messageId: string,
+    @CurrentUserId() userId: string,
+    @Body() body: ViewOnceOpeningDTO,
+  ) {
+    return this.viewOnceUseCase.close(conversationId, messageId, userId, body.openingKey);
   }
 
   @PatchAuth('conversations/:id/theme', { summary: 'Set conversation theme', params: [{ name: 'id', description: 'Conversation UUID' }] })
   async setTheme(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdatePreferenceDTO, @CurrentUserId() userId: string) {
-    return this.setThemeUseCase.execute(userId, id, body.theme);
+    return this.setThemeUseCase.execute(userId, id, body.theme, body.muted);
   }
 
   @PatchAuth('conversations/:id/background', { summary: 'Set conversation background', params: [{ name: 'id', description: 'Conversation UUID' }] })

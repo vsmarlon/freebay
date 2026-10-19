@@ -8,7 +8,7 @@ export class VerifyUrlSafetyUseCase {
   constructor(private readonly urlSafetyService: UrlSafetyService) {}
 
   async execute(rawUrl: string): Promise<Either<AppError, UrlSafetyVerification>> {
-    const result = this.urlSafetyService.verifyUrl(rawUrl);
+    const result = await this.urlSafetyService.verifyPublicDestination(rawUrl);
     return right(result);
   }
 }

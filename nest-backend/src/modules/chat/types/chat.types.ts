@@ -7,5 +7,6 @@ export interface UpsertPreferenceInput {
   isArchived?: boolean;
   isDeleted?: boolean;
   theme?: ChatTheme;
+  muted?: boolean;
   backgroundUrl?: string | null;
 }

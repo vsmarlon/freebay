@@ -86,8 +86,9 @@ export class GetMessagesUseCase {
             isArchived: preference.isArchived,
             theme: preference.theme,
             backgroundUrl: preference.backgroundUrl,
+            muted: preference.muted,
           }
-        : null,
+        : { isArchived: false, theme: 'DEFAULT', backgroundUrl: null, muted: false },
     });
   }
 

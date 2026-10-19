@@ -1,6 +1,7 @@
 import { Prisma, DirectMessage, ChatMessage, ChatThreadType, MessageType } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
+import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { CursorPage, PageQuery, paginateById } from '@/shared/core/pagination';
 import { DatabaseError } from '@/shared/core/errors';
 import { deleteUpload } from '@/shared/utils/file.utils';
@@ -105,7 +106,7 @@ export function findChatMessagesByOrder(prisma: PrismaService, orderId: string, 
 }
 
 export function markChatMessagesRead(prisma: PrismaService, orderId: string, userId: string, messageId?: string): Promise<{ count: number }> {
-  return prisma.chatMessage.updateMany({ where: { orderId, senderId: { not: userId }, readAt: null, ...(messageId ? { id: messageId } : { viewOnce: false }) }, data: { readAt: new Date(), deliveredAt: new Date() } });
+  return prisma.chatMessage.updateMany({ where: { orderId, senderId: { not: userId }, readAt: null, viewOnce: false, ...(messageId ? { id: messageId } : {}) }, data: { readAt: new Date(), deliveredAt: new Date() } });
 }
 
 export function markMessagesDelivered(prisma: PrismaService, conversationId: string, userId: string): Promise<{ count: number }> {
@@ -113,7 +114,69 @@ export function markMessagesDelivered(prisma: PrismaService, conversationId: str
 }
 
 export function markMessagesRead(prisma: PrismaService, conversationId: string, userId: string, messageId?: string): Promise<{ count: number }> {
-  return prisma.directMessage.updateMany({ where: { conversationId, senderId: { not: userId }, readAt: null, ...(messageId ? { id: messageId } : { viewOnce: false }) }, data: { readAt: new Date(), deliveredAt: new Date() } });
+  return prisma.directMessage.updateMany({ where: { conversationId, senderId: { not: userId }, readAt: null, viewOnce: false, ...(messageId ? { id: messageId } : {}) }, data: { readAt: new Date(), deliveredAt: new Date() } });
+}
+
+export async function claimViewOnce(
+  prisma: PrismaService,
+  messageId: string,
+  threadId: string,
+  userId: string,
+  type: ChatThreadType,
+  openingHash: string,
+): RepositoryResponse<{ readAt: Date; attachmentUrl: string } | null> {
+  return repositoryResponse(async () => {
+    const now = new Date();
+    const where = type === ChatThreadType.ORDER
+      ? { id: messageId, orderId: threadId, senderId: { not: userId }, viewOnce: true, deletedAt: null, attachmentUrl: { not: null } }
+      : { id: messageId, conversationId: threadId, senderId: { not: userId }, viewOnce: true, deletedAt: null, attachmentUrl: { not: null } };
+    const existing = type === ChatThreadType.ORDER
+      ? await prisma.chatMessage.findFirst({ where, select: { readAt: true, attachmentUrl: true, viewOnceOpeningHash: true, viewOnceClosedAt: true } })
+      : await prisma.directMessage.findFirst({ where, select: { readAt: true, attachmentUrl: true, viewOnceOpeningHash: true, viewOnceClosedAt: true } });
+    if (existing?.viewOnceOpeningHash === openingHash && existing.viewOnceClosedAt === null && existing.readAt && existing.attachmentUrl) {
+      return { readAt: existing.readAt, attachmentUrl: existing.attachmentUrl };
+    }
+    if (!existing || existing.readAt !== null || existing.viewOnceOpeningHash !== null || existing.viewOnceClosedAt !== null) return null;
+
+    const claimWhere = { ...where, readAt: null, viewOnceOpeningHash: null, viewOnceClosedAt: null };
+    const claimed = type === ChatThreadType.ORDER
+      ? await prisma.chatMessage.updateMany({ where: claimWhere, data: { readAt: now, deliveredAt: now, viewOnceOpeningHash: openingHash } })
+      : await prisma.directMessage.updateMany({ where: claimWhere, data: { readAt: now, deliveredAt: now, viewOnceOpeningHash: openingHash } });
+    if (claimed.count !== 1) {
+      const retry = type === ChatThreadType.ORDER
+        ? await prisma.chatMessage.findFirst({ where: { ...where, viewOnceOpeningHash: openingHash, viewOnceClosedAt: null }, select: { readAt: true, attachmentUrl: true } })
+        : await prisma.directMessage.findFirst({ where: { ...where, viewOnceOpeningHash: openingHash, viewOnceClosedAt: null }, select: { readAt: true, attachmentUrl: true } });
+      return retry?.readAt && retry.attachmentUrl ? { readAt: retry.readAt, attachmentUrl: retry.attachmentUrl } : null;
+    }
+
+    const result = type === ChatThreadType.ORDER
+      ? await prisma.chatMessage.findFirst({ where: { ...where, viewOnceOpeningHash: openingHash, viewOnceClosedAt: null }, select: { readAt: true, attachmentUrl: true } })
+      : await prisma.directMessage.findFirst({ where: { ...where, viewOnceOpeningHash: openingHash, viewOnceClosedAt: null }, select: { readAt: true, attachmentUrl: true } });
+    return result?.readAt && result.attachmentUrl ? { readAt: result.readAt, attachmentUrl: result.attachmentUrl } : null;
+  }, 'Erro ao abrir mídia de visualização única');
+}
+
+export async function closeViewOnce(
+  prisma: PrismaService,
+  messageId: string,
+  threadId: string,
+  userId: string,
+  type: ChatThreadType,
+  openingHash: string,
+): RepositoryResponse<boolean> {
+  return repositoryResponse(async () => {
+    const where = type === ChatThreadType.ORDER
+      ? { id: messageId, orderId: threadId, senderId: { not: userId }, viewOnce: true, deletedAt: null, readAt: { not: null }, viewOnceOpeningHash: openingHash }
+      : { id: messageId, conversationId: threadId, senderId: { not: userId }, viewOnce: true, deletedAt: null, readAt: { not: null }, viewOnceOpeningHash: openingHash };
+    const changed = type === ChatThreadType.ORDER
+      ? await prisma.chatMessage.updateMany({ where: { ...where, viewOnceClosedAt: null }, data: { viewOnceClosedAt: new Date() } })
+      : await prisma.directMessage.updateMany({ where: { ...where, viewOnceClosedAt: null }, data: { viewOnceClosedAt: new Date() } });
+    if (changed.count === 1) return true;
+    const alreadyClosed = type === ChatThreadType.ORDER
+      ? await prisma.chatMessage.findFirst({ where: { ...where, viewOnceClosedAt: { not: null } }, select: { id: true } })
+      : await prisma.directMessage.findFirst({ where: { ...where, viewOnceClosedAt: { not: null } }, select: { id: true } });
+    return alreadyClosed !== null;
+  }, 'Erro ao fechar mídia de visualização única');
 }
 
 export function findDirectMessageById(prisma: PrismaService, id: string): Promise<DirectMessage | null> {

@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SendMessageUseCase } from './send-message.usecase';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
@@ -5,9 +6,11 @@ import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block
 import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
-import { NotFoundError, BadRequestError } from '@/shared/core/errors';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
+import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
 import { directConversation, directMessage, orderMessage } from './test-fixtures';
+import { deleteUpload, saveUpload } from '@/shared/utils/file.utils';
 
 const mockRepo = {
   findDirectConversationById: jest.fn(),
@@ -32,6 +35,14 @@ const mockThreadAccess = {
   resolveThread: jest.fn(),
 };
 
+const mockPreferenceRepository = {
+  findByUserAndThread: jest.fn(),
+};
+
+const mockNotificationService = {
+  notifyNewMessage: jest.fn(),
+};
+
 describe('SendMessageUseCase', () => {
   let sut: SendMessageUseCase;
 
@@ -43,7 +54,8 @@ describe('SendMessageUseCase', () => {
         { provide: BlockDatabaseRepository, useValue: mockBlockRepository },
         { provide: OgScraperService, useValue: mockOgScraper },
         { provide: ChatThreadAccessService, useValue: mockThreadAccess },
-        { provide: NotificationService, useValue: { notifyNewMessage: jest.fn() } },
+        { provide: ConversationPreferenceDatabaseRepository, useValue: mockPreferenceRepository },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
@@ -57,6 +69,7 @@ describe('SendMessageUseCase', () => {
       right({ directConversationId: 'conv-1', otherUserId: 'user-2' }),
     );
     mockRepo.messageBelongsToThread.mockResolvedValue(right(true));
+    mockPreferenceRepository.findByUserAndThread.mockResolvedValue(right(null));
   });
 
   it('returns error if thread cannot be resolved', async () => {
@@ -106,9 +119,10 @@ describe('SendMessageUseCase', () => {
   });
 
   it('sends a VIDEO message with an attachment', async () => {
+    const attachmentUrl = saveUpload({ mimetype: 'video/mp4', buffer: Buffer.from('video') }, 'chat', 'user-1');
     mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
     mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
-      id: 'msg-video', content: null, type: 'VIDEO', attachmentUrl: '/media/chat/video.mp4',
+      id: 'msg-video', content: null, type: 'VIDEO', attachmentUrl,
     })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
 
@@ -116,14 +130,25 @@ describe('SendMessageUseCase', () => {
       senderId: 'user-1',
       conversationId: 'conv-1',
       type: 'VIDEO',
-      attachmentUrl: '/media/chat/video.mp4',
+      attachmentUrl,
     });
 
     expect(result.isRight()).toBe(true);
-    expect(mockRepo.createDirectMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'VIDEO', attachmentUrl: '/media/chat/video.mp4' }),
+      expect(mockRepo.createDirectMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'VIDEO', attachmentUrl }),
       true,
     );
+    deleteUpload(attachmentUrl);
+  });
+
+  it('rejects an unowned attachment before creating a message', async () => {
+    const result = await sut.execute({
+      senderId: 'user-1', conversationId: 'conv-1', content: 'text',
+      attachmentUrl: '/media/chat/00000000-0000-0000-0000-000000000001.png',
+    });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockRepo.createDirectMessage).not.toHaveBeenCalled();
   });
 
   it('allows participant to send in pending conversation', async () => {
@@ -185,9 +210,10 @@ describe('SendMessageUseCase', () => {
   });
 
   it('merges durationMs into metadata for AUDIO messages', async () => {
+    const attachmentUrl = saveUpload({ mimetype: 'audio/mp4', buffer: Buffer.from('audio') }, 'chat', 'user-1');
     mockRepo.findDirectConversationById.mockResolvedValue(right(directConversation()));
     mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
-      id: 'msg-audio', content: null, type: 'AUDIO', attachmentUrl: '/media/chat/audio.m4a',
+      id: 'msg-audio', content: null, type: 'AUDIO', attachmentUrl,
       metadata: { durationMs: 12500 },
     })));
     mockRepo.updateDirectConversation.mockResolvedValue(right({}));
@@ -196,7 +222,7 @@ describe('SendMessageUseCase', () => {
       senderId: 'user-1',
       conversationId: 'conv-1',
       type: 'AUDIO',
-      attachmentUrl: '/media/chat/audio.m4a',
+      attachmentUrl,
       durationMs: 12500,
     });
 
@@ -205,6 +231,7 @@ describe('SendMessageUseCase', () => {
       expect.objectContaining({ metadata: { durationMs: 12500 } }),
       true,
     );
+    deleteUpload(attachmentUrl);
   });
 
   it.each([
@@ -380,5 +407,74 @@ describe('SendMessageUseCase', () => {
 
     expect(result.isLeft()).toBe(true);
     expect(mockRepo.createDirectMessage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { kind: 'direct', muted: true, threadId: 'direct-thread-1', recipientId: 'recipient-1' },
+    { kind: 'order', muted: true, threadId: 'order-thread-1', recipientId: 'seller-1' },
+  ])('uses only the authorized recipient preference for $kind notification push suppression', async ({ kind, muted, threadId, recipientId }) => {
+    const messageId = `message-${kind}`;
+    mockThreadAccess.resolveThread.mockResolvedValue(kind === 'order'
+      ? right({ orderId: threadId, otherUserId: recipientId })
+      : right({ directConversationId: threadId, otherUserId: recipientId }));
+    mockPreferenceRepository.findByUserAndThread.mockResolvedValue(right({ muted }));
+    if (kind === 'order') {
+      mockRepo.createChatMessage.mockResolvedValue(right(orderMessage({ id: messageId, sender: { id: 'sender-1', displayName: 'Sender', avatarUrl: null } })));
+    } else {
+      mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({ id: messageId, conversationId: threadId, sender: { id: 'sender-1', displayName: 'Sender', avatarUrl: null } })));
+      mockRepo.updateDirectConversation.mockResolvedValue(right({}));
+    }
+
+    await sut.execute({ senderId: 'sender-1', conversationId: threadId, content: 'hello' });
+
+    expect(mockPreferenceRepository.findByUserAndThread).toHaveBeenCalledWith(
+      recipientId,
+      threadId,
+      kind === 'order' ? 'ORDER' : 'DIRECT',
+    );
+    expect(mockNotificationService.notifyNewMessage).toHaveBeenCalledWith(
+      recipientId,
+      'Sender',
+      threadId,
+      messageId,
+      { suppressPush: true },
+    );
+  });
+
+  it.each([
+    { label: 'explicitly unmuted', preference: { muted: false } },
+    { label: 'legacy preference missing', preference: null },
+  ])('preserves push delivery for $label recipient preferences', async ({ preference }) => {
+    mockPreferenceRepository.findByUserAndThread.mockResolvedValue(right(preference));
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
+      id: 'message-unmuted', sender: { id: 'user-1', displayName: 'John', avatarUrl: null },
+    })));
+    mockRepo.updateDirectConversation.mockResolvedValue(right({}));
+
+    await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Hello' });
+
+    expect(mockNotificationService.notifyNewMessage).toHaveBeenCalledWith(
+      'user-2', 'John', 'conv-1', 'message-unmuted', { suppressPush: false },
+    );
+  });
+
+  it('creates the notification with push suppressed when preference lookup fails', async () => {
+    const logger = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    mockPreferenceRepository.findByUserAndThread.mockResolvedValue(
+      left(new AppError('DB_ERROR', 'sensitive failure details for recipient user-2')),
+    );
+    mockRepo.createDirectMessage.mockResolvedValue(right(directMessage({
+      id: 'message-safe-fallback', sender: { id: 'user-1', displayName: 'John', avatarUrl: null },
+    })));
+    mockRepo.updateDirectConversation.mockResolvedValue(right({}));
+
+    await sut.execute({ senderId: 'user-1', conversationId: 'conv-1', content: 'Hello' });
+
+    expect(mockNotificationService.notifyNewMessage).toHaveBeenCalledWith(
+      'user-2', 'John', 'conv-1', 'message-safe-fallback', { suppressPush: true },
+    );
+    expect(logger).toHaveBeenCalledWith('Chat mute preference lookup failed (DB_ERROR); suppressing push');
+    expect(JSON.stringify(logger.mock.calls)).not.toContain('sensitive failure details');
+    logger.mockRestore();
   });
 });
