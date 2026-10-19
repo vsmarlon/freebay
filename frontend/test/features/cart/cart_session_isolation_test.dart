@@ -13,6 +13,8 @@ class _CartRepository implements CartRepository {
   final pending = <Completer<Either<Failure, CartEntity>>>[];
   final pendingMutations = <Completer<Either<Failure, void>>>[];
   final pendingCheckouts = <Completer<Either<Failure, CartCheckoutEntity>>>[];
+  final pendingRecoveries =
+      <Completer<Either<Failure, CartCheckoutRecoveryEntity?>>>[];
 
   @override
   Future<Either<Failure, CartEntity>> getCart() {
@@ -36,6 +38,15 @@ class _CartRepository implements CartRepository {
   }) {
     final request = Completer<Either<Failure, CartCheckoutEntity>>();
     pendingCheckouts.add(request);
+    return request.future;
+  }
+
+  @override
+  Future<Either<Failure, CartCheckoutRecoveryEntity?>> recoverCheckout({
+    bool hosted = false,
+  }) {
+    final request = Completer<Either<Failure, CartCheckoutRecoveryEntity?>>();
+    pendingRecoveries.add(request);
     return request.future;
   }
 
@@ -120,6 +131,34 @@ void main() {
       expect(await mutation, isFalse);
       expect(repository.pending, isEmpty);
       expect(container.read(cartProvider).cart.totalItems, 0);
+    },
+  );
+
+  test(
+    'an unresolved recovered attempt blocks starting a conflicting checkout',
+    () async {
+      final repository = _CartRepository();
+      final container = ProviderContainer(
+        overrides: [cartRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(container.dispose);
+
+      final recovery = container.read(cartProvider.notifier).recoverCheckout();
+      repository.pendingRecoveries.single.complete(
+        const Right(
+          CartCheckoutRecoveryEntity(
+            status: 'CHECKING',
+            paymentGroupId: 'group-1',
+            orderIds: ['order-1'],
+            totalAmount: 12500,
+          ),
+        ),
+      );
+      await recovery;
+
+      expect(container.read(cartProvider).checkoutRecoveryRequired, isTrue);
+      expect(await container.read(cartProvider.notifier).checkout(), isFalse);
+      expect(repository.pendingCheckouts, isEmpty);
     },
   );
 

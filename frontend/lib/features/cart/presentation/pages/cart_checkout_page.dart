@@ -26,7 +26,10 @@ class CartCheckoutPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final strings = l10n(context);
     useEffect(() {
-      Future.microtask(() => ref.read(cartProvider.notifier).loadCart());
+      Future.microtask(() {
+        ref.read(cartProvider.notifier).loadCart();
+        ref.read(cartProvider.notifier).recoverCheckout();
+      });
       return null;
     }, const []);
     final state = ref.watch(cartProvider);
@@ -53,6 +56,23 @@ class CartCheckoutPage extends HookConsumerWidget {
             Expanded(
               child: state.lastCheckout != null
                   ? _buildResult(context, state.lastCheckout!)
+                  : state.isRecoveringCheckout
+                  ? const SkeletonPage(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 16),
+                          ShimmerBlock(height: 80),
+                        ],
+                      ),
+                    )
+                  : state.checkoutPaid
+                  ? _buildPaidResult(context)
+                  : state.checkoutRecoveryRequired
+                  ? EmptyState.error(
+                      message: strings.paymentProviderConfirmationNote,
+                      onRetry: () =>
+                          ref.read(cartProvider.notifier).recoverCheckout(),
+                    )
                   : state.isLoading
                   ? const SkeletonPage(
                       child: Column(
@@ -169,7 +189,10 @@ class CartCheckoutPage extends HookConsumerWidget {
                                 AppButton(
                                   label: strings.cartGenerateCheckout,
                                   isLoading: state.isCheckingOut,
-                                  onPressed: hasUnavailableItems
+                                  onPressed:
+                                      hasUnavailableItems ||
+                                          state.checkoutRecoveryRequired ||
+                                          state.isRecoveringCheckout
                                       ? null
                                       : () => _submitCheckout(context, ref),
                                 ),
@@ -245,6 +268,30 @@ class CartCheckoutPage extends HookConsumerWidget {
                 ),
               ),
               Spacing.vSm,
+              AppButton(
+                label: strings.cartViewOrders,
+                onPressed: () => context.go(AppRoutes.orders),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaidResult(BuildContext context) {
+    final strings = l10n(context);
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: context.surfaceColor,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(strings.orderStatusConfirmed.toUpperCase()),
+              Spacing.vMd,
               AppButton(
                 label: strings.cartViewOrders,
                 onPressed: () => context.go(AppRoutes.orders),

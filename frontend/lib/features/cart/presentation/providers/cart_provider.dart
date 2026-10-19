@@ -15,6 +15,9 @@ final cartRepositoryProvider = Provider<CartRepository>(
 class CartState {
   final bool isLoading;
   final bool isCheckingOut;
+  final bool isRecoveringCheckout;
+  final bool checkoutRecoveryRequired;
+  final bool checkoutPaid;
   final CartEntity cart;
   final CartCheckoutEntity? lastCheckout;
   final String? error;
@@ -22,6 +25,9 @@ class CartState {
   const CartState({
     this.isLoading = false,
     this.isCheckingOut = false,
+    this.isRecoveringCheckout = false,
+    this.checkoutRecoveryRequired = false,
+    this.checkoutPaid = false,
     this.cart = const CartEntity(),
     this.lastCheckout,
     this.error,
@@ -30,6 +36,9 @@ class CartState {
   CartState copyWith({
     bool? isLoading,
     bool? isCheckingOut,
+    bool? isRecoveringCheckout,
+    bool? checkoutRecoveryRequired,
+    bool? checkoutPaid,
     CartEntity? cart,
     CartCheckoutEntity? lastCheckout,
     String? error,
@@ -37,6 +46,10 @@ class CartState {
     return CartState(
       isLoading: isLoading ?? this.isLoading,
       isCheckingOut: isCheckingOut ?? this.isCheckingOut,
+      isRecoveringCheckout: isRecoveringCheckout ?? this.isRecoveringCheckout,
+      checkoutRecoveryRequired:
+          checkoutRecoveryRequired ?? this.checkoutRecoveryRequired,
+      checkoutPaid: checkoutPaid ?? this.checkoutPaid,
       cart: cart ?? this.cart,
       lastCheckout: lastCheckout ?? this.lastCheckout,
       error: error,
@@ -46,28 +59,87 @@ class CartState {
 
 class CartNotifier extends Notifier<CartState> {
   int _sessionGeneration = 0;
+  int _recoveryGeneration = 0;
+  int _cartLoadGeneration = 0;
 
   @override
   CartState build() => const CartState();
 
   void resetForSessionChange() {
     _sessionGeneration++;
+    _recoveryGeneration++;
+    _cartLoadGeneration++;
     state = const CartState();
+  }
+
+  Future<void> recoverCheckout() async {
+    final generation = _sessionGeneration;
+    final request = ++_recoveryGeneration;
+    state = state.copyWith(
+      isRecoveringCheckout: true,
+      checkoutRecoveryRequired: true,
+    );
+    final result = await ref
+        .read(cartRepositoryProvider)
+        .recoverCheckout(hosted: kIsWeb);
+    if (!ref.mounted ||
+        generation != _sessionGeneration ||
+        request != _recoveryGeneration) {
+      return;
+    }
+    result.fold((_) => state = state.copyWith(isRecoveringCheckout: false), (
+      attempt,
+    ) {
+      if (attempt == null) {
+        state = CartState(cart: state.cart);
+        return;
+      }
+      if (attempt.status == 'PAID') {
+        state = state.copyWith(
+          isRecoveringCheckout: false,
+          checkoutRecoveryRequired: false,
+          checkoutPaid: state.cart.items.isEmpty,
+        );
+        return;
+      }
+      final secret = attempt.paymentIntentClientSecret;
+      final url = attempt.checkoutUrl;
+      if (attempt.status == 'CHECKING' && (url != null || secret != null)) {
+        state = state.copyWith(
+          isRecoveringCheckout: false,
+          checkoutRecoveryRequired: false,
+          lastCheckout: CartCheckoutEntity(
+            paymentGroupId: attempt.paymentGroupId,
+            totalOrders: attempt.orderIds.length,
+            totalAmount: attempt.totalAmount,
+            checkoutUrl: url,
+            paymentIntentClientSecret: secret,
+          ),
+        );
+      } else {
+        state = state.copyWith(isRecoveringCheckout: false);
+      }
+    });
   }
 
   Future<void> loadCart() async {
     final generation = _sessionGeneration;
-    state = CartState(
-      isLoading: true,
-      cart: state.cart,
-      lastCheckout: state.lastCheckout,
-    );
+    final request = ++_cartLoadGeneration;
+    state = state.copyWith(isLoading: true);
     final result = await ref.read(cartRepositoryProvider).getCart();
-    if (!ref.mounted || generation != _sessionGeneration) return;
+    if (!ref.mounted ||
+        generation != _sessionGeneration ||
+        request != _cartLoadGeneration) {
+      return;
+    }
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
-      (cart) => state = CartState(cart: cart, lastCheckout: state.lastCheckout),
+      (cart) => state = state.copyWith(
+        isLoading: false,
+        cart: cart,
+        checkoutPaid: cart.items.isEmpty ? state.checkoutPaid : false,
+      ),
     );
   }
 
@@ -143,6 +215,9 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   Future<bool> checkout() async {
+    if (state.checkoutRecoveryRequired || state.isRecoveringCheckout) {
+      return false;
+    }
     final generation = _sessionGeneration;
     state = state.copyWith(isCheckingOut: true);
     final result = await ref
@@ -151,14 +226,23 @@ class CartNotifier extends Notifier<CartState> {
     if (!ref.mounted || generation != _sessionGeneration) return false;
     final success = result.fold(
       (failure) {
-        state = state.copyWith(isCheckingOut: false, error: failure.message);
+        state = state.copyWith(
+          isCheckingOut: false,
+          checkoutRecoveryRequired: true,
+          error: failure.message,
+        );
         return false;
       },
       (checkout) {
-        state = state.copyWith(isCheckingOut: false, lastCheckout: checkout);
+        state = state.copyWith(
+          isCheckingOut: false,
+          lastCheckout: checkout,
+          checkoutPaid: false,
+        );
         return true;
       },
     );
+    if (!success) await recoverCheckout();
     if (success) {
       ref.invalidate(purchasesListProvider);
       ref.invalidate(salesListProvider);

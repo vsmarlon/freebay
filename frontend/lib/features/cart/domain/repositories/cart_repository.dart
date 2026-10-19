@@ -1,5 +1,5 @@
-import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/features/cart/data/entities/cart_entity.dart';
+import 'package:freebay/features/cart/data/entities/cart_checkout_entity.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
 
@@ -10,6 +10,9 @@ abstract interface class CartRepository {
   Future<Either<Failure, void>> removeFromCart(String productId);
   Future<Either<Failure, void>> clearCart();
   Future<Either<Failure, CartCheckoutEntity>> checkoutCart({
+    bool hosted = false,
+  });
+  Future<Either<Failure, CartCheckoutRecoveryEntity?>> recoverCheckout({
     bool hosted = false,
   });
 }

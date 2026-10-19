@@ -91,11 +91,13 @@ void main() {
         ),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(
       find.text(
-        'Apple Pay ou Google Pay indisponível neste dispositivo ou não configurado.',
+        AppLocalizations.of(
+          tester.element(find.byType(CartCheckoutPage)),
+        ).paymentWalletUnavailable,
       ),
       findsOneWidget,
     );

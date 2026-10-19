@@ -60,4 +60,22 @@ class CartRepositoryImpl implements CartRepository {
     decoder: (response) =>
         Right(CartCheckoutEntity.fromJson(response.data['data'])),
   );
+
+  @override
+  Future<Either<Failure, CartCheckoutRecoveryEntity?>> recoverCheckout({
+    bool hosted = false,
+  }) => requestEither(
+    () => client.get(
+      '/cart/checkout/recovery',
+      queryParameters: {'mode': hosted ? 'session' : 'intent'},
+    ),
+    decoder: (response) {
+      final data = response.data['data'];
+      return Right(
+        data is Map<String, dynamic>
+            ? CartCheckoutRecoveryEntity.fromJson(data)
+            : null,
+      );
+    },
+  );
 }
