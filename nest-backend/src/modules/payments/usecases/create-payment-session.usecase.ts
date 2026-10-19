@@ -6,8 +6,10 @@ import {
   NotFoundError,
   BadRequestError,
   InvalidOrderStateError,
+  PaymentProviderError,
 } from '@/shared/core/errors';
 import { PaymentSessionParams } from '../types/payment-provider.types';
+import { CHECKOUT_EXPIRY_MILLISECONDS } from '../payment.constants';
 import { StripeProvider } from '../providers/stripe-provider';
 import { CreatePaymentSessionInput, CreatePaymentSessionOutput } from '../dtos/payment.dto';
 import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
@@ -83,14 +85,36 @@ export class CreatePaymentSessionUseCase {
       });
     }
 
+    if (existingTx) {
+      return left(new PaymentProviderError('A previous payment attempt requires manual reconciliation'));
+    }
+
+    const idempotencyKey = derivedKey;
+    const expiresAt = new Date(Date.now() + CHECKOUT_EXPIRY_MILLISECONDS);
+    const reserved = await this.transactionRepository.reservePaymentSessionAttempt({
+      orderId: input.orderId,
+      amount: order.amount,
+      platformFee: order.platformFee,
+      sellerAmount: order.sellerAmount,
+      paymentMethod: PaymentMethod.CREDIT_CARD,
+      idempotencyKey,
+      expiresAt,
+    });
+    if (reserved.isLeft()) return left(reserved.value);
+    if (!reserved.value) {
+      return left(new PaymentProviderError('A payment attempt already exists and requires reconciliation'));
+    }
+
     const params: PaymentSessionParams = {
       orderId: input.orderId,
+      buyerId: order.buyerId,
       amount: order.amount,
       currency: 'brl',
       customerEmail: customerEmail ?? undefined,
       customerName,
       customerTaxId,
-      idempotencyKey: derivedKey,
+      idempotencyKey,
+      expiresAt,
       transferGroup: `freebay:order:${input.orderId}`,
       successUrl: `${process.env.APP_URL}/payments/success?orderId=${input.orderId}`,
       cancelUrl: `${process.env.APP_URL}/payments/cancel?orderId=${input.orderId}`,
@@ -103,24 +127,38 @@ export class CreatePaymentSessionUseCase {
     }
 
     const session = sessionResult.value;
+    const canonicalResult = await this.paymentProvider.retrievePaymentSession(session.stripeSessionId);
+    if (canonicalResult.isLeft()) return left(canonicalResult.value);
+    const canonical = canonicalResult.value;
+    if (
+      canonical.stripeSessionId !== session.stripeSessionId ||
+      canonical.mode !== 'payment' ||
+      (canonical.status !== 'open' && canonical.status !== 'complete') ||
+      canonical.amountTotal !== order.amount ||
+      canonical.currency?.toLowerCase() !== 'brl' ||
+      canonical.orderId !== order.id ||
+      canonical.paymentGroupId !== null ||
+      canonical.buyerId !== order.buyerId ||
+      canonical.idempotencyKey !== idempotencyKey ||
+      !canonical.expiresAt
+    ) {
+      return left(new PaymentProviderError('Checkout Session does not match the durable order attempt'));
+    }
 
-    const upsertResult = await this.transactionRepository.upsertTransaction({
+    const attached = await this.transactionRepository.attachPaymentSession({
       orderId: input.orderId,
-      externalId: session.stripeSessionId,
-      amount: order.amount,
-      platformFee: order.platformFee,
-      sellerAmount: order.sellerAmount,
-      paymentMethod: PaymentMethod.CREDIT_CARD,
-      idempotencyKey: derivedKey,
-      checkoutUrl: session.checkoutUrl,
-      checkoutExpiresAt: session.expiresAt,
+      idempotencyKey,
+      externalId: canonical.stripeSessionId,
+      checkoutUrl: canonical.checkoutUrl ?? '',
+      expiresAt: canonical.expiresAt,
     });
-    if (upsertResult.isLeft()) return left(upsertResult.value);
+    if (attached.isLeft()) return left(attached.value);
+    if (!attached.value) return left(new PaymentProviderError('Checkout Session could not be attached to its durable attempt'));
 
     return right({
-      stripeSessionId: session.stripeSessionId,
-      checkoutUrl: session.checkoutUrl,
-      expiresAt: session.expiresAt,
+      stripeSessionId: canonical.stripeSessionId,
+      checkoutUrl: canonical.checkoutUrl ?? '',
+      expiresAt: canonical.expiresAt,
       orderId: input.orderId,
     });
   }

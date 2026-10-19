@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
+import { CpfProtectionService } from '@/shared/utils/cpf-protection.service';
 import {
   CartItemPayload,
   ProductBrief,
@@ -19,7 +20,10 @@ import {
 
 @Injectable()
 export class CartDatabaseRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly cpfProtection?: CpfProtectionService,
+  ) {
   }
 
   async findProductById(productId: string): RepositoryResponse<ProductBrief | null> {
@@ -96,7 +100,8 @@ export class CartDatabaseRepository {
         where: { id: userId },
         select: { cpf: true },
       });
-      return user?.cpf ?? null;
+      if (!user?.cpf || !this.cpfProtection) return null;
+      return this.cpfProtection.decrypt(user.cpf);
     }, 'Erro ao buscar usuário');
   }
 

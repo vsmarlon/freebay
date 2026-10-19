@@ -7,6 +7,7 @@ import { UserDatabaseRepository } from '@/modules/users';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
+import { PaymentSessionParams, PaymentSessionSnapshot } from '@/modules/payments/types/payment-provider.types';
 
 const mockCartRepository = {
   findUserCpf: jest.fn(),
@@ -19,12 +20,15 @@ const mockCartRepository = {
 const mockPaymentGroupRepository = {
   create: jest.fn(),
   findByIdempotencyKey: jest.fn(),
+  findLatestOpenForBuyer: jest.fn(),
+  findPendingForBuyer: jest.fn(),
   attachPayment: jest.fn(),
   markTerminal: jest.fn(),
 };
 
 const mockPaymentProvider = {
   createPaymentSession: jest.fn(),
+  retrievePaymentSession: jest.fn(),
   createPaymentIntent: jest.fn(),
   cancelPendingPayment: jest.fn(),
 };
@@ -77,25 +81,35 @@ describe('CheckoutCartUseCase', () => {
     mockCartRepository.reserveAndCreateOrder.mockResolvedValue({ id: 'order-1' });
     mockCartRepository.clear.mockResolvedValue(right(undefined));
     mockPaymentGroupRepository.findByIdempotencyKey.mockResolvedValue(right(null));
+    mockPaymentGroupRepository.findLatestOpenForBuyer.mockResolvedValue(right(null));
+    mockPaymentGroupRepository.findPendingForBuyer.mockResolvedValue(right(null));
     mockPaymentGroupRepository.create.mockResolvedValue({ id: 'group-1' });
     mockPaymentGroupRepository.attachPayment.mockResolvedValue(right(undefined));
     mockPaymentGroupRepository.markTerminal.mockResolvedValue(1);
     mockUserRepository.findPaymentInfo.mockResolvedValue(
       right({ displayName: 'Buyer', email: 'buyer@example.com', cpf: '12345678901' }),
     );
-    mockPaymentProvider.createPaymentSession.mockResolvedValue(
-      right({
+    mockPaymentProvider.createPaymentSession.mockImplementation(async (params: PaymentSessionParams) => {
+      mockPaymentProvider.retrievePaymentSession.mockResolvedValue(right<never, PaymentSessionSnapshot>({
         stripeSessionId: 'cs_1',
         checkoutUrl: 'https://checkout.stripe.com/cs_1',
-        expiresAt: new Date('2026-01-01T01:00:00.000Z'),
-      }),
-    );
+        status: 'open', mode: 'payment', paymentStatus: 'unpaid', amountTotal: params.amount,
+        currency: params.currency, orderId: null, paymentGroupId: params.paymentGroupId ?? null,
+        buyerId: params.buyerId ?? null, idempotencyKey: params.idempotencyKey ?? null,
+        expiresAt: params.expiresAt ?? null,
+      }));
+      return right({
+        stripeSessionId: 'cs_1',
+        checkoutUrl: 'https://checkout.stripe.com/cs_1',
+        expiresAt: params.expiresAt ?? new Date('2026-01-01T01:00:00.000Z'),
+      });
+    });
     mockPaymentProvider.createPaymentIntent.mockResolvedValue(
       right({ paymentIntentId: 'pi_1', clientSecret: 'pi_1_secret' }),
     );
     mockPaymentProvider.cancelPendingPayment.mockResolvedValue(right(undefined));
     mockPrisma.$transaction.mockImplementation((callback: (tx: unknown) => unknown) =>
-      Promise.resolve(callback({})),
+      Promise.resolve(callback({ $queryRaw: jest.fn().mockResolvedValue([{ id: 'buyer-1' }]) })),
     );
   });
 
@@ -204,13 +218,16 @@ describe('CheckoutCartUseCase', () => {
   it('deve limpar o carrinho somente depois de vincular o pagamento', async () => {
     await sut.execute({ userId: 'buyer-1' });
 
-    expect(mockCartRepository.clear).toHaveBeenCalledWith('buyer-1', {});
+    expect(mockCartRepository.clear).toHaveBeenCalledWith(
+      'buyer-1',
+      expect.objectContaining({ $queryRaw: expect.any(Function) }),
+    );
     expect(mockPaymentGroupRepository.attachPayment.mock.invocationCallOrder[0]).toBeLessThan(
       mockCartRepository.clear.mock.invocationCallOrder[0],
     );
   });
 
-  it('deve compensar todas as reservas quando a criação do pagamento na Stripe falha', async () => {
+  it('deve manter as reservas quando a resposta da Stripe é ambígua', async () => {
     mockCartRepository.getUserCart.mockResolvedValue(
       right([
         buildCartItem({ productId: 'p1', product: { id: 'p1', sellerId: 's1' } }),
@@ -227,11 +244,36 @@ describe('CheckoutCartUseCase', () => {
     const result = await sut.execute({ userId: 'buyer-1' });
 
     expect(result.isLeft()).toBe(true);
-    expect(mockCartRepository.restoreOrderReservation).toHaveBeenCalledTimes(2);
-    expect(mockCartRepository.restoreOrderReservation).toHaveBeenCalledWith('order-1', 'p1', {});
-    expect(mockCartRepository.restoreOrderReservation).toHaveBeenCalledWith('order-2', 'p2', {});
-    expect(mockPaymentGroupRepository.markTerminal).toHaveBeenCalledWith('group-1', 'FAILED', {});
+    expect(mockCartRepository.restoreOrderReservation).not.toHaveBeenCalled();
+    expect(mockPaymentGroupRepository.markTerminal).not.toHaveBeenCalled();
     expect(mockCartRepository.clear).not.toHaveBeenCalled();
+  });
+
+  it('does not reserve another order while the account has a pending attempt', async () => {
+    mockPaymentGroupRepository.findLatestOpenForBuyer.mockResolvedValue(right({
+      mode: 'session',
+      group: { status: 'PENDING' },
+    }));
+
+    const result = await sut.execute({ userId: 'buyer-1', mode: 'intent' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    expect(mockPaymentProvider.createPaymentIntent).not.toHaveBeenCalled();
+  });
+
+  it('não tenta de novo um grupo pendente sem identidade Stripe persistida', async () => {
+    mockPaymentGroupRepository.findByIdempotencyKey.mockResolvedValue(right({
+      id: 'group-ambiguous', buyerId: 'buyer-1', amount: 10000, currency: 'brl', status: 'PENDING',
+      stripePaymentIntentId: null, stripeSessionId: null, clientSecret: null, checkoutUrl: null,
+      expiresAt: new Date(Date.now() + 60_000), orders: [],
+    }));
+
+    const result = await sut.execute({ userId: 'buyer-1', mode: 'session' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
+    expect(mockPaymentGroupRepository.create).not.toHaveBeenCalled();
   });
 
   it('deve cancelar o pagamento externo antes de compensar uma falha de finalização', async () => {
@@ -298,6 +340,23 @@ describe('CheckoutCartUseCase', () => {
     expect((result.value as { paymentGroupId: string }).paymentGroupId).toBe('group-existing');
     expect(mockCartRepository.reserveAndCreateOrder).not.toHaveBeenCalled();
     expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
+  });
+
+  it('uses a new identity when the same cart is checked out after a prior group was paid', async () => {
+    mockPaymentGroupRepository.findByIdempotencyKey.mockResolvedValue(right({
+      id: 'group-paid', buyerId: 'buyer-1', amount: 10000, currency: 'brl', status: 'PAID',
+      stripePaymentIntentId: 'pi_paid', stripeSessionId: null, clientSecret: null, checkoutUrl: null,
+      expiresAt: new Date('2026-01-01T00:00:00.000Z'), orders: [],
+    }));
+
+    const result = await sut.execute({ userId: 'buyer-1', mode: 'session' });
+
+    expect(result.isRight()).toBe(true);
+    expect(mockPaymentGroupRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^cart:buyer-1:session:[a-f0-9]{32}:[0-9a-f-]{36}$/) }),
+      expect.anything(),
+    );
+    expect(mockCartRepository.reserveAndCreateOrder).toHaveBeenCalledTimes(1);
   });
 
   it('deve criar um novo grupo quando o grupo com a mesma chave já expirou', async () => {

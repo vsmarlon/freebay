@@ -6,6 +6,7 @@ import { UpdateCartItemUseCase } from './update-cart-item.usecase';
 import { RemoveFromCartUseCase } from './remove-from-cart.usecase';
 import { ClearCartUseCase } from './clear-cart.usecase';
 import { CheckoutCartUseCase } from './checkout-cart.usecase';
+import { GetCheckoutRecoveryUseCase } from './get-checkout-recovery.usecase';
 import { PaymentsModule } from '@/modules/payments/payments.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
     RemoveFromCartUseCase,
     ClearCartUseCase,
     CheckoutCartUseCase,
+    GetCheckoutRecoveryUseCase,
   ],
   exports: [
     GetCartUseCase,
@@ -26,6 +28,7 @@ import { PaymentsModule } from '@/modules/payments/payments.module';
     RemoveFromCartUseCase,
     ClearCartUseCase,
     CheckoutCartUseCase,
+    GetCheckoutRecoveryUseCase,
   ],
 })
 export class CartUseCasesModule {}

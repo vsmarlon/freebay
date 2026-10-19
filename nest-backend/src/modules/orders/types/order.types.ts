@@ -46,6 +46,10 @@ export const SALES_ORDER_STATUSES = [
 
 export type SalesOrderStatus = (typeof SALES_ORDER_STATUSES)[number];
 
+export type CancellationClaimOwner =
+  | { refundOperationId: string }
+  | { paymentIdempotencyKey: string };
+
 export interface SalesOrderCursor {
   scope: "seller-sales";
   sellerId: string;
@@ -84,6 +88,11 @@ export interface RefundOrderTxData extends Omit<CancelOrderTxData, 'reason'> {
   status: OrderStatus;
   escrowStatus: Extract<EscrowStatus, 'HELD' | 'RELEASED'>;
   transferId: string | null;
+  refundOperationId: string;
+  refundProviderId: string;
+  refundAmount: number;
+  disputeResolution?: string;
+  resolvedById?: string;
 }
 
 export interface ProductForOrder {

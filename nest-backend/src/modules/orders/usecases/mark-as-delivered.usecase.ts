@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
+import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError, ConflictError } from '@/shared/core/errors';
 import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { MarkAsDeliveredInput } from '../dtos/order.dto';
 
@@ -22,11 +22,9 @@ export class MarkAsDeliveredUseCase {
       return left(new InvalidOrderStateError('SHIPPED to deliver', orderResult.value.status));
     }
 
-    const result = await this.orderRepository.update(input.orderId, {
-      status: OrderStatus.DELIVERED,
-      deliveryConfirmedAt: new Date(),
-    });
+    const result = await this.orderRepository.markDelivered(input.orderId);
     if (result.isLeft()) return left(result.value);
+    if (!result.value) return left(new ConflictError('Order changed before delivery could be recorded'));
 
     return right(undefined);
   }

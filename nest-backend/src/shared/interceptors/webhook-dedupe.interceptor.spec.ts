@@ -8,7 +8,7 @@ import { left, right } from "@/shared/core/either";
 
 describe("WebhookDedupeInterceptor", () => {
   let interceptor: WebhookDedupeInterceptor;
-  let mockRedis: { setIfAbsent: jest.Mock; del: jest.Mock };
+  let mockRedis: { get: jest.Mock; add: jest.Mock; setIfAbsent: jest.Mock; del: jest.Mock };
 
   const createContext = (
     stripeEvent: { id: string } | undefined,
@@ -19,6 +19,8 @@ describe("WebhookDedupeInterceptor", () => {
 
   beforeEach(async () => {
     mockRedis = {
+      get: jest.fn().mockResolvedValue(null),
+      add: jest.fn().mockResolvedValue(undefined),
       setIfAbsent: jest.fn().mockResolvedValue(true),
       del: jest.fn().mockResolvedValue(undefined),
     };
@@ -36,7 +38,7 @@ describe("WebhookDedupeInterceptor", () => {
   });
 
   it("skips the handler and returns processed false when the event key already exists", async () => {
-    mockRedis.setIfAbsent.mockResolvedValue(false);
+    mockRedis.get.mockResolvedValue('done');
     const handler: CallHandler = { handle: jest.fn() };
 
     const result = await lastValueFrom(
@@ -45,37 +47,39 @@ describe("WebhookDedupeInterceptor", () => {
 
     expect(result).toEqual({ processed: false });
     expect(handler.handle).not.toHaveBeenCalled();
-    expect(mockRedis.del).not.toHaveBeenCalled();
+    expect(mockRedis.add).not.toHaveBeenCalled();
   });
 
-  it("atomically claims the key before running the handler", async () => {
+  it("stores the done key only after the handler succeeds", async () => {
+    const events: string[] = [];
     const handler: CallHandler = {
-      handle: jest.fn(() => of({ processed: true })),
+      handle: jest.fn(() => {
+        events.push('handler');
+        return of(right({ processed: true }));
+      }),
     };
+    mockRedis.add.mockImplementation(async () => { events.push('done'); });
 
     const result = await lastValueFrom(
       await interceptor.intercept(createContext({ id: "evt_123" }), handler),
     );
 
-    expect(result).toEqual({ processed: true });
+    expect(result).toEqual(right({ processed: true }));
     expect(handler.handle).toHaveBeenCalled();
-    expect(mockRedis.setIfAbsent).toHaveBeenCalledWith(
+    expect(mockRedis.get).toHaveBeenCalledWith('webhook:evt_123');
+    expect(mockRedis.add).toHaveBeenCalledWith(
       "webhook:evt_123",
       "1",
       WEBHOOK_DEDUPE_TTL_SECONDS,
     );
+    expect(events).toEqual(['handler', 'done']);
   });
 
-  it("releases the key before re-emitting the handler error", async () => {
+  it("does not store a done key when the handler throws", async () => {
     const originalError = new Error("boom");
-    const events: string[] = [];
     const handler: CallHandler = {
       handle: jest.fn(() => throwError(() => originalError)),
     };
-    mockRedis.del.mockImplementation(async () => {
-      await Promise.resolve();
-      events.push("deleted");
-    });
 
     const observable = await interceptor.intercept(
       createContext({ id: "evt_123" }),
@@ -87,7 +91,6 @@ describe("WebhookDedupeInterceptor", () => {
         error: (error: unknown) => {
           try {
             expect(error).toBe(originalError);
-            events.push("error");
             resolve();
           } catch (assertionError: unknown) {
             reject(assertionError);
@@ -96,11 +99,10 @@ describe("WebhookDedupeInterceptor", () => {
       });
     });
 
-    expect(mockRedis.del).toHaveBeenCalledWith("webhook:evt_123");
-    expect(events).toEqual(["deleted", "error"]);
+    expect(mockRedis.add).not.toHaveBeenCalled();
   });
 
-  it("releases the key when the handler emits Left", async () => {
+  it("does not store a done key when the handler emits Left", async () => {
     const handler: CallHandler = {
       handle: jest.fn(() => of(left(new Error("failed")))),
     };
@@ -109,7 +111,7 @@ describe("WebhookDedupeInterceptor", () => {
       await interceptor.intercept(createContext({ id: "evt_123" }), handler),
     );
 
-    expect(mockRedis.del).toHaveBeenCalledWith("webhook:evt_123");
+    expect(mockRedis.add).not.toHaveBeenCalled();
   });
 
   it("retains the key when the handler emits Right", async () => {
@@ -121,11 +123,11 @@ describe("WebhookDedupeInterceptor", () => {
       await interceptor.intercept(createContext({ id: "evt_123" }), handler),
     );
 
-    expect(mockRedis.del).not.toHaveBeenCalled();
+    expect(mockRedis.add).toHaveBeenCalledWith('webhook:evt_123', '1', WEBHOOK_DEDUPE_TTL_SECONDS);
   });
 
   it("deduplicates a v2 event using its event id", async () => {
-    mockRedis.setIfAbsent.mockResolvedValue(false);
+    mockRedis.get.mockResolvedValue('done');
     const handler: CallHandler = { handle: jest.fn() };
     const v2Event = {
       id: "evt_v2_account",
@@ -138,11 +140,7 @@ describe("WebhookDedupeInterceptor", () => {
     );
 
     expect(result).toEqual({ processed: false });
-    expect(mockRedis.setIfAbsent).toHaveBeenCalledWith(
-      "webhook:evt_v2_account",
-      "1",
-      WEBHOOK_DEDUPE_TTL_SECONDS,
-    );
+    expect(mockRedis.get).toHaveBeenCalledWith("webhook:evt_v2_account");
     expect(handler.handle).not.toHaveBeenCalled();
   });
 });

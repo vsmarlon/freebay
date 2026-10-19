@@ -39,6 +39,27 @@ export interface CheckoutCartInput {
   mode?: CheckoutMode;
 }
 
+export class CheckoutRecoveryQueryDTO {
+  @ApiProperty({ enum: ['session', 'intent'] })
+  @IsIn(['session', 'intent'])
+  readonly mode!: CheckoutMode;
+}
+
+export interface CheckoutRecoveryInput {
+  userId: string;
+  mode: CheckoutMode;
+}
+
+export interface CheckoutRecoveryOutput {
+  status: 'CHECKING' | 'PAID';
+  paymentGroupId: string;
+  orderIds: string[];
+  totalAmount: number;
+  checkoutUrl: string | null;
+  paymentIntentClientSecret: string | null;
+  expiresAt: Date | null;
+}
+
 export interface CheckoutCartItemOutput {
   orderId: string;
   productId: string;

@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { PaymentGroupStatus } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, BadRequestError, DatabaseError } from '@/shared/core/errors';
+import { AppError, BadRequestError, DatabaseError, PaymentProviderError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { UserDatabaseRepository } from '@/modules/users';
 import { PaymentGroupDatabaseRepository } from '@/modules/payments/data/repositories/payment-group-database.repository';
@@ -38,18 +40,31 @@ export class CheckoutCartUseCase {
     const mode: CheckoutMode = input.mode ?? 'session';
     const planResult = await this.planner.plan(input, mode);
     if (planResult.isLeft()) return left(planResult.value);
-    const { cpf, planned, totalAmount, idempotencyKey } = planResult.value;
+    const { cpf, planned, totalAmount } = planResult.value;
+    let { idempotencyKey } = planResult.value;
 
     const existingResult = await this.planner.findReusable(idempotencyKey);
     if (existingResult.isLeft()) return left(existingResult.value);
     const existing = existingResult.value;
     if (existing && this.planner.isReusable(existing)) return right(this.planner.toOutput(existing));
+    if (existing?.status === PaymentGroupStatus.PAID) idempotencyKey = `${idempotencyKey}:${randomUUID()}`;
+    if (existing?.status === PaymentGroupStatus.PENDING && !existing.stripeSessionId && !existing.stripePaymentIntentId) {
+      return left(new PaymentProviderError('Payment group attempt requires manual reconciliation'));
+    }
+
+    const pendingAttempt = await this.paymentGroupRepository.findLatestOpenForBuyer(input.userId);
+    if (pendingAttempt.isLeft()) return left(pendingAttempt.value);
+    if (pendingAttempt.value?.group.status === PaymentGroupStatus.PENDING) {
+      return left(new PaymentProviderError('Existing checkout attempt requires recovery before another checkout'));
+    }
 
     let groupId: string;
+    let expiresAt: Date;
     let orderIds: Array<{ orderId: string; productId: string }>;
     try {
       const created = await this.reservation.reserve(input.userId, idempotencyKey, totalAmount, planned);
       groupId = created.groupId;
+      expiresAt = created.expiresAt;
       orderIds = created.reserved;
     } catch (error) {
       if (error instanceof AppError) return left(error);
@@ -62,9 +77,9 @@ export class CheckoutCartUseCase {
       return left(new DatabaseError('Erro ao criar pedidos do carrinho'));
     }
 
-    const paymentResult = await this.payment.create(mode, groupId, input.userId, totalAmount, planned, cpf);
+    const paymentResult = await this.payment.create(mode, groupId, input.userId, totalAmount, planned, cpf, expiresAt);
     if (paymentResult.isLeft()) {
-      await this.compensation.compensate(groupId, orderIds);
+      this.logger.error(`Payment group ${groupId} remains reserved pending provider reconciliation`);
       return left(paymentResult.value);
     }
 

@@ -12,7 +12,7 @@ describe('ConfirmDeliveryUseCase', () => {
   beforeEach(async () => {
     mockOrderRepository = {
       findById: jest.fn(),
-      confirmDelivery: jest.fn().mockResolvedValue(right(undefined)),
+      confirmDelivery: jest.fn().mockResolvedValue(right(true)),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -52,6 +52,19 @@ describe('ConfirmDeliveryUseCase', () => {
       orderId: 'order-123',
       sellerId: 'seller-123',
       sellerAmount: 9000,
+    });
+  });
+
+  it('allows the buyer to confirm a shipped order through the guarded release seam', async () => {
+    mockOrderRepository.findById.mockResolvedValue(right({
+      id: 'order-123', buyerId: 'user-123', sellerId: 'seller-123', status: 'SHIPPED', sellerAmount: 9000,
+    }));
+
+    const result = await sut.execute({ orderId: 'order-123', buyerId: 'user-123' });
+
+    expect(result.isRight()).toBe(true);
+    expect(mockOrderRepository.confirmDelivery).toHaveBeenCalledWith({
+      orderId: 'order-123', sellerId: 'seller-123', sellerAmount: 9000,
     });
   });
 

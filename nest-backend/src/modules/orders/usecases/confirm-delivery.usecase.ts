@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
+import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError, ConflictError } from '@/shared/core/errors';
 import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { ConfirmDeliveryInput } from '../dtos/order.dto';
@@ -23,8 +23,8 @@ export class ConfirmDeliveryUseCase {
       return left(new UnauthorizedError('Only buyer can confirm delivery'));
     }
 
-    if (order.status !== OrderStatus.CONFIRMED && order.status !== OrderStatus.DELIVERED) {
-      return left(new InvalidOrderStateError('CONFIRMED or DELIVERED', order.status));
+    if (order.status !== OrderStatus.CONFIRMED && order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.SHIPPED) {
+      return left(new InvalidOrderStateError('CONFIRMED, SHIPPED or DELIVERED', order.status));
     }
 
     const result = await this.orderRepository.confirmDelivery({
@@ -33,6 +33,7 @@ export class ConfirmDeliveryUseCase {
       sellerAmount: order.sellerAmount,
     });
     if (result.isLeft()) return left(result.value);
+    if (!result.value) return left(new ConflictError('Order changed before delivery could be confirmed'));
 
     await this.payoutService.payoutForOrder(input.orderId);
 

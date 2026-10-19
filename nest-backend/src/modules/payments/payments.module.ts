@@ -63,6 +63,7 @@ import { RecoverDisputeTransferUseCase } from './usecases/recover-dispute-transf
     RecoverDisputeTransferUseCase,
     ExpireCheckoutGroupUseCase,
     UserDatabaseRepository,
+    ProcessRefundUseCase,
   ],
 })
 export class PaymentsModule {}

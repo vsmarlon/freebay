@@ -82,3 +82,46 @@ describe('OrderDatabaseRepository.findSellerSales', () => {
     }
   });
 });
+
+describe('OrderDatabaseRepository.claimCancellation', () => {
+  it('recognizes retries by durable operation ownership, not by the prior reason string', async () => {
+    const updateMany = jest.fn()
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 0 });
+    const findFirst = jest.fn()
+      .mockResolvedValueOnce({ id: 'order-1' })
+      .mockResolvedValueOnce(null);
+    const module = await Test.createTestingModule({
+      providers: [
+        OrderDatabaseRepository,
+        { provide: PrismaService, useValue: { order: { findFirst, updateMany } } },
+      ],
+    }).compile();
+    const repository = module.get(OrderDatabaseRepository);
+
+    const initial = await repository.claimCancellation(
+      'order-1', 'CONFIRMED', 'Original reason', { refundOperationId: 'refund-op-1' },
+    );
+    const retry = await repository.claimCancellation(
+      'order-1', 'CONFIRMED', 'Changed reason', { refundOperationId: 'refund-op-1' },
+    );
+    const unrelated = await repository.claimCancellation(
+      'order-1', 'CONFIRMED', 'Unrelated request', { refundOperationId: 'refund-op-2' },
+    );
+
+    expect(initial.isRight() && initial.value).toBe(true);
+    expect(retry.isRight() && retry.value).toBe(true);
+    expect(unrelated.isRight() && unrelated.value).toBe(false);
+    expect(findFirst).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      where: expect.objectContaining({
+        transaction: { is: { refundOperationId: 'refund-op-1' } },
+      }),
+    }));
+    expect(findFirst).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      where: expect.objectContaining({
+        transaction: { is: { refundOperationId: 'refund-op-2' } },
+      }),
+    }));
+  });
+});

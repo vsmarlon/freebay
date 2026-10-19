@@ -14,7 +14,7 @@ import { CreatePaymentSessionUseCase } from './usecases/create-payment-session.u
 import { CreatePaymentIntentUseCase } from './usecases/create-payment-intent.usecase';
 import { ProcessWebhookUseCase } from './usecases/process-webhook.usecase';
 import { ProcessGroupWebhookUseCase } from './usecases/process-group-webhook.usecase';
-import { isFullRefund, ProcessRefundUseCase } from './usecases/process-refund.usecase';
+import { ProcessRefundUseCase } from './usecases/process-refund.usecase';
 import { StartConnectOnboardingUseCase } from './usecases/start-connect-onboarding.usecase';
 import { GetConnectStatusUseCase } from './usecases/get-connect-status.usecase';
 import { GetConnectDashboardLinkUseCase } from './usecases/get-connect-dashboard-link.usecase';
@@ -53,6 +53,10 @@ const WHITELIST_EVENTS = [
   'v2.core.account[requirements].updated',
   'v2.core.account[future_requirements].updated',
   'charge.refunded',
+  'refund.created',
+  'refund.updated',
+  'refund.failed',
+  'charge.refund.updated',
   'charge.dispute.created',
   'charge.dispute.closed',
 ];
@@ -202,11 +206,13 @@ export class PaymentsController {
     switch (event.type) {
       case 'charge.refunded': {
         const charge = event.data.object;
-        if (!isFullRefund(charge)) {
-          this.logger.warn(`Ignoring partial Stripe refund event ${event.id} for charge ${charge.id}`);
-          return right(undefined);
-        }
-        return this.processRefundUseCase.execute(charge.id, true);
+        return this.processRefundUseCase.execute(charge.id);
+      }
+      case 'refund.updated':
+      case 'refund.created':
+      case 'refund.failed':
+      case 'charge.refund.updated': {
+        return this.processRefundUseCase.executeRefund(event.data.object.id);
       }
       case 'charge.dispute.created':
       case 'charge.dispute.closed': {

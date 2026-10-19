@@ -71,12 +71,25 @@ export class OrderDatabaseRepository {
     return this.reservations.createOrderWithReservation(data);
   }
 
-  async confirmDelivery(data: ConfirmDeliveryData): RepositoryResponse<void> {
+  async confirmDelivery(data: ConfirmDeliveryData): RepositoryResponse<boolean> {
     return this.mutations.confirmDelivery(data);
   }
 
-  async cancelOrder(data: CancelOrderTxData): RepositoryResponse<void> {
+  markDelivered(orderId: string): RepositoryResponse<boolean> {
+    return this.mutations.markDelivered(orderId);
+  }
+
+  async cancelOrder(data: CancelOrderTxData): RepositoryResponse<boolean> {
     return this.mutations.cancelOrder(data);
+  }
+
+  claimCancellation(
+    orderId: string,
+    status: OrderStatus,
+    reason: string,
+    owner?: Parameters<OrderMutationRepository['claimCancellation']>[3],
+  ): RepositoryResponse<boolean> {
+    return this.mutations.claimCancellation(orderId, status, reason, owner);
   }
 
   markRefundPending(orderId: string, reason: string): RepositoryResponse<void> {
@@ -87,7 +100,7 @@ export class OrderDatabaseRepository {
     return this.mutations.markShipped(orderId);
   }
 
-  async refundOrder(data: RefundOrderTxData): RepositoryResponse<void> {
+  async refundOrder(data: RefundOrderTxData): RepositoryResponse<boolean> {
     return this.mutations.refundOrder(data);
   }
 

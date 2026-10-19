@@ -91,6 +91,53 @@ export class PaymentGroupDatabaseRepository
     }, 'Erro ao buscar pagamento do carrinho');
   }
 
+  findLatestOpenForBuyer(buyerId: string): RepositoryResponse<{
+    group: PaymentGroupSnapshot;
+    mode: 'session' | 'intent' | null;
+  } | null> {
+    return repositoryResponse(async () => {
+      const orderBy = [{ createdAt: 'desc' }, { id: 'desc' }] satisfies Prisma.PaymentGroupOrderByWithRelationInput[];
+      const pending = await this.prisma.paymentGroup.findFirst({
+        where: { buyerId, status: PaymentGroupStatus.PENDING },
+        orderBy,
+        include: GROUP_INCLUDE,
+      });
+      const group = pending ?? await this.prisma.paymentGroup.findFirst({
+        where: { buyerId, status: PaymentGroupStatus.PAID },
+        orderBy,
+        include: GROUP_INCLUDE,
+      });
+      if (!group) return null;
+      const mode = group.idempotencyKey.split(':')[2];
+      return {
+        group: this.toSnapshot(group),
+        mode: mode === 'session' || mode === 'intent' ? mode : null,
+      };
+    }, 'Erro ao recuperar checkout');
+  }
+
+  findPendingForBuyer(
+    buyerId: string,
+    tx: Prisma.TransactionClient,
+  ): RepositoryResponse<{
+    group: PaymentGroupSnapshot;
+    mode: 'session' | 'intent' | null;
+  } | null> {
+    return repositoryResponse(async () => {
+      const group = await tx.paymentGroup.findFirst({
+        where: { buyerId, status: PaymentGroupStatus.PENDING },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        include: GROUP_INCLUDE,
+      });
+      if (!group) return null;
+      const mode = group.idempotencyKey.split(':')[2];
+      return {
+        group: this.toSnapshot(group),
+        mode: mode === 'session' || mode === 'intent' ? mode : null,
+      };
+    }, 'Erro ao recuperar checkout');
+  }
+
   async findByIdempotencyKey(
     idempotencyKey: string,
   ): RepositoryResponse<PaymentGroupSnapshot | null> {

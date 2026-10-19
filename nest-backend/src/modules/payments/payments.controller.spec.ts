@@ -24,7 +24,7 @@ type V2AccountEventType =
   | 'v2.core.account[requirements].updated'
   | 'v2.core.account[future_requirements].updated';
 
-type Handler = { execute: jest.Mock };
+type Handler = { execute: jest.Mock; executeRefund?: jest.Mock };
 
 function event(type: V2AccountEventType, relatedType = 'v2.core.account'): Stripe.V2.Core.EventNotification {
   return {
@@ -39,11 +39,12 @@ function event(type: V2AccountEventType, relatedType = 'v2.core.account'): Strip
   };
 }
 
-const handler = (): Handler => ({ execute: jest.fn() });
+const handler = (): Handler => ({ execute: jest.fn(), executeRefund: jest.fn() });
 
 const compileController = async (overrides: {
   sync?: Handler;
   recovery?: Handler;
+  refund?: Handler;
 } = {}): Promise<PaymentsController> => {
   const module = await Test.createTestingModule({
     controllers: [PaymentsController],
@@ -52,7 +53,7 @@ const compileController = async (overrides: {
       { provide: CreatePaymentIntentUseCase, useValue: handler() },
       { provide: ProcessWebhookUseCase, useValue: handler() },
       { provide: ProcessGroupWebhookUseCase, useValue: handler() },
-      { provide: ProcessRefundUseCase, useValue: handler() },
+      { provide: ProcessRefundUseCase, useValue: overrides.refund ?? handler() },
       { provide: StartConnectOnboardingUseCase, useValue: handler() },
       { provide: GetConnectStatusUseCase, useValue: handler() },
       { provide: GetConnectDashboardLinkUseCase, useValue: handler() },
@@ -135,4 +136,22 @@ describe('PaymentsController dispute webhooks', () => {
     await controller.handleWebhook({ stripeEvent: disputeEvent });
     expect(recovery.execute).not.toHaveBeenCalled();
   });
+});
+
+describe('PaymentsController refund webhooks', () => {
+  it.each(['refund.created', 'refund.updated', 'refund.failed', 'charge.refund.updated'] as const)(
+    'reconciles %s against the canonical refund object', async (type) => {
+      const refund = { execute: jest.fn(), executeRefund: jest.fn().mockResolvedValue(right(undefined)) };
+      const controller = await compileController({ refund });
+      const stripeEvent = {
+        id: `evt_${type}`,
+        type,
+        data: { object: { id: 're_1' } },
+      } as Stripe.Event;
+
+      await controller.handleWebhook({ stripeEvent });
+
+      expect(refund.executeRefund).toHaveBeenCalledWith('re_1');
+    },
+  );
 });

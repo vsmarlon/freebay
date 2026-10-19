@@ -1,6 +1,6 @@
 import { Logger } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
-import { AppError } from "@/shared/core/errors";
+import { AppError, PaymentProviderError } from "@/shared/core/errors";
 import { UserDatabaseRepository } from "@/modules/users";
 import { PaymentLineItem } from "@/modules/payments/types/payment-provider.types";
 import { StripeProvider } from "@/modules/payments/providers/stripe-provider";
@@ -29,25 +29,28 @@ export class CheckoutCartPayment {
     amount: number,
     planned: PlannedCartItem[],
     customerTaxId: string | null,
+    expiresAt: Date,
   ): Promise<Either<AppError, CheckoutPayment>> {
     return mode === "session"
-      ? this.createSession(groupId, userId, amount, planned, customerTaxId)
+      ? this.createSession(groupId, userId, amount, planned, customerTaxId, expiresAt)
       : this.createIntent(groupId, userId, amount);
   }
 
-  private async createSession(groupId: string, userId: string, amount: number, planned: PlannedCartItem[], customerTaxId: string | null): Promise<Either<AppError, CheckoutPayment>> {
+  private async createSession(groupId: string, userId: string, amount: number, planned: PlannedCartItem[], customerTaxId: string | null, expiresAt: Date): Promise<Either<AppError, CheckoutPayment>> {
     const userResult = await this.userRepository.findPaymentInfo(userId);
     if (userResult.isLeft()) return left(userResult.value);
     const user = userResult.value ?? { displayName: "", email: "", cpf: null };
     const lineItems: PaymentLineItem[] = planned.map((item) => ({ name: item.productTitle, amount: item.amount / item.quantity, quantity: item.quantity }));
     const sessionResult = await this.paymentProvider.createPaymentSession({
       paymentGroupId: groupId,
+      buyerId: userId,
       amount,
       currency: "brl",
       customerEmail: user.email ?? undefined,
       customerName: user.displayName,
       customerTaxId: customerTaxId ?? undefined,
       idempotencyKey: `group-session:${groupId}`,
+      expiresAt,
       lineItems,
       successUrl: `${process.env.APP_URL}/payments/success?paymentGroupId=${groupId}`,
       cancelUrl: `${process.env.APP_URL}/payments/cancel?paymentGroupId=${groupId}`,
@@ -56,10 +59,27 @@ export class CheckoutCartPayment {
       this.logger.error(`Cart payment session failed: ${sessionResult.value.message}`);
       return left(sessionResult.value);
     }
+    const canonicalResult = await this.paymentProvider.retrievePaymentSession(sessionResult.value.stripeSessionId);
+    if (canonicalResult.isLeft()) return left(canonicalResult.value);
+    const canonical = canonicalResult.value;
+    if (
+      canonical.stripeSessionId !== sessionResult.value.stripeSessionId ||
+      canonical.status !== 'open' && canonical.status !== 'complete' ||
+      canonical.mode !== 'payment' ||
+      canonical.amountTotal !== amount ||
+      canonical.currency?.toLowerCase() !== 'brl' ||
+      canonical.orderId !== null ||
+      canonical.paymentGroupId !== groupId ||
+      canonical.buyerId !== userId ||
+      canonical.idempotencyKey !== `group-session:${groupId}` ||
+      !canonical.expiresAt
+    ) {
+      return left(new PaymentProviderError('Checkout Session does not match the durable payment group'));
+    }
     return right({ attach: {
-      stripeSessionId: sessionResult.value.stripeSessionId,
-      checkoutUrl: sessionResult.value.checkoutUrl,
-      expiresAt: sessionResult.value.expiresAt,
+      stripeSessionId: canonical.stripeSessionId,
+      checkoutUrl: canonical.checkoutUrl ?? '',
+      expiresAt: canonical.expiresAt,
     } });
   }
 

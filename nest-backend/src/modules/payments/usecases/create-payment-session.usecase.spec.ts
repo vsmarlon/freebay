@@ -13,9 +13,11 @@ describe('CreatePaymentSessionUseCase', () => {
   let mockUserRepository: { findPaymentInfo: jest.Mock };
   let mockTransactionRepository: {
     findByOrderId: jest.Mock;
+    reservePaymentSessionAttempt: jest.Mock;
+    attachPaymentSession: jest.Mock;
     upsertTransaction: jest.Mock;
   };
-  let mockPaymentProvider: { createPaymentSession: jest.Mock };
+  let mockPaymentProvider: { createPaymentSession: jest.Mock; retrievePaymentSession: jest.Mock };
 
   const mockOrder = {
     id: 'order-123',
@@ -36,6 +38,8 @@ describe('CreatePaymentSessionUseCase', () => {
     };
     mockTransactionRepository = {
       findByOrderId: jest.fn().mockResolvedValue(right(null)),
+      reservePaymentSessionAttempt: jest.fn().mockResolvedValue(right(true)),
+      attachPaymentSession: jest.fn().mockResolvedValue(right(true)),
       upsertTransaction: jest.fn().mockResolvedValue(right(undefined)),
     };
     mockPaymentProvider = {
@@ -46,6 +50,12 @@ describe('CreatePaymentSessionUseCase', () => {
           expiresAt: new Date(),
         }),
       ),
+      retrievePaymentSession: jest.fn().mockResolvedValue(right({
+        stripeSessionId: 'cs_test_abc123', checkoutUrl: 'https://checkout.stripe.com/pay/cs_test_abc123',
+        status: 'open', mode: 'payment', paymentStatus: 'unpaid',
+        amountTotal: 10000, currency: 'brl', orderId: 'order-123', paymentGroupId: null,
+        buyerId: 'user-buyer', idempotencyKey: 'session:order-123', expiresAt: new Date(),
+      })),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -120,11 +130,63 @@ describe('CreatePaymentSessionUseCase', () => {
     expect(mockPaymentProvider.createPaymentSession).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId: 'order-123',
+        buyerId: 'user-buyer',
         amount: 10000,
         currency: 'brl',
         customerEmail: 'john@example.com',
       }),
     );
+    expect(mockPaymentProvider.retrievePaymentSession).toHaveBeenCalledWith('cs_test_abc123');
+    expect(mockTransactionRepository.reservePaymentSessionAttempt.mock.invocationCallOrder[0])
+      .toBeLessThan(mockPaymentProvider.createPaymentSession.mock.invocationCallOrder[0]);
+    expect(mockPaymentProvider.retrievePaymentSession.mock.invocationCallOrder[0])
+      .toBeLessThan(mockTransactionRepository.attachPaymentSession.mock.invocationCallOrder[0]);
+  });
+
+  it('does not create a second Session for an unresolved durable attempt', async () => {
+    mockOrderRepository.findById = jest.fn().mockResolvedValue(right(mockOrder));
+    mockTransactionRepository.findByOrderId.mockResolvedValue(right({
+      id: 'tx-attempt', status: 'PENDING', externalId: null,
+      idempotencyKey: 'session:order-123', checkoutUrl: null,
+    }));
+
+    const result = await sut.execute({ orderId: 'order-123', userId: 'user-buyer' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
+    expect(mockTransactionRepository.reservePaymentSessionAttempt).not.toHaveBeenCalled();
+  });
+
+  it('does not retry the provider after local attachment fails for a created Session', async () => {
+    mockOrderRepository.findById.mockResolvedValue(right(mockOrder));
+    mockTransactionRepository.attachPaymentSession.mockResolvedValueOnce(left(new PaymentProviderError('database unavailable')));
+    const input = { orderId: 'order-123', userId: 'user-buyer' };
+
+    const first = await sut.execute(input);
+    mockTransactionRepository.findByOrderId.mockResolvedValue(right({
+      id: 'tx-attempt', status: 'PENDING', externalId: null,
+      idempotencyKey: 'session:order-123', checkoutUrl: null,
+    }));
+    const retry = await sut.execute(input);
+
+    expect(first.isLeft()).toBe(true);
+    expect(retry.isLeft()).toBe(true);
+    expect(mockPaymentProvider.createPaymentSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not attach a Session whose canonical metadata belongs to another buyer', async () => {
+    mockOrderRepository.findById.mockResolvedValue(right(mockOrder));
+    mockPaymentProvider.retrievePaymentSession.mockResolvedValue(right({
+      stripeSessionId: 'cs_test_abc123', checkoutUrl: 'https://checkout.stripe.com/pay/cs_test_abc123',
+      status: 'open', mode: 'payment', paymentStatus: 'unpaid', amountTotal: 10000, currency: 'brl',
+      orderId: 'order-123', paymentGroupId: null, buyerId: 'other-buyer',
+      idempotencyKey: 'session:order-123', expiresAt: new Date(),
+    }));
+
+    const result = await sut.execute({ orderId: 'order-123', userId: 'user-buyer' });
+
+    expect(result.isLeft()).toBe(true);
+    expect(mockTransactionRepository.attachPaymentSession).not.toHaveBeenCalled();
   });
 
   it.each([undefined, '', '   '])(

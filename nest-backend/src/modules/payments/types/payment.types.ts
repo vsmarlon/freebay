@@ -14,6 +14,8 @@ export type TransactionWithOrder = Prisma.TransactionGetPayload<{
 export interface ExpiredPendingTransaction {
   readonly id: string;
   readonly orderId: string;
+  readonly externalId: string | null;
+  readonly idempotencyKey: string;
   readonly productId: string;
   readonly quantity: number;
 }
@@ -28,4 +30,14 @@ export interface UpsertTransactionData {
   readonly idempotencyKey: string;
   readonly checkoutUrl?: string;
   readonly checkoutExpiresAt?: Date;
+}
+
+export interface PaymentSessionAttemptData {
+  readonly orderId: string;
+  readonly amount: number;
+  readonly platformFee: number;
+  readonly sellerAmount: number;
+  readonly paymentMethod: PaymentMethod;
+  readonly idempotencyKey: string;
+  readonly expiresAt: Date;
 }

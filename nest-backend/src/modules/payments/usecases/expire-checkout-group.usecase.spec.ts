@@ -7,6 +7,7 @@ import { OrderDatabaseRepository } from '../../orders/data/repositories/order-da
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
+import { StripeProvider } from '../providers/stripe-provider';
 
 const mockPaymentGroupRepository = {
   findExpiredGroupIds: jest.fn(),
@@ -29,6 +30,10 @@ const mockOrderRepository = {
 
 const mockPrisma = {
   $transaction: jest.fn(),
+};
+
+const mockStripe = {
+  cancelPendingPayment: jest.fn(),
 };
 
 const buildGroup = () => ({
@@ -72,6 +77,7 @@ describe('ExpireCheckoutGroupUseCase', () => {
         { provide: ProductDatabaseRepository, useValue: mockProductRepository },
         { provide: OrderDatabaseRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: StripeProvider, useValue: mockStripe },
       ],
     }).compile();
 
@@ -84,6 +90,7 @@ describe('ExpireCheckoutGroupUseCase', () => {
     mockTransactionRepository.markAsFailed.mockResolvedValue(right({ count: 1 }));
     mockProductRepository.restoreInventoryOnExpiry.mockResolvedValue(right(undefined));
     mockOrderRepository.cancel.mockResolvedValue(right(undefined));
+    mockStripe.cancelPendingPayment.mockResolvedValue(right(undefined));
     mockPrisma.$transaction.mockImplementation((callback: (tx: unknown) => unknown) =>
       Promise.resolve(callback({})),
     );
@@ -132,7 +139,7 @@ describe('ExpireCheckoutGroupUseCase', () => {
   it('deve reclamar transações avulsas expiradas sem grupo', async () => {
     mockTransactionRepository.findExpiredPending.mockResolvedValue(
       right([
-        { id: 'tx-solo', orderId: 'order-solo', productId: 'product-solo', quantity: 3 },
+        { id: 'tx-solo', orderId: 'order-solo', externalId: 'pi_solo', idempotencyKey: 'key-solo', productId: 'product-solo', quantity: 3 },
       ]),
     );
 
@@ -147,9 +154,33 @@ describe('ExpireCheckoutGroupUseCase', () => {
     expect(mockPaymentGroupRepository.markTerminal).not.toHaveBeenCalled();
   });
 
+  it('não deve liberar estoque se o provedor não confirmou o cancelamento', async () => {
+    mockPaymentGroupRepository.findExpiredGroupIds.mockResolvedValue(right(['group-1']));
+    mockStripe.cancelPendingPayment.mockResolvedValue(left(new DatabaseError('timeout')));
+
+    await sut.execute();
+
+    expect(mockPaymentGroupRepository.markTerminal).not.toHaveBeenCalled();
+    expect(mockOrderRepository.cancel).not.toHaveBeenCalled();
+    expect(mockProductRepository.restoreInventoryOnExpiry).not.toHaveBeenCalled();
+  });
+
+  it('mantém estoque retido quando o grupo não tem identidade no provedor', async () => {
+    mockPaymentGroupRepository.findExpiredGroupIds.mockResolvedValue(right(['group-1']));
+    mockPaymentGroupRepository.findById.mockResolvedValue(right({
+      ...buildGroup(), stripePaymentIntentId: null,
+    }));
+
+    await sut.execute();
+
+    expect(mockStripe.cancelPendingPayment).not.toHaveBeenCalled();
+    expect(mockPaymentGroupRepository.markTerminal).not.toHaveBeenCalled();
+    expect(mockProductRepository.restoreInventoryOnExpiry).not.toHaveBeenCalled();
+  });
+
   it('não deve reclamar uma transação avulsa que outro processo já falhou', async () => {
     mockTransactionRepository.findExpiredPending.mockResolvedValue(
-      right([{ id: 'tx-solo', orderId: 'order-solo', productId: 'product-solo', quantity: 3 }]),
+      right([{ id: 'tx-solo', orderId: 'order-solo', externalId: 'pi_solo', idempotencyKey: 'key-solo', productId: 'product-solo', quantity: 3 }]),
     );
     mockTransactionRepository.markAsFailed.mockResolvedValue(right({ count: 0 }));
 
@@ -157,6 +188,18 @@ describe('ExpireCheckoutGroupUseCase', () => {
 
     expect(mockProductRepository.restoreInventoryOnExpiry).not.toHaveBeenCalled();
     expect(mockOrderRepository.cancel).not.toHaveBeenCalled();
+  });
+
+  it('mantém estoque retido quando uma transação expirada não tem identidade no provedor', async () => {
+    mockTransactionRepository.findExpiredPending.mockResolvedValue(right([
+      { id: 'tx-orphan', orderId: 'order-orphan', externalId: null, idempotencyKey: 'key-orphan', productId: 'product-orphan', quantity: 1 },
+    ]));
+
+    await sut.execute();
+
+    expect(mockStripe.cancelPendingPayment).not.toHaveBeenCalled();
+    expect(mockOrderRepository.cancel).not.toHaveBeenCalled();
+    expect(mockProductRepository.restoreInventoryOnExpiry).not.toHaveBeenCalled();
   });
 
   it('deve propagar a falha quando a busca de grupos expirados falha', async () => {

@@ -6,6 +6,7 @@ import { ProductDatabaseRepository } from '../../products/data/repositories/prod
 import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
+import { StripeProvider } from '../providers/stripe-provider';
 
 const GROUP_RACE_SKIP = 'GROUP_RACE_SKIP';
 
@@ -19,6 +20,7 @@ export class ExpireCheckoutGroupUseCase {
     private readonly productRepo: ProductDatabaseRepository,
     private readonly orderRepo: OrderDatabaseRepository,
     private readonly prisma: PrismaService,
+    private readonly stripe: StripeProvider,
   ) {}
 
   async execute(): Promise<Either<AppError, void>> {
@@ -37,6 +39,19 @@ export class ExpireCheckoutGroupUseCase {
       }
 
       const group = groupResult.value;
+      if (!group.stripeSessionId && !group.stripePaymentIntentId) {
+        this.logger.warn(`Payment group ${group.id} has no provider identity; inventory remains held`);
+        continue;
+      }
+      const providerCancellation = await this.stripe.cancelPendingPayment({
+        stripeSessionId: group.stripeSessionId ?? undefined,
+        stripePaymentIntentId: group.stripePaymentIntentId ?? undefined,
+        idempotencyKey: `checkout-expiry-${group.id}`,
+      });
+      if (providerCancellation.isLeft()) {
+        this.logger.warn(`Payment group ${group.id} remains held pending provider reconciliation`);
+        continue;
+      }
       try {
         const reclaimed = await this.prisma.$transaction(async (tx) => {
           const claimed = await this.paymentGroupRepo.markTerminal(group.id, 'EXPIRED', tx);
@@ -70,6 +85,19 @@ export class ExpireCheckoutGroupUseCase {
     if (soloResult.isLeft()) return left(soloResult.value);
 
     for (const transaction of soloResult.value) {
+      if (!transaction.externalId) {
+        this.logger.warn(`Transaction ${transaction.id} has no provider identity; inventory remains held`);
+        continue;
+      }
+      const providerCancellation = await this.stripe.cancelPendingPayment({
+        stripeSessionId: transaction.externalId.startsWith('cs_') ? transaction.externalId : undefined,
+        stripePaymentIntentId: transaction.externalId.startsWith('pi_') ? transaction.externalId : undefined,
+        idempotencyKey: `checkout-expiry-${transaction.idempotencyKey}`,
+      });
+      if (providerCancellation.isLeft()) {
+        this.logger.warn(`Transaction ${transaction.id} remains held pending provider reconciliation`);
+        continue;
+      }
       try {
         const reclaimed = await this.prisma.$transaction(async (tx) => {
           const failed = await this.transactionRepo.markAsFailed(transaction.id, tx);

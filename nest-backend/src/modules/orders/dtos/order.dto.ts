@@ -1,9 +1,10 @@
-import { IsIn, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { EscrowStatus, OrderStatus } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { CursorQueryDTO } from '@/shared/dtos/pagination.dto';
 import { SALES_ORDER_STATUSES, SalesOrderStatus } from '../types/order.types';
+import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
 export class CreateOrderDTO {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -61,6 +62,10 @@ export class CancelOrderDTO {
   @ApiProperty({ example: 'Buyer changed mind' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/\S/u)
+  @MaxLength(500)
+  @SanitizeText()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/\p{Cc}/gu, '') : value)
   readonly reason: string;
 }
 

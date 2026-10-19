@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Body, Controller, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { GetAuth, PostAuth, PatchAuth, CurrentUserId } from '@/shared/decorators';
 import { GetCartUseCase } from './usecases/get-cart.usecase';
@@ -7,12 +7,14 @@ import { UpdateCartItemUseCase } from './usecases/update-cart-item.usecase';
 import { RemoveFromCartUseCase } from './usecases/remove-from-cart.usecase';
 import { ClearCartUseCase } from './usecases/clear-cart.usecase';
 import { CheckoutCartUseCase } from './usecases/checkout-cart.usecase';
+import { GetCheckoutRecoveryUseCase } from './usecases/get-checkout-recovery.usecase';
 import {
   AddToCartDTO,
   UpdateCartItemDTO,
   CheckoutCartDTO,
   CartResponse,
   CheckoutCartResponse,
+  CheckoutRecoveryQueryDTO,
 } from './dtos/cart.dto';
 
 @ApiTags('Cart')
@@ -25,6 +27,7 @@ export class CartController {
     private readonly removeFromCartUseCase: RemoveFromCartUseCase,
     private readonly clearCartUseCase: ClearCartUseCase,
     private readonly checkoutCartUseCase: CheckoutCartUseCase,
+    private readonly getCheckoutRecoveryUseCase: GetCheckoutRecoveryUseCase,
   ) {}
 
   @GetAuth({
@@ -48,6 +51,11 @@ export class CartController {
   })
   async checkout(@CurrentUserId() userId: string, @Body() body: CheckoutCartDTO) {
     return this.checkoutCartUseCase.execute({ userId, mode: body.mode });
+  }
+
+  @GetAuth('checkout/recovery', { summary: 'Recover the current account checkout attempt' })
+  async checkoutRecovery(@CurrentUserId() userId: string, @Query() query: CheckoutRecoveryQueryDTO) {
+    return this.getCheckoutRecoveryUseCase.execute({ userId, mode: query.mode });
   }
 
   @PostAuth(':productId', {

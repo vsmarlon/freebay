@@ -39,10 +39,17 @@ describe('OrderDatabaseRepository.refundOrder', () => {
       900,
       { status, escrowStatus },
     );
+    const refundOperationId = `operation-${order.id}`;
+    const refundProviderId = `re-${order.id}`;
+    await prisma.order.update({ where: { id: order.id }, data: { cancellationReason: 'refund pending' } });
     await prisma.transaction.create({ data: {
       orderId: order.id, amount: 1000, platformFee: 100, sellerAmount: 900,
       paymentMethod: 'CREDIT_CARD', provider: 'STRIPE', status: 'PAID',
       idempotencyKey: `refund-${order.id}`,
+      refundOperationId,
+      refundIdempotencyKey: `key-${order.id}`,
+      refundProviderId,
+      refundAmount: 1000,
     } });
     await prisma.wallet.update({
       where: { userId: seller.id },
@@ -65,6 +72,9 @@ describe('OrderDatabaseRepository.refundOrder', () => {
       sellerAmount: 900,
       escrowStatus: escrowStatus === EscrowStatus.RELEASED ? 'RELEASED' : 'HELD',
       transferId,
+      refundOperationId,
+      refundProviderId,
+      refundAmount: 1000,
     };
 
     return {
@@ -102,6 +112,9 @@ describe('OrderDatabaseRepository.refundOrder', () => {
       sellerAmount: 900,
       escrowStatus: 'RELEASED',
       transferId: null,
+      refundOperationId: `operation-${result.order.id}`,
+      refundProviderId: `re-${result.order.id}`,
+      refundAmount: 1000,
     });
 
     expect(retry.isRight()).toBe(true);
@@ -126,6 +139,9 @@ describe('OrderDatabaseRepository.refundOrder', () => {
       sellerAmount: 900,
       escrowStatus: 'HELD',
       transferId: null,
+      refundOperationId: `operation-${result.order.id}`,
+      refundProviderId: `re-${result.order.id}`,
+      refundAmount: 1000,
     });
 
     expect(retry.isRight()).toBe(true);

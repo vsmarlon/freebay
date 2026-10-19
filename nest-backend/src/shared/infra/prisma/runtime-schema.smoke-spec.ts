@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserDatabaseRepository } from '@/modules/users';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
+import { CpfProtectionService } from '@/shared/utils/cpf-protection.service';
 import { PrismaService } from './prisma.service';
 
 // This deliberately bypasses setup-integration.ts: syncing a separate test
@@ -19,6 +20,7 @@ describe('Runtime database schema', () => {
     module = await Test.createTestingModule({
       providers: [
         PrismaService,
+        CpfProtectionService,
         UserDatabaseRepository,
         TransactionDatabaseRepository,
         { provide: ConfigService, useValue: new ConfigService({ DATABASE_URL: url.toString() }) },
@@ -43,6 +45,11 @@ describe('Runtime database schema', () => {
 
   it('executes the real transfer reconciliation query on the configured database', async () => {
     const result = await module.get(TransactionDatabaseRepository).findTransferFailures(null, 1);
+    expect(result.isLeft() ? result.value : null).toBeNull();
+  });
+
+  it('executes the real refund recovery query on the configured database', async () => {
+    const result = await module.get(TransactionDatabaseRepository).findPendingRefundRecoveries();
     expect(result.isLeft() ? result.value : null).toBeNull();
   });
 });

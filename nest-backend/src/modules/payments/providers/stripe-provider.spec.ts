@@ -15,8 +15,10 @@ jest.mock('stripe', () => ({
 }));
 
 type MockStripe = {
-  checkout: { sessions: { create: jest.Mock; expire: jest.Mock } };
-  paymentIntents: { create: jest.Mock; cancel: jest.Mock };
+  checkout: { sessions: { create: jest.Mock; retrieve: jest.Mock; expire: jest.Mock } };
+  paymentIntents: { create: jest.Mock; retrieve: jest.Mock; cancel: jest.Mock };
+  refunds: { create: jest.Mock; retrieve: jest.Mock; list: jest.Mock };
+  charges: { retrieve: jest.Mock };
   transfers: {
     create: jest.Mock;
     retrieve: jest.Mock;
@@ -47,17 +49,21 @@ describe('StripeProvider', () => {
       checkout: {
         sessions: {
           create: jest.fn(),
+          retrieve: jest.fn(),
           expire: jest.fn(),
         },
       },
       paymentIntents: {
         create: jest.fn(),
+        retrieve: jest.fn(),
         cancel: jest.fn(),
       },
       webhooks: {
         constructEvent: jest.fn(),
         generateTestHeaderString: jest.fn(),
       },
+      refunds: { create: jest.fn(), retrieve: jest.fn(), list: jest.fn() },
+      charges: { retrieve: jest.fn() },
       transfers: {
         create: jest.fn(),
         retrieve: jest.fn(),
@@ -232,6 +238,7 @@ describe('StripeProvider', () => {
 
   describe('createPaymentSession', () => {
     it('creates a payment session successfully', async () => {
+      const expiresAt = new Date('2026-10-05T01:30:00.000Z');
       mockStripe.checkout.sessions.create.mockResolvedValue({
         id: 'cs_test_123',
         url: 'https://checkout.stripe.com/pay/cs_test_123',
@@ -239,9 +246,14 @@ describe('StripeProvider', () => {
 
       const result = await provider.createPaymentSession({
         orderId: 'order-123',
+        buyerId: 'buyer-123',
         amount: 10000,
         currency: 'brl',
         customerEmail: 'test@example.com',
+        customerName: 'Buyer Name',
+        customerTaxId: '12345678901',
+        idempotencyKey: 'session:order-123',
+        expiresAt,
         successUrl: 'https://app.freebay.com/success',
         cancelUrl: 'https://app.freebay.com/cancel',
       });
@@ -263,10 +275,15 @@ describe('StripeProvider', () => {
           cancel_url: 'https://app.freebay.com/cancel',
           metadata: expect.objectContaining({
             orderId: 'order-123',
+            buyerId: 'buyer-123',
+            idempotencyKey: 'session:order-123',
           }),
+          expires_at: Math.floor(expiresAt.getTime() / 1000),
         }),
         expect.any(Object),
       );
+      expect(mockStripe.checkout.sessions.create.mock.calls[0]?.[0]?.metadata).not.toHaveProperty('customerName');
+      expect(mockStripe.checkout.sessions.create.mock.calls[0]?.[0]?.metadata).not.toHaveProperty('customerTaxId');
     });
 
     it('handles Stripe API errors', async () => {
@@ -440,9 +457,159 @@ describe('StripeProvider', () => {
     });
   });
 
+  describe('refundPayment', () => {
+    it('reuses a canonical succeeded refund for the same operation instead of creating another', async () => {
+      mockStripe.refunds.list.mockResolvedValue({
+        data: [{
+          id: 're_existing', charge: 'ch_1', amount: 400, status: 'succeeded',
+          metadata: { orderId: 'order_1', operationId: 'refund-op-old' },
+        }],
+        has_more: false,
+      });
+      const payment = {
+        orderId: 'order_1', amount: 400, chargeId: 'ch_1', operationId: 'refund-op-old',
+        idempotencyKey: 'expired-old-idempotency-key',
+        knownProviderId: null, allowCreate: false,
+      };
+
+      const result = await provider.refundPayment(payment);
+
+      expect(result.isRight()).toBe(true);
+      expect(mockStripe.refunds.create).not.toHaveBeenCalled();
+      if (result.isRight()) expect(result.value.id).toBe('re_existing');
+    });
+
+    it.each(['pending', 'requires_action', 'failed', 'canceled', 'unknown'])(
+      'returns existing canonical %s refund without creating another', async (status) => {
+        mockStripe.refunds.list.mockResolvedValue({
+          data: [{
+            id: 're_existing', charge: 'ch_1', amount: 400, status,
+            metadata: { orderId: 'order_1', operationId: 'refund-op-old' },
+          }],
+          has_more: false,
+        });
+
+        const result = await provider.refundPayment({
+          orderId: 'order_1', amount: 400, chargeId: 'ch_1', operationId: 'refund-op-old',
+          idempotencyKey: 'expired-old-idempotency-key', knownProviderId: null, allowCreate: false,
+        });
+
+        expect(result.isRight()).toBe(true);
+        expect(mockStripe.refunds.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it('uses an operation-bound idempotency key and opaque order metadata', async () => {
+      mockStripe.refunds.list.mockResolvedValue({ data: [], has_more: false });
+      mockStripe.refunds.create.mockResolvedValue({
+        id: 're_1', charge: 'ch_1', amount: 1000, status: 'pending',
+        metadata: { orderId: 'order_1', operationId: 'refund-op-1' },
+      });
+      const payment = {
+        orderId: 'order_1', amount: 1000, chargeId: 'ch_1', operationId: 'refund-op-1',
+        idempotencyKey: 'refund:refund-op-1',
+        knownProviderId: null, allowCreate: true,
+      };
+
+      const result = await provider.refundPayment(payment);
+
+      expect(mockStripe.refunds.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 1000,
+          charge: 'ch_1',
+          metadata: { orderId: 'order_1', operationId: 'refund-op-1' },
+        }),
+        { idempotencyKey: 'refund:refund-op-1' },
+      );
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value).toEqual({
+          id: 're_1', chargeId: 'ch_1', amount: 1000, status: 'pending', orderId: 'order_1', operationId: 'refund-op-1',
+        });
+      }
+    });
+
+    it('holds an existing operation without canonical provider evidence instead of recreating it', async () => {
+      mockStripe.refunds.list.mockResolvedValue({ data: [], has_more: false });
+      const result = await provider.refundPayment({
+        orderId: 'order_1', amount: 400, chargeId: 'ch_1', operationId: 'refund-op-old',
+        idempotencyKey: 'expired-old-idempotency-key', knownProviderId: null, allowCreate: false,
+      });
+
+      expect(result.isLeft()).toBe(true);
+      expect(mockStripe.refunds.create).not.toHaveBeenCalled();
+    });
+
+    it('creates exactly once when a fresh durable operation has no canonical refund yet', async () => {
+      mockStripe.refunds.list.mockResolvedValue({ data: [], has_more: false });
+      mockStripe.refunds.create.mockResolvedValue({
+        id: 're_new', charge: 'ch_1', amount: 400, status: 'pending',
+        metadata: { orderId: 'order_1', operationId: 'refund-op-new' },
+      });
+      const result = await provider.refundPayment({
+        orderId: 'order_1', amount: 400, chargeId: 'ch_1', operationId: 'refund-op-new',
+        idempotencyKey: 'refund:refund-op-new', knownProviderId: null, allowCreate: true,
+      });
+
+      expect(result.isRight()).toBe(true);
+      expect(mockStripe.refunds.create).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['incomplete list', { data: [], has_more: true }],
+      ['duplicate matches', { data: [
+        { id: 're_1', charge: 'ch_1', amount: 400, status: 'succeeded', metadata: { orderId: 'order_1', operationId: 'refund-op-old' } },
+        { id: 're_2', charge: 'ch_1', amount: 400, status: 'succeeded', metadata: { orderId: 'order_1', operationId: 'refund-op-old' } },
+      ], has_more: false }],
+      ['mismatched amount', { data: [
+        { id: 're_1', charge: 'ch_1', amount: 399, status: 'succeeded', metadata: { orderId: 'order_1', operationId: 'refund-op-old' } },
+      ], has_more: false }],
+    ])('holds an existing operation when canonical evidence is %s', async (_label, listed) => {
+      mockStripe.refunds.list.mockResolvedValue(listed);
+      const result = await provider.refundPayment({
+        orderId: 'order_1', amount: 400, chargeId: 'ch_1', operationId: 'refund-op-old',
+        idempotencyKey: 'expired-old-idempotency-key', knownProviderId: null, allowCreate: false,
+      });
+
+      expect(result.isLeft()).toBe(true);
+      expect(mockStripe.refunds.create).not.toHaveBeenCalled();
+    });
+
+    it('retrieves canonical Checkout Session ownership and settlement fields', async () => {
+      mockStripe.checkout.sessions.retrieve.mockResolvedValue({
+        id: 'cs_test_123', url: 'https://checkout.stripe.com/pay/cs_test_123',
+        status: 'open', mode: 'payment', payment_status: 'unpaid', amount_total: 10000,
+        currency: 'brl', expires_at: 1791163800,
+        metadata: { orderId: 'order-123', buyerId: 'buyer-123', idempotencyKey: 'session:order-123' },
+      });
+
+      const result = await provider.retrievePaymentSession('cs_test_123');
+
+      expect(result.isRight()).toBe(true);
+      if (result.isRight()) {
+        expect(result.value).toMatchObject({
+          stripeSessionId: 'cs_test_123', orderId: 'order-123', buyerId: 'buyer-123',
+          amountTotal: 10000, currency: 'brl', idempotencyKey: 'session:order-123',
+        });
+      }
+    });
+  });
+
+  describe('retrieveChargeRefunds', () => {
+    it('holds reconciliation when the canonical list has additional pages', async () => {
+      mockStripe.charges.retrieve.mockResolvedValue({ id: 'ch_1', amount: 1000, amount_refunded: 0 });
+      mockStripe.refunds.list.mockResolvedValue({ data: [], has_more: true });
+
+      const result = await provider.retrieveChargeRefunds('ch_1');
+
+      expect(result.isLeft()).toBe(true);
+    });
+  });
+
   describe('cancelPendingPayment', () => {
     it('expires a Checkout Session idempotently', async () => {
-      mockStripe.checkout.sessions.expire.mockResolvedValue({ id: 'cs_1' });
+      mockStripe.checkout.sessions.retrieve.mockResolvedValue({ status: 'open' });
+      mockStripe.checkout.sessions.expire.mockResolvedValue({ id: 'cs_1', status: 'expired' });
 
       const result = await provider.cancelPendingPayment({
         stripeSessionId: 'cs_1',
@@ -458,7 +625,8 @@ describe('StripeProvider', () => {
     });
 
     it('cancels a PaymentIntent idempotently', async () => {
-      mockStripe.paymentIntents.cancel.mockResolvedValue({ id: 'pi_1' });
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({ status: 'requires_payment_method' });
+      mockStripe.paymentIntents.cancel.mockResolvedValue({ id: 'pi_1', status: 'canceled' });
 
       const result = await provider.cancelPendingPayment({
         stripePaymentIntentId: 'pi_1',
@@ -471,6 +639,24 @@ describe('StripeProvider', () => {
         {},
         { idempotencyKey: 'cancel-2' },
       );
+    });
+
+    it('does not expire a completed Checkout Session that may already be paid', async () => {
+      mockStripe.checkout.sessions.retrieve.mockResolvedValue({ status: 'complete' });
+
+      const result = await provider.cancelPendingPayment({ stripeSessionId: 'cs_paid', idempotencyKey: 'cancel-paid' });
+
+      expect(result.isLeft()).toBe(true);
+      expect(mockStripe.checkout.sessions.expire).not.toHaveBeenCalled();
+    });
+
+    it('does not cancel a succeeded PaymentIntent', async () => {
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({ status: 'succeeded' });
+
+      const result = await provider.cancelPendingPayment({ stripePaymentIntentId: 'pi_paid', idempotencyKey: 'cancel-paid' });
+
+      expect(result.isLeft()).toBe(true);
+      expect(mockStripe.paymentIntents.cancel).not.toHaveBeenCalled();
     });
   });
 

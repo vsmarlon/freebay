@@ -9,6 +9,10 @@ import {
   PaymentIntentResult,
   PaymentSessionParams,
   PaymentSessionResult,
+  PaymentSessionSnapshot,
+  ChargeRefundSnapshot,
+  RefundSnapshot,
+  RefundStatus,
 } from '../types/payment-provider.types';
 import {
   ConnectAccountSnapshot,
@@ -25,6 +29,21 @@ import {
 } from './stripe-webhook-verifier';
 
 export { StripeWebhookEvent, VerifiedV2AccountWebhookEvent } from './stripe-webhook-verifier';
+
+function mapRefund(refund: Stripe.Refund): RefundSnapshot {
+  const knownStatus: RefundStatus = refund.status === 'pending' || refund.status === 'requires_action' ||
+    refund.status === 'succeeded' || refund.status === 'failed' || refund.status === 'canceled'
+    ? refund.status
+    : 'unknown';
+  return {
+    id: refund.id,
+    chargeId: typeof refund.charge === 'string' ? refund.charge : refund.charge?.id ?? null,
+    amount: refund.amount,
+    status: knownStatus,
+    orderId: refund.metadata?.orderId || null,
+    operationId: refund.metadata?.operationId || null,
+  };
+}
 
 @Injectable()
 export class StripeProvider {
@@ -90,19 +109,22 @@ export class StripeProvider {
           metadata: {
             ...(params.orderId ? { orderId: params.orderId } : {}),
             ...(params.paymentGroupId ? { paymentGroupId: params.paymentGroupId } : {}),
-           idempotencyKey: params.idempotencyKey || fallbackKey,
-           customerName: params.customerName || '',
-           customerTaxId: params.customerTaxId || '',
-           },
+            ...(params.buyerId ? { buyerId: params.buyerId } : {}),
+            idempotencyKey: params.idempotencyKey || fallbackKey,
+          },
            ...(params.transferGroup
              ? { payment_intent_data: { transfer_group: params.transferGroup } }
              : {}),
-          expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRY_SECONDS,
+          expires_at: params.expiresAt
+            ? Math.floor(params.expiresAt.getTime() / 1000)
+            : Math.floor(Date.now() / 1000) + CHECKOUT_EXPIRY_SECONDS,
         },
         { idempotencyKey: params.idempotencyKey || fallbackKey },
       );
 
-      const expiresAt = new Date(Date.now() + CHECKOUT_EXPIRY_MILLISECONDS);
+      const expiresAt = session.expires_at
+        ? new Date(session.expires_at * 1000)
+        : new Date(Date.now() + CHECKOUT_EXPIRY_MILLISECONDS);
 
       return right({
         stripeSessionId: session.id,
@@ -160,6 +182,29 @@ export class StripeProvider {
     }
   }
 
+  async retrievePaymentSession(sessionId: string): Promise<Either<AppError, PaymentSessionSnapshot>> {
+    try {
+      const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+      return right({
+        stripeSessionId: session.id,
+        checkoutUrl: session.url,
+        status: session.status,
+        mode: session.mode,
+        paymentStatus: session.payment_status,
+        amountTotal: session.amount_total,
+        currency: session.currency,
+        orderId: session.metadata?.orderId ?? null,
+        paymentGroupId: session.metadata?.paymentGroupId ?? null,
+        buyerId: session.metadata?.buyerId ?? null,
+        idempotencyKey: session.metadata?.idempotencyKey ?? null,
+        expiresAt: session.expires_at ? new Date(session.expires_at * 1000) : null,
+      });
+    } catch (error) {
+      this.logger.error(`Checkout Session reconciliation failed for ${sessionId}: ${error instanceof Error ? error.message : String(error)}`);
+      return left(new PaymentProviderError('Não foi possível reconciliar a sessão de pagamento'));
+    }
+  }
+
   async cancelPendingPayment(payment: {
     stripeSessionId?: string;
     stripePaymentIntentId?: string;
@@ -167,17 +212,31 @@ export class StripeProvider {
   }): Promise<Either<AppError, void>> {
     try {
       if (payment.stripeSessionId) {
-        await this.stripe.checkout.sessions.expire(
-          payment.stripeSessionId,
-          {},
-          { idempotencyKey: payment.idempotencyKey },
-        );
+        let session = await this.stripe.checkout.sessions.retrieve(payment.stripeSessionId);
+        if (session.status === 'open') {
+          session = await this.stripe.checkout.sessions.expire(
+            payment.stripeSessionId,
+            {},
+            { idempotencyKey: payment.idempotencyKey },
+          );
+        }
+        if (session.status !== 'expired') {
+          return left(new PaymentProviderError('Pagamento ainda não está terminal; reconciliação necessária'));
+        }
       } else if (payment.stripePaymentIntentId) {
-        await this.stripe.paymentIntents.cancel(
+        let intent = await this.stripe.paymentIntents.retrieve(payment.stripePaymentIntentId);
+        if (intent.status === 'canceled') return right(undefined);
+        if (!['requires_payment_method', 'requires_confirmation', 'requires_action', 'requires_capture'].includes(intent.status)) {
+          return left(new PaymentProviderError('Pagamento ainda não está terminal; reconciliação necessária'));
+        }
+        intent = await this.stripe.paymentIntents.cancel(
           payment.stripePaymentIntentId,
           {},
           { idempotencyKey: payment.idempotencyKey },
         );
+        if (intent.status !== 'canceled') {
+          return left(new PaymentProviderError('Cancelamento do pagamento não foi confirmado'));
+        }
       } else {
         throw new Error('Stripe payment reference is missing');
       }
@@ -194,24 +253,85 @@ export class StripeProvider {
     amount: number;
     chargeId?: string;
     paymentIntentId?: string;
-  }): Promise<Either<AppError, 'succeeded' | 'pending'>> {
+    operationId: string;
+    idempotencyKey: string;
+    knownProviderId: string | null;
+    allowCreate: boolean;
+  }): Promise<Either<AppError, RefundSnapshot>> {
     try {
+      if (!payment.chargeId) {
+        return left(new PaymentProviderError('Referência de pagamento ausente para reembolso'));
+      }
+      const listed = await this.stripe.refunds.list({ charge: payment.chargeId, limit: 100 });
+      if (listed.has_more) {
+        return left(new PaymentProviderError('A lista de reembolsos exige reconciliação manual'));
+      }
+      const operationMatches = listed.data
+        .map(mapRefund)
+        .filter((refund) => refund.operationId === payment.operationId);
+      if (operationMatches.length > 1) {
+        return left(new PaymentProviderError('Mais de um reembolso corresponde à operação; reconciliação manual necessária'));
+      }
+      const existing = operationMatches[0];
+      if (existing) {
+        if (
+          existing.orderId !== payment.orderId ||
+          existing.chargeId !== payment.chargeId ||
+          existing.amount !== payment.amount ||
+          (payment.knownProviderId !== null && existing.id !== payment.knownProviderId)
+        ) {
+          return left(new PaymentProviderError('O reembolso canônico não corresponde à operação persistida'));
+        }
+        return right(existing);
+      }
+      if (!payment.allowCreate || payment.knownProviderId !== null) {
+        return left(new PaymentProviderError('A operação não tem reembolso canônico; reconciliação manual necessária'));
+      }
       const refund = await this.stripe.refunds.create(
         {
           amount: payment.amount,
-          ...(payment.chargeId
-            ? { charge: payment.chargeId }
-            : { payment_intent: payment.paymentIntentId }),
+          charge: payment.chargeId,
           reason: 'requested_by_customer',
+          metadata: { orderId: payment.orderId, operationId: payment.operationId },
         },
-        { idempotencyKey: `order-cancel-${payment.orderId}` },
+        { idempotencyKey: payment.idempotencyKey },
       );
-      if (refund.status === 'succeeded') return right('succeeded');
-      if (refund.status === 'pending') return right('pending');
-      return left(new PaymentProviderError('O reembolso não foi aceito pelo provedor'));
+      return right(mapRefund(refund));
     } catch (error) {
       this.logger.error(`Stripe refund failed for order ${payment.orderId}: ${error instanceof Error ? error.message : String(error)}`);
       return left(new PaymentProviderError('Erro ao solicitar reembolso'));
+    }
+  }
+
+  async retrieveRefund(refundId: string): Promise<Either<AppError, RefundSnapshot>> {
+    try {
+      return right(mapRefund(await this.stripe.refunds.retrieve(refundId)));
+    } catch {
+      return left(new PaymentProviderError('Não foi possível reconciliar o reembolso'));
+    }
+  }
+
+  async retrieveChargeRefunds(chargeId: string): Promise<Either<AppError, ChargeRefundSnapshot>> {
+    try {
+      const [charge, refunds] = await Promise.all([
+        this.stripe.charges.retrieve(chargeId),
+        this.stripe.refunds.list({ charge: chargeId, limit: 100 }),
+      ]);
+      if (refunds.has_more) {
+        return left(new PaymentProviderError('A lista de reembolsos exige reconciliação manual'));
+      }
+      const snapshots = refunds.data.map(mapRefund);
+      if (new Set(snapshots.map((refund) => refund.id)).size !== snapshots.length) {
+        return left(new PaymentProviderError('A lista de reembolsos está incompleta; reconciliação manual necessária'));
+      }
+      return right({
+        id: charge.id,
+        amount: charge.amount,
+        amountRefunded: charge.amount_refunded,
+        refunds: snapshots,
+      });
+    } catch {
+      return left(new PaymentProviderError('Não foi possível reconciliar os reembolsos da cobrança'));
     }
   }
 

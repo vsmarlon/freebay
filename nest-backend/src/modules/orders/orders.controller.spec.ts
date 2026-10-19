@@ -16,6 +16,7 @@ import { TransformInterceptor } from '@/shared/http/transform.interceptor';
 import { createValidationPipe } from '@/shared/http/validation-pipe.factory';
 import { GetOrderUseCase } from './usecases/get-order.usecase';
 import { ListSalesOrdersUseCase } from './usecases/list-sales-orders.usecase';
+import { StepUpGuard } from '@/shared/auth/step-up.guard';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -40,6 +41,8 @@ describe('OrdersController', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(StepUpGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -113,6 +116,8 @@ describe('OrdersController create HTTP contract', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(StepUpGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

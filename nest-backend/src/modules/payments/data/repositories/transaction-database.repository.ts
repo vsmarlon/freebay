@@ -3,7 +3,9 @@ import { Prisma, ReversalState, TransferDeliveryState } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, DEFAULT_PAGE_SIZE } from '@/shared/core/pagination';
-import { ExpiredPendingTransaction, TransactionWithOrder, UpsertTransactionData } from '../../types/payment.types';
+import { ExpiredPendingTransaction, PaymentSessionAttemptData, TransactionWithOrder, UpsertTransactionData } from '../../types/payment.types';
+import { ChargeRefundSnapshot } from '../../types/payment-provider.types';
+import { RefundReservation } from './transaction-reconciliation.repository';
 import { TransactionGuardedClaimsRepository } from './transaction-guarded-claims.repository';
 import { TransactionReconciliationRepository } from './transaction-reconciliation.repository';
 import { TransactionUpsertRepository } from './transaction-upsert.repository';
@@ -36,7 +38,12 @@ export class TransactionDatabaseRepository {
   findByIdempotencyKey(key: string) { return this.reconciliation.findByIdempotencyKey(key); }
   findByChargeId(chargeId: string) { return this.reconciliation.findByChargeId(chargeId); }
   findByOrderId(orderId: string) { return this.reconciliation.findByOrderId(orderId); }
+  findPendingRefundRecoveries() { return this.reconciliation.findPendingRefundRecoveries(); }
+  reserveRefund(orderId: string, amount: number, provider: ChargeRefundSnapshot): RepositoryResponse<RefundReservation> { return this.reconciliation.reserveRefund(orderId, amount, provider); }
+  recordRefundProviderId(orderId: string, operationId: string, refundId: string): RepositoryResponse<boolean> { return this.reconciliation.recordRefundProviderId(orderId, operationId, refundId); }
 
   findExpiredPending(now: Date): RepositoryResponse<ExpiredPendingTransaction[]> { return this.upsert.findExpiredPending(now); }
   upsertTransaction(data: UpsertTransactionData) { return this.upsert.upsertTransaction(data); }
+  reservePaymentSessionAttempt(data: PaymentSessionAttemptData) { return this.upsert.reservePaymentSessionAttempt(data); }
+  attachPaymentSession(data: Parameters<TransactionUpsertRepository['attachPaymentSession']>[0]) { return this.upsert.attachPaymentSession(data); }
 }

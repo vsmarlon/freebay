@@ -28,6 +28,7 @@ import { GetOrderUseCase } from './usecases/get-order.usecase';
 import { ListSalesOrdersUseCase } from './usecases/list-sales-orders.usecase';
 import { CancelOrderDTO, CreateOrderDTO, SalesOrdersQueryDTO } from "./dtos/order.dto";
 import { AuthUser } from "@/shared/core/types";
+import { RequireStepUp } from '@/shared/auth/step-up.guard';
 import { left } from "@/shared/core/either";
 import { BadRequestError } from "@/shared/core/errors";
 import { getPlatformFeePercent } from "@/shared/core/platform-fee";
@@ -153,6 +154,7 @@ export class OrdersController {
     bodyType: CancelOrderDTO,
     errors: [{ status: 404, description: "Order not found" }],
   })
+  @RequireStepUp('cancel_order', 'id')
   async cancel(
     @Param("id", ParseUUIDPipe) id: string,
     @CurrentUserId() userId: string,
