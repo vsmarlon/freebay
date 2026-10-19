@@ -5,7 +5,6 @@ import { CreateReviewUseCase } from './usecases/create-review/create-review.usec
 import { GetUserReviewsUseCase } from './usecases/get-user-reviews/get-user-reviews.usecase';
 import { CanReviewOrderUseCase } from './usecases/can-review-order/can-review-order.usecase';
 import { ReviewDatabaseRepository } from './data/repositories/review-database.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
 @Module({
   controllers: [ReviewsController],
@@ -15,7 +14,6 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
     CreateReviewUseCase,
     GetUserReviewsUseCase,
     CanReviewOrderUseCase,
-    PrismaService,
   ],
 })
 export class ReviewsModule {}

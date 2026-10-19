@@ -7,7 +7,6 @@ import { GetNotificationsUseCase } from './usecases/get-notifications.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { MarkAllAsReadUseCase } from './usecases/mark-all-as-read.usecase';
 import { RegisterFcmTokenUseCase } from './usecases/register-fcm-token.usecase';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationDatabaseRepository } from './data/repositories/notification-database.repository';
 
 @Global()
@@ -21,7 +20,6 @@ import { NotificationDatabaseRepository } from './data/repositories/notification
     MarkAsReadUseCase,
     MarkAllAsReadUseCase,
     RegisterFcmTokenUseCase,
-    PrismaService,
     NotificationDatabaseRepository,
   ],
   exports: [NotificationService, FcmService, NotificationDatabaseRepository],

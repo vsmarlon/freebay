@@ -7,12 +7,10 @@ import { RemoveFromCartUseCase } from './remove-from-cart.usecase';
 import { ClearCartUseCase } from './clear-cart.usecase';
 import { CheckoutCartUseCase } from './checkout-cart.usecase';
 import { PaymentsModule } from '@/modules/payments/payments.module';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
 @Module({
   imports: [PaymentsModule],
   providers: [
-    PrismaService,
     CartDatabaseRepository,
     GetCartUseCase,
     AddToCartUseCase,

@@ -9,7 +9,6 @@ import { WithdrawDisputeUseCase } from './usecases/withdraw-dispute.usecase';
 import { DisputeDatabaseRepository } from './data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from './services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from './services/dispute-resolution-execution.service';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
@@ -25,7 +24,6 @@ import { PaymentsModule } from '../payments/payments.module';
     DisputeDatabaseRepository,
     DisputeTransitionPolicy,
     DisputeResolutionExecutionService,
-    PrismaService,
   ],
 })
 export class DisputesModule {}

@@ -11,7 +11,6 @@ import { GetConnectStatusUseCase } from './usecases/get-connect-status.usecase';
 import { GetConnectDashboardLinkUseCase } from './usecases/get-connect-dashboard-link.usecase';
 import { SellerPayoutService } from './services/seller-payout.service';
 import { StripeProvider } from './providers/stripe-provider';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { OrderDatabaseRepository } from '../orders/data/repositories/order-database.repository';
 import { ProductDatabaseRepository } from '../products/data/repositories/product-database.repository';
 import { TransactionDatabaseRepository } from './data/repositories/transaction-database.repository';
@@ -30,7 +29,6 @@ import { RecoverDisputeTransferUseCase } from './usecases/recover-dispute-transf
   imports: [ConfigModule],
   controllers: [PaymentsController],
   providers: [
-    PrismaService,
     CreatePaymentSessionUseCase,
     CreatePaymentIntentUseCase,
     ProcessWebhookUseCase,
