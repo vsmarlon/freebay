@@ -7,6 +7,7 @@
 # Environment
 .env
 .env.*
+!.env.example
 !.env.*.example
 !.env.production.example
 
@@ -16,6 +17,10 @@ session-*.md
 
 # Dependencies
 node_modules/
+web/.react-router/
+web/test-results/
+web/playwright-report/
+/web/e2e/artifacts/
 .dart_tool/
 .packages
 .pub-cache/
@@ -39,6 +44,9 @@ dist/
 # IDE
 .idea/
 .vscode/
+!.vscode/
+.vscode/*
+!.vscode/launch.json
 *.iml
 
 # OS
@@ -53,3 +61,14 @@ Thumbs.db
 
 # Kotlin tooling output
 .kotlin/
+
+# Agent-local ledger (machine-specific progress, never commit)
+/.superpowers/
+
+# Test/device evidence (local run logs, reports, screenshots — not durable docs)
+docs/test-runs/
+docs/device-runs/
+e2e/artifacts/
+
+# Logs (all tools, all dirs)
+*.log

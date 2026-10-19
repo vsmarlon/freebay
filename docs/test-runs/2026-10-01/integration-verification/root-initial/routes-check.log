@@ -1,3 +1,0 @@
-""
-"=== Route literal rules (navigate via AppRoutes) ==="
-node scripts/ci-check.js --routes

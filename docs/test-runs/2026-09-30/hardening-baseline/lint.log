@@ -1,4 +1,0 @@
-
-> nest-backend@1.0.0 lint
-> eslint "{src,test}/**/*.ts" --max-warnings 0
-
