@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import type { Express } from 'express';
 import { io, Socket as ClientSocket } from 'socket.io-client';
 import { AppModule } from '../../src/app.module';
 import { StripeProvider } from '../../src/modules/payments/providers/stripe-provider';
@@ -24,11 +25,12 @@ describe('Chat socket privacy (real gateway and database)', () => {
   let stranger: { id: string; token: string };
   const sockets: ClientSocket[] = [];
   const suffix = Date.now().toString(36);
+  const testClientIp = '198.51.100.24';
 
   async function register(name: string): Promise<{ id: string; token: string }> {
     const response = await fetch(`${baseUrl}/auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': testClientIp },
       body: JSON.stringify({
         displayName: `Socket ${name}`,
         username: `${name}_${suffix}`,
@@ -69,6 +71,8 @@ describe('Chat socket privacy (real gateway and database)', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(StripeProvider).useValue({}).compile();
     app = module.createNestApplication();
+    const expressApp: Express = app.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', 'loopback');
     app.useGlobalPipes(createValidationPipe());
     app.useGlobalFilters(new AllExceptionsFilter());
     app.useGlobalInterceptors(new TransformInterceptor(), new EitherInterceptor());
@@ -83,7 +87,7 @@ describe('Chat socket privacy (real gateway and database)', () => {
     stranger = await register('stranger');
     const response = await fetch(`${baseUrl}/chat/conversations`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${seller.token}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${seller.token}`, 'Content-Type': 'application/json', 'X-Forwarded-For': testClientIp },
       body: JSON.stringify({ targetUserId: buyer.id }),
     });
     expect(response.status).toBe(201);

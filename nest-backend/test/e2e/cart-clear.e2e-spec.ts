@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { request as httpRequest, IncomingMessage } from 'http';
 import { Pool } from 'pg';
+import type { Express } from 'express';
 import { AppModule } from '../../src/app.module';
 import { StripeProvider } from '../../src/modules/payments/providers/stripe-provider';
 import { AllExceptionsFilter } from '../../src/shared/http/exception-filter';
@@ -50,6 +51,7 @@ function tokenFrom(response: ApiResponse): string {
 describe('Cart clear HTTP regression', () => {
   let app: INestApplication;
   const suffix = Date.now().toString(36);
+  const testClientIp = '198.51.100.25';
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     allowExitOnIdle: true,
@@ -68,6 +70,7 @@ describe('Cart clear HTTP regression', () => {
     }
     return new Promise((resolve, reject) => {
       const headers: Record<string, string> = {};
+      headers['X-Forwarded-For'] = testClientIp;
       const payload = body === undefined ? undefined : Buffer.from(JSON.stringify(body));
       if (token) headers.Authorization = `Bearer ${token}`;
       if (payload) {
@@ -102,6 +105,8 @@ describe('Cart clear HTTP regression', () => {
       .useValue({})
       .compile();
     app = module.createNestApplication();
+    const expressApp: Express = app.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', 'loopback');
     app.useGlobalPipes(createValidationPipe());
     app.useGlobalFilters(new AllExceptionsFilter());
     app.useGlobalInterceptors(new TransformInterceptor(), new EitherInterceptor());

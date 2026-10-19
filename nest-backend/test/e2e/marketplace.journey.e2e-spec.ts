@@ -6,6 +6,7 @@ import { request as httpRequest, IncomingMessage } from 'http';
 import { existsSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { Pool } from 'pg';
+import type { Express } from 'express';
 import { AppModule } from '../../src/app.module';
 import { StripeProvider } from '../../src/modules/payments/providers/stripe-provider';
 import { PaymentProviderError } from '../../src/shared/core/errors';
@@ -67,6 +68,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
   let app: INestApplication;
   let port: number;
   const suffix = Date.now().toString(36);
+  const testClientIp = '198.51.100.23';
   const createdUploads: string[] = [];
   let categoryId = '';
   let productId = '';
@@ -74,12 +76,18 @@ describe('Marketplace journey (HTTP + real database)', () => {
   let sellerToken = '';
   let sellerId = '';
   let buyerToken = '';
-  const stripe = { refundPayment: jest.fn(), cancelPendingPayment: jest.fn() };
+  const stripe = {
+    refundPayment: jest.fn(),
+    cancelPendingPayment: jest.fn(),
+    retrieveChargeRefunds: jest.fn().mockResolvedValue(right({
+      id: 'ch_test_paid', amount: 5000, amountRefunded: 0, refunds: [],
+    })),
+  };
 
   const http = (
     method: 'GET' | 'POST' | 'PATCH',
     path: string,
-    options: { token?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer; fieldName?: string; mimeType?: string; fileName?: string } } = {},
+    options: { token?: string; stepUpToken?: string; clientIp?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer; fieldName?: string; mimeType?: string; fileName?: string } } = {},
   ): Promise<{ status: number; json: Envelope }> => {
     const address = app.getHttpServer().address();
     if (address === null || typeof address === 'string') {
@@ -88,6 +96,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
     port = address.port;
     return new Promise((resolve, reject) => {
       const headers: Record<string, string> = {};
+      headers['X-Forwarded-For'] = options.clientIp ?? testClientIp;
       let payload: Buffer | undefined;
       if (options.multipart) {
         const boundary = `e2e-${suffix}`;
@@ -113,6 +122,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
         headers['Content-Type'] = 'application/json';
       }
       if (options.token) headers.Authorization = `Bearer ${options.token}`;
+      if (options.stepUpToken) headers['X-Step-Up-Token'] = options.stepUpToken;
       if (payload) headers['Content-Length'] = String(payload.length);
       const req = httpRequest(
         { hostname: '127.0.0.1', port, path, method, headers },
@@ -137,7 +147,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
 
   const post = (
     path: string,
-    options?: { token?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer; fieldName?: string; mimeType?: string; fileName?: string } },
+    options?: { token?: string; clientIp?: string; body?: unknown; multipart?: { fields: Record<string, string>; file: Buffer; fieldName?: string; mimeType?: string; fileName?: string } },
   ): Promise<{ status: number; json: Envelope }> =>
     http('POST', path, options).then(async (res) => {
       await sleep(150);
@@ -160,6 +170,26 @@ describe('Marketplace journey (HTTP + real database)', () => {
       return res;
     });
 
+  const cancelOrderWithFreshProof = async (
+    orderId: string,
+    token: string,
+    body: unknown,
+    clientIp = testClientIp,
+  ): Promise<{ status: number; json: Envelope }> => {
+    const proof = await post('/auth/step-up', {
+      token,
+      clientIp,
+      body: {
+        purpose: 'cancel_order',
+        resourceId: orderId,
+        proof: { kind: 'password', password: 'password123' },
+      },
+    });
+    expect(proof.status).toBe(200);
+    const stepUpToken = parseData<{ stepUpToken: string }>(proof).stepUpToken;
+    return http('PATCH', `/orders/${orderId}/cancel`, { token, stepUpToken, body });
+  };
+
   beforeAll(async () => {
     assertSafeTestEnvironment();
     await prisma.$connect();
@@ -168,6 +198,8 @@ describe('Marketplace journey (HTTP + real database)', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(StripeProvider).useValue(stripe).compile();
     app = module.createNestApplication();
+    const expressApp: Express = app.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', 'loopback');
     app.useGlobalPipes(createValidationPipe());
     app.useGlobalFilters(new AllExceptionsFilter());
     app.useGlobalInterceptors(new TransformInterceptor(), new EitherInterceptor());
@@ -472,7 +504,7 @@ describe('Marketplace journey (HTTP + real database)', () => {
   });
 
   it('cancels the order with a reason and persists it', async () => {
-    const res = await patch(`/orders/${orderId}/cancel`, buyerToken, {
+    const res = await cancelOrderWithFreshProof(orderId, buyerToken, {
       reason: 'E2E changed mind',
     });
     expect(res.status).toBe(200);
@@ -507,11 +539,11 @@ describe('Marketplace journey (HTTP + real database)', () => {
     expect(order.status).toBe(201);
     const secondOrderId = parseData<{ id: string }>(order).id;
 
-    const missing = await patch(`/orders/${secondOrderId}/cancel`, buyerToken, {});
+    const missing = await cancelOrderWithFreshProof(secondOrderId, buyerToken, {});
     expect(missing.status).toBe(400);
     expect(missing.json.error?.code).toBe('VALIDATION_ERROR');
 
-    const cancelled = await patch(`/orders/${secondOrderId}/cancel`, buyerToken, {
+    const cancelled = await cancelOrderWithFreshProof(secondOrderId, buyerToken, {
       reason: 'E2E changed mind',
     });
     expect(cancelled.status).toBe(200);
@@ -687,21 +719,28 @@ describe('Marketplace journey (HTTP + real database)', () => {
     await prisma.wallet.upsert({ where: { userId: seller.id }, create: { userId: seller.id, pendingBalance: 4500 }, update: { pendingBalance: 4500 } });
 
     stripe.refundPayment.mockResolvedValueOnce(left(new PaymentProviderError('Refund failed')))
-      .mockResolvedValueOnce(right('pending'))
-      .mockResolvedValueOnce(right('succeeded'));
-    const failed = await patch(`/orders/${order.id}/cancel`, buyerToken, { reason: 'Changed mind' });
+      .mockResolvedValueOnce(right({
+        id: 're_test_paid_refund', chargeId: 'ch_test_paid', amount: 5000,
+        status: 'pending', orderId: order.id, operationId: null,
+      }))
+      .mockResolvedValueOnce(right({
+        id: 're_test_paid_refund', chargeId: 'ch_test_paid', amount: 5000,
+        status: 'succeeded', orderId: order.id, operationId: null,
+      }));
+    const refundClientIp = '198.51.100.27';
+    const failed = await cancelOrderWithFreshProof(order.id, buyerToken, { reason: 'Changed mind' }, refundClientIp);
     expect(failed.status).toBe(500);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('CONFIRMED');
     expect((await prisma.wallet.findUniqueOrThrow({ where: { userId: seller.id } })).pendingBalance).toBe(4500);
     expect((await prisma.wallet.findUniqueOrThrow({ where: { userId: buyer.id } })).availableBalance).toBe(0);
 
-    const pending = await patch(`/orders/${order.id}/cancel`, buyerToken, { reason: 'Changed mind' });
+    const pending = await cancelOrderWithFreshProof(order.id, buyerToken, { reason: 'Changed mind' }, refundClientIp);
     expect(pending.status).toBe(200);
     expect(pending.json.data).toBe('REFUND_PENDING');
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('CONFIRMED');
     expect((await patch(`/orders/${order.id}/ship`, sellerToken, {})).status).toBe(422);
 
-    const succeeded = await patch(`/orders/${order.id}/cancel`, buyerToken, { reason: 'Changed mind' });
+    const succeeded = await cancelOrderWithFreshProof(order.id, buyerToken, { reason: 'Changed mind' }, refundClientIp);
     expect(succeeded.status).toBe(200);
     expect(stripe.refundPayment).toHaveBeenCalledTimes(3);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('CANCELLED');

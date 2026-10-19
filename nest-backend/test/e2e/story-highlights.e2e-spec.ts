@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import type { Express } from 'express';
 import { AppModule } from '../../src/app.module';
 import { StripeProvider } from '../../src/modules/payments/providers/stripe-provider';
 import { StoryCleanupTask } from '../../src/modules/tasks/story-cleanup.task';
@@ -25,12 +26,14 @@ describe('Story highlights (HTTP + real database)', () => {
   let app: INestApplication;
   let baseUrl: string;
   const suffix = Date.now().toString(36);
+  const testClientIp = '198.51.100.26';
 
   async function call(method: string, path: string, token?: string, body?: object) {
     const response = await fetch(`${baseUrl}${path}`, {
       method,
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'X-Forwarded-For': testClientIp,
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -45,6 +48,8 @@ describe('Story highlights (HTTP + real database)', () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(StripeProvider).useValue({}).compile();
     app = module.createNestApplication();
+    const expressApp: Express = app.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', 'loopback');
     app.useGlobalPipes(createValidationPipe());
     app.useGlobalFilters(new AllExceptionsFilter());
     app.useGlobalInterceptors(new TransformInterceptor(), new EitherInterceptor());
