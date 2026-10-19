@@ -88,6 +88,21 @@ void main() {
     test('returns null when no token is cached', () {
       expect(mediaAuthHeaders('/media/chat/a.jpg'), isNull);
     });
+
+    test('attaches view-once key only to private media headers', () {
+      final headers = mediaAuthHeaders(
+        '/media/chat/a.jpg',
+        viewOnceOpeningKey: 'one-open-key',
+      );
+      expect(headers?['x-view-once-opening'], 'one-open-key');
+      expect(
+        mediaAuthHeaders(
+          '$base/uploads/a.jpg',
+          viewOnceOpeningKey: 'one-open-key',
+        ),
+        isNull,
+      );
+    });
   });
 
   group('absolutizeMediaUrls', () {

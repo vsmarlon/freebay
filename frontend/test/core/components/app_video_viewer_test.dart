@@ -11,7 +11,7 @@ void main() {
   final previousPlatform = VideoPlayerPlatform.instance;
   tearDown(() => VideoPlayerPlatform.instance = previousPlatform);
 
-  testWidgets('chat preview stays paused and is handed to fullscreen', (
+  testWidgets('chat video waits for play and hands playback to fullscreen', (
     tester,
   ) async {
     final platform = _FakeVideoPlatform();
@@ -39,23 +39,27 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(platform.createCount, 3);
+    expect(platform.createCount, 0);
     expect(platform.playCount, 0);
-    final videos = tester.widgetList<VideoPlayer>(find.byType(VideoPlayer));
-    expect(videos, hasLength(3));
-    expect(
-      videos.every((video) => video.controller.value.isInitialized),
-      isTrue,
+    expect(find.byType(VideoPlayer), findsNothing);
+    await tester.tap(find.byIcon(Icons.play_arrow).first);
+    for (var frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pump();
+
+    expect(platform.createCount, 1);
+    expect(platform.playCount, 1);
+    expect(find.byType(VideoPlayer), findsOneWidget);
+    await tester.tapAt(
+      tester.getTopLeft(find.byType(VideoPlayer).first) + const Offset(12, 12),
     );
-    expect(videos.every((video) => !video.controller.value.isPlaying), isTrue);
-    final videoTopLeft = tester.getTopLeft(find.byType(VideoPlayer).first);
-    await tester.tapAt(videoTopLeft + const Offset(12, 12));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump();
 
-    expect(platform.createCount, 3);
+    expect(platform.createCount, 1);
     expect(find.byType(VideoViewerControls), findsOneWidget);
-    expect(platform.playCount, 1);
+    expect(platform.playCount, 2);
     expect(find.text('00:00 / 00:10'), findsOneWidget);
   });
 

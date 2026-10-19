@@ -27,18 +27,34 @@ String mediaUrl(String path) {
   return '$root$path';
 }
 
-Map<String, String>? mediaAuthHeaders(String url) {
+Map<String, String>? mediaAuthHeaders(
+  String url, {
+  String? viewOnceOpeningKey,
+}) {
   if (!isPrivateMedia(url)) return null;
   final token = StorageService.cachedToken;
-  if (token == null) return null;
-  return {'Authorization': 'Bearer $token'};
+  if (token == null && viewOnceOpeningKey == null) return null;
+  final headers = <String, String>{};
+  if (token != null) headers['Authorization'] = 'Bearer $token';
+  if (viewOnceOpeningKey != null) {
+    headers['x-view-once-opening'] = viewOnceOpeningKey;
+  }
+  return headers;
 }
 
-Future<Map<String, String>?> getMediaAuthHeadersAsync(String url) async {
+Future<Map<String, String>?> getMediaAuthHeadersAsync(
+  String url, {
+  String? viewOnceOpeningKey,
+}) async {
   if (!isPrivateMedia(url)) return null;
   final token = StorageService.cachedToken ?? await StorageService.getToken();
-  if (token == null) return null;
-  return {'Authorization': 'Bearer $token'};
+  if (token == null && viewOnceOpeningKey == null) return null;
+  final headers = <String, String>{};
+  if (token != null) headers['Authorization'] = 'Bearer $token';
+  if (viewOnceOpeningKey != null) {
+    headers['x-view-once-opening'] = viewOnceOpeningKey;
+  }
+  return headers;
 }
 
 dynamic absolutizeMediaUrls(dynamic node) {

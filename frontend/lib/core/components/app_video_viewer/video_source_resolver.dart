@@ -8,7 +8,10 @@ import 'package:video_player/video_player.dart';
 class VideoSourceResolver {
   const VideoSourceResolver();
 
-  Future<VideoPlayerController> createController(String rawUrl) async {
+  Future<VideoPlayerController> createController(
+    String rawUrl, {
+    Map<String, String>? httpHeaders,
+  }) async {
     final resolvedUrl = mediaUrl(rawUrl);
     final uri = Uri.tryParse(resolvedUrl);
 
@@ -25,6 +28,7 @@ class VideoSourceResolver {
     VideoPlayerController? controller;
     try {
       final headers =
+          httpHeaders ??
           await getMediaAuthHeadersAsync(resolvedUrl) ??
           const <String, String>{};
       controller = VideoPlayerController.networkUrl(
@@ -35,6 +39,7 @@ class VideoSourceResolver {
       return controller;
     } catch (_) {
       await controller?.dispose();
+      if (httpHeaders != null) rethrow;
       return _downloadAndCreateController(resolvedUrl);
     }
   }

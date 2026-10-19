@@ -13,14 +13,18 @@ Future<void> showFullScreenVideo(
   BuildContext context,
   String videoUrl, {
   VideoPlayerController? controller,
+  Map<String, String>? httpHeaders,
 }) async {
   await Navigator.of(context).push<void>(
     PageRouteBuilder<void>(
       opaque: false,
       barrierColor: Colors.black,
       transitionDuration: AppMotion.forContext(context, AppMotion.enter),
-      pageBuilder: (_, _, _) =>
-          _AppVideoViewer(videoUrl: videoUrl, controller: controller),
+      pageBuilder: (_, _, _) => _AppVideoViewer(
+        videoUrl: videoUrl,
+        controller: controller,
+        httpHeaders: httpHeaders,
+      ),
       transitionsBuilder: (_, animation, _, child) =>
           FadeTransition(opacity: animation, child: child),
     ),
@@ -30,8 +34,13 @@ Future<void> showFullScreenVideo(
 class _AppVideoViewer extends StatefulWidget {
   final String videoUrl;
   final VideoPlayerController? controller;
+  final Map<String, String>? httpHeaders;
 
-  const _AppVideoViewer({required this.videoUrl, this.controller});
+  const _AppVideoViewer({
+    required this.videoUrl,
+    this.controller,
+    this.httpHeaders,
+  });
 
   @override
   State<_AppVideoViewer> createState() => _AppVideoViewerState();
@@ -94,7 +103,10 @@ class _AppVideoViewerState extends State<_AppVideoViewer> {
 
   Future<void> _initialize() async {
     try {
-      final controller = await _resolver.createController(widget.videoUrl);
+      final controller = await _resolver.createController(
+        widget.videoUrl,
+        httpHeaders: widget.httpHeaders,
+      );
       if (!mounted) {
         await controller.dispose();
         return;
