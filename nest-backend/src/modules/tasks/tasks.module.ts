@@ -11,6 +11,7 @@ import { DisputeResolutionExecutionService } from '../disputes/services/dispute-
 import { MagicLinkDatabaseRepository } from '../auth/data/repositories/magic-link-database.repository';
 import { MagicLinkCleanupTask } from './magic-link-cleanup.task';
 import { TransferReconciliationTask } from './transfer-reconciliation.task';
+import { RefundRecoveryTask } from './refund-recovery.task';
 
 @Module({
   imports: [ScheduleModule.forRoot(), PaymentsModule, UsersModule],
@@ -24,6 +25,7 @@ import { TransferReconciliationTask } from './transfer-reconciliation.task';
     MagicLinkDatabaseRepository,
     MagicLinkCleanupTask,
     TransferReconciliationTask,
+    RefundRecoveryTask,
   ],
 })
 export class TasksModule {}

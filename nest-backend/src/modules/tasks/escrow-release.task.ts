@@ -38,7 +38,15 @@ export class EscrowReleaseTask {
       try {
         const released = await this.prisma.$transaction(async (tx) => {
           const claimed = await tx.order.updateMany({
-            where: { id: order.id, status: OrderStatus.DELIVERED },
+            where: {
+              id: order.id,
+              status: OrderStatus.DELIVERED,
+              cancellationReason: null,
+              transaction: { is: {
+                status: { in: [TransactionStatus.PAID, TransactionStatus.HELD] },
+                refundOperationId: null,
+              } },
+            },
             data: { status: OrderStatus.COMPLETED, escrowStatus: EscrowStatus.RELEASED },
           });
           if (claimed.count === 0) {
@@ -61,10 +69,11 @@ export class EscrowReleaseTask {
             { reason: WalletEntryReason.SALE_RELEASED, orderId: order.id },
           );
 
-          await tx.transaction.update({
-            where: { orderId: order.id },
+          const transactionClaim = await tx.transaction.updateMany({
+            where: { orderId: order.id, status: { in: [TransactionStatus.PAID, TransactionStatus.HELD] }, refundOperationId: null },
             data: { status: TransactionStatus.RELEASED, releasedAt: new Date() },
           });
+          if (transactionClaim.count !== 1) throw new Error('ESCROW_TRANSACTION_CLAIM_LOST');
           return true;
         });
 
