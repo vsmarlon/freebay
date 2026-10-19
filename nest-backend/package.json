@@ -4,7 +4,7 @@
   "description": "FreeBay NestJS Backend",
   "scripts": {
     "build": "nest build",
-    "start": "nest start",
+    "start": "npm run start:dev",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "test": "jest",
@@ -15,7 +15,7 @@
     "test:integration:cov": "npm run prisma:test:sync && dotenv -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.integration.js --coverage",
     "test:safety": "node --test scripts/safe-prisma-db-push.test.js",
     "test:runtime-db": "dotenv -e .env -- jest --runInBand --testRegex=runtime-schema.smoke-spec.ts$",
-    "test:e2e": "npm run prisma:test:sync && dotenv -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.e2e.js --runInBand",
+    "test:e2e": "npm run prisma:test:sync && dotenv -e .env.test.local -e .env.test -- cross-env NODE_ENV=test jest --config jest.config.e2e.js --runInBand",
     "test:all": "npm test && npm run test:integration",
     "prisma:generate": "prisma generate",
     "db:sync": "prisma db push && prisma generate",
@@ -27,6 +27,8 @@
     "tsc:check": "tsc --noEmit"
   },
   "dependencies": {
+    "@nestjs-cls/transactional": "^4.0.1",
+    "@nestjs-cls/transactional-adapter-prisma": "^2.0.1",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
@@ -50,6 +52,7 @@
     "google-auth-library": "^11.0.2",
     "helmet": "^8.2.0",
     "ioredis": "^5.10.0",
+    "nestjs-cls": "^7.0.1",
     "open-graph-scraper": "^6.12.0",
     "pg": "^8.19.0",
     "reflect-metadata": "^0.2.2",
