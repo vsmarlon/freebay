@@ -48,6 +48,7 @@ abstract class ChatEntity with _$ChatEntity {
   DateTime get timestamp => lastMessageInfo?.createdAt ?? createdAt;
   bool get unread => unreadCount > 0;
   bool get isArchived => preference?.isArchived ?? false;
+  bool get isMuted => preference?.muted ?? false;
   String? get orderStatus => orderInfo?.status;
 
   OrderStatus? get orderStatusEnum {

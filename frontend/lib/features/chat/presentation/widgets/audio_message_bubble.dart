@@ -12,12 +12,16 @@ class AudioMessageBubble extends StatefulWidget {
   final String? audioUrl;
   final bool isMe;
   final int? durationMs;
+  final String? viewOnceOpeningKey;
+  final VoidCallback? onViewOnceClose;
 
   const AudioMessageBubble({
     super.key,
     required this.audioUrl,
     required this.isMe,
     this.durationMs,
+    this.viewOnceOpeningKey,
+    this.onViewOnceClose,
   });
 
   @override
@@ -27,9 +31,11 @@ class AudioMessageBubble extends StatefulWidget {
 class _AudioMessageBubbleState extends State<AudioMessageBubble> {
   final _player = AudioPlayer();
   StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<PlayerState>? _playerStateSub;
   bool _loading = false;
   bool _ready = false;
   bool _playing = false;
+  File? _viewOnceTemporaryFile;
   Duration _position = Duration.zero;
   Duration? _total;
 
@@ -41,6 +47,13 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
     _positionSub = _player.positionStream.listen((pos) {
       if (mounted) setState(() => _position = pos);
     });
+    if (widget.viewOnceOpeningKey != null) {
+      _playerStateSub = _player.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed) {
+          widget.onViewOnceClose?.call();
+        }
+      });
+    }
   }
 
   String? get _url {
@@ -57,16 +70,24 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
       try {
         final response = await HttpClient.instance.get<List<int>>(
           url,
-          options: Options(responseType: ResponseType.bytes),
+          options: Options(
+            responseType: ResponseType.bytes,
+            headers: mediaAuthHeaders(
+              url,
+              viewOnceOpeningKey: widget.viewOnceOpeningKey,
+            ),
+          ),
         );
         final bytes = response.data;
         if (bytes == null) throw const FormatException('Áudio vazio');
+        final isViewOnce = widget.viewOnceOpeningKey != null;
         final file = File(
-          '${Directory.systemTemp.path}/freebay_audio_${url.hashCode.toUnsigned(32)}.m4a',
+          '${Directory.systemTemp.path}/freebay_audio_${isViewOnce ? DateTime.now().microsecondsSinceEpoch : url.hashCode.toUnsigned(32)}.m4a',
         );
-        if (!await file.exists()) {
+        if (isViewOnce || !await file.exists()) {
           await file.writeAsBytes(bytes, flush: true);
         }
+        if (isViewOnce) _viewOnceTemporaryFile = file;
         await _player.setFilePath(file.path);
         if (!mounted) return;
         setState(() {
@@ -98,7 +119,14 @@ class _AudioMessageBubbleState extends State<AudioMessageBubble> {
   @override
   void dispose() {
     _positionSub?.cancel();
+    _playerStateSub?.cancel();
     _player.dispose();
+    final viewOnceFile = _viewOnceTemporaryFile;
+    if (viewOnceFile != null) {
+      unawaited(
+        viewOnceFile.delete().then<void>((_) {}, onError: (Object _) {}),
+      );
+    }
     super.dispose();
   }
 

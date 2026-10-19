@@ -17,6 +17,7 @@ _ConversationPreference _$ConversationPreferenceFromJson(
   isDeleted: json['isDeleted'] as bool? ?? false,
   theme: json['theme'] as String? ?? 'DEFAULT',
   backgroundUrl: json['backgroundUrl'] as String?,
+  muted: json['muted'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$ConversationPreferenceToJson(
@@ -30,4 +31,5 @@ Map<String, dynamic> _$ConversationPreferenceToJson(
   'isDeleted': instance.isDeleted,
   'theme': instance.theme,
   'backgroundUrl': instance.backgroundUrl,
+  'muted': instance.muted,
 };

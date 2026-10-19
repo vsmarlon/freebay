@@ -133,7 +133,9 @@ class ConversationDetailsStarredTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = l10n(context);
-    final starred = messages.where((m) => starredIds.contains(m.id)).toList();
+    final starred = messages
+        .where((m) => !m.viewOnce && starredIds.contains(m.id))
+        .toList();
     if (starred.isEmpty) {
       return EmptyState(
         icon: Icons.star_outline,

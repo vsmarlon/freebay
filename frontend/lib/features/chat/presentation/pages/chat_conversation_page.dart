@@ -328,6 +328,8 @@ class _ChatConversationPageState extends ConsumerState<ChatConversationPage>
                           (_) {},
                         );
                       },
+                      viewOnceOpeningKey: _notifier.viewOnceOpeningKey,
+                      onViewOnceClose: _notifier.closeViewOnce,
                     ),
                   );
                 },

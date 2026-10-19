@@ -68,7 +68,9 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.longPress(find.text('Maria'));
+    await tester.longPress(
+      find.byKey(ValueKey('${ChatThreadType.direct}:chat-1')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Excluir'));
     await tester.pumpAndSettle();

@@ -32,6 +32,8 @@ class ChatMessageList extends StatelessWidget {
   final void Function(String, String) onReactionTap;
   final void Function(MessageEntity, String) onReactionLongPress;
   final ValueChanged<String> onViewOnceReveal;
+  final String? Function(String) viewOnceOpeningKey;
+  final ValueChanged<String> onViewOnceClose;
 
   const ChatMessageList({
     super.key,
@@ -54,6 +56,8 @@ class ChatMessageList extends StatelessWidget {
     required this.onReactionTap,
     required this.onReactionLongPress,
     required this.onViewOnceReveal,
+    required this.viewOnceOpeningKey,
+    required this.onViewOnceClose,
   });
 
   bool _isSameSender(int index) {
@@ -153,6 +157,10 @@ class ChatMessageList extends StatelessWidget {
                           isStarred: starredIds.contains(msgEntity.id),
                           currentUserId: currentUserId,
                           otherUserName: otherUserName,
+                          viewOnceOpeningKey: msgEntity.viewOnce
+                              ? viewOnceOpeningKey(msgEntity.id)
+                              : null,
+                          onViewOnceClose: () => onViewOnceClose(msgEntity.id),
                           onReplyTap:
                               !isSelecting && msgEntity.replyToId != null
                               ? () => onReplyTap(msgEntity.replyToId!)
@@ -178,9 +186,10 @@ class ChatMessageList extends StatelessWidget {
                               ? () => onViewOnceReveal(msgEntity.id)
                               : null,
                           onImageTap:
-                              (msgEntity.type == MessageType.image ||
-                                  msgEntity.type == MessageType.gif ||
-                                  msgEntity.type == MessageType.video)
+                              (!msgEntity.viewOnce &&
+                                  (msgEntity.type == MessageType.image ||
+                                      msgEntity.type == MessageType.gif ||
+                                      msgEntity.type == MessageType.video))
                               ? () {
                                   final allMedia =
                                       ChatMediaGalleryViewer.extractMedia(

@@ -198,6 +198,52 @@ class ChatRepository {
         Right(ConversationPreference.fromJson(response.data['data'])),
   );
 
+  Future<Either<Failure, ConversationPreference>> setMuted(
+    String id,
+    ChatThreadType type,
+    bool muted,
+  ) => requestEither(
+    () => client.patch('/chat/conversations/$id/theme', data: {'muted': muted}),
+    decoder: (response) =>
+        Right(ConversationPreference.fromJson(response.data['data'])),
+  );
+
+  Future<Either<Failure, ({String mediaUrl, DateTime readAt})>> openViewOnce(
+    String conversationId,
+    String messageId,
+    String openingKey,
+  ) => requestEither(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/view-once/open',
+      data: {'openingKey': openingKey},
+    ),
+    decoder: (response) {
+      final data = response.data['data'];
+      if (data is! Map<String, dynamic> ||
+          data['mediaUrl'] is! String ||
+          data['readAt'] is! String) {
+        return const Left(ServerFailure());
+      }
+      final readAt = DateTime.tryParse(data['readAt'] as String);
+      if (readAt == null) {
+        return const Left(ServerFailure());
+      }
+      return Right((mediaUrl: data['mediaUrl'] as String, readAt: readAt));
+    },
+  );
+
+  Future<Either<Failure, void>> closeViewOnce(
+    String conversationId,
+    String messageId,
+    String openingKey,
+  ) => requestEither<void>(
+    () => client.post(
+      '/chat/conversations/$conversationId/messages/$messageId/view-once/close',
+      data: {'openingKey': openingKey},
+    ),
+    decoder: (_) => const Right(null),
+  );
+
   Future<Either<Failure, ConversationPreference>> setBackground(
     String id,
     ChatThreadType type,
@@ -325,6 +371,7 @@ class ChatRepository {
       final messages = rawMessages
           .whereType<Map>()
           .map((m) => MessageEntity.fromJson(Map<String, dynamic>.from(m)))
+          .where((message) => !message.viewOnce)
           .toList();
       return Right((
         messages: messages,

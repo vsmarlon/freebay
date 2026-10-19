@@ -26,7 +26,6 @@ class _ConversationDetailsPageState
     extends ConsumerState<ConversationDetailsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isMuted = false;
   ConversationMediaFilter _mediaFilter = ConversationMediaFilter.image;
 
   @override
@@ -48,6 +47,7 @@ class _ConversationDetailsPageState
   Widget build(BuildContext context) {
     final conversation = ref.watch(conversationMessagesProvider(widget.chatId));
     final mediaMessages = conversation.messages.where((message) {
+      if (message.viewOnce) return false;
       if (_mediaFilter == ConversationMediaFilter.link) {
         final metadata = message.metadata;
         return message.type == MessageType.text &&
@@ -123,7 +123,7 @@ class _ConversationDetailsPageState
                   ListView(
                     children: [
                       ConversationDetailsActionsTab(
-                        isMuted: _isMuted,
+                        isMuted: conversation.preference?.muted ?? false,
                         onToggleMute: _toggleMute,
                         onTheme: _showThemeSheet,
                         onBlock: _showBlockSheet,
@@ -140,14 +140,30 @@ class _ConversationDetailsPageState
     );
   }
 
-  void _toggleMute() {
-    setState(() => _isMuted = !_isMuted);
-    AppSnackbar.info(
-      context,
-      _isMuted
-          ? l10n(context).chatNotificationsMuted
-          : l10n(context).chatNotificationsEnabled,
-    );
+  Future<void> _toggleMute() async {
+    final conversation = ref.read(conversationMessagesProvider(widget.chatId));
+    if (conversation.threadType == null) return;
+    final muted = !(conversation.preference?.muted ?? false);
+    final result = await ref
+        .read(chatRepositoryProvider)
+        .setMuted(widget.chatId, _threadType(conversation), muted);
+    if (!mounted) return;
+    result.fold((failure) => AppSnackbar.error(context, failure.message), (
+      preference,
+    ) {
+      ref
+          .read(conversationMessagesProvider(widget.chatId).notifier)
+          .setPreference(preference);
+      ref.invalidate(chatsProvider);
+      ref.invalidate(liveChatListProvider);
+      ref.invalidate(archivedChatListProvider);
+      AppSnackbar.info(
+        context,
+        preference.muted
+            ? l10n(context).chatNotificationsMuted
+            : l10n(context).chatNotificationsEnabled,
+      );
+    });
   }
 
   void _showBlockSheet() {

@@ -11,12 +11,16 @@ class VideoMessageBubble extends StatefulWidget {
   final String? videoUrl;
   final bool isMe;
   final String? thumbnailUrl;
+  final String? viewOnceOpeningKey;
+  final VoidCallback? onViewOnceClose;
 
   const VideoMessageBubble({
     super.key,
     required this.videoUrl,
     required this.isMe,
     this.thumbnailUrl,
+    this.viewOnceOpeningKey,
+    this.onViewOnceClose,
   });
 
   @override
@@ -52,7 +56,6 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   @override
   void initState() {
     super.initState();
-    if (_thumbnailUrl == null) _initialize(play: false);
   }
 
   @override
@@ -65,12 +68,8 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
       _error = null;
       _thumbnailFailed = false;
       _loading = false;
-      if (_thumbnailUrl == null) _initialize(play: false);
     } else if (oldWidget.thumbnailUrl != widget.thumbnailUrl) {
       _thumbnailFailed = false;
-      if (_thumbnailUrl == null && _controller == null) {
-        _initialize(play: false);
-      }
     }
   }
 
@@ -79,23 +78,44 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
     if (url == null) return;
     if (_loading) return;
     final initialization = ++_initialization;
+    VideoPlayerController? controller;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final controller = await _resolver.createController(url);
-      await controller.setLooping(true);
-      await controller.setVolume(_muted ? 0 : 1);
+      final openingKey = widget.viewOnceOpeningKey;
+      controller = openingKey == null
+          ? await _resolver.createController(url)
+          : VideoPlayerController.networkUrl(
+              Uri.parse(url),
+              httpHeaders:
+                  await getMediaAuthHeadersAsync(
+                    url,
+                    viewOnceOpeningKey: openingKey,
+                  ) ??
+                  const <String, String>{},
+            );
+      final initializedController = controller;
+      if (openingKey != null) await initializedController.initialize();
+      await initializedController.setLooping(true);
+      await initializedController.setVolume(_muted ? 0 : 1);
       if (!mounted || initialization != _initialization) {
-        await controller.dispose();
+        await initializedController.dispose();
         return;
       }
-      setState(() => _controller = controller);
-      if (play) await controller.play();
+      setState(() => _controller = initializedController);
+      if (openingKey != null) {
+        initializedController.addListener(_closeWhenCompleted);
+      }
+      if (play) await initializedController.play();
     } catch (_) {
+      await controller?.dispose();
       if (mounted && initialization == _initialization) {
-        setState(() => _error = l10n(context).errorUnknown);
+        setState(() {
+          if (identical(_controller, controller)) _controller = null;
+          _error = l10n(context).errorUnknown;
+        });
       }
     } finally {
       if (mounted && initialization == _initialization) {
@@ -124,10 +144,48 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
       _controller = null;
       setState(() {});
     }
-    await showFullScreenVideo(context, url, controller: controller);
-    if (mounted && controller != null && _thumbnailUrl == null) {
+    try {
+      final httpHeaders = widget.viewOnceOpeningKey == null
+          ? null
+          : await getMediaAuthHeadersAsync(
+              url,
+              viewOnceOpeningKey: widget.viewOnceOpeningKey,
+            );
+      if (!mounted) return;
+      await showFullScreenVideo(
+        context,
+        url,
+        controller: controller,
+        httpHeaders: httpHeaders,
+      );
+    } finally {
+      if (widget.viewOnceOpeningKey != null) widget.onViewOnceClose?.call();
+    }
+    if (mounted &&
+        controller != null &&
+        _thumbnailUrl == null &&
+        widget.viewOnceOpeningKey == null) {
       await _initialize(play: false);
     }
+  }
+
+  void _closeWhenCompleted() {
+    final value = _controller?.value;
+    if (value == null ||
+        value.duration <= Duration.zero ||
+        value.position < value.duration) {
+      return;
+    }
+    _controller?.removeListener(_closeWhenCompleted);
+    widget.onViewOnceClose?.call();
+  }
+
+  Future<void> _openFromBubble(String url) async {
+    if (widget.viewOnceOpeningKey != null && _controller == null) {
+      await _initialize(play: false);
+      if (!mounted || _controller == null) return;
+    }
+    await _openFullscreen(url);
   }
 
   Future<void> _toggleMute() async {
@@ -156,6 +214,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
   @override
   void dispose() {
     _initialization++;
+    _controller?.removeListener(_closeWhenCompleted);
     _controller?.dispose();
     super.dispose();
   }
@@ -179,7 +238,7 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
           alignment: Alignment.center,
           children: [
             GestureDetector(
-              onTap: _loading ? null : () => _openFullscreen(url),
+              onTap: _loading ? null : () => _openFromBubble(url),
               behavior: HitTestBehavior.opaque,
               child: AspectRatio(
                 aspectRatio: initialized
@@ -189,6 +248,16 @@ class _VideoMessageBubbleState extends State<VideoMessageBubble> {
                     ? VideoPlayer(controller)
                     : thumbnailUrl == null || _thumbnailFailed
                     ? ColoredBox(color: context.surfaceMidColor)
+                    : isPrivateMedia(thumbnailUrl)
+                    ? Image.network(
+                        thumbnailUrl,
+                        headers: mediaAuthHeaders(thumbnailUrl),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          _onThumbnailError();
+                          return ColoredBox(color: context.surfaceMidColor);
+                        },
+                      )
                     : CachedNetworkImage(
                         imageUrl: thumbnailUrl,
                         httpHeaders: mediaAuthHeaders(thumbnailUrl),

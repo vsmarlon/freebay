@@ -178,6 +178,7 @@ class ChatSocketService {
     socket
       ..onConnect((_) {
         if (!_isCurrent(socket, generation)) return;
+        _eventsController.add(const ChatReconnectedEvent());
         for (final conversationId in _joinedConversations) {
           socket.emit('join_conversation', {'conversationId': conversationId});
         }
@@ -236,6 +237,14 @@ class ChatSocketService {
         _eventsController.add(
           MessageDeletedEvent(data['messageId'] as String? ?? ''),
         );
+      })
+      ..on('messages_read', (data) {
+        if (!_isCurrent(socket, generation) || data is! Map) return;
+        final conversationId = data['conversationId'];
+        final readerId = data['readerId'];
+        if (conversationId is String && readerId is String) {
+          _eventsController.add(MessagesReadEvent(conversationId, readerId));
+        }
       })
       ..on('user_typing', (data) {
         if (!_isCurrent(socket, generation) || data is! Map<String, dynamic>) {

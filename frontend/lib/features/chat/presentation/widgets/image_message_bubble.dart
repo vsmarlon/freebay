@@ -10,12 +10,14 @@ class ImageMessageBubble extends StatelessWidget {
   final bool isMe;
 
   final VoidCallback? onTapImage;
+  final String? viewOnceOpeningKey;
 
   const ImageMessageBubble({
     super.key,
     required this.imageUrl,
     required this.isMe,
     this.onTapImage,
+    this.viewOnceOpeningKey,
   });
 
   String? get _fullUrl {
@@ -31,36 +33,52 @@ class ImageMessageBubble extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: onTapImage ?? () => unawaited(showAppImageViewer(context, url)),
+      onTap: viewOnceOpeningKey != null
+          ? null
+          : onTapImage ?? () => unawaited(showAppImageViewer(context, url)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 240, maxHeight: 300),
-        child: CachedNetworkImage(
-          imageUrl: url,
-          httpHeaders: mediaAuthHeaders(url),
-          fit: BoxFit.cover,
-          memCacheWidth: 600,
-          memCacheHeight: 800,
-          placeholder: (context, url) => Container(
-            width: 200,
-            height: 150,
-            color: isMe
-                ? Colors.white.withValues(alpha: 0.2)
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+        child: isPrivateMedia(url)
+            ? Image.network(
+                url,
+                headers: mediaAuthHeaders(
+                  url,
+                  viewOnceOpeningKey: viewOnceOpeningKey,
+                ),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 200,
+                  height: 150,
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: const Icon(Icons.broken_image, size: 32),
+                ),
+              )
+            : CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                memCacheWidth: 600,
+                memCacheHeight: 800,
+                placeholder: (context, url) => Container(
+                  width: 200,
+                  height: 150,
+                  color: isMe
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  width: 200,
+                  height: 150,
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: const Icon(Icons.broken_image, size: 32),
+                ),
               ),
-            ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            width: 200,
-            height: 150,
-            color: Theme.of(context).colorScheme.errorContainer,
-            child: const Icon(Icons.broken_image, size: 32),
-          ),
-        ),
       ),
     );
   }

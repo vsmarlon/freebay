@@ -32,6 +32,8 @@ class ChatConversationBody extends StatelessWidget {
     required this.onReactionTap,
     required this.onReactionLongPress,
     required this.onViewOnceReveal,
+    required this.viewOnceOpeningKey,
+    required this.onViewOnceClose,
   });
 
   final ScrollController scrollController;
@@ -56,6 +58,8 @@ class ChatConversationBody extends StatelessWidget {
   final void Function(String msgId, String emoji) onReactionTap;
   final void Function(MessageEntity msg, String emoji) onReactionLongPress;
   final ValueChanged<String> onViewOnceReveal;
+  final String? Function(String) viewOnceOpeningKey;
+  final ValueChanged<String> onViewOnceClose;
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +121,8 @@ class ChatConversationBody extends StatelessWidget {
                   onReactionTap: onReactionTap,
                   onReactionLongPress: onReactionLongPress,
                   onViewOnceReveal: onViewOnceReveal,
+                  viewOnceOpeningKey: viewOnceOpeningKey,
+                  onViewOnceClose: onViewOnceClose,
                 ),
               ),
             ),

@@ -11,6 +11,7 @@ import 'package:freebay/features/chat/data/entities/chat_entity.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/orders/data/entities/order_entity.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_list_states.dart';
+import 'package:freebay/features/chat/presentation/pages/chat_counterparty_groups.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_loading_tile.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
@@ -253,6 +254,14 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                     return buildChatErrorState(context, ref);
                   }
                   final chats = listState.items;
+                  final chatGroups = groupChatsByCounterparty(chats);
+                  final chatRows = <({String? heading, ChatEntity? chat})>[];
+                  for (final group in chatGroups.values) {
+                    chatRows.add((heading: group.first.otherName, chat: null));
+                    chatRows.addAll(
+                      group.map((chat) => (heading: null, chat: chat)),
+                    );
+                  }
                   final loadingMore = listState.isLoadingMore;
                   if (chats.isEmpty) {
                     return buildChatEmptyState(context, query.isNotEmpty);
@@ -267,19 +276,45 @@ class _ChatListPageState extends ConsumerState<ChatListPage>
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
                         controller: _scrollController,
-                        itemCount: chats.length + (loadingMore ? 1 : 0),
+                        itemCount: chatRows.length + (loadingMore ? 1 : 0),
                         itemBuilder: (context, index) {
-                          if (index == chats.length) {
+                          if (index == chatRows.length) {
                             return ChatListLoadingTile(isDark: isDark);
                           }
-                          final chat = chats[index];
+                          final row = chatRows[index];
+                          final chat = row.chat;
+                          if (chat == null) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Spacing.vSm,
+                                Spacing.vXs,
+                                Row(
+                                  children: [
+                                    Spacing.hMd,
+                                    Expanded(
+                                      child: Text(
+                                        row.heading!,
+                                        style: AppTypography.brutalistTag
+                                            .copyWith(
+                                              color: context.textSecondary,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Spacing.vXs,
+                              ],
+                            );
+                          }
                           return ChatListTile(
+                            key: ValueKey('${chat.threadType}:${chat.id}'),
                             chat: chat,
                             isDark: isDark,
                             canSwipe: _canModifyOrderChat(chat),
-                            onTap: () {
-                              context.push(AppRoutes.chatPath(chat.id));
-                            },
+                            onTap: () =>
+                                context.push(AppRoutes.chatPath(chat.id)),
                             onLongPress: () => _showContextMenu(chat),
                             onArchive: () => _archiveChat(chat),
                           );

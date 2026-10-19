@@ -19,6 +19,7 @@ class ChatMediaGalleryViewer extends StatefulWidget {
   static List<MessageEntity> extractMedia(List<MessageEntity> messages) {
     return messages.where((m) {
       if (m.deletedAt != null) return false;
+      if (m.viewOnce) return false;
       if (m.attachmentUrl == null || m.attachmentUrl!.isEmpty) return false;
       return m.type == MessageType.image ||
           m.type == MessageType.video ||
@@ -111,13 +112,20 @@ class _ChatMediaGalleryViewerState extends State<ChatMediaGalleryViewer> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        CachedNetworkImage(
-                          imageUrl: url,
-                          httpHeaders: mediaAuthHeaders(url),
-                          fit: BoxFit.contain,
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
+                        isPrivateMedia(url)
+                            ? Image.network(
+                                url,
+                                headers: mediaAuthHeaders(url),
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                height: double.infinity,
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: url,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
                         if (isVideo)
                           Container(
                             decoration: const BoxDecoration(
@@ -167,13 +175,20 @@ class _ChatMediaGalleryViewerState extends State<ChatMediaGalleryViewer> {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          CachedNetworkImage(
-                            imageUrl: url,
-                            httpHeaders: mediaAuthHeaders(url),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                          ),
+                          isPrivateMedia(url)
+                              ? Image.network(
+                                  url,
+                                  headers: mediaAuthHeaders(url),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                )
+                              : CachedNetworkImage(
+                                  imageUrl: url,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
                           if (isVideo)
                             const Icon(
                               Icons.play_arrow,

@@ -24,6 +24,7 @@ class _ChatRepository extends ChatRepository {
   int sends = 0;
   bool failNextSend = false;
   Completer<void>? startGate;
+  final List<(String, String?)> startedContexts = [];
   final List<String?> clientMessageIds = [];
   final List<String> messages = [];
 
@@ -33,6 +34,7 @@ class _ChatRepository extends ChatRepository {
     String? productId,
   }) async {
     starts++;
+    startedContexts.add((targetUserId, productId));
     if (startGate != null) await startGate!.future;
     return const Right('conversation-1');
   }
@@ -113,10 +115,11 @@ Widget _app(NewChatPage page, _ChatRepository repository) {
 
 void main() {
   testWidgets('shows the exact editable product draft', (tester) async {
+    final repository = _ChatRepository();
     await tester.pumpWidget(
       _app(
         const NewChatPage(targetUserId: 'seller-1', productId: 'product-1'),
-        _ChatRepository(),
+        repository,
       ),
     );
     await tester.pumpAndSettle();
@@ -125,6 +128,8 @@ void main() {
       tester.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
       'Oi, ainda está disponível?',
     );
+    expect(repository.starts, 0);
+    expect(repository.sends, 0);
   });
 
   testWidgets('sends edited text explicitly once with one client id', (
@@ -143,6 +148,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.starts, 1);
+    expect(repository.startedContexts, [('seller-1', 'product-1')]);
     expect(repository.sends, 1);
     expect(repository.messages, ['Ainda tem?']);
     expect(repository.clientMessageIds.single, isNotNull);

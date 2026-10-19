@@ -5,11 +5,14 @@ import 'package:freebay/features/chat/data/entities/message_entity.dart';
 import 'package:freebay/features/chat/data/entities/message_type.dart';
 import 'package:freebay/features/chat/data/entities/chat_thread_type.dart';
 import 'package:freebay/features/chat/data/entities/message_reaction_entity.dart';
+import 'package:freebay/features/chat/data/repositories/chat_repository.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_provider.dart';
 import 'package:freebay/features/chat/presentation/providers/chat_socket_provider.dart';
 import 'package:freebay/shared/events/chat_event.dart';
 import 'package:freebay/shared/either/either.dart';
 import 'package:freebay/shared/errors/failures/failures.dart';
+import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:uuid/uuid.dart';
 
 /// Page-scoped source of truth for one conversation's server state.
 ///
@@ -94,16 +97,47 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
   StreamSubscription<ChatEvent>? _sub;
   Timer? _typingTimer;
   int _locationSendSequence = 0;
+  int _loadSequence = 0;
+  final Map<String, String> _viewOnceOpeningKeys = {};
+  late ChatRepository _repository;
 
   @override
   ConversationMessagesState build() {
     final socket = ref.read(chatSocketServiceProvider);
+    _repository = ref.read(chatRepositoryProvider);
+    final repository = _repository;
+    ref.listen(authControllerProvider.select((auth) => auth.value?.id), (
+      previous,
+      next,
+    ) {
+      if (previous == next || !ref.mounted) return;
+      for (final entry in _viewOnceOpeningKeys.entries) {
+        unawaited(
+          repository
+              .closeViewOnce(chatId, entry.key, entry.value)
+              .then<void>((_) {}, onError: (Object _) {}),
+        );
+      }
+      _viewOnceOpeningKeys.clear();
+      _cursor = null;
+      _loadSequence++;
+      state = const ConversationMessagesState();
+      _loadFirstPage();
+    });
     socket.joinConversation(chatId);
     _sub = socket.events.listen(_onEvent);
     ref.onDispose(() {
       socket.leaveConversation(chatId);
       _sub?.cancel();
       _typingTimer?.cancel();
+      for (final entry in _viewOnceOpeningKeys.entries) {
+        unawaited(
+          repository
+              .closeViewOnce(chatId, entry.key, entry.value)
+              .then<void>((_) {}, onError: (Object _) {}),
+        );
+      }
+      _viewOnceOpeningKeys.clear();
     });
     _loadFirstPage();
     return const ConversationMessagesState();
@@ -114,12 +148,13 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
   }
 
   Future<void> _loadConversation({required bool showLoadingError}) async {
+    final sequence = ++_loadSequence;
     final repo = ref.read(chatRepositoryProvider);
     final conversationFuture = repo.getConversation(chatId);
     final starredFuture = repo.getStarredMessages(chatId);
     final results = await conversationFuture;
     final starred = await starredFuture;
-    if (!ref.mounted) return;
+    if (!ref.mounted || sequence != _loadSequence) return;
     results.fold(
       (failure) {
         if (showLoadingError) {
@@ -129,7 +164,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
       (data) {
         _cursor = data.nextCursor;
         state = state.copyWith(
-          messages: List.from(data.messages),
+          messages: _retainOpenViewOnceMessages(data.messages),
           preference: data.preference,
           hasMore: data.hasMore,
           isLoading: showLoadingError ? false : null,
@@ -141,7 +176,7 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
         );
       },
     );
-    if (!ref.mounted) return;
+    if (!ref.mounted || sequence != _loadSequence) return;
     starred.fold((_) {}, (messages) {
       state = state.copyWith(starredIds: {for (final m in messages) m.id});
     });
@@ -151,24 +186,105 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
   Future<void> refresh() => _loadConversation(showLoadingError: false);
 
   Future<Either<Failure, void>> revealViewOnce(String messageId) async {
-    final result = await ref
-        .read(chatRepositoryProvider)
-        .markAsRead(chatId, messageId: messageId);
-    if (!ref.mounted || result.isLeft) return result;
-    final readAt = DateTime.now();
-    state = state.copyWith(
-      messages: [
-        for (final message in state.messages)
-          if (message.id == messageId && message.senderId == state.otherUserId)
-            message.copyWith(
-              readAt: readAt,
-              deliveredAt: message.deliveredAt ?? readAt,
-            )
-          else
-            message,
-      ],
+    final matchingMessages = state.messages
+        .where((item) => item.id == messageId)
+        .toList();
+    final message = matchingMessages.isEmpty ? null : matchingMessages.first;
+    final currentUserId = ref.read(authControllerProvider).value?.id;
+    if (message == null ||
+        !message.viewOnce ||
+        currentUserId == null ||
+        message.senderId == currentUserId ||
+        (message.readAt != null &&
+            !_viewOnceOpeningKeys.containsKey(messageId))) {
+      return const Left(ServerFailure());
+    }
+    final openingKey = _viewOnceOpeningKeys.putIfAbsent(
+      messageId,
+      () => const Uuid().v4(),
     );
-    return result;
+    final repository = _repository;
+    final result = await repository.openViewOnce(chatId, messageId, openingKey);
+    if (!ref.mounted) {
+      unawaited(
+        repository
+            .closeViewOnce(chatId, messageId, openingKey)
+            .then<void>((_) {}, onError: (Object _) {}),
+      );
+      return const Right(null);
+    }
+    if (_viewOnceOpeningKeys[messageId] != openingKey) {
+      unawaited(
+        repository
+            .closeViewOnce(chatId, messageId, openingKey)
+            .then<void>((_) {}, onError: (Object _) {}),
+      );
+      return const Right(null);
+    }
+    return result.fold<Either<Failure, void>>(Left.new, (opened) {
+      state = state.copyWith(
+        messages: [
+          for (final item in state.messages)
+            if (item.id == messageId)
+              item.copyWith(
+                attachmentUrl: opened.mediaUrl,
+                readAt: opened.readAt,
+                deliveredAt: item.deliveredAt ?? opened.readAt,
+              )
+            else
+              item,
+        ],
+      );
+      return const Right(null);
+    });
+  }
+
+  String? viewOnceOpeningKey(String messageId) =>
+      _viewOnceOpeningKeys[messageId];
+
+  List<MessageEntity> _retainOpenViewOnceMessages(
+    List<MessageEntity> incoming,
+  ) => [
+    for (final message in incoming)
+      if (_viewOnceOpeningKeys.containsKey(message.id) &&
+          message.deletedAt == null)
+        _openedMessage(message)
+      else
+        message,
+  ];
+
+  MessageEntity _openedMessage(MessageEntity incoming) {
+    for (final existing in state.messages) {
+      if (existing.id == incoming.id && existing.readAt != null) {
+        return incoming.copyWith(
+          attachmentUrl: existing.attachmentUrl,
+          readAt: existing.readAt,
+          deliveredAt: existing.deliveredAt,
+        );
+      }
+    }
+    return incoming;
+  }
+
+  void closeViewOnce(String messageId) {
+    final openingKey = _viewOnceOpeningKeys.remove(messageId);
+    if (openingKey == null) return;
+    if (ref.mounted) {
+      state = state.copyWith(
+        messages: [
+          for (final message in state.messages)
+            if (message.id == messageId)
+              message.copyWith(attachmentUrl: null)
+            else
+              message,
+        ],
+      );
+    }
+    unawaited(
+      _repository
+          .closeViewOnce(chatId, messageId, openingKey)
+          .then<void>((_) {}, onError: (Object _) {}),
+    );
   }
 
   Future<Either<Failure, MessageEntity>> sendLocation({
@@ -202,7 +318,10 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
     results.fold((_) => state = state.copyWith(isLoadingOlder: false), (data) {
       _cursor = data.nextCursor;
       state = state.copyWith(
-        messages: [...data.messages, ...state.messages],
+        messages: [
+          ..._retainOpenViewOnceMessages(data.messages),
+          ...state.messages,
+        ],
         hasMore: data.hasMore,
         isLoadingOlder: false,
       );
@@ -231,6 +350,13 @@ class ConversationMessagesNotifier extends Notifier<ConversationMessagesState> {
       state = state.copyWith(otherUserOnline: true);
     } else if (event is UserOfflineEvent) {
       state = state.copyWith(otherUserOnline: false);
+    } else if (event is MessagesReadEvent) {
+      final currentUserId = ref.read(authControllerProvider).value?.id;
+      if (event.conversationId == chatId && event.readerId != currentUserId) {
+        unawaited(refresh());
+      }
+    } else if (event is ChatReconnectedEvent) {
+      unawaited(refresh());
     }
   }
 

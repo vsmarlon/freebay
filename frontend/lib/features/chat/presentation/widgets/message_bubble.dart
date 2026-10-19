@@ -32,6 +32,8 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onViewOnceReveal;
   final bool isStarred;
   final VoidCallback? onImageTap;
+  final String? viewOnceOpeningKey;
+  final VoidCallback? onViewOnceClose;
 
   const MessageBubble({
     super.key,
@@ -51,6 +53,8 @@ class MessageBubble extends StatelessWidget {
     this.onViewOnceReveal,
     this.isStarred = false,
     this.onImageTap,
+    this.viewOnceOpeningKey,
+    this.onViewOnceClose,
   });
 
   bool get _isRead => message.readAt != null;
@@ -58,8 +62,9 @@ class MessageBubble extends StatelessWidget {
   bool get _isDeleted => message.deletedAt != null;
   bool get _hasReply => message.replyTo != null;
   bool get _hasReactions => message.reactions.isNotEmpty;
-  bool get _isViewOnceRevealed => message.viewOnce && message.readAt != null;
-  bool get _isViewOnceLocked => message.viewOnce && message.readAt == null;
+  bool get _isViewOnceRevealed =>
+      message.viewOnce && message.readAt != null && viewOnceOpeningKey != null;
+  bool get _isViewOnceLocked => message.viewOnce && !_isViewOnceRevealed;
   bool get _isForwarded => message.metadata?['isForwarded'] == true;
 
   @override
@@ -229,7 +234,10 @@ class MessageBubble extends StatelessWidget {
 
     // View-once already revealed
     if (_isViewOnceRevealed) {
-      return _buildMessageContent(context, showViewedFooter: true);
+      return _ViewOnceLifetime(
+        onClose: onViewOnceClose,
+        child: _buildMessageContent(context, showViewedFooter: true),
+      );
     }
 
     return _buildMessageContent(context);
@@ -321,22 +329,32 @@ class MessageBubble extends StatelessWidget {
           imageUrl: message.attachmentUrl,
           isMe: isMe,
           onTapImage: onImageTap,
+          viewOnceOpeningKey: viewOnceOpeningKey,
         );
       case MessageType.video:
-        return VideoMessageBubble(videoUrl: message.attachmentUrl, isMe: isMe);
+        return VideoMessageBubble(
+          videoUrl: message.attachmentUrl,
+          isMe: isMe,
+          viewOnceOpeningKey: viewOnceOpeningKey,
+          onViewOnceClose: onViewOnceClose,
+        );
       case MessageType.audio:
         final rawDuration = message.metadata?['durationMs'];
         return AudioMessageBubble(
           audioUrl: message.attachmentUrl,
           isMe: isMe,
           durationMs: rawDuration is int ? rawDuration : null,
+          viewOnceOpeningKey: viewOnceOpeningKey,
+          onViewOnceClose: onViewOnceClose,
         );
       case MessageType.location:
         return LocationMessageBubble(metadata: message.metadata, isMe: isMe);
       case MessageType.productCard:
         return ProductCardBubble(message: message, isMe: isMe);
       case MessageType.unknown:
-        return _buildMessageContent(context);
+        return message.content == null || message.content!.isEmpty
+            ? const SizedBox.shrink()
+            : Text(message.content!, style: AppTypography.bodyMedium);
       case MessageType.text:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,4 +371,25 @@ class MessageBubble extends StatelessWidget {
         );
     }
   }
+}
+
+class _ViewOnceLifetime extends StatefulWidget {
+  const _ViewOnceLifetime({required this.onClose, required this.child});
+
+  final VoidCallback? onClose;
+  final Widget child;
+
+  @override
+  State<_ViewOnceLifetime> createState() => _ViewOnceLifetimeState();
+}
+
+class _ViewOnceLifetimeState extends State<_ViewOnceLifetime> {
+  @override
+  void dispose() {
+    widget.onClose?.call();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

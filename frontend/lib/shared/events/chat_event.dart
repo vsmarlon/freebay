@@ -40,3 +40,14 @@ class UserOfflineEvent extends ChatEvent {
   final String userId;
   const UserOfflineEvent(this.userId);
 }
+
+class MessagesReadEvent extends ChatEvent {
+  final String conversationId;
+  final String readerId;
+
+  const MessagesReadEvent(this.conversationId, this.readerId);
+}
+
+class ChatReconnectedEvent extends ChatEvent {
+  const ChatReconnectedEvent();
+}

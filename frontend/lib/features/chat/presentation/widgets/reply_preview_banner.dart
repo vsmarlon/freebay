@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/chat/data/entities/message_entity.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Resolves whose message is being replied to, for any reply preview surface.
 String replySenderLabel(
@@ -40,7 +41,11 @@ class ReplyPreviewBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final reply = replyTo;
     final isDeleted = reply == null;
-    final displayText = reply == null ? 'Mensagem apagada' : reply.previewText;
+    final displayText = reply == null
+        ? 'Mensagem apagada'
+        : reply.viewOnce
+        ? l10n(context).chatViewOnce
+        : reply.previewText;
 
     final banner = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

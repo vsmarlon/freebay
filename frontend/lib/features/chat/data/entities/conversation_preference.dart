@@ -14,6 +14,7 @@ abstract class ConversationPreference with _$ConversationPreference {
     @Default(false) bool isDeleted,
     @Default('DEFAULT') String theme,
     String? backgroundUrl,
+    @Default(false) bool muted,
   }) = _ConversationPreference;
 
   factory ConversationPreference.fromJson(Map<String, dynamic> json) =>

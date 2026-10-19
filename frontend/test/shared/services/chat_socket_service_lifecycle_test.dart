@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/shared/services/chat_socket_service.dart';
+import 'package:freebay/shared/events/chat_event.dart';
 
 class _FakeSocket implements ChatSocketClient {
   bool connectedValue = false;
@@ -164,4 +165,31 @@ void main() {
       expect(socket.emitted[1].$2['conversationId'], 'conversation-1');
     },
   );
+
+  test('emits read invalidations and reconnect catch-up events', () async {
+    final socket = _FakeSocket();
+    final service = ChatSocketService(
+      tokenReader: () async => 'token',
+      socketFactory: (_, _) => socket,
+      connectivityStream: noConnectivity,
+    );
+    addTearDown(service.dispose);
+    final received = <ChatEvent>[];
+    final subscription = service.events.listen(received.add);
+    addTearDown(subscription.cancel);
+
+    await service.connect();
+    socket.callbacks['connect']?.call(null);
+    socket.callbacks['messages_read']?.call({
+      'conversationId': 'conversation-1',
+      'readerId': 'reader-1',
+    });
+    await Future<void>.delayed(Duration.zero);
+
+    expect(received, hasLength(2));
+    expect(received.first, isA<ChatReconnectedEvent>());
+    final read = received.last as MessagesReadEvent;
+    expect(read.conversationId, 'conversation-1');
+    expect(read.readerId, 'reader-1');
+  });
 }
