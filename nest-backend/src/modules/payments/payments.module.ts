@@ -12,7 +12,7 @@ import { GetConnectDashboardLinkUseCase } from './usecases/get-connect-dashboard
 import { SellerPayoutService } from './services/seller-payout.service';
 import { StripeProvider } from './providers/stripe-provider';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaOrderRepository } from '../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../orders/data/repositories/order-database.repository';
 import { ProductDatabaseRepository } from '../products/data/repositories/product-database.repository';
 import { TransactionDatabaseRepository } from './data/repositories/transaction-database.repository';
 import { ConnectAccountDatabaseRepository } from './data/repositories/connect-account-database.repository';
@@ -41,7 +41,7 @@ import { RecoverDisputeTransferUseCase } from './usecases/recover-dispute-transf
     GetConnectDashboardLinkUseCase,
     SellerPayoutService,
     StripeProvider,
-    PrismaOrderRepository,
+    OrderDatabaseRepository,
     ProductDatabaseRepository,
     TransactionDatabaseRepository,
     ConnectAccountDatabaseRepository,

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentSessionUseCase } from './create-payment-session.usecase';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { StripeProvider } from '../providers/stripe-provider';
@@ -28,7 +28,7 @@ describe('CreatePaymentSessionUseCase Integration', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePaymentSessionUseCase,
-        PrismaOrderRepository,
+        OrderDatabaseRepository,
         UserDatabaseRepository,
         TransactionDatabaseRepository,
         { provide: PrismaService, useValue: prisma },

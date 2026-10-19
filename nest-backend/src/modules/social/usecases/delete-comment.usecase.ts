@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
-import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
+import { CommentDatabaseRepository } from '../data/repositories/comment-database.repository';
 
 export interface DeleteCommentInput {
   commentId: string;
@@ -10,7 +10,7 @@ export interface DeleteCommentInput {
 
 @Injectable()
 export class DeleteCommentUseCase {
-  constructor(private readonly commentRepository: PrismaCommentRepository) {}
+  constructor(private readonly commentRepository: CommentDatabaseRepository) {}
 
   async execute(input: DeleteCommentInput): Promise<Either<AppError, void>> {
     const comment = await this.commentRepository.findById(input.commentId);

@@ -5,11 +5,11 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from "@/shared/core/errors";
-import { PrismaStoryRepository } from "../data/repositories/story-database.repository";
+import { StoryDatabaseRepository } from "../data/repositories/story-database.repository";
 
 @Injectable()
 export class DeleteStoryUseCase {
-  constructor(private readonly storyRepository: PrismaStoryRepository) {}
+  constructor(private readonly storyRepository: StoryDatabaseRepository) {}
 
   async execute(input: {
     storyId: string;

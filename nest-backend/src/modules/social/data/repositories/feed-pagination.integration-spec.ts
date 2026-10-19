@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { GetFeedUseCase } from '../../usecases/get-feed.usecase';
-import { PrismaPostRepository } from './post-database.repository';
+import { PostDatabaseRepository } from './post-database.repository';
 import { prisma } from '../../../../../test/setup-integration';
 import { FeedType } from '../../types/social.types';
 
@@ -12,7 +12,7 @@ describe('Explore feed pagination (real PostgreSQL)', () => {
   beforeAll(async () => {
     database = new PrismaService(new ConfigService());
     await database.$connect();
-    feed = new GetFeedUseCase(new PrismaPostRepository(database));
+    feed = new GetFeedUseCase(new PostDatabaseRepository(database));
   });
 
   afterAll(async () => {

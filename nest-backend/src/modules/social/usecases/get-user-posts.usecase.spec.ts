@@ -1,6 +1,6 @@
 import { Test } from "@nestjs/testing";
 import { encodeCursor } from "@/shared/core/pagination";
-import { PrismaPostRepository } from "../data/repositories/post-database.repository";
+import { PostDatabaseRepository } from "../data/repositories/post-database.repository";
 import { GetUserPostsUseCase } from "./get-user-posts.usecase";
 
 describe("GetUserPostsUseCase", () => {
@@ -23,7 +23,7 @@ describe("GetUserPostsUseCase", () => {
     const module = await Test.createTestingModule({
       providers: [
         GetUserPostsUseCase,
-        { provide: PrismaPostRepository, useValue: postRepository },
+        { provide: PostDatabaseRepository, useValue: postRepository },
       ],
     }).compile();
 

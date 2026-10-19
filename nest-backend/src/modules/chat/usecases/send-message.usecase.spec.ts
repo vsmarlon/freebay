@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SendMessageUseCase } from './send-message.usecase';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
@@ -40,7 +40,7 @@ describe('SendMessageUseCase', () => {
       providers: [
         SendMessageUseCase,
         { provide: ConversationDatabaseRepository, useValue: mockRepo },
-        { provide: PrismaBlockRepository, useValue: mockBlockRepository },
+        { provide: BlockDatabaseRepository, useValue: mockBlockRepository },
         { provide: OgScraperService, useValue: mockOgScraper },
         { provide: ChatThreadAccessService, useValue: mockThreadAccess },
         { provide: NotificationService, useValue: { notifyNewMessage: jest.fn() } },

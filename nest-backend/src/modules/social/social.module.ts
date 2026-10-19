@@ -3,11 +3,11 @@ import { SocialReadController } from "./social-read.controller";
 import { SocialWriteController } from "./social-write.controller";
 
 // Repositories
-import { PrismaCommentRepository } from "./data/repositories/comment-database.repository";
-import { PrismaLikeRepository } from "./data/repositories/like-database.repository";
-import { PrismaPostRepository } from "./data/repositories/post-database.repository";
-import { PrismaSavedPostRepository } from "./data/repositories/saved-post-database.repository";
-import { PrismaShareRepository } from "./data/repositories/share-database.repository";
+import { CommentDatabaseRepository } from "./data/repositories/comment-database.repository";
+import { LikeDatabaseRepository } from "./data/repositories/like-database.repository";
+import { PostDatabaseRepository } from "./data/repositories/post-database.repository";
+import { SavedPostDatabaseRepository } from "./data/repositories/saved-post-database.repository";
+import { ShareDatabaseRepository } from "./data/repositories/share-database.repository";
 
 // Usecases
 import { CreatePostUseCase } from "./usecases/create-post.usecase";
@@ -37,11 +37,11 @@ import { ApproveCommentUseCase } from './usecases/approve-comment.usecase';
   controllers: [SocialReadController, SocialWriteController],
   providers: [
     // Repositories
-    PrismaCommentRepository,
-    PrismaLikeRepository,
-    PrismaPostRepository,
-    PrismaSavedPostRepository,
-    PrismaShareRepository,
+    CommentDatabaseRepository,
+    LikeDatabaseRepository,
+    PostDatabaseRepository,
+    SavedPostDatabaseRepository,
+    ShareDatabaseRepository,
     // Usecases
     CreatePostUseCase,
     CommentUseCase,
@@ -67,11 +67,11 @@ import { ApproveCommentUseCase } from './usecases/approve-comment.usecase';
     GetSavedPostsUseCase,
   ],
   exports: [
-    PrismaCommentRepository,
-    PrismaLikeRepository,
-    PrismaPostRepository,
-    PrismaSavedPostRepository,
-    PrismaShareRepository,
+    CommentDatabaseRepository,
+    LikeDatabaseRepository,
+    PostDatabaseRepository,
+    SavedPostDatabaseRepository,
+    ShareDatabaseRepository,
     CreatePostUseCase,
     CommentUseCase,
     LikePostUseCase,

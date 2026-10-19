@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
-import { PrismaOrderRepository } from './data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from './data/repositories/order-database.repository';
 import { CreateOrderUseCase } from './usecases/create-order.usecase';
 import { ConfirmDeliveryUseCase } from './usecases/confirm-delivery.usecase';
 import { MarkAsShippedUseCase } from './usecases/mark-as-shipped.usecase';
@@ -29,7 +29,7 @@ describe('OrdersController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
-        { provide: PrismaOrderRepository, useValue: {} },
+        { provide: OrderDatabaseRepository, useValue: {} },
         { provide: CreateOrderUseCase, useValue: {} },
         { provide: ConfirmDeliveryUseCase, useValue: {} },
         { provide: MarkAsShippedUseCase, useValue: {} },
@@ -102,7 +102,7 @@ describe('OrdersController create HTTP contract', () => {
     const module = await Test.createTestingModule({
       controllers: [OrdersController],
       providers: [
-        { provide: PrismaOrderRepository, useValue: { findProductForOrder: jest.fn() } },
+        { provide: OrderDatabaseRepository, useValue: { findProductForOrder: jest.fn() } },
         { provide: CreateOrderUseCase, useValue: { execute: createOrder } },
         { provide: ConfirmDeliveryUseCase, useValue: {} },
         { provide: MarkAsShippedUseCase, useValue: {} },

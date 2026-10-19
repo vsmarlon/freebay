@@ -7,7 +7,7 @@ import { MutationState } from '../../types/social.types';
 import { postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
-export class PrismaLikeRepository {
+export class LikeDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 

@@ -10,7 +10,7 @@ import {
 import { PaymentIntentParams } from '../types/payment-provider.types';
 import { StripeProvider } from '../providers/stripe-provider';
 import { CreatePaymentIntentInput, CreatePaymentIntentOutput } from '../dtos/payment.dto';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 
@@ -19,7 +19,7 @@ export class CreatePaymentIntentUseCase {
   private readonly logger = new Logger(CreatePaymentIntentUseCase.name);
 
   constructor(
-    private readonly orderRepository: PrismaOrderRepository,
+    private readonly orderRepository: OrderDatabaseRepository,
     private readonly userRepository: UserDatabaseRepository,
     private readonly transactionRepository: TransactionDatabaseRepository,
     @Inject(StripeProvider) private readonly paymentProvider: StripeProvider,

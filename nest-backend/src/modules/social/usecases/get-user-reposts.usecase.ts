@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError } from "@/shared/core/errors";
-import { PrismaShareRepository } from "../data/repositories/share-database.repository";
+import { ShareDatabaseRepository } from "../data/repositories/share-database.repository";
 import { UserPostEntry, UserPostsQuery } from "../types/social.types";
 
 @Injectable()
 export class GetUserRepostsUseCase {
-  constructor(private readonly shareRepository: PrismaShareRepository) {}
+  constructor(private readonly shareRepository: ShareDatabaseRepository) {}
 
   async execute(
     query: UserPostsQuery,

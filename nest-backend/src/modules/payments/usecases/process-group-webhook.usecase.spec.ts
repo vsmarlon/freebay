@@ -3,7 +3,7 @@ import { ProcessGroupWebhookUseCase } from './process-group-webhook.usecase';
 import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
@@ -83,7 +83,7 @@ describe('ProcessGroupWebhookUseCase', () => {
         { provide: PaymentGroupDatabaseRepository, useValue: mockPaymentGroupRepository },
         { provide: TransactionDatabaseRepository, useValue: mockTransactionRepository },
         { provide: ProductDatabaseRepository, useValue: mockProductRepository },
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: OrderDatabaseRepository, useValue: mockOrderRepository },
         { provide: WalletDatabaseRepository, useValue: mockWalletRepository },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: PrismaService, useValue: mockPrisma },

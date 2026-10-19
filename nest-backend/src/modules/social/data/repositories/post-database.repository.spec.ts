@@ -1,6 +1,6 @@
 import { Test } from "@nestjs/testing";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
-import { PrismaPostRepository } from "./post-database.repository";
+import { PostDatabaseRepository } from "./post-database.repository";
 import { ContentFilter, FeedType } from "../../types/social.types";
 
 const post = {
@@ -27,19 +27,19 @@ const post = {
   product: null,
 };
 
-describe("PrismaPostRepository canonical interactions", () => {
+describe("PostDatabaseRepository canonical interactions", () => {
   it("uses the authenticated following query, block filters, and tied keyset metadata", async () => {
     const first = { ...post, id: "post-2", userId: "followed-1", createdAt: new Date("2026-09-12T00:00:00.000Z") };
     const second = { ...post, id: "post-1", userId: "followed-1", createdAt: first.createdAt };
     const findMany = jest.fn().mockResolvedValueOnce([first, second]);
     const module = await Test.createTestingModule({
       providers: [
-        PrismaPostRepository,
+        PostDatabaseRepository,
         { provide: PrismaService, useValue: { post: { findMany } } },
       ],
     }).compile();
 
-    const result = await module.get(PrismaPostRepository).findFeed({
+    const result = await module.get(PostDatabaseRepository).findFeed({
       userId: "viewer-1",
        type: FeedType.FOLLOWING,
        contentFilter: ContentFilter.SOCIAL,
@@ -80,11 +80,11 @@ describe("PrismaPostRepository canonical interactions", () => {
       .mockResolvedValueOnce([second]);
     const module = await Test.createTestingModule({
       providers: [
-        PrismaPostRepository,
+        PostDatabaseRepository,
         { provide: PrismaService, useValue: { post: { findMany } } },
       ],
     }).compile();
-    const repository = module.get(PrismaPostRepository);
+    const repository = module.get(PostDatabaseRepository);
 
     const result = await repository.findByUserId({ userId: "owner-1", limit: 1 });
 
@@ -127,11 +127,11 @@ describe("PrismaPostRepository canonical interactions", () => {
       .mockResolvedValue({ ...post, likes: [], savedBy: [], shares: [] });
     const module = await Test.createTestingModule({
       providers: [
-        PrismaPostRepository,
+        PostDatabaseRepository,
         { provide: PrismaService, useValue: { post: { findUnique } } },
       ],
     }).compile();
-    const repository = module.get(PrismaPostRepository);
+    const repository = module.get(PostDatabaseRepository);
 
     const result = await repository.findById("post-1", "viewer-1");
 
@@ -161,11 +161,11 @@ describe("PrismaPostRepository canonical interactions", () => {
       .mockResolvedValue({ ...post, likes: [], savedBy: [], shares: [] });
     const module = await Test.createTestingModule({
       providers: [
-        PrismaPostRepository,
+        PostDatabaseRepository,
         { provide: PrismaService, useValue: { post: { findUnique } } },
       ],
     }).compile();
-    const repository = module.get(PrismaPostRepository);
+    const repository = module.get(PostDatabaseRepository);
 
     const result = await repository.findById("post-1");
 
@@ -199,11 +199,11 @@ describe("PrismaPostRepository canonical interactions", () => {
       ]);
     const module = await Test.createTestingModule({
       providers: [
-        PrismaPostRepository,
+        PostDatabaseRepository,
         { provide: PrismaService, useValue: { savedPost: { findMany } } },
       ],
     }).compile();
-    const repository = module.get(PrismaPostRepository);
+    const repository = module.get(PostDatabaseRepository);
 
     const result = await repository.findSaved({ userId: "viewer-1", limit: 2 });
     const secondPage = await repository.findSaved({

@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { AppError, BadRequestError } from '@/shared/core/errors';
 import { Either, left, right } from '@/shared/core/either';
 import { CursorPage } from '@/shared/core/pagination';
-import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { ProfileTimelineCursor, ProfileTimelineKind, UserPostEntry, UserPostsQuery } from '../types/social.types';
 
 @Injectable()
 export class GetProfileTimelineUseCase {
-  constructor(private readonly posts: PrismaPostRepository) {}
+  constructor(private readonly posts: PostDatabaseRepository) {}
 
   async execute(query: UserPostsQuery): Promise<Either<AppError, CursorPage<UserPostEntry>>> {
     const [owner, at, eventId, cursorKind, extra] = query.cursor

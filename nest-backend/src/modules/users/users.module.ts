@@ -25,9 +25,9 @@ import {
   GetBlockStatusUseCase,
 } from './usecases';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { PrismaFollowRepository } from './data/repositories/follow-database.repository';
-import { PrismaBlockRepository } from './data/repositories/block-database.repository';
-import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
+import { FollowDatabaseRepository } from './data/repositories/follow-database.repository';
+import { BlockDatabaseRepository } from './data/repositories/block-database.repository';
+import { OrderDatabaseRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { PhoneVerificationDatabaseRepository } from './data/repositories/phone-verification-database.repository';
 import { AccountLifecycleDatabaseRepository } from './data/repositories/account-lifecycle-database.repository';
 import { SmsService } from './services/sms.service';
@@ -38,7 +38,7 @@ import { UserLookupRepository } from './domain/repositories/user-lookup.reposito
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { ManageSafetyListUseCase } from './usecases/manage-safety-list.usecase';
 import { SafetyListRepository } from './domain/repositories/safety-list.repository';
-import { PrismaSafetyListRepository } from './data/repositories/safety-list-database.repository';
+import { SafetyListDatabaseRepository } from './data/repositories/safety-list-database.repository';
 
 @Module({
   imports: [AuthModule],
@@ -71,19 +71,19 @@ import { PrismaSafetyListRepository } from './data/repositories/safety-list-data
     GetFollowStatusUseCase,
     GetBlockStatusUseCase,
     ManageSafetyListUseCase,
-    PrismaSafetyListRepository,
-    { provide: SafetyListRepository, useExisting: PrismaSafetyListRepository },
+    SafetyListDatabaseRepository,
+    { provide: SafetyListRepository, useExisting: SafetyListDatabaseRepository },
     AccountLifecycleDatabaseRepository,
-    PrismaFollowRepository,
-    PrismaBlockRepository,
-    PrismaOrderRepository,
+    FollowDatabaseRepository,
+    BlockDatabaseRepository,
+    OrderDatabaseRepository,
     PhoneVerificationDatabaseRepository,
     TwilioSmsService,
     { provide: SmsService, useExisting: TwilioSmsService },
-    { provide: FollowRepository, useExisting: PrismaFollowRepository },
-    { provide: BlockRepository, useExisting: PrismaBlockRepository },
+    { provide: FollowRepository, useExisting: FollowDatabaseRepository },
+    { provide: BlockRepository, useExisting: BlockDatabaseRepository },
     { provide: UserLookupRepository, useExisting: UserDatabaseRepository },
   ],
-  exports: [PrismaFollowRepository, PrismaBlockRepository, AccountLifecycleDatabaseRepository],
+  exports: [FollowDatabaseRepository, BlockDatabaseRepository, AccountLifecycleDatabaseRepository],
 })
 export class UsersModule {}

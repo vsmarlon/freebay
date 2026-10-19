@@ -5,7 +5,7 @@ import { DatabaseError } from '@/shared/core/errors';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 
@@ -69,7 +69,7 @@ describe('ProcessWebhookUseCase', () => {
         ProcessWebhookUseCase,
         { provide: ProductDatabaseRepository, useValue: mockProductRepo },
         { provide: TransactionDatabaseRepository, useValue: mockTransactionRepo },
-        { provide: PrismaOrderRepository, useValue: mockOrderRepo },
+        { provide: OrderDatabaseRepository, useValue: mockOrderRepo },
         { provide: WalletDatabaseRepository, useValue: mockWalletRepo },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: PrismaService, useValue: mockPrisma },

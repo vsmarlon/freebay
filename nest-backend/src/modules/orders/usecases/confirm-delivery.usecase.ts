@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { ConfirmDeliveryInput } from '../dtos/order.dto';
 
 @Injectable()
 export class ConfirmDeliveryUseCase {
   constructor(
-    private readonly orderRepository: PrismaOrderRepository,
+    private readonly orderRepository: OrderDatabaseRepository,
     private readonly payoutService: SellerPayoutService,
   ) {}
 

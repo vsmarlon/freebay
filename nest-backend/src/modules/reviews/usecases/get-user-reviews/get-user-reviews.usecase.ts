@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
-import { PrismaReviewRepository } from '@/modules/reviews/data/repositories/review-database.repository';
+import { ReviewDatabaseRepository } from '@/modules/reviews/data/repositories/review-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { GetUserReviewsUsecaseInput, GetUserReviewsUsecaseOutput } from './get-user-reviews.dto';
 
 @Injectable()
 export class GetUserReviewsUseCase {
   constructor(
-    private readonly reviewRepository: PrismaReviewRepository,
+    private readonly reviewRepository: ReviewDatabaseRepository,
     private readonly prisma: PrismaService,
   ) {}
 

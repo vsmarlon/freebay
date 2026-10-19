@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus, TransactionStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError, ConflictError, PaymentProviderError } from '@/shared/core/errors';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { CancelOrderInput } from '../dtos/order.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
@@ -11,7 +11,7 @@ import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 @Injectable()
 export class CancelOrderUseCase {
   constructor(
-    private readonly orderRepository: PrismaOrderRepository,
+    private readonly orderRepository: OrderDatabaseRepository,
     private readonly notificationService: NotificationService,
     private readonly transactions: TransactionDatabaseRepository,
     private readonly stripe: StripeProvider,

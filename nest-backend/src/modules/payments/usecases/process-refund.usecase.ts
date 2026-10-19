@@ -8,7 +8,7 @@ import {
   InvalidOrderStateError,
 } from "@/shared/core/errors";
 import { TransactionDatabaseRepository } from "../data/repositories/transaction-database.repository";
-import { PrismaOrderRepository } from "../../orders/data/repositories/order-database.repository";
+import { OrderDatabaseRepository } from "../../orders/data/repositories/order-database.repository";
 import { SellerPayoutService } from "../services/seller-payout.service";
 
 export function isFullRefund(
@@ -32,7 +32,7 @@ export class ProcessRefundUseCase {
 
   constructor(
     private readonly transactionRepo: TransactionDatabaseRepository,
-    private readonly orderRepo: PrismaOrderRepository,
+    private readonly orderRepo: OrderDatabaseRepository,
     private readonly payoutService: SellerPayoutService,
   ) {}
 

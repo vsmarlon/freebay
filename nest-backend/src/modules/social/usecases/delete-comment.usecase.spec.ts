@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DeleteCommentUseCase } from './delete-comment.usecase';
-import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
+import { CommentDatabaseRepository } from '../data/repositories/comment-database.repository';
 import { right } from '@/shared/core/either';
 import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
 
@@ -17,7 +17,7 @@ describe('DeleteCommentUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeleteCommentUseCase,
-        { provide: PrismaCommentRepository, useValue: mockCommentRepo },
+        { provide: CommentDatabaseRepository, useValue: mockCommentRepo },
       ],
     }).compile();
 

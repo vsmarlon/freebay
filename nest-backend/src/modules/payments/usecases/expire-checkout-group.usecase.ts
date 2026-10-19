@@ -3,7 +3,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
 
@@ -17,7 +17,7 @@ export class ExpireCheckoutGroupUseCase {
     private readonly paymentGroupRepo: PaymentGroupDatabaseRepository,
     private readonly transactionRepo: TransactionDatabaseRepository,
     private readonly productRepo: ProductDatabaseRepository,
-    private readonly orderRepo: PrismaOrderRepository,
+    private readonly orderRepo: OrderDatabaseRepository,
     private readonly prisma: PrismaService,
   ) {}
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfirmDeliveryUseCase } from './confirm-delivery.usecase';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { NotFoundError, InvalidOrderStateError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
@@ -18,7 +18,7 @@ describe('ConfirmDeliveryUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ConfirmDeliveryUseCase,
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: OrderDatabaseRepository, useValue: mockOrderRepository },
         { provide: SellerPayoutService, useValue: { payoutForOrder: jest.fn() } },
       ],
     }).compile();

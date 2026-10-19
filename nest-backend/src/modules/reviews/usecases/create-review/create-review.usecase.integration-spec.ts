@@ -1,5 +1,5 @@
 import { CreateReviewUseCase } from './create-review.usecase';
-import { PrismaReviewRepository } from '@/modules/reviews/data/repositories/review-database.repository';
+import { ReviewDatabaseRepository } from '@/modules/reviews/data/repositories/review-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { prisma } from '../../../../../test/setup-integration';
 import { UserFactory, ProductFactory, OrderFactory } from '../../../../../test/factories';
@@ -9,7 +9,7 @@ import { ReviewType } from '@prisma/client';
 
 describe('CreateReviewUseCase Integration', () => {
   let sut: CreateReviewUseCase;
-  let reviewRepository: PrismaReviewRepository;
+  let reviewRepository: ReviewDatabaseRepository;
   let prismaService: PrismaService;
   let userFactory: UserFactory;
   let productFactory: ProductFactory;
@@ -18,7 +18,7 @@ describe('CreateReviewUseCase Integration', () => {
   beforeEach(() => {
     const mockConfig = createMockConfigService();
     prismaService = new PrismaService(mockConfig);
-    reviewRepository = new PrismaReviewRepository(prismaService);
+    reviewRepository = new ReviewDatabaseRepository(prismaService);
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
     orderFactory = new OrderFactory(prisma);

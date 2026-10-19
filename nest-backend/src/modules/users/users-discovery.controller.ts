@@ -11,13 +11,13 @@ import {
   SuggestionsQueryDTO,
 } from "./dtos/user.dto";
 import { toUserBrief } from "./dtos/user-response.class";
-import { PrismaBlockRepository } from "./data/repositories/block-database.repository";
+import { BlockDatabaseRepository } from "./data/repositories/block-database.repository";
 
 @ApiTags("Users")
 @Controller("users")
 export class UsersDiscoveryController {
   constructor(
-    private readonly blockRepository: PrismaBlockRepository,
+    private readonly blockRepository: BlockDatabaseRepository,
     private readonly searchUsersUseCase: SearchUsersUseCase,
     private readonly getSuggestionsUseCase: GetSuggestionsUseCase,
   ) {}

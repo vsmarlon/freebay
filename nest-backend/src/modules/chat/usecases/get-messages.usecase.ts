@@ -3,7 +3,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { CursorPage, FIRST_PAGE, PageQuery } from '@/shared/core/pagination';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ChatThreadType } from '@prisma/client';
 import { GetMessagesOutput, GetMessagesResult } from '../dtos/chat.dto';
@@ -17,7 +17,7 @@ import {
 export class GetMessagesUseCase {
   constructor(
     private readonly conversationRepository: ConversationDatabaseRepository,
-    private readonly preferenceRepository: PrismaConversationPreferenceRepository,
+    private readonly preferenceRepository: ConversationPreferenceDatabaseRepository,
     private readonly threadAccess: ChatThreadAccessService,
   ) {}
 

@@ -18,7 +18,7 @@ import { SendMessageUseCase } from './usecases/send-message.usecase';
 import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
 import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
 import { ChatThreadAccessService } from './services/chat-thread-access.service';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 
 interface AuthenticatedUser {
   userId: string;
@@ -45,7 +45,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private deleteMessageUseCase: DeleteMessageUseCase,
     private toggleReactionUseCase: ToggleReactionUseCase,
     private threadAccess: ChatThreadAccessService,
-    private blockRepository: PrismaBlockRepository,
+    private blockRepository: BlockDatabaseRepository,
   ) {}
 
   afterInit(namespace: Namespace) {

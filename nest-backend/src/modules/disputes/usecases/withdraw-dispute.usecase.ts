@@ -4,14 +4,14 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, BadRequestError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 
 @Injectable()
 export class WithdrawDisputeUseCase {
   constructor(
     private prisma: PrismaService,
-    private disputeRepo: PrismaDisputeRepository,
+    private disputeRepo: DisputeDatabaseRepository,
     private transitionPolicy: DisputeTransitionPolicy,
     private notificationService: NotificationService,
   ) {}

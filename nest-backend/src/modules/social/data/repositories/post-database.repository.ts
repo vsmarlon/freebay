@@ -8,7 +8,7 @@ import { CursorPage } from '@/shared/core/pagination';
 import { PostQueryHelpers, normalizePost, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
-export class PrismaPostRepository {
+export class PostDatabaseRepository {
   private readonly queries: PostQueryHelpers;
 
   constructor(private readonly prisma: PrismaService) {

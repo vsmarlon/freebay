@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ForwardMessagesInput, ForwardMessagesOutput, SendMessageOutput } from '../dtos/chat.dto';
@@ -13,7 +13,7 @@ export class ForwardMessagesUseCase {
   constructor(
     private readonly prisma: PrismaService,
     private readonly conversationRepository: ConversationDatabaseRepository,
-    private readonly blockRepository: PrismaBlockRepository,
+    private readonly blockRepository: BlockDatabaseRepository,
     private readonly threadAccess: ChatThreadAccessService,
   ) {}
 

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
-import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import {
   decodeFeedCursor,
   FeedQuery,
@@ -13,7 +13,7 @@ import {
 
 @Injectable()
 export class GetFeedUseCase {
-  constructor(private readonly postRepository: PrismaPostRepository) {}
+  constructor(private readonly postRepository: PostDatabaseRepository) {}
 
   async execute(input: FeedQuery): Promise<Either<AppError, FeedResult>> {
     const type = input.type ?? FeedType.EXPLORE;

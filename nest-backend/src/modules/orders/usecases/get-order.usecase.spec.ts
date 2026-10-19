@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { GetOrderUseCase } from './get-order.usecase';
 import { ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
@@ -14,7 +14,7 @@ describe('GetOrderUseCase', () => {
     const module = await Test.createTestingModule({
       providers: [
         GetOrderUseCase,
-        { provide: PrismaOrderRepository, useValue: { findById } },
+        { provide: OrderDatabaseRepository, useValue: { findById } },
       ],
     }).compile();
     sut = module.get(GetOrderUseCase);

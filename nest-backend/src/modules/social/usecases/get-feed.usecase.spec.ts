@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { GetFeedUseCase } from './get-feed.usecase';
 import { FeedType } from '../types/social.types';
 
@@ -36,7 +36,7 @@ describe('GetFeedUseCase cursor validation', () => {
     const module = await Test.createTestingModule({
       providers: [
         GetFeedUseCase,
-        { provide: PrismaPostRepository, useValue: { findFeed } },
+        { provide: PostDatabaseRepository, useValue: { findFeed } },
       ],
     }).compile();
 

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForwardMessagesUseCase } from './forward-messages.usecase';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { BadRequestError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
@@ -39,7 +39,7 @@ describe('ForwardMessagesUseCase', () => {
         ForwardMessagesUseCase,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: ConversationDatabaseRepository, useValue: mockRepo },
-        { provide: PrismaBlockRepository, useValue: mockBlockRepository },
+        { provide: BlockDatabaseRepository, useValue: mockBlockRepository },
         { provide: ChatThreadAccessService, useValue: mockThreadAccess },
       ],
     }).compile();

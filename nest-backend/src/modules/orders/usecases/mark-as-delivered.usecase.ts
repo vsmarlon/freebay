@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UnauthorizedError, InvalidOrderStateError } from '@/shared/core/errors';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { MarkAsDeliveredInput } from '../dtos/order.dto';
 
 @Injectable()
 export class MarkAsDeliveredUseCase {
-  constructor(private readonly orderRepository: PrismaOrderRepository) {}
+  constructor(private readonly orderRepository: OrderDatabaseRepository) {}
 
   async execute(input: MarkAsDeliveredInput): Promise<Either<AppError, void>> {
     const orderResult = await this.orderRepository.findById(input.orderId);

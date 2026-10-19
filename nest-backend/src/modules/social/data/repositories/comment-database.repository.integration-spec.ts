@@ -1,16 +1,16 @@
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { prisma } from '../../../../../test/setup-integration';
-import { PrismaCommentRepository } from './comment-database.repository';
+import { CommentDatabaseRepository } from './comment-database.repository';
 
-describe('PrismaCommentRepository comment counters', () => {
+describe('CommentDatabaseRepository comment counters', () => {
   let database: PrismaService;
-  let repository: PrismaCommentRepository;
+  let repository: CommentDatabaseRepository;
 
   beforeAll(async () => {
     database = new PrismaService(new ConfigService());
     await database.$connect();
-    repository = new PrismaCommentRepository(database);
+    repository = new CommentDatabaseRepository(database);
   });
 
   afterAll(async () => {

@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory } from '../../../../test/factories';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { OgScraperService } from '../services/og-scraper.service';
 import { SendMessageUseCase } from './send-message.usecase';
@@ -26,7 +26,7 @@ describe('SendMessageUseCase location integration', () => {
       providers: [
         SendMessageUseCase,
         ConversationDatabaseRepository,
-        PrismaBlockRepository,
+        BlockDatabaseRepository,
         OgScraperService,
         ChatThreadAccessService,
         NotificationService,

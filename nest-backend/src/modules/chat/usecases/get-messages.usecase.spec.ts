@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { GetMessagesUseCase } from './get-messages.usecase';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
@@ -33,7 +33,7 @@ describe('GetMessagesUseCase', () => {
       providers: [
         GetMessagesUseCase,
         { provide: ConversationDatabaseRepository, useValue: mockRepo },
-        { provide: PrismaConversationPreferenceRepository, useValue: mockPreferenceRepo },
+        { provide: ConversationPreferenceDatabaseRepository, useValue: mockPreferenceRepo },
         { provide: ChatThreadAccessService, useValue: mockThreadAccess },
       ],
     }).compile();

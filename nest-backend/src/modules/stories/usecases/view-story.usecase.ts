@@ -1,11 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError, NotFoundError } from "@/shared/core/errors";
-import { PrismaStoryRepository } from "../data/repositories/story-database.repository";
+import { StoryDatabaseRepository } from "../data/repositories/story-database.repository";
 
 @Injectable()
 export class ViewStoryUseCase {
-  constructor(private readonly storyRepository: PrismaStoryRepository) {}
+  constructor(private readonly storyRepository: StoryDatabaseRepository) {}
 
   async execute(input: {
     storyId: string;

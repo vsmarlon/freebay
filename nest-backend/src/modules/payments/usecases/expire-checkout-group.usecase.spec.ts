@@ -3,7 +3,7 @@ import { ExpireCheckoutGroupUseCase } from './expire-checkout-group.usecase';
 import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
 import { DatabaseError } from '@/shared/core/errors';
@@ -70,7 +70,7 @@ describe('ExpireCheckoutGroupUseCase', () => {
         { provide: PaymentGroupDatabaseRepository, useValue: mockPaymentGroupRepository },
         { provide: TransactionDatabaseRepository, useValue: mockTransactionRepository },
         { provide: ProductDatabaseRepository, useValue: mockProductRepository },
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: OrderDatabaseRepository, useValue: mockOrderRepository },
         { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();

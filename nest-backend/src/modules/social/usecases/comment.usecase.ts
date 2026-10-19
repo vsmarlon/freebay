@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
-import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
-import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { CommentDatabaseRepository } from '../data/repositories/comment-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { CreateCommentInput, CreateCommentOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { StoryAudience } from '@prisma/client';
@@ -10,9 +10,9 @@ import { StoryAudience } from '@prisma/client';
 @Injectable()
 export class CommentUseCase {
   constructor(
-    private readonly commentRepository: PrismaCommentRepository,
+    private readonly commentRepository: CommentDatabaseRepository,
     private readonly notificationService: NotificationService,
-    private readonly postRepository: PrismaPostRepository,
+    private readonly postRepository: PostDatabaseRepository,
   ) {}
 
   async execute(input: CreateCommentInput): Promise<Either<AppError, CreateCommentOutput>> {

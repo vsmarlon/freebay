@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StartConversationUseCase } from './start-conversation.usecase';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { BadRequestError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 
@@ -27,7 +27,7 @@ describe('StartConversationUseCase', () => {
       providers: [
         StartConversationUseCase,
         { provide: ConversationDatabaseRepository, useValue: mockRepo },
-        { provide: PrismaBlockRepository, useValue: mockBlockRepository },
+        { provide: BlockDatabaseRepository, useValue: mockBlockRepository },
       ],
     }).compile();
 

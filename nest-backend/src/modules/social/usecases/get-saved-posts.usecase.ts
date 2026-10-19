@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
-import { PrismaSavedPostRepository } from '../data/repositories/saved-post-database.repository';
+import { SavedPostDatabaseRepository } from '../data/repositories/saved-post-database.repository';
 import { SavedPostsCursor } from '../types/social.types';
 import { CursorPage } from '@/shared/core/pagination';
 import { PostResponse } from '../types/social.types';
 
 @Injectable()
 export class GetSavedPostsUseCase {
-  constructor(private readonly savedPostRepository: PrismaSavedPostRepository) {}
+  constructor(private readonly savedPostRepository: SavedPostDatabaseRepository) {}
 
   async execute(input: { userId: string; limit?: number; cursor?: string }): Promise<Either<AppError, CursorPage<PostResponse>>> {
     const cursor = parseCursor(input.cursor, input.userId);

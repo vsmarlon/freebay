@@ -1,6 +1,6 @@
 import { Test } from "@nestjs/testing";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
-import { PrismaCommentRepository } from "./comment-database.repository";
+import { CommentDatabaseRepository } from "./comment-database.repository";
 
 const comment = {
   id: "comment-1",
@@ -21,7 +21,7 @@ const comment = {
   commentLikes: [{ userId: "viewer-1" }],
 };
 
-describe("PrismaCommentRepository viewer interactions", () => {
+describe("CommentDatabaseRepository viewer interactions", () => {
   it("filters comment likes by viewer and omits liker IDs", async () => {
     const findMany = jest.fn().mockResolvedValue([
       {
@@ -31,11 +31,11 @@ describe("PrismaCommentRepository viewer interactions", () => {
     ]);
     const module = await Test.createTestingModule({
       providers: [
-        PrismaCommentRepository,
+        CommentDatabaseRepository,
         { provide: PrismaService, useValue: { comment: { findMany } } },
       ],
     }).compile();
-    const repository = module.get(PrismaCommentRepository);
+    const repository = module.get(CommentDatabaseRepository);
 
     const result = await repository.findAllByPostId(
       "post-1",

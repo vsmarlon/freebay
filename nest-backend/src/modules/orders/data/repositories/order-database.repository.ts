@@ -21,7 +21,7 @@ import { OrderReservationRepository } from "./order-reservation.repository";
 import { OrderMutationRepository } from "./order-mutation.repository";
 
 @Injectable()
-export class PrismaOrderRepository {
+export class OrderDatabaseRepository {
   private readonly reads: OrderReadRepository;
   private readonly reservations: OrderReservationRepository;
   private readonly mutations: OrderMutationRepository;

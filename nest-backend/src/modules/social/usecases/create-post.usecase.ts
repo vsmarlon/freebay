@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError } from '@/shared/core/errors';
 import { PostType, StoryAudience } from '@prisma/client';
-import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { isValidBlurHash } from '@/shared/utils/blurhash.utils';
@@ -10,7 +10,7 @@ import { isValidBlurHash } from '@/shared/utils/blurhash.utils';
 @Injectable()
 export class CreatePostUseCase {
   constructor(
-    private readonly postRepository: PrismaPostRepository,
+    private readonly postRepository: PostDatabaseRepository,
     private readonly notificationService: NotificationService,
   ) {}
 

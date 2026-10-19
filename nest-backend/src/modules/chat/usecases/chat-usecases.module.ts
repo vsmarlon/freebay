@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaConversationPreferenceRepository } from '../data/repositories/conversation-preference-database.repository';
+import { ConversationPreferenceDatabaseRepository } from '../data/repositories/conversation-preference-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { SendMessageUseCase } from './send-message.usecase';
 import { GetConversationsUseCase } from './get-conversations.usecase';
 import { GetMessagesUseCase } from './get-messages.usecase';
@@ -28,9 +28,9 @@ import { MarkAsReadUseCase } from './mark-as-read.usecase';
   providers: [
     MarkAsReadUseCase,
     ConversationDatabaseRepository,
-    PrismaConversationPreferenceRepository,
+    ConversationPreferenceDatabaseRepository,
     ChatThreadAccessService,
-    PrismaBlockRepository,
+    BlockDatabaseRepository,
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,
@@ -55,7 +55,7 @@ import { MarkAsReadUseCase } from './mark-as-read.usecase';
     MarkAsReadUseCase,
     ConversationDatabaseRepository,
     ChatThreadAccessService,
-    PrismaBlockRepository,
+    BlockDatabaseRepository,
     SendMessageUseCase,
     GetConversationsUseCase,
     GetMessagesUseCase,

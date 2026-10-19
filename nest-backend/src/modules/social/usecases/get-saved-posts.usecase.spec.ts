@@ -1,7 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { right } from "@/shared/core/either";
 import { CursorPage } from "@/shared/core/pagination";
-import { PrismaSavedPostRepository } from "../data/repositories/saved-post-database.repository";
+import { SavedPostDatabaseRepository } from "../data/repositories/saved-post-database.repository";
 import { PostResponse } from "../types/social.types";
 import { GetSavedPostsUseCase } from "./get-saved-posts.usecase";
 
@@ -11,7 +11,7 @@ describe("GetSavedPostsUseCase", () => {
     const module = await Test.createTestingModule({
       providers: [
         GetSavedPostsUseCase,
-        { provide: PrismaSavedPostRepository, useValue: { findSaved } },
+        { provide: SavedPostDatabaseRepository, useValue: { findSaved } },
       ],
     }).compile();
 
@@ -30,7 +30,7 @@ describe("GetSavedPostsUseCase", () => {
     const module = await Test.createTestingModule({
       providers: [
         GetSavedPostsUseCase,
-        { provide: PrismaSavedPostRepository, useValue: { findSaved } },
+        { provide: SavedPostDatabaseRepository, useValue: { findSaved } },
       ],
     }).compile();
     const useCase = module.get(GetSavedPostsUseCase);
@@ -54,7 +54,7 @@ describe("GetSavedPostsUseCase", () => {
     const module = await Test.createTestingModule({
       providers: [
         GetSavedPostsUseCase,
-        { provide: PrismaSavedPostRepository, useValue: { findSaved } },
+        { provide: SavedPostDatabaseRepository, useValue: { findSaved } },
       ],
     }).compile();
     const useCase = module.get(GetSavedPostsUseCase);

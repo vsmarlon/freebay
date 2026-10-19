@@ -1,18 +1,18 @@
 import { Test } from "@nestjs/testing";
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
-import { PrismaSavedPostRepository } from "./saved-post-database.repository";
+import { SavedPostDatabaseRepository } from "./saved-post-database.repository";
 
-describe("PrismaSavedPostRepository", () => {
+describe("SavedPostDatabaseRepository", () => {
   it("orders saved rows by the stable createdAt/id keyset and applies visibility", async () => {
     const findMany = jest.fn().mockResolvedValue([]);
     const module = await Test.createTestingModule({
       providers: [
-        PrismaSavedPostRepository,
+        SavedPostDatabaseRepository,
         { provide: PrismaService, useValue: { savedPost: { findMany } } },
       ],
     }).compile();
 
-    await module.get(PrismaSavedPostRepository).findSaved({
+    await module.get(SavedPostDatabaseRepository).findSaved({
       userId: "user-1",
       limit: 2,
       cursor: {

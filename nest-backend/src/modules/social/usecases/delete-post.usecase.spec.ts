@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DeletePostUseCase } from './delete-post.usecase';
-import { PrismaPostRepository } from '../data/repositories/post-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { right } from '@/shared/core/either';
 import { NotFoundError, ForbiddenError } from '@/shared/core/errors';
 
@@ -17,7 +17,7 @@ describe('DeletePostUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DeletePostUseCase,
-        { provide: PrismaPostRepository, useValue: mockPostRepo },
+        { provide: PostDatabaseRepository, useValue: mockPostRepo },
       ],
     }).compile();
 

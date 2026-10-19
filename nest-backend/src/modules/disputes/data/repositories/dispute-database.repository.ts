@@ -8,7 +8,7 @@ import { GetDisputeOutput, GetUserDisputesOutput } from '../../dtos/dispute.dto'
 import { DisputeWithOrder, CreateDisputeInput } from '../../types/dispute.types';
 
 @Injectable()
-export class PrismaDisputeRepository {
+export class DisputeDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 

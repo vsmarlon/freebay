@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError } from "@/shared/core/errors";
 import { StoryAudience, StoryMediaType } from "@prisma/client";
-import { PrismaStoryRepository, storyMediaUrl } from "../data/repositories/story-database.repository";
+import { StoryDatabaseRepository, storyMediaUrl } from "../data/repositories/story-database.repository";
 import {
   CreateStoryInput,
   CreateStoryOutput,
@@ -11,7 +11,7 @@ import {
 
 @Injectable()
 export class CreateStoryUseCase {
-  constructor(private readonly storyRepository: PrismaStoryRepository) {}
+  constructor(private readonly storyRepository: StoryDatabaseRepository) {}
 
   async execute(
     input: CreateStoryInput,

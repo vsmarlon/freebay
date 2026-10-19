@@ -3,7 +3,7 @@ import { ConversationStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { StartConversationOutput } from '../dtos/chat.dto';
 import { toStartConversationOutput } from '../dtos/conversation-response';
 
@@ -11,7 +11,7 @@ import { toStartConversationOutput } from '../dtos/conversation-response';
 export class StartConversationUseCase {
   constructor(
     private readonly conversationRepository: ConversationDatabaseRepository,
-    private readonly blockRepository: PrismaBlockRepository,
+    private readonly blockRepository: BlockDatabaseRepository,
   ) {}
 
   async execute(initiatorId: string, targetUserId: string, productId?: string): Promise<Either<AppError, StartConversationOutput>> {

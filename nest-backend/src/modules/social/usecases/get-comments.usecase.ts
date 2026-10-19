@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError } from "@/shared/core/errors";
-import { PrismaCommentRepository } from "../data/repositories/comment-database.repository";
+import { CommentDatabaseRepository } from "../data/repositories/comment-database.repository";
 import { CommentTree } from "../types/social.types";
 
 @Injectable()
 export class GetCommentsUseCase {
-  constructor(private readonly commentRepository: PrismaCommentRepository) {}
+  constructor(private readonly commentRepository: CommentDatabaseRepository) {}
 
   async execute(input: {
     postId: string;

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { right } from "@/shared/core/either";
-import { PrismaShareRepository } from "../data/repositories/share-database.repository";
+import { ShareDatabaseRepository } from "../data/repositories/share-database.repository";
 import { GetUserRepostsUseCase } from "./get-user-reposts.usecase";
 
 describe("GetUserRepostsUseCase", () => {
@@ -11,7 +11,7 @@ describe("GetUserRepostsUseCase", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetUserRepostsUseCase,
-        { provide: PrismaShareRepository, useValue: shareRepository },
+        { provide: ShareDatabaseRepository, useValue: shareRepository },
       ],
     }).compile();
 

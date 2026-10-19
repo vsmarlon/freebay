@@ -11,7 +11,7 @@ import {
 import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { BlockRepository } from '../domain/repositories/block.repository';
-import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { BadRequestError, NotFoundError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
@@ -60,7 +60,7 @@ const compileSubject = async (): Promise<TestingModule> => Test.createTestingMod
     { provide: UserDatabaseRepository, useValue: mockUserRepository },
     { provide: FollowRepository, useValue: mockFollowRepository },
     { provide: BlockRepository, useValue: mockBlockRepository },
-    { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+    { provide: OrderDatabaseRepository, useValue: mockOrderRepository },
     { provide: NotificationService, useValue: mockNotificationService },
   ],
 }).compile();

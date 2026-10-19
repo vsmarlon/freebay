@@ -1,20 +1,20 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { decodeCursor } from '@/shared/core/pagination';
-import { PrismaOrderRepository } from './order-database.repository';
+import { OrderDatabaseRepository } from './order-database.repository';
 
-describe('PrismaOrderRepository.findSellerSales', () => {
+describe('OrderDatabaseRepository.findSellerSales', () => {
   it('uses the descending createdAt/id keyset and preserves tied timestamps', async () => {
     const findMany = jest.fn().mockResolvedValue([
       { id: 'order-2', createdAt: new Date('2026-09-12T00:00:00.000Z') },
     ]);
     const module = await Test.createTestingModule({
       providers: [
-        PrismaOrderRepository,
+        OrderDatabaseRepository,
         { provide: PrismaService, useValue: { order: { findMany } } },
       ],
     }).compile();
-    const repository = module.get(PrismaOrderRepository);
+    const repository = module.get(OrderDatabaseRepository);
     const createdAt = new Date('2026-09-12T00:00:00.000Z');
 
     const result = await repository.findSellerSales(
@@ -55,11 +55,11 @@ describe('PrismaOrderRepository.findSellerSales', () => {
     ]);
     const module = await Test.createTestingModule({
       providers: [
-        PrismaOrderRepository,
+        OrderDatabaseRepository,
         { provide: PrismaService, useValue: { order: { findMany } } },
       ],
     }).compile();
-    const repository = module.get(PrismaOrderRepository);
+    const repository = module.get(OrderDatabaseRepository);
 
     const result = await repository.findSellerSales(
       'seller-1',

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaLikeRepository } from '../data/repositories/like-database.repository';
+import { LikeDatabaseRepository } from '../data/repositories/like-database.repository';
 
 @Injectable()
 export class GetLikedPostsUseCase {
-  constructor(private readonly likeRepository: PrismaLikeRepository) {}
+  constructor(private readonly likeRepository: LikeDatabaseRepository) {}
 
   async execute(userId: string): Promise<Either<AppError, unknown[]>> {
     const result = await this.likeRepository.findLikedByUserId(userId);

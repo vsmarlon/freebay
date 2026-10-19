@@ -7,7 +7,7 @@ import { postIncludeForViewer, ShareWithPost, MutationState } from '../../types/
 import { normalizePost, visiblePostAuthor, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
-export class PrismaShareRepository {
+export class ShareDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 

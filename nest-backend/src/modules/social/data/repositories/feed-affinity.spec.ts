@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaPostRepository } from './post-database.repository';
+import { PostDatabaseRepository } from './post-database.repository';
 import { decodeFeedCursor } from '../../types/social.types';
 
 const post = (id: string, userId: string, createdAt: Date, likesCount: number) => ({
@@ -21,7 +21,7 @@ const post = (id: string, userId: string, createdAt: Date, likesCount: number) =
   product: null,
 });
 
-describe('PrismaPostRepository feed affinity', () => {
+describe('PostDatabaseRepository feed affinity', () => {
   it('keeps duplicate follow rows from changing ranking, pagination, or ties', async () => {
     const createdAt = new Date('2026-09-20T00:00:00.000Z');
     const candidates = [
@@ -33,7 +33,7 @@ describe('PrismaPostRepository feed affinity', () => {
     const run = async (followingIdRows: string[]) => {
       const module = await Test.createTestingModule({
         providers: [
-          PrismaPostRepository,
+          PostDatabaseRepository,
           {
             provide: PrismaService,
             useValue: {
@@ -43,7 +43,7 @@ describe('PrismaPostRepository feed affinity', () => {
           },
         ],
       }).compile();
-      const result = await module.get(PrismaPostRepository).findFeed({ userId: 'viewer', limit: 3 });
+      const result = await module.get(PostDatabaseRepository).findFeed({ userId: 'viewer', limit: 3 });
       if (result.isLeft()) throw new Error('feed query failed');
       return { ids: result.value.posts.map(({ id }) => id), nextCursor: result.value.nextCursor };
     };
@@ -66,7 +66,7 @@ describe('PrismaPostRepository feed affinity', () => {
     ];
     const module = await Test.createTestingModule({
       providers: [
-        PrismaPostRepository,
+        PostDatabaseRepository,
         {
           provide: PrismaService,
           useValue: {
@@ -75,7 +75,7 @@ describe('PrismaPostRepository feed affinity', () => {
         },
       ],
     }).compile();
-    const repository = module.get(PrismaPostRepository);
+    const repository = module.get(PostDatabaseRepository);
 
     const first = await repository.findFeed({ limit: 2 });
     if (first.isLeft() || !first.value.nextCursor) throw new Error('feed query failed');

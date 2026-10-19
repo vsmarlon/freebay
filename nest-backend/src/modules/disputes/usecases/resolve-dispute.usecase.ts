@@ -4,7 +4,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
@@ -14,7 +14,7 @@ import { DisputeWinner } from '../dispute.constants';
 export class ResolveDisputeUseCase {
   constructor(
     private prisma: PrismaService,
-    private disputeRepo: PrismaDisputeRepository,
+    private disputeRepo: DisputeDatabaseRepository,
     private notificationService: NotificationService,
     private transitionPolicy: DisputeTransitionPolicy,
     private resolutionExecution: DisputeResolutionExecutionService,

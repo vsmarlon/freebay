@@ -8,7 +8,7 @@ import { UserBrief } from "../../types/user.types";
 import { FollowRepository } from '../../domain/repositories/follow.repository';
 
 @Injectable()
-export class PrismaFollowRepository extends FollowRepository {
+export class FollowDatabaseRepository extends FollowRepository {
   constructor(private readonly prisma: PrismaService) {
     super();
   }

@@ -6,7 +6,7 @@ import { SafetyListRepository } from '../../domain/repositories/safety-list.repo
 const userFields = { id: true, displayName: true, username: true, avatarUrl: true, avatarBlurHash: true, isVerified: true, reputationScore: true } as const;
 
 @Injectable()
-export class PrismaSafetyListRepository extends SafetyListRepository {
+export class SafetyListDatabaseRepository extends SafetyListRepository {
   constructor(private readonly prisma: PrismaService) { super(); }
 
   candidates(ownerId: string, search: string, selected: boolean, limit: number, offset: number) {

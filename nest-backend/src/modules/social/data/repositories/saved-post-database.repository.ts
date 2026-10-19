@@ -8,7 +8,7 @@ import { normalizePost } from './post-database.repository';
 import { postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
-export class PrismaSavedPostRepository {
+export class SavedPostDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 

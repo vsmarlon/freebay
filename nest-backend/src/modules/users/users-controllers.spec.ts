@@ -5,7 +5,7 @@ import { ListFollowersUseCase } from './usecases/list-followers.usecase';
 import { ListFollowingUseCase } from './usecases/list-following.usecase';
 import { GetFollowStatusUseCase } from './usecases/get-follow-status.usecase';
 import { GetBlockStatusUseCase } from './usecases/get-block-status.usecase';
-import { PrismaBlockRepository } from './data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from './data/repositories/block-database.repository';
 import { UsersAccountController } from './users-account.controller';
 import { UsersDiscoveryController } from './users-discovery.controller';
 import { UsersSocialController } from './users-social.controller';
@@ -109,7 +109,7 @@ describe('Users controllers route precedence', () => {
       ],
       providers: [
         { provide: UserDatabaseRepository, useValue: userRepository },
-        { provide: PrismaBlockRepository, useValue: blockRepository },
+        { provide: BlockDatabaseRepository, useValue: blockRepository },
         { provide: GetProfileUseCase, useValue: getProfile },
         { provide: GetUserStatsUseCase, useValue: { execute: jest.fn() } },
         { provide: UpdateProfileUseCase, useValue: { execute: jest.fn() } },

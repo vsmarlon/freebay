@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
-import { PrismaBlockRepository } from '@/modules/users/data/repositories/block-database.repository';
+import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
 import { OgScraperService } from '../services/og-scraper.service';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
@@ -20,7 +20,7 @@ export class SendMessageUseCase {
 
   constructor(
     private readonly conversationRepository: ConversationDatabaseRepository,
-    private readonly blockRepository: PrismaBlockRepository,
+    private readonly blockRepository: BlockDatabaseRepository,
     private readonly ogScraper: OgScraperService,
     private readonly threadAccess: ChatThreadAccessService,
     private readonly notifications: NotificationService,

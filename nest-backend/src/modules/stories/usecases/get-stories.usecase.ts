@@ -1,14 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError } from "@/shared/core/errors";
-import { PrismaStoryRepository, storyMediaUrl } from "../data/repositories/story-database.repository";
+import { StoryDatabaseRepository, storyMediaUrl } from "../data/repositories/story-database.repository";
 
 import { GroupedStory } from "../dtos/stories.dto";
 import { canonicalStoryTextBlocks } from "../dtos/stories.dto";
 
 @Injectable()
 export class GetStoriesUseCase {
-  constructor(private readonly storyRepository: PrismaStoryRepository) {}
+  constructor(private readonly storyRepository: StoryDatabaseRepository) {}
 
   async execute(
     userId?: string,

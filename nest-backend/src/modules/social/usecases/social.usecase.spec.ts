@@ -7,9 +7,9 @@ import { CreatePostUseCase } from './create-post.usecase';
 import { LikePostUseCase } from './like-post.usecase';
 import { UnlikePostUseCase } from './unlike-post.usecase';
 import { CommentUseCase } from './comment.usecase';
-import { PrismaPostRepository } from '../data/repositories/post-database.repository';
-import { PrismaLikeRepository } from '../data/repositories/like-database.repository';
-import { PrismaCommentRepository } from '../data/repositories/comment-database.repository';
+import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
+import { LikeDatabaseRepository } from '../data/repositories/like-database.repository';
+import { CommentDatabaseRepository } from '../data/repositories/comment-database.repository';
 import {
   createCommentInput,
   createPostInput,
@@ -49,7 +49,7 @@ describe('CreatePostUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePostUseCase,
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
+        { provide: PostDatabaseRepository, useValue: mockPostRepository },
         { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
@@ -143,8 +143,8 @@ describe('LikePostUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LikePostUseCase,
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
-        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
+        { provide: PostDatabaseRepository, useValue: mockPostRepository },
+        { provide: LikeDatabaseRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
@@ -186,8 +186,8 @@ describe('UnlikePostUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UnlikePostUseCase,
-        { provide: PrismaPostRepository, useValue: mockPostRepository },
-        { provide: PrismaLikeRepository, useValue: mockLikeRepository },
+        { provide: PostDatabaseRepository, useValue: mockPostRepository },
+        { provide: LikeDatabaseRepository, useValue: mockLikeRepository },
       ],
     }).compile();
 
@@ -226,9 +226,9 @@ describe('CommentUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CommentUseCase,
-        { provide: PrismaCommentRepository, useValue: mockCommentRepository },
+        { provide: CommentDatabaseRepository, useValue: mockCommentRepository },
         { provide: NotificationService, useValue: mockNotificationService },
-        { provide: PrismaPostRepository, useValue: { findById: jest.fn().mockResolvedValue(right({ id: 'post-123', userId: 'owner-123' })) } },
+        { provide: PostDatabaseRepository, useValue: { findById: jest.fn().mockResolvedValue(right({ id: 'post-123', userId: 'owner-123' })) } },
       ],
     }).compile();
 

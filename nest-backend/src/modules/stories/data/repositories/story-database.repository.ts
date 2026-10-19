@@ -43,7 +43,7 @@ export function storyMediaUrl(url: string): string {
 }
 
 @Injectable()
-export class PrismaStoryRepository {
+export class StoryDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 

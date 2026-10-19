@@ -3,20 +3,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { prisma } from '../../../../../test/setup-integration';
 import { UserFactory, ProductFactory, OrderFactory } from '../../../../../test/factories';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaOrderRepository } from './order-database.repository';
+import { OrderDatabaseRepository } from './order-database.repository';
 import { RefundOrderTxData } from '../../types/order.types';
 
-describe('PrismaOrderRepository.refundOrder', () => {
-  let repository: PrismaOrderRepository;
+describe('OrderDatabaseRepository.refundOrder', () => {
+  let repository: OrderDatabaseRepository;
   let userFactory: UserFactory;
   let productFactory: ProductFactory;
   let orderFactory: OrderFactory;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PrismaOrderRepository, { provide: PrismaService, useValue: prisma }],
+      providers: [OrderDatabaseRepository, { provide: PrismaService, useValue: prisma }],
     }).compile();
-    repository = module.get(PrismaOrderRepository);
+    repository = module.get(OrderDatabaseRepository);
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
     orderFactory = new OrderFactory(prisma);

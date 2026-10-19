@@ -10,7 +10,7 @@ import { OpenDisputeUseCase } from './open-dispute.usecase';
 import { ResolveDisputeUseCase } from './resolve-dispute.usecase';
 import { SubmitEvidenceUseCase } from './submit-evidence.usecase';
 import { WithdrawDisputeUseCase } from './withdraw-dispute.usecase';
-import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
@@ -59,7 +59,7 @@ describe('Disputes Effect Integration', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         usecase,
-        PrismaDisputeRepository,
+        DisputeDatabaseRepository,
         DisputeTransitionPolicy,
         DisputeResolutionExecutionService,
         { provide: PrismaService, useValue: prismaClient },

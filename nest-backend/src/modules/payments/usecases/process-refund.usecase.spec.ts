@@ -2,7 +2,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { right, left } from "@/shared/core/either";
 import { PaymentProviderError } from "@/shared/core/errors";
 import { TransactionDatabaseRepository } from "../data/repositories/transaction-database.repository";
-import { PrismaOrderRepository } from "../../orders/data/repositories/order-database.repository";
+import { OrderDatabaseRepository } from "../../orders/data/repositories/order-database.repository";
 import { SellerPayoutService } from "../services/seller-payout.service";
 import { isFullRefund, ProcessRefundUseCase } from "./process-refund.usecase";
 
@@ -37,7 +37,7 @@ describe("ProcessRefundUseCase", () => {
       providers: [
         ProcessRefundUseCase,
         { provide: TransactionDatabaseRepository, useValue: mocks.transactionRepo },
-        { provide: PrismaOrderRepository, useValue: mocks.orderRepo },
+        { provide: OrderDatabaseRepository, useValue: mocks.orderRepo },
         { provide: SellerPayoutService, useValue: mocks.payoutService },
       ],
     }).compile();

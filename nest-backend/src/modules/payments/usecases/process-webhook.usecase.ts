@@ -7,7 +7,7 @@ import { NotificationService } from '../../notifications/services/notification.s
 import { ProcessWebhookInput, WebhookDataPayload } from '../dtos/payment.dto';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 import { TransactionWithOrder } from '../types/payment.types';
 
@@ -21,7 +21,7 @@ export class ProcessWebhookUseCase {
   constructor(
     private readonly productRepo: ProductDatabaseRepository,
     private readonly transactionRepo: TransactionDatabaseRepository,
-    private readonly orderRepo: PrismaOrderRepository,
+    private readonly orderRepo: OrderDatabaseRepository,
     private readonly walletRepo: WalletDatabaseRepository,
     private readonly notificationService: NotificationService,
     private readonly prisma: PrismaService,

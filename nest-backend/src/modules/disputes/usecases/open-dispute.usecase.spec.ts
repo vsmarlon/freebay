@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OpenDisputeUseCase } from './open-dispute.usecase';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { PrismaDisputeRepository } from '../data/repositories/dispute-database.repository';
+import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
@@ -50,7 +50,7 @@ describe('OpenDisputeUseCase', () => {
       providers: [
         OpenDisputeUseCase,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: PrismaDisputeRepository, useValue: mockDisputeRepo },
+        { provide: DisputeDatabaseRepository, useValue: mockDisputeRepo },
         { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();

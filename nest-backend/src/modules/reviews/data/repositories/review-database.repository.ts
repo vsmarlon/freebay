@@ -8,7 +8,7 @@ import { RepositoryResponse } from '@/shared/core/either';
 import { saveUpload } from '@/shared/utils/file.utils';
 
 @Injectable()
-export class PrismaReviewRepository {
+export class ReviewDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {}
   async findById(id: string): RepositoryResponse<ReviewWithDetails | null> {
     return repositoryResponse(() => this.prisma.review.findUnique({

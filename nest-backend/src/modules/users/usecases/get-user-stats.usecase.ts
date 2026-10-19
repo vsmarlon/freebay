@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { PrismaOrderRepository } from '@/modules/orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '@/modules/orders/data/repositories/order-database.repository';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { UserStatsResponse } from '../dtos/user-response.class';
 import { GetUserStatsInput } from '../dtos/user.dto';
@@ -9,7 +9,7 @@ import { GetUserStatsInput } from '../dtos/user.dto';
 @Injectable()
 export class GetUserStatsUseCase {
   constructor(
-    private readonly orderRepository: PrismaOrderRepository,
+    private readonly orderRepository: OrderDatabaseRepository,
     private readonly followRepository: FollowRepository,
   ) {}
 

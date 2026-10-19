@@ -7,7 +7,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { UpsertPreferenceInput } from '../../types/chat.types';
 
 @Injectable()
-export class PrismaConversationPreferenceRepository {
+export class ConversationPreferenceDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 

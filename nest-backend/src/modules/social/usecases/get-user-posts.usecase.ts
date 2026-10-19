@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Either, left, right } from "@/shared/core/either";
 import { AppError, BadRequestError } from "@/shared/core/errors";
 import { CursorPage } from "@/shared/core/pagination";
-import { PrismaPostRepository } from "../data/repositories/post-database.repository";
+import { PostDatabaseRepository } from "../data/repositories/post-database.repository";
 import {
   UserPostEntry,
   UserPostsCursor,
@@ -11,7 +11,7 @@ import {
 
 @Injectable()
 export class GetUserPostsUseCase {
-  constructor(private readonly postRepository: PrismaPostRepository) {}
+  constructor(private readonly postRepository: PostDatabaseRepository) {}
 
   async execute(
     query: UserPostsQuery,

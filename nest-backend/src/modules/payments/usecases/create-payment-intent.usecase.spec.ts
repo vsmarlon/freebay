@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentIntentUseCase } from './create-payment-intent.usecase';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { StripeProvider } from '../providers/stripe-provider';
@@ -50,7 +50,7 @@ describe('CreatePaymentIntentUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreatePaymentIntentUseCase,
-        { provide: PrismaOrderRepository, useValue: mockOrderRepository },
+        { provide: OrderDatabaseRepository, useValue: mockOrderRepository },
         { provide: UserDatabaseRepository, useValue: mockUserRepository },
         { provide: TransactionDatabaseRepository, useValue: mockTransactionRepository },
         { provide: StripeProvider, useValue: mockPaymentProvider },

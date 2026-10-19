@@ -13,7 +13,7 @@ import {
 import { postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
-export class PrismaCommentRepository {
+export class CommentDatabaseRepository {
   constructor(private readonly prisma: PrismaService) {
   }
 

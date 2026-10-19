@@ -8,7 +8,7 @@ import { UserBrief } from '../../types/user.types';
 import { BlockRepository } from '../../domain/repositories/block.repository';
 
 @Injectable()
-export class PrismaBlockRepository extends BlockRepository {
+export class BlockDatabaseRepository extends BlockRepository {
   constructor(private readonly prisma: PrismaService) {
     super();
   }

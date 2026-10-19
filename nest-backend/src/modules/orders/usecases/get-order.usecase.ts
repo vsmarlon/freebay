@@ -1,4 +1,4 @@
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
@@ -8,7 +8,7 @@ import { OrderFullPayload } from '../types/order.types';
 
 @Injectable()
 export class GetOrderUseCase {
-  constructor(private readonly orderRepository: PrismaOrderRepository) {}
+  constructor(private readonly orderRepository: OrderDatabaseRepository) {}
 
   async execute(
     id: string,

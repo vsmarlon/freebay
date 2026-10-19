@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateOrderUseCase } from './create-order.usecase';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory, ProductFactory } from '../../../../test/factories';
 import { CreateOrderInput } from '../dtos/order.dto';
@@ -19,7 +19,7 @@ describe('CreateOrderUseCase Integration', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CreateOrderUseCase,
-        PrismaOrderRepository,
+        OrderDatabaseRepository,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationService, useValue: { create: jest.fn() } },
       ],

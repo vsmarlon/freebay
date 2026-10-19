@@ -5,7 +5,7 @@ import { DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { ProductDatabaseRepository } from '../../products/data/repositories/product-database.repository';
-import { PrismaOrderRepository } from '../../orders/data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { WalletDatabaseRepository } from '../../wallet/data/repositories/wallet-database.repository';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-group-database.repository';
@@ -34,7 +34,7 @@ export class ProcessGroupWebhookUseCase {
     private readonly paymentGroupRepo: PaymentGroupDatabaseRepository,
     private readonly transactionRepo: TransactionDatabaseRepository,
     private readonly productRepo: ProductDatabaseRepository,
-    private readonly orderRepo: PrismaOrderRepository,
+    private readonly orderRepo: OrderDatabaseRepository,
     private readonly walletRepo: WalletDatabaseRepository,
     private readonly notificationService: NotificationService,
     private readonly prisma: PrismaService,

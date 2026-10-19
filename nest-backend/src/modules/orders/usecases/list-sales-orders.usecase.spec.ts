@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { PrismaOrderRepository } from '../data/repositories/order-database.repository';
+import { OrderDatabaseRepository } from '../data/repositories/order-database.repository';
 import { ListSalesOrdersUseCase } from './list-sales-orders.usecase';
 import { SalesOrdersQueryDTO } from '../dtos/order.dto';
 import { BadRequestError } from '@/shared/core/errors';
@@ -15,7 +15,7 @@ describe('ListSalesOrdersUseCase', () => {
     const module = await Test.createTestingModule({
       providers: [
         ListSalesOrdersUseCase,
-        { provide: PrismaOrderRepository, useValue: { findSellerSales } },
+        { provide: OrderDatabaseRepository, useValue: { findSellerSales } },
       ],
     }).compile();
     sut = module.get(ListSalesOrdersUseCase);
