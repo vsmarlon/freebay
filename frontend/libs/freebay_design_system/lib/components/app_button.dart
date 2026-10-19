@@ -82,69 +82,73 @@ class _AppButtonState extends State<AppButton> {
       ),
       child: SizedBox(
         width: widget.width,
-        height: height,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: gradient,
-            color: gradient == null ? backgroundColor : null,
-            border: border,
-            boxShadow: shadowColor != null && !_isPressed
-                ? AppDepth.hard(shadowColor)
-                : null,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: isEnabled
-                  ? () {
-                      HapticFeedback.lightImpact();
-                      widget.onPressed?.call();
-                    }
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: height),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: gradient,
+              color: gradient == null ? backgroundColor : null,
+              border: border,
+              boxShadow: shadowColor != null && !_isPressed
+                  ? AppDepth.hard(shadowColor)
                   : null,
-              onHighlightChanged: isEnabled
-                  ? (highlighted) {
-                      setState(() => _isPressed = highlighted);
-                    }
-                  : null,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: Center(
-                  child: widget.isLoading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              foregroundColor,
-                            ),
-                          ),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (widget.icon != null) ...[
-                              Icon(
-                                widget.icon,
-                                size: 20,
-                                color: foregroundColor,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isEnabled
+                    ? () {
+                        HapticFeedback.lightImpact();
+                        widget.onPressed?.call();
+                      }
+                    : null,
+                onHighlightChanged: isEnabled
+                    ? (highlighted) {
+                        setState(() => _isPressed = highlighted);
+                      }
+                    : null,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: Spacing.sm,
+                  ),
+                  child: Center(
+                    child: widget.isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                foregroundColor,
                               ),
-                              Spacing.hSm,
-                            ],
-                            Flexible(
-                              child: Text(
-                                widget.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                semanticsLabel: widget.label,
-                                style: textStyle.copyWith(
+                            ),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (widget.icon != null) ...[
+                                Icon(
+                                  widget.icon,
+                                  size: 20,
                                   color: foregroundColor,
                                 ),
+                                Spacing.hSm,
+                              ],
+                              Flexible(
+                                child: Text(
+                                  widget.label,
+                                  textAlign: TextAlign.center,
+                                  semanticsLabel: widget.label,
+                                  style: textStyle.copyWith(
+                                    color: foregroundColor,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
             ),
