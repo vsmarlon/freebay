@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { prisma } from '../../../../../test/setup-integration';
 import { CommentDatabaseRepository } from './comment-database.repository';
+import { randomUUID } from 'node:crypto';
 
 describe('CommentDatabaseRepository comment counters', () => {
   let database: PrismaService;
@@ -84,5 +85,26 @@ describe('CommentDatabaseRepository comment counters', () => {
     expect((await repository.softDeleteWithCount(root.value.id)).value).toBe(false);
     expect((await prisma.post.findUnique({ where: { id: post.id } }))?.commentsCount).toBe(1);
     expect(await prisma.comment.count({ where: { postId: post.id, deletedAt: null } })).toBe(1);
+  });
+
+  it('replays the canonical comment once, rejects a changed digest, and rechecks access on replay', async () => {
+    const owner = await prisma.user.create({ data: { email: `fb08-owner-${Date.now()}@example.com`, displayName: 'Owner' } });
+    const commenter = await prisma.user.create({ data: { email: `fb08-author-${Date.now()}@example.com`, displayName: 'Author' } });
+    const post = await prisma.post.create({ data: { userId: owner.id, type: 'REGULAR', content: 'post' } });
+    const requestId = randomUUID();
+    const input = { content: 'reply', user: { connect: { id: commenter.id } }, post: { connect: { id: post.id } } };
+    const options = { postId: post.id, userId: commenter.id, requestId, digest: 'payload-a', mentionIds: [] };
+
+    const first = await repository.createIdempotent(input, options);
+    const replay = await repository.createIdempotent(input, options);
+    const changed = await repository.createIdempotent({ ...input, content: 'changed' }, { ...options, digest: 'payload-b' });
+    expect(first.isRight() && replay.isRight() && first.value.comment.id === replay.value.comment.id).toBe(true);
+    expect(replay.isRight() && replay.value.replayed).toBe(true);
+    expect(changed.isLeft()).toBe(true);
+    expect(await prisma.comment.count({ where: { postId: post.id } })).toBe(1);
+    expect((await prisma.post.findUnique({ where: { id: post.id } }))?.commentsCount).toBe(1);
+
+    await prisma.block.create({ data: { blockerId: owner.id, blockedId: commenter.id } });
+    expect((await repository.createIdempotent(input, options)).isLeft()).toBe(true);
   });
 });

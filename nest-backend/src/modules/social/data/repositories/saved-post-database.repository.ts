@@ -4,8 +4,7 @@ import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage } from '@/shared/core/pagination';
 import { PostResponse, postIncludeForViewer, SavedPostsRepositoryQuery } from '../../types/social.types';
-import { normalizePost } from './post-database.repository';
-import { postVisibilityWhere } from './post-query-helpers';
+import { normalizePostsForViewer, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class SavedPostDatabaseRepository {
@@ -73,7 +72,7 @@ export class SavedPostDatabaseRepository {
       const page = saved.slice(0, limit);
       const last = page[page.length - 1];
       return {
-        items: page.map(({ post }) => normalizePost(post)),
+        items: await normalizePostsForViewer(page.map(({ post }) => post), query.userId, this.prisma),
         hasMore,
         nextCursor: hasMore && last
           ? Buffer.from(JSON.stringify({

@@ -3,8 +3,8 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
-import { MutationState } from '../../types/social.types';
-import { postVisibilityWhere } from './post-query-helpers';
+import { MutationState, PostResponse, postIncludeForViewer } from '../../types/social.types';
+import { normalizePostsForViewer, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class LikeDatabaseRepository {
@@ -46,21 +46,16 @@ export class LikeDatabaseRepository {
     }), 'Erro ao atualizar like');
   }
 
-  async findLikedByUserId(userId: string): RepositoryResponse<unknown[]> {
+  async findLikedByUserId(userId: string): RepositoryResponse<PostResponse[]> {
     return repositoryResponse(async () => {
       const likes = await this.prisma.like.findMany({
         where: { userId, post: { deletedAt: null, AND: [postVisibilityWhere(userId)] } },
         include: {
-          post: {
-            include: {
-              user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
-              _count: { select: { likes: true, comments: true, shares: true } },
-            },
-          },
+          post: { include: postIncludeForViewer(userId) },
         },
         orderBy: { createdAt: 'desc' },
       });
-      return likes.map((l) => l.post);
+      return normalizePostsForViewer(likes.map((like) => like.post), userId, this.prisma);
     }, 'Erro ao buscar likes');
   }
 

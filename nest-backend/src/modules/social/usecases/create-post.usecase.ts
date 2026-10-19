@@ -53,6 +53,7 @@ export class CreatePostUseCase {
 
     return right({
       id: post.id,
+      isQuote: false,
       content: post.content,
       imageUrl: post.imageUrl,
       ...(post.audience !== StoryAudience.CLOSE_FRIENDS && isValidBlurHash(post.imageBlurHash)

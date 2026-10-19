@@ -4,7 +4,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { postIncludeForViewer, ShareWithPost, MutationState } from '../../types/social.types';
-import { normalizePost, visiblePostAuthor, postVisibilityWhere } from './post-query-helpers';
+import { normalizePostsForViewer, visiblePostAuthor, postVisibilityWhere } from './post-query-helpers';
 
 @Injectable()
 export class ShareDatabaseRepository {
@@ -62,9 +62,11 @@ export class ShareDatabaseRepository {
           user: { select: { id: true, displayName: true, avatarUrl: true } },
         },
       });
+      const normalizedPosts = await normalizePostsForViewer(shares.map((share) => share.post), params.viewerId, this.prisma);
+      const byPostId = new Map(normalizedPosts.map((post) => [post.id, post]));
       return shares.map((share) => ({
         ...share,
-        post: normalizePost(share.post),
+        post: byPostId.get(share.post.id)!,
       }));
     }, 'Erro ao buscar reposts');
   }

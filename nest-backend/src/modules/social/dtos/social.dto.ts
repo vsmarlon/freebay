@@ -9,10 +9,12 @@ import {
   Min,
   Max,
   IsArray,
+  IsIn,
+  IsBoolean,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { PostType, StoryAudience } from "@prisma/client";
+import { CommentReplyPermission, PostType, ReportReason, StoryAudience } from "@prisma/client";
 import { SanitizeText } from "@/shared/utils/sanitize.decorator";
 import { COMMENT_MAX_LENGTH, ContentFilter, FeedType, ProfileTimelineKind, SEARCH_MAX_LENGTH, SearchFilter } from "../types/social.types";
 
@@ -64,6 +66,100 @@ export class CreateCommentDTO {
   @IsOptional()
   @IsUUID("all", { each: true })
   readonly mentionIds?: string[];
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  readonly clientRequestId?: string;
+}
+
+export class CreateQuoteDTO {
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional() @IsUUID()
+  readonly sourcePostId?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional() @IsUUID()
+  readonly sourceCommentId?: string;
+
+  @ApiProperty({ minLength: 1, maxLength: COMMENT_MAX_LENGTH })
+  @IsString() @MinLength(1) @MaxLength(COMMENT_MAX_LENGTH) @SanitizeText()
+  readonly content!: string;
+
+  @ApiPropertyOptional({ type: [String], example: ['uuid'] })
+  @IsArray() @IsOptional() @IsUUID('all', { each: true })
+  readonly mentionIds?: string[];
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional() @IsUUID()
+  readonly clientRequestId?: string;
+}
+
+export class ConversationQueryDTO {
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  readonly limit?: number;
+  @ApiPropertyOptional({ description: 'Opaque keyset cursor' })
+  @IsOptional() @IsString() @MaxLength(4096)
+  readonly cursor?: string;
+  @ApiPropertyOptional({ enum: ['recent', 'likes'] })
+  @IsOptional() @IsIn(['recent', 'likes'])
+  readonly sort?: 'recent' | 'likes';
+}
+
+export class CommentContextQueryDTO {
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  readonly replyLimit?: number;
+  @ApiPropertyOptional({ description: 'Opaque direct-reply cursor' })
+  @IsOptional() @IsString() @MaxLength(4096)
+  readonly replyCursor?: string;
+  @ApiPropertyOptional({ enum: ['recent', 'likes'] })
+  @IsOptional() @IsIn(['recent', 'likes'])
+  readonly replySort?: 'recent' | 'likes';
+  @ApiPropertyOptional({ description: 'Opaque ancestor continuation cursor' })
+  @IsOptional() @IsString() @MaxLength(4096)
+  readonly ancestorCursor?: string;
+}
+
+export class HiddenRepliesQueryDTO {
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  readonly limit?: number;
+  @ApiPropertyOptional({ description: 'Opaque hidden-replies cursor' })
+  @IsOptional() @IsString() @MaxLength(4096)
+  readonly cursor?: string;
+}
+
+export class SetReplyPermissionDTO {
+  @ApiProperty({ enum: CommentReplyPermission, default: CommentReplyPermission.EVERYONE })
+  @IsEnum(CommentReplyPermission)
+  readonly permission!: CommentReplyPermission;
+}
+
+export class SetConversationPreferenceDTO {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  readonly enabled!: boolean;
+}
+
+export class CommentBookmarksQueryDTO {
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  readonly limit?: number;
+  @ApiPropertyOptional({ description: 'Opaque bookmark cursor' })
+  @IsOptional() @IsString() @MaxLength(4096)
+  readonly cursor?: string;
+}
+
+export class ReportCommentDTO {
+  @ApiProperty({ enum: ReportReason })
+  @IsEnum(ReportReason)
+  readonly reason!: ReportReason;
+
+  @ApiPropertyOptional({ maxLength: 1000 })
+  @IsOptional() @IsString() @MaxLength(1000) @SanitizeText()
+  readonly description?: string;
 }
 
 export class GetFeedQueryDTO {
@@ -176,6 +272,7 @@ export interface CreatePostInput {
 
 export interface CreatePostOutput {
   id: string;
+  isQuote: false;
   content: string | null;
   imageUrl: string | null;
   imageBlurHash?: string;
@@ -205,6 +302,8 @@ export interface CreateCommentInput {
   content: string;
   parentId?: string;
   mentionIds?: string[];
+  clientRequestId?: string;
+  media?: Express.Multer.File[];
 }
 
 export interface CreateCommentOutput {
@@ -213,4 +312,5 @@ export interface CreateCommentOutput {
   userId: string;
   content: string;
   createdAt: Date;
+  media?: Array<{ id: string; url: string; mimeType: string; size: number }>;
 }

@@ -10,6 +10,10 @@ import {
   GetUserPostsQueryDTO,
   SearchPostsQueryDTO,
   GetCommentsQueryDTO,
+  ConversationQueryDTO,
+  CommentContextQueryDTO,
+  HiddenRepliesQueryDTO,
+  CommentBookmarksQueryDTO,
 } from "./dtos/social.dto";
 import {
   GetAuth,
@@ -28,6 +32,8 @@ import { GetCommentsUseCase } from "./usecases/get-comments.usecase";
 import { GetLikedPostsUseCase } from "./usecases/get-liked-posts.usecase";
 import { GetSavedPostsUseCase } from "./usecases/get-saved-posts.usecase";
 import { FeedType } from "./types/social.types";
+import { GetConversationUseCase } from './usecases/get-conversation.usecase';
+import { ManageCommentInteractionsUseCase } from './usecases/manage-comment-interactions.usecase';
 
 @ApiTags("Social")
 @Controller("social")
@@ -42,7 +48,29 @@ export class SocialReadController {
     private readonly getCommentsUseCase: GetCommentsUseCase,
     private readonly getLikedPostsUseCase: GetLikedPostsUseCase,
     private readonly getSavedPostsUseCase: GetSavedPostsUseCase,
+    private readonly getConversationUseCase: GetConversationUseCase,
+    private readonly manageCommentInteractionsUseCase: ManageCommentInteractionsUseCase,
   ) {}
+
+  @GetPublic('posts/:id/conversation', { summary: 'Get keyset-paged conversation roots' })
+  async getConversation(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string, @Query() query: ConversationQueryDTO) {
+    return this.getConversationUseCase.roots({ postId: id, viewerId: viewerId || undefined, limit: query.limit ?? 20, sort: query.sort ?? 'recent', cursor: query.cursor });
+  }
+
+  @GetPublic('comments/:id/context', { summary: 'Get a comment with paged ancestors and direct replies' })
+  async getCommentContext(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string, @Query() query: CommentContextQueryDTO) {
+    return this.getConversationUseCase.context({ commentId: id, viewerId: viewerId || undefined, limit: query.replyLimit ?? 20, sort: query.replySort ?? 'recent', replyCursor: query.replyCursor, ancestorCursor: query.ancestorCursor });
+  }
+
+  @GetPublic('posts/:id/hidden-replies', { summary: 'List author-hidden replies visible to this viewer' })
+  async getHiddenReplies(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string, @Query() query: HiddenRepliesQueryDTO) {
+    return this.getConversationUseCase.hiddenReplies({ postId: id, viewerId: viewerId || undefined, limit: query.limit ?? 20, cursor: query.cursor });
+  }
+
+  @GetAuth('comments/bookmarks', 'List bookmarked comments')
+  async getCommentBookmarks(@CurrentUserId() userId: string, @Query() query: CommentBookmarksQueryDTO) {
+    return this.manageCommentInteractionsUseCase.bookmarks(userId, query.limit ?? 20, query.cursor);
+  }
 
   @GetPublic("feed", {
     summary: "Get social feed",

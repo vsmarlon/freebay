@@ -206,29 +206,25 @@ describe('UnlikePostUseCase', () => {
 
 describe('CommentUseCase', () => {
   let sut: CommentUseCase;
-  let mockCommentRepository: { createWithCount: jest.Mock; createMentions: jest.Mock; belongsToPost: jest.Mock };
-  let mockNotificationService: { notifyMention: jest.Mock };
+  let mockCommentRepository: { createIdempotent: jest.Mock };
+  let mockNotificationService: { deliverPersisted: jest.Mock };
 
   beforeEach(async () => {
     mockCommentRepository = {
-      createWithCount: jest.fn().mockResolvedValue(right({
-        id: 'comment-123',
-        content: 'Test comment',
-        postId: 'post-123',
-        userId: 'user-123',
-        createdAt: new Date(),
+      createIdempotent: jest.fn().mockResolvedValue(right({
+        comment: { id: 'comment-123', content: 'Great post!', createdAt: new Date() },
+        notifications: [],
+        replayed: false,
       })),
-      createMentions: jest.fn().mockResolvedValue(right(undefined)),
-      belongsToPost: jest.fn().mockResolvedValue(right(true)),
     };
-    mockNotificationService = { notifyMention: jest.fn().mockResolvedValue(undefined) };
+    mockNotificationService = { deliverPersisted: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CommentUseCase,
         { provide: CommentDatabaseRepository, useValue: mockCommentRepository },
         { provide: NotificationService, useValue: mockNotificationService },
-        { provide: PostDatabaseRepository, useValue: { findById: jest.fn().mockResolvedValue(right({ id: 'post-123', userId: 'owner-123' })) } },
+        { provide: PostDatabaseRepository, useValue: { findById: jest.fn().mockResolvedValue(right({ id: 'post-123', userId: 'owner-123', audience: 'EVERYONE' })) } },
       ],
     }).compile();
 
@@ -242,11 +238,9 @@ describe('CommentUseCase', () => {
     expect(comment.content).toBe('Great post!');
     expect(comment.postId).toBe('post-123');
     expect(comment.userId).toBe('user-123');
-    expect(mockCommentRepository.createWithCount).toHaveBeenCalledWith(
+    expect(mockCommentRepository.createIdempotent).toHaveBeenCalledWith(
       expect.objectContaining({ content: 'Great post!' }),
-      'post-123',
-      'owner-123',
-      'user-123',
+      expect.objectContaining({ postId: 'post-123', userId: 'user-123', mentionIds: [] }),
     );
   });
 
@@ -257,11 +251,9 @@ describe('CommentUseCase', () => {
     }));
 
     expectRight(result);
-    expect(mockCommentRepository.createMentions).toHaveBeenCalledWith('comment-123', ['friend-user-id']);
-    expect(mockNotificationService.notifyMention).toHaveBeenCalledWith(
-      'friend-user-id',
-      expect.stringContaining('comentário'),
-      'comment-123',
+    expect(mockCommentRepository.createIdempotent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ mentionIds: ['friend-user-id'] }),
     );
   });
 
@@ -272,6 +264,9 @@ describe('CommentUseCase', () => {
     }));
 
     expectRight(result);
-    expect(mockCommentRepository.createMentions).toHaveBeenCalledWith('comment-123', ['friend-user-id']);
+    expect(mockCommentRepository.createIdempotent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ mentionIds: ['friend-user-id'] }),
+    );
   });
 });

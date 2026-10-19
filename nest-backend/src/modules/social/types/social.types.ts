@@ -38,7 +38,7 @@ export const POST_INCLUDE = {
   likes: { take: 1, select: { userId: true } },
   shares: { take: 1, select: { userId: true } },
   savedBy: { take: 1, select: { userId: true } },
-  _count: { select: { likes: true, comments: { where: { deletedAt: null, isHidden: false } }, shares: true } },
+  _count: { select: { likes: true, comments: { where: { deletedAt: null, isHidden: false, authorHiddenAt: null } }, shares: true } },
   product: {
     select: {
       id: true,
@@ -74,11 +74,26 @@ export type PostPayload = Prisma.PostGetPayload<{
   include: typeof POST_INCLUDE;
 }>;
 
-export type PostResponse = Omit<PostPayload, "likes" | "shares" | "savedBy" | "imageBlurHash"> & {
+export type QuotePostView = Pick<PostPayload,
+  'id' | 'content' | 'imageUrl' | 'type' | 'audience' | 'userId' | 'createdAt' | 'user' |
+  'likesCount' | 'commentsCount' | 'sharesCount'
+> & { imageBlurHash?: string };
+
+export type QuoteCommentView = Pick<CommentFlatPayload,
+  'id' | 'postId' | 'parentId' | 'userId' | 'content' | 'createdAt' | 'deletedAt' | 'likesCount' | 'user'
+> & { isLiked: boolean };
+
+export type QuoteSourceView =
+  | { kind: 'post'; id: string; post: QuotePostView }
+  | { kind: 'comment'; id: string; postId: string; comment: QuoteCommentView };
+
+export type PostResponse = Omit<PostPayload, "likes" | "shares" | "savedBy" | "imageBlurHash" | "clientRequestId" | "clientRequestHash" | "quoteSourcePostId" | "quoteSourceCommentId"> & {
   imageBlurHash?: string;
   isLiked: boolean;
   isSaved: boolean;
   hasReposted: boolean;
+  isQuote: boolean;
+  quoteSource?: QuoteSourceView | null;
 };
 
 export const COMMENT_INCLUDE = {
@@ -87,6 +102,7 @@ export const COMMENT_INCLUDE = {
   },
   _count: { select: { commentLikes: true } },
   commentLikes: { take: 1, select: { userId: true } },
+  media: { select: { id: true, url: true, mimeType: true, size: true }, orderBy: [{ position: 'asc' as const }, { createdAt: 'asc' as const }] },
   replies: {
     include: {
       user: {
@@ -114,7 +130,15 @@ export const COMMENT_FLAT_INCLUDE = {
   },
   _count: { select: { commentLikes: true } },
   commentLikes: { take: 1, select: { userId: true } },
+  media: { select: { id: true, url: true, mimeType: true, size: true }, orderBy: [{ position: 'asc' as const }, { createdAt: 'asc' as const }] },
 } satisfies Prisma.CommentInclude;
+
+export function commentFlatIncludeForViewer(viewerId?: string) {
+  return {
+    ...COMMENT_FLAT_INCLUDE,
+    commentLikes: { where: { userId: viewerId ?? '' }, take: 1, select: { userId: true } },
+  } satisfies Prisma.CommentInclude;
+}
 
 export const COMMENT_PAGE_INCLUDE = {
   ...COMMENT_FLAT_INCLUDE,
@@ -127,10 +151,17 @@ export const COMMENT_PAGE_INCLUDE = {
 } satisfies Prisma.CommentInclude;
 
 export function commentVisibilityWhere(viewerId?: string): Prisma.CommentWhereInput {
-  return { OR: [
-    { isHidden: false },
-    { userId: viewerId ?? '' },
-    { post: { userId: viewerId ?? '' } },
+  return { AND: [
+    { OR: [
+      { isHidden: false },
+      { userId: viewerId ?? '' },
+      { post: { userId: viewerId ?? '' } },
+    ] },
+    { OR: [
+      { authorHiddenAt: null },
+      { userId: viewerId ?? '' },
+      { post: { userId: viewerId ?? '' } },
+    ] },
   ] };
 }
 

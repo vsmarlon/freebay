@@ -58,7 +58,7 @@ export class PostQueryHelpers {
     const hasMore = posts.length > limit;
     const page = posts.slice(0, limit);
     return {
-      posts: page.map(normalizePost),
+      posts: await normalizePostsForViewer(page, query.userId, this.prisma),
       hasMore,
       nextCursor: hasMore && page[page.length - 1] ? encodeFeedCursor({
         userId: query.userId ?? '', type: FeedType.FOLLOWING, contentFilter: query.contentFilter ?? ContentFilter.ALL,
@@ -82,7 +82,7 @@ export class PostQueryHelpers {
       const remainingIds = cursor.remainingIds.slice(limit);
       const hasMore = remainingIds.length > 0 || cursor.hasOlder;
       return {
-        posts: page.map(normalizePost), hasMore,
+        posts: await normalizePostsForViewer(page, query.userId, this.prisma), hasMore,
         nextCursor: hasMore ? encodeFeedCursor({ ...cursor, remainingIds }) : null,
       };
     }
@@ -128,7 +128,7 @@ export class PostQueryHelpers {
     const hasMore = remainingIds.length > 0 || hasOlder;
     const boundary = candidates[candidates.length - 1];
     return {
-      posts: page.map(normalizePost),
+      posts: await normalizePostsForViewer(page, query.userId, this.prisma),
       hasMore,
       nextCursor: hasMore ? encodeFeedCursor({
         userId: query.userId ?? '', type: FeedType.EXPLORE,
@@ -145,7 +145,7 @@ export class PostQueryHelpers {
         where: { id, AND: [postVisibilityWhere(viewerId)] },
         include: postIncludeForViewer(viewerId),
       });
-      return post && post.deletedAt === null ? normalizePost(post) : null;
+      return post && post.deletedAt === null ? (await normalizePostsForViewer([post], viewerId, this.prisma))[0] : null;
     }, 'Erro ao buscar post');
   }
 
@@ -162,7 +162,7 @@ export class PostQueryHelpers {
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: limit + 1, include: postIncludeForViewer(query.viewerId),
       });
       const hasMore = posts.length > limit;
-      const page = posts.slice(0, limit).map(normalizePost);
+      const page = await normalizePostsForViewer(posts.slice(0, limit), query.viewerId, this.prisma);
       const last = page[page.length - 1];
       return { items: page, hasMore, nextCursor: hasMore && last ? Buffer.from(JSON.stringify({ scope: 'user-posts', profileUserId: query.userId, createdAt: last.createdAt.toISOString(), postId: last.id }), 'utf8').toString('base64url') : null };
     }, 'Erro ao buscar posts do usuário');
@@ -200,12 +200,16 @@ export class PostQueryHelpers {
           },
         }),
       ]);
+      const normalizedPosts = await normalizePostsForViewer(posts, query.viewerId, this.prisma);
+      const normalizedShares = await normalizePostsForViewer(shares.map((share) => share.post), query.viewerId, this.prisma);
+      const normalizedPostById = new Map(normalizedPosts.map((post) => [post.id, post]));
+      const normalizedShareById = new Map(normalizedShares.map((post) => [post.id, post]));
       const events = [
         ...posts.map((post) => ({
           id: post.id,
           createdAt: post.createdAt,
           entry: {
-            post: normalizePost(post), repostId: null, repostedAt: null,
+            post: normalizedPostById.get(post.id)!, repostId: null, repostedAt: null,
             repostedBy: null, isReposted: false, sharesCount: post.sharesCount,
           } satisfies UserPostEntry,
         })),
@@ -213,7 +217,7 @@ export class PostQueryHelpers {
           id: share.id,
           createdAt: share.createdAt,
           entry: {
-            post: normalizePost(share.post), repostId: share.id,
+            post: normalizedShareById.get(share.post.id)!, repostId: share.id,
             repostedAt: share.createdAt, repostedBy: share.user,
             isReposted: true, sharesCount: share.post.sharesCount,
           } satisfies UserPostEntry,
@@ -242,7 +246,7 @@ export class PostQueryHelpers {
         where.user = author;
       }
       const posts = await this.prisma.post.findMany({ where, orderBy: { createdAt: 'desc' }, take: query.limit ?? SOCIAL_DEFAULT_PAGE_SIZE, ...(query.cursor ? { skip: 1, cursor: { id: query.cursor } } : {}), include: postIncludeForViewer(query.userId) });
-      return posts.map(normalizePost);
+      return normalizePostsForViewer(posts, query.userId, this.prisma);
     }, 'Erro ao buscar posts');
   }
 }
@@ -273,7 +277,8 @@ export function postVisibilityWhere(viewerId?: string): Prisma.PostWhereInput {
 }
 
 export function normalizePost(post: PostPayload): PostResponse {
-  const { likes, savedBy, shares, ...response } = post;
+  const { likes, savedBy, shares, clientRequestId: _requestId, clientRequestHash: _requestHash,
+    quoteSourcePostId: _sourcePostId, quoteSourceCommentId: _sourceCommentId, ...response } = post;
   const { imageBlurHash, ...publicFields } = response;
   const visibleImageHash = post.imageUrl == null
     ? imageBlurHash ?? post.product?.images[0]?.blurHash
@@ -290,7 +295,50 @@ export function normalizePost(post: PostPayload): PostResponse {
     isLiked: likes.length > 0,
     isSaved: savedBy.length > 0,
     hasReposted: shares.length > 0,
+    isQuote: post.isQuote,
+    quoteSource: null,
   };
+}
+
+export async function normalizePostsForViewer(posts: readonly PostPayload[], viewerId: string | undefined, prisma: PrismaService): Promise<PostResponse[]> {
+  const normalized = posts.map(normalizePost);
+  const postSourceIds = [...new Set(posts.flatMap((post) => post.quoteSourcePostId ? [post.quoteSourcePostId] : []))];
+  const commentSourceIds = [...new Set(posts.flatMap((post) => post.quoteSourceCommentId ? [post.quoteSourceCommentId] : []))];
+  const [postSources, commentSources] = await Promise.all([
+    postSourceIds.length ? prisma.post.findMany({
+      where: { id: { in: postSourceIds }, deletedAt: null, audience: 'EVERYONE', AND: [postVisibilityWhere(viewerId)] },
+      include: postIncludeForViewer(viewerId),
+    }) : Promise.resolve([]),
+    commentSourceIds.length ? prisma.comment.findMany({
+      where: { id: { in: commentSourceIds }, deletedAt: null, isHidden: false, authorHiddenAt: null,
+        post: { deletedAt: null, audience: 'EVERYONE', AND: [postVisibilityWhere(viewerId)] },
+        ...(viewerId ? { user: visiblePostAuthor(viewerId) } : {}),
+      },
+      include: { user: { select: { id: true, displayName: true, username: true, avatarUrl: true } }, commentLikes: { where: { userId: viewerId ?? '' }, take: 1, select: { userId: true } } },
+    }) : Promise.resolve([]),
+  ]);
+  const sourcePosts = new Map(postSources.map((post) => [post.id, normalizePost(post)]));
+  const sourceComments = new Map(commentSources.map((comment) => [comment.id, comment]));
+  return normalized.map((response, index) => {
+    const post = posts[index];
+    if (post.quoteSourcePostId) {
+      const source = sourcePosts.get(post.quoteSourcePostId);
+      if (source) response.quoteSource = { kind: 'post', id: source.id, post: {
+        id: source.id, content: source.content, imageUrl: source.imageUrl,
+        ...(source.imageBlurHash ? { imageBlurHash: source.imageBlurHash } : {}),
+        type: source.type, audience: source.audience, userId: source.userId, createdAt: source.createdAt,
+        user: source.user, likesCount: source.likesCount, commentsCount: source.commentsCount, sharesCount: source.sharesCount,
+      } };
+    } else if (post.quoteSourceCommentId) {
+      const source = sourceComments.get(post.quoteSourceCommentId);
+      if (source) response.quoteSource = { kind: 'comment', id: source.id, postId: source.postId, comment: {
+        id: source.id, postId: source.postId, parentId: source.parentId, userId: source.userId,
+        content: source.content, createdAt: source.createdAt, deletedAt: source.deletedAt,
+        likesCount: source.likesCount, user: source.user, isLiked: source.commentLikes.length > 0,
+      } };
+    }
+    return response;
+  });
 }
 
 export function encodeFeedCursor(cursor: FeedCursor): string {
