@@ -1,0 +1,22 @@
+.marketplace { width: min(100% - 2rem, 80rem); margin-inline: auto; padding-block: 2rem 5rem; }
+.market-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 1rem; }
+.market-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.market-card { min-width: 0; }
+.market-card-media { position: relative; display: block; aspect-ratio: 1; overflow: hidden; }
+.market-card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.market-card-copy h2 { overflow-wrap: anywhere; }
+.market-detail { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(16rem, .8fr); gap: 2rem; }
+.market-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; align-content: start; }
+.market-gallery img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.market-panel { align-self: start; }
+.market-actions { display: grid; gap: 1rem; margin-block-start: 1rem; }
+.market-category-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; padding: 0; list-style: none; }
+.market-search-tabs { display: flex; gap: 1rem; }
+.market-owner { display: flex; align-items: center; gap: 1rem; }
+.market-tag { position: absolute; inset-block-start: .5rem; inset-inline-start: .5rem; }
+.market-favorite::before { content: '♡'; }
+.market-favorite-saved::before { content: '♥'; }
+.market-confirm-dialog .ui-dialog footer > button:last-child { display: none; }
+@media (min-width: 640px) { .market-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .market-card-media { aspect-ratio: 4 / 3; } }
+@media (min-width: 1024px) { .market-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 639px) { .marketplace { width: min(100% - 1.25rem, 80rem); padding-block-start: 1.25rem; } .market-detail { grid-template-columns: 1fr; } .market-gallery { grid-template-columns: 1fr; } .market-gallery img { aspect-ratio: 4 / 3; } }
