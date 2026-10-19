@@ -23,6 +23,7 @@ import { MediaAccessService } from './services/media-access.service';
 export interface MediaRequest {
   headers?: {
     range?: string;
+    'x-view-once-opening'?: string;
   };
 }
 
@@ -55,7 +56,7 @@ export class MediaController {
       throw new NotFoundException('Arquivo não encontrado');
     }
 
-    const allowed = await this.mediaAccess.canRead(userId, context, filename);
+    const allowed = await this.mediaAccess.canRead(userId, context, filename, req?.headers?.['x-view-once-opening']);
     if (!allowed) {
       throw new NotFoundException('Arquivo não encontrado');
     }

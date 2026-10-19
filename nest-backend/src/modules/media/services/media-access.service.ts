@@ -3,8 +3,8 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PrivateUploadContext } from '@/shared/utils/file.utils';
 import { storyAudienceWhere } from '@/modules/stories/data/repositories/story-database.repository';
 import { postVisibilityWhere } from '@/modules/social/data/repositories/post-query-helpers';
-
-const VIEW_ONCE_FETCH_GRACE_MS = 5 * 60 * 1000;
+import { commentVisibilityWhere } from '@/modules/social/types/social.types';
+import { createHash, timingSafeEqual } from 'crypto';
 
 @Injectable()
 export class MediaAccessService {
@@ -14,6 +14,7 @@ export class MediaAccessService {
     userId: string,
     context: PrivateUploadContext,
     filename: string,
+    openingKey?: string,
   ): Promise<boolean> {
     const url = `/media/${context}/${filename}`;
 
@@ -40,6 +41,24 @@ export class MediaAccessService {
       return post !== null;
     }
 
+    if (context === 'comment') {
+      const media = await this.prisma.commentMedia.findFirst({
+        where: {
+          url,
+          comment: { is: {
+            deletedAt: null,
+            AND: [
+              commentVisibilityWhere(userId),
+              { post: { deletedAt: null, AND: [postVisibilityWhere(userId)] } },
+              { user: { blocksGiven: { none: { blockedId: userId } }, blocksReceived: { none: { blockerId: userId } } } },
+            ],
+          } },
+        },
+        select: { ownerId: true, comment: { select: { userId: true } } },
+      });
+      return media !== null && media.ownerId === media.comment.userId;
+    }
+
     if (context === 'background') {
       const preference = await this.prisma.conversationPreference.findFirst({
         where: { userId, backgroundUrl: url },
@@ -54,6 +73,8 @@ export class MediaAccessService {
         deletedAt: true,
         viewOnce: true,
         readAt: true,
+        viewOnceOpeningHash: true,
+        viewOnceClosedAt: true,
         senderId: true,
         conversation: { select: { user1Id: true, user2Id: true } },
       },
@@ -63,7 +84,7 @@ export class MediaAccessService {
       const { conversation } = directMessage;
       const isParticipant =
         conversation.user1Id === userId || conversation.user2Id === userId;
-      return isParticipant && this._payloadStillVisible(directMessage, userId);
+      return isParticipant && this._payloadStillVisible(directMessage, userId, openingKey);
     }
 
     const chatMessage = await this.prisma.chatMessage.findFirst({
@@ -72,6 +93,8 @@ export class MediaAccessService {
         deletedAt: true,
         viewOnce: true,
         readAt: true,
+        viewOnceOpeningHash: true,
+        viewOnceClosedAt: true,
         senderId: true,
         order: { select: { buyerId: true, sellerId: true } },
       },
@@ -80,7 +103,7 @@ export class MediaAccessService {
     if (chatMessage) {
       const { order } = chatMessage;
       const isParticipant = order.buyerId === userId || order.sellerId === userId;
-      return isParticipant && this._payloadStillVisible(chatMessage, userId);
+      return isParticipant && this._payloadStillVisible(chatMessage, userId, openingKey);
     }
 
     return false;
@@ -92,16 +115,21 @@ export class MediaAccessService {
       viewOnce: boolean;
       readAt: Date | null;
       senderId: string;
+      viewOnceOpeningHash: string | null;
+      viewOnceClosedAt: Date | null;
     },
     userId: string,
+    openingKey?: string,
   ): boolean {
     if (message.deletedAt !== null) return false;
+    if (message.viewOnce) {
+      if (message.senderId === userId || message.readAt === null || message.viewOnceClosedAt !== null || !openingKey) return false;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(openingKey)) return false;
+      const actualHash = createHash('sha256').update(openingKey).digest();
+      if (!message.viewOnceOpeningHash || !/^[0-9a-f]{64}$/.test(message.viewOnceOpeningHash)) return false;
+      return timingSafeEqual(Buffer.from(message.viewOnceOpeningHash, 'hex'), actualHash);
+    }
     if (message.senderId === userId) return true;
-    if (!message.viewOnce || message.readAt === null) return true;
-
-    // ponytail: the read that reveals a view-once message returns its URL in the
-    // same response, so the fetch has to be allowed to land. Grace window instead
-    // of a hard cutoff; swap for a one-shot signed URL if that is too generous.
-    return Date.now() - message.readAt.getTime() <= VIEW_ONCE_FETCH_GRACE_MS;
+    return true;
   }
 }

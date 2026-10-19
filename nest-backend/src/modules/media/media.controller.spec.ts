@@ -66,7 +66,7 @@ describe('MediaController', () => {
   it('authorizes against the requesting user, not just the filename', async () => {
     const result = await sut.serve(VIEWER, 'chat', EXISTING);
     await drain(result.getStream());
-    expect(mediaAccess.canRead).toHaveBeenCalledWith(VIEWER, 'chat', EXISTING);
+    expect(mediaAccess.canRead).toHaveBeenCalledWith(VIEWER, 'chat', EXISTING, undefined);
   });
 
   it('404s for a missing file', async () => {
@@ -84,6 +84,7 @@ describe('MediaController', () => {
     '..%2f..%2fetc',
     'a/../../secret.jpg',
     'not-a-uuid.jpg',
+    `${EXISTING}.owner`,
     `${EXISTING}/../../secret`,
     '.env',
   ])('rejects traversal or non-generated filename %p', async (filename) => {
@@ -116,6 +117,36 @@ describe('MediaController', () => {
     expect(result.options.length).toBe(3);
 
     await drain(result.getStream());
+  });
+
+  it('forwards the view-once key for range authorization and rejects a wrong key before streaming', async () => {
+    const openingKey = '550e8400-e29b-41d4-a716-446655440000';
+    mediaAccess.canRead.mockImplementation(async (_userId, _context, _filename, candidateKey) => candidateKey === openingKey);
+    const headers: Record<string, string> = {};
+    let status = 200;
+    const res = {
+      setHeader(name: string, value: string) {
+        headers[name] = value;
+      },
+      status(code: number) {
+        status = code;
+      },
+    };
+
+    const result = await sut.serve(VIEWER, 'chat', EXISTING, {
+      headers: { range: 'bytes=1-3', 'x-view-once-opening': openingKey },
+    }, res);
+    expect(status).toBe(206);
+    expect(headers['Content-Range']).toBe('bytes 1-3/5');
+    expect(mediaAccess.canRead).toHaveBeenCalledWith(VIEWER, 'chat', EXISTING, openingKey);
+    await drain(result.getStream());
+
+    await expect(sut.serve(VIEWER, 'chat', EXISTING, {
+      headers: { range: 'bytes=1-3', 'x-view-once-opening': '550e8400-e29b-41d4-a716-446655440001' },
+    }, res)).rejects.toThrow(NotFoundException);
+    expect(mediaAccess.canRead).toHaveBeenLastCalledWith(
+      VIEWER, 'chat', EXISTING, '550e8400-e29b-41d4-a716-446655440001',
+    );
   });
 
   it('returns HTTP 416 for an unsatisfiable range request', async () => {
