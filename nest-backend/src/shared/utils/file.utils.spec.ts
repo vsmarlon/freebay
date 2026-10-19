@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
-import { saveUpload } from './file.utils';
+import { deleteUpload, isOwnedUpload, saveUpload } from './file.utils';
 
 describe('saveUpload', () => {
   const written: string[] = [];
@@ -36,5 +36,23 @@ describe('saveUpload', () => {
 
   it('gives every upload a distinct name', () => {
     expect(save('image/png')).not.toBe(save('image/png'));
+  });
+
+  it('persists private upload ownership and deletes its proof with the file', () => {
+    const url = saveUpload({ mimetype: 'image/png', buffer: Buffer.from('private') }, 'chat', 'owner-1');
+    const filepath = join(process.cwd(), url.replace('/media/', 'private-uploads/'));
+    expect(isOwnedUpload(url, 'owner-1', 'chat')).toBe(true);
+    expect(isOwnedUpload(url, 'owner-2', 'chat')).toBe(false);
+    expect(isOwnedUpload(url, 'owner-1', 'background')).toBe(false);
+    deleteUpload(url);
+    expect(isOwnedUpload(url, 'owner-1', 'chat')).toBe(false);
+    expect(existsSync(filepath)).toBe(false);
+    expect(existsSync(`${filepath}.owner`)).toBe(false);
+  });
+
+  it('rejects private uploads without an owner marker', () => {
+    const url = saveUpload({ mimetype: 'image/png', buffer: Buffer.from('legacy') }, 'chat');
+    expect(isOwnedUpload(url, 'owner-1', 'chat')).toBe(false);
+    deleteUpload(url);
   });
 });
