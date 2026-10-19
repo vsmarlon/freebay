@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/auth.dart';
-import 'package:freebay/shared/services/storage_service.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 /// Biometry on/off row. Owns the enroll/revoke orchestration so the

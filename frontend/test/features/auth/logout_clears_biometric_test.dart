@@ -4,6 +4,7 @@ import 'package:freebay/shared/services/storage_service.dart';
 import 'package:freebay/shared/services/biometry_service.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:freebay/features/auth/data/repositories/auth_repository.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/shared/either/either.dart';
@@ -31,17 +32,30 @@ class _SwitchingAuthRepository extends AuthRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const biometricChannel = MethodChannel('com.freebay.app/biometric_key');
 
   setUp(() {
+    String? vaultToken = 'biometric-credential';
     FlutterSecureStorage.setMockInitialValues({
       'auth_token': 'access-token',
       'refresh_token': 'refresh-token',
-      'biometric_token': 'biometric-credential',
+      'biometric_auth_v1_present': 'true',
       'biometry_owner_id': 'user-1',
       'biometry_enabled': 'true',
       'biometry_prompted': 'true',
       'remember_me': 'false',
     });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(biometricChannel, (call) async {
+          if (call.method == 'readVault') return vaultToken;
+          if (call.method == 'clearVault') vaultToken = null;
+          return null;
+        });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(biometricChannel, null);
   });
 
   test(

@@ -37,6 +37,14 @@ mixin AuthGoogleAuthentication on Notifier<AsyncValue<UserEntity?>> {
 
       await ensureGoogleSignInInitialized();
       if (!AuthSessionCoordinator.isCurrentAttempt(sdkAttempt)) return;
+      if (!GoogleSignIn.instance.supportsAuthenticate()) {
+        ErrorReporter.report(
+          'google-signin',
+          StateError('Interactive Google authentication unavailable'),
+        );
+        _setGoogleError();
+        return;
+      }
 
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance
           .authenticate();
@@ -78,9 +86,6 @@ mixin AuthGoogleAuthentication on Notifier<AsyncValue<UserEntity?>> {
   }
 
   void _setGoogleError() {
-    state = AsyncValue.error(
-      const ServerFailure(_googleGenericError),
-      StackTrace.current,
-    );
+    state = AsyncValue.error(const GoogleSignInFailure(), StackTrace.current);
   }
 }

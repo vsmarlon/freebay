@@ -19,6 +19,7 @@ import 'package:freebay/shared/services/biometric_key_service.dart';
 import 'package:freebay/shared/services/error_reporter.dart';
 import 'package:freebay/shared/services/http_client.dart';
 import 'package:freebay/shared/services/storage_service.dart';
+import 'package:freebay/shared/services/notification_socket_service.dart';
 import 'package:freebay/features/auth/data/services/apple_auth_nonce.dart';
 import 'package:freebay/shared/services/notification_service.dart';
 import 'package:freebay/core/router/app_router.dart';
@@ -41,9 +42,6 @@ export 'auth_dependencies.dart';
 
 part 'auth_google_authentication.dart';
 part 'auth_session_lifecycle.dart';
-
-const String _googleGenericError =
-    'Não foi possível entrar com o Google. Tente novamente.';
 
 final authControllerProvider =
     NotifierProvider<AuthController, AsyncValue<UserEntity?>>(
@@ -278,12 +276,17 @@ class AuthController extends Notifier<AsyncValue<UserEntity?>>
   }
 
   void setUser(UserEntity? user) {
-    final currentUserId = state.value?.id;
+    final currentUser = state.value;
+    final currentUserId = currentUser?.id;
     if (user != null && currentUserId != user.id) {
       return;
     }
     state = AsyncValue.data(user);
-    routerRefreshNotifier.value++;
+    // ponytail: profile-only refresh can restore a route being popped.
+    if (currentUserId != user?.id ||
+        needsProfileCompletion(currentUser) != needsProfileCompletion(user)) {
+      routerRefreshNotifier.value++;
+    }
   }
 
   bool needsProfileCompletion(UserEntity? user) {

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dio/dio.dart';
@@ -62,6 +62,12 @@ class _AuthAdapter implements HttpClientAdapter {
           ..._session('bio-owner', 'bio-access', 'bio-refresh'),
           'biometricToken': 'biometric-secret',
         },
+      });
+    }
+    if (options.path == '/auth/biometric-challenge') {
+      return _json({
+        'success': true,
+        'data': {'challengeId': 'challenge-1', 'challenge': 'server-challenge'},
       });
     }
     if (options.path == '/auth/complete-profile' && holdCompleteProfile) {
@@ -158,7 +164,29 @@ void main() {
     required _Biometry biometry,
     Map<String, Object> preferences = const {'remember_me': false},
     Future<void> Function(String token)? afterAuthenticationSideEffects,
+    String? biometricSignError,
   }) async {
+    const biometricChannel = MethodChannel('com.freebay.app/biometric_key');
+    String? vaultToken = secureValues.containsKey('biometric_auth_v1_present')
+        ? 'biometric-secret'
+        : null;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(biometricChannel, (call) async {
+          if (call.method == 'readVault') return vaultToken;
+          if (call.method == 'clearVault') vaultToken = null;
+          if (call.method == 'hasKey') return true;
+          if (call.method == 'sign') {
+            if (biometricSignError != null) {
+              throw PlatformException(code: biometricSignError);
+            }
+            return 'signature';
+          }
+          return null;
+        });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(biometricChannel, null);
+    });
     FlutterSecureStorage.setMockInitialValues(<String, String>{});
     SharedPreferences.setMockInitialValues({});
     await StorageService.clearTokens();
@@ -453,7 +481,7 @@ void main() {
   });
 
   test(
-    'opted-in cold start cancellation never restores remembered bearer',
+    'biometric key prompt cancellation never restores remembered bearer',
     () async {
       final biometry = _Biometry(
         enabled: () async => true,
@@ -464,12 +492,13 @@ void main() {
         secureValues: const {
           'auth_token': 'remembered-access',
           'refresh_token': 'remembered-refresh',
-          'biometric_token': 'biometric-secret',
+          'biometric_auth_v1_present': 'true',
           'biometry_owner_id': 'bio-owner',
           'biometry_enabled': 'true',
         },
         preferences: const {'remember_me': true},
         biometry: biometry,
+        biometricSignError: 'cancelled',
       );
       await waitForBoot();
 
@@ -481,7 +510,7 @@ void main() {
       expect(await StorageService.getToken(), isNull);
       expect(await StorageService.getBiometricToken(), 'biometric-secret');
       expect(await BiometryService().isEnabled(), isTrue);
-      expect(biometry.prompts, 1);
+      expect(biometry.prompts, 0);
       adapter.rejectAuthProbe = true;
       await expectLater(
         HttpClient.instance.get('/after-cancel'),
@@ -507,7 +536,7 @@ void main() {
         secureValues: const {
           'auth_token': 'remembered-access',
           'refresh_token': 'remembered-refresh',
-          'biometric_token': 'biometric-secret',
+          'biometric_auth_v1_present': 'true',
           'biometry_owner_id': 'bio-owner',
           'biometry_enabled': 'true',
         },
@@ -567,7 +596,7 @@ void main() {
       secureValues: const {
         'auth_token': 'remembered-access',
         'refresh_token': 'remembered-refresh',
-        'biometric_token': 'biometric-secret',
+        'biometric_auth_v1_present': 'true',
       },
       biometry: biometry,
     );
@@ -594,7 +623,7 @@ void main() {
         secureValues: const {
           'auth_token': 'remembered-access',
           'refresh_token': 'remembered-refresh',
-          'biometric_token': 'biometric-secret',
+          'biometric_auth_v1_present': 'true',
           'biometry_owner_id': 'expected-owner',
           'biometry_enabled': 'true',
         },
@@ -630,7 +659,7 @@ void main() {
         secureValues: const {
           'auth_token': 'remembered-access',
           'refresh_token': 'remembered-refresh',
-          'biometric_token': 'biometric-secret',
+          'biometric_auth_v1_present': 'true',
           'biometry_owner_id': 'bio-owner',
           'biometry_enabled': 'true',
         },
@@ -651,7 +680,7 @@ void main() {
         adapter.requests.where((request) => request.path == '/users/me'),
         isEmpty,
       );
-      expect(biometry.prompts, 1);
+      expect(biometry.prompts, 0);
     },
   );
 }

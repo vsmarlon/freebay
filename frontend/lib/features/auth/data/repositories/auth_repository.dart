@@ -259,8 +259,8 @@ class AuthRepository {
       data: {
         'biometricToken': biometricToken,
         'purpose': purpose,
-        if (stepUpPurpose != null) 'stepUpPurpose': stepUpPurpose,
-        if (resourceId != null) 'resourceId': resourceId,
+        'stepUpPurpose': ?stepUpPurpose,
+        'resourceId': ?resourceId,
       },
     ),
     decoder: (response) {
@@ -289,11 +289,7 @@ class AuthRepository {
   }) => requestEither(
     () => client.post(
       '/auth/step-up',
-      data: {
-        'purpose': purpose,
-        if (resourceId != null) 'resourceId': resourceId,
-        'proof': proof,
-      },
+      data: {'purpose': purpose, 'resourceId': ?resourceId, 'proof': proof},
     ),
     decoder: (response) {
       final token = response.data?['data']?['stepUpToken'];
@@ -306,10 +302,11 @@ class AuthRepository {
 
   Future<Either<Failure, void>> revokeBiometricToken() async {
     final biometricToken = await StorageService.getBiometricToken();
-    if (biometricToken == null)
+    if (biometricToken == null) {
       return const Left(
         CacheFailure('Biometric revocation could not be confirmed.'),
       );
+    }
     return requestEither<void>(
       () => client.patch(
         '/auth/biometric-token/revoke',

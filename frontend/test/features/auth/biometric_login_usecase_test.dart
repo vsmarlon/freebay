@@ -83,7 +83,7 @@ class _FailingAuthRepository extends AuthRepository {
   @override
   Future<Either<Failure, ({String challengeId, String challenge})>>
   createBiometricLoginChallenge(String biometricToken) async =>
-      Right(_challenge);
+      const Right(_challenge);
 }
 
 class _SuccessfulAuthRepository extends AuthRepository {
@@ -111,7 +111,7 @@ class _SuccessfulAuthRepository extends AuthRepository {
   @override
   Future<Either<Failure, ({String challengeId, String challenge})>>
   createBiometricLoginChallenge(String biometricToken) async =>
-      Right(_challenge);
+      const Right(_challenge);
 }
 
 Future<Either<Failure, UserEntity>> _run(BiometricLoginUsecase usecase) =>
@@ -119,6 +119,28 @@ Future<Either<Failure, UserEntity>> _run(BiometricLoginUsecase usecase) =>
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const biometricChannel = MethodChannel('com.freebay.app/biometric_key');
+
+  setUp(() {
+    String? vaultToken = 'credential';
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(biometricChannel, (call) async {
+          switch (call.method) {
+            case 'readVault':
+              return vaultToken;
+            case 'clearVault':
+              vaultToken = null;
+              return null;
+            default:
+              return null;
+          }
+        });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(biometricChannel, null);
+  });
 
   test('does not check availability or prompt without consent', () async {
     final service = _BiometryService()
@@ -139,7 +161,7 @@ void main() {
 
   test('does not prompt when no biometric credential is enrolled', () async {
     FlutterSecureStorage.setMockInitialValues({
-      'biometric_token': 'credential',
+      'biometric_auth_v1_present': 'true',
       'biometry_enabled': 'true',
       'biometry_owner_id': 'user-1',
     });
@@ -157,7 +179,7 @@ void main() {
 
   test('clears all biometric state when biometric login fails', () async {
     FlutterSecureStorage.setMockInitialValues({
-      'biometric_token': 'credential',
+      'biometric_auth_v1_present': 'true',
       'biometry_enabled': 'true',
       'biometry_prompted': 'true',
     });
@@ -183,7 +205,7 @@ void main() {
 
   test('returns the authenticated user after biometric success', () async {
     FlutterSecureStorage.setMockInitialValues({
-      'biometric_token': 'credential',
+      'biometric_auth_v1_present': 'true',
       'biometry_owner_id': 'user-1',
     });
     final service = _BiometryService()
@@ -206,7 +228,7 @@ void main() {
 
   test('preserves the credential when the user cancels the prompt', () async {
     FlutterSecureStorage.setMockInitialValues({
-      'biometric_token': 'credential',
+      'biometric_auth_v1_present': 'true',
       'biometry_enabled': 'true',
       'biometry_owner_id': 'user-1',
     });
@@ -232,7 +254,7 @@ void main() {
 
   test('preserves the credential on a transient failure', () async {
     FlutterSecureStorage.setMockInitialValues({
-      'biometric_token': 'credential',
+      'biometric_auth_v1_present': 'true',
       'biometry_enabled': 'true',
       'biometry_prompted': 'false',
       'biometry_owner_id': 'user-1',
@@ -259,7 +281,7 @@ void main() {
 
   test('clears credentials when the biometric owner does not match', () async {
     FlutterSecureStorage.setMockInitialValues({
-      'biometric_token': 'credential',
+      'biometric_auth_v1_present': 'true',
       'biometry_enabled': 'true',
       'biometry_owner_id': 'user-1',
     });

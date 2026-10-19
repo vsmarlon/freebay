@@ -1,6 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// flutter_cache_manager is already resolved through cached_network_image; keep
+// the dependency set unchanged for this one-off legacy cache cleanup.
+// ignore: depend_on_referenced_packages
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:freebay/shared/services/biometric_key_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +25,7 @@ class StorageService {
   static const _welcomeSetupDonePrefix = 'welcome_setup_done_';
   static const _lastActiveAtKey = 'last_active_at';
   static const _pushInstallationKey = 'push_installation_id';
+  static const _privateMediaCacheCleanupKey = 'private_media_cache_cleaned_v1';
 
   static SharedPreferences? _prefs;
   static String? _tokenCache;
@@ -37,6 +43,10 @@ class StorageService {
   static Future<void> init() async {
     try {
       _prefs = await SharedPreferences.getInstance();
+      if (_prefs?.getBool(_privateMediaCacheCleanupKey) != true) {
+        await clearMediaCaches();
+        await _prefs?.setBool(_privateMediaCacheCleanupKey, true);
+      }
     } catch (e) {
       debugPrint('[StorageService] SharedPreferences init error: $e');
     }
@@ -141,6 +151,11 @@ class StorageService {
         // Cache cleanup is best effort; it never changes credential storage.
       }
     });
+  }
+
+  static Future<void> clearMediaCaches() async {
+    PaintingBinding.instance.imageCache.clear();
+    await DefaultCacheManager().emptyCache();
   }
 
   static Future<void> _enqueueCacheOperation(
@@ -308,6 +323,7 @@ class StorageService {
       await _storage.delete(key: _refreshTokenKey);
     });
     await clearUserCache();
+    await clearMediaCaches();
   }
 
   static Future<void> clearTokenIf(String token) async {

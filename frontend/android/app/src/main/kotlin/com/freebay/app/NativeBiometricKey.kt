@@ -216,8 +216,7 @@ class NativeBiometricKey(private val activity: FlutterFragmentActivity) {
                 }
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     val cancelled = errorCode == BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED ||
-                        errorCode == BiometricPrompt.BIOMETRIC_ERROR_CANCELED ||
-                        errorCode == BiometricPrompt.BIOMETRIC_ERROR_NEGATIVE_BUTTON
+                        errorCode == BiometricPrompt.BIOMETRIC_ERROR_CANCELED
                     fail(if (cancelled) "cancelled" else "biometric_error")
                 }
             })

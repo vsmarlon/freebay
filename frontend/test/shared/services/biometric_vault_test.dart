@@ -38,17 +38,25 @@ void main() {
     expect(calls, ['clearVault']);
     expect(await StorageService.hasBiometricToken(), isFalse);
     expect(await StorageService.getBiometricOwner(), isNull);
-    expect(await const FlutterSecureStorage().read(key: 'auth_token'),
-        'unrelated-session');
+    expect(
+      await const FlutterSecureStorage().read(key: 'auth_token'),
+      'unrelated-session',
+    );
   });
 
-  test('native cleanup failure does not retain enabled credential metadata', () async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (_) async {
-          throw PlatformException(code: 'vault_delete_failed');
-        });
-    await expectLater(StorageService.clearBiometricToken(), throwsA(isA<PlatformException>()));
-    expect(await StorageService.hasBiometricToken(), isFalse);
-    expect(await StorageService.getBiometricOwner(), isNull);
-  });
+  test(
+    'native cleanup failure does not retain enabled credential metadata',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (_) async {
+            throw PlatformException(code: 'vault_delete_failed');
+          });
+      await expectLater(
+        StorageService.clearBiometricToken(),
+        throwsA(isA<PlatformException>()),
+      );
+      expect(await StorageService.hasBiometricToken(), isFalse);
+      expect(await StorageService.getBiometricOwner(), isNull);
+    },
+  );
 }

@@ -1,6 +1,8 @@
 part of 'auth_controller.dart';
 
 mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
+  String? _mediaCacheUserId;
+
   Future<void> _initAuth(int attempt) async {
     if (!ref.mounted) return;
     // Close HTTP auth before any asynchronous consent/storage lookup can run.
@@ -97,6 +99,16 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
       canEstablish: () => _isCurrentAuthAttempt(attempt),
     );
     if (!established || !_isCurrentAuthAttempt(attempt)) return;
+    final accountChanged =
+        _mediaCacheUserId != null && _mediaCacheUserId != user.id;
+    if (accountChanged) {
+      await StorageService.clearMediaCaches();
+      if (!_isCurrentAuthAttempt(attempt)) return;
+    }
+    _mediaCacheUserId = user.id;
+    final notificationSocket = ref.read(notificationSocketServiceProvider);
+    if (accountChanged) notificationSocket.disconnect();
+    notificationSocket.connect();
     ref.read(cartProvider.notifier).resetForSessionChange();
     state = AsyncValue.data(user);
     try {
@@ -196,6 +208,8 @@ mixin AuthSessionLifecycle on Notifier<AsyncValue<UserEntity?>> {
     bool clearSavedEmail = false,
   }) async {
     HttpClient.suspendRefresh();
+    ref.read(notificationSocketServiceProvider).disconnect();
+    _mediaCacheUserId = null;
     state = const AsyncValue.data(null);
     try {
       await NotificationService().clearToken();

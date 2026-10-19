@@ -45,7 +45,7 @@ class StepUpAuthenticator {
     } catch (_) {
       // Unsupported platforms still offer password authentication.
     }
-    if (!current()) return null;
+    if (!context.mounted || !current()) return null;
     final selection = await showDialog<_StepUpSelection>(
       context: context,
       builder: (dialogContext) => _StepUpDialog(
@@ -119,11 +119,13 @@ class StepUpAuthenticator {
           };
       }
     } on PlatformException catch (error) {
+      if (!context.mounted) return null;
       if (error.code != 'cancelled' && current()) {
         AppSnackbar.error(context, l10n(context).errorUnknown);
       }
       return null;
     } on GoogleSignInException catch (error) {
+      if (!context.mounted) return null;
       if (error.code != GoogleSignInExceptionCode.canceled &&
           error.code != GoogleSignInExceptionCode.interrupted &&
           current()) {
@@ -131,11 +133,13 @@ class StepUpAuthenticator {
       }
       return null;
     } on SignInWithAppleAuthorizationException catch (error) {
+      if (!context.mounted) return null;
       if (error.code != AuthorizationErrorCode.canceled && current()) {
         AppSnackbar.error(context, l10n(context).errorUnknown);
       }
       return null;
     } catch (_) {
+      if (!context.mounted) return null;
       if (current()) AppSnackbar.error(context, l10n(context).errorUnknown);
       return null;
     }
