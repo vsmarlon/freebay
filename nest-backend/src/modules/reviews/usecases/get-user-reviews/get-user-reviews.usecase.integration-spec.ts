@@ -24,7 +24,7 @@ describe('GetUserReviewsUseCase Integration', () => {
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
     orderFactory = new OrderFactory(prisma);
-    createReviewUseCase = new CreateReviewUseCase(reviewRepository, prismaService);
+    createReviewUseCase = new CreateReviewUseCase(reviewRepository);
     sut = new GetUserReviewsUseCase(reviewRepository, prismaService);
   });
 

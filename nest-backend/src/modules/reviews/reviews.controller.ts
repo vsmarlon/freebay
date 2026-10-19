@@ -9,8 +9,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { BoundedMultipartInterceptor } from '@/shared/interceptors/bounded-multipart.interceptor';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewInput } from './dtos/create-review.dto';
 import {
@@ -77,10 +76,7 @@ export class ReviewsController {
     httpCode: HttpStatus.CREATED,
   })
   @UseInterceptors(
-    FileInterceptor('image', {
-      storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
+    BoundedMultipartInterceptor('image', 1, 5 * 1024 * 1024 + 512 * 1024, 4 * 1024, 5 * 1024 * 1024),
   )
   async uploadImage(
     @Param('orderId', ParseUUIDPipe) orderId: string,

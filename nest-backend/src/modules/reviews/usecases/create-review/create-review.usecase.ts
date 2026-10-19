@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
 import { ReviewDatabaseRepository } from '@/modules/reviews/data/repositories/review-database.repository';
-import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { CreateReviewUsecaseInput, CreateReviewUsecaseOutput } from './create-review.dto';
 import { OrderStatus, ReviewType } from '@prisma/client';
 
@@ -28,7 +27,6 @@ class UnauthorizedReviewError extends AppError {
 export class CreateReviewUseCase {
   constructor(
     private readonly reviewRepository: ReviewDatabaseRepository,
-    private readonly prisma: PrismaService,
   ) {}
 
   async execute(
@@ -42,9 +40,13 @@ export class CreateReviewUseCase {
       return left(new BadRequestError('Comentário deve ter no máximo 500 caracteres'));
     }
 
-    const order = await this.prisma.order.findUnique({
-      where: { id: input.orderId },
-    });
+    const orderResult = await this.reviewRepository.findOrderSnapshot(input.orderId);
+
+    if (orderResult.isLeft()) {
+      return left(orderResult.value);
+    }
+
+    const order = orderResult.value;
 
     if (!order) {
       return left(new NotFoundError('Order'));
@@ -95,35 +97,29 @@ export class CreateReviewUseCase {
       return left(new DuplicateReviewError());
     }
 
-    const review = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.review.create({
-        data: {
-          reviewer: { connect: { id: input.reviewerId } },
-          reviewed: { connect: { id: input.reviewedId } },
-          order: { connect: { id: input.orderId } },
-          type: input.type,
-          score: input.score,
-          comment: input.comment,
-          images:
-            input.imageUrls && input.imageUrls.length > 0
-              ? {
-                  create: input.imageUrls.map((url, index) => ({
-                    url,
-                    order: index,
-                  })),
-                }
-              : undefined,
-        },
-        include: {
-          reviewer: {
-            select: { id: true, displayName: true, avatarUrl: true, isVerified: true },
-          },
-          images: { orderBy: { order: 'asc' } },
-        },
-      });
-
-      return created;
+    const reviewResult = await this.reviewRepository.create({
+      reviewer: { connect: { id: input.reviewerId } },
+      reviewed: { connect: { id: input.reviewedId } },
+      order: { connect: { id: input.orderId } },
+      type: input.type,
+      score: input.score,
+      comment: input.comment,
+      images:
+        input.imageUrls && input.imageUrls.length > 0
+          ? {
+              create: input.imageUrls.map((url, index) => ({
+                url,
+                order: index,
+              })),
+            }
+          : undefined,
     });
+
+    if (reviewResult.isLeft()) {
+      return left(reviewResult.value);
+    }
+
+    const review = reviewResult.value;
 
     const updateResult = await this.reviewRepository.updateUserReputation(input.reviewedId);
 

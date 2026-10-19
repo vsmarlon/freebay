@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { Prisma, ReviewType } from '@prisma/client';
+import { Prisma, ReviewType, OrderStatus } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { REVIEW_INCLUDE, REVIEW_DETAILED_INCLUDE, ReviewWithReviewer, ReviewWithDetails } from '@/modules/reviews/types/review.types';
@@ -66,6 +66,15 @@ export class ReviewDatabaseRepository {
     return repositoryResponse(async () => {
       return await this.prisma.review.create({ data, include: REVIEW_INCLUDE });
     }, 'Erro ao criar avaliação');
+  }
+
+  async findOrderSnapshot(orderId: string): RepositoryResponse<{ status: OrderStatus; buyerId: string; sellerId: string } | null> {
+    return repositoryResponse(async () => {
+      return await this.prisma.order.findUnique({
+        where: { id: orderId },
+        select: { status: true, buyerId: true, sellerId: true },
+      });
+    }, 'Erro ao buscar pedido para avaliação');
   }
 
   async updateUserReputation(userId: string): RepositoryResponse<{ reputationScore: number; totalReviews: number }> {

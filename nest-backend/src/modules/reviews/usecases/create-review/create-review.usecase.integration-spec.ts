@@ -22,7 +22,7 @@ describe('CreateReviewUseCase Integration', () => {
     userFactory = new UserFactory(prisma);
     productFactory = new ProductFactory(prisma);
     orderFactory = new OrderFactory(prisma);
-    sut = new CreateReviewUseCase(reviewRepository, prismaService);
+    sut = new CreateReviewUseCase(reviewRepository);
   });
 
   describe('Business Rules', () => {
