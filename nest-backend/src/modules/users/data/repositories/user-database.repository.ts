@@ -9,8 +9,8 @@ import {
   UserSuggestionResult,
   toUserSearchResult,
   toUserSuggestionResult,
-} from '../../types/user.types';
-import { normalizeEmail } from '../../utils/normalize-email';
+} from '@/modules/users/types/search.types';
+import { normalizeEmail } from '@/shared/utils/normalize-email';
 import { postVisibilityWhere } from '@/modules/social/data/repositories/post-query-helpers';
 import { storyAudienceWhere } from '@/modules/stories/data/repositories/story-database.repository';
 

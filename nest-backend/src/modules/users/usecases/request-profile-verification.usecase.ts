@@ -4,7 +4,7 @@ import { randomInt, createHmac } from 'crypto';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { RedisService } from '@/shared/infra/redis/redis.service';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { ResendService } from '@/modules/auth/services/resend.service';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 

@@ -12,7 +12,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
 import { ApiTags } from "@nestjs/swagger";
-import { UserDatabaseRepository } from "@/modules/auth/data/repositories/user-database.repository";
+import { UserDatabaseRepository } from "@/modules/users";
 import {
   GetUserStatsUseCase,
   RegisterPhoneUseCase,

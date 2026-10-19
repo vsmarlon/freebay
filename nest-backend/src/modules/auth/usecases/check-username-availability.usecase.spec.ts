@@ -1,5 +1,5 @@
 import { CheckUsernameAvailabilityUseCase } from './check-username-availability.usecase';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { DatabaseError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
 import { Test } from '@nestjs/testing';

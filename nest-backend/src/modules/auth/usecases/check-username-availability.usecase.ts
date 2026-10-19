@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { USERNAME_REGEX } from '../dtos/auth.dto';
 
 export interface CheckUsernameAvailabilityInput {

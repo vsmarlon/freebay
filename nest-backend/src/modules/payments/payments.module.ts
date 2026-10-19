@@ -20,7 +20,7 @@ import { PaymentGroupDatabaseRepository } from './data/repositories/payment-grou
 import { ProcessGroupWebhookUseCase } from './usecases/process-group-webhook.usecase';
 import { ExpireCheckoutGroupUseCase } from './usecases/expire-checkout-group.usecase';
 import { WalletDatabaseRepository } from '../wallet/data/repositories/wallet-database.repository';
-import { UserDatabaseRepository } from '../auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { WebhookGuard } from '@/shared/guards/webhook.guard';
 import { WebhookDedupeInterceptor } from '@/shared/interceptors/webhook-dedupe.interceptor';
 import { RedisService } from '@/shared/infra/redis/redis.service';

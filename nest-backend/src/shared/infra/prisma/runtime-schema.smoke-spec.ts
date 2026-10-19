@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
 import { PrismaService } from './prisma.service';
 

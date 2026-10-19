@@ -6,7 +6,7 @@ import { RedisService } from '@/shared/infra/redis/redis.service';
 import { ResendService } from '../services/resend.service';
 import { RequestMagicLinkDTO } from '../dtos/magic-link.dto';
 import { MagicLinkRepository } from '../domain/repositories/magic-link.repository';
-import { normalizeEmail } from '../utils/normalize-email';
+import { normalizeEmail } from '@/shared/utils/normalize-email';
 
 export const MAGIC_LINK_THROTTLE_TTL_SECONDS = 60 * 60;
 export const MAGIC_LINK_TTL_SECONDS = 10 * 60;

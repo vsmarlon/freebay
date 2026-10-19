@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUseCase } from './register.usecase';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { prisma } from '../../../../test/setup-integration';
 import { UserFactory } from '../../../../test/factories';
 import { RegisterDTO } from '../dtos/auth.dto';

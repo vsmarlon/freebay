@@ -8,7 +8,7 @@ import { CheckUsernameAvailabilityUseCase } from './check-username-availability.
 import { BiometricLoginUseCase } from './biometric-login.usecase';
 import { GoogleAuthUseCase } from './google-auth.usecase';
 import { CompleteProfileUseCase } from './complete-profile.usecase';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { ResendService } from '../services/resend.service';
 import { MagicLinkDatabaseRepository } from '../data/repositories/magic-link-database.repository';

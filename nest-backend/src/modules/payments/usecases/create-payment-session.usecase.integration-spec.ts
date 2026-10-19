@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreatePaymentSessionUseCase } from './create-payment-session.usecase';
 import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
-import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { StripeProvider } from '../providers/stripe-provider';
 import { prisma } from '../../../../test/setup-integration';

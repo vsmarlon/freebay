@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { GoogleAuthUseCase } from './google-auth.usecase';
 import { UserRole } from '@prisma/client';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { right } from '@/shared/core/either';
 import { SessionTokenService } from '../services/session-token.service';
 

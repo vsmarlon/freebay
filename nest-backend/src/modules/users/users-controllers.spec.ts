@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { right } from '@/shared/core/either';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { ListFollowersUseCase } from './usecases/list-followers.usecase';
 import { ListFollowingUseCase } from './usecases/list-following.usecase';
 import { GetFollowStatusUseCase } from './usecases/get-follow-status.usecase';

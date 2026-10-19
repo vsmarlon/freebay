@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, BadRequestError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { BlockRepository } from '../domain/repositories/block.repository';
 import { BlockResponse } from '../dtos/user-response.class';
 import { BlockUserInput } from '../dtos/user.dto';

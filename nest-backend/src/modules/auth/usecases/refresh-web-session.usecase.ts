@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AccountSuspendedError, AppError, InvalidTokenError, UserNotFoundError } from '@/shared/core/errors';
 import { JwtPayload, JwtTokenType } from '@/shared/core/types';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { SessionTokenService } from '../services/session-token.service';
 
 @Injectable()

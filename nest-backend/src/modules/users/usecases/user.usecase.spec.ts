@@ -8,7 +8,7 @@ import {
   BlockUserUseCase,
   UnblockUserUseCase,
 } from './index';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { FollowRepository } from '../domain/repositories/follow.repository';
 import { BlockRepository } from '../domain/repositories/block.repository';
 import { OrderDatabaseRepository } from '@/modules/orders/data/repositories/order-database.repository';

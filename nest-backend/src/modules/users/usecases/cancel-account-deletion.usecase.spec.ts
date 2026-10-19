@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CancelAccountDeletionUseCase } from './cancel-account-deletion.usecase';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { right } from '@/shared/core/either';
 import { BadRequestError, UserNotFoundError } from '@/shared/core/errors';

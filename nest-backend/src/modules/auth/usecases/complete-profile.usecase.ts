@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, UsernameAlreadyExistsError, UserNotFoundError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { CompleteProfileDTO } from '../dtos/auth.dto';
 import { AuthSessionResponse } from '../dtos/auth-response.class';
 import { toUserResponse } from '../../users/dtos/user-response.class';

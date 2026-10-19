@@ -8,7 +8,7 @@ import {
   RecoveryCodeNotFoundError,
 } from '@/shared/core/errors';
 import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { ResetPasswordDTO } from '../dtos/password-recovery.dto';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 

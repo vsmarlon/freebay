@@ -11,7 +11,7 @@ import { PaymentSessionParams } from '../types/payment-provider.types';
 import { StripeProvider } from '../providers/stripe-provider';
 import { CreatePaymentSessionInput, CreatePaymentSessionOutput } from '../dtos/payment.dto';
 import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
-import { UserDatabaseRepository } from '../../auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 
 @Injectable()

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterPhoneUseCase } from './register-phone.usecase';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { SmsService } from '../services/sms.service';
 import { right, left } from '@/shared/core/either';

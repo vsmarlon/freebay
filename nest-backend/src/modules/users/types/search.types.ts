@@ -16,6 +16,12 @@ export type UserSuggestionResult = UserSearchResult & {
   mutualCount: number;
 };
 
+export interface UserProfileCounts {
+  postsCount: number;
+  productsCount: number;
+  hasActiveStory: boolean;
+}
+
 type UserProfileFields = Omit<
   UserSearchResult,
   'followersCount' | 'followingCount'

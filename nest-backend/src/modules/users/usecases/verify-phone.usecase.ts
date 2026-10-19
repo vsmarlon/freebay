@@ -8,7 +8,7 @@ import {
   PhoneCodeExpiredError,
   PhoneCodeNotFoundError,
 } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { UserResponse, toUserResponse } from '../dtos/user-response.class';

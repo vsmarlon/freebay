@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
 import { VerifyPhoneUseCase } from './verify-phone.usecase';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { right } from '@/shared/core/either';

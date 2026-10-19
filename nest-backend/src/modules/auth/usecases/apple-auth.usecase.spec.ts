@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { right } from '@/shared/core/either';
 import { InvalidAppleTokenError } from '@/shared/core/errors';
 import { AppleProviderService } from '@/shared/auth/apple-provider.service';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { SessionTokenService } from '../services/session-token.service';
 import { AppleAuthUseCase } from './apple-auth.usecase';
 

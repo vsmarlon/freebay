@@ -3,9 +3,9 @@ import { UserRole } from '@prisma/client';
 import { Either, left } from '@/shared/core/either';
 import { AppleEmailCollisionError, AppError, AppleUnavailableError, InvalidAppleTokenError } from '@/shared/core/errors';
 import { AppleConfigurationError, AppleProviderService } from '@/shared/auth/apple-provider.service';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { AuthSessionResponse } from '../dtos/auth-response.class';
-import { normalizeEmail } from '../utils/normalize-email';
+import { normalizeEmail } from '@/shared/utils/normalize-email';
 import { SessionTokenService } from '../services/session-token.service';
 import { issueSession } from '../utils/session-policy';
 

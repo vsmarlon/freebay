@@ -35,7 +35,7 @@ import { TwilioSmsService } from './services/twilio-sms.service';
 import { FollowRepository } from './domain/repositories/follow.repository';
 import { BlockRepository } from './domain/repositories/block.repository';
 import { UserLookupRepository } from './domain/repositories/user-lookup.repository';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { ManageSafetyListUseCase } from './usecases/manage-safety-list.usecase';
 import { SafetyListRepository } from './domain/repositories/safety-list.repository';
 import { SafetyListDatabaseRepository } from './data/repositories/safety-list-database.repository';

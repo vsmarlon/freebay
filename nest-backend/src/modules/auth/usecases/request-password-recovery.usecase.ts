@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { RequestPasswordRecoveryDTO } from '../dtos/password-recovery.dto';
 import { ResendService } from '../services/resend.service';

@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { right } from '@/shared/core/either';
 import { JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { BiometricLoginUseCase } from './biometric-login.usecase';
 import { UserRole } from '@prisma/client';
 import { SessionTokenService } from '../services/session-token.service';

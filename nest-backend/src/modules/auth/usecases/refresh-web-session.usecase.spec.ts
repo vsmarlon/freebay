@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { right } from '@/shared/core/either';
 import { JwtTokenType } from '@/shared/core/types';
 import { UserRole } from '@prisma/client';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { SessionTokenService } from '../services/session-token.service';
 import { RefreshWebSessionUseCase } from './refresh-web-session.usecase';
 

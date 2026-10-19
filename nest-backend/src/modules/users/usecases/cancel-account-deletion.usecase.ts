@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, FreshAuthenticationRequiredError, UserNotFoundError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 
 export const DELETION_CANCEL_FRESH_AUTH_MS = 5 * 60 * 1000;

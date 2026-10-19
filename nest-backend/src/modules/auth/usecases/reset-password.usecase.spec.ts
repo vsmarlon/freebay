@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcryptjs';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PasswordRecoveryDatabaseRepository } from '../data/repositories/password-recovery-database.repository';
 import { RecoveryCodeNotFoundError } from '@/shared/core/errors';
 import { ResetPasswordUseCase } from './reset-password.usecase';

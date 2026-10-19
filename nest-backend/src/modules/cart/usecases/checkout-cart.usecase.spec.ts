@@ -3,7 +3,7 @@ import { CheckoutCartUseCase } from './checkout-cart.usecase';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 import { PaymentGroupDatabaseRepository } from '@/modules/payments/data/repositories/payment-group-database.repository';
 import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';

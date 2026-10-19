@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidCredentialsError, NotFoundError, SessionExpiredError, UnauthorizedError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { BiometricSessionResponse } from '../dtos/auth-response.class';
 import { AuthUser, JwtTokenType } from '@/shared/core/types';

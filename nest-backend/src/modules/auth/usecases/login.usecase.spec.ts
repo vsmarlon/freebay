@@ -1,5 +1,5 @@
 import { LoginUseCase } from './login.usecase';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { InvalidCredentialsError } from '@/shared/core/errors';
 import { right } from '@/shared/core/either';
 import * as bcrypt from 'bcryptjs';

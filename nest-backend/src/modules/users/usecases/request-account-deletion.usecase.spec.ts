@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RequestAccountDeletionUseCase } from './request-account-deletion.usecase';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { AccountLifecycleDatabaseRepository } from '../data/repositories/account-lifecycle-database.repository';
 import { SessionRevokerService } from '@/shared/auth/session-revoker.service';
 import { AppleProviderService } from '@/shared/auth/apple-provider.service';

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidPhoneError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { SmsService } from '../services/sms.service';
 

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Either, left } from '@/shared/core/either';
 import { AppError, InvalidCredentialsError } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '../data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { LoginDTO } from '../dtos/auth.dto';
 import { AuthSessionResponse } from '../dtos/auth-response.class';
 import { SessionTokenService } from '../services/session-token.service';

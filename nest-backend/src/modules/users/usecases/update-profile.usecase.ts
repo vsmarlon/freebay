@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, UsernameAlreadyExistsError } from '@/shared/core/errors';
 import { Prisma } from '@prisma/client';
-import { UserDatabaseRepository } from '@/modules/auth/data/repositories/user-database.repository';
+import { UserDatabaseRepository } from '@/modules/users';
 import { UserResponse, toUserResponse } from '../dtos/user-response.class';
 import { UpdateProfileInput } from '../dtos/user.dto';
 import { RequestProfileVerificationUseCase } from './request-profile-verification.usecase';
