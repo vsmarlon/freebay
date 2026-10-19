@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, BadRequestError, UnauthorizedError } from '@/shared/core/errors';
+import { AppError, NotFoundError, BadRequestError, UnauthorizedError, DatabaseError } from '@/shared/core/errors';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
-import { OrderStatus } from '@prisma/client';
+import { Dispute, OrderStatus } from '@prisma/client';
 import {
   DISPUTE_EXPIRY_WINDOW_HOURS,
   DISPUTE_HOUR_IN_MILLISECONDS,
@@ -11,6 +11,9 @@ import {
 import { OpenDisputeInput, OpenDisputeOutput } from '../dtos/dispute.dto';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
+
+const DISPUTE_ORDER_CLAIM_LOST = 'DISPUTE_ORDER_CLAIM_LOST';
+const DISPUTE_CREATE_FAILED = 'DISPUTE_CREATE_FAILED';
 
 @Injectable()
 export class OpenDisputeUseCase {
@@ -38,40 +41,59 @@ export class OpenDisputeUseCase {
       return left(new BadRequestError('Dispute already exists for this order'));
     }
 
-    if (order.status !== OrderStatus.CONFIRMED && order.status !== OrderStatus.DELIVERED) {
-      return left(new BadRequestError('Order must be CONFIRMED or DELIVERED to open dispute'));
+    if (order.status !== OrderStatus.CONFIRMED &&
+        order.status !== OrderStatus.SHIPPED &&
+        order.status !== OrderStatus.DELIVERED) {
+      return left(new BadRequestError('Order must be CONFIRMED, SHIPPED or DELIVERED to open dispute'));
     }
 
     const currentTime = now ?? new Date();
-    const deliveryTime = order.deliveryConfirmedAt || order.createdAt;
-    const hoursSinceDelivery =
-      (currentTime.getTime() - deliveryTime.getTime()) / DISPUTE_HOUR_IN_MILLISECONDS;
-    if (hoursSinceDelivery > DISPUTE_OPENING_WINDOW_HOURS) {
-      return left(new BadRequestError(`Dispute window has expired (${DISPUTE_OPENING_WINDOW_HOURS}h after delivery)`));
+    if (order.status !== OrderStatus.SHIPPED) {
+      const deliveryTime = order.deliveryConfirmedAt || order.createdAt;
+      const hoursSinceDelivery =
+        (currentTime.getTime() - deliveryTime.getTime()) / DISPUTE_HOUR_IN_MILLISECONDS;
+      if (hoursSinceDelivery > DISPUTE_OPENING_WINDOW_HOURS) {
+        return left(new BadRequestError(`Dispute window has expired (${DISPUTE_OPENING_WINDOW_HOURS}h after delivery)`));
+      }
     }
 
     const expiresAt = new Date(
       currentTime.getTime() + DISPUTE_EXPIRY_WINDOW_HOURS * DISPUTE_HOUR_IN_MILLISECONDS,
     );
 
-    const disputeResult = await this.disputeRepo.create({
-      orderId: input.orderId,
-      openedById: input.userId,
-      reason: input.reason,
-      expiresAt,
-    });
+    let dispute: Dispute;
+    try {
+      dispute = await this.prisma.$transaction(async (tx) => {
+        const claimed = await tx.order.updateMany({
+          where: {
+            id: input.orderId,
+            status: order.status,
+            cancellationReason: null,
+            dispute: { is: null },
+          },
+          data: { status: OrderStatus.DISPUTED },
+        });
+        if (claimed.count === 0) throw new Error(DISPUTE_ORDER_CLAIM_LOST);
 
-    if (disputeResult.isLeft()) return left(disputeResult.value);
-    const dispute = disputeResult.value;
-
-    await this.prisma.order.update({
-      where: { id: input.orderId },
-      data: { status: OrderStatus.DISPUTED },
-    });
+        const created = await this.disputeRepo.create({
+          orderId: input.orderId,
+          openedById: input.userId,
+          reason: input.reason,
+          expiresAt,
+        }, tx);
+        if (created.isLeft()) throw new Error(DISPUTE_CREATE_FAILED);
+        return created.value;
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === DISPUTE_ORDER_CLAIM_LOST) {
+        return left(new BadRequestError('Order changed and can no longer be disputed'));
+      }
+      return left(new DatabaseError('Failed to open dispute'));
+    }
 
     const otherUserId = order.buyerId === input.userId ? order.sellerId : order.buyerId;
     await Promise.all([
-      this.notificationService.notifyDispute(otherUserId, dispute.id, 'Uma disputa foi aberta em um dos seus pedidos'),
+      this.notificationService.notifyDispute(otherUserId, dispute.id, order.id, 'Uma disputa foi aberta em um dos seus pedidos'),
       this.notificationService.notifyOrderStatus(input.userId, order.id, OrderStatus.DISPUTED),
       this.notificationService.notifyOrderStatus(otherUserId, order.id, OrderStatus.DISPUTED),
     ]);

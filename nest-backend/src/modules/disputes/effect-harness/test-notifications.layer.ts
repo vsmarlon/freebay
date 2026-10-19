@@ -11,8 +11,8 @@ export const TestNotificationsLayer = (calls: RecordedNotification[]) =>
     NotificationTag,
     () =>
       ({
-        notifyDispute: (userId: string, disputeId: string, message: string) => {
-          calls.push({ method: 'notifyDispute', args: [userId, disputeId, message] });
+        notifyDispute: (userId: string, disputeId: string, orderId: string, message: string) => {
+          calls.push({ method: 'notifyDispute', args: [userId, disputeId, orderId, message] });
           return Promise.resolve();
         },
         notifyOrderStatus: (userId: string, orderId: string, status: string) => {

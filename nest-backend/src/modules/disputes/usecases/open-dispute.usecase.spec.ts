@@ -16,6 +16,7 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+  $transaction: jest.fn(),
 };
 
 const mockDisputeRepo = {
@@ -57,6 +58,9 @@ describe('OpenDisputeUseCase', () => {
 
     sut = module.get<OpenDisputeUseCase>(OpenDisputeUseCase);
     jest.clearAllMocks();
+    mockPrisma.$transaction.mockImplementation((work) => work({
+      order: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    }));
   });
 
   it('opens a dispute successfully', async () => {
@@ -150,5 +154,44 @@ describe('OpenDisputeUseCase', () => {
       expect(result.value).toBeInstanceOf(BadRequestError);
     }
     expect(mockDisputeRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('allows a stale SHIPPED order into manual dispute review without using order creation as delivery time', async () => {
+    const now = new Date('2026-01-03T00:00:00.000Z');
+    mockPrisma.order.findUnique.mockResolvedValue({
+      ...mockOrder,
+      status: 'SHIPPED',
+      deliveryConfirmedAt: null,
+      createdAt: new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000),
+    });
+    mockDisputeRepo.create.mockResolvedValue(right(mockDispute));
+    mockPrisma.order.update.mockResolvedValue({ ...mockOrder, status: 'DISPUTED' });
+
+    const result = await sut.execute(
+      { orderId: 'order-123', userId: 'buyer-123', reason: 'Never arrived' },
+      now,
+    );
+
+    expect(result.isRight()).toBe(true);
+    expect(mockDisputeRepo.create).toHaveBeenCalled();
+  });
+
+  it('does not create a dispute when the atomic order claim loses to cancellation or release', async () => {
+    mockPrisma.order.findUnique.mockResolvedValue(mockOrder);
+    mockDisputeRepo.create.mockResolvedValue(right(mockDispute));
+    const orderUpdateMany = jest.fn().mockResolvedValue({ count: 0 });
+    const disputeCreate = jest.fn();
+    mockPrisma.$transaction.mockImplementation(async (work) => work({
+      order: { updateMany: orderUpdateMany },
+      dispute: { create: disputeCreate },
+    }));
+
+    const result = await sut.execute({
+      orderId: 'order-123', userId: 'buyer-123', reason: 'Item not received',
+    });
+
+    expect(result.isLeft()).toBe(true);
+    expect(orderUpdateMany).toHaveBeenCalled();
+    expect(disputeCreate).not.toHaveBeenCalled();
   });
 });
