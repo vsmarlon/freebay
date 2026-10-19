@@ -22,6 +22,6 @@ import { NotificationDatabaseRepository } from './data/repositories/notification
     RegisterFcmTokenUseCase,
     NotificationDatabaseRepository,
   ],
-  exports: [NotificationService, FcmService, NotificationDatabaseRepository],
+  exports: [NotificationService, FcmService, NotificationDatabaseRepository, NotificationsGateway],
 })
 export class NotificationsModule {}
