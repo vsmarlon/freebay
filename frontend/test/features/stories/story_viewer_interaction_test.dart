@@ -88,9 +88,129 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       await tester.pump();
       expect(find.byKey(const ValueKey('second')), findsOneWidget);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      expect(
+        tester
+            .widget<StoryPage>(find.byType(StoryPage))
+            .animationController
+            .isAnimating,
+        isFalse,
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      final firstPointer = await tester.startGesture(const Offset(400, 400));
+      final secondPointer = await tester.startGesture(const Offset(450, 400));
+      await firstPointer.up();
+      await tester.pump();
+      expect(
+        tester
+            .widget<StoryPage>(find.byType(StoryPage))
+            .animationController
+            .isAnimating,
+        isFalse,
+      );
+      await secondPointer.up();
+      await tester.pump();
+      expect(
+        tester
+            .widget<StoryPage>(find.byType(StoryPage))
+            .animationController
+            .isAnimating,
+        isTrue,
+      );
       tester.binding.imageCache.clear();
     },
   );
+
+  testWidgets('a canceled downward drag tracks the finger and keeps progress', (
+    tester,
+  ) async {
+    await tester.runAsync(() => _primeStoryImages(tester));
+    final secondGroup = StoryGroupEntity(
+      user: const StoryUserEntity(id: 'other', displayName: 'Bob'),
+      stories: [
+        StoryGroupItem(
+          id: 'other-story',
+          imageUrl: 'https://example.test/other.png',
+          createdAt: now,
+          expiresAt: now.add(const Duration(days: 1)),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          storiesRepositoryProvider.overrideWithValue(_StoryRepository()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).push<void>(
+                    PageRouteBuilder<void>(
+                      opaque: false,
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          StoryViewerPage(groups: [group, secondGroup]),
+                    ),
+                  ),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump();
+    expect(find.text('Open'), findsOneWidget);
+
+    final groups = find.byType(PageView);
+    await tester.fling(groups, const Offset(-600, 0), 2000);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.getTopLeft(find.text('Bob')).dx, lessThan(100));
+    await tester.fling(groups, const Offset(600, 0), 2000);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.getTopLeft(find.text('Alice')).dx, lessThan(100));
+
+    await tester.pump(const Duration(seconds: 2));
+    final storyPage = find.byType(StoryPage);
+    final progress = tester
+        .widget<StoryPage>(storyPage)
+        .animationController
+        .value;
+    final gesture = await tester.startGesture(const Offset(700, 400));
+    await gesture.moveBy(const Offset(0, 120));
+    await tester.pump();
+    expect(tester.getTopLeft(storyPage).dy, 120);
+    expect(
+      tester.widget<StoryPage>(storyPage).animationController.value,
+      closeTo(progress, 0.001),
+    );
+
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.getTopLeft(storyPage).dy, 0);
+    expect(
+      tester.widget<StoryPage>(storyPage).animationController.value,
+      closeTo(progress, 0.001),
+    );
+
+    await tester.drag(storyPage, const Offset(0, 300));
+    await tester.pumpAndSettle();
+    expect(find.text('Open'), findsOneWidget);
+    expect(storyPage, findsNothing);
+    tester.binding.imageCache.clear();
+  });
 }
 
 Future<void> _primeStoryImages(WidgetTester tester) async {

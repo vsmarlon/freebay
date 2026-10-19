@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:freebay/core/ui.dart';
+import 'package:freebay/features/auth/auth.dart';
 import 'package:freebay/features/stories/data/entities/story_entity.dart';
 import 'package:freebay/features/stories/presentation/providers/stories_provider.dart';
 import 'package:freebay/features/stories/presentation/widgets/story_page.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/shared/services/notification_socket_service.dart';
 
 class StoryViewerPage extends ConsumerStatefulWidget {
   final List<StoryGroupEntity> groups;
@@ -25,6 +27,8 @@ class StoryViewerPage extends ConsumerStatefulWidget {
 class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
   late PageController _groupPageController;
   late int _currentGroupIndex;
+  StreamSubscription<NotificationSocketEvent>? _privacyEvents;
+  bool _privateContentRemoved = false;
 
   @override
   void initState() {
@@ -33,10 +37,44 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
     _groupPageController = PageController(
       initialPage: widget.initialGroupIndex,
     );
+    _privacyEvents = ref.read(notificationSocketServiceProvider).events.listen((
+      _,
+    ) {
+      _removePrivateContent();
+    });
+    ref.listenManual(
+      authControllerProvider.select((session) => session.value?.id),
+      (previous, next) {
+        if (previous != next) _removePrivateContent();
+      },
+    );
+  }
+
+  void _removePrivateContent() {
+    if (!mounted ||
+        _privateContentRemoved ||
+        !widget.groups.any(
+          (group) => group.stories.any(
+            (story) => story.audience == StoryAudience.closeFriends,
+          ),
+        )) {
+      return;
+    }
+    // ponytail: the empty invalidation event identifies no source; discard the
+    // private snapshot and fetch a fresh one on the next open.
+    setState(() => _privateContentRemoved = true);
+    ref.invalidate(storiesProvider);
+    for (final group in widget.groups) {
+      ref.invalidate(userStoriesProvider(group.user.id));
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(Navigator.of(context).maybePop());
+    });
   }
 
   @override
   void dispose() {
+    _privacyEvents?.cancel();
     _groupPageController.dispose();
     super.dispose();
   }
@@ -65,8 +103,14 @@ class _StoryViewerPageState extends ConsumerState<StoryViewerPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_privateContentRemoved) {
+      return Scaffold(
+        backgroundColor: AppColors.onSurface,
+        body: Center(child: Text(l10n(context).feedNoStories)),
+      );
+    }
     return Scaffold(
-      backgroundColor: AppColors.onSurface,
+      backgroundColor: Colors.transparent,
       body: PageView.builder(
         controller: _groupPageController,
         onPageChanged: (idx) {
@@ -118,6 +162,12 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   int _activePointers = 0;
   Timer? _holdTimer;
   bool _wasHeld = false;
+  bool _isDraggingDown = false;
+  double _dragOffset = 0;
+  double _settleFrom = 0;
+  bool _isSettlingDismiss = false;
+  bool _lifecyclePaused = false;
+  double _pointerDownY = 0;
 
   @override
   void initState() {
@@ -153,11 +203,15 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final shouldPause = state != AppLifecycleState.resumed;
-    if (_isPaused != shouldPause || _activePointers > 0) {
+    final isLifecyclePaused = state != AppLifecycleState.resumed;
+    _lifecyclePaused = isLifecyclePaused;
+    final shouldPause =
+        isLifecyclePaused || _isSettlingDismiss || _activePointers > 0;
+    if (_isPaused != shouldPause ||
+        (isLifecyclePaused && _activePointers > 0)) {
       setState(() {
         _isPaused = shouldPause;
-        if (shouldPause) _activePointers = 0;
+        if (isLifecyclePaused) _activePointers = 0;
       });
     }
   }
@@ -219,6 +273,7 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
   }
 
   void _onPointerDown(PointerDownEvent event) {
+    _pointerDownY = event.position.dy;
     _activePointers++;
     if (_activePointers == 1) {
       _wasHeld = false;
@@ -237,10 +292,61 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
       _holdTimer?.cancel();
       WidgetsBinding.instance.addPostFrameCallback((_) => _wasHeld = false);
     }
-    if (!mounted || !widget.isActive || _activePointers > 0 || !_isPaused) {
+    if (!mounted ||
+        !widget.isActive ||
+        _activePointers > 0 ||
+        !_isPaused ||
+        _lifecyclePaused ||
+        _isSettlingDismiss) {
       return;
     }
     setState(() => _isPaused = false);
+  }
+
+  void _onVerticalDragStart(DragStartDetails details) {
+    if (!widget.isActive) return;
+    setState(() {
+      _isDraggingDown = true;
+      _isSettlingDismiss = true;
+      _settleFrom = 0;
+      _dragOffset = (details.globalPosition.dy - _pointerDownY).clamp(
+        0.0,
+        MediaQuery.sizeOf(context).height,
+      );
+    });
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    if (!_isDraggingDown || details.delta.dy <= 0) return;
+    setState(() {
+      _dragOffset = (_dragOffset + details.delta.dy).clamp(
+        0.0,
+        MediaQuery.sizeOf(context).height,
+      );
+    });
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    if (!_isDraggingDown) return;
+    _isDraggingDown = false;
+    final height = MediaQuery.sizeOf(context).height;
+    if (_dragOffset > height * 0.25 ||
+        details.velocity.pixelsPerSecond.dy > 1000) {
+      widget.onClose();
+      return;
+    }
+    setState(() {
+      _settleFrom = _dragOffset;
+      _dragOffset = 0;
+    });
+  }
+
+  void _onDismissSettleEnd() {
+    if (!_isSettlingDismiss || _isDraggingDown || _dragOffset != 0) return;
+    _isSettlingDismiss = false;
+    if (mounted && !_lifecyclePaused && _activePointers == 0 && _isPaused) {
+      setState(() => _isPaused = false);
+    }
   }
 
   @override
@@ -265,18 +371,30 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
       onPointerCancel: _onPointerEnd,
       child: GestureDetector(
         onTapUp: _onTapUp,
-        child: Stack(
-          children: [
-            StoryPage(
-              key: ValueKey(story.id),
-              story: story,
-              animationController: _animController,
-              isPaused: _isPaused || !widget.isActive,
-              onComplete: _nextStory,
-            ),
-            _buildProgressBars(),
-            _buildHeader(story),
-          ],
+        onVerticalDragStart: _onVerticalDragStart,
+        onVerticalDragUpdate: _onVerticalDragUpdate,
+        onVerticalDragEnd: _onVerticalDragEnd,
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: _settleFrom, end: _dragOffset),
+          duration: _isDraggingDown
+              ? Duration.zero
+              : AppMotion.forContext(context, AppMotion.base),
+          onEnd: _onDismissSettleEnd,
+          builder: (context, offset, child) =>
+              Transform.translate(offset: Offset(0, offset), child: child),
+          child: Stack(
+            children: [
+              StoryPage(
+                key: ValueKey(story.id),
+                story: story,
+                animationController: _animController,
+                isPaused: _isPaused || !widget.isActive,
+                onComplete: _nextStory,
+              ),
+              _buildProgressBars(),
+              _buildHeader(story),
+            ],
+          ),
         ),
       ),
     );
