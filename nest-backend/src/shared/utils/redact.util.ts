@@ -23,10 +23,29 @@ const SENSITIVE_KEYS = new Set([
   'cpfHash',
   'clientSecret',
   'paymentIntentClientSecret',
-]);
+  'email',
+  'phone',
+  'displayname',
+  'name',
+  'firstname',
+  'lastname',
+  'fullname',
+  'username',
+  'customername',
+  'customertaxid',
+  'fcmToken',
+  'deviceToken',
+  'cookie',
+  'set-cookie',
+  'stepuptoken',
+  'openingkey',
+  'x-view-once-opening',
+].map((key) => key.toLowerCase()));
 
 export function isSensitiveKey(key: string): boolean {
-  return SENSITIVE_KEYS.has(key) || key.toLowerCase().includes('secret');
+  const normalized = key.toLowerCase();
+  return SENSITIVE_KEYS.has(normalized) ||
+    /(?:secret|token|password|authorization|cookie|email|phone|cpf)/.test(normalized);
 }
 
 export function redact(value: unknown, depth = 0): JsonValue {

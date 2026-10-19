@@ -56,9 +56,9 @@ export class LoggingInterceptor implements NestInterceptor {
             }
           }
         },
-        error: (error) => {
+        error: () => {
           const responseTime = Date.now() - now;
-          this.logger.error(`${method} ${url} - ${responseTime}ms - ${error.message}`);
+          this.logger.error(`${method} ${url} - ${responseTime}ms - request failed`);
         },
       }),
     );

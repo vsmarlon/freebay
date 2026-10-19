@@ -8,29 +8,15 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { STRICT_ORIGIN_KEY } from '@/shared/decorators/strict-origin.decorator';
+import { isAllowedOrigin, parseAllowedOrigins } from '@/shared/http/origin-policy';
 
-function normalizeOrigin(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  try {
-    return new URL(trimmed).origin;
-  } catch {
-    return null;
-  }
-}
-
-function allowedOrigins(config: ConfigService): Set<string> {
+function allowedOrigins(config: ConfigService): readonly string[] {
   const raw =
     config.get<string>('ALLOWED_ORIGINS') ??
     config.get<string>('WEB_APP_URL') ??
     config.get<string>('WEB_ALLOWED_ORIGIN') ??
     'http://localhost:3000';
-  const out = new Set<string>();
-  for (const part of raw.split(',')) {
-    const normalized = normalizeOrigin(part);
-    if (normalized) out.add(normalized);
-  }
-  return out;
+  return parseAllowedOrigins(raw);
 }
 
 @Injectable()
@@ -48,13 +34,7 @@ export class OriginGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    if (!origin) {
-      if (strict) throw new UnauthorizedException('Origem web não autorizada');
-      return true;
-    }
-
-    const normalized = normalizeOrigin(origin);
-    if (!normalized || !allowedOrigins(this.config).has(normalized)) {
+    if (!isAllowedOrigin(origin, allowedOrigins(this.config)) || (!origin && strict)) {
       throw new UnauthorizedException('Origem web não autorizada');
     }
     return true;

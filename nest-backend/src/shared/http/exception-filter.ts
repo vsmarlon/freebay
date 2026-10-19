@@ -57,7 +57,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
           : (resolvedMessage as string) || exception.message;
       } else {
         message = exception.message;
-        this.logger.warn(`[HTTP] ${request.method} ${request.url} - ${status} ${message}`);
+         this.logger.warn(`[HTTP] ${request.method} ${request.url} - ${status}`);
       }
 
       if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
@@ -68,14 +68,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       code = exception.code;
       message = exception.message;
       const detail = exception.detail ? ` (${exception.detail})` : '';
-      this.logger.warn(`[APP] ${request.method} ${request.url} - ${code}: ${message}${detail}`);
+      this.logger.warn(`[APP] ${request.method} ${request.url} - ${code}${detail ? ' [detail omitted]' : ''}`);
       if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
         captureError(exception, { requestId, path: request.url, code });
       }
     } else if (exception instanceof Error) {
       this.logger.error(
-        `[UNHANDLED] ${request.method} ${request.url} - ${exception.message}`,
-        exception.stack,
+        `[UNHANDLED] ${request.method} ${request.url} - ${exception.name}`,
       );
       captureError(exception, { requestId, path: request.url, code });
     } else {

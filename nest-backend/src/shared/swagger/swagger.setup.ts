@@ -1,7 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
-export function setupSwagger(app: INestApplication): void {
+export function setupSwagger(app: INestApplication): boolean {
+  if (process.env.NODE_ENV === 'production' || process.env.SWAGGER_ENABLED === 'false') return false;
   const config = new DocumentBuilder()
     .setTitle('FreeBay API')
     .setDescription(
@@ -30,8 +31,12 @@ export function setupSwagger(app: INestApplication): void {
       persistAuthorization: true,
       tagsSorter: 'alpha',
       operationsSorter: 'alpha',
-      tryItOutEnabled: true,
+      tryItOutEnabled: process.env.SWAGGER_TRY_IT_OUT === 'true',
+      supportedSubmitMethods: process.env.SWAGGER_TRY_IT_OUT === 'true'
+        ? ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']
+        : [],
     },
     customSiteTitle: 'FreeBay API Docs',
   });
+  return true;
 }
