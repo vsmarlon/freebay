@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -18,8 +19,6 @@ import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 const double kNavBarContentHeight = 64;
 
-const double kDrawerOverswipeThreshold = 56;
-
 class AppShell extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
   final List<Widget> branches;
@@ -38,7 +37,10 @@ class _AppShellState extends State<AppShell>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   late final HideOnScrollController _navHide;
   late final PageController _pageController;
-  double _overscrolledLeft = 0;
+  late final AnimationController _drawer;
+  LocalHistoryEntry? _drawerHistory;
+  double _dragStartPage = 0;
+  bool _dragging = false;
   final Set<int> _visitedTabs = {0};
 
   @override
@@ -50,6 +52,10 @@ class _AppShellState extends State<AppShell>
     _pageController = PageController(
       initialPage: widget.navigationShell.currentIndex,
     );
+    _drawer = AnimationController(vsync: this)
+      ..addListener(() {
+        if (mounted) setState(() {});
+      });
   }
 
   @override
@@ -62,6 +68,7 @@ class _AppShellState extends State<AppShell>
     _visitedTabs.add(index);
     if (_pageController.hasClients &&
         _pageController.page?.round() != index &&
+        !_dragging &&
         !_pageController.position.isScrollingNotifier.value) {
       _pageController.jumpToPage(index);
     }
@@ -72,6 +79,10 @@ class _AppShellState extends State<AppShell>
     WidgetsBinding.instance.removeObserver(this);
     _navHide.dispose();
     _pageController.dispose();
+    final history = _drawerHistory;
+    _drawerHistory = null;
+    history?.remove();
+    _drawer.dispose();
     super.dispose();
   }
 
@@ -122,20 +133,6 @@ class _AppShellState extends State<AppShell>
 
   bool _handleShellScroll(ScrollNotification notification) {
     if (notification.metrics.axis == Axis.horizontal) {
-      if (notification.depth != 0) return false;
-      if (notification is OverscrollNotification &&
-          notification.overscroll < 0 &&
-          widget.navigationShell.currentIndex == 0) {
-        _overscrolledLeft -= notification.overscroll;
-        if (_overscrolledLeft > kDrawerOverswipeThreshold) {
-          _overscrolledLeft = 0;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            appShellScaffoldKey.currentState?.openDrawer();
-          });
-        }
-      } else if (notification is ScrollEndNotification) {
-        _overscrolledLeft = 0;
-      }
       return false;
     }
     if (MediaQuery.viewInsetsOf(context).bottom > 0) {
@@ -143,6 +140,82 @@ class _AppShellState extends State<AppShell>
       return false;
     }
     return _navHide.handleNotification(notification);
+  }
+
+  void _rememberDrawer() {
+    if (_drawerHistory != null) return;
+    _drawerHistory = LocalHistoryEntry(
+      onRemove: () {
+        if (_drawerHistory == null) return;
+        _drawerHistory = null;
+        if (mounted) _settleDrawer(false);
+      },
+    );
+    ModalRoute.of(context)?.addLocalHistoryEntry(_drawerHistory!);
+  }
+
+  void _settleDrawer(bool open) {
+    if (open) _rememberDrawer();
+    _drawer
+        .animateTo(
+          open ? 1 : 0,
+          duration: AppMotion.forContext(context, AppMotion.base),
+        )
+        .whenCompleteOrCancel(() {
+          if (!mounted || _drawer.value != 0) return;
+          final history = _drawerHistory;
+          _drawerHistory = null;
+          history?.remove();
+        });
+  }
+
+  void _startDrag(DragStartDetails details) {
+    _dragging = true;
+    _drawer.stop();
+    _dragStartPage =
+        _pageController.page ?? widget.navigationShell.currentIndex.toDouble();
+  }
+
+  void _updateDrag(DragUpdateDetails details) {
+    if (!_pageController.hasClients) return;
+    final width = MediaQuery.sizeOf(context).width;
+    final delta = details.primaryDelta ?? 0;
+    final pixels = _pageController.position.pixels;
+    if (_drawer.value > 0 || (pixels <= 0 && delta > 0)) {
+      _rememberDrawer();
+      _drawer.value = (_drawer.value + delta / (width * 0.78)).clamp(0, 1);
+      return;
+    }
+    _pageController.jumpTo(
+      (pixels - delta).clamp(0, _pageController.position.maxScrollExtent),
+    );
+  }
+
+  void _endDrag([DragEndDetails? details]) {
+    if (!_dragging) return;
+    _dragging = false;
+    final velocity = details?.primaryVelocity ?? 0;
+    if (_drawer.value > 0 || _drawerHistory != null) {
+      _settleDrawer(
+        details != null &&
+            (velocity.abs() >= kMinFlingVelocity
+                ? velocity > 0
+                : _drawer.value >= 0.5),
+      );
+      return;
+    }
+    if (!_pageController.hasClients) return;
+    final page = _pageController.page ?? _dragStartPage;
+    final target =
+        (velocity.abs() >= kMinFlingVelocity
+                ? _dragStartPage.round() + (velocity < 0 ? 1 : -1)
+                : page.round())
+            .clamp(0, widget.branches.length - 1);
+    _pageController.animateToPage(
+      target,
+      duration: AppMotion.forContext(context, AppMotion.base),
+      curve: AppMotion.baseCurve,
+    );
   }
 
   BrutalistFab? _fabFor(BuildContext context, int selectedIndex) {
@@ -187,114 +260,180 @@ class _AppShellState extends State<AppShell>
         final isKeyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
         if (isKeyboardOpen || !shellIsCurrent) _navHide.showImmediately();
 
-        return Scaffold(
-          backgroundColor: Colors.transparent,
-          resizeToAvoidBottomInset: false,
-          key: appShellScaffoldKey,
-          drawer: const FeedDrawer(),
-          drawerEnableOpenDragGesture: selectedIndex == 0,
-          drawerEdgeDragWidth: 32,
-          drawerScrimColor: Colors.black54,
-          body: AppBackground(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: _handleShellScroll,
-                    child: Builder(
-                      builder: (mediaContext) => MediaQuery(
-                        data: MediaQuery.of(mediaContext).copyWith(
-                          padding: MediaQuery.paddingOf(mediaContext).copyWith(
-                            bottom: isKeyboardOpen
-                                ? 0
-                                : navBarHeight + navBottom,
+        return GestureDetector(
+          dragStartBehavior: DragStartBehavior.down,
+          onHorizontalDragStart: _startDrag,
+          onHorizontalDragUpdate: _updateDrag,
+          onHorizontalDragEnd: _endDrag,
+          onHorizontalDragCancel: _endDrag,
+          child: _DrawerScaffold(
+            open: () => _settleDrawer(true),
+            close: () => _settleDrawer(false),
+            opened: _drawer.value == 1,
+            backgroundColor: Colors.transparent,
+            resizeToAvoidBottomInset: false,
+            key: appShellScaffoldKey,
+            body: AppBackground(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: _handleShellScroll,
+                      child: Builder(
+                        builder: (mediaContext) => MediaQuery(
+                          data: MediaQuery.of(mediaContext).copyWith(
+                            padding: MediaQuery.paddingOf(mediaContext)
+                                .copyWith(
+                                  bottom: isKeyboardOpen
+                                      ? 0
+                                      : navBarHeight + navBottom,
+                                ),
                           ),
-                        ),
-                        child: PageView(
-                          controller: _pageController,
-                          onPageChanged: _onPageChanged,
-                          physics: const ClampingScrollPhysics(),
-                          // The custom PageView must mute kept-alive branches,
-                          // including when a root route covers the entire shell.
-                          children: [
-                            for (final (index, branch)
-                                in widget.branches.indexed)
-                              RepaintBoundary(
-                                child: Offstage(
-                                  offstage: !_visitedTabs.contains(index),
-                                  child: TickerMode(
-                                    enabled:
-                                        shellIsCurrent &&
-                                        index == selectedIndex,
-                                    child: ShellScrollChromeScope(
-                                      animation: _navHide.animation,
-                                      child: branch,
+                          child: PageView(
+                            controller: _pageController,
+                            onPageChanged: _onPageChanged,
+                            physics: const NeverScrollableScrollPhysics(),
+                            // The custom PageView must mute kept-alive branches,
+                            // including when a root route covers the entire shell.
+                            children: [
+                              for (final (index, branch)
+                                  in widget.branches.indexed)
+                                RepaintBoundary(
+                                  child: Offstage(
+                                    offstage: !_visitedTabs.contains(index),
+                                    child: TickerMode(
+                                      enabled:
+                                          shellIsCurrent &&
+                                          index == selectedIndex,
+                                      child: ShellScrollChromeScope(
+                                        animation: _navHide.animation,
+                                        child: branch,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                if (connectivity.asData?.value == false)
-                  Positioned(
-                    top: MediaQuery.paddingOf(context).top + 8,
-                    left: 16,
-                    right: 16,
-                    child: Semantics(
-                      liveRegion: true,
-                      label: l10n(context).commonOffline,
-                      child: Container(
-                        color: context.surfaceColor,
-                        padding: const EdgeInsets.all(8),
-                        child: ExcludeSemantics(
-                          child: Text(
-                            l10n(context).commonOffline.toUpperCase(),
-                            textAlign: TextAlign.center,
-                            style: AppTypography.labelSmall.copyWith(
-                              color: context.textPrimary,
+                  if (connectivity.asData?.value == false)
+                    Positioned(
+                      top: MediaQuery.paddingOf(context).top + 8,
+                      left: 16,
+                      right: 16,
+                      child: Semantics(
+                        liveRegion: true,
+                        label: l10n(context).commonOffline,
+                        child: Container(
+                          color: context.surfaceColor,
+                          padding: const EdgeInsets.all(8),
+                          child: ExcludeSemantics(
+                            child: Text(
+                              l10n(context).commonOffline.toUpperCase(),
+                              textAlign: TextAlign.center,
+                              style: AppTypography.labelSmall.copyWith(
+                                color: context.textPrimary,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                if (fab != null && !isKeyboardOpen)
-                  Positioned(
-                    right: 16,
-                    bottom: navBarHeight + navBottom + 16,
-                    child: ScrollAwareBar(
-                      animation: _navHide.animation,
-                      height: navBarHeight + navBottom + 16 + fab.size,
-                      edge: ScrollBarEdge.bottom,
-                      child: fab,
-                    ),
-                  ),
-                if (!isKeyboardOpen)
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: navBottom,
-                    child: ScrollAwareBar(
-                      animation: _navHide.animation,
-                      height: navBarHeight + navBottom,
-                      edge: ScrollBarEdge.bottom,
-                      child: _BrutalistNavBar(
-                        selectedIndex: selectedIndex,
-                        onDestinationSelected: _onDestinationSelected,
+                  if (fab != null && !isKeyboardOpen)
+                    Positioned(
+                      right: 16,
+                      bottom: navBarHeight + navBottom + 16,
+                      child: ScrollAwareBar(
+                        animation: _navHide.animation,
+                        height: navBarHeight + navBottom + 16 + fab.size,
+                        edge: ScrollBarEdge.bottom,
+                        child: fab,
                       ),
                     ),
-                  ),
-              ],
+                  if (!isKeyboardOpen)
+                    Positioned(
+                      left: 16,
+                      right: 16,
+                      bottom: navBottom,
+                      child: ScrollAwareBar(
+                        animation: _navHide.animation,
+                        height: navBarHeight + navBottom,
+                        edge: ScrollBarEdge.bottom,
+                        child: _BrutalistNavBar(
+                          selectedIndex: selectedIndex,
+                          onDestinationSelected: _onDestinationSelected,
+                        ),
+                      ),
+                    ),
+                  if (_drawer.value > 0) ...[
+                    Positioned.fill(
+                      child: ModalBarrier(
+                        color: Colors.black.withValues(
+                          alpha: 0.54 * _drawer.value,
+                        ),
+                        onDismiss: () => _settleDrawer(false),
+                        semanticsLabel: MaterialLocalizations.of(
+                          context,
+                        ).modalBarrierDismissLabel,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left:
+                          -(1 - _drawer.value) *
+                          MediaQuery.sizeOf(context).width *
+                          0.78,
+                      width: MediaQuery.sizeOf(context).width * 0.78,
+                      child: const BlockSemantics(child: FeedDrawer()),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         );
       },
     );
   }
+}
+
+// ponytail: Scaffold exposes open/close but no drag progress. Keep its existing
+// caller API while one shell-owned animation drives all drawer entry points.
+class _DrawerScaffold extends Scaffold {
+  const _DrawerScaffold({
+    required this.open,
+    required this.close,
+    required this.opened,
+    super.key,
+    super.backgroundColor,
+    super.resizeToAvoidBottomInset,
+    super.body,
+  });
+
+  final VoidCallback open;
+  final VoidCallback close;
+  final bool opened;
+
+  @override
+  ScaffoldState createState() => _DrawerScaffoldState();
+}
+
+class _DrawerScaffoldState extends ScaffoldState {
+  // ScaffoldState exposes its widget as Scaffold; this state is created only
+  // by _DrawerScaffold.
+  _DrawerScaffold get _configuration => widget as _DrawerScaffold;
+
+  @override
+  void openDrawer() => _configuration.open();
+
+  @override
+  void closeDrawer() => _configuration.close();
+
+  @override
+  bool get isDrawerOpen => _configuration.opened;
 }
 
 class _BrutalistNavBar extends StatelessWidget {

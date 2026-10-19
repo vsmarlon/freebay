@@ -22,6 +22,11 @@ Widget _app() {
   final router = GoRouter(
     initialLocation: '/b0',
     routes: [
+      GoRoute(
+        path: '/profile/posts',
+        builder: (_, _) =>
+            Scaffold(appBar: AppBar(), body: const Text('POSTS ROUTE')),
+      ),
       StatefulShellRoute(
         builder: (context, state, navigationShell) => navigationShell,
         navigatorContainerBuilder: (context, navigationShell, children) =>
@@ -159,7 +164,7 @@ void main() {
     expect(find.text('CHARLIE'), findsOneWidget);
   });
 
-  testWidgets('over-swiping right on the first branch opens the drawer', (
+  testWidgets('drawer follows a plain-content drag, cancels and commits', (
     tester,
   ) async {
     await tester.pumpWidget(_app());
@@ -167,10 +172,26 @@ void main() {
 
     expect(appShellScaffoldKey.currentState?.isDrawerOpen, isFalse);
 
+    final partial = await tester.startGesture(
+      tester.getCenter(find.byType(PageView)),
+    );
+    await partial.moveBy(const Offset(80, 0));
+    await tester.pump();
+    final drawer = find.byType(Drawer);
+    expect(
+      tester.getTopLeft(drawer).dx,
+      greaterThan(-tester.getSize(drawer).width),
+    );
+    expect(tester.getTopLeft(drawer).dx, lessThan(0));
+    await partial.cancel();
+    await _settle(tester);
+    expect(find.byType(Drawer), findsNothing);
+    expect(find.text('ALPHA'), findsOneWidget);
+
     final gesture = await tester.startGesture(
       tester.getCenter(find.byType(PageView)),
     );
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < 10; i++) {
       await gesture.moveBy(const Offset(40, 0));
       await tester.pump(const Duration(milliseconds: 16));
     }
@@ -178,6 +199,41 @@ void main() {
     await _settle(tester);
 
     expect(appShellScaffoldKey.currentState?.isDrawerOpen, isTrue);
+  });
+
+  testWidgets('removing the shell during drawer opening releases its history', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app());
+    await _settle(tester);
+
+    appShellScaffoldKey.currentState!.openDrawer();
+    await tester.pumpWidget(const SizedBox.shrink());
+
+    expect(tester.takeException(), isNull);
+    expect(appShellScaffoldKey.currentState, isNull);
+  });
+
+  testWidgets('drawer navigation during opening closes before returning', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app());
+    await _settle(tester);
+
+    appShellScaffoldKey.currentState!.openDrawer();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(find.byType(Drawer), findsOneWidget);
+    await tester.tap(find.text('Publicações'));
+    await _settle(tester);
+
+    expect(find.text('POSTS ROUTE'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await _settle(tester);
+
+    expect(find.text('ALPHA'), findsOneWidget);
+    expect(find.byType(Drawer), findsNothing);
   });
 
   testWidgets('a nested horizontal pager never changes the shell branch', (

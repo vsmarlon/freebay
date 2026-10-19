@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:freebay/core/router/app_router.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/components/app_shell_scaffold_key.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/chat/presentation/pages/chat_conversation_page.dart';
 import 'package:freebay/features/chat/presentation/widgets/chat_list_tile.dart';
@@ -143,6 +144,41 @@ Future<void> scrollFeedCoverage(
   );
 }
 
+Future<void> waitForDrawerState(WidgetTester tester, bool isOpen) async {
+  for (var frame = 0; frame < 50; frame++) {
+    if (appShellScaffoldKey.currentState?.isDrawerOpen == isOpen) return;
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  throw StateError('Drawer did not become ${isOpen ? 'open' : 'closed'}');
+}
+
+Future<void> openDrawer(WidgetTester tester, String interaction) async {
+  final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+  final point = switch (interaction) {
+    'header_tap' => tester.getCenter(find.byIcon(Icons.menu)),
+    'edge_right_drag' => Offset(1, size.height * .45),
+    _ =>
+      tester.getTopLeft(find.byType(FeedPostItem).first) +
+          const Offset(24, 100),
+  };
+  if (interaction == 'header_tap') {
+    await tester.tapAt(point);
+  } else {
+    final gesture = await tester.startGesture(point);
+    for (var step = 0; step < 8; step++) {
+      await gesture.moveBy(const Offset(18, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+  }
+  await waitForDrawerState(tester, true);
+}
+
+Future<void> closeDrawer(WidgetTester tester) async {
+  appShellScaffoldKey.currentState!.closeDrawer();
+  await waitForDrawerState(tester, false);
+}
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -153,6 +189,7 @@ void main() {
       'chat_scroll',
       'story_view',
       'product_detail',
+      'drawer_open',
     }.contains(flow)) {
       throw StateError('Unknown PERF_FLOW: $flow');
     }
@@ -171,7 +208,52 @@ void main() {
       'auth/session hydration',
     );
 
-    if (flow == 'feed_scroll') {
+    if (flow == 'drawer_open') {
+      if (container.read(authControllerProvider).value == null) {
+        throw StateError('Perf fixture missing: signed-in session for drawer');
+      }
+      appRouter.go(AppRoutes.feed);
+      await until(tester, () {
+        final state = container.read(feedProvider);
+        return !state.isLoading &&
+            !state.isRefreshing &&
+            !state.isStale &&
+            state.error == null &&
+            state.posts.length >= 3;
+      }, 'authenticated feed with at least three fresh server posts');
+      final cases = <Map<String, Object?>>[];
+      binding.reportData ??= <String, dynamic>{};
+      binding.reportData!['drawer_cases'] = cases;
+      binding.reportData!['drawer_native_input_latency'] =
+          'unsupported: integration_test FrameTiming has no native input timestamp';
+      final interactions = [
+        ('header_tap', 'first_after_app_launch'),
+        ('header_tap', 'repeat_same_process'),
+        ('edge_right_drag', 'repeat_same_process'),
+        ('edge_right_drag', 'repeat_same_process'),
+        ('feed_content_right_drag', 'repeat_same_process'),
+        ('feed_content_right_drag', 'repeat_same_process'),
+      ];
+      for (var index = 0; index < interactions.length; index++) {
+        final (interaction, opening) = interactions[index];
+        final frameReportKey = 'drawer_case_$index';
+        await binding.watchPerformance(
+          () => openDrawer(tester, interaction),
+          reportKey: frameReportKey,
+        );
+        cases.add({
+          'interaction': interaction,
+          'opening': opening,
+          'open': appShellScaffoldKey.currentState?.isDrawerOpen == true,
+          'frame_report_key': frameReportKey,
+          if (interaction == 'edge_right_drag' ||
+              interaction == 'feed_content_right_drag')
+            'cold_status': 'pending_separate_profile_launch',
+        });
+        binding.reportData!['drawer_cases'] = cases;
+        await closeDrawer(tester);
+      }
+    } else if (flow == 'feed_scroll') {
       appRouter.go(AppRoutes.feed);
       await until(tester, () {
         final state = container.read(feedProvider);
