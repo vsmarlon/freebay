@@ -726,6 +726,14 @@ to claim completion.
 
 ## Release closure
 
+- Android cleartext launch check: `src/debug` and `src/profile` set
+  `usesCleartextTraffic="true"` for emulator/LAN backends only. Release merges
+  `src/main` only (`usesCleartextTraffic="false"` + deny-by-default
+  `network_security_config.xml`), so production fails closed on plain http.
+  Before launch verify: no `src/release` overlay with cleartext true, main still
+  `false`, backend is https-only, and the release artifact was built with
+  `--release`.
+
 - Close #2 only after every child issue has its required implementation, local and
   cumulative evidence, with no unresolved blocker.
 - #1 release automation may change only `.github/workflows/`, `Makefile`, and

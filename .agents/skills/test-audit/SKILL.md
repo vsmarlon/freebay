@@ -5,11 +5,11 @@ description: Use whenever writing, changing, reviewing, or auditing FreeBay test
 
 # Test value gate
 
-For behavior changes, use RED → GREEN → REFACTOR; prefer real HTTP/database/device boundaries. Read `AGENTS.md` and `docs/FEATURE_TRUTH.md` when capability status matters. For a subsystem-wide test sweep, read [CAMPAIGN.md](CAMPAIGN.md) before work.
+For behavior changes, follow the tests and evidence policy in `AGENTS.md`; prefer real HTTP/database/device boundaries. Read `docs/FEATURE_TRUTH.md` when capability status matters. For a subsystem-wide test sweep, read [CAMPAIGN.md](CAMPAIGN.md) before work.
 
 ## Before adding/changing a test
 
-State: (1) observable contract, (2) credible regression, (3) why stronger existing coverage misses it, (4) whether it requires a test-only seam. If any answer is missing, defer. The regression must fail pre-fix for the intended behavior, not fixture/compile failure.
+State: (1) observable contract, (2) credible regression, (3) why stronger existing coverage misses it, (4) whether it requires a test-only seam. If any answer is missing, defer. Regression tests must detect the intended behavior failure, not merely fixture/compile problems.
 
 Reject tests that merely echo mocks/helpers, inspect implementation trivia, duplicate stronger boundary coverage, assert inventories/exports, or pass for unrelated reasons. Keep independent money, security, concurrency, recovery, protocol and persistence contracts. Do not weaken an assertion to accommodate a refactor.
 

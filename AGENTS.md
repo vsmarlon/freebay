@@ -11,16 +11,15 @@
 
 ## Architecture contracts
 
+Backend target: [ADR 0004](docs/adr/0004-selective-modular-backend-architecture.md) and [ADR 0005](docs/adr/0005-module-template-public-api-uow-events.md); active scope/status: [backend architecture plan](docs/BACKEND_ARCHITECTURE_PLAN.md); phase order and safety gates: [hardening plan](docs/HARDENING_PLAN.md). Concrete implementation recipes (not authorization): [backend guide](docs/BACKEND_IMPLEMENTATION_GUIDE.md). Controllers delegate and preserve the original `AppError` and HTTP mapping.
+
 | Area | Required boundary |
 |---|---|
-| Backend | NestJS vertical modules under `nest-backend/src/modules/<feature>/`. Use cases hold business decisions and return `Either<AppError, Output>` (or `void` for mutations). Concrete repositories own database access. Existing modules vary: do not add repository ports or impose uniform layers without approval. |
-| Backend HTTP | Controllers delegate, then preserve the original `AppError` when unwrapping `Either`; global interceptors/filter shape success and errors. Do not convert failures to default HTTP 400. |
 | Frontend | Feature code lives under `frontend/lib/features/`; state/API/UI remain in their existing feature seams. In a logic-only domain use case, data entities are allowed; concrete data repositories are not. Keep existing domain repository abstractions where present. Not every feature has all Clean Architecture layers. |
 | Frontend HTTP | Repositories call backend endpoints through Dio and adapt results with `requestEither`; no direct database access. |
 | State/navigation | Riverpod owns shared/server/business state; `setState` is for local ephemeral UI. Use `AppRoutes` constants/builders, not route literals. |
 | Persistence | Prisma schema is `nest-backend/prisma/schema.prisma`. Money is integer cents. Follow `freebay-prisma` and `freebay-data-model` for DB work; production/test/runtime DBs are distinct evidence targets. |
-
-These are target boundaries, not a claim that a repository-wide boundary checker already enforces them. P4 in [`docs/HARDENING_PLAN.md`](docs/HARDENING_PLAN.md) is planned; report it as active only after its implementation and checks are verified.
+| Backend modules | Selective ports: Tier B CRUD may use its own concrete repository; module-to-module calls use the owner's narrow `index.ts` API. Domain imports neither Nest nor Prisma. Transaction pattern and current exceptions are in ADR 0005; do not infer authorization for another slice from examples. |
 
 ## Type safety
 
@@ -28,7 +27,7 @@ Keep types truthful in production and tests. Bare `any`, `as any`, and `as unkno
 
 ## Tests and evidence
 
-- For behavior changes: **RED → GREEN → REFACTOR**. The RED run must fail for the intended behavior, not compilation, broken setup, or unavailable dependencies.
+- Verify behavior changes with focused tests; tests may be written before or after implementation.
 - Prefer E2E for journeys. Add isolated tests only for a concrete failure the existing broader tests do not catch. Load [`test-audit`](.agents/skills/test-audit/SKILL.md) whenever authoring, changing, reviewing, or sweeping tests.
 - Preserve distinct money, authorization, concurrency, and recovery checks until equivalent broader evidence is verified.
 - Record E2E evidence under `docs/test-runs/<date>/`: revision including dirty changes, environment without credentials, fixtures/reset, exact steps/commands, expected/actual result, exit status, and relevant logs/screenshots. Mark blocked runs blocked.
