@@ -122,3 +122,82 @@ abstract class _$Suggestions extends $Notifier<SuggestionsState> {
     return element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(quoteMentionCandidates)
+final quoteMentionCandidatesProvider = QuoteMentionCandidatesFamily._();
+
+final class QuoteMentionCandidatesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<UserSearchEntity>>,
+          List<UserSearchEntity>,
+          FutureOr<List<UserSearchEntity>>
+        >
+    with
+        $FutureModifier<List<UserSearchEntity>>,
+        $FutureProvider<List<UserSearchEntity>> {
+  QuoteMentionCandidatesProvider._({
+    required QuoteMentionCandidatesFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'quoteMentionCandidatesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$quoteMentionCandidatesHash();
+
+  @override
+  String toString() {
+    return r'quoteMentionCandidatesProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<UserSearchEntity>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<UserSearchEntity>> create(Ref ref) {
+    final argument = this.argument as String;
+    return quoteMentionCandidates(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is QuoteMentionCandidatesProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$quoteMentionCandidatesHash() =>
+    r'a25bf8cb6a7b66c86168a27f02c2a68443a228b0';
+
+final class QuoteMentionCandidatesFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<UserSearchEntity>>, String> {
+  QuoteMentionCandidatesFamily._()
+    : super(
+        retry: null,
+        name: r'quoteMentionCandidatesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  QuoteMentionCandidatesProvider call(String query) =>
+      QuoteMentionCandidatesProvider._(argument: query, from: this);
+
+  @override
+  String toString() => r'quoteMentionCandidatesProvider';
+}

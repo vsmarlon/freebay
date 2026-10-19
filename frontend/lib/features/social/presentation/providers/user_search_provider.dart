@@ -179,3 +179,16 @@ class Suggestions extends _$Suggestions {
     );
   }
 }
+
+@riverpod
+Future<List<UserSearchEntity>> quoteMentionCandidates(
+  Ref ref,
+  String query,
+) async {
+  final trimmed = query.trim();
+  if (trimmed.isEmpty) return const [];
+  final result = await ref
+      .read(socialRepositoryProvider)
+      .searchUsers(query: trimmed);
+  return result.fold((failure) => throw failure, (page) => page.users);
+}

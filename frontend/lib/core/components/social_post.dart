@@ -27,6 +27,8 @@ class SocialPost extends StatefulWidget {
   final Future<bool> Function()? onRepost;
   final VoidCallback? onComment;
   final VoidCallback? onShare;
+  final VoidCallback? onQuote;
+  final Widget? quotePreview;
   final VoidCallback? onTap;
   final VoidCallback? onUserTap;
   final double? price;
@@ -58,6 +60,8 @@ class SocialPost extends StatefulWidget {
     this.onRepost,
     this.onComment,
     this.onShare,
+    this.onQuote,
+    this.quotePreview,
     this.onTap,
     this.onUserTap,
     this.price,
@@ -120,6 +124,7 @@ class _SocialPostState extends State<SocialPost> {
     onSave: _handleSave,
     onRepost: _handleRepost,
     onComment: widget.onComment,
+    onQuote: widget.onQuote,
   );
 
   @override
@@ -165,6 +170,7 @@ class _SocialPostState extends State<SocialPost> {
               createdAt: widget.createdAt,
               onUserTap: widget.onUserTap,
             ),
+            if (widget.quotePreview != null) widget.quotePreview!,
             if (widget.isCloseFriends)
               Padding(
                 padding: const EdgeInsets.symmetric(

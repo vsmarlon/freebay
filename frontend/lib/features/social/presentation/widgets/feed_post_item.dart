@@ -10,6 +10,7 @@ import 'package:freebay/features/social/presentation/providers/saves_provider.da
 import 'package:freebay/features/social/presentation/providers/reposts_provider.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/features/social/presentation/widgets/quote_source_preview.dart';
 
 class FeedPostItem extends ConsumerStatefulWidget {
   final PostEntity post;
@@ -96,6 +97,15 @@ class _FeedPostItemState extends ConsumerState<FeedPostItem> {
               price: price,
               isSelling: post.type == PostType.product,
               isCloseFriends: post.audience == PostAudience.closeFriends,
+              quotePreview: post.isQuote
+                  ? QuoteSourcePreview(source: post.quoteSource)
+                  : null,
+              onQuote: !post.isQuote && post.audience == PostAudience.everyone
+                  ? () => context.push(
+                      AppRoutes.createPost,
+                      extra: QuoteSource.post(id: post.id, post: post),
+                    )
+                  : null,
               closeFriendsLabel: strings.feedAudienceCloseFriends,
               onTap: () => context.push(AppRoutes.postPath(post.id)),
               onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),

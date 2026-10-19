@@ -4,9 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/social/presentation/providers/post_search_provider.dart';
-import 'package:freebay/features/social/data/entities/post_entity.dart';
-import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
-import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/features/social/presentation/widgets/feed_post_item.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostSearchPage extends ConsumerStatefulWidget {
@@ -129,24 +127,14 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
               ),
             ),
             Spacing.vMd,
-            Expanded(
-              child: _buildContent(
-                context,
-                searchState,
-                ref.watch(likesProvider),
-              ),
-            ),
+            Expanded(child: _buildContent(context, searchState)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    PostSearchState state,
-    LikesState likesState,
-  ) {
+  Widget _buildContent(BuildContext context, PostSearchState state) {
     if (state.error != null && state.posts.isEmpty && !state.isLoading) {
       return EmptyState.error(
         message: state.error,
@@ -192,42 +180,7 @@ class _PostSearchPageState extends ConsumerState<PostSearchPage> {
             }
 
             final post = state.posts[index];
-            final isLiked =
-                likesState.getLikedOverride(post.id) ?? post.isLiked;
-            final likesCount =
-                likesState.getCountOverride(post.id) ?? post.likesCount;
-            return SocialPost(
-              userId: post.user.id,
-              userName:
-                  post.user.displayName ?? l10n(context).commonUnknownUser,
-              userAvatarUrl: post.user.avatarUrl,
-              content: post.content,
-              imageUrl: post.imageUrl,
-              imageBlurHash: post.audience == PostAudience.everyone
-                  ? post.imageBlurHash
-                  : null,
-              isCloseFriends: post.audience == PostAudience.closeFriends,
-              closeFriendsLabel: l10n(context).feedAudienceCloseFriends,
-              likesCount: likesCount,
-              commentsCount: post.commentsCount,
-              sharesCount: post.sharesCount,
-              isLiked: isLiked,
-              createdAt: post.createdAt,
-              price: post.product?.price.toDouble(),
-              isSelling: post.type == PostType.product,
-              onTap: () => context.push(AppRoutes.postPath(post.id)),
-              onUserTap: () => context.push(AppRoutes.userPath(post.user.id)),
-              onLike: () async {
-                return ref
-                    .read(likesProvider.notifier)
-                    .toggleLike(
-                      post.id,
-                      initialIsLiked: post.isLiked,
-                      initialCount: post.likesCount,
-                    );
-              },
-              onComment: () => context.push(AppRoutes.postPath(post.id)),
-            );
+            return FeedPostItem(key: ValueKey(post.id), post: post);
           },
         ),
       ),

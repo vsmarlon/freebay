@@ -68,6 +68,59 @@ mixin SocialRepositoryFeed {
     }
   }
 
+  Future<Either<Failure, PostEntity>> createQuote({
+    required String content,
+    required String sourceId,
+    required bool sourceIsComment,
+    required String clientRequestId,
+    List<String> mentionIds = const [],
+    String? imagePath,
+  }) async {
+    final authenticationAttempt =
+        AuthSessionCoordinator.currentAuthenticationAttempt;
+    try {
+      final fields = <String, dynamic>{
+        'content': content,
+        if (sourceIsComment) 'sourceCommentId': sourceId,
+        if (!sourceIsComment) 'sourcePostId': sourceId,
+        'mentionIds': mentionIds.toSet().toList()..sort(),
+        'clientRequestId': clientRequestId,
+      };
+      final data = imagePath == null
+          ? fields
+          : FormData.fromMap({
+              ...fields,
+              'image': await ImageUploadService.compressedMultipartFile(
+                imagePath,
+                filename: 'quote.jpg',
+              ),
+            }, ListFormat.multiCompatible);
+      if (!AuthSessionCoordinator.isCurrentAttempt(authenticationAttempt)) {
+        return const Left(CacheFailure('Authentication attempt superseded.'));
+      }
+      return requestEither(
+        () => client.post(
+          '/social/quotes',
+          data: data,
+          options: Options(
+            headers: {'Idempotency-Key': clientRequestId},
+            contentType: imagePath == null ? null : 'multipart/form-data',
+          ),
+        ),
+        decoder: (response) {
+          final root = _jsonMap(response.data);
+          final payload = _jsonMap(root?['data']);
+          if (payload == null) throw const FormatException('Invalid quote');
+          final post = _jsonMap(payload['post'] ?? payload);
+          if (post == null) throw const FormatException('Invalid quote');
+          return Right(PostEntity.fromJson(post));
+        },
+      );
+    } catch (_) {
+      return const Left(ServerFailure('Erro ao processar imagem'));
+    }
+  }
+
   Future<Either<Failure, PostMutationState>> likePost(String postId) =>
       _postMutation('/social/posts/$postId/like');
   Future<Either<Failure, PostMutationState>> unlikePost(String postId) =>
@@ -118,6 +171,28 @@ mixin SocialRepositoryFeed {
         },
       );
 
+  Future<Either<Failure, CommentContext>> getCommentContext(
+    String commentId, {
+    String? replyCursor,
+    String? ancestorCursor,
+    String replySort = 'recent',
+  }) => requestEither(
+    () => client.get(
+      '/social/comments/$commentId/context',
+      queryParameters: {
+        'replyLimit': 20,
+        'replySort': replySort,
+        'replyCursor': ?replyCursor,
+        'ancestorCursor': ?ancestorCursor,
+      },
+    ),
+    decoder: (response) {
+      final map = _jsonMap(response.data['data']);
+      if (map == null) throw const FormatException('Invalid comment context');
+      return Right(CommentContext.fromJson(map));
+    },
+  );
+
   Future<Either<Failure, void>> commentPost(
     String postId,
     String content, {
@@ -132,6 +207,37 @@ mixin SocialRepositoryFeed {
     ),
     decoder: (_) => const Right(null),
   );
+
+  Future<Either<Failure, CommentEntity>> createComment(
+    String postId,
+    String content, {
+    String? parentId,
+    required String clientRequestId,
+  }) => requestEither<CommentEntity>(
+    () => client.post(
+      '/social/posts/$postId/comments',
+      data: {
+        'content': content,
+        'clientRequestId': clientRequestId,
+        if (parentId != null && parentId.isNotEmpty) 'parentId': parentId,
+      },
+      options: Options(headers: {'Idempotency-Key': clientRequestId}),
+    ),
+    decoder: (response) {
+      final data = _jsonMap(response.data['data']);
+      final comment = data == null ? null : _jsonMap(data['comment'] ?? data);
+      if (comment == null) {
+        throw const FormatException('Invalid comment response');
+      }
+      return Right(CommentEntity.fromJson(comment));
+    },
+  );
+
+  Future<Either<Failure, void>> approveComment(String commentId) =>
+      requestEither<void>(
+        () => client.patch('/social/comments/$commentId/approve'),
+        decoder: (_) => const Right(null),
+      );
 
   Future<Either<Failure, void>> likeComment(String commentId) async {
     final result = await requestEither<void>(

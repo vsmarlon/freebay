@@ -4,23 +4,66 @@ class AppLink {
   const AppLink._();
 
   static String fromNotification(Map<String, dynamic> data) {
-    switch (data['action']?.toString()) {
+    String? id(String key) {
+      final candidate = data[key];
+      if (candidate is! String ||
+          !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(candidate)) {
+        return null;
+      }
+      return candidate;
+    }
+
+    final action = data['action'];
+    if (action != null && action is! String) return AppRoutes.notifications;
+    final routeAction =
+        action ??
+        switch (data['type']) {
+          'PAYMENT' => 'wallet',
+          'ORDER' => 'orders',
+          'MESSAGE' => 'chat',
+          'FOLLOW' => 'profile',
+          'DISPUTE' => 'disputes',
+          _ => null,
+        };
+
+    switch (routeAction) {
       case 'wallet':
         return AppRoutes.wallet;
       case 'chat':
-        return data['conversationId']?.toString().isNotEmpty == true
-            ? AppRoutes.chatPath(data['conversationId'].toString())
-            : AppRoutes.chat;
+        final conversationId =
+            id('conversationId') ??
+            (data['conversationId'] == null ? id('orderId') : null);
+        if (conversationId != null) return AppRoutes.chatPath(conversationId);
+        return data['conversationId'] == null && data['orderId'] == null
+            ? AppRoutes.chat
+            : AppRoutes.notifications;
       case 'profile':
-        return AppRoutes.profile;
+        final userId = id(action == null ? 'senderId' : 'userId');
+        return userId == null
+            ? AppRoutes.notifications
+            : AppRoutes.userPath(userId);
+      case 'post':
+        final postId = id('postId');
+        final commentId = id('commentId');
+        if (postId != null && commentId != null) {
+          return AppRoutes.commentPath(postId, commentId);
+        }
+        return postId == null
+            ? AppRoutes.notifications
+            : AppRoutes.postPath(postId);
       case 'orders':
-        return data['orderId']?.toString().isNotEmpty == true
-            ? AppRoutes.orderPath(data['orderId'].toString())
-            : AppRoutes.orders;
+        final orderId = id('orderId');
+        return orderId == null
+            ? AppRoutes.notifications
+            : AppRoutes.orderPath(orderId);
       case 'disputes':
-        return data['disputeId']?.toString().isNotEmpty == true
-            ? AppRoutes.disputePath(data['disputeId'].toString())
-            : AppRoutes.disputes;
+        final disputeId = id('disputeId');
+        if (disputeId != null) return AppRoutes.disputePath(disputeId);
+        if (action == null) {
+          final orderId = id('orderId');
+          if (orderId != null) return AppRoutes.orderPath(orderId);
+        }
+        return AppRoutes.notifications;
       default:
         return AppRoutes.notifications;
     }
@@ -44,6 +87,12 @@ class AppLink {
             ? AppRoutes.productPath(segments[1])
             : AppRoutes.explore;
       case 'post':
+        if (segments.length == 4 &&
+            segments[2] == 'comment' &&
+            RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(segments[1]) &&
+            RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(segments[3])) {
+          return AppRoutes.commentPath(segments[1], segments[3]);
+        }
         return segments.length > 1
             ? AppRoutes.postPath(segments[1])
             : AppRoutes.feed;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freebay/core/components/social_post.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
+import 'package:freebay/features/social/presentation/widgets/quote_source_preview.dart';
 
 class PostDetailsPostSection extends StatelessWidget {
   final PostEntity post;
@@ -16,6 +17,7 @@ class PostDetailsPostSection extends StatelessWidget {
   final VoidCallback onUserTap;
   final VoidCallback onComment;
   final VoidCallback onShare;
+  final VoidCallback? onQuote;
 
   const PostDetailsPostSection({
     super.key,
@@ -31,6 +33,7 @@ class PostDetailsPostSection extends StatelessWidget {
     required this.onUserTap,
     required this.onComment,
     required this.onShare,
+    this.onQuote,
   });
 
   @override
@@ -62,6 +65,10 @@ class PostDetailsPostSection extends StatelessWidget {
       onRepost: onRepost,
       onComment: onComment,
       onShare: onShare,
+      onQuote: onQuote,
+      quotePreview: post.isQuote
+          ? QuoteSourcePreview(source: post.quoteSource)
+          : null,
     );
   }
 }

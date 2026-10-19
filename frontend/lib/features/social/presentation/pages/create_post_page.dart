@@ -12,11 +12,17 @@ import 'package:freebay/features/auth/presentation/controllers/auth_controller.d
 import 'package:freebay/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:freebay/features/profile/presentation/providers/profile_timeline_provider.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
+import 'package:freebay/features/social/data/entities/user_search_entity.dart';
+import 'package:freebay/features/social/presentation/providers/user_search_provider.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 import 'package:freebay/shared/services/error_reporter.dart';
+import 'package:freebay/shared/services/auth_session_coordinator.dart';
+import 'package:uuid/uuid.dart';
+import 'package:freebay/features/social/presentation/widgets/quote_source_preview.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
-  const CreatePostPage({super.key});
+  final QuoteSource? quoteSource;
+  const CreatePostPage({super.key, this.quoteSource});
 
   @override
   ConsumerState<CreatePostPage> createState() => _CreatePostPageState();
@@ -29,6 +35,10 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   String? _selectedImagePath;
   bool _isLoading = false;
   PostAudience _audience = PostAudience.everyone;
+  String? _quoteRequestId;
+  String? _quoteRequestFingerprint;
+  final List<UserSearchEntity> _selectedMentionUsers = [];
+  String _searchedMentionQuery = '';
 
   @override
   void dispose() {
@@ -80,18 +90,27 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   }
 
   Future<void> _createPost() async {
+    if (_isLoading) return;
     final rawContent = _contentController.text.trim();
     final mention = _mentionController.text.trim();
 
     String? content = rawContent.isNotEmpty ? rawContent : null;
-    if (_audience == PostAudience.everyone &&
+    if (widget.quoteSource == null &&
+        _audience == PostAudience.everyone &&
         mention.isNotEmpty &&
         content != null) {
       content = '$content\n@$mention';
-    } else if (_audience == PostAudience.everyone && mention.isNotEmpty) {
+    } else if (widget.quoteSource == null &&
+        _audience == PostAudience.everyone &&
+        mention.isNotEmpty) {
       content = '@$mention';
     }
 
+    if (widget.quoteSource != null &&
+        (content == null || content.length > 1000)) {
+      AppSnackbar.warning(context, l10n(context).feedPostContentRequired);
+      return;
+    }
     if (content == null && _selectedImagePath == null) {
       AppSnackbar.warning(context, l10n(context).feedPostContentRequired);
       return;
@@ -99,14 +118,43 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
     setState(() => _isLoading = true);
     final repository = ref.read(socialRepositoryProvider);
-    final result = await repository.createPost(
-      content: content,
-      imagePath: _selectedImagePath,
-      audience: _audience,
-    );
+    final userIdAtSubmit = ref.read(authControllerProvider).value?.id;
+    final authAttempt = AuthSessionCoordinator.currentAuthenticationAttempt;
+    final selectedMentionIds =
+        _selectedMentionUsers.map((user) => user.id).toSet().toList()..sort();
+    final quoteFingerprint =
+        '$content|$_selectedImagePath|${widget.quoteSource}|${selectedMentionIds.join(',')}';
+    if (quoteFingerprint != _quoteRequestFingerprint) {
+      _quoteRequestId = const Uuid().v4();
+      _quoteRequestFingerprint = quoteFingerprint;
+    }
+    final result = widget.quoteSource != null
+        ? await repository.createQuote(
+            content: content!,
+            sourceId: widget.quoteSource!.when(
+              post: (id, post) => id,
+              comment: (id, postId, comment) => id,
+            ),
+            sourceIsComment: widget.quoteSource!.maybeWhen(
+              comment: (_, _, _) => true,
+              orElse: () => false,
+            ),
+            clientRequestId: _quoteRequestId!,
+            mentionIds: selectedMentionIds,
+            imagePath: _selectedImagePath,
+          )
+        : await repository.createPost(
+            content: content,
+            imagePath: _selectedImagePath,
+            audience: _audience,
+          );
 
-    setState(() => _isLoading = false);
     if (!mounted) return;
+    setState(() => _isLoading = false);
+    if (!AuthSessionCoordinator.isCurrentAttempt(authAttempt) ||
+        ref.read(authControllerProvider).value?.id != userIdAtSubmit) {
+      return;
+    }
 
     result.fold((failure) => AppSnackbar.error(context, failure.message), (
       post,
@@ -131,6 +179,17 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   Widget build(BuildContext context) {
     final strings = l10n(context);
     final user = ref.watch(authControllerProvider).value;
+    final mentionQuery = _mentionController.text.trim();
+    final mentionCandidates =
+        widget.quoteSource != null &&
+            mentionQuery.isNotEmpty &&
+            mentionQuery == _searchedMentionQuery
+        ? ref
+                  .watch(quoteMentionCandidatesProvider(mentionQuery))
+                  .asData
+                  ?.value ??
+              const <UserSearchEntity>[]
+        : const <UserSearchEntity>[];
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -172,49 +231,56 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        UserAvatar(imageUrl: user?.avatarUrl),
-                        Spacing.hSm,
-                        Text(
-                          user?.displayNameOrDefault ?? strings.commonYou,
-                          style: TextStyle(
-                            fontFamily: AppTypography.headlineFontFamily,
-                            fontWeight: FontWeight.w700,
-                            color: context.textPrimary,
+                    if (widget.quoteSource == null)
+                      Row(
+                        children: [
+                          UserAvatar(imageUrl: user?.avatarUrl),
+                          Spacing.hSm,
+                          Text(
+                            user?.displayNameOrDefault ?? strings.commonYou,
+                            style: TextStyle(
+                              fontFamily: AppTypography.headlineFontFamily,
+                              fontWeight: FontWeight.w700,
+                              color: context.textPrimary,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                     Spacing.vMd,
-                    Row(
-                      children: [
-                        Expanded(
-                          child: AppButton(
-                            label: strings.feedAudiencePublic,
-                            variant: _audience == PostAudience.everyone
-                                ? AppButtonVariant.primary
-                                : AppButtonVariant.secondary,
-                            onPressed: () => setState(
-                              () => _audience = PostAudience.everyone,
+                    if (widget.quoteSource == null)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppButton(
+                              label: strings.feedAudiencePublic,
+                              variant: _audience == PostAudience.everyone
+                                  ? AppButtonVariant.primary
+                                  : AppButtonVariant.secondary,
+                              onPressed: () => setState(
+                                () => _audience = PostAudience.everyone,
+                              ),
                             ),
                           ),
-                        ),
-                        Spacing.hSm,
-                        Expanded(
-                          child: AppButton(
-                            label: strings.feedAudienceCloseFriends,
-                            variant: _audience == PostAudience.closeFriends
-                                ? AppButtonVariant.primary
-                                : AppButtonVariant.secondary,
-                            onPressed: () => setState(
-                              () => _audience = PostAudience.closeFriends,
+                          Spacing.hSm,
+                          Expanded(
+                            child: AppButton(
+                              label: strings.feedAudienceCloseFriends,
+                              variant: _audience == PostAudience.closeFriends
+                                  ? AppButtonVariant.primary
+                                  : AppButtonVariant.secondary,
+                              onPressed: () => setState(
+                                () => _audience = PostAudience.closeFriends,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    if (_audience == PostAudience.closeFriends) ...[
+                        ],
+                      ),
+                    if (widget.quoteSource != null) ...[
+                      Spacing.vMd,
+                      QuoteSourcePreview(source: widget.quoteSource),
+                    ],
+                    if (widget.quoteSource == null &&
+                        _audience == PostAudience.closeFriends) ...[
                       Spacing.vSm,
                       Text(
                         strings.feedCloseFriendsPostDescription,
@@ -235,6 +301,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       padding: const EdgeInsets.all(16),
                       child: TextField(
                         controller: _contentController,
+                        maxLength: widget.quoteSource == null ? null : 1000,
                         maxLines: null,
                         minLines: 5,
                         style: TextStyle(color: context.textPrimary),
@@ -246,7 +313,67 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                       ),
                     ),
                     Spacing.vSm,
-                    if (_audience == PostAudience.everyone)
+                    if (widget.quoteSource != null) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _mentionController,
+                              decoration: InputDecoration(
+                                hintText: strings.feedMentionUser,
+                              ),
+                              onChanged: (_) =>
+                                  setState(() => _searchedMentionQuery = ''),
+                            ),
+                          ),
+                          Spacing.hSm,
+                          BrutalistIconButton(
+                            key: const ValueKey('quote-mention-search'),
+                            icon: Icons.search,
+                            semanticLabel: strings.commonSearch,
+                            onTap: _searchQuoteMentionCandidates,
+                          ),
+                        ],
+                      ),
+                      if (_selectedMentionUsers.isNotEmpty)
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final selected in _selectedMentionUsers)
+                              InputChip(
+                                label: Text(selected.displayName),
+                                onDeleted: () => setState(
+                                  () => _selectedMentionUsers.removeWhere(
+                                    (user) => user.id == selected.id,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      if (mentionCandidates.isNotEmpty)
+                        ...mentionCandidates
+                            .where(
+                              (candidate) => !_selectedMentionUsers.any(
+                                (selected) => selected.id == candidate.id,
+                              ),
+                            )
+                            .take(5)
+                            .map(
+                              (candidate) => ListTile(
+                                leading: UserAvatar(
+                                  imageUrl: candidate.avatarUrl,
+                                ),
+                                title: Text(candidate.displayName),
+                                subtitle: candidate.username == null
+                                    ? null
+                                    : Text('@${candidate.username}'),
+                                onTap: () => _selectQuoteMention(candidate),
+                              ),
+                            ),
+                    ],
+                    Spacing.vSm,
+                    if (widget.quoteSource == null &&
+                        _audience == PostAudience.everyone)
                       Container(
                         color: context.surfaceColor,
                         padding: const EdgeInsets.symmetric(
@@ -350,5 +477,22 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         ),
       ),
     );
+  }
+
+  void _searchQuoteMentionCandidates() {
+    final query = _mentionController.text.trim();
+    setState(() => _searchedMentionQuery = query);
+    if (query.isNotEmpty) {
+      ref.read(quoteMentionCandidatesProvider(query));
+    }
+  }
+
+  void _selectQuoteMention(UserSearchEntity user) {
+    if (_selectedMentionUsers.any((selected) => selected.id == user.id)) return;
+    setState(() {
+      _selectedMentionUsers.add(user);
+      _mentionController.clear();
+      _searchedMentionQuery = '';
+    });
   }
 }

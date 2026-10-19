@@ -9,6 +9,8 @@ class CommentInput extends StatelessWidget {
   final VoidCallback onSend;
   final String? hint;
   final bool compact;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onDiscard;
 
   const CommentInput({
     super.key,
@@ -18,6 +20,8 @@ class CommentInput extends StatelessWidget {
     required this.onSend,
     this.hint,
     this.compact = false,
+    this.onChanged,
+    this.onDiscard,
   });
 
   @override
@@ -30,6 +34,14 @@ class CommentInput extends StatelessWidget {
 
     return Row(
       children: [
+        if (onDiscard != null)
+          BrutalistIconButton(
+            icon: Icons.close,
+            semanticLabel: l10n(context).commonClear,
+            onTap: onDiscard,
+            size: buttonSize,
+            iconSize: iconSize,
+          ),
         if (compact) const SizedBox(width: 40),
         Expanded(
           child: TextField(
@@ -46,6 +58,26 @@ class CommentInput extends StatelessWidget {
             ),
             style: TextStyle(color: context.textPrimary),
             maxLines: null,
+            maxLength: 1000,
+            onChanged: onChanged,
+            buildCounter:
+                (
+                  context, {
+                  required currentLength,
+                  required isFocused,
+                  maxLength,
+                }) => Semantics(
+                  liveRegion: true,
+                  label: '$currentLength / ${maxLength ?? 1000}',
+                  child: Text(
+                    '$currentLength / ${maxLength ?? 1000}',
+                    style: TextStyle(
+                      color: currentLength >= (maxLength ?? 1000)
+                          ? context.colors.error
+                          : context.textSecondary,
+                    ),
+                  ),
+                ),
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => onSend(),
           ),

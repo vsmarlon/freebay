@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:freebay/features/auth/data/entities/user_entity.dart';
 import 'package:freebay/features/product/domain/product_filters.dart';
+import 'package:freebay/features/social/data/entities/comment_entity.dart';
 
 part 'post_entity.freezed.dart';
 part 'post_entity.g.dart';
@@ -77,8 +78,26 @@ abstract class PostEntity with _$PostEntity {
     required DateTime createdAt,
     required UserEntity user,
     PostProductInfo? product,
+    @Default(false) bool isQuote,
+    QuoteSource? quoteSource,
   }) = _PostEntity;
 
   factory PostEntity.fromJson(Map<String, dynamic> json) =>
       _$PostEntityFromJson(json);
+}
+
+@Freezed(unionKey: 'kind')
+sealed class QuoteSource with _$QuoteSource {
+  const factory QuoteSource.post({
+    required String id,
+    required PostEntity post,
+  }) = QuotePostSource;
+  const factory QuoteSource.comment({
+    required String id,
+    required String postId,
+    required CommentEntity comment,
+  }) = QuoteCommentSource;
+
+  factory QuoteSource.fromJson(Map<String, dynamic> json) =>
+      _$QuoteSourceFromJson(json);
 }

@@ -15,6 +15,7 @@ _CommentEntity _$CommentEntityFromJson(Map<String, dynamic> json) =>
       parentId: json['parentId'] as String?,
       likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
       isLiked: json['isLiked'] as bool? ?? false,
+      isHidden: json['isHidden'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
       user: json['user'] == null
           ? null
@@ -35,6 +36,7 @@ Map<String, dynamic> _$CommentEntityToJson(_CommentEntity instance) =>
       'parentId': instance.parentId,
       'likesCount': instance.likesCount,
       'isLiked': instance.isLiked,
+      'isHidden': instance.isHidden,
       'createdAt': instance.createdAt.toIso8601String(),
       'user': instance.user?.toJson(),
       'replies': instance.replies.map((e) => e.toJson()).toList(),

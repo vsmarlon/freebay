@@ -110,7 +110,7 @@ void main() {
         'has_seen_onboarding': true,
         'welcome_setup_done_$userId': true,
       });
-      await StorageService.init();
+      await tester.runAsync(StorageService.init);
 
       final userFull = testUser(
         id: userId,
@@ -206,4 +206,59 @@ void main() {
       );
     },
   );
+
+  final incompleteUser = testUser(
+    id: 'routing-owner',
+    displayName: 'Ada Example',
+  );
+  final completeUser = testUser(
+    id: incompleteUser.id,
+    displayName: incompleteUser.displayName,
+    username: 'ada_example',
+  );
+  for (final scenario in [
+    (
+      name: 'setUser redirects a newly completed profile to feed',
+      initialUser: incompleteUser,
+      nextUser: completeUser,
+      destination: AppRoutes.feed,
+    ),
+    (
+      name: 'setUser redirects a newly incomplete profile to completion',
+      initialUser: completeUser,
+      nextUser: incompleteUser,
+      destination: AppRoutes.completeProfile,
+    ),
+    (
+      name: 'setUser redirects a cleared session to login',
+      initialUser: incompleteUser,
+      nextUser: null,
+      destination: AppRoutes.login,
+    ),
+  ]) {
+    testWidgets(scenario.name, (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'has_seen_onboarding': true,
+        'welcome_setup_done_${incompleteUser.id}': true,
+      });
+      await tester.runAsync(StorageService.init);
+      await _pumpRouter(tester, scenario.initialUser);
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      );
+      container
+          .read(authControllerProvider.notifier)
+          .setUser(scenario.nextUser);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      expect(container.read(authControllerProvider).value, scenario.nextUser);
+      expect(
+        appRouter.routeInformationProvider.value.uri.path,
+        scenario.destination,
+      );
+    });
+  }
 }

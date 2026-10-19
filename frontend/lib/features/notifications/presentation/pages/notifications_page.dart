@@ -5,6 +5,7 @@ import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/notifications/data/entities/notification_entity.dart';
 import 'package:freebay/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:freebay/core/router/app_routes.dart';
+import 'package:freebay/core/router/app_link.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class NotificationsPage extends ConsumerWidget {
@@ -171,34 +172,12 @@ class _NotificationTile extends ConsumerWidget {
       ref.read(notificationsProvider.notifier).markAsRead(notification.id);
     }
 
-    switch (notification.type) {
-      case NotificationType.order:
-        if (notification.orderId != null) {
-          context.push(AppRoutes.orderPath(notification.orderId!));
-        }
-        break;
-      case NotificationType.follow:
-        if (notification.senderId != null) {
-          context.push(AppRoutes.userPath(notification.senderId!));
-        }
-        break;
-      case NotificationType.message:
-        if (notification.conversationId != null) {
-          context.push(AppRoutes.chatPath(notification.conversationId!));
-        } else if (notification.orderId != null) {
-          context.push(AppRoutes.chatPath(notification.orderId!));
-        }
-        break;
-      case NotificationType.dispute:
-        if (notification.orderId != null) {
-          context.push(AppRoutes.orderPath(notification.orderId!));
-        }
-        break;
-      case NotificationType.payment:
-      case NotificationType.mention:
-      case NotificationType.unknown:
-        break;
-    }
+    final data = <String, dynamic>{
+      ...?notification.data,
+      'type': notification.type.wireValue,
+    };
+    final destination = AppLink.fromNotification(data);
+    if (destination != AppRoutes.notifications) context.push(destination);
   }
 
   IconData _getIcon(NotificationType type) {

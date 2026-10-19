@@ -14,6 +14,10 @@ class CommentItem extends StatelessWidget {
   final VoidCallback onReply;
   final VoidCallback onLike;
   final VoidCallback? onUserTap;
+  final bool canApprove;
+  final bool isApproving;
+  final VoidCallback? onApprove;
+  final VoidCallback? onQuote;
 
   const CommentItem({
     super.key,
@@ -24,6 +28,10 @@ class CommentItem extends StatelessWidget {
     required this.onReply,
     required this.onLike,
     this.onUserTap,
+    this.canApprove = false,
+    this.isApproving = false,
+    this.onApprove,
+    this.onQuote,
   });
 
   @override
@@ -108,6 +116,16 @@ class CommentItem extends StatelessWidget {
                             ),
                           ),
                           Spacing.hMd,
+                          if (canApprove)
+                            AppButton(
+                              label: isApproving
+                                  ? l10n(context).commonLoading
+                                  : l10n(context).socialCommentApprovePending,
+                              variant: AppButtonVariant.ghost,
+                              size: AppButtonSize.compact,
+                              isLoading: isApproving,
+                              onPressed: isApproving ? null : onApprove,
+                            ),
                           GestureDetector(
                             onTap: onReply,
                             child: Text(
@@ -122,6 +140,20 @@ class CommentItem extends StatelessWidget {
                             ),
                           ),
                           Spacing.hMd,
+                          if (onQuote != null)
+                            Semantics(
+                              button: true,
+                              label: l10n(context).socialQuoteLabel,
+                              child: GestureDetector(
+                                onTap: onQuote,
+                                child: Icon(
+                                  Icons.format_quote,
+                                  size: 16,
+                                  color: context.textSecondary,
+                                ),
+                              ),
+                            ),
+                          if (onQuote != null) Spacing.hMd,
                           GestureDetector(
                             onTap: onLike,
                             child: Row(

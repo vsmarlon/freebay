@@ -22,7 +22,7 @@ class FeedDrawer extends ConsumerWidget {
     final navigator = Navigator.of(drawerContext, rootNavigator: true);
     final router = GoRouter.of(drawerContext);
     final scaffold = Scaffold.maybeOf(drawerContext);
-    if (scaffold?.isDrawerOpen ?? false) scaffold!.closeDrawer();
+    scaffold?.closeDrawer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (navigator.mounted) action(navigator.context, router);
     });

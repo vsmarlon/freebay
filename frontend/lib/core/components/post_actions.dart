@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:freebay_design_system/freebay_design_system.dart';
+import 'package:freebay/shared/l10n/app_localizations_context.dart';
 
 class PostActions extends StatelessWidget {
   final bool isLiked;
@@ -15,6 +16,7 @@ class PostActions extends StatelessWidget {
   final VoidCallback onSave;
   final VoidCallback onRepost;
   final VoidCallback? onComment;
+  final VoidCallback? onQuote;
 
   const PostActions({
     super.key,
@@ -30,6 +32,7 @@ class PostActions extends StatelessWidget {
     required this.onSave,
     required this.onRepost,
     this.onComment,
+    this.onQuote,
   });
 
   @override
@@ -41,20 +44,25 @@ class PostActions extends StatelessWidget {
           top: BorderSide(color: AppColors.onSurface.withAlpha(26)),
         ),
       ),
-      child: Row(
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        runAlignment: WrapAlignment.spaceBetween,
+        spacing: Spacing.sm,
+        runSpacing: Spacing.xs,
         children: [
           Opacity(
             opacity: isLikeLoading ? 0.5 : 1.0,
             child: PostActionButton(
+              key: const ValueKey('post-action-like'),
               icon: isLiked ? Icons.favorite : Icons.favorite_border,
               iconColor: isLiked ? AppColors.primaryContainer : null,
               label: likesCount > 0 ? likesCount.toString() : null,
               onTap: onLike,
             ),
           ),
-          if (allowRepost) Spacing.hMd,
           if (allowRepost)
             PostActionButton(
+              key: const ValueKey('post-action-comment'),
               icon: Icons.chat_bubble_outline,
               label: commentsCount > 0 ? commentsCount.toString() : null,
               onTap: () {
@@ -62,15 +70,38 @@ class PostActions extends StatelessWidget {
                 onComment?.call();
               },
             ),
-          Spacing.hMd,
           PostActionButton(
+            key: const ValueKey('post-action-repost'),
             icon: isReposted ? Icons.repeat : Icons.repeat,
             iconColor: isReposted ? AppColors.primaryContainer : null,
             label: sharesCount > 0 ? sharesCount.toString() : null,
+            semanticLabel: l10n(context).feedRepost,
             onTap: onRepost,
+            onLongPress: onQuote == null
+                ? null
+                : () => showBrutalistSheet<void>(
+                    context: context,
+                    title: l10n(context).feedRepost,
+                    builder: (sheetContext) => ListTile(
+                      leading: const Icon(Icons.format_quote),
+                      title: Text(l10n(context).socialQuoteLabel),
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        onQuote!();
+                      },
+                    ),
+                  ),
           ),
-          const Spacer(),
+          if (onQuote != null) ...[
+            PostActionButton(
+              key: const ValueKey('post-action-quote'),
+              icon: Icons.format_quote,
+              semanticLabel: l10n(context).socialQuoteLabel,
+              onTap: onQuote!,
+            ),
+          ],
           PostActionButton(
+            key: const ValueKey('post-action-save'),
             icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
             onTap: onSave,
           ),
@@ -85,6 +116,8 @@ class PostActionButton extends StatelessWidget {
   final Color? iconColor;
   final String? label;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final String? semanticLabel;
 
   const PostActionButton({
     super.key,
@@ -92,33 +125,46 @@ class PostActionButton extends StatelessWidget {
     this.iconColor,
     this.label,
     required this.onTap,
+    this.onLongPress,
+    this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final defaultColor = context.textPrimary;
 
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: semanticLabel,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: iconColor ?? defaultColor, size: 24),
-            if (label != null) ...[
-              Spacing.hXs,
-              Text(
-                label!,
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: iconColor ?? defaultColor,
-                ),
-              ),
-            ],
-          ],
+      onLongPress: onLongPress,
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: iconColor ?? defaultColor, size: 24),
+                if (label != null) ...[
+                  Spacing.hXs,
+                  Text(
+                    label!,
+                    style: TextStyle(
+                      fontFamily: AppTypography.fontFamily,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: iconColor ?? defaultColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

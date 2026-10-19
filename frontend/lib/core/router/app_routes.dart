@@ -9,6 +9,7 @@ class AppRoutes {
   static const String welcome = '/welcome';
   static const String createPost = '/create-post';
   static const String postDetails = '/post/:id';
+  static const String commentDetails = '/post/:postId/comment/:commentId';
   static const String postSearch = '/posts/search';
   static const String peopleSearch = '/people/search';
   static const String createProduct = '/products/create';
@@ -62,6 +63,8 @@ class AppRoutes {
   // hand-writing a '/path/$id' literal at the call site. ──
 
   static String postPath(String id) => '/post/$id';
+  static String commentPath(String postId, String commentId) =>
+      '/post/$postId/comment/$commentId';
   static String productPath(String id) => '/products/$id';
   static String productEditPath(String id) => '/products/$id/edit';
   static String userPath(String id) => '/user/$id';

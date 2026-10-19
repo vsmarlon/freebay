@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:freebay/core/router/app_routes.dart';
 import 'package:freebay/core/router/navigation_tracker.dart';
 import 'package:freebay/core/ui.dart';
 import 'package:freebay/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
+import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/presentation/controllers/post_details_controller.dart';
 import 'package:freebay/features/social/presentation/providers/comment_likes_provider.dart';
 import 'package:freebay/features/social/presentation/providers/likes_provider.dart';
@@ -15,7 +15,6 @@ import 'package:freebay/features/social/presentation/providers/reposts_provider.
 import 'package:freebay/features/social/presentation/providers/saves_provider.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:freebay/features/social/presentation/widgets/comment_item.dart';
-import 'package:freebay/features/social/presentation/widgets/post_details_comment_tree.dart';
 import 'package:freebay/features/social/presentation/widgets/post_details_post_section.dart';
 import 'package:freebay/features/social/presentation/widgets/post_details_skeleton.dart';
 import 'package:freebay/shared/l10n/app_localizations_context.dart';
@@ -31,65 +30,95 @@ class PostDetailsPage extends ConsumerStatefulWidget {
 
 class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
   final _commentController = TextEditingController();
-  final _replyController = TextEditingController();
-  final _replyFocusNode = FocusNode();
   bool _isCommentSending = false;
-  bool _isReplySending = false;
-  String? _replyToId;
+  final Set<String> _approvingCommentIds = {};
 
   @override
   void dispose() {
     _commentController.dispose();
-    _replyController.dispose();
-    _replyFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _sendComment() async {
-    final isReply = _replyToId != null;
-    if (isReply ? _isReplySending : _isCommentSending) return;
-    final controller = isReply ? _replyController : _commentController;
-    setState(() => isReply ? _isReplySending = true : _isCommentSending = true);
-    final sent = await ref
+    if (_isCommentSending) return;
+    setState(() => _isCommentSending = true);
+    await ref
         .read(postDetailsControllerProvider(widget.postId))
-        .sendComment(context, controller, parentId: _replyToId);
-    if (sent && mounted) {
-      setState(() => _replyToId = null);
-      _replyController.clear();
-    }
+        .sendComment(context, _commentController);
     if (mounted) {
-      setState(
-        () => isReply ? _isReplySending = false : _isCommentSending = false,
-      );
+      setState(() => _isCommentSending = false);
     }
   }
 
-  void _setReplyTo(CommentEntity comment) {
-    setState(() => _replyToId = comment.id);
-    final handle = comment.user?.username;
-    _replyController.text = handle != null && handle.isNotEmpty
-        ? '@$handle '
-        : '';
-    _replyController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _replyController.text.length),
+  List<CommentEntity> _flattenComments(List<CommentEntity> roots) {
+    final result = <CommentEntity>[];
+    void append(List<CommentEntity> comments) {
+      for (final comment in comments) {
+        result.add(comment);
+        append(comment.replies);
+      }
+    }
+
+    append(roots);
+    return result;
+  }
+
+  Set<String> _hiddenCommentsWithHiddenParent(List<CommentEntity> comments) {
+    final result = <String>{};
+    void visit(List<CommentEntity> nodes, bool parentIsHidden) {
+      for (final comment in nodes) {
+        if (parentIsHidden) result.add(comment.id);
+        visit(comment.replies, comment.isHidden);
+      }
+    }
+
+    visit(comments, false);
+    return result;
+  }
+
+  List<CommentEntity> _visibleComments(
+    List<CommentEntity> comments,
+    String? viewerId,
+    String postOwnerId,
+  ) => comments
+      .where(
+        (comment) =>
+            !comment.isHidden ||
+            viewerId == postOwnerId ||
+            viewerId == comment.userId,
+      )
+      .map(
+        (comment) => comment.copyWith(
+          replies: _visibleComments(comment.replies, viewerId, postOwnerId),
+        ),
+      )
+      .toList();
+
+  Future<void> _approveComment(CommentEntity comment, String ownerId) async {
+    if (_approvingCommentIds.contains(comment.id)) return;
+    final viewerId = ref.read(authControllerProvider).value?.id;
+    if (viewerId != ownerId || !comment.isHidden) return;
+    setState(() => _approvingCommentIds.add(comment.id));
+    final result = await ref
+        .read(socialRepositoryProvider)
+        .approveComment(comment.id);
+    if (!mounted) return;
+    final currentViewerId = ref.read(authControllerProvider).value?.id;
+    if (widget.postId != comment.postId || currentViewerId != viewerId) {
+      setState(() => _approvingCommentIds.remove(comment.id));
+      return;
+    }
+    await result.fold(
+      (failure) async {
+        AppSnackbar.error(context, failure.message);
+      },
+      (_) async {
+        await ref.read(postDetailsProvider(widget.postId).notifier).refresh();
+      },
     );
-    Future.microtask(_replyFocusNode.requestFocus);
-  }
-
-  TreeNode<CommentEntity> _buildTree(List<CommentEntity> comments) {
-    final root = TreeNode<CommentEntity>.root();
-    for (final comment in comments) {
-      root.add(_createNode(comment));
+    if (mounted) {
+      setState(() => _approvingCommentIds.remove(comment.id));
     }
-    return root;
-  }
-
-  TreeNode<CommentEntity> _createNode(CommentEntity comment) {
-    final node = TreeNode<CommentEntity>(key: comment.id, data: comment);
-    for (final reply in comment.replies) {
-      node.add(_createNode(reply));
-    }
-    return node;
   }
 
   @override
@@ -143,7 +172,14 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
         ),
       ),
     );
-    final tree = _buildTree(state.comments);
+    final viewerId = ref.watch(authControllerProvider).value?.id;
+    final visibleComments = _visibleComments(
+      state.comments,
+      viewerId,
+      post.user.id,
+    );
+    final flattenedComments = _flattenComments(visibleComments);
+    final hiddenParents = _hiddenCommentsWithHiddenParent(visibleComments);
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(postDetailsProvider(widget.postId).notifier).refresh(),
@@ -164,6 +200,12 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
                   _toggleRepost(post.id, post.hasReposted, post.sharesCount),
               onComment: () => FocusScope.of(context).unfocus(),
               onShare: () => _sharePost(context, post.id),
+              onQuote: post.isQuote || post.audience != PostAudience.everyone
+                  ? null
+                  : () => context.push(
+                      AppRoutes.createPost,
+                      extra: QuoteSource.post(id: post.id, post: post),
+                    ),
             ),
           ),
           SliverToBoxAdapter(
@@ -189,7 +231,7 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               ),
             ),
           ),
-          if (state.comments.isEmpty)
+          if (visibleComments.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
@@ -199,11 +241,15 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               ),
             )
           else
-            SliverToBoxAdapter(
-              child: PostDetailsCommentTree(
-                tree: tree,
-                height: MediaQuery.sizeOf(context).height * 0.6,
-                itemBuilder: _buildCommentNode,
+            SliverList.builder(
+              itemCount: flattenedComments.length,
+              itemBuilder: (context, index) => _buildCommentNode(
+                context,
+                flattenedComments[index],
+                post.user.id,
+                viewerId,
+                hiddenParents,
+                post.audience == PostAudience.everyone,
               ),
             ),
         ],
@@ -261,17 +307,40 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
     );
   }
 
-  Widget _buildCommentNode(BuildContext context, CommentEntity comment) {
-    final isReplying = _replyToId == comment.id;
+  Widget _buildCommentNode(
+    BuildContext context,
+    CommentEntity comment,
+    String postOwnerId,
+    String? viewerId,
+    Set<String> hiddenParents,
+    bool isPublicPost,
+  ) {
     final likes = ref.watch(commentLikesProvider);
     return Column(
       children: [
         CommentItem(
           comment: comment,
-          isReplying: isReplying,
+          isReplying: false,
           isLiked: likes.getLikedOverride(comment.id) ?? comment.isLiked,
           likesCount: likes.getCountOverride(comment.id) ?? comment.likesCount,
-          onReply: () => _setReplyTo(comment),
+          canApprove:
+              viewerId == postOwnerId &&
+              comment.isHidden &&
+              !hiddenParents.contains(comment.id),
+          isApproving: _approvingCommentIds.contains(comment.id),
+          onApprove: () => _approveComment(comment, postOwnerId),
+          onQuote: comment.isHidden || comment.user == null || !isPublicPost
+              ? null
+              : () => context.push(
+                  AppRoutes.createPost,
+                  extra: QuoteSource.comment(
+                    id: comment.id,
+                    postId: comment.postId,
+                    comment: comment,
+                  ),
+                ),
+          onReply: () =>
+              context.push(AppRoutes.commentPath(widget.postId, comment.id)),
           onLike: () async {
             if (ref.read(authControllerProvider).value == null) {
               if (context.mounted) {
@@ -291,18 +360,6 @@ class _PostDetailsPageState extends ConsumerState<PostDetailsPage> {
               ? () => context.push(AppRoutes.userPath(comment.user!.id))
               : null,
         ),
-        if (isReplying)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: CommentInput(
-              controller: _replyController,
-              focusNode: _replyFocusNode,
-              isSending: _isReplySending,
-              onSend: _sendComment,
-              hint: l10n(context).feedReplyingHint,
-              compact: true,
-            ),
-          ),
       ],
     );
   }

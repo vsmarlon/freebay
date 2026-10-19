@@ -58,7 +58,7 @@ final class PostDetailsProvider
   }
 }
 
-String _$postDetailsHash() => r'0d84fd5d16f31127de3bddf8b2d2c75f8ac79437';
+String _$postDetailsHash() => r'0e565db7107d3609ff773ba0b669dd672ca79570';
 
 final class PostDetailsFamily extends $Family
     with

@@ -54,6 +54,10 @@ _PostEntity _$PostEntityFromJson(Map<String, dynamic> json) => _PostEntity(
   product: json['product'] == null
       ? null
       : PostProductInfo.fromJson(json['product'] as Map<String, dynamic>),
+  isQuote: json['isQuote'] as bool? ?? false,
+  quoteSource: json['quoteSource'] == null
+      ? null
+      : QuoteSource.fromJson(json['quoteSource'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
@@ -76,6 +80,8 @@ Map<String, dynamic> _$PostEntityToJson(_PostEntity instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'user': instance.user.toJson(),
       'product': instance.product?.toJson(),
+      'isQuote': instance.isQuote,
+      'quoteSource': instance.quoteSource?.toJson(),
     };
 
 const _$PostTypeEnumMap = {
@@ -87,3 +93,33 @@ const _$PostAudienceEnumMap = {
   PostAudience.everyone: 'EVERYONE',
   PostAudience.closeFriends: 'CLOSE_FRIENDS',
 };
+
+QuotePostSource _$QuotePostSourceFromJson(Map<String, dynamic> json) =>
+    QuotePostSource(
+      id: json['id'] as String,
+      post: PostEntity.fromJson(json['post'] as Map<String, dynamic>),
+      $type: json['kind'] as String?,
+    );
+
+Map<String, dynamic> _$QuotePostSourceToJson(QuotePostSource instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'post': instance.post.toJson(),
+      'kind': instance.$type,
+    };
+
+QuoteCommentSource _$QuoteCommentSourceFromJson(Map<String, dynamic> json) =>
+    QuoteCommentSource(
+      id: json['id'] as String,
+      postId: json['postId'] as String,
+      comment: CommentEntity.fromJson(json['comment'] as Map<String, dynamic>),
+      $type: json['kind'] as String?,
+    );
+
+Map<String, dynamic> _$QuoteCommentSourceToJson(QuoteCommentSource instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'postId': instance.postId,
+      'comment': instance.comment.toJson(),
+      'kind': instance.$type,
+    };

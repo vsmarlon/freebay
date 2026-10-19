@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:freebay/features/auth/auth.dart';
 import 'package:freebay/features/social/data/entities/post_entity.dart';
 import 'package:freebay/features/social/data/entities/comment_entity.dart';
 import 'package:freebay/features/social/domain/usecases/get_post_details_usecase.dart';
 import 'package:freebay/features/social/presentation/providers/social_repository_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freebay/features/social/social.dart';
+import 'package:freebay/shared/services/auth_session_coordinator.dart';
+import 'package:freebay/shared/services/notification_socket_service.dart';
 
 part 'post_details_provider.g.dart';
 
@@ -47,6 +52,7 @@ class PostDetailsState {
 
 @riverpod
 class PostDetails extends _$PostDetails {
+  int _loadGeneration = 0;
   GetPostDetailsUseCase get _getPostDetails =>
       ref.read(getPostDetailsUseCaseProvider);
   GetPostCommentsUseCase get _getPostComments =>
@@ -54,17 +60,51 @@ class PostDetails extends _$PostDetails {
 
   @override
   PostDetailsState build(String postId) {
-    Future.microtask(_loadData);
+    ref.watch(authControllerProvider.select((session) => session.value?.id));
+    final generation = ++_loadGeneration;
+    final subscription = ref
+        .read(notificationSocketServiceProvider)
+        .events
+        .listen((event) {
+          if (state.post?.audience == PostAudience.everyone) return;
+          if (event is NotificationSocketSuspended) {
+            _loadGeneration++;
+            state = PostDetailsState(isLoading: true);
+          } else {
+            unawaited(_loadData());
+          }
+        });
+    ref.onDispose(subscription.cancel);
+    Future.microtask(() {
+      if (ref.mounted && generation == _loadGeneration) return _loadData();
+    });
     return PostDetailsState(isLoading: true);
   }
 
   Future<void> _loadData() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    final generation = ++_loadGeneration;
+    final session = AuthSessionCoordinator.currentAuthenticationAttempt;
+    state = PostDetailsState(isLoading: true);
 
     final postResult = await _getPostDetails(postId);
-    if (!ref.mounted) return;
+    if (!ref.mounted ||
+        generation != _loadGeneration ||
+        !AuthSessionCoordinator.isCurrentAttempt(session)) {
+      return;
+    }
+    if (postResult.isLeft) {
+      postResult.fold(
+        (failure) => state = PostDetailsState(error: failure.message),
+        (_) {},
+      );
+      return;
+    }
     final commentsResult = await _getPostComments(postId);
-    if (!ref.mounted) return;
+    if (!ref.mounted ||
+        generation != _loadGeneration ||
+        !AuthSessionCoordinator.isCurrentAttempt(session)) {
+      return;
+    }
 
     PostEntity? post;
     String? errorMessage;
@@ -79,8 +119,7 @@ class PostDetails extends _$PostDetails {
       errorMessage ??= failure.message;
     }, (data) => comments = data);
 
-    state = state.copyWith(
-      isLoading: false,
+    state = PostDetailsState(
       post: post,
       comments: comments,
       error: errorMessage,
@@ -106,8 +145,15 @@ class PostDetails extends _$PostDetails {
   /// Silently re-fetches only comments without showing a loading state.
   /// Used after posting a comment so the list updates without flashing.
   Future<void> refreshComments() async {
+    final generation = _loadGeneration;
+    final session = AuthSessionCoordinator.currentAuthenticationAttempt;
     final commentsResult = await _getPostComments(postId);
-    if (!ref.mounted) return;
+    if (!ref.mounted ||
+        generation != _loadGeneration ||
+        !AuthSessionCoordinator.isCurrentAttempt(session) ||
+        state.post == null) {
+      return;
+    }
     commentsResult.fold(
       (_) {}, // silently ignore errors — existing comments stay visible
       (data) => state = state.copyWith(comments: data),
