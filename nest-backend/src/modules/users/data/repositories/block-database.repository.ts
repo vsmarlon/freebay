@@ -4,23 +4,28 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse, left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
-import { UserBrief } from '../../types/user.types';
+import { UserBrief } from '@/modules/users/types/user.types';
 import { BlockRepository } from '../../domain/repositories/block.repository';
+import { NotificationsGateway } from '@/modules/notifications/notifications.gateway';
 
 @Injectable()
 export class BlockDatabaseRepository extends BlockRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly prisma: PrismaService, private readonly notificationsGateway: NotificationsGateway) {
     super();
   }
 
   async block(blockerId: string, blockedId: string): RepositoryResponse<void> {
     try {
-      await this.prisma.$transaction(async (tx) => {
+      const invalidatedUserIds = await this.prisma.$transaction(async (tx) => {
         await tx.block.create({ data: { blockerId, blockedId } });
         await tx.follow.deleteMany({ where: { OR: [
           { followerId: blockerId, followingId: blockedId },
           { followerId: blockedId, followingId: blockerId },
         ] } });
+        const memberships = await tx.closeFriend.findMany({ where: { OR: [
+          { ownerId: blockerId, memberId: blockedId },
+          { ownerId: blockedId, memberId: blockerId },
+        ] }, select: { memberId: true } });
         await tx.closeFriend.deleteMany({ where: { OR: [
           { ownerId: blockerId, memberId: blockedId },
           { ownerId: blockedId, memberId: blockerId },
@@ -29,7 +34,9 @@ export class BlockDatabaseRepository extends BlockRepository {
           { ownerId: blockerId, restrictedId: blockedId },
           { ownerId: blockedId, restrictedId: blockerId },
         ] } });
+        return memberships.map(({ memberId }) => memberId);
       });
+      this.notificationsGateway.sendPrivateContentInvalidated(invalidatedUserIds);
       return right(undefined);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return left(new BadRequestError('Already blocked'));

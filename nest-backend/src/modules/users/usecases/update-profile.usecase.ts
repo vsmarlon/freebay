@@ -36,7 +36,7 @@ export class UpdateProfileUseCase {
 
     const updateData: Prisma.UserUpdateInput = {
       ...profile,
-      ...(cpf !== undefined ? { cpf: cpf.replace(/\D/g, '') } : {}),
+      ...(cpf !== undefined ? { cpf } : {}),
       ...(input.avatarUrl !== undefined ? { avatarBlurHash: null } : {}),
     };
 

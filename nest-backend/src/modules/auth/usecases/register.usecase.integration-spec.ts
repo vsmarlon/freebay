@@ -6,6 +6,8 @@ import { UserFactory } from '../../../../test/factories';
 import { RegisterDTO } from '../dtos/auth.dto';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { SessionTokenService } from '../services/session-token.service';
+import { CpfProtectionService } from '@/shared/utils/cpf-protection.service';
+import { ConfigService } from '@nestjs/config';
 
 describe('RegisterUseCase Integration', () => {
   let sut: RegisterUseCase;
@@ -17,6 +19,8 @@ describe('RegisterUseCase Integration', () => {
         RegisterUseCase,
         UserDatabaseRepository,
         { provide: PrismaService, useValue: prisma },
+        CpfProtectionService,
+        { provide: ConfigService, useValue: { get: (key: string) => process.env[key] } },
         { provide: SessionTokenService, useValue: { generate: () => ({ token: 'access', refreshToken: 'refresh' }) } },
       ],
     }).compile();

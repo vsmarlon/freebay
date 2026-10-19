@@ -24,6 +24,27 @@ describe('AppleProviderService', () => {
     expect(ciphertext.split('.')).toHaveLength(3);
   });
 
+  it('revokes a web-issued Apple credential with its encrypted Services ID', async () => {
+    const pair = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+    const config = new ConfigService({
+      APPLE_TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+      APPLE_TEAM_ID: 'team-id', APPLE_KEY_ID: 'key-id', APPLE_PRIVATE_KEY: pair.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+      APPLE_CLIENT_ID: 'native-service-id',
+    });
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 200 }));
+    try {
+      const service = new AppleProviderService(config);
+      const credential = service.encryptRefreshToken('refresh-secret', 'web-service-id');
+      await service.revokeRefreshToken(credential);
+
+      const body = new URLSearchParams(String(fetchSpy.mock.calls[0]?.[1]?.body));
+      expect(body.get('client_id')).toBe('web-service-id');
+      expect(body.get('token')).toBe('refresh-secret');
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
   describe('identity token verification', () => {
     let fetchSpy: jest.SpyInstance;
     const config = new ConfigService({ APPLE_CLIENT_ID: 'com.example.app' });
@@ -45,6 +66,16 @@ describe('AppleProviderService', () => {
       const identity = await new AppleProviderService(config).verifyIdentityToken(identityJwt(claims), 'raw-nonce');
       expect(identity).toEqual({ sub: 'apple-user', email: 'person@example.com', emailVerified: true, nonce: claims.nonce });
       expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('accepts the explicitly configured web Services ID without changing the native audience default', async () => {
+      const service = new AppleProviderService(new ConfigService({ APPLE_CLIENT_ID: 'com.example.app', APPLE_WEB_CLIENT_ID: 'com.example.web' }));
+      const webClaims = { ...claims, aud: 'com.example.web' };
+
+      await expect(service.verifyIdentityToken(identityJwt(webClaims), 'raw-nonce', 'com.example.web'))
+        .resolves.toEqual(expect.objectContaining({ sub: 'apple-user' }));
+      await expect(service.verifyIdentityToken(identityJwt(webClaims), 'raw-nonce'))
+        .rejects.toThrow('Invalid Apple identity token');
     });
 
     it.each<[string, Record<string, unknown>]>([

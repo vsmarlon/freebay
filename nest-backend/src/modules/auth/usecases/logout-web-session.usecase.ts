@@ -9,7 +9,11 @@ export class LogoutWebSessionUseCase {
   constructor(private readonly tokens: SessionTokenService) {}
 
   async execute(payloads: Array<JwtPayload | undefined>): Promise<Either<AppError, { message: string }>> {
-    await Promise.all(payloads.map((payload) => this.tokens.revoke(payload?.jti, payload?.exp)));
+    const families = [...new Set(payloads.flatMap((payload) => payload?.sid ? [payload.sid] : []))];
+    await Promise.all([
+      ...payloads.map((payload) => this.tokens.revoke(payload?.jti, payload?.exp)),
+      ...families.map((sid) => this.tokens.revokeFamily(sid)),
+    ]);
     return right({ message: 'Logout realizado' });
   }
 }

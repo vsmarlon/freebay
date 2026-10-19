@@ -1,77 +1,70 @@
 import { Test } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { UserRole } from '@prisma/client';
 import { right } from '@/shared/core/either';
 import { JwtTokenType } from '@/shared/core/types';
-import { RedisService } from '@/shared/infra/redis/redis.service';
+import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
+import { BiometricCredentialService } from '@/shared/auth/biometric-credential.service';
 import { UserDatabaseRepository } from '@/modules/users';
-import { BiometricLoginUseCase } from './biometric-login.usecase';
-import { UserRole } from '@prisma/client';
 import { SessionTokenService } from '../services/session-token.service';
+import { BiometricLoginUseCase } from './biometric-login.usecase';
 
 describe('BiometricLoginUseCase', () => {
   const payload = {
-    userId: 'u1',
-    role: UserRole.USER,
-    type: JwtTokenType.BIOMETRIC,
-    jti: 'biometric-jti',
+    userId: 'u1', role: UserRole.USER, type: JwtTokenType.BIOMETRIC, sid: 'family-1', jti: 'bio-1',
     exp: Math.floor(Date.now() / 1000) + 60,
-    iat: Math.floor(Date.now() / 1000),
+    sessionStartedAtMs: 123456789,
   };
 
-  async function createSubject(redis: { get: jest.Mock }) {
-    let claimed = false;
-    const users = {
-      findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: UserRole.USER, suspendedAt: null })),
+  async function createSubject(proofValid = true, claimed = true) {
+    const users = { findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: UserRole.USER, suspendedAt: null })) };
+    const validator = { verifyAndValidate: jest.fn().mockResolvedValue(payload) };
+    const credentials = { verifyAndConsume: jest.fn().mockResolvedValue(proofValid) };
+    const tokens = {
+      claimBiometric: jest.fn().mockResolvedValue(claimed),
+      generate: jest.fn().mockReturnValue({ token: 'access', refreshToken: 'refresh' }),
+      generateBiometric: jest.fn().mockReturnValue('rotated-biometric'),
     };
-    const jwt = { verifyAsync: jest.fn().mockResolvedValue(payload) };
     const module = await Test.createTestingModule({
       providers: [
         BiometricLoginUseCase,
         { provide: UserDatabaseRepository, useValue: users },
-        { provide: JwtService, useValue: jwt },
-        { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('secret') } },
-        { provide: RedisService, useValue: redis },
-        { provide: SessionTokenService, useValue: { claimBiometric: jest.fn().mockImplementation(async () => { if (claimed) return false; claimed = true; return true; }), generate: jest.fn().mockReturnValue({ token: 'a', refreshToken: 'r' }), generateBiometric: jest.fn().mockReturnValue('b') } },
+        { provide: JwtTokenValidatorService, useValue: validator },
+        { provide: BiometricCredentialService, useValue: credentials },
+        { provide: SessionTokenService, useValue: tokens },
       ],
     }).compile();
-    return module.get(BiometricLoginUseCase);
+    return { sut: module.get(BiometricLoginUseCase), credentials, tokens, validator };
   }
 
-  it('allows only one concurrent biometric rotation for a token', async () => {
-    const sut = await createSubject({ get: jest.fn().mockResolvedValue(null) });
+  const body = { biometricToken: 'bound-token', challengeId: 'challenge-id', signature: 'c2ln' };
 
-    const results = await Promise.all([sut.execute('token'), sut.execute('token')]);
+  it('requires a one-time key signature and keeps the original family without inventing fresh auth time', async () => {
+    const { sut, credentials, tokens, validator } = await createSubject();
 
-    expect(results.filter((result) => result.isRight())).toHaveLength(1);
+    const result = await sut.execute(body);
+
+    expect(result.isRight()).toBe(true);
+    expect(validator.verifyAndValidate).toHaveBeenCalledWith('bound-token', [JwtTokenType.BIOMETRIC]);
+    expect(credentials.verifyAndConsume).toHaveBeenCalledWith(payload, 'challenge-id', 'c2ln', { purpose: 'login' });
+    expect(tokens.generate).toHaveBeenCalledWith('u1', UserRole.USER, null, 'family-1', 123456789);
+    expect(tokens.generateBiometric).toHaveBeenCalledWith('u1', UserRole.USER, 'family-1', 123456789);
   });
 
-  it('rejects an already revoked or claimed token', async () => {
-    const sut = await createSubject({ get: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce('1') });
+  it('rejects legacy bearer tokens without a registered-key signature', async () => {
+    const { sut, tokens } = await createSubject(false);
 
-    const result = await sut.execute('token');
+    const result = await sut.execute(body);
 
     expect(result.isLeft()).toBe(true);
+    expect(tokens.claimBiometric).not.toHaveBeenCalled();
   });
 
-  it('checks suspension before claiming the token', async () => {
-    const users = {
-      findById: jest.fn().mockResolvedValue(right({ id: 'u1', role: UserRole.USER, suspendedAt: new Date(), suspensionReason: 'fraud' })),
-    };
-    const jwt = { verifyAsync: jest.fn().mockResolvedValue(payload) };
-    const module = await Test.createTestingModule({
-      providers: [
-        BiometricLoginUseCase,
-        { provide: UserDatabaseRepository, useValue: users },
-        { provide: JwtService, useValue: jwt },
-        { provide: ConfigService, useValue: { getOrThrow: jest.fn().mockReturnValue('secret') } },
-        { provide: RedisService, useValue: { get: jest.fn().mockResolvedValue(null) } },
-        { provide: SessionTokenService, useValue: { claimBiometric: jest.fn().mockResolvedValue(true), generate: jest.fn().mockReturnValue({ token: 'a', refreshToken: 'r' }), generateBiometric: jest.fn().mockReturnValue('b') } },
-      ],
-    }).compile();
+  it('rejects reuse after revoking the entire session family', async () => {
+    const { sut, tokens } = await createSubject(true, false);
 
-    const result = await module.get(BiometricLoginUseCase).execute('token');
+    const result = await sut.execute(body);
 
     expect(result.isLeft()).toBe(true);
+    expect(tokens.claimBiometric).toHaveBeenCalledWith('bio-1', payload.exp, 'family-1');
   });
 });

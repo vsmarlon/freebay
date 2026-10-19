@@ -16,6 +16,7 @@ import { NotificationService } from '@/modules/notifications/services/notificati
 import { BadRequestError, NotFoundError } from '@/shared/core/errors';
 import { left, right } from '@/shared/core/either';
 import { expectLeft, expectRight, mockUser, rightCounts } from './user-test-fixtures';
+import { User, UserRole } from '@prisma/client';
 
 const mockUserRepository = {
   findById: jest.fn(),
@@ -88,6 +89,52 @@ describe('Users UseCases', () => {
   });
 
   describe('GetProfileUseCase', () => {
+    it('returns saved owner preferences but excludes them and secrets from public profiles', async () => {
+      const sourceUser: User = {
+        id: 'owner-123', displayName: 'Owner', username: 'owner', email: 'owner@example.com',
+        emailVerified: false, passwordHash: 'secret-hash', googleId: null, appleId: null,
+        appleRefreshTokenEncrypted: null, cpfHash: null, cpf: null, phone: null,
+        phoneVerified: false, city: null, state: null, avatarUrl: null, avatarBlurHash: null,
+        bannerUrl: null, bio: null, isVerified: false, isGuest: false, role: UserRole.USER,
+        reputationScore: 0, totalReviews: 0, createdAt: new Date(), updatedAt: new Date(),
+        deletedAt: null, lastSeenAt: null, deletionRequestedAt: null, sessionsInvalidBefore: null,
+        suspendedAt: null, suspensionReason: null, personalPurgePendingMedia: [],
+        personalPurgeCompletedAt: null, fcmToken: 'private-token',
+        notificationPrefs: { orders: false, follows: true, messages: false, disputes: true, malicious: true },
+        webConsentGrantedAt: null, webConsentIp: null, webConsentUserAgent: null,
+      };
+      mockUserRepository.findById.mockResolvedValue(right(sourceUser));
+
+      const owner = expectRight(await getProfileUseCase.execute({ userId: sourceUser.id, includePrivate: true }));
+      expect(owner.notificationPrefs).toEqual({ orders: false, follows: true, messages: false, disputes: true });
+
+      const publicProfile = expectRight(await getProfileUseCase.execute({ userId: sourceUser.id }));
+      expect(publicProfile.notificationPrefs).toBeUndefined();
+      expect(publicProfile).not.toHaveProperty('email');
+      expect(publicProfile).not.toHaveProperty('fcmToken');
+      expect(publicProfile).not.toHaveProperty('passwordHash');
+    });
+
+    it('defaults missing owner preferences to enabled and omits unknown keys', async () => {
+      const sourceUser: User = {
+        id: 'owner-123', displayName: 'Owner', username: 'owner', email: 'owner@example.com',
+        emailVerified: false, passwordHash: null, googleId: null, appleId: null,
+        appleRefreshTokenEncrypted: null, cpfHash: null, cpf: null, phone: null,
+        phoneVerified: false, city: null, state: null, avatarUrl: null, avatarBlurHash: null,
+        bannerUrl: null, bio: null, isVerified: false, isGuest: false, role: UserRole.USER,
+        reputationScore: 0, totalReviews: 0, createdAt: new Date(), updatedAt: new Date(),
+        deletedAt: null, lastSeenAt: null, deletionRequestedAt: null, sessionsInvalidBefore: null,
+        suspendedAt: null, suspensionReason: null, personalPurgePendingMedia: [],
+        personalPurgeCompletedAt: null, fcmToken: null,
+        notificationPrefs: { legacy: false }, webConsentGrantedAt: null, webConsentIp: null,
+        webConsentUserAgent: null,
+      };
+      mockUserRepository.findById.mockResolvedValue(right(sourceUser));
+
+      const owner = expectRight(await getProfileUseCase.execute({ userId: sourceUser.id, includePrivate: true }));
+      expect(owner.notificationPrefs).toEqual({ orders: true, follows: true, messages: true, disputes: true });
+    });
+
     it('returns NotFoundError when user not found', async () => {
       mockUserRepository.findById.mockResolvedValue(right(null));
 
@@ -104,6 +151,20 @@ describe('Users UseCases', () => {
       const result = await updateProfileUseCase.execute({ userId: 'nonexistent', displayName: 'New Name' });
 
       expect(expectLeft(result)).toBeInstanceOf(NotFoundError);
+    });
+
+    it('preserves a validated alphanumeric CNPJ until the persistence repository normalizes it', async () => {
+      mockUserRepository.update.mockResolvedValue(right(mockUser));
+
+      await updateProfileUseCase.execute({
+        userId: mockUser.id,
+        cpf: '12.ABC.345/01DE-35',
+        profileVerificationCode: '123456',
+      });
+
+      expect(mockUserRepository.update).toHaveBeenCalledWith(mockUser.id, expect.objectContaining({
+        cpf: '12.ABC.345/01DE-35',
+      }));
     });
   });
 

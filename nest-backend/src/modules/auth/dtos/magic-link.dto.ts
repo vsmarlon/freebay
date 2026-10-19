@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Equals, IsBoolean, IsEmail, IsIn, IsOptional, IsString, Length } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Equals, IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, Length } from 'class-validator';
 
 export class RequestMagicLinkDTO {
   @ApiProperty({ example: 'user@example.com' })
@@ -26,4 +26,24 @@ export class ConsumeMagicLinkDTO {
   @IsString()
   @Length(32, 512)
   token: string;
+}
+
+export class RequestStepUpMagicLinkDTO {
+  @ApiProperty({ enum: ['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'] })
+  @IsIn(['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'])
+  purpose: 'biometric_enroll' | 'delete_account' | 'export_data' | 'connect_dashboard' | 'cancel_order';
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  resourceId?: string;
+
+  @ApiProperty({ enum: ['pt-BR', 'en'] })
+  @IsIn(['pt-BR', 'en'])
+  locale: 'pt-BR' | 'en';
+
+  @ApiProperty({ example: true, description: 'Consent to this sensitive-action confirmation email, not marketing.' })
+  @IsBoolean()
+  @Equals(true)
+  consent: true;
 }

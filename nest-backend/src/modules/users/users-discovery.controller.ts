@@ -86,14 +86,7 @@ export class UsersDiscoveryController {
       viewerId: userId,
     });
     if (searchResult.isLeft()) return searchResult;
-    const users = searchResult.value;
-
-    return {
-      users,
-      hasMore: users.length === parsedLimit,
-      nextOffset:
-        users.length === parsedLimit ? parsedOffset + parsedLimit : null,
-    };
+    return searchResult.value;
   }
 
   @GetAuth("suggestions", {

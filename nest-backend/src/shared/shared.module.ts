@@ -10,6 +10,12 @@ import { JwtTokenValidatorService } from './auth/jwt-token-validator.service';
 import { SessionRevokerService } from './auth/session-revoker.service';
 import { RolesGuard } from './guards/roles.guard';
 import { AppleProviderService } from './auth/apple-provider.service';
+import { RedisThrottlerStorage } from './infra/redis/redis-throttler.storage';
+import { BiometricCredentialService } from './auth/biometric-credential.service';
+import { StepUpGuard } from './auth/step-up.guard';
+import { StepUpService } from './auth/step-up.service';
+import { CpfProtectionService } from './utils/cpf-protection.service';
+import { AuthSessionStateDatabaseRepository } from './infra/prisma/auth-session-state-database.repository';
 
 @Global()
 @Module({
@@ -34,7 +40,13 @@ import { AppleProviderService } from './auth/apple-provider.service';
   ],
   providers: [
     PrismaService,
+    AuthSessionStateDatabaseRepository,
     RedisService,
+    RedisThrottlerStorage,
+    BiometricCredentialService,
+    StepUpGuard,
+    StepUpService,
+    CpfProtectionService,
     JwtTokenValidatorService,
     SessionRevokerService,
     AppleProviderService,
@@ -42,7 +54,13 @@ import { AppleProviderService } from './auth/apple-provider.service';
   ],
   exports: [
     PrismaService,
+    AuthSessionStateDatabaseRepository,
     RedisService,
+    RedisThrottlerStorage,
+    BiometricCredentialService,
+    StepUpGuard,
+    StepUpService,
+    CpfProtectionService,
     JwtModule,
     JwtTokenValidatorService,
     SessionRevokerService,

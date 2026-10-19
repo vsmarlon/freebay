@@ -16,6 +16,7 @@ export class LoginUseCase {
   ) {}
 
   async execute(input: LoginDTO): Promise<Either<AppError, AuthSessionResponse>> {
+    const sessionStartedAtMs = Date.now();
     const userResult = await this.userRepository.findByEmail(input.email);
     if (userResult.isLeft()) return left(userResult.value);
     const user = userResult.value;
@@ -33,6 +34,6 @@ export class LoginUseCase {
       return left(new InvalidCredentialsError());
     }
 
-    return issueSession(user, this.sessionTokens);
+    return issueSession(user, this.sessionTokens, sessionStartedAtMs);
   }
 }

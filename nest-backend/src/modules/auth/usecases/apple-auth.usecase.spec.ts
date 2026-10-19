@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { UserRole } from '@prisma/client';
 import { right } from '@/shared/core/either';
 import { InvalidAppleTokenError } from '@/shared/core/errors';
@@ -46,6 +47,7 @@ describe('AppleAuthUseCase', () => {
       { provide: UserDatabaseRepository, useValue: users },
       { provide: AppleProviderService, useValue: apple },
       { provide: SessionTokenService, useValue: tokens },
+      { provide: ConfigService, useValue: { get: jest.fn((key: string) => key === 'APPLE_CLIENT_ID' ? 'native-service-id' : key === 'APPLE_WEB_CLIENT_ID' ? 'web-service-id' : undefined) } },
     ] }).compile();
     sut = module.get(AppleAuthUseCase);
   });
@@ -66,6 +68,14 @@ describe('AppleAuthUseCase', () => {
       emailVerified: true, passwordHash: null, wallet: { create: {} },
     }));
     expect(tokens.generate).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the explicit Apple web Services ID only for browser authentication', async () => {
+    const result = await sut.execute(input, true);
+
+    expect(result.isRight()).toBe(true);
+    expect(apple.verifyIdentityToken).toHaveBeenCalledWith('identity', 'nonce', 'web-service-id');
+    expect(apple.exchangeAuthorizationCode).toHaveBeenCalledWith('one-time-code', 'nonce', 'web-service-id');
   });
 
   it('rejects a returned identity-token subject mismatch without creating an account or session', async () => {

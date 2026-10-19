@@ -9,6 +9,8 @@ import { BlockDatabaseRepository } from './data/repositories/block-database.repo
 import { UsersAccountController } from './users-account.controller';
 import { UsersDiscoveryController } from './users-discovery.controller';
 import { UsersSocialController } from './users-social.controller';
+import { StepUpGuard } from '@/shared/auth/step-up.guard';
+import { StepUpService } from '@/shared/auth/step-up.service';
 import {
   GetProfileUseCase,
   GetUserStatsUseCase,
@@ -43,6 +45,8 @@ describe('Users controllers route precedence', () => {
   const blockStatus = { execute: jest.fn() };
   const blockRepository = { getBlockedUsers: jest.fn() };
   const userRepository = { findById: jest.fn() };
+  const exportUserData = { execute: jest.fn() };
+  const requestDeletion = { execute: jest.fn() };
 
   const get = (path: string): Promise<{ status: number; body: string }> =>
     new Promise((resolve, reject) => {
@@ -92,10 +96,23 @@ describe('Users controllers route precedence', () => {
       req.end('{}');
     });
 
+  const remove = (path: string): Promise<{ status: number }> =>
+    new Promise((resolve, reject) => {
+      const address = app.getHttpServer().address();
+      if (address === null || typeof address === 'string') throw new Error('Test server did not bind to a port');
+      const req = httpRequest({ hostname: '127.0.0.1', port: address.port, path, method: 'DELETE' }, (res: IncomingMessage) => {
+        res.resume();
+        res.on('end', () => resolve({ status: res.statusCode ?? 0 }));
+        res.on('error', reject);
+      });
+      req.on('error', reject);
+      req.end();
+    });
+
   beforeAll(async () => {
     getProfile.execute.mockResolvedValue(right({ id: 'user-1' }));
     followUser.execute.mockResolvedValue(right({ active: true, count: 1 }));
-    searchUsers.execute.mockResolvedValue(right([]));
+    searchUsers.execute.mockResolvedValue(right({ users: [], hasMore: false, nextOffset: null }));
     listFollowers.execute.mockResolvedValue(right({ users: [], total: 0, limit: 20, offset: 0 }));
     listFollowing.execute.mockResolvedValue(right({ users: [], total: 0, limit: 20, offset: 0 }));
     blockRepository.getBlockedUsers.mockResolvedValue(right([]));
@@ -108,6 +125,8 @@ describe('Users controllers route precedence', () => {
         UsersSocialController,
       ],
       providers: [
+        StepUpGuard,
+        { provide: StepUpService, useValue: { consume: jest.fn().mockResolvedValue(true) } },
         { provide: UserDatabaseRepository, useValue: userRepository },
         { provide: BlockDatabaseRepository, useValue: blockRepository },
         { provide: GetProfileUseCase, useValue: getProfile },
@@ -129,13 +148,13 @@ describe('Users controllers route precedence', () => {
         { provide: VerifyPhoneUseCase, useValue: { execute: jest.fn() } },
         {
           provide: RequestAccountDeletionUseCase,
-          useValue: { execute: jest.fn() },
+          useValue: requestDeletion,
         },
         {
           provide: CancelAccountDeletionUseCase,
           useValue: { execute: jest.fn() },
         },
-        { provide: ExportUserDataUseCase, useValue: { execute: jest.fn() } },
+        { provide: ExportUserDataUseCase, useValue: exportUserData },
         { provide: ManageSafetyListUseCase, useValue: { candidates: jest.fn(), list: jest.fn(), change: jest.fn() } },
       ],
     }).compile();
@@ -152,6 +171,18 @@ describe('Users controllers route precedence', () => {
     expect(getProfile.execute).toHaveBeenCalledWith(
       expect.objectContaining({ includePrivate: true }),
     );
+  });
+
+  it('requires a consumed step-up token before exporting account data', async () => {
+    const response = await get('/users/me/export');
+    expect(response.status).toBe(401);
+    expect(exportUserData.execute).not.toHaveBeenCalled();
+  });
+
+  it.each(['/users/me', '/users/me/web'])('requires step-up before account deletion at %s', async (path) => {
+    const response = await remove(path);
+    expect(response.status).toBe(401);
+    expect(requestDeletion.execute).not.toHaveBeenCalled();
   });
 
   it('routes GET /users/me/followers to the social controller, not :id/followers', async () => {

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { UserRole } from '@prisma/client';
 import { Either, left } from '@/shared/core/either';
 import { AppleEmailCollisionError, AppError, AppleUnavailableError, InvalidAppleTokenError } from '@/shared/core/errors';
@@ -15,12 +16,18 @@ export class AppleAuthUseCase {
     private readonly users: UserDatabaseRepository,
     private readonly apple: AppleProviderService,
     private readonly sessionTokens: SessionTokenService,
+    private readonly config: ConfigService,
   ) {}
 
-  async execute(input: { identityToken: string; authorizationCode: string; rawNonce: string; fullName?: string }): Promise<Either<AppError, AuthSessionResponse>> {
+  async execute(input: { identityToken: string; authorizationCode: string; rawNonce: string; fullName?: string }, web = false): Promise<Either<AppError, AuthSessionResponse>> {
+    const sessionStartedAtMs = Date.now();
     try {
-      const clientIdentity = await this.apple.verifyIdentityToken(input.identityToken, input.rawNonce);
-      const exchanged = await this.apple.exchangeAuthorizationCode(input.authorizationCode, input.rawNonce);
+      const clientId = web
+        ? this.config.get<string>('APPLE_WEB_CLIENT_ID')?.trim()
+        : this.config.get<string>('APPLE_CLIENT_ID')?.trim();
+      if (!clientId) return left(new AppleUnavailableError());
+      const clientIdentity = await this.apple.verifyIdentityToken(input.identityToken, input.rawNonce, clientId);
+      const exchanged = await this.apple.exchangeAuthorizationCode(input.authorizationCode, input.rawNonce, clientId);
       if (clientIdentity.sub !== exchanged.identity.sub || clientIdentity.nonce !== exchanged.identity.nonce) {
         return left(new InvalidAppleTokenError('A resposta da Apple não corresponde ao login iniciado'));
       }
@@ -32,7 +39,7 @@ export class AppleAuthUseCase {
         const updated = await this.users.updateAppleCredential(byAppleId.value.id, exchanged.encryptedRefreshToken);
         if (updated.isLeft()) return left(updated.value);
         if (!updated.value || updated.value.deletedAt) return left(new InvalidAppleTokenError('Esta conta foi removida'));
-        return issueSession(updated.value, this.sessionTokens);
+        return issueSession(updated.value, this.sessionTokens, sessionStartedAtMs);
       }
 
       if (!exchanged.identity.email || exchanged.identity.emailVerified !== true) {
@@ -66,7 +73,7 @@ export class AppleAuthUseCase {
         wallet: { create: {} },
       });
       if (created.isLeft()) return left(created.value);
-      return issueSession(created.value, this.sessionTokens);
+      return issueSession(created.value, this.sessionTokens, sessionStartedAtMs);
     } catch (error) {
       if (error instanceof AppleConfigurationError) return left(new AppleUnavailableError());
       return left(new InvalidAppleTokenError());

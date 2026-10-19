@@ -44,6 +44,7 @@ export class GoogleAuthUseCase {
     this.audiences = [
       this.config.get<string>('GOOGLE_CLIENT_ID'),
       this.config.get<string>('GOOGLE_SERVER_CLIENT_ID'),
+      this.config.get<string>('GOOGLE_WEB_CLIENT_ID'),
     ]
       .filter((id): id is string => Boolean(id && id.trim().length > 0))
       .flatMap((id) => id.split(',').map((s) => s.trim()))
@@ -59,6 +60,7 @@ export class GoogleAuthUseCase {
   }
 
   async execute(idToken: string): Promise<Either<AppError, AuthSessionResponse>> {
+    const sessionStartedAtMs = Date.now();
     let payload: GooglePayload;
     try {
       const ticket = await this.client.verifyIdToken({
@@ -84,8 +86,8 @@ export class GoogleAuthUseCase {
     const byGoogleId = await this.userRepository.findByGoogleId(payload.sub);
     if (byGoogleId.isLeft()) return left(byGoogleId.value);
     if (byGoogleId.value) {
-      this.logger.log(`Login Google bem-sucedido para usuário existente: ${byGoogleId.value.id} (${byGoogleId.value.email})`);
-      return issueSession(byGoogleId.value, this.sessionTokens);
+      this.logger.log(`Login Google bem-sucedido para usuário existente: ${byGoogleId.value.id}`);
+      return issueSession(byGoogleId.value, this.sessionTokens, sessionStartedAtMs);
     }
 
     // 2. Usuário com mesmo e-mail já existe — vincular conta Google
@@ -97,7 +99,7 @@ export class GoogleAuthUseCase {
         return left(new UnverifiedGoogleEmailError());
       }
 
-      this.logger.log(`Vinculando conta Google ao usuário existente: ${byEmail.value.id} (${payload.email})`);
+      this.logger.log(`Vinculando conta Google ao usuário existente: ${byEmail.value.id}`);
       const updated = await this.userRepository.update(byEmail.value.id, {
         googleId: payload.sub,
         emailVerified: true,
@@ -107,11 +109,11 @@ export class GoogleAuthUseCase {
         this.logger.error(`Erro ao atualizar vínculo Google do usuário: ${updated.value.message}`);
         return left(updated.value);
       }
-      return issueSession(updated.value, this.sessionTokens);
+      return issueSession(updated.value, this.sessionTokens, sessionStartedAtMs);
     }
 
     // 3. Novo usuário — criado inicialmente sem username (completará no frontend)
-    this.logger.log(`Criando novo usuário via Google OAuth: ${payload.email}`);
+    this.logger.log('Criando novo usuário via Google OAuth');
     const created = await this.userRepository.create({
       displayName: payload.name ?? payload.email.split('@')[0],
       username: null,
@@ -138,7 +140,39 @@ export class GoogleAuthUseCase {
       return left(created.value);
     }
 
-    this.logger.log(`Novo usuário criado com sucesso: ${created.value.id} (${created.value.email})`);
-    return issueSession(created.value, this.sessionTokens);
+    this.logger.log(`Novo usuário criado com sucesso: ${created.value.id}`);
+    return issueSession(created.value, this.sessionTokens, sessionStartedAtMs);
   }
+
+  async verifyForStepUp(idToken: string): Promise<{ subject: string } | null> {
+    try {
+      const ticket = await this.client.verifyIdToken({
+        idToken,
+        audience: this.audiences.length === 1 ? this.audiences[0] : this.audiences,
+      });
+      const subject = ticket.getPayload()?.sub;
+      const issuedAt = decodeTokenIssuedAt(idToken);
+      const now = Math.floor(Date.now() / 1000);
+      return subject && issuedAt !== null && issuedAt <= now + 30 && now - issuedAt <= 300
+        ? { subject }
+        : null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+function decodeTokenIssuedAt(idToken: string): number | null {
+  try {
+    const segment = idToken.split('.')[1];
+    if (!segment) return null;
+    const claims: unknown = JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'));
+    return isRecord(claims) && typeof claims.iat === 'number' ? claims.iat : null;
+  } catch {
+    return null;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -41,6 +41,7 @@ describe('GoogleAuthUseCase', () => {
     mockConfigService = {
       get: jest.fn().mockImplementation((key: string) => {
         if (key === 'GOOGLE_CLIENT_ID') return 'mock-client-id.apps.googleusercontent.com';
+        if (key === 'GOOGLE_WEB_CLIENT_ID') return 'mock-web-client-id.apps.googleusercontent.com';
         return null;
       }),
     };
@@ -97,10 +98,38 @@ describe('GoogleAuthUseCase', () => {
     const result = await sut.execute('valid-google-id-token');
 
     expect(result.isRight()).toBe(true);
+    expect(mockVerifyIdToken).toHaveBeenCalledWith(expect.objectContaining({
+      audience: expect.arrayContaining(['mock-client-id.apps.googleusercontent.com', 'mock-web-client-id.apps.googleusercontent.com']),
+    }));
     if (result.isRight()) {
       expect(result.value.user.id).toBe('user-google-1');
       expect(result.value.user.username).toBe('existing_user');
     }
+  });
+
+  it('verifies fresh Google step-up proof without linking by email', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const token = `header.${Buffer.from(JSON.stringify({ iat: now })).toString('base64url')}.signature`;
+    mockVerifyIdToken.mockResolvedValue({ getPayload: () => ({ sub: 'google-sub' }) });
+
+    const identity = await sut.verifyForStepUp(token);
+
+    expect(identity).toEqual({ subject: 'google-sub' });
+    expect(mockUserRepository.findByEmail).not.toHaveBeenCalled();
+    expect(mockUserRepository.update).not.toHaveBeenCalled();
+    expect(mockUserRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects stale or malformed Google issuance time for step-up', async () => {
+    const stale = Math.floor(Date.now() / 1000) - 301;
+    const token = `header.${Buffer.from(JSON.stringify({ iat: stale })).toString('base64url')}.signature`;
+    mockVerifyIdToken.mockResolvedValue({ getPayload: () => ({ sub: 'google-sub' }) });
+
+    expect(await sut.verifyForStepUp(token)).toBeNull();
+
+    mockVerifyIdToken.mockClear();
+    mockVerifyIdToken.mockResolvedValue({ getPayload: () => ({ sub: 'google-sub' }) });
+    expect(await sut.verifyForStepUp('malformed')).toBeNull();
   });
 
   it('links Google account when user exists with matching email', async () => {

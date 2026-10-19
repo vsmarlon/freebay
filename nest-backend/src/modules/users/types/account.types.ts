@@ -14,9 +14,9 @@ export interface AccountDeletionState {
 
 export interface PurgeCandidate {
   id: string;
-  avatarUrl: string | null;
-  bannerUrl: string | null;
 }
+
+export type PersonalPurgeStatus = 'canceled' | 'completed' | 'pending-media' | 'pending-review' | 'pending-verification';
 
 export interface UserDataExport {
   exportedAt: string;

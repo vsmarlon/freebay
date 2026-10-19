@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { RepositoryResponse } from '@/shared/core/either';
 import { UserDataExport } from '../../types/account.types';
+import { CpfProtectionService } from '@/shared/utils/cpf-protection.service';
 
 const USER_PROFILE_SELECT = {
   id: true, displayName: true, username: true, email: true, emailVerified: true,
@@ -112,7 +114,12 @@ type UserProfile = Prisma.UserGetPayload<{ select: typeof USER_PROFILE_SELECT }>
 
 @Injectable()
 export class UserDataExportRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly cpfProtection: CpfProtectionService;
+
+  constructor(private readonly prisma: PrismaService, @Optional() cpfProtection?: CpfProtectionService) {
+    // ponytail: preserve the existing lifecycle repository's direct construction; shared DI wins when available.
+    this.cpfProtection = cpfProtection ?? new CpfProtectionService(new ConfigService(process.env));
+  }
 
   async exportData(userId: string): RepositoryResponse<UserDataExport | null> {
     return repositoryResponse(async () => {
@@ -155,7 +162,8 @@ export class UserDataExportRepository {
       ]);
 
       return {
-        exportedAt: new Date().toISOString(), scope: EXPORT_SCOPE, profile: user, products, posts, comments,
+        exportedAt: new Date().toISOString(), scope: EXPORT_SCOPE,
+        profile: { ...user, cpf: this.cpfProtection.decrypt(user.cpf) }, products, posts, comments,
         orders: { asBuyer: ordersAsBuyer, asSeller: ordersAsSeller }, transactions,
         wallet: { balances: wallet, entries: walletEntries }, connectAccount,
         reviews: { given: reviewsGiven, received: reviewsReceived },

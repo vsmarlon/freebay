@@ -33,7 +33,11 @@ export class FollowUserUseCase {
 
     const followerResult = await this.userRepository.findById(input.followerId);
     if (!followerResult.isLeft() && followerResult.value) {
-      await this.notificationService.notifyNewFollower(input.followingId, followerResult.value.displayName);
+      await this.notificationService.notifyNewFollower(
+        input.followingId,
+        followerResult.value.displayName,
+        input.followerId,
+      );
     }
 
     const [followersCountResult, followingCountResult] = await Promise.all([

@@ -11,9 +11,11 @@ export interface JwtPayload {
   email?: string;
   role: UserRole;
   type?: JwtTokenType;
+  sid?: string;
   jti?: string;
   iat?: number;
   issuedAtMs?: number;
+  sessionStartedAtMs?: number;
   authenticatedAtMs?: number;
   exp?: number;
 }

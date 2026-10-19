@@ -13,13 +13,14 @@ export class RefreshMobileSessionUseCase {
   ) {}
 
   async execute(payload: JwtPayload): Promise<Either<AppError, { token: string; refreshToken: string }>> {
-    if (payload.type !== JwtTokenType.REFRESH || !payload.userId || !payload.jti || !payload.exp) return left(new InvalidTokenError());
+    if (payload.type !== JwtTokenType.REFRESH || !payload.userId || !payload.jti || !payload.exp || !payload.sid ||
+      typeof payload.sessionStartedAtMs !== 'number' || !Number.isSafeInteger(payload.sessionStartedAtMs)) return left(new InvalidTokenError());
     const user = await this.users.findById(payload.userId);
     if (user.isLeft()) return left(user.value);
     if (!user.value) return left(new UserNotFoundError());
     if (user.value.suspendedAt) return left(new AccountSuspendedError(user.value.suspensionReason));
-    if (!await this.tokens.claimRefresh(payload.jti, payload.exp)) return left(new InvalidTokenError('Sessão já renovada'));
+    if (!await this.tokens.claimRefresh(payload.jti, payload.exp, payload.sid)) return left(new InvalidTokenError('Sessão já renovada'));
     await this.tokens.revoke(payload.jti, payload.exp);
-    return right(this.tokens.generate(user.value.id, user.value.role, payload.authenticatedAtMs ?? null));
+    return right(this.tokens.generate(user.value.id, user.value.role, payload.authenticatedAtMs ?? null, payload.sid, payload.sessionStartedAtMs));
   }
 }

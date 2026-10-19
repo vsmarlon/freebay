@@ -32,17 +32,21 @@ import { UploadModule } from './modules/upload/upload.module';
 import { MediaModule } from './modules/media/media.module';
 import { HealthModule } from './modules/health/health.module';
 import { THROTTLE_TTL_HOUR_MS, THROTTLE_TTL_MINUTE_MS, THROTTLE_TTL_SECOND_MS } from './shared/http/throttle.constants';
+import { validateEnvironment } from './shared/config/environment';
+import { RedisThrottlerStorage } from './shared/infra/redis/redis-throttler.storage';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],
+      validate: validateEnvironment,
     }),
     ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      imports: [ConfigModule, SharedModule],
+      inject: [ConfigService, RedisThrottlerStorage],
+      useFactory: (config: ConfigService, storage: RedisThrottlerStorage) => ({
+        storage,
         throttlers: [
           {
             name: 'short',

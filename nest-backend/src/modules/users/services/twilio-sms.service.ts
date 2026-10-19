@@ -17,9 +17,6 @@ export class TwilioSmsService extends SmsService {
 
     if (!accountSid || !authToken || !fromNumber) {
       this.logger.warn('SMS not sent: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN or TWILIO_FROM_NUMBER is not configured');
-      if (this.config.get<string>('NODE_ENV') !== 'production') {
-        this.logger.debug(`[DEV ONLY] Verification code for +55${phone}: ${code}`);
-      }
       return null;
     }
 
@@ -45,8 +42,7 @@ export class TwilioSmsService extends SmsService {
     );
 
     if (!response.ok) {
-      const errorBody = await response.text();
-      this.logger.error(`SMS send failed: Twilio API responded ${response.status} - ${errorBody}`);
+      this.logger.error(`SMS send failed: Twilio API responded ${response.status}`);
       return null;
     }
 

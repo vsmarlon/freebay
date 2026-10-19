@@ -5,7 +5,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError } from '@/shared/core/errors';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { UserDatabaseRepository } from '@/modules/users';
-import { ResendService } from '@/modules/auth/services/resend.service';
+import { ResendService } from '@/modules/auth';
 import { isValidCpfOrCnpj } from '@/shared/utils/cpf.utils';
 
 const TTL = 600;

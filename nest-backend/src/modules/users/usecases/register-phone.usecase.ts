@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomInt } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, InvalidPhoneError } from '@/shared/core/errors';
@@ -29,7 +30,7 @@ export class RegisterPhoneUseCase {
     const deleteResult = await this.phoneVerificationRepository.deleteManyForUser(input.userId);
     if (deleteResult.isLeft()) return left(deleteResult.value);
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = randomInt(100_000, 1_000_000).toString();
     const codeHash = await bcrypt.hash(code, 10);
 
     const createResult = await this.phoneVerificationRepository.create({

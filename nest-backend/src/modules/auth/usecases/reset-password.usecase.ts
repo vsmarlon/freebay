@@ -4,6 +4,7 @@ import { Either, left, right } from '@/shared/core/either';
 import {
   AppError,
   RecoveryCodeAlreadyUsedError,
+  RecoveryCodeAttemptsExceededError,
   RecoveryCodeExpiredError,
   RecoveryCodeNotFoundError,
 } from '@/shared/core/errors';
@@ -37,6 +38,14 @@ export class ResetPasswordUseCase {
       return left(new RecoveryCodeExpiredError());
     }
 
+    if (recovery.codeHash.startsWith('web-reset:')) {
+      return left(new RecoveryCodeNotFoundError());
+    }
+
+    const reservation = await this.recoveryRepository.reserveAttempt(recovery.id);
+    if (reservation.isLeft()) return left(reservation.value);
+    if (!reservation.value) return left(new RecoveryCodeAttemptsExceededError());
+
     const matches = await bcrypt.compare(input.code, recovery.codeHash);
     if (!matches) {
       return left(new RecoveryCodeNotFoundError());
@@ -52,11 +61,9 @@ export class ResetPasswordUseCase {
       return left(new RecoveryCodeNotFoundError());
     }
 
-    const updateResult = await this.userRepository.update(user.id, { passwordHash });
-    if (updateResult.isLeft()) return left(updateResult.value);
-
-    const markResult = await this.recoveryRepository.markUsed(recovery.id);
-    if (markResult.isLeft()) return left(markResult.value);
+    const consumeResult = await this.recoveryRepository.consumeAndUpdatePassword(recovery.id, user.id, passwordHash);
+    if (consumeResult.isLeft()) return left(consumeResult.value);
+    if (!consumeResult.value) return left(new RecoveryCodeAlreadyUsedError());
 
     await this.sessionRevoker.revokeAllSessions(user.id);
 

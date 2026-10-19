@@ -4,7 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthWebSessionController } from './auth-web-session.controller';
-import { right } from '@/shared/core/either';
+import { left, right } from '@/shared/core/either';
+import { InvalidGoogleTokenError } from '@/shared/core/errors';
 import { RegisterUseCase } from './usecases/register.usecase';
 import { LoginUseCase } from './usecases/login.usecase';
 import { GoogleAuthUseCase } from './usecases/google-auth.usecase';
@@ -19,10 +20,15 @@ import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
 import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
 import { EnrollBiometricUseCase } from './usecases/enroll-biometric.usecase';
 import { RevokeBiometricUseCase } from './usecases/revoke-biometric.usecase';
+import { CreateBiometricChallengeUseCase } from './usecases/create-biometric-challenge.usecase';
+import { CreateStepUpUseCase } from './usecases/create-step-up.usecase';
+import { RequestWebStepUpMagicLinkUseCase } from './usecases/request-web-step-up-magic-link.usecase';
 import { RequestMagicLinkUseCase } from './usecases/request-magic-link.usecase';
 import { ConsumeMagicLinkUseCase } from './usecases/consume-magic-link.usecase';
 import { RefreshWebSessionUseCase } from './usecases/refresh-web-session.usecase';
 import { LogoutWebSessionUseCase } from './usecases/logout-web-session.usecase';
+import { RequestWebPasswordResetUseCase } from './usecases/request-web-password-reset.usecase';
+import { ResetWebPasswordUseCase } from './usecases/reset-web-password.usecase';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { OriginGuard } from '@/shared/guards/origin.guard';
 import { APP_GUARD } from '@nestjs/core';
@@ -61,6 +67,9 @@ describe('AuthController web session endpoints', () => {
   let module: TestingModule;
   let app: ReturnType<TestingModule['createNestApplication']>;
   let authService: {
+    login: jest.Mock;
+    google: jest.Mock;
+    apple: jest.Mock;
     requestMagicLink: jest.Mock;
     consumeMagicLink: jest.Mock;
     refreshWebSession: jest.Mock;
@@ -69,6 +78,11 @@ describe('AuthController web session endpoints', () => {
   };
   let jwtService: { verify: jest.Mock };
   let tokenValidator: { verifyAndValidate: jest.Mock };
+  let createStepUp: { execute: jest.Mock };
+  let requestStepUpMagicLink: { execute: jest.Mock };
+  let requestWebPasswordReset: { execute: jest.Mock };
+  let resetWebPassword: { execute: jest.Mock };
+  let registerUseCase: { execute: jest.Mock };
 
   const post = async ({ method, path, body, cookie, origin, authorization }: JsonRequest): Promise<JsonResponse> => {
     const address = app.getHttpServer().address();
@@ -90,6 +104,9 @@ describe('AuthController web session endpoints', () => {
 
   beforeAll(async () => {
     authService = {
+      login: jest.fn().mockResolvedValue(right({ user: { id: 'user-1', email: 'user@example.com' }, token: 'access-token', refreshToken: 'refresh-token' })),
+      google: jest.fn().mockResolvedValue(right({ user: { id: 'user-1', email: 'user@example.com' }, token: 'access-token', refreshToken: 'refresh-token' })),
+      apple: jest.fn().mockResolvedValue(right({ user: { id: 'user-1', email: 'user@example.com' }, token: 'access-token', refreshToken: 'refresh-token' })),
       requestMagicLink: jest.fn().mockResolvedValue(right(undefined)),
       consumeMagicLink: jest.fn().mockResolvedValue(right({
         user: { id: 'user-1', email: 'user@example.com' },
@@ -105,13 +122,18 @@ describe('AuthController web session endpoints', () => {
     tokenValidator = { verifyAndValidate: jest.fn().mockResolvedValue({
       userId: 'user-1', role: UserRole.USER, type: JwtTokenType.ACCESS, jti: 'access-jti', exp: 500,
     } satisfies AuthUser) };
+    createStepUp = { execute: jest.fn().mockResolvedValue(right({ stepUpToken: 'step-up', expiresAt: new Date(Date.now() + 300_000).toISOString() })) };
+    requestStepUpMagicLink = { execute: jest.fn().mockResolvedValue(right({ sent: true })) };
+    requestWebPasswordReset = { execute: jest.fn().mockResolvedValue(right(undefined)) };
+    resetWebPassword = { execute: jest.fn().mockResolvedValue(right(undefined)) };
+    registerUseCase = { execute: jest.fn().mockResolvedValue(right({ user: { id: 'new-user', email: 'new@example.com' }, token: 'new-access', refreshToken: 'new-refresh' })) };
     module = await Test.createTestingModule({
       controllers: [AuthController, AuthWebSessionController],
       providers: [
-        { provide: RegisterUseCase, useValue: { execute: jest.fn() } },
-        { provide: LoginUseCase, useValue: { execute: jest.fn() } },
-        { provide: GoogleAuthUseCase, useValue: { execute: jest.fn() } },
-        { provide: AppleAuthUseCase, useValue: { execute: jest.fn() } },
+        { provide: RegisterUseCase, useValue: registerUseCase },
+        { provide: LoginUseCase, useValue: { execute: authService.login } },
+        { provide: GoogleAuthUseCase, useValue: { execute: authService.google } },
+        { provide: AppleAuthUseCase, useValue: { execute: authService.apple } },
         { provide: CompleteProfileUseCase, useValue: { execute: jest.fn() } },
         { provide: RefreshMobileSessionUseCase, useValue: { execute: jest.fn() } },
         { provide: LogoutSessionUseCase, useValue: { execute: jest.fn() } },
@@ -122,6 +144,11 @@ describe('AuthController web session endpoints', () => {
         { provide: BiometricLoginUseCase, useValue: { execute: jest.fn() } },
         { provide: EnrollBiometricUseCase, useValue: { execute: authService.enrollBiometricToken } },
         { provide: RevokeBiometricUseCase, useValue: { execute: jest.fn() } },
+        { provide: CreateBiometricChallengeUseCase, useValue: { execute: jest.fn().mockResolvedValue(right({ challengeId: 'challenge-1', challenge: 'freebay:v1:login:login:-:nonce' })) } },
+        { provide: CreateStepUpUseCase, useValue: createStepUp },
+        { provide: RequestWebStepUpMagicLinkUseCase, useValue: requestStepUpMagicLink },
+        { provide: RequestWebPasswordResetUseCase, useValue: requestWebPasswordReset },
+        { provide: ResetWebPasswordUseCase, useValue: resetWebPassword },
         { provide: RequestMagicLinkUseCase, useValue: { execute: authService.requestMagicLink } },
         { provide: ConsumeMagicLinkUseCase, useValue: { execute: authService.consumeMagicLink } },
         { provide: RefreshWebSessionUseCase, useValue: { execute: authService.refreshWebSession } },
@@ -151,6 +178,89 @@ describe('AuthController web session endpoints', () => {
     expect(JSON.parse(response.body)).not.toHaveProperty('account');
   });
 
+  it('exposes purpose-specific web recovery without authenticating or revealing account status', async () => {
+    const response = await post({ method: 'POST', path: '/auth/web/password-reset/request', origin: 'https://app.example.com', body: { email: 'unknown@example.com', locale: 'en' } });
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ sent: true });
+    expect(requestWebPasswordReset.execute).toHaveBeenCalledWith({ email: 'unknown@example.com', locale: 'en' });
+    expect(response.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('rejects web password recovery from an untrusted origin', async () => {
+    const response = await post({ method: 'POST', path: '/auth/web/password-reset/consume', origin: 'https://evil.example.com', body: { token: 'A'.repeat(43), newPassword: 'new-password-123' } });
+    expect(response.statusCode).toBe(401);
+    expect(resetWebPassword.execute).not.toHaveBeenCalled();
+  });
+
+  it('resets browser credentials without creating an authenticated session', async () => {
+    const response = await post({ method: 'POST', path: '/auth/web/password-reset/consume', origin: 'https://app.example.com', body: { token: 'A'.repeat(43), newPassword: 'new-password-123' } });
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ reset: true });
+    expect(response.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('issues browser login only through HttpOnly cookies and never returns JWTs', async () => {
+    const response = await post({ method: 'POST', path: '/auth/web/login', origin: 'https://app.example.com', body: { email: 'user@example.com', password: 'password123' } });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ user: { id: 'user-1', email: 'user@example.com' } });
+    expect(JSON.parse(response.body)).not.toHaveProperty('token');
+    expect(JSON.parse(response.body)).not.toHaveProperty('refreshToken');
+    expect(response.headers['set-cookie']).toEqual([
+      'freebay_access=access-token; Path=/; Max-Age=900; HttpOnly; Secure; SameSite=Lax',
+      'freebay_refresh=refresh-token; Path=/auth/web/session; Max-Age=604800; HttpOnly; Secure; SameSite=Lax',
+    ]);
+  });
+
+  it('registers a browser user using HttpOnly cookies rather than returning session tokens', async () => {
+    const response = await post({ method: 'POST', path: '/auth/web/register', origin: 'https://app.example.com', body: { displayName: 'New User', username: 'new_user', email: 'new@example.com', password: 'strong-password-123' } });
+    expect(response.statusCode).toBe(201);
+    expect(JSON.parse(response.body)).toEqual({ user: { id: 'new-user', email: 'new@example.com' } });
+    expect(JSON.parse(response.body)).not.toHaveProperty('token');
+    expect(response.headers['set-cookie']).toEqual([
+      'freebay_access=new-access; Path=/; Max-Age=900; HttpOnly; Secure; SameSite=Lax',
+      'freebay_refresh=new-refresh; Path=/auth/web/session; Max-Age=604800; HttpOnly; Secure; SameSite=Lax',
+    ]);
+  });
+
+  it('rejects browser registration from an untrusted origin before account creation', async () => {
+    registerUseCase.execute.mockClear();
+    const response = await post({ method: 'POST', path: '/auth/web/register', origin: 'https://evil.example.com', body: { displayName: 'New User', username: 'new_user', email: 'new@example.com', password: 'strong-password-123' } });
+    expect(response.statusCode).toBe(401);
+    expect(registerUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('rejects browser provider issuance from an untrusted origin before authenticating', async () => {
+    const response = await post({ method: 'POST', path: '/auth/web/google', origin: 'https://evil.example.com', body: { idToken: 'provider-id-token' } });
+
+    expect(response.statusCode).toBe(401);
+    expect(authService.google).not.toHaveBeenCalled();
+    expect(response.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('does not set session cookies when the browser provider credential is rejected', async () => {
+    authService.google.mockResolvedValueOnce(left(new InvalidGoogleTokenError()));
+    const response = await post({ method: 'POST', path: '/auth/web/google', origin: 'https://app.example.com', body: { idToken: 'invalid-id-token' } });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.headers['set-cookie']).toBeUndefined();
+    expect(JSON.parse(response.body)).not.toHaveProperty('token');
+  });
+
+  it.each([
+    ['/auth/web/google', { idToken: 'google-id-token' }, 'google'],
+    ['/auth/web/apple', { identityToken: 'apple-id-token', authorizationCode: 'single-use-code', rawNonce: 'n'.repeat(32) }, 'apple'],
+  ] as const)('keeps provider session credentials in cookies for %s', async (path, body, provider) => {
+    const response = await post({ method: 'POST', path, origin: 'https://app.example.com', body });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ user: { id: 'user-1', email: 'user@example.com' } });
+    expect(JSON.parse(response.body)).not.toHaveProperty('token');
+    expect(JSON.parse(response.body)).not.toHaveProperty('refreshToken');
+    expect(response.headers['set-cookie']).toHaveLength(2);
+    expect(authService[provider]).toHaveBeenCalled();
+  });
+
   it('forwards the trusted origin and deletion purpose for the public web deletion flow', async () => {
     authService.requestMagicLink.mockClear();
 
@@ -170,12 +280,72 @@ describe('AuthController web session endpoints', () => {
       method: 'POST',
       path: '/auth/biometric-token/enroll',
       authorization: 'Bearer access-token',
-      body: { userId: 'attacker-controlled' },
+      body: { userId: 'attacker-controlled', stepUpToken: 'step-up-proof', publicKey: Buffer.from('public-key').toString('base64') },
     });
 
     expect(response.statusCode).toBe(201);
     expect(JSON.parse(response.body)).toEqual({ biometricToken: 'enrolled-token' });
-    expect(authService.enrollBiometricToken).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }));
+    expect(authService.enrollBiometricToken).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }), 'step-up-proof', Buffer.from('public-key').toString('base64'));
+  });
+
+  it('offers fresh proof through the same-origin web session cookie route', async () => {
+    const response = await post({
+      method: 'POST', path: '/auth/web/step-up', origin: 'https://app.example.com', cookie: 'freebay_access=access-cookie',
+      body: { purpose: 'export_data', proof: { kind: 'password', password: 'secret' } },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual(expect.objectContaining({ stepUpToken: 'step-up' }));
+    expect(createStepUp.execute).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }), expect.objectContaining({ purpose: 'export_data' }), { web: true });
+  });
+
+  it('requests action-bound email proof only with a trusted origin and the current cookie identity', async () => {
+    const response = await post({
+      method: 'POST', path: '/auth/web/step-up/magic-link/request', origin: 'https://app.example.com', cookie: 'freebay_access=access-cookie',
+      body: { purpose: 'cancel_order', resourceId: '550e8400-e29b-41d4-a716-446655440000', locale: 'en', consent: true },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ sent: true });
+    expect(JSON.parse(response.body)).not.toHaveProperty('token');
+    expect(JSON.parse(response.body)).not.toHaveProperty('stepUpToken');
+    expect(requestStepUpMagicLink.execute).toHaveBeenCalledWith(expect.objectContaining({
+      user: expect.objectContaining({ userId: 'user-1' }),
+      body: expect.objectContaining({ purpose: 'cancel_order', resourceId: '550e8400-e29b-41d4-a716-446655440000' }),
+      ip: expect.any(String),
+    }));
+  });
+
+  it.each([undefined, 'https://evil.example.com'])('rejects sensitive-action email requests without trusted Origin (%s)', async (origin) => {
+    requestStepUpMagicLink.execute.mockClear();
+    const response = await post({
+      method: 'POST', path: '/auth/web/step-up/magic-link/request', origin, cookie: 'freebay_access=access-cookie',
+      body: { purpose: 'export_data', locale: 'en', consent: true },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(requestStepUpMagicLink.execute).not.toHaveBeenCalled();
+  });
+
+  it('returns only the validated access cookie for browser memory and disables caching', async () => {
+    const response = await post({
+      method: 'POST', path: '/auth/web/session/access-token',
+      origin: 'https://app.example.com', cookie: 'freebay_access=access-cookie',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(JSON.parse(response.body)).toEqual({ token: 'access-cookie' });
+    expect(response.headers['set-cookie']).toBeUndefined();
+  });
+
+  it('does not accept a bearer token for the cookie-only browser access-token exchange', async () => {
+    const response = await post({
+      method: 'POST', path: '/auth/web/session/access-token',
+      origin: 'https://app.example.com', authorization: 'Bearer access-token',
+    });
+
+    expect(response.statusCode).toBe(401);
   });
 
   it.each([undefined, 'https://evil.example.com'])('rejects magic-link requests without a trusted Origin (%s)', async (origin) => {

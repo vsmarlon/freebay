@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { UserBrief } from '../types/user.types';
 
 // ─── Swagger response classes ──────────────────────────
@@ -68,7 +69,17 @@ export class UserResponse {
 
   @ApiProperty({ example: false })
   hasActiveStory: boolean;
+
+  @ApiPropertyOptional({ example: { orders: true, follows: true, messages: true, disputes: true } })
+  notificationPrefs?: UserNotificationPreferences;
 }
+
+export type UserNotificationPreferences = {
+  orders: boolean;
+  follows: boolean;
+  messages: boolean;
+  disputes: boolean;
+};
 
 export class UserStatsResponse {
   @ApiProperty({ example: 12 })
@@ -231,4 +242,15 @@ export const toUserResponse = (
   postsCount: extras?.postsCount ?? 0,
   productsCount: extras?.productsCount ?? 0,
   hasActiveStory: extras?.hasActiveStory ?? false,
+  notificationPrefs: isOwner ? effectiveNotificationPreferences(user.notificationPrefs) : undefined,
 });
+
+function effectiveNotificationPreferences(value: Prisma.JsonValue | null): UserNotificationPreferences {
+  const prefs = value !== null && typeof value === 'object' && !Array.isArray(value) ? value : null;
+  return {
+    orders: prefs?.orders !== false,
+    follows: prefs?.follows !== false,
+    messages: prefs?.messages !== false,
+    disputes: prefs?.disputes !== false,
+  };
+}

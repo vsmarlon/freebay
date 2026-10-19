@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
+import type { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 
 export type MagicLinkSendResult = { id: string };
 
@@ -16,7 +17,7 @@ export class ResendService {
     const appUrl = this.config.get<string>('WEB_APP_URL', this.config.get<string>('APP_URL', 'http://localhost:3000'));
     const confirmationUrl = purpose === 'account-deletion'
       ? deletionConfirmationUrl(returnOrigin, token, this.config.get<string>('NODE_ENV') === 'production')
-      : `${appUrl}/auth/magic-link/confirm?token=${encodeURIComponent(token)}`;
+      : `${appUrl.replace(/\/$/, '')}/${locale}/verify-email?token=${encodeURIComponent(token)}`;
     if (!confirmationUrl) {
       this.logger.warn('Account deletion email link not sent: no trusted public origin');
       return null;
@@ -50,6 +51,47 @@ export class ResendService {
       }, { idempotencyKey: `magic-link/${credentialId}` });
     if (error || !data?.id) {
       this.logger.error('Magic-link email was not accepted by Resend');
+      return null;
+    }
+    return { id: data.id };
+  }
+
+  async sendStepUpMagicLink(
+    email: string,
+    token: string,
+    contextSignature: string,
+    purpose: StepUpPurpose,
+    resourceId: string | undefined,
+    locale: 'pt-BR' | 'en',
+    credentialId: string,
+  ): Promise<MagicLinkSendResult | null> {
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('Sensitive-action confirmation email not sent: RESEND_API_KEY is not configured');
+      return null;
+    }
+    const appUrl = this.config.get<string>('WEB_APP_URL', this.config.get<string>('APP_URL', 'http://localhost:3000'));
+    const url = new URL(`/${locale}/verify-action`, appUrl);
+    url.searchParams.set('token', token);
+    url.searchParams.set('contextSignature', contextSignature);
+    url.searchParams.set('purpose', purpose);
+    if (resourceId) url.searchParams.set('resourceId', resourceId);
+
+    const portuguese = locale === 'pt-BR';
+    const action = stepUpActionLabel(purpose, portuguese);
+    const subject = portuguese ? `Confirme uma ação sensível — FreeBay` : `Confirm a sensitive action — FreeBay`;
+    const body = portuguese
+      ? `Recebemos uma solicitação para ${action}. Abra o link e confirme explicitamente. Isso não altera suas preferências de marketing. O link expira em 10 minutos.`
+      : `A request was made to ${action}. Open the link and explicitly confirm it. This does not change your marketing preferences. The link expires in 10 minutes.`;
+    const { data, error } = await new Resend(apiKey).emails.send({
+      from: this.config.get<string>('RESEND_FROM_EMAIL') || this.config.get<string>('EMAIL_FROM') || 'FreeBay <onboarding@resend.dev>',
+      to: email,
+      subject,
+      text: `${body}\n${url.toString()}`,
+      html: `<p>${body}</p><p><a href="${url.toString()}">${url.toString()}</a></p>`,
+    }, { idempotencyKey: `magic-link/${credentialId}` });
+    if (error || !data?.id) {
+      this.logger.error('Sensitive-action confirmation email was not accepted by Resend');
       return null;
     }
     return { id: data.id };
@@ -142,14 +184,40 @@ export class ResendService {
     });
 
     if (!response.ok) {
-      const body = await response.text();
-      this.logger.error(`Recovery email failed: Resend API responded ${response.status} - ${body}`);
+      this.logger.error(`Recovery email failed: Resend API responded ${response.status}`);
       return null;
     }
 
     const payload = await response.json() as { id?: string };
-    this.logger.log(`[ResendService] Recovery email dispatched to ${email} (ID: ${payload.id})`);
+    this.logger.log(`[ResendService] Recovery email dispatched (ID: ${payload.id})`);
     return payload.id ?? null;
+  }
+
+  async sendWebPasswordReset(email: string, token: string, locale: 'pt-BR' | 'en', credentialId: string): Promise<string | null> {
+    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('Web password-reset email not sent: RESEND_API_KEY is not configured');
+      return null;
+    }
+    const appUrl = this.config.get<string>('WEB_APP_URL', this.config.get<string>('APP_URL', 'http://localhost:3000')).replace(/\/$/, '');
+    const url = `${appUrl}/${locale}/reset-password#token=${encodeURIComponent(token)}`;
+    const portuguese = locale === 'pt-BR';
+    const subject = portuguese ? 'Redefina sua senha do FreeBay' : 'Reset your FreeBay password';
+    const body = portuguese
+      ? 'Recebemos uma solicitação para redefinir sua senha. O link expira em 10 minutos e só funciona uma vez.'
+      : 'We received a request to reset your password. This link expires in 10 minutes and can only be used once.';
+    const { data, error } = await new Resend(apiKey).emails.send({
+      from: this.config.get<string>('RESEND_FROM_EMAIL') || this.config.get<string>('EMAIL_FROM') || 'FreeBay <onboarding@resend.dev>',
+      to: email,
+      subject,
+      text: `${body}\n${url}`,
+      html: `<p>${body}</p><p><a href="${url}">${url}</a></p>`,
+    }, { idempotencyKey: `web-password-reset/${credentialId}` });
+    if (error || !data?.id) {
+      this.logger.error('Web password-reset email was not accepted by Resend');
+      return null;
+    }
+    return data.id;
   }
 
   async sendProfileVerificationCode(email: string, code: string, locale: 'pt-BR' | 'en'): Promise<boolean> {
@@ -168,6 +236,18 @@ export class ResendService {
     });
     return !error && Boolean(data?.id);
   }
+}
+
+function stepUpActionLabel(purpose: StepUpPurpose, portuguese: boolean): string {
+  const labels: Record<StepUpPurpose, [string, string]> = {
+    biometric_enroll: ['cadastrar o acesso biométrico', 'enroll biometric sign-in'],
+    delete_account: ['solicitar a exclusão da conta', 'request account deletion'],
+    export_data: ['exportar os dados da conta', 'export account data'],
+    connect_dashboard: ['abrir a configuração de pagamentos', 'open payment setup'],
+    cancel_order: ['cancelar um pedido', 'cancel an order'],
+  };
+  const label = labels[purpose];
+  return label[portuguese ? 0 : 1];
 }
 
 function deletionConfirmationUrl(origin: string | undefined, token: string, production: boolean): string | null {

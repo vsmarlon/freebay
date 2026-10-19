@@ -1,5 +1,5 @@
-import { IsString, MinLength, MaxLength, IsEmail, IsOptional, Matches } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, MinLength, MaxLength, IsEmail, IsOptional, Matches, IsIn, IsObject, IsUUID, ValidateNested } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 
@@ -61,6 +61,134 @@ export class BiometricLoginDTO {
   @IsString()
   @MaxLength(2048)
   readonly biometricToken: string;
+
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID('4')
+  readonly challengeId: string;
+
+  @ApiProperty({ description: 'Base64 DER ECDSA signature over the exact challenge UTF-8 bytes' })
+  @IsString()
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/)
+  readonly signature: string;
+}
+
+export class BiometricTokenDTO {
+  @ApiProperty({ description: 'Backend-issued biometric token (JWT type: biometric)', maxLength: 2048 })
+  @IsString()
+  @MaxLength(2048)
+  readonly biometricToken: string;
+}
+
+export class BiometricChallengeDTO {
+  @ApiProperty({ maxLength: 2048 })
+  @IsString()
+  @MaxLength(2048)
+  readonly biometricToken: string;
+
+  @ApiProperty({ enum: ['login', 'step_up'] })
+  @IsIn(['login', 'step_up'])
+  readonly purpose: 'login' | 'step_up';
+
+  @ApiPropertyOptional({ enum: ['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'] })
+  @IsOptional()
+  @IsIn(['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'])
+  readonly stepUpPurpose?: 'biometric_enroll' | 'delete_account' | 'export_data' | 'connect_dashboard' | 'cancel_order';
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly resourceId?: string;
+}
+
+export class BiometricEnrollmentDTO {
+  @ApiProperty({ maxLength: 4096 })
+  @IsString()
+  @MaxLength(4096)
+  readonly stepUpToken: string;
+
+  @ApiProperty({ description: 'Base64 DER SubjectPublicKeyInfo for a P-256 key', maxLength: 1024 })
+  @IsString()
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/)
+  readonly publicKey: string;
+}
+
+export class StepUpProofDTO {
+  @ApiProperty({ enum: ['password', 'google', 'apple', 'biometric', 'magic_link'] })
+  @IsIn(['password', 'google', 'apple', 'biometric', 'magic_link'])
+  readonly kind: 'password' | 'google' | 'apple' | 'biometric' | 'magic_link';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  readonly password?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(8192)
+  readonly idToken?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(8192)
+  readonly identityToken?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(256)
+  readonly rawNonce?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
+  readonly biometricToken?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly challengeId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/)
+  readonly signature?: string;
+
+  @ApiPropertyOptional({ description: 'Single-use action-confirmation link token; accepted only by web step-up.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  readonly token?: string;
+
+  @ApiPropertyOptional({ description: 'Server HMAC binding the token to user, purpose, and resource.' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[0-9a-f]{64}$/)
+  readonly contextSignature?: string;
+}
+
+export class StepUpDTO {
+  @ApiProperty({ enum: ['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'] })
+  @IsIn(['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'])
+  readonly purpose: 'biometric_enroll' | 'delete_account' | 'export_data' | 'connect_dashboard' | 'cancel_order';
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly resourceId?: string;
+
+  @ApiProperty({ type: StepUpProofDTO })
+  @IsObject()
+  @ValidateNested()
+  @Type(() => StepUpProofDTO)
+  readonly proof: StepUpProofDTO;
 }
 
 export class GoogleAuthDTO {

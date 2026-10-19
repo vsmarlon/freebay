@@ -12,15 +12,14 @@ import {
   PhoneCodeNotFoundError,
 } from '@/shared/core/errors';
 
-const mockUserRepository = {
-  update: jest.fn(),
-};
-
 const mockPhoneVerificationRepository = {
   findLatestByUserId: jest.fn(),
+  reserveFailedAttempt: jest.fn(),
+  consumeAndVerify: jest.fn(),
   incrementAttempts: jest.fn(),
-  markUsed: jest.fn(),
 };
+
+const mockUserRepository = { update: jest.fn() };
 
 const mockPrisma = {
   post: { count: jest.fn() },
@@ -99,20 +98,45 @@ describe('VerifyPhoneUseCase', () => {
     mockPhoneVerificationRepository.findLatestByUserId.mockResolvedValue(
       right({ ...baseVerification, codeHash }),
     );
+    mockPhoneVerificationRepository.reserveFailedAttempt.mockResolvedValue(right(true));
     const result = await sut.execute({ userId: 'user-1', code: '123456' });
 
-    expect(mockPhoneVerificationRepository.incrementAttempts).toHaveBeenCalledWith('code-1');
+    expect(mockPhoneVerificationRepository.reserveFailedAttempt).toHaveBeenCalledWith('code-1');
     expect(result.isLeft()).toBe(true);
     if (result.isLeft()) expect(result.value).toBeInstanceOf(PhoneCodeNotFoundError);
   });
 
-  it('marks the code used, verifies the user, and returns the mapped profile on a correct code', async () => {
+  it('caps concurrent wrong-code attempts at the configured maximum through execute', async () => {
+    const codeHash = await bcrypt.hash('999999', 10);
+    let attempts = 0;
+    mockPhoneVerificationRepository.findLatestByUserId.mockResolvedValue(
+      right({ ...baseVerification, codeHash }),
+    );
+    mockPhoneVerificationRepository.reserveFailedAttempt.mockImplementation(async () => {
+      if (attempts >= baseVerification.maxAttempts) return right(false);
+      attempts += 1;
+      return right(true);
+    });
+    mockPhoneVerificationRepository.incrementAttempts.mockImplementation(async () => {
+      attempts += 1;
+      return right({ ...baseVerification, attempts });
+    });
+
+    const results = await Promise.all(Array.from({ length: 10 }, () =>
+      sut.execute({ userId: 'user-1', code: '123456' }),
+    ));
+
+    expect(attempts).toBe(baseVerification.maxAttempts);
+    expect(mockPhoneVerificationRepository.reserveFailedAttempt).toHaveBeenCalledTimes(10);
+    expect(results.filter((result) => result.isLeft() && result.value instanceof PhoneCodeAttemptsExceededError)).toHaveLength(5);
+  });
+
+  it('atomically consumes the code and verifies the user on a correct code', async () => {
     const codeHash = await bcrypt.hash('123456', 10);
     mockPhoneVerificationRepository.findLatestByUserId.mockResolvedValue(
       right({ ...baseVerification, codeHash }),
     );
-    mockPhoneVerificationRepository.markUsed.mockResolvedValue(right({ ...baseVerification, usedAt: new Date() }));
-    mockUserRepository.update.mockResolvedValue(
+    mockPhoneVerificationRepository.consumeAndVerify.mockResolvedValue(
       right({
         id: 'user-1',
         displayName: 'Test User',
@@ -124,11 +148,7 @@ describe('VerifyPhoneUseCase', () => {
 
     const result = await sut.execute({ userId: 'user-1', code: '123456' });
 
-    expect(mockPhoneVerificationRepository.markUsed).toHaveBeenCalledWith('code-1');
-    expect(mockUserRepository.update).toHaveBeenCalledWith('user-1', {
-      phoneVerified: true,
-      isVerified: true,
-    });
+    expect(mockPhoneVerificationRepository.consumeAndVerify).toHaveBeenCalledWith('code-1', 'user-1');
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       expect(result.value.id).toBe('user-1');

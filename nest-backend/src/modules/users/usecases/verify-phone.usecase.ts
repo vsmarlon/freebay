@@ -8,7 +8,6 @@ import {
   PhoneCodeExpiredError,
   PhoneCodeNotFoundError,
 } from '@/shared/core/errors';
-import { UserDatabaseRepository } from '@/modules/users';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { UserResponse, toUserResponse } from '../dtos/user-response.class';
@@ -21,7 +20,6 @@ export interface VerifyPhoneInput {
 @Injectable()
 export class VerifyPhoneUseCase {
   constructor(
-    private readonly userRepository: UserDatabaseRepository,
     private readonly phoneVerificationRepository: PhoneVerificationDatabaseRepository,
     private readonly prisma: PrismaService,
   ) {}
@@ -49,18 +47,15 @@ export class VerifyPhoneUseCase {
 
     const matches = await bcrypt.compare(input.code.trim(), verification.codeHash);
     if (!matches) {
-      await this.phoneVerificationRepository.incrementAttempts(verification.id);
+      const attemptResult = await this.phoneVerificationRepository.reserveFailedAttempt(verification.id);
+      if (attemptResult.isLeft()) return left(attemptResult.value);
+      if (!attemptResult.value) return left(new PhoneCodeAttemptsExceededError());
       return left(new PhoneCodeNotFoundError());
     }
 
-    const markUsedResult = await this.phoneVerificationRepository.markUsed(verification.id);
-    if (markUsedResult.isLeft()) return left(markUsedResult.value);
-
-    const updateResult = await this.userRepository.update(input.userId, {
-      phoneVerified: true,
-      isVerified: true,
-    });
+    const updateResult = await this.phoneVerificationRepository.consumeAndVerify(verification.id, input.userId);
     if (updateResult.isLeft()) return left(updateResult.value);
+    if (!updateResult.value) return left(new PhoneCodeAlreadyUsedError());
 
     const [postsCount, productsCount, activeStory] = await Promise.all([
       this.prisma.post.count({ where: { userId: input.userId } }),

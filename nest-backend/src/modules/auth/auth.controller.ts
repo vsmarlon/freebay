@@ -6,6 +6,7 @@ import {
   Request,
   UnauthorizedException,
   ParseUUIDPipe,
+  Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { RegisterUseCase } from './usecases/register.usecase';
@@ -22,7 +23,9 @@ import { ResetPasswordUseCase } from './usecases/reset-password.usecase';
 import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
 import { EnrollBiometricUseCase } from './usecases/enroll-biometric.usecase';
 import { RevokeBiometricUseCase } from './usecases/revoke-biometric.usecase';
-import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, GoogleAuthDTO, AppleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
+import { CreateBiometricChallengeUseCase } from './usecases/create-biometric-challenge.usecase';
+import { CreateStepUpUseCase } from './usecases/create-step-up.usecase';
+import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, BiometricTokenDTO, BiometricChallengeDTO, BiometricEnrollmentDTO, StepUpDTO, GoogleAuthDTO, AppleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -47,14 +50,12 @@ import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
 import { AllowTokenTypes } from './guards/token-types.decorator';
 import { ownedPayload } from './utils/web-session-cookies';
-import { Either } from '@/shared/core/either';
-import { AppError } from '@/shared/core/errors';
 import { THROTTLE_TTL_MINUTE_MS, THROTTLE_TTL_TEN_SECONDS_MS } from '@/shared/http/throttle.constants';
-
-function unwrap<T>(result: Either<AppError, T>): T {
-  if (result.isLeft()) throw result.value;
-  return result.value;
-}
+import { unwrap } from '@/shared/http/unwrap';
+import { ConfigService } from '@nestjs/config';
+import { StrictOrigin } from '@/shared/decorators';
+import { setWebSessionCookies } from './utils/web-session-cookies';
+import type { Response } from 'express';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -75,6 +76,9 @@ export class AuthController {
     private readonly enrollBiometricUseCase: EnrollBiometricUseCase,
     private readonly revokeBiometricUseCase: RevokeBiometricUseCase,
     private readonly jwtService: JwtService,
+    private readonly createBiometricChallengeUseCase: CreateBiometricChallengeUseCase,
+    private readonly createStepUpUseCase: CreateStepUpUseCase,
+    private readonly configService: ConfigService,
   ) {}
 
   @PostPublic('register', {
@@ -89,6 +93,19 @@ export class AuthController {
   })
   async register(@Body() body: RegisterDTO) {
     return unwrap(await this.registerUseCase.execute(body));
+  }
+
+  @PostPublic('web/register', {
+    summary: 'Register and start a browser session',
+    bodyType: RegisterDTO,
+    httpCode: HttpStatus.CREATED,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 20, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
+  @StrictOrigin()
+  async webRegister(@Body() body: RegisterDTO, @Res({ passthrough: true }) response: Response) {
+    const session = unwrap(await this.registerUseCase.execute(body));
+    setWebSessionCookies(response, this.configService.get('NODE_ENV') === 'production', session.token, session.refreshToken);
+    return { user: session.user };
   }
 
   @GetPublic('username-available', {
@@ -113,6 +130,19 @@ export class AuthController {
     return unwrap(await this.loginUseCase.execute(body));
   }
 
+  @PostPublic('web/login', {
+    summary: 'Sign in to the browser session with email and password',
+    bodyType: LoginDTO,
+    httpCode: HttpStatus.OK,
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
+  @StrictOrigin()
+  async webLogin(@Body() body: LoginDTO, @Res({ passthrough: true }) response: Response) {
+    const session = unwrap(await this.loginUseCase.execute(body));
+    setWebSessionCookies(response, this.configService.get('NODE_ENV') === 'production', session.token, session.refreshToken);
+    return { user: session.user };
+  }
+
   @PostPublic('google', {
     summary: 'Google OAuth login',
     description: 'Authenticate with a Google ID token. Links to existing account if email matches, or creates a new account.',
@@ -124,6 +154,19 @@ export class AuthController {
   })
   async googleAuth(@Body() body: GoogleAuthDTO) {
     return unwrap(await this.googleAuthUseCase.execute(body.idToken));
+  }
+
+  @PostPublic('web/google', {
+    summary: 'Sign in to the browser session with Google',
+    bodyType: GoogleAuthDTO,
+    httpCode: HttpStatus.OK,
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
+  @StrictOrigin()
+  async webGoogleAuth(@Body() body: GoogleAuthDTO, @Res({ passthrough: true }) response: Response) {
+    const session = unwrap(await this.googleAuthUseCase.execute(body.idToken));
+    setWebSessionCookies(response, this.configService.get('NODE_ENV') === 'production', session.token, session.refreshToken);
+    return { user: session.user };
   }
 
   @PostAuth('complete-profile', {
@@ -157,6 +200,19 @@ export class AuthController {
   })
   async appleAuth(@Body() body: AppleAuthDTO) {
     return unwrap(await this.appleAuthUseCase.execute(body));
+  }
+
+  @PostPublic('web/apple', {
+    summary: 'Sign in to the browser session with Apple',
+    bodyType: AppleAuthDTO,
+    httpCode: HttpStatus.OK,
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
+  @StrictOrigin()
+  async webAppleAuth(@Body() body: AppleAuthDTO, @Res({ passthrough: true }) response: Response) {
+    const session = unwrap(await this.appleAuthUseCase.execute(body, true));
+    setWebSessionCookies(response, this.configService.get('NODE_ENV') === 'production', session.token, session.refreshToken);
+    return { user: session.user };
   }
 
   @PostAuth('logout', {
@@ -226,7 +282,7 @@ export class AuthController {
 
   @PostPublic('biometric-login', {
     summary: 'Biometric login',
-    description: 'Authenticate using a backend-issued biometric token. Returns a fresh token set including a rotated biometric token — store the new biometricToken in the device keychain.',
+    description: 'Authenticates a one-time challenge with the registered non-exportable P-256 key and rotates the session family.',
     bodyType: BiometricLoginDTO,
     responseType: BiometricSessionResponse,
     errors: [{ status: 401, description: 'Invalid or revoked biometric token' }],
@@ -234,29 +290,50 @@ export class AuthController {
     httpCode: HttpStatus.OK,
   })
   async biometricLogin(@Body() body: BiometricLoginDTO) {
-    return unwrap(await this.biometricLoginUseCase.execute(body.biometricToken));
+    return unwrap(await this.biometricLoginUseCase.execute(body));
+  }
+
+  @PostPublic('biometric-challenge', {
+    summary: 'Create a one-time biometric signature challenge',
+    bodyType: BiometricChallengeDTO,
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
+    httpCode: HttpStatus.OK,
+  })
+  async biometricChallenge(@Body() body: BiometricChallengeDTO) {
+    return unwrap(await this.createBiometricChallengeUseCase.execute(body));
+  }
+
+  @PostAuth('step-up', {
+    summary: 'Prove recent authentication for a sensitive action',
+    bodyType: StepUpDTO,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 15, ttl: THROTTLE_TTL_MINUTE_MS } },
+    httpCode: HttpStatus.OK,
+  })
+  async stepUp(@CurrentUser() user: AuthUser, @Body() body: StepUpDTO) {
+    return unwrap(await this.createStepUpUseCase.execute(user, body));
   }
 
   @PostAuth('biometric-token/enroll', {
     summary: 'Enroll biometric login',
-    description: 'Issues a biometric token for the authenticated account.',
+    description: 'Registers a P-256 public key after consuming biometric_enroll step-up proof and issues a bound biometric token.',
+    bodyType: BiometricEnrollmentDTO,
     responseType: BiometricEnrollmentResponse,
   })
   @AllowTokenTypes(JwtTokenType.ACCESS)
-  async enrollBiometricToken(@CurrentUser() user: AuthUser) {
-    return unwrap(await this.enrollBiometricUseCase.execute(user));
+  async enrollBiometricToken(@CurrentUser() user: AuthUser, @Body() body: BiometricEnrollmentDTO) {
+    return unwrap(await this.enrollBiometricUseCase.execute(user, body.stepUpToken, body.publicKey));
   }
 
   @PatchAuth('biometric-token/revoke', {
     summary: 'Revoke biometric token',
     description: 'Blacklists a biometric token so it can no longer be used. Authenticate with the access token and send the biometric token in the body. Call this when the user disables biometric login.',
-    bodyType: BiometricLoginDTO,
+    bodyType: BiometricTokenDTO,
     responseType: MessageResponse,
   })
   @AllowTokenTypes(JwtTokenType.ACCESS)
   async revokeBiometricToken(
     @CurrentUser() user: AuthUser,
-    @Body() body: BiometricLoginDTO,
+    @Body() body: BiometricTokenDTO,
   ) {
     const payload = ownedPayload(this.jwtService,
       body.biometricToken,
@@ -269,6 +346,7 @@ export class AuthController {
     if (!payload.jti || !payload.exp) {
       throw new UnauthorizedException('Token biométrico inválido');
     }
-    return unwrap(await this.revokeBiometricUseCase.execute({ jti: payload.jti, exp: payload.exp }));
+    if (!payload.sid) throw new UnauthorizedException('Token biométrico inválido');
+    return unwrap(await this.revokeBiometricUseCase.execute({ jti: payload.jti, exp: payload.exp, sid: payload.sid }));
   }
 }

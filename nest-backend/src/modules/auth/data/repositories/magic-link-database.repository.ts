@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, User, WebMagicLink } from '@prisma/client';
+import { Prisma, WebMagicLink } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { DatabaseError } from '@/shared/core/errors';
 import { Either, left, right } from '@/shared/core/either';
-import { MagicLinkRepository } from '../../domain/repositories/magic-link.repository';
+import { ConsumedMagicLink, MagicLinkRepository } from '../../domain/repositories/magic-link.repository';
 
 @Injectable()
 export class MagicLinkDatabaseRepository implements MagicLinkRepository {
@@ -25,7 +25,7 @@ export class MagicLinkDatabaseRepository implements MagicLinkRepository {
     }
   }
 
-  async consume(tokenHash: string, now: Date, allowRegistration = true): Promise<Either<DatabaseError, User | null>> {
+  async consume(tokenHash: string, now: Date, allowRegistration = true): Promise<Either<DatabaseError, ConsumedMagicLink | null>> {
     try {
       const user = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const link = await tx.webMagicLink.findFirst({ where: { tokenHash, consumedAt: null, activatedAt: { not: null }, expiresAt: { gt: now } } });
@@ -41,12 +41,13 @@ export class MagicLinkDatabaseRepository implements MagicLinkRepository {
         });
         if (claimed.count !== 1) return null;
 
-         if (existing) {
-           await tx.wallet.upsert({ where: { userId: existing.id }, create: { userId: existing.id }, update: {} });
-           return tx.user.update({ where: { id: existing.id }, data: { emailVerified: true, webConsentGrantedAt: link.consentAt, webConsentIp: link.requestedIp, webConsentUserAgent: link.userAgent } });
-        }
+          if (existing) {
+            await tx.wallet.upsert({ where: { userId: existing.id }, create: { userId: existing.id }, update: {} });
+            const user = await tx.user.update({ where: { id: existing.id }, data: { emailVerified: true, webConsentGrantedAt: link.consentAt, webConsentIp: link.requestedIp, webConsentUserAgent: link.userAgent } });
+            return { user, sessionStartedAtMs: link.requestedAt.getTime() };
+          }
 
-        return tx.user.create({
+         const user = await tx.user.create({
           data: {
             email: link.email,
             displayName: 'FreeBay user',
@@ -56,11 +57,48 @@ export class MagicLinkDatabaseRepository implements MagicLinkRepository {
             webConsentIp: link.requestedIp,
             webConsentUserAgent: link.userAgent,
           },
-        });
+         });
+         return { user, sessionStartedAtMs: link.requestedAt.getTime() };
       });
       return right(user);
     } catch {
       return left(new DatabaseError('Erro ao consumir link de acesso'));
+    }
+  }
+
+  async consumeStepUpProof(tokenHash: string, userId: string, sessionStartedAtMs: number, now: Date): Promise<Either<DatabaseError, boolean>> {
+    if (!Number.isSafeInteger(sessionStartedAtMs) || sessionStartedAtMs <= 0) return right(false);
+    try {
+      const consumed = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const users = await tx.$queryRaw<Array<{
+          id: string;
+          email: string;
+          suspendedAt: Date | null;
+          deletedAt: Date | null;
+          sessionsInvalidBefore: Date | null;
+        }>>(Prisma.sql`
+          SELECT id, email, "suspendedAt", "deletedAt", "sessionsInvalidBefore"
+          FROM "User" WHERE id = ${userId} FOR UPDATE
+        `);
+        const user = users[0];
+        if (!user || user.suspendedAt || user.deletedAt ||
+          (user.sessionsInvalidBefore && sessionStartedAtMs <= user.sessionsInvalidBefore.getTime())) return false;
+
+        const claim = await tx.webMagicLink.updateMany({
+          where: {
+            tokenHash,
+            email: { equals: user.email, mode: 'insensitive' },
+            consumedAt: null,
+            activatedAt: { not: null },
+            expiresAt: { gt: now },
+          },
+          data: { consumedAt: now },
+        });
+        return claim.count === 1;
+      });
+      return right(consumed);
+    } catch {
+      return left(new DatabaseError('Erro ao consumir a confirmação da ação'));
     }
   }
 

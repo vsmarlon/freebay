@@ -6,10 +6,11 @@ import { RepositoryResponse, left, right } from "@/shared/core/either";
 import { BadRequestError, DatabaseError, ForbiddenError } from "@/shared/core/errors";
 import { UserBrief } from "../../types/user.types";
 import { FollowRepository } from '../../domain/repositories/follow.repository';
+import { NotificationsGateway } from '@/modules/notifications/notifications.gateway';
 
 @Injectable()
 export class FollowDatabaseRepository extends FollowRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(private readonly prisma: PrismaService, private readonly notificationsGateway: NotificationsGateway) {
     super();
   }
 
@@ -42,18 +43,25 @@ export class FollowDatabaseRepository extends FollowRepository {
     followingId: string,
   ): RepositoryResponse<void> {
     try {
-      await this.prisma.$transaction(async (tx) => {
+      const invalidatedUserIds = await this.prisma.$transaction(async (tx) => {
         await tx.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
         const remainingConnection = await tx.follow.findFirst({ where: { OR: [
           { followerId, followingId }, { followerId: followingId, followingId: followerId },
         ] }, select: { id: true } });
         if (!remainingConnection) {
+          const memberships = await tx.closeFriend.findMany({ where: { OR: [
+            { ownerId: followingId, memberId: followerId },
+            { ownerId: followerId, memberId: followingId },
+          ] }, select: { memberId: true } });
           await tx.closeFriend.deleteMany({ where: { OR: [
             { ownerId: followingId, memberId: followerId },
             { ownerId: followerId, memberId: followingId },
           ] } });
+          return memberships.map(({ memberId }) => memberId);
         }
+        return [];
       });
+      this.notificationsGateway.sendPrivateContentInvalidated(invalidatedUserIds);
       return right(undefined);
     } catch (error) {
       if (

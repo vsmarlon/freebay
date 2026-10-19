@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { SafetyListRepository } from '../../domain/repositories/safety-list.repository';
+import { NotificationsGateway } from '@/modules/notifications/notifications.gateway';
 
 const userFields = { id: true, displayName: true, username: true, avatarUrl: true, avatarBlurHash: true, isVerified: true, reputationScore: true } as const;
 
 @Injectable()
 export class SafetyListDatabaseRepository extends SafetyListRepository {
-  constructor(private readonly prisma: PrismaService) { super(); }
+  constructor(private readonly prisma: PrismaService, private readonly notificationsGateway: NotificationsGateway) { super(); }
 
   candidates(ownerId: string, search: string, selected: boolean, limit: number, offset: number) {
     return repositoryResponse(async () => {
@@ -77,7 +78,8 @@ export class SafetyListDatabaseRepository extends SafetyListRepository {
 
   removeCloseFriend(ownerId: string, memberId: string) {
     return repositoryResponse(async () => {
-      await this.prisma.closeFriend.deleteMany({ where: { ownerId, memberId } });
+      const removed = await this.prisma.closeFriend.deleteMany({ where: { ownerId, memberId } });
+      if (removed.count > 0) this.notificationsGateway.sendPrivateContentInvalidated([memberId]);
     }, 'Erro ao remover amigo próximo');
   }
 

@@ -6,11 +6,14 @@ import { randomUUID } from 'crypto';
 import { JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 import { UserRole } from '@prisma/client';
+import {
+  DEFAULT_ACCESS_TOKEN_TTL,
+  DEFAULT_BIOMETRIC_TOKEN_TTL,
+  DEFAULT_REFRESH_TOKEN_TTL,
+  SessionRevokerService,
+} from '@/shared/auth/session-revoker.service';
 
-export const DEFAULT_ACCESS_TOKEN_TTL = '15m';
-export const DEFAULT_REFRESH_TOKEN_TTL = '7d';
-export const DEFAULT_BIOMETRIC_TOKEN_TTL = '7d';
-export const BIOMETRIC_ENROLLMENT_CLAIM_TTL_SECONDS = 300;
+export { DEFAULT_ACCESS_TOKEN_TTL, DEFAULT_BIOMETRIC_TOKEN_TTL, DEFAULT_REFRESH_TOKEN_TTL };
 
 @Injectable()
 export class SessionTokenService {
@@ -18,17 +21,19 @@ export class SessionTokenService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly redisService: RedisService,
+    private readonly sessionRevoker: SessionRevokerService,
   ) {}
 
-  generate(userId: string, role: UserRole, authenticatedAtMs: number | null = Date.now()) {
+  generate(userId: string, role: UserRole, authenticatedAtMs: number | null, sid: string | undefined, sessionStartedAtMs: number) {
+    const sessionId = sid ?? randomUUID();
     return {
-      token: this.sign(userId, role, JwtTokenType.ACCESS, this.config.get('JWT_EXPIRES_IN', DEFAULT_ACCESS_TOKEN_TTL), authenticatedAtMs),
-      refreshToken: this.sign(userId, role, JwtTokenType.REFRESH, this.config.get('JWT_REFRESH_EXPIRES_IN', DEFAULT_REFRESH_TOKEN_TTL), authenticatedAtMs),
+      token: this.sign(userId, role, JwtTokenType.ACCESS, this.config.get('JWT_EXPIRES_IN', DEFAULT_ACCESS_TOKEN_TTL), authenticatedAtMs, sessionId, sessionStartedAtMs),
+      refreshToken: this.sign(userId, role, JwtTokenType.REFRESH, this.config.get('JWT_REFRESH_EXPIRES_IN', DEFAULT_REFRESH_TOKEN_TTL), authenticatedAtMs, sessionId, sessionStartedAtMs),
     };
   }
 
-  generateBiometric(userId: string, role: UserRole) {
-    return this.sign(userId, role, JwtTokenType.BIOMETRIC, this.config.get('JWT_BIOMETRIC_EXPIRES_IN', DEFAULT_BIOMETRIC_TOKEN_TTL));
+  generateBiometric(userId: string, role: UserRole, sid: string | undefined, sessionStartedAtMs: number) {
+    return this.sign(userId, role, JwtTokenType.BIOMETRIC, this.config.get('JWT_BIOMETRIC_EXPIRES_IN', DEFAULT_BIOMETRIC_TOKEN_TTL), null, sid ?? randomUUID(), sessionStartedAtMs);
   }
 
   async revoke(jti?: string, exp?: number): Promise<void> {
@@ -37,25 +42,28 @@ export class SessionTokenService {
     if (ttl > 0) await this.redisService.add(`blacklist:${jti}`, '1', ttl);
   }
 
-  async claimRefresh(jti: string, exp: number): Promise<boolean> {
+  async claimRefresh(jti: string, exp: number, sid?: string): Promise<boolean> {
     const ttl = exp - Math.floor(Date.now() / 1000);
-    return ttl > 0 && this.redisService.setIfAbsent(`refresh-claimed:${jti}`, '1', ttl);
+    const claimed = ttl > 0 && await this.redisService.setIfAbsent(`refresh-claimed:${jti}`, '1', ttl);
+    if (!claimed && sid) await this.revokeFamily(sid);
+    return claimed;
   }
 
-  async claimBiometric(jti: string, exp: number): Promise<boolean> {
+  async claimBiometric(jti: string, exp: number, sid?: string): Promise<boolean> {
     const ttl = exp - Math.floor(Date.now() / 1000);
-    return ttl > 0 && this.redisService.setIfAbsent(`biometric-claimed:${jti}`, '1', ttl);
+    const claimed = ttl > 0 && await this.redisService.setIfAbsent(`biometric-claimed:${jti}`, '1', ttl);
+    if (!claimed && sid) await this.revokeFamily(sid);
+    return claimed;
   }
 
-  async claimBiometricEnrollment(jti: string, exp?: number): Promise<boolean> {
-    const ttl = Math.max(1, (exp ?? Math.floor(Date.now() / 1000) + BIOMETRIC_ENROLLMENT_CLAIM_TTL_SECONDS) - Math.floor(Date.now() / 1000));
-    return this.redisService.setIfAbsent(`biometric-enrollment-claimed:${jti}`, '1', ttl);
+  async revokeFamily(sid: string): Promise<void> {
+    await this.sessionRevoker.revokeFamily(sid);
   }
 
-  private sign(userId: string, role: UserRole, type: JwtTokenType, expiresIn: string, authenticatedAtMs?: number | null) {
+  private sign(userId: string, role: UserRole, type: JwtTokenType, expiresIn: string, authenticatedAtMs: number | null, sid: string | undefined, sessionStartedAtMs: number) {
     return this.jwtService.sign(
       {
-        userId, role, type, jti: randomUUID(), issuedAtMs: Date.now(),
+        userId, role, type, jti: randomUUID(), issuedAtMs: Date.now(), sessionStartedAtMs, ...(sid ? { sid } : {}),
         ...(authenticatedAtMs === null || authenticatedAtMs === undefined ? {} : { authenticatedAtMs }),
       } satisfies JwtPayload,
       { expiresIn: expiresIn as JwtSignOptions['expiresIn'] },

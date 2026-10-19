@@ -28,7 +28,7 @@ export class AppleProviderService {
     }
   }
 
-  async verifyIdentityToken(token: string, rawNonce: string): Promise<AppleIdentity> {
+  async verifyIdentityToken(token: string, rawNonce: string, clientId = this.required('APPLE_CLIENT_ID')): Promise<AppleIdentity> {
     const [encodedHeader, encodedClaims, encodedSignature, ...extra] = token.split('.');
     if (!encodedHeader || !encodedClaims || !encodedSignature || extra.length) throw new Error('Invalid Apple identity token');
     const header = parseJson(encodedHeader);
@@ -36,7 +36,7 @@ export class AppleProviderService {
     const key = await this.getKey(header.kid);
     const valid = verify('RSA-SHA256', Buffer.from(`${encodedHeader}.${encodedClaims}`), key, Buffer.from(encodedSignature, 'base64url'));
     const claims = parseJson(encodedClaims);
-    const audience = this.config.get<string>('APPLE_CLIENT_ID');
+    const audience = clientId;
     const now = Math.floor(Date.now() / 1000);
     if (!valid || claims.iss !== APPLE_ISSUER || claims.aud !== audience || !audience ||
       typeof claims.sub !== 'string' || !claims.sub || typeof claims.exp !== 'number' || claims.exp <= now ||
@@ -52,8 +52,7 @@ export class AppleProviderService {
     };
   }
 
-  async exchangeAuthorizationCode(code: string, rawNonce: string): Promise<{ identity: AppleIdentity; encryptedRefreshToken: string | null }> {
-    const clientId = this.required('APPLE_CLIENT_ID');
+  async exchangeAuthorizationCode(code: string, rawNonce: string, clientId = this.required('APPLE_CLIENT_ID')): Promise<{ identity: AppleIdentity; encryptedRefreshToken: string | null }> {
     const teamId = this.required('APPLE_TEAM_ID');
     const keyId = this.required('APPLE_KEY_ID');
     const privateKey = this.required('APPLE_PRIVATE_KEY').replace(/\\n/g, '\n');
@@ -73,15 +72,16 @@ export class AppleProviderService {
     if (!response.ok) throw new Error('Apple authorization code exchange failed');
     const payload: unknown = await response.json();
     if (!isRecord(payload) || typeof payload.id_token !== 'string') throw new Error('Apple authorization response is invalid');
-    const identity = await this.verifyIdentityToken(payload.id_token, rawNonce);
+    const identity = await this.verifyIdentityToken(payload.id_token, rawNonce, clientId);
     if (typeof payload.refresh_token !== 'string' || !payload.refresh_token) {
       throw new Error('Apple authorization response did not contain a revocable credential');
     }
-    return { identity, encryptedRefreshToken: this.encryptRefreshToken(payload.refresh_token) };
+    return { identity, encryptedRefreshToken: this.encryptRefreshToken(payload.refresh_token, clientId) };
   }
 
   async revokeRefreshToken(encryptedToken: string): Promise<void> {
-    const clientId = this.required('APPLE_CLIENT_ID');
+    const credential = this.decryptRefreshToken(encryptedToken);
+    const clientId = credential.clientId ?? this.required('APPLE_CLIENT_ID');
     const teamId = this.required('APPLE_TEAM_ID');
     const keyId = this.required('APPLE_KEY_ID');
     const privateKey = this.required('APPLE_PRIVATE_KEY').replace(/\\n/g, '\n');
@@ -92,31 +92,38 @@ export class AppleProviderService {
     signer.update(`${header}.${claims}`);
     signer.end();
     const clientSecret = `${header}.${claims}.${signer.sign({ key: privateKey, dsaEncoding: 'ieee-p1363' }).toString('base64url')}`;
-    const refreshToken = this.decryptRefreshToken(encryptedToken);
     const response = await fetch(APPLE_TOKEN_URL.replace('/token', '/revoke'), {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, token: refreshToken, token_type_hint: 'refresh_token' }),
+      body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, token: credential.token, token_type_hint: 'refresh_token' }),
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) throw new Error('Apple token revocation failed');
   }
 
-  encryptRefreshToken(token: string): string {
+  encryptRefreshToken(token: string, clientId?: string): string {
     const key = this.encryptionKey();
     if (key.length !== 32) throw new Error('APPLE_TOKEN_ENCRYPTION_KEY must decode to exactly 32 bytes');
     const iv = randomBytes(12);
     const cipher = createCipheriv('aes-256-gcm', key, iv);
-    const encrypted = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()]);
+    const plaintext = clientId ? JSON.stringify({ clientId, token }) : token;
+    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
     return `${iv.toString('base64url')}.${cipher.getAuthTag().toString('base64url')}.${encrypted.toString('base64url')}`;
   }
 
-  private decryptRefreshToken(value: string): string {
+  private decryptRefreshToken(value: string): { token: string; clientId?: string } {
     const [iv, tag, ciphertext, ...extra] = value.split('.');
     if (!iv || !tag || !ciphertext || extra.length) throw new Error('Invalid encrypted Apple token');
     const decipher = createDecipheriv('aes-256-gcm', this.encryptionKey(), Buffer.from(iv, 'base64url'));
     decipher.setAuthTag(Buffer.from(tag, 'base64url'));
-    return Buffer.concat([decipher.update(Buffer.from(ciphertext, 'base64url')), decipher.final()]).toString('utf8');
+    const plaintext = Buffer.concat([decipher.update(Buffer.from(ciphertext, 'base64url')), decipher.final()]).toString('utf8');
+    try {
+      const parsed: unknown = JSON.parse(plaintext);
+      if (isRecord(parsed) && typeof parsed.token === 'string' && typeof parsed.clientId === 'string') {
+        return { token: parsed.token, clientId: parsed.clientId };
+      }
+    } catch { void 0; }
+    return { token: plaintext };
   }
 
   private encryptionKey(): Buffer {

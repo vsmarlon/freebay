@@ -23,6 +23,11 @@ import { EnrollBiometricUseCase } from './enroll-biometric.usecase';
 import { RevokeBiometricUseCase } from './revoke-biometric.usecase';
 import { SessionTokenService } from '../services/session-token.service';
 import { AppleAuthUseCase } from './apple-auth.usecase';
+import { CreateBiometricChallengeUseCase } from './create-biometric-challenge.usecase';
+import { CreateStepUpUseCase } from './create-step-up.usecase';
+import { RequestWebStepUpMagicLinkUseCase } from './request-web-step-up-magic-link.usecase';
+import { RequestWebPasswordResetUseCase } from './request-web-password-reset.usecase';
+import { ResetWebPasswordUseCase } from './reset-web-password.usecase';
 
 @Module({
   providers: [
@@ -50,6 +55,11 @@ import { AppleAuthUseCase } from './apple-auth.usecase';
     LogoutSessionUseCase,
     EnrollBiometricUseCase,
     RevokeBiometricUseCase,
+    CreateBiometricChallengeUseCase,
+    CreateStepUpUseCase,
+    RequestWebStepUpMagicLinkUseCase,
+    RequestWebPasswordResetUseCase,
+    ResetWebPasswordUseCase,
   ],
   exports: [
     UserDatabaseRepository,
@@ -73,6 +83,11 @@ import { AppleAuthUseCase } from './apple-auth.usecase';
     EnrollBiometricUseCase,
     RevokeBiometricUseCase,
     SessionTokenService,
+    CreateBiometricChallengeUseCase,
+    CreateStepUpUseCase,
+    RequestWebStepUpMagicLinkUseCase,
+    RequestWebPasswordResetUseCase,
+    ResetWebPasswordUseCase,
   ],
 })
 export class AuthUseCasesModule {}

@@ -9,8 +9,7 @@ import {
   ParseUUIDPipe,
   Query,
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { memoryStorage } from "multer";
+import { BoundedMultipartInterceptor } from "@/shared/interceptors/bounded-multipart.interceptor";
 import { ApiTags } from "@nestjs/swagger";
 import { UserDatabaseRepository } from "@/modules/users";
 import {
@@ -56,6 +55,7 @@ import {
 import { validateImageFile } from "@/shared/utils/image-upload.utils";
 import { deleteUpload, saveUpload } from "@/shared/utils/file.utils";
 import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
+import { RequireStepUp } from '@/shared/auth/step-up.guard';
 
 @ApiTags("Users")
 @Controller("users")
@@ -134,6 +134,7 @@ export class UsersAccountController {
     throttle: { limit: 3, ttl: 3600000 },
     errors: [{ status: 404, description: "User not found" }],
   })
+  @RequireStepUp('export_data')
   async exportMyData(@CurrentUserId() userId: string) {
     return this.exportUserDataUseCase.execute({ userId });
   }
@@ -152,6 +153,7 @@ export class UsersAccountController {
       },
     ],
   })
+  @RequireStepUp('delete_account')
   async requestAccountDeletion(@CurrentUserId() userId: string) {
     return this.requestAccountDeletionUseCase.execute({ userId });
   }
@@ -164,6 +166,7 @@ export class UsersAccountController {
   @AllowTokenTypes(JwtTokenType.ACCESS)
   @WebCookieAuth()
   @StrictOrigin()
+  @RequireStepUp('delete_account')
   async requestWebAccountDeletion(@CurrentUser() user: AuthUser) {
     return this.requestAccountDeletionUseCase.execute({ userId: user.userId });
   }
@@ -217,10 +220,7 @@ export class UsersAccountController {
     httpCode: HttpStatus.OK,
   })
   @UseInterceptors(
-    FileInterceptor("avatar", {
-      storage: memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
-    }),
+    BoundedMultipartInterceptor("avatar", 1, 5 * 1024 * 1024 + 512 * 1024, 4 * 1024, 5 * 1024 * 1024),
   )
   async uploadAvatar(
     @CurrentUserId() userId: string,
@@ -237,10 +237,7 @@ export class UsersAccountController {
     httpCode: HttpStatus.OK,
   })
   @UseInterceptors(
-    FileInterceptor("banner", {
-      storage: memoryStorage(),
-      limits: { fileSize: 8 * 1024 * 1024 },
-    }),
+    BoundedMultipartInterceptor("banner", 1, 8 * 1024 * 1024 + 512 * 1024, 4 * 1024, 8 * 1024 * 1024),
   )
   async uploadBanner(
     @CurrentUserId() userId: string,

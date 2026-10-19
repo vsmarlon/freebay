@@ -13,7 +13,11 @@ export class LogoutSessionUseCase {
   ) {}
 
   async execute(payloads: Array<JwtPayload | undefined>, device?: { userId: string; installationId: string }): Promise<Either<AppError, { message: string }>> {
-    await Promise.all(payloads.map((payload) => this.tokens.revoke(payload?.jti, payload?.exp)));
+    const families = [...new Set(payloads.flatMap((payload) => payload?.sid ? [payload.sid] : []))];
+    await Promise.all([
+      ...payloads.map((payload) => this.tokens.revoke(payload?.jti, payload?.exp)),
+      ...families.map((sid) => this.tokens.revokeFamily(sid)),
+    ]);
     if (device) {
       const removed = await this.notifications.removePushDevice(device.userId, device.installationId);
       if (removed.isLeft()) return left(removed.value);

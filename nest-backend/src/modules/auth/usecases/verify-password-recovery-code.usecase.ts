@@ -32,13 +32,16 @@ export class VerifyPasswordRecoveryCodeUseCase {
       return left(new RecoveryCodeExpiredError());
     }
 
-    if (recovery.attempts >= recovery.maxAttempts) {
-      return left(new RecoveryCodeAttemptsExceededError());
+    if (recovery.codeHash.startsWith('web-reset:')) {
+      return left(new RecoveryCodeNotFoundError());
     }
+
+    const reservation = await this.recoveryRepository.reserveAttempt(recovery.id);
+    if (reservation.isLeft()) return left(reservation.value);
+    if (!reservation.value) return left(new RecoveryCodeAttemptsExceededError());
 
     const matches = await bcrypt.compare(input.code, recovery.codeHash);
     if (!matches) {
-      await this.recoveryRepository.incrementAttempts(recovery.id);
       return left(new RecoveryCodeNotFoundError());
     }
 

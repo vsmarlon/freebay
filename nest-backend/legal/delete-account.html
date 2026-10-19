@@ -38,6 +38,11 @@
   <section id="authenticated" hidden>
     <h2>Conta autenticada</h2>
     <p id="auth-status">Nenhuma exclusão foi solicitada ainda.</p>
+    <div id="step-up-proof">
+      <label for="password">Confirme sua senha atual para solicitar a exclusão</label>
+      <input id="password" type="password" autocomplete="current-password" minlength="8" required>
+      <p>Contas sem senha podem usar a exclusão pelo aplicativo após confirmar a identidade pelo provedor vinculado.</p>
+    </div>
     <label id="confirm-label" class="check">
       <input id="confirm" type="checkbox">
       Confirmo que quero iniciar o prazo de exclusão de 30 dias. Posso cancelar nesse prazo após autenticar novamente.
@@ -73,12 +78,16 @@
   const deleteButton = document.getElementById('delete-button');
   const cancelButton = document.getElementById('cancel-button');
   const authStatus = document.getElementById('auth-status');
+  const password = document.getElementById('password');
 
-  async function request(path, method, body) {
+  async function request(path, method, body, stepUpToken) {
     const response = await fetch(path, {
       method,
       credentials: 'same-origin',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: {
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(stepUpToken ? { 'x-step-up-token': stepUpToken } : {}),
+      },
       body: body ? JSON.stringify(body) : undefined,
     });
     const text = await response.text();
@@ -89,7 +98,7 @@
       error.status = response.status;
       throw error;
     }
-    return data;
+    return data && typeof data.data === 'object' ? data.data : data;
   }
 
   function showAuthenticated(user) {
@@ -100,6 +109,7 @@
       document.getElementById('confirm-label').hidden = true;
       deleteButton.hidden = true;
       cancelButton.hidden = false;
+      document.getElementById('step-up-proof').hidden = true;
     }
   }
 
@@ -137,10 +147,18 @@
 
   confirm.addEventListener('change', () => { deleteButton.disabled = !confirm.checked; });
   deleteButton.addEventListener('click', async () => {
-    if (!confirm.checked) return;
+    if (!confirm.checked || password.value.length < 8) return;
     deleteButton.disabled = true;
     try {
-      const state = await request('/users/me/web', 'DELETE');
+      const proof = await request('/auth/web/step-up', 'POST', {
+        purpose: 'delete_account',
+        proof: { kind: 'password', password: password.value },
+      });
+      password.value = '';
+      if (typeof proof.stepUpToken !== 'string' || !proof.stepUpToken) {
+        throw new Error('Não foi possível confirmar sua identidade. Tente novamente.');
+      }
+      const state = await request('/users/me/web', 'DELETE', null, proof.stepUpToken);
       authStatus.textContent = `Pedido aceito em ${new Date(state.deletionRequestedAt).toLocaleString('pt-BR')}. Exclusão prevista após 30 dias.`;
       document.getElementById('confirm-label').hidden = true;
       deleteButton.hidden = true;

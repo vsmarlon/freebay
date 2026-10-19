@@ -18,6 +18,7 @@ export class RegisterUseCase {
   ) {}
 
   async execute(input: RegisterDTO): Promise<Either<AppError, AuthSessionResponse>> {
+    const sessionStartedAtMs = Date.now();
     const email = normalizeEmail(input.email);
     const existingResult = await this.userRepository.findByEmail(email);
     if (existingResult.isLeft()) return left(existingResult.value);
@@ -54,6 +55,6 @@ export class RegisterUseCase {
     });
     if (createResult.isLeft()) return left(createResult.value);
 
-    return issueSession(createResult.value, this.sessionTokens);
+    return issueSession(createResult.value, this.sessionTokens, sessionStartedAtMs);
   }
 }
