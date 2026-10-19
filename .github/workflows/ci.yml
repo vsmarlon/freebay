@@ -45,6 +45,11 @@ jobs:
         working-directory: nest-backend
         run: npm ci
 
+      - name: Verify root CI scripts and architecture gates
+        run: |
+          node scripts/ci-check.js
+          npm run test:ci-scripts
+
       - name: Generate Prisma Client
         working-directory: nest-backend
         env:
@@ -146,7 +151,7 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Verify architecture and UI gates
-        run: node scripts/ci-check.js
+        run: node scripts/ci-check.js --architecture --routes --design
 
       - name: Verify Dart formatting
         run: dart format --output=none --set-exit-if-changed frontend/lib frontend/test frontend/libs/freebay_design_system/lib
@@ -185,3 +190,39 @@ jobs:
           name: android-debug-apk
           path: frontend/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
+
+  web-ci:
+    name: Web CI (React / TypeScript)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24.10.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.10.0
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Typecheck web
+        working-directory: web
+        run: npm run typecheck
+
+      - name: Lint web
+        working-directory: web
+        run: npm run lint
+
+      - name: Test web
+        working-directory: web
+        run: npm test
+
+      - name: Build web
+        working-directory: web
+        run: npm run build

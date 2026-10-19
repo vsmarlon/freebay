@@ -6,7 +6,13 @@
   "scripts": {
     "prepare": "husky",
     "ci:check": "node scripts/ci-check.js",
-    "test:ci-scripts": "node --test scripts/ci-check.test.js scripts/perf-check.test.js"
+    "test:ci-scripts": "node --test scripts/ci-check.test.js scripts/perf-check.test.js",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "web:typecheck": "npm --prefix web run typecheck",
+    "web:lint": "npm --prefix web run lint",
+    "web:test": "npm --prefix web run test",
+    "web:check": "npm run web:typecheck && npm run web:lint && npm run web:test && npm run web:build"
   },
   "lint-staged": {
     "nest-backend/src/**/*.ts": [

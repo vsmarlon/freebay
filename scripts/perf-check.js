@@ -24,7 +24,7 @@ const limits = [
   ['worst_frame_rasterizer_time_millis', 'worst_frame_rasterizer_ms'],
 ];
 
-function validateSummary(summary) {
+function validateSummary(summary, minimumFrames = 30) {
   const failures = [];
   for (const name of metrics) {
     const value = summary?.[name];
@@ -33,20 +33,20 @@ function validateSummary(summary) {
       failures.push(`${name} missing or invalid`);
     }
   }
-  if (typeof summary?.frame_count === 'number' && summary.frame_count < 30) {
-    failures.push('frame_count below 30: interaction was not measured');
+  if (typeof summary?.frame_count === 'number' && summary.frame_count < minimumFrames) {
+    failures.push(`frame_count below ${minimumFrames}: interaction was not measured`);
   }
   return failures;
 }
 
-function evaluate(summary, config) {
-  const failures = validateSummary(summary);
+function evaluate(summary, config, { minimumFrames = 30, baseline = config.baseline } = {}) {
+  const failures = validateSummary(summary, minimumFrames);
   if (failures.length) return failures;
 
   for (const [metric, threshold] of limits) {
     const max = config.thresholds[threshold];
     if (summary[metric] >= max) failures.push(`${metric} ${summary[metric]}ms >= ${max}ms`);
-    const prior = config.baseline?.[metric];
+    const prior = baseline?.[metric];
     if (typeof prior === 'number' && summary[metric] > prior *
         (1 + config.thresholds.regression_tolerance_pct / 100)) {
       failures.push(`${metric} ${summary[metric]}ms regressed against baseline ${prior}ms`);
@@ -55,6 +55,52 @@ function evaluate(summary, config) {
   for (const metric of ['missed_frame_build_budget_count', 'missed_frame_rasterizer_budget_count']) {
     if (summary[metric] > config.thresholds.missed_frame_budget_count) {
       failures.push(`${metric} ${summary[metric]} exceeds ${config.thresholds.missed_frame_budget_count}`);
+    }
+  }
+  return failures;
+}
+
+function validateDrawerCases(cases, responseData) {
+  if (!Array.isArray(cases) || cases.length !== 6) {
+    return ['drawer_cases missing or incomplete (expected six labeled interactions)'];
+  }
+  const failures = [];
+  const expected = [
+    ['header_tap', 'first_after_app_launch'],
+    ['header_tap', 'repeat_same_process'],
+    ['edge_right_drag', 'repeat_same_process'],
+    ['edge_right_drag', 'repeat_same_process'],
+    ['feed_content_right_drag', 'repeat_same_process'],
+    ['feed_content_right_drag', 'repeat_same_process'],
+  ];
+  for (const [index, item] of cases.entries()) {
+    if (item?.interaction !== expected[index][0] || item?.opening !== expected[index][1] ||
+        item?.open !== true || typeof item.frame_report_key !== 'string') {
+      failures.push(`drawer case ${index + 1} missing expected outcome/label/frame key`);
+    }
+    const frameFailures = validateSummary(responseData?.[item?.frame_report_key], 1);
+    if (frameFailures.length) failures.push(`drawer case ${index + 1}: ${frameFailures.join(', ')}`);
+  }
+  for (const interaction of ['header_tap', 'edge_right_drag', 'feed_content_right_drag']) {
+    const rows = cases.filter((item) => item?.interaction === interaction);
+    if (rows.length !== 2) failures.push(`${interaction} did not produce two labeled opens`);
+  }
+  if (cases.slice(2).some((item) => item.cold_status !== 'pending_separate_profile_launch'))
+    failures.push('drawer cold cases not run must be marked pending');
+  return failures;
+}
+
+function compareDrawerCases(cases, responseData, previous, config) {
+  if (!Array.isArray(previous) || previous.length !== 6) return [];
+  const failures = [];
+  for (const [index, item] of cases.entries()) {
+    const current = responseData[item.frame_report_key];
+    const prior = previous[index]?.frame_summary;
+    for (const [metric] of limits) {
+      if (typeof prior?.[metric] === 'number' && current[metric] >
+          prior[metric] * (1 + config.thresholds.regression_tolerance_pct / 100)) {
+        failures.push(`${item.interaction} ${item.opening}: ${metric} ${current[metric]}ms regressed against baseline ${prior[metric]}ms`);
+      }
     }
   }
   return failures;
@@ -77,7 +123,7 @@ function deviceFor(id) {
   return `${device.name} | ${device.targetPlatform} | ${device.sdk}`;
 }
 
-function evidence({ flow, device, config, summary, previous, failures, status, commandLine, exitStatus }) {
+function evidence({ flow, device, config, summary, previous, responseData, failures, status, commandLine, exitStatus }) {
   const date = new Date().toISOString().slice(0, 10);
   const dir = path.join(root, 'docs', 'test-runs', date);
   fs.mkdirSync(dir, { recursive: true });
@@ -85,6 +131,22 @@ function evidence({ flow, device, config, summary, previous, failures, status, c
   const changed = command('git', ['status', '--short']).stdout.trim();
   const rows = summary ? metrics.map((key) =>
     `| ${key} | ${summary[key]} | ${previous?.[key] ?? '—'} |`).join('\n') : '| (no frame summary) | — | — |';
+  const drawerRows = responseData?.drawer_cases?.map((item) => {
+    const frame = responseData[item.frame_report_key];
+    return `| ${item.interaction} | ${item.opening} | ${item.open} | ${frame?.frame_count ?? 'missing'} | ${frame?.['90th_percentile_frame_build_time_millis'] ?? 'missing'} | ${frame?.worst_frame_build_time_millis ?? 'missing'} | ${frame?.['90th_percentile_frame_rasterizer_time_millis'] ?? 'missing'} | ${frame?.worst_frame_rasterizer_time_millis ?? 'missing'} |`;
+  }).join('\n');
+  const drawerEvidenceCases = responseData?.drawer_cases?.map((item) => ({
+    ...item,
+    frame_summary: responseData[item.frame_report_key] ?? null,
+  }));
+  const drawerEvidence = flow === 'drawer_open' ?
+    `\n## Drawer interactions\n\n` +
+    `| Input | Opening | Opened | Frames | Build p90 ms | Build worst ms | Raster p90 ms | Raster worst ms |\n| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |\n${drawerRows || '| no cases | — | — | — | — | — | — | — |'}\n\n` +
+    `Native input-to-visible-motion latency: unsupported (not inferred from frame or test-harness time).\n\n` +
+    `\`\`\`json\n${JSON.stringify(drawerEvidenceCases ?? null, null, 2)}\n\`\`\`\n` : '';
+  const expected = flow === 'drawer_open'
+    ? 'Each of six labeled drawer opens has valid build/raster FrameTiming; per-case budgets and same-device case baselines apply. Native input latency is unsupported.'
+    : `>=30 frames, build + raster below absolute budgets and within ${config.thresholds.regression_tolerance_pct}% of a measured same-device baseline, zero missed budgets.`;
   const text = `# Performance: ${flow}\n\n` +
     `- Status: **${status}**; exit status: ${exitStatus}\n` +
     `- Tested revision: ${revision}; working-tree changes:\n\n` +
@@ -92,10 +154,10 @@ function evidence({ flow, device, config, summary, previous, failures, status, c
     `- Environment: ${device}; Flutter profile mode; backend and fixture: see docs/DEVICE_TESTING.md\n` +
     `- Command: \`${commandLine}\`\n` +
     `- Fixture/reset: seeded catalog and posts; stories for story_view; authenticated user with a long real conversation for chat_scroll. Restore the same fixture before comparing.\n` +
-    `- Expected: >=30 frames, build + raster below absolute budgets and within ${config.thresholds.regression_tolerance_pct}% of a measured same-device baseline, zero missed budgets.\n\n` +
+    `- Expected: ${expected}\n\n` +
     `| Metric | Actual | Prior baseline |\n| --- | ---: | ---: |\n${rows}\n\n` +
     `- Baseline: \`perf/baselines/${flow}.json\`; recorded at: ${config.recorded_at ?? 'not yet recorded'}\n` +
-    `- Result: ${failures.length ? failures.join('; ') : (status === 'NEW BASELINE' ? 'first measurement, regression comparison pending' : 'within budget')}\n`;
+    `- Result: ${failures.length ? failures.join('; ') : (status === 'NEW BASELINE' ? 'first measurement, regression comparison pending' : 'within budget')}\n` + drawerEvidence;
   fs.writeFileSync(path.join(dir, `perf-${flow}.md`), text);
   console.log(`Evidence: docs/test-runs/${date}/perf-${flow}.md`);
 }
@@ -121,59 +183,74 @@ function run(flow, id, update) {
       exitStatus: 1 });
     throw error;
   }
-  if (!update && (!config.baseline || !config.recorded_at)) {
+  if (!update && (flow === 'drawer_open' ? !config.drawer_cases : !config.baseline || !config.recorded_at)) {
     throw new Error(`${flow}: no measured baseline; run --update-baseline first`);
   }
   if (!update && config.device !== device) {
     throw new Error(`${flow}: baseline is for ${config.device}, not ${device}; use matching hardware or --update-baseline`);
-  }
-  if (device.includes(' | android')) {
-    const mappings = command('adb', ['-s', id, 'reverse', '--list']);
-    if (mappings.error || mappings.status !== 0) {
-      throw new Error(`adb reverse inspection failed: ${mappings.error?.message ?? mappings.stderr}`);
-    }
-    if (!mappings.stdout.split(/\r?\n/).some((line) => line.trim().split(/\s+/)[1] === 'tcp:3000')) {
-      const reverse = command('adb', ['-s', id, 'reverse', 'tcp:3000', 'tcp:3000']);
-      if (reverse.error || reverse.status !== 0) {
-        throw new Error(`adb reverse failed: ${reverse.error?.message ?? reverse.stderr}`);
-      }
-    }
   }
   const previous = config.baseline;
   const response = path.join(frontend, 'build', 'integration_response_data.json');
   fs.rmSync(response, { force: true }); // No stale measurement can pass a failed drive.
   const args = ['drive', '--profile', '--no-dds', '-d', id,
     '--driver=test_driver/integration_test.dart', '--target=integration_test/perf_test.dart',
-    `--dart-define=PERF_FLOW=${flow}`];
+    '--dart-define-from-file=.env', `--dart-define=PERF_FLOW=${flow}`];
   const commandLine = `node scripts/perf-check.js ${flow} --device ${id}${update ? ' --update-baseline' : ''}`;
   console.log(`flutter ${args.join(' ')} (${device})`);
   const result = command('flutter', args, frontend);
   if (result.stdout) process.stdout.write(result.stdout);
   if (result.stderr) process.stderr.write(result.stderr);
   if (result.error || result.status !== 0) {
-    evidence({ flow, device, config, previous, failures: ['flutter drive failed (see console output)'],
+    let responseData;
+    try { responseData = JSON.parse(fs.readFileSync(response, 'utf8')); } catch (_) {}
+    evidence({ flow, device, config, previous, responseData,
+      failures: ['flutter drive failed (see console output)'],
       status: 'BLOCKED', commandLine, exitStatus: result.status ?? 1 });
     throw new Error(`flutter drive failed: ${result.error?.message ?? `exit ${result.status}`}`);
   }
 
-  let summary;
+  let responseData;
   try {
-    summary = JSON.parse(fs.readFileSync(response, 'utf8')).performance;
+    responseData = JSON.parse(fs.readFileSync(response, 'utf8'));
   } catch (_) { // A successful drive with no response is still a failed measurement.
-    summary = null;
+    responseData = null;
   }
+  const summary = responseData?.performance;
   const fixture = result.stdout?.match(/Perf fixture missing: ([^\r\n]+)/)?.[1];
-  const failures = summary ? evaluate(summary, config) :
+  const failures = flow === 'drawer_open' ? [] : summary ? evaluate(summary, config) :
     [fixture ? `Perf fixture missing: ${fixture}` : 'No frame summary from the instrumented interaction'];
-  if (update && validateSummary(summary).length === 0) {
-    config.baseline = Object.fromEntries(metrics.map((key) => [key, summary[key]]));
+  let drawerCaptureFailures = [];
+  if (flow === 'drawer_open') {
+    drawerCaptureFailures = validateDrawerCases(responseData?.drawer_cases, responseData);
+    failures.push(...drawerCaptureFailures);
+    if (!drawerCaptureFailures.length) {
+      for (const item of responseData.drawer_cases) {
+        failures.push(...evaluate(responseData[item.frame_report_key], config, { minimumFrames: 1 })
+          .map((failure) => `${item.interaction} ${item.opening}: ${failure}`));
+      }
+      failures.push(...compareDrawerCases(responseData.drawer_cases, responseData,
+        config.drawer_cases, config));
+    }
+  }
+  if (update && failures.length === 0 &&
+      (flow === 'drawer_open' || validateSummary(summary).length === 0)) {
+    if (flow === 'drawer_open') {
+      config.drawer_cases = responseData.drawer_cases.map((item) => {
+        return { ...item, frame_summary: responseData[item.frame_report_key] };
+      });
+      config.baseline = null;
+      config.measurement_status =
+        'per-case build/raster baseline; native input latency unsupported';
+    } else {
+      config.baseline = Object.fromEntries(metrics.map((key) => [key, summary[key]]));
+    }
     config.recorded_at = new Date().toISOString();
     config.device = device;
     fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`);
-    if (failures.length) console.log(`${flow}: baseline measured but absolute budget still fails`);
   }
-  const status = !summary ? 'BLOCKED' : failures.length ? 'FAIL' : update ? 'NEW BASELINE' : 'PASS';
-  evidence({ flow, device, config, summary, previous, failures, status, commandLine,
+  const status = flow !== 'drawer_open' && !summary || flow === 'drawer_open' && drawerCaptureFailures.length
+    ? 'BLOCKED' : failures.length ? 'FAIL' : update ? 'NEW BASELINE' : 'PASS';
+  evidence({ flow, device, config, summary, previous, responseData, failures, status, commandLine,
     exitStatus: failures.length ? 1 : 0 });
   if (failures.length) throw new Error(`${flow}: ${failures.join('; ')}`);
   console.log(`${flow}: ${status}`);
@@ -202,4 +279,4 @@ function main(args) {
 if (require.main === module) {
   try { main(process.argv.slice(2)); } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
-module.exports = { evaluate };
+module.exports = { evaluate, validateDrawerCases, compareDrawerCases };
