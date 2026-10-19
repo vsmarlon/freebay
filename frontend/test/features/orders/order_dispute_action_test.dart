@@ -21,7 +21,11 @@ void main() {
   testWidgets('dispute action follows the states accepted by the dispute API', (
     tester,
   ) async {
-    for (final status in [OrderStatus.confirmed, OrderStatus.delivered]) {
+    for (final status in [
+      OrderStatus.confirmed,
+      OrderStatus.shipped,
+      OrderStatus.delivered,
+    ]) {
       await tester.pumpWidget(
         MaterialApp(
           locale: const Locale('pt', 'BR'),
@@ -39,20 +43,27 @@ void main() {
       expect(find.text('Abrir uma disputa'), findsOneWidget);
     }
 
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('pt', 'BR'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: OrderActions(
-            order: _order(OrderStatus.shipped),
-            canReview: false,
-            isBuyer: true,
+    for (final status in [
+      OrderStatus.pending,
+      OrderStatus.completed,
+      OrderStatus.cancelled,
+      OrderStatus.disputed,
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('pt', 'BR'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: OrderActions(
+              order: _order(status),
+              canReview: false,
+              isBuyer: true,
+            ),
           ),
         ),
-      ),
-    );
-    expect(find.text('Abrir uma disputa'), findsNothing);
+      );
+      expect(find.text('Abrir uma disputa'), findsNothing);
+    }
   });
 }

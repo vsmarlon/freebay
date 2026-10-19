@@ -33,9 +33,7 @@ void main() {
     () async {
       final client = Dio(BaseOptions(baseUrl: 'http://localhost:3000'))
         ..httpClientAdapter = _CancelAdapter();
-      final result = await OrderRepositoryImpl(
-        client: client,
-      ).cancelOrder(
+      final result = await OrderRepositoryImpl(client: client).cancelOrder(
         'order-1',
         reason: 'Mudei de ideia',
         stepUpToken: 'fresh-proof',

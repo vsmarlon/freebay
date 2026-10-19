@@ -62,7 +62,9 @@ class OrderActions extends StatelessWidget {
     final strings = l10n(context);
     final List<Widget> actions = [];
 
-    if (isBuyer && order.status == OrderStatus.delivered) {
+    if (isBuyer &&
+        (order.status == OrderStatus.shipped ||
+            order.status == OrderStatus.delivered)) {
       actions.add(
         AppButton(
           label: strings.ordersConfirmReceipt,
@@ -135,6 +137,7 @@ class OrderActions extends StatelessWidget {
 
   bool _canDispute() {
     return order.status == OrderStatus.delivered ||
+        order.status == OrderStatus.shipped ||
         order.status == OrderStatus.confirmed;
   }
 

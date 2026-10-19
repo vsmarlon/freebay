@@ -61,12 +61,18 @@ class OrderRepositoryImpl implements OrderRepository {
   );
 
   @override
-  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) =>
-      requestEither(
-        () => client.post('/orders/$orderId/confirm-delivery'),
-        decoder: (response) =>
-            Right(OrderEntity.fromJson(response.data['data'])),
-      );
+  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) async {
+    final confirmation = await requestEither<void>(
+      () => client.patch('/orders/$orderId/confirm-delivery'),
+      decoder: (_) => const Right(null),
+    );
+    if (confirmation.isLeft) {
+      return Left(confirmation.leftOrNull!);
+    }
+
+    // Confirmation returns an acknowledgement; reload the canonical order.
+    return getOrder(orderId);
+  }
 
   @override
   Future<Either<Failure, OrderEntity>> createOrder(String productId) =>

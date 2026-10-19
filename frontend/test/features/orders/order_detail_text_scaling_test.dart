@@ -15,15 +15,19 @@ import 'package:freebay/shared/models/cursor_page.dart';
 import 'package:freebay/shared/l10n/generated/app_localizations.dart';
 
 class _AuthController extends AuthController {
+  _AuthController({this.userId = 'buyer-1'});
+
+  final String userId;
+
   @override
-  AsyncValue<UserEntity?> build() =>
-      const AsyncValue.data(UserEntity(id: 'buyer-1'));
+  AsyncValue<UserEntity?> build() => AsyncValue.data(UserEntity(id: userId));
 }
 
 class _OrderRepository implements OrderRepository {
-  const _OrderRepository(this.order);
+  _OrderRepository(this.order);
 
   final OrderEntity order;
+  int confirmDeliveryCalls = 0;
 
   @override
   Future<Either<Failure, OrderEntity>> getOrder(
@@ -52,8 +56,10 @@ class _OrderRepository implements OrderRepository {
   }) async => const Right(CursorPage.empty());
 
   @override
-  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) async =>
-      Right(order);
+  Future<Either<Failure, OrderEntity>> confirmDelivery(String orderId) async {
+    confirmDeliveryCalls++;
+    return Right(order);
+  }
 
   @override
   Future<Either<Failure, OrderEntity>> createOrder(String productId) async =>
@@ -117,4 +123,71 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('buyer can confirm a shipped order only after confirmation', (
+    tester,
+  ) async {
+    final order = OrderEntity(
+      id: 'order-shipped',
+      buyerId: 'buyer-1',
+      sellerId: 'seller-1',
+      productId: 'product-1',
+      amount: 19990,
+      platformFee: 1999,
+      sellerAmount: 17991,
+      status: OrderStatus.shipped,
+      escrowStatus: EscrowStatus.held,
+      createdAt: DateTime.utc(2026, 9, 30),
+    );
+    final buyerRepository = _OrderRepository(order);
+
+    Future<void> pumpAsUser(String userId, _OrderRepository repository) =>
+        tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              authControllerProvider.overrideWith(
+                () => _AuthController(userId: userId),
+              ),
+              orderRepositoryProvider.overrideWithValue(repository),
+            ],
+            child: MaterialApp(
+              locale: const Locale('pt', 'BR'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: OrderDetailPage(orderId: order.id),
+            ),
+          ),
+        );
+
+    await pumpAsUser('buyer-1', buyerRepository);
+    await tester.pumpAndSettle();
+    final confirmReceipt = find.text('Confirmar recebimento');
+    expect(confirmReceipt, findsOneWidget);
+
+    await tester.ensureVisible(confirmReceipt);
+    await tester.tap(confirmReceipt);
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Ao confirmar o recebimento, o pagamento será liberado para o vendedor.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect(buyerRepository.confirmDeliveryCalls, 0);
+
+    await tester.ensureVisible(confirmReceipt);
+    await tester.tap(confirmReceipt);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Confirmar'));
+    await tester.pumpAndSettle();
+    expect(buyerRepository.confirmDeliveryCalls, 1);
+
+    final sellerRepository = _OrderRepository(order);
+    await pumpAsUser('seller-1', sellerRepository);
+    await tester.pumpAndSettle();
+    expect(find.text('Confirmar recebimento'), findsNothing);
+    expect(sellerRepository.confirmDeliveryCalls, 0);
+  });
 }
