@@ -1,4 +1,4 @@
-.PHONY: help lint analyze format architecture-check boundaries-check design-check routes-check test test-unit test-integration web-check web-dev perf-check run-profile
+.PHONY: help lint analyze format architecture-check boundaries-check design-check routes-check test test-unit test-integration web-check web-dev perf-check run-profile run-debug
 
 BACKEND_DIR  := nest-backend
 FRONTEND_DIR := frontend
@@ -21,6 +21,7 @@ help:
 	@echo "  make web-dev           Start the React web development server"
 	@echo "  make perf-check DEVICE=<id>  Profile all five mobile flows (requires backend and fixtures)"
 	@echo "  make run-profile DEVICE=<id> Run Flutter profile mode with frontend/.env"
+	@echo "  make run-debug DEVICE=<id>   Run Flutter debug with frontend/.env"
 	@echo ""
 
 lint:
@@ -74,7 +75,7 @@ test-unit:
 	cd $(BACKEND_DIR) && npm test
 	@echo ""
 	@echo "=== Flutter unit tests ==="
-	cd $(FRONTEND_DIR) && $(FLUTTER) test
+	cd $(FRONTEND_DIR) && $(FLUTTER) test --dart-define=API_BASE_URL=http://127.0.0.1:43187
 
 test-integration:
 	@echo ""
@@ -94,4 +95,7 @@ perf-check:
 	node scripts/perf-check.js --all --device $(DEVICE)
 
 run-profile:
-	cd $(FRONTEND_DIR) && $(FLUTTER) run --profile --dart-define-from-file=.env $(if $(DEVICE),-d $(DEVICE),)
+	npm run dev:profile -- $(if $(DEVICE),--device $(DEVICE),)
+
+run-debug:
+	npm run dev:debug -- $(if $(DEVICE),--device $(DEVICE),)

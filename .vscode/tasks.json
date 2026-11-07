@@ -1,0 +1,47 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "FreeBay: adb reverse API",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/adb-reverse-api.cjs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "FreeBay: Stop USB setup",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev.cjs", "--stop-task"],
+      "problemMatcher": []
+    },
+    {
+      "label": "FreeBay: USB Profile setup and readiness",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev.cjs", "--mode", "profile", "--transport", "usb", "--setup-only"],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": [{ "regexp": "^(.*)$", "message": 1 }],
+        "background": {
+          "beginsPattern": "^\\[FreeBay\\] Setting up development target\\.",
+          "endsPattern": "^\\[FreeBay\\] profile target selected .* ready\\.$"
+        }
+      }
+    },
+    {
+      "label": "FreeBay: USB Debug setup and readiness",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/dev.cjs", "--mode", "debug", "--transport", "usb", "--setup-only"],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": [{ "regexp": "^(.*)$", "message": 1 }],
+        "background": {
+          "beginsPattern": "^\\[FreeBay\\] Setting up development target\\.",
+          "endsPattern": "^\\[FreeBay\\] debug target selected .* ready\\.$"
+        }
+      }
+    }
+  ]
+}

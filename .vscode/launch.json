@@ -2,7 +2,30 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "FreeBay App",
+      "name": "FreeBay App (USB Profile — default)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "frontend",
+      "program": "frontend/lib/main.dart",
+      "flutterMode": "profile",
+      "deviceId": "${env:FREEBAY_ADB_DEVICE}",
+      "preLaunchTask": "FreeBay: USB Profile setup and readiness",
+      "postDebugTask": "FreeBay: Stop USB setup",
+      "args": ["--dart-define-from-file=.env", "--dart-define=API_BASE_URL=http://localhost:3000"]
+    },
+    {
+      "name": "FreeBay App (USB Debug)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "frontend",
+      "program": "frontend/lib/main.dart",
+      "deviceId": "${env:FREEBAY_ADB_DEVICE}",
+      "preLaunchTask": "FreeBay: USB Debug setup and readiness",
+      "postDebugTask": "FreeBay: Stop USB setup",
+      "args": ["--dart-define-from-file=.env", "--dart-define=API_BASE_URL=http://localhost:3000"]
+    },
+    {
+      "name": "FreeBay App (LAN Debug)",
       "request": "launch",
       "type": "dart",
       "cwd": "frontend",
@@ -12,7 +35,7 @@
       ]
     },
     {
-      "name": "FreeBay App (Profile)",
+      "name": "FreeBay App (LAN Profile)",
       "request": "launch",
       "type": "dart",
       "cwd": "frontend",
