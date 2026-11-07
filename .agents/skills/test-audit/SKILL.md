@@ -7,6 +7,8 @@ description: Use whenever writing, changing, reviewing, or auditing FreeBay test
 
 For behavior changes, follow the tests and evidence policy in `AGENTS.md`; prefer real HTTP/database/device boundaries. Read `docs/FEATURE_TRUTH.md` when capability status matters. For a subsystem-wide test sweep, read [CAMPAIGN.md](CAMPAIGN.md) before work.
 
+A user-visible or journey change is not verified by tests alone: confirm it on a real device following [`freebay-mobile-mcp`](../freebay-mobile-mcp/SKILL.md).
+
 ## Before adding/changing a test
 
 State: (1) observable contract, (2) credible regression, (3) why stronger existing coverage misses it, (4) whether it requires a test-only seam. If any answer is missing, defer. Regression tests must detect the intended behavior failure, not merely fixture/compile problems.

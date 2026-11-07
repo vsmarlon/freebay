@@ -5,6 +5,8 @@ description: Use whenever using mobile-mcp for FreeBay device reproduction, inte
 
 # Mobile verification
 
+Device validation through these flows is required, not optional, for any user-visible or journey change. An automated test suite — red-green regressions included — does not close that change; report what stays test-only verified.
+
 Before device work, read [`docs/DEVICE_TESTING.md`](../../../docs/DEVICE_TESTING.md) and `freebay-app-flows`; establish a concrete expected outcome and fixture. Discover local devices first; use remote only on explicit request. Select the actual app/session and avoid exposing credentials.
 
 Inspect accessibility elements after each screen change and act only on current refs/labels. Capture screenshot, logs and crash state for the target outcome. Group known interactions into a batch. A mock, widget test or screenshot alone does not establish a real journey; payment-sheet launch does not establish settlement.

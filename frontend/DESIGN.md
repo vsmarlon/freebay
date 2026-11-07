@@ -219,6 +219,17 @@ Before building a UI primitive, check whether it exists. The common ones:
 | Screen header | `PageHeader` | A hand-rolled `AppBar` |
 | Avatar | `UserAvatar` | `CircleAvatar` |
 
+### Inputs
+
+`AppTextField` uses a persistent label, readable body-sized entry text, and an opaque
+`surfaceContainerHigh` fill so text remains legible over the aurora. The square field
+has a quiet enabled edge and a magenta focus outline; validation errors use the
+theme error color. Keep hints/examples secondary to the label, and keep help or
+field-specific feedback adjacent to the field rather than replacing its label. The
+shared `OutlineInputBorder` explicitly uses `BorderRadius.zero`: unlike most Material
+shapes, its constructor defaults to a 4px radius, so omitting the radius breaks the
+square-corner rule.
+
 Extend a primitive rather than inlining a copy of it. A second implementation of a
 thing that already exists is how the system drifts.
 
