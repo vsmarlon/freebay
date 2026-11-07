@@ -179,6 +179,35 @@ describe('User search (HTTP + real database)', () => {
     expect(users.findIndex((user) => user.id === rankIds[2])).toBeLessThan(users.findIndex((user) => user.id === rankIds[0]));
     const tied = users.filter((user) => [rankIds[0], rankIds[1]].includes(user.id)).map((user) => user.id);
     expect(tied).toEqual([rankIds[0], rankIds[1]].sort());
+    const atSearch = await call('/users/search?q=%40rankneedle');
+    expect(atSearch.body.data.users.map((user) => user.id)).toEqual([exactUsernameId, prefixUsernameId]);
+    const emptyHandle = await call('/users/search?q=%40');
+    expect(emptyHandle.body.data.users).toEqual([]);
+  }, 120000);
+
+  it('pages suggestions with stable non-overlapping results and preserves the users array', async () => {
+    const followed = await register('Suggestion followed', 'suggestfollowed');
+    const candidates = await Promise.all([
+      register('Suggestion A', 'suggesta'),
+      register('Suggestion B', 'suggestb'),
+      register('Suggestion C', 'suggestc'),
+    ]);
+    await prisma.follow.create({ data: { followerId: viewerId, followingId: followed.data.user.id } });
+    await prisma.follow.createMany({ data: candidates.map((candidate) => ({ followerId: followed.data.user.id, followingId: candidate.data.user.id })) });
+    const firstResponse = await fetch(`${baseUrl}/users/suggestions?limit=2`, { headers: { Authorization: `Bearer ${token}`, 'X-Forwarded-For': `198.51.100.${++testCaseNumber}` } });
+    const first: unknown = await firstResponse.json();
+    expect(firstResponse.status).toBe(200);
+    const firstData = suggestionsData(first);
+    const firstUsers = firstData.users;
+    expect(firstData).toMatchObject({ meta: { hasMore: true, nextOffset: 2 } });
+    expect(firstUsers).toHaveLength(2);
+    const secondResponse = await fetch(`${baseUrl}/users/suggestions?limit=2&offset=2`, { headers: { Authorization: `Bearer ${token}`, 'X-Forwarded-For': `198.51.100.${++testCaseNumber}` } });
+    const second: unknown = await secondResponse.json();
+    expect(secondResponse.status).toBe(200);
+    const secondData = suggestionsData(second);
+    expect(secondData.users).toHaveLength(1);
+    expect(secondData.users.map((user) => user.id)).not.toEqual(expect.arrayContaining(firstUsers.map((user) => user.id)));
+    expect(secondData.meta).toEqual({ hasMore: false, nextOffset: null });
   }, 120000);
 
   it('excludes blocks in either direction before pagination and keeps blank and one-character queries compatible', async () => {
@@ -224,3 +253,10 @@ describe('User search (HTTP + real database)', () => {
     expect(noRows.nextOffset).toBeNull();
   }, 120000);
 });
+
+function suggestionsData(value: unknown): { users: Array<{ id: string }>; meta: { hasMore: boolean; nextOffset: number | null } } {
+  if (typeof value !== 'object' || value === null || !('data' in value) || typeof value.data !== 'object' || value.data === null || !('users' in value.data) || !Array.isArray(value.data.users) || !('meta' in value.data) || typeof value.data.meta !== 'object' || value.data.meta === null || !('hasMore' in value.data.meta) || typeof value.data.meta.hasMore !== 'boolean' || !('nextOffset' in value.data.meta) || (typeof value.data.meta.nextOffset !== 'number' && value.data.meta.nextOffset !== null)) throw new Error('Unexpected suggestions response');
+  const users = value.data.users.filter((user): user is { id: string } => typeof user === 'object' && user !== null && 'id' in user && typeof user.id === 'string');
+  if (users.length !== value.data.users.length) throw new Error('Unexpected suggestions response');
+  return { users, meta: { hasMore: value.data.meta.hasMore, nextOffset: value.data.meta.nextOffset } };
+}

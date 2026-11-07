@@ -211,23 +211,25 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     form.append('type', 'REGULAR');
     form.append('audience', 'CLOSE_FRIENDS');
     form.append('content', 'a private memory');
-    form.append('image', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'post.png');
+    form.append('mediaMetadata', JSON.stringify([{ fileIndex: 0, type: 'IMAGE' }]));
+    form.append('files', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'post.png');
     const createdResponse = await fetch(`${baseUrl}/social/posts`, {
       method: 'POST', headers: { Authorization: `Bearer ${author.token}`, ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}) }, body: form,
     });
     expect(createdResponse.status).toBe(201);
     const created = await createdResponse.json() as Body;
-    const post = created.data as { id: string; imageUrl: string; audience: string };
+    const post = created.data as { id: string; media: Array<{ url: string; blurHash?: string }>; audience: string };
     expect(post.audience).toBe('CLOSE_FRIENDS');
-    expect(post.imageUrl).toMatch(/\/media\/privatepost\//);
-    expect(post).not.toHaveProperty('imageBlurHash');
+    expect(post.media[0].url).toMatch(/\/media\/privatepost\//);
+    expect(post.media[0]).not.toHaveProperty('blurHash');
     const publicCount = await prisma.post.count({ where: { userId: author.id, audience: 'EVERYONE', deletedAt: null } });
     expect((await call('GET', `/users/${author.id}`, outsider.token)).json.data.postsCount).toBe(publicCount);
     expect((await call('GET', `/users/${author.id}`, friend.token)).json.data.postsCount).toBe(publicCount + 1);
     const postPath = `/social/posts/${post.id}`;
     const readList = async (path: string, token: string) => (await call('GET', path, token)).json.data;
     expect((await call('GET', postPath, friend.token)).status).toBe(200);
-    expect((await call('GET', postPath, friend.token)).json.data).not.toHaveProperty('imageBlurHash');
+    const privateDetail = (await call('GET', postPath, friend.token)).json.data as { media: Array<{ blurHash?: string }> };
+    expect(privateDetail.media[0]).not.toHaveProperty('blurHash');
     expect((await call('GET', postPath, follower.token)).status).toBe(404);
     expect((await call('GET', postPath, outsider.token)).status).toBe(404);
     expect((await call('GET', postPath)).status).toBe(404);
@@ -246,7 +248,7 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     expect((await call('POST', `${postPath}/save`, friend.token)).status).toBe(201);
     expect((await call('POST', `${postPath}/comments`, friend.token, { content: 'nice' })).status).toBe(201);
     expect(JSON.stringify(await readList(`${postPath}/comments`, outsider.token))).not.toContain('nice');
-    const mediaPath = new URL(post.imageUrl, baseUrl).pathname;
+    const mediaPath = new URL(post.media[0].url, baseUrl).pathname;
     expect((await fetch(`${baseUrl}${mediaPath}`)).status).toBe(401);
     expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${follower.token}` } })).status).toBe(404);
     expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${friend.token}` } })).status).toBe(200);
@@ -300,13 +302,14 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     postForm.append('type', 'REGULAR');
     postForm.append('audience', 'CLOSE_FRIENDS');
     postForm.append('content', 'private connection post');
-    postForm.append('image', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'post.png');
+    postForm.append('mediaMetadata', JSON.stringify([{ fileIndex: 0, type: 'IMAGE' }]));
+    postForm.append('files', new Blob([Buffer.from('89504e470d0a1a0a00000000', 'hex')], { type: 'image/png' }), 'post.png');
     const postResponse = await fetch(`${baseUrl}/social/posts`, {
       method: 'POST', headers: { Authorization: `Bearer ${owner.token}`, ...(testClientIp ? { 'X-Forwarded-For': testClientIp } : {}) }, body: postForm,
     });
     expect(postResponse.status).toBe(201);
     const postData = await postResponse.json() as Body;
-    const privatePost = postData.data as { id: string; imageUrl: string };
+    const privatePost = postData.data as { id: string; media: Array<{ url: string }> };
     const hasStory = async (token: string) => {
       const response = await call('GET', '/stories', token);
       if (response.status !== 200) throw new Error(`GET /stories returned ${response.status}: ${JSON.stringify(response.json)}`);
@@ -319,7 +322,7 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     expect((await call('GET', `/social/posts/${privatePost.id}`, friend.token)).status).toBe(200);
     expect((await call('GET', `/social/posts/${privatePost.id}`, follower.token)).status).toBe(200);
     expect((await call('GET', `/social/posts/${privatePost.id}`, stranger.token)).status).toBe(404);
-    const mediaPath = new URL(privatePost.imageUrl, baseUrl).pathname;
+    const mediaPath = new URL(privatePost.media[0].url, baseUrl).pathname;
     expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${follower.token}` } })).status).toBe(200);
     expect((await fetch(`${baseUrl}${mediaPath}`, { headers: { Authorization: `Bearer ${stranger.token}` } })).status).toBe(404);
 
@@ -350,8 +353,9 @@ describe('Story audiences and safety (HTTP + real database)', () => {
     const form = new FormData();
     form.append('type', 'REGULAR');
     form.append('content', 'public image with a compact placeholder');
+    form.append('mediaMetadata', JSON.stringify([{ fileIndex: 0, type: 'IMAGE' }]));
     form.append(
-      'image',
+      'files',
       new Blob([
         readFileSync(join(process.cwd(), '..', 'frontend', 'assets', 'freebay-textonly.png')),
       ], { type: 'image/png' }),
@@ -363,19 +367,19 @@ describe('Story audiences and safety (HTTP + real database)', () => {
       body: form,
     });
     const created = await createdResponse.json() as Body;
-    const post = created.data as { id: string; imageUrl: string; imageBlurHash?: unknown };
+    const post = created.data as { id: string; media: Array<{ url: string; blurHash?: unknown }> };
     expect(createdResponse.status).toBe(201);
-    expect(typeof post.imageBlurHash).toBe('string');
-    if (typeof post.imageBlurHash !== 'string') return;
-    const publicFile = join(process.cwd(), post.imageUrl.replace('/uploads/', 'uploads/'));
+    expect(typeof post.media[0].blurHash).toBe('string');
+    if (typeof post.media[0].blurHash !== 'string') return;
+    const publicFile = join(process.cwd(), post.media[0].url.replace('/uploads/', 'uploads/'));
     expect(existsSync(publicFile)).toBe(true);
     createdPublicFiles.push(publicFile);
 
     const detail = await call('GET', `/social/posts/${post.id}`, owner.token);
-    expect(detail.json.data.imageBlurHash).toBe(post.imageBlurHash);
+    expect((detail.json.data as { media: Array<{ blurHash?: string }> }).media[0].blurHash).toBe(post.media[0].blurHash);
     const feed = await call('GET', '/social/feed', owner.token);
-    const posts = feed.json.data.posts as { id: string; imageBlurHash?: string }[];
-    expect(posts.find((item) => item.id === post.id)?.imageBlurHash).toBe(post.imageBlurHash);
+    const posts = feed.json.data.posts as { id: string; media: Array<{ blurHash?: string }> }[];
+    expect(posts.find((item) => item.id === post.id)?.media[0].blurHash).toBe(post.media[0].blurHash);
 
     const privateUpload = new FormData();
     privateUpload.append('file', new Blob([

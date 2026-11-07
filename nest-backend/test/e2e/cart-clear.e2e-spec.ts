@@ -156,8 +156,9 @@ describe('Cart clear HTTP regression', () => {
         title: 'Cart regression item',
         description: 'HTTP fixture',
         price: 1000,
+        quantity: 10,
         condition: 'USED',
-        images: { create: { url: '/fixture.jpg' } },
+        media: { create: { url: '/fixture.jpg', type: 'IMAGE' } },
       },
     });
     await prisma.cartItem.createMany({
@@ -193,5 +194,30 @@ describe('Cart clear HTTP regression', () => {
     expect(await prisma.cartItem.findUniqueOrThrow({
       where: { userId_productId: { userId: other.id, productId: product.id } },
     })).toMatchObject({ quantity: 4 });
+
+    const limitedProduct = await prisma.product.create({
+      data: {
+        sellerId: other.id,
+        categoryId: category.id,
+        title: 'One remaining item',
+        description: 'Stock regression fixture',
+        price: 1000,
+        quantity: 3,
+        soldCount: 2,
+        condition: 'USED',
+      },
+    });
+    const limitedPath = `/cart/${limitedProduct.id}`;
+    expect((await request('POST', limitedPath, ownerToken, { quantity: 2 })).status).toBe(400);
+    expect(await prisma.cartItem.count({
+      where: { userId: owner.id, productId: limitedProduct.id },
+    })).toBe(0);
+    expect((await request('POST', limitedPath, ownerToken, { quantity: 1 })).status).toBe(201);
+    expect((await request('POST', limitedPath, ownerToken, { quantity: 1 })).status).toBe(400);
+    expect((await request('PATCH', limitedPath, ownerToken, { quantity: 2 })).status).toBe(400);
+    expect(await prisma.cartItem.findUniqueOrThrow({
+      where: { userId_productId: { userId: owner.id, productId: limitedProduct.id } },
+    })).toMatchObject({ quantity: 1 });
+    expect((await request('PATCH', limitedPath, ownerToken, { quantity: 1 })).status).toBe(200);
   });
 });

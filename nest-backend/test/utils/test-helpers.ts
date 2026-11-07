@@ -60,9 +60,9 @@ export async function cleanDatabase(prisma: PrismaClient): Promise<void> {
     "ChatMessage", "ReviewImage", "Review", "Dispute",
     "WalletEntry", "ConnectAccount", "PaymentGroup", "Transaction", "Order",
     "CartItem", "Favorite", "StoryView", "Story", "SavedPost", "Share",
-    "CommentMention", "CommentLike", "Comment", "PostMention", "Like", "Post",
+    "CommentMention", "CommentLike", "Comment", "PostMention", "Like", "PostMedia", "Post",
     "Block", "Follow", "Notification", "Report", "ModerationAction", "BugReport",
-    "ProductImage", "Product", "Wallet", "User", "Category" CASCADE`);
+    "ProductMedia", "Product", "Wallet", "User", "Category" CASCADE`);
 }
 
 export function assertSafeTestEnvironment(): void {

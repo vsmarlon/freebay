@@ -268,8 +268,8 @@ describe('Marketplace journey (HTTP + real database)', () => {
     expect(lookup.status).toBe(200);
     const result = parseData<{ available: boolean; suggestions: string[] }>(lookup);
     expect(result.available).toBe(false);
-    expect(result.suggestions).toHaveLength(3);
-    expect(new Set(result.suggestions).size).toBe(3);
+    expect(result.suggestions).toHaveLength(20);
+    expect(new Set(result.suggestions).size).toBe(20);
     expect(result.suggestions).not.toContain(`${username}_1`);
     for (const suggestion of result.suggestions) {
       expect(suggestion).toMatch(/^[a-z0-9_]{3,20}$/);
@@ -286,6 +286,27 @@ describe('Marketplace journey (HTTP + real database)', () => {
     expect(registration.status).toBe(201);
     const after = await get(`/auth/username-available?u=${chosen}`);
     expect(parseData<{ available: boolean }>(after).available).toBe(false);
+  });
+
+  it('finds useful free alternatives after the initial suffix slots are occupied', async () => {
+    const username = `crowded_${suffix}`.slice(0, 16);
+    await prisma.user.create({ data: { email: `crowded-base-${suffix}@example.com`, username, displayName: 'Crowded' } });
+    await prisma.user.createMany({ data: Array.from({ length: 12 }, (_, index) => ({
+      email: `crowded-${index}-${suffix}@example.com`,
+      username: `${username}_${index + 1}`.slice(0, 20),
+      displayName: 'Occupied',
+    })) });
+
+    const lookup = await get(`/auth/username-available?u=${username}`);
+    expect(lookup.status).toBe(200);
+    const result = parseData<{ available: boolean; suggestions: string[] }>(lookup);
+    expect(result.available).toBe(false);
+    expect(result.suggestions).toHaveLength(20);
+    expect(new Set(result.suggestions).size).toBe(20);
+    for (const suggestion of result.suggestions) {
+      expect(suggestion).toMatch(/^[a-z0-9_]{3,20}$/);
+      expect(await prisma.user.findUnique({ where: { username: suggestion } })).toBeNull();
+    }
   });
 
   it('rejects a duplicate email without enumerating state', async () => {
@@ -339,9 +360,10 @@ describe('Marketplace journey (HTTP + real database)', () => {
           price: '10990',
           condition: 'USED',
           categoryId,
+          mediaMetadata: JSON.stringify([{ fileIndex: 0, type: 'IMAGE' }]),
         },
         file: readFileSync(join(process.cwd(), '..', 'frontend', 'assets', 'freebay-textonly.png')),
-        fieldName: 'image',
+        fieldName: 'files',
         mimeType: 'image/png',
         fileName: 'product.png',
       },
@@ -350,14 +372,14 @@ describe('Marketplace journey (HTTP + real database)', () => {
     const product = parseData<{
       id: string;
       price: number;
-      images: { url: string; blurHash?: string }[];
+      media: { url: string; blurHash?: string }[];
     }>(res);
     expect(product.price).toBe(10990);
     expect(typeof product.id).toBe('string');
     expect(product.id).not.toHaveLength(0);
     productId = product.id;
-    expect(product.images?.[0]?.blurHash).toEqual(expect.any(String));
-    createdUploads.push(product.images[0].url);
+    expect(product.media?.[0]?.blurHash).toEqual(expect.any(String));
+    createdUploads.push(product.media[0].url);
   });
 
   it('persists an uploaded avatar BlurHash through the public profile response', async () => {
@@ -381,9 +403,9 @@ describe('Marketplace journey (HTTP + real database)', () => {
   });
 
   it('rejects another seller’s product and avatar files without deleting their files', async () => {
-    const productImage = parseData<{ product: { images: Array<{ url: string }> } }>(
+    const productImage = parseData<{ product: { media: Array<{ url: string }> } }>(
       await get(`/products/${productId}`),
-    ).product.images[0].url;
+    ).product.media[0].url;
     const productFile = join(process.cwd(), productImage.replace('/uploads/', 'uploads/'));
     expect(existsSync(productFile)).toBe(true);
 
@@ -422,8 +444,10 @@ describe('Marketplace journey (HTTP + real database)', () => {
           price: '-5',
           condition: 'USED',
           categoryId,
+          mediaMetadata: JSON.stringify([{ fileIndex: 0, type: 'IMAGE' }]),
         },
         file: Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+        fieldName: 'files',
       },
     });
     expect(res.status).toBe(400);
@@ -525,8 +549,12 @@ describe('Marketplace journey (HTTP + real database)', () => {
           price: '5000',
           condition: 'NEW',
           categoryId,
+          mediaMetadata: JSON.stringify([{ fileIndex: 0, type: 'IMAGE' }]),
         },
-        file: Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+        file: readFileSync(join(process.cwd(), '..', 'frontend', 'assets', 'freebay-textonly.png')),
+        fieldName: 'files',
+        mimeType: 'image/png',
+        fileName: 'second-product.png',
       },
     });
     expect(second.status).toBe(201);
@@ -553,11 +581,11 @@ describe('Marketplace journey (HTTP + real database)', () => {
     const res = await get(`/products/${productId}`);
     expect(res.status).toBe(200);
     const detail = parseData<{
-      product: { price: number; images: Array<{ url: string }> };
+      product: { price: number; media: Array<{ url: string }> };
     }>(res).product;
     expect(detail.price).toBe(10990);
-    expect(detail.images).toHaveLength(1);
-    createdUploads.push(detail.images[0].url);
+    expect(detail.media).toHaveLength(1);
+    createdUploads.push(detail.media[0].url);
   });
 
   it('paginates own posts and reposts together in the profile timeline without losing text', async () => {
@@ -572,12 +600,12 @@ describe('Marketplace journey (HTTP + real database)', () => {
     const first = await get(`/social/posts/user/${seller.id}/timeline?limit=2`, sellerToken);
     expect(first.status).toBe(200);
     const page = parseData<{
-      items: Array<{ post: { id: string; content: string; imageUrl: string | null }; isReposted: boolean; repostedBy: { id: string } | null }>;
+      items: Array<{ post: { id: string; content: string; media: unknown[] }; isReposted: boolean; repostedBy: { id: string } | null }>;
       nextCursor: string | null;
       hasMore: boolean;
     }>(first);
     expect(page.items.map((entry) => entry.post.id)).toEqual([latest.id, foreign.id]);
-    expect(page.items[0].post.imageUrl).toBeNull();
+    expect(page.items[0].post.media).toEqual([]);
     expect(page.items[0].post.content).toBe('Text-only last');
     expect(page.items[1].isReposted).toBe(true);
     expect(page.items[1].repostedBy?.id).toBe(seller.id);
