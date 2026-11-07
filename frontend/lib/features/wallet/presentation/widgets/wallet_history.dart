@@ -29,7 +29,7 @@ class WalletHistoryList extends StatelessWidget {
           ),
           Spacing.vSm,
           AppButton(
-            label: strings.commonRetry,
+            label: strings.commonRetry.toUpperCase(),
             variant: AppButtonVariant.secondary,
             onPressed: onRetry,
           ),

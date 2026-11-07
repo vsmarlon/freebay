@@ -46,7 +46,7 @@ class CartCheckoutPage extends HookConsumerWidget {
         child: Column(
           children: [
             PageHeader(
-              text: strings.cartCheckoutTitle,
+              text: strings.cartCheckoutTitle.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
                 semanticLabel: strings.accessibilityBack,
@@ -94,7 +94,7 @@ class CartCheckoutPage extends HookConsumerWidget {
                   : cart.items.isEmpty
                   ? EmptyState(
                       icon: Icons.shopping_cart_outlined,
-                      title: strings.cartEmptyTitle,
+                      title: strings.cartEmptyTitle.toUpperCase(),
                       subtitle: strings.cartEmptyBody,
                     )
                   : Column(
@@ -221,7 +221,7 @@ class CartCheckoutPage extends HookConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                strings.cartCheckoutGenerated,
+                strings.cartCheckoutGenerated.toUpperCase(),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -290,7 +290,7 @@ class CartCheckoutPage extends HookConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(strings.orderStatusConfirmed),
+              Text(strings.orderStatusConfirmed.toUpperCase()),
               Spacing.vMd,
               AppButton(
                 label: strings.cartViewOrders,

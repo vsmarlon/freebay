@@ -42,7 +42,7 @@ class OrderActions extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n(context).ordersActions,
+            l10n(context).ordersActions.toUpperCase(),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,

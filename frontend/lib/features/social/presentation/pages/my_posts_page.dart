@@ -256,7 +256,7 @@ class MyPostsPage extends HookConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     showBrutalistSheet(
       context: context,
-      title: strings.feedPostTitle,
+      title: strings.feedPostTitle.toUpperCase(),
       builder: (sheetContext) => AppButton(
         label: strings.feedDeletePost,
         variant: AppButtonVariant.danger,

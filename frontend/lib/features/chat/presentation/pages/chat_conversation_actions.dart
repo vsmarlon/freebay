@@ -119,7 +119,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
           context,
           message: l10n(context).chatSendDeliveryUncertain,
           action: SnackBarAction(
-            label: l10n(context).commonRetry,
+            label: l10n(context).commonRetry.toUpperCase(),
             onPressed: () {
               if (_messageController.text.trim() == draft && draft != null) {
                 unawaited(_sendMessage(clientMessageId: pendingId));
@@ -309,7 +309,7 @@ mixin _ChatConversationActions on ConsumerState<ChatConversationPage> {
           context,
           localizedFailureMessage(context, failure),
           action: SnackBarAction(
-            label: l10n(context).commonRetry,
+            label: l10n(context).commonRetry.toUpperCase(),
             onPressed: () => _sendLocation(
               metadata: metadata,
               replyToId: replyToId,

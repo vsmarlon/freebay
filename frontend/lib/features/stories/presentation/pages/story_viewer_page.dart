@@ -541,7 +541,7 @@ class _GroupStoryViewerState extends ConsumerState<GroupStoryViewer>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          l10n(context).closeFriendsTitle,
+                          l10n(context).closeFriendsTitle.toUpperCase(),
                           style: AppTypography.brutalistTag.copyWith(
                             color: AppColors.onPrimary,
                           ),

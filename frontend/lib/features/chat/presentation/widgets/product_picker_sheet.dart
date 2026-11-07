@@ -14,7 +14,7 @@ Future<void> showProductPickerSheet({
 }) {
   return showBrutalistSheet<void>(
     context: context,
-    title: l10n(context).chatChooseProduct,
+    title: l10n(context).chatChooseProduct.toUpperCase(),
     padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
     scrollable: false,
     builder: (_) => _ProductPickerSheet(onProductSelected: onProductSelected),

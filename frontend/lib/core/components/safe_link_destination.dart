@@ -36,7 +36,7 @@ class SafeLinkDestination extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            strings.safeLinkDestination,
+            strings.safeLinkDestination.toUpperCase(),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 10,

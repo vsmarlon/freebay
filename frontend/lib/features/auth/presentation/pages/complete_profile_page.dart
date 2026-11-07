@@ -115,7 +115,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
             child: Column(
               children: [
                 AuthHeader(
-                  title: strings.authCompleteProfileTitle,
+                  title: strings.authCompleteProfileTitle.toUpperCase(),
                   onBack: _confirmCancel,
                   backTooltip: strings.authBackToLogin,
                 ),
@@ -198,7 +198,7 @@ class _CompleteProfilePageState extends ConsumerState<CompleteProfilePage>
                             begin: 0.49,
                             end: 0.77,
                             child: AppButton(
-                              label: strings.commonFinish,
+                              label: strings.commonFinish.toUpperCase(),
                               size: AppButtonSize.large,
                               isLoading: authState.isLoading,
                               onPressed: _handleComplete,

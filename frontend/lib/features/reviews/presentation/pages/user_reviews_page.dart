@@ -83,7 +83,7 @@ class _UserReviewsPageState extends ConsumerState<UserReviewsPage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.reviewsTitle,
+              text: strings.reviewsTitle.toUpperCase(),
               subtitle: widget.userName,
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,

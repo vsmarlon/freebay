@@ -155,7 +155,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                strings.productTitle,
+                strings.productTitle.toUpperCase(),
                 style: AppTypography.labelSmall.copyWith(
                   color: context.textSecondary,
                 ),

@@ -205,7 +205,7 @@ class _MarketplaceStickersView extends StatelessWidget {
           onTap: () async {
             final location = await _promptText(
               context,
-              title: strings.mediaEditorLocationTitle,
+              title: strings.mediaEditorLocationTitle.toUpperCase(),
               hint: strings.mediaEditorLocationHint,
             );
             if (location != null && location.trim().isNotEmpty) {
@@ -277,11 +277,17 @@ class _MarketplaceStickersView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(strings.commonCancel, style: AppTypography.button),
+            child: Text(
+              strings.commonCancel.toUpperCase(),
+              style: AppTypography.button,
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
-            child: Text(strings.commonApply, style: AppTypography.button),
+            child: Text(
+              strings.commonApply.toUpperCase(),
+              style: AppTypography.button,
+            ),
           ),
         ],
       ),

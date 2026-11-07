@@ -55,7 +55,7 @@ class BrutalistFilterChip extends StatelessWidget {
               const SizedBox(width: 6),
             ],
             Text(
-              label,
+              label.toUpperCase(),
               style: AppTypography.brutalistTag.copyWith(
                 color: _active ? AppColors.white : context.textPrimary,
                 fontSize: 11,

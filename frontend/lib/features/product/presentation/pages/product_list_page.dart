@@ -148,7 +148,7 @@ class _ProductListPageState extends ConsumerState<ProductListPage>
                 height: headerHeight,
                 edge: ScrollBarEdge.top,
                 child: PageHeader(
-                  text: strings.navExplore,
+                  text: strings.navExplore.toUpperCase(),
                   actions: [
                     IconButton(
                       icon: Icon(

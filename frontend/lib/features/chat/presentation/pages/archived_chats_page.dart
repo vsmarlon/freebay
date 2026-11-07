@@ -49,7 +49,7 @@ class _ArchivedChatsPageState extends ConsumerState<ArchivedChatsPage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.chatArchivedTitle,
+              text: strings.chatArchivedTitle.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
                 semanticLabel: strings.accessibilityBack,

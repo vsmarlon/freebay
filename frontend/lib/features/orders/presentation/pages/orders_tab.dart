@@ -164,7 +164,7 @@ class OrdersTab extends ConsumerWidget {
                       ),
                       Spacing.vSm,
                       AppButton(
-                        label: l10n(context).commonRetry,
+                        label: l10n(context).commonRetry.toUpperCase(),
                         size: AppButtonSize.compact,
                         onPressed: view.loadMore,
                       ),

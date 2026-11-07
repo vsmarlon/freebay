@@ -53,7 +53,7 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        EyebrowLabel(strings.profileTheme),
+        EyebrowLabel(strings.profileTheme, uppercase: false),
         Spacing.vSm,
         ListTile(
           contentPadding: EdgeInsets.zero,
@@ -187,7 +187,7 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
           ),
         ),
         Spacing.vLg,
-        EyebrowLabel(strings.faqAccountProfile),
+        EyebrowLabel(strings.faqAccountProfile, uppercase: false),
         Spacing.vSm,
         ListTile(
           contentPadding: EdgeInsets.zero,

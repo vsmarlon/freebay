@@ -21,7 +21,7 @@ class NotificationsPage extends ConsumerWidget {
       body: Column(
         children: [
           PageHeader(
-            text: strings.notificationsTitle,
+            text: strings.notificationsTitle.toUpperCase(),
             leading: BrutalistIconButton(
               icon: Icons.arrow_back,
               semanticLabel: strings.accessibilityBack,

@@ -95,7 +95,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           child: Column(
             children: [
               AuthHeader(
-                title: strings.authLogin,
+                title: strings.authLogin.toUpperCase(),
                 showBack: context.canPop(),
                 onBack: () => context.pop(),
               ),
@@ -231,14 +231,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               AppButton(
-                                label: strings.authEnterAccount,
+                                label: strings.authEnterAccount.toUpperCase(),
                                 size: AppButtonSize.large,
                                 isLoading: authState.isLoading,
                                 onPressed: _handleLogin,
                               ),
                               Spacing.vMd,
                               GoogleAuthButton(
-                                label: strings.authSignInGoogle,
+                                label: strings.authSignInGoogle.toUpperCase(),
                                 loading: authState.isLoading,
                                 onTap: () => ref
                                     .read(authControllerProvider.notifier)
@@ -266,7 +266,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           end: 0.86,
                           child: Text.rich(
                             TextSpan(
-                              text: '${strings.authNoAccountQuestion} ',
+                              text:
+                                  '${strings.authNoAccountQuestion.toUpperCase()} ',
                               style: TextStyle(
                                 fontFamily: AppTypography.fontFamily,
                                 fontSize: 12,
@@ -275,7 +276,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               ),
                               children: [
                                 TextSpan(
-                                  text: strings.authSignUp,
+                                  text: strings.authSignUp.toUpperCase(),
                                   style: const TextStyle(
                                     fontFamily:
                                         AppTypography.headlineFontFamily,

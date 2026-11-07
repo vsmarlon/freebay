@@ -145,7 +145,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                   : center == null
                   ? Center(
                       child: AppButton(
-                        label: strings.commonRetry,
+                        label: strings.commonRetry.toUpperCase(),
                         onPressed: _determinePosition,
                       ),
                     )

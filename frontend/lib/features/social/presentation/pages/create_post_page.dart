@@ -188,7 +188,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.feedCreatePublication,
+              text: strings.feedCreatePublication.toUpperCase(),
               leading: GestureDetector(
                 onTap: () => context.pop(),
                 child: Container(

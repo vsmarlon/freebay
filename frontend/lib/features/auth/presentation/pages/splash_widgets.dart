@@ -41,7 +41,7 @@ class _SplashGetStartedButtonState extends State<SplashGetStartedButton> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              l10n(context).commonGetStarted,
+              l10n(context).commonGetStarted.toUpperCase(),
               style: const TextStyle(
                 fontFamily: AppTypography.headlineFontFamily,
                 fontSize: 16,
@@ -81,7 +81,7 @@ class SplashStatBlock extends StatelessWidget {
         ),
         Spacing.vXs,
         Text(
-          label,
+          label.toUpperCase(),
           style: const TextStyle(
             fontFamily: AppTypography.fontFamily,
             fontSize: 10,

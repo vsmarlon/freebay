@@ -50,7 +50,7 @@ class OrderStatusTimeline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            strings.orderStatusHeading,
+            strings.orderStatusHeading.toUpperCase(),
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontSize: 12,

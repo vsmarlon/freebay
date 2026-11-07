@@ -34,7 +34,7 @@ class _CreateDisputePageState extends ConsumerState<CreateDisputePage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.disputeOpen,
+              text: strings.disputeOpen.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
                 semanticLabel: strings.accessibilityBack,

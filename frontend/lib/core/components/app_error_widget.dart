@@ -69,9 +69,12 @@ class _AppErrorWidgetState extends State<AppErrorWidget> {
                   ? null
                   : AppButton(
                       label: switch (widget.action) {
-                        AppErrorAction.retry => localizations.commonRetry,
-                        AppErrorAction.back => localizations.commonBack,
-                        AppErrorAction.home => localizations.navHome,
+                        AppErrorAction.retry =>
+                          localizations.commonRetry.toUpperCase(),
+                        AppErrorAction.back =>
+                          localizations.commonBack.toUpperCase(),
+                        AppErrorAction.home =>
+                          localizations.navHome.toUpperCase(),
                       },
                       onPressed: _recovering ? null : _recover,
                       isLoading: _recovering,

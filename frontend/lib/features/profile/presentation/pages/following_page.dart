@@ -76,9 +76,11 @@ class FollowingPage extends ConsumerWidget {
                                   avatarUrl: user.avatarUrl,
                                 ),
                                 trailing: AppButton(
-                                  label: (isFollowing
-                                      ? strings.profileUnfollow
-                                      : strings.profileFollow),
+                                  label:
+                                      (isFollowing
+                                              ? strings.profileUnfollow
+                                              : strings.profileFollow)
+                                          .toUpperCase(),
                                   size: AppButtonSize.compact,
                                   variant: isFollowing
                                       ? AppButtonVariant.secondary

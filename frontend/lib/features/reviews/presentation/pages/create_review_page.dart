@@ -83,7 +83,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
         child: Column(
           children: [
             PageHeader(
-              text: strings.reviewsCreateTitle,
+              text: strings.reviewsCreateTitle.toUpperCase(),
               leading: BrutalistIconButton(
                 icon: Icons.arrow_back,
                 semanticLabel: strings.accessibilityBack,
@@ -205,7 +205,7 @@ class _CreateReviewPageState extends ConsumerState<CreateReviewPage> {
                     ),
                     Spacing.vXl,
                     AppButton(
-                      label: strings.reviewsSubmit,
+                      label: strings.reviewsSubmit.toUpperCase(),
                       isLoading: _isSubmitting,
                       onPressed: _submit,
                     ),

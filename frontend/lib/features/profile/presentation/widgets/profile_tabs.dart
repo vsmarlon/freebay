@@ -34,18 +34,48 @@ class ProfileTabs extends ConsumerWidget {
     ];
     return DefaultTabController(
       length: _timelineKinds.length,
-      child: TabBarView(
-        children: [
-          for (final kind in _timelineKinds)
-            _TimelineTab(
-              key: ValueKey('${user.id}:$kind:${viewerId ?? 'anonymous'}'),
-              user: user,
-              kind: kind,
-              viewerId: viewerId,
-              labels: labels,
-              headerSlivers: headerSlivers,
+      child: NestedScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          ...headerSlivers,
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _ProfileTabHeader(
+              TabBar(
+                tabs: [
+                  for (final label in labels)
+                    Tab(
+                      child: Semantics(
+                        label: label,
+                        button: true,
+                        child: Text(label.toUpperCase()),
+                      ),
+                    ),
+                ],
+                labelColor: context.colors.primary,
+                unselectedLabelColor: context.textSecondary,
+                indicatorColor: AppColors.primaryContainer,
+                indicatorWeight: 3,
+                labelStyle: AppTypography.brutalistTag,
+                unselectedLabelStyle: AppTypography.brutalistTag,
+                dividerColor: Colors.transparent,
+              ),
             ),
+          ),
         ],
+        body: TabBarView(
+          children: [
+            for (var index = 0; index < _timelineKinds.length; index++)
+              _TimelineTab(
+                key: ValueKey(
+                  '${user.id}:${_timelineKinds[index]}:${viewerId ?? 'anonymous'}',
+                ),
+                user: user,
+                kind: _timelineKinds[index],
+                viewerId: viewerId,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -80,15 +110,11 @@ class _TimelineTab extends ConsumerStatefulWidget {
     required this.user,
     required this.kind,
     required this.viewerId,
-    required this.labels,
-    required this.headerSlivers,
   });
 
   final UserEntity user;
   final String kind;
   final String? viewerId;
-  final List<String> labels;
-  final List<Widget> headerSlivers;
 
   @override
   ConsumerState<_TimelineTab> createState() => _TimelineTabState();
@@ -96,16 +122,8 @@ class _TimelineTab extends ConsumerStatefulWidget {
 
 class _TimelineTabState extends ConsumerState<_TimelineTab>
     with AutomaticKeepAliveClientMixin {
-  final ScrollController _controller = ScrollController();
-
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,34 +143,8 @@ class _TimelineTabState extends ConsumerState<_TimelineTab>
       },
       child: CustomScrollView(
         key: PageStorageKey('${widget.user.id}:${widget.kind}'),
-        controller: _controller,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          ...widget.headerSlivers,
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _ProfileTabHeader(
-              TabBar(
-                tabs: [
-                  for (final label in widget.labels)
-                    Tab(
-                      child: Semantics(
-                        label: label,
-                        button: true,
-                        child: Text(label),
-                      ),
-                    ),
-                ],
-                labelColor: context.colors.primary,
-                unselectedLabelColor: context.textSecondary,
-                indicatorColor: AppColors.primaryContainer,
-                indicatorWeight: 3,
-                labelStyle: AppTypography.brutalistTag,
-                unselectedLabelStyle: AppTypography.brutalistTag,
-                dividerColor: Colors.transparent,
-              ),
-            ),
-          ),
           if (timeline.entries.isEmpty && timeline.isLoading)
             const SliverPadding(
               padding: EdgeInsets.all(16),

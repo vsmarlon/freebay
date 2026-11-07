@@ -50,7 +50,7 @@ class EscrowStatusCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      strings.paymentPageTitle,
+                      strings.paymentPageTitle.toUpperCase(),
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontSize: 12,

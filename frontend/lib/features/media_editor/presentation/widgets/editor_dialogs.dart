@@ -24,7 +24,10 @@ Future<bool?> showDiscardEditorDialog(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: Text(strings.commonCancel, style: AppTypography.button),
+          child: Text(
+            strings.commonCancel.toUpperCase(),
+            style: AppTypography.button,
+          ),
         ),
         TextButton(
           onPressed: () {
@@ -32,7 +35,7 @@ Future<bool?> showDiscardEditorDialog(
             onDiscard?.call();
           },
           child: Text(
-            strings.chatEditorDiscard,
+            strings.chatEditorDiscard.toUpperCase(),
             style: AppTypography.button.copyWith(color: AppColors.error),
           ),
         ),

@@ -87,7 +87,7 @@ class FeedTitle extends StatelessWidget {
                 context,
                 FeedType.following,
                 Icons.people,
-                strings.feedFilterFollowing,
+                strings.feedFilterFollowing.toUpperCase(),
               ),
             ],
             child: Container(
@@ -113,7 +113,7 @@ class FeedTitle extends StatelessWidget {
                   Text(
                     currentType == FeedType.explore
                         ? strings.feedExplore
-                        : strings.feedFilterFollowing,
+                        : strings.feedFilterFollowing.toUpperCase(),
                     style: TextStyle(
                       fontFamily: AppTypography.headlineFontFamily,
                       fontSize: 12,
