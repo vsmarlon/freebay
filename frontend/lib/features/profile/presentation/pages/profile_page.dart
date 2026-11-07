@@ -123,8 +123,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               data: (firstPaint) {
                 final u = firstPaint.user;
                 return AppRefreshIndicator(
+                  // NestedScrollView reports the inner list at depth 1.
                   notificationPredicate: (notification) =>
-                      notification.depth == 0 &&
+                      notification.depth <= 1 &&
                       notification.metrics.axis == Axis.vertical,
                   onRefresh: _refreshProfile,
                   child: ProfileTabs(

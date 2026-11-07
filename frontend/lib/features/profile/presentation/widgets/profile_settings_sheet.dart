@@ -37,12 +37,8 @@ class _SettingsSheetBody extends ConsumerStatefulWidget {
 class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
   bool _logoutBusy = false;
 
-  void _pushAfterClose(String route) {
-    Navigator.pop(context);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.rootNavigator.mounted) widget.router.push(route);
-    });
-  }
+  // Keep the sheet in the history so Back returns to it open.
+  void _pushKeepingSettings(String route) => widget.router.push(route);
 
   @override
   Widget build(BuildContext context) {
@@ -67,42 +63,49 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
             ThemeMode.system => Icons.brightness_auto,
           }, color: context.textPrimary),
           title: Text(
+            strings.profileTheme,
+            style: AppTypography.bodyMedium.copyWith(
+              color: context.textPrimary,
+            ),
+          ),
+          subtitle: Text(
             switch (themeMode) {
               ThemeMode.dark => strings.profileThemeDark,
               ThemeMode.light => strings.profileThemeLight,
               ThemeMode.system => strings.profileThemeSystem,
             },
-            style: AppTypography.bodyMedium.copyWith(
-              color: context.textPrimary,
+            style: AppTypography.bodySmall.copyWith(
+              color: context.textSecondary,
             ),
           ),
-          onTap: () => ref.read(themeModeProvider.notifier).toggleTheme(),
-        ),
-        Spacing.vSm,
-        Row(
-          children: [
-            for (final (mode, label) in [
-              (ThemeMode.system, strings.profileThemeSystem),
-              (ThemeMode.light, strings.profileThemeLight),
-              (ThemeMode.dark, strings.profileThemeDark),
-            ]) ...[
-              Expanded(
-                child: Semantics(
-                  button: true,
-                  selected: themeMode == mode,
-                  label: label,
-                  excludeSemantics: true,
-                  child: BrutalistFilterChip(
-                    label: label,
-                    isSelected: themeMode == mode,
-                    onTap: () =>
-                        ref.read(themeModeProvider.notifier).setTheme(mode),
-                  ),
-                ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ThemeOption(
+                label: 'S',
+                isSelected: themeMode == ThemeMode.system,
+                onTap: () => ref
+                    .read(themeModeProvider.notifier)
+                    .setTheme(ThemeMode.system),
               ),
-              if (mode != ThemeMode.dark) Spacing.hSm,
+              Spacing.hXs,
+              _ThemeOption(
+                label: 'L',
+                isSelected: themeMode == ThemeMode.light,
+                onTap: () => ref
+                    .read(themeModeProvider.notifier)
+                    .setTheme(ThemeMode.light),
+              ),
+              Spacing.hXs,
+              _ThemeOption(
+                label: 'D',
+                isSelected: themeMode == ThemeMode.dark,
+                onTap: () => ref
+                    .read(themeModeProvider.notifier)
+                    .setTheme(ThemeMode.dark),
+              ),
             ],
-          ],
+          ),
         ),
         Spacing.vMd,
         ListTile(
@@ -255,37 +258,37 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
         MenuListTile(
           icon: Icons.edit,
           label: strings.profileEdit,
-          onTap: () => _pushAfterClose(AppRoutes.profileEdit),
+          onTap: () => _pushKeepingSettings(AppRoutes.profileEdit),
         ),
         MenuListTile(
           icon: Icons.group_outlined,
           label: strings.closeFriendsTitle,
-          onTap: () => _pushAfterClose(AppRoutes.profileCloseFriends),
+          onTap: () => _pushKeepingSettings(AppRoutes.profileCloseFriends),
         ),
         MenuListTile(
           icon: Icons.block_outlined,
           label: strings.profileBlockedUsersTitle,
-          onTap: () => _pushAfterClose(AppRoutes.profileBlocked),
+          onTap: () => _pushKeepingSettings(AppRoutes.profileBlocked),
         ),
         MenuListTile(
           icon: Icons.bookmark_border,
           label: strings.profileSavedPostsTitle,
-          onTap: () => _pushAfterClose(AppRoutes.profileSaved),
+          onTap: () => _pushKeepingSettings(AppRoutes.profileSaved),
         ),
         MenuListTile(
           icon: Icons.favorite_border,
           label: strings.profileFavoritesTitle,
-          onTap: () => _pushAfterClose(AppRoutes.profileFavorites),
+          onTap: () => _pushKeepingSettings(AppRoutes.profileFavorites),
         ),
         MenuListTile(
           icon: Icons.receipt_long_outlined,
           label: strings.profilePurchasesTitle,
-          onTap: () => _pushAfterClose(AppRoutes.profilePurchases),
+          onTap: () => _pushKeepingSettings(AppRoutes.profilePurchases),
         ),
         MenuListTile(
           icon: Icons.privacy_tip_outlined,
           label: strings.privacyTitle,
-          onTap: () => _pushAfterClose(AppRoutes.profilePrivacy),
+          onTap: () => _pushKeepingSettings(AppRoutes.profilePrivacy),
         ),
         MenuListTile(
           icon: Icons.verified_user_outlined,
@@ -368,6 +371,49 @@ class _SettingsSheetBodyState extends ConsumerState<_SettingsSheetBody> {
           AppSnackbar.handleFailure(context, error);
         }
       },
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryContainer : Colors.transparent,
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryContainer
+                : context.borderColor,
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppTypography.fontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: isSelected ? AppColors.onPrimary : context.textPrimary,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
