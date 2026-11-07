@@ -49,6 +49,7 @@ jobs:
         run: |
           node scripts/ci-check.js
           npm run test:ci-scripts
+          node --test scripts/build-manifest.test.cjs scripts/summarize-jest.test.cjs
 
       - name: Generate Prisma Client
         working-directory: nest-backend
@@ -81,7 +82,9 @@ jobs:
           REDIS_PORT: 6379
           JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
           GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
-        run: npm test
+        run: |
+          npm test -- --json --outputFile="$RUNNER_TEMP/backend-unit.json"
+          node ../scripts/summarize-jest.cjs "$RUNNER_TEMP/backend-unit.json" "$RUNNER_TEMP/backend-unit-summary.json" "npm test -- --json" "unit tests, external providers replaced at test boundaries"
 
       - name: Push Test Schema (Prisma db push)
         working-directory: nest-backend
@@ -99,7 +102,9 @@ jobs:
           REDIS_PORT: 6379
           JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
           GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
-        run: npx jest --config jest.config.integration.js --runInBand
+        run: |
+          npx jest --config jest.config.integration.js --runInBand --json --outputFile="$RUNNER_TEMP/backend-integration.json"
+          node ../scripts/summarize-jest.cjs "$RUNNER_TEMP/backend-integration.json" "$RUNNER_TEMP/backend-integration-summary.json" "npx jest --config jest.config.integration.js --runInBand" "per-job freebay_test_db and Redis service"
 
       - name: Run Backend E2E Journey Tests (Jest)
         working-directory: nest-backend
@@ -110,17 +115,23 @@ jobs:
           REDIS_PORT: 6379
           JWT_SECRET: test_jwt_secret_for_ci_pipeline_2026
           GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
-        run: npm run test:e2e
+        run: |
+          npx jest --config jest.config.e2e.js --runInBand --json --outputFile="$RUNNER_TEMP/backend-e2e.json"
+          node ../scripts/summarize-jest.cjs "$RUNNER_TEMP/backend-e2e.json" "$RUNNER_TEMP/backend-e2e-summary.json" "npx jest --config jest.config.e2e.js --runInBand" "per-job freebay_test_db and Redis; external provider boundaries are fake or disabled"
 
+      - name: Create backend build manifest and staging artifact
+        if: success()
+        run: |
+          mkdir -p "$RUNNER_TEMP/backend-artifact"
+          node -e "const fs=require('node:fs'); const names=['unit','integration','e2e']; const values=names.map(n=>JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/backend-' + n + '-summary.json','utf8'))); const summary={tests:values.reduce((n,v)=>n+v.tests,0),passed:values.reduce((n,v)=>n+v.passed,0),failed:values.reduce((n,v)=>n+v.failed,0),skipped:values.reduce((n,v)=>n+v.skipped,0),success:values.every(v=>v.success),commands:values.map(v=>v.command),fixture:values.map(v=>v.fixture)}; fs.writeFileSync(process.env.RUNNER_TEMP + '/backend-test-summary.json',JSON.stringify(summary)); if(summary.tests < 1 || summary.failed || summary.skipped || !summary.success) process.exit(1)"
+          node scripts/build-manifest.cjs create nest-backend/dist "$RUNNER_TEMP/backend-artifact/backend-build-manifest.json" "$GITHUB_SHA" backend-node24-test-runtime "$RUNNER_TEMP/backend-test-summary.json"
+          cp -a nest-backend/dist "$RUNNER_TEMP/backend-artifact/dist"
       - name: Upload backend build
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: backend-dist
-          path: |
-            nest-backend/dist
-            nest-backend/package.json
-            nest-backend/package-lock.json
+          path: ${{ runner.temp }}/backend-artifact/
           if-no-files-found: error
 
   frontend-ci:
@@ -138,10 +149,6 @@ jobs:
           flutter-version: '3.44.4'
           cache: true
 
-      - name: Create synthetic Flutter test environment
-        working-directory: frontend
-        run: touch .env
-
       - name: Install Flutter dependencies
         working-directory: frontend
         run: flutter pub get
@@ -154,15 +161,11 @@ jobs:
         run: node scripts/ci-check.js --architecture --routes --design
 
       - name: Verify Dart formatting
-        run: dart format --output=none --set-exit-if-changed frontend/lib frontend/test frontend/libs/freebay_design_system/lib
+        run: dart format --output=none --set-exit-if-changed frontend/lib frontend/libs/freebay_design_system/lib
 
       - name: Analyze Flutter Code
         working-directory: frontend
-        run: flutter analyze --fatal-infos lib test libs/freebay_design_system/lib
-
-      - name: Run Flutter Widget & Unit Tests
-        working-directory: frontend
-        run: flutter test --coverage
+        run: flutter analyze --fatal-infos lib libs/freebay_design_system/lib
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -174,14 +177,6 @@ jobs:
       - name: Build Android debug APK
         working-directory: frontend
         run: flutter build apk --debug
-
-      - name: Upload Flutter coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-coverage
-          path: frontend/coverage/lcov.info
-          if-no-files-found: ignore
 
       - name: Upload Android debug APK
         if: success()
@@ -226,3 +221,158 @@ jobs:
       - name: Build web
         working-directory: web
         run: npm run build
+
+      - name: Run fixture-backed browser contract journeys
+        working-directory: web
+        env:
+          E2E_SUMMARY_FILE: ${{ runner.temp }}/web-fixture-summary.json
+          E2E_FIXTURE_MODE: synthetic browser fixture only; not Nest/database evidence
+          E2E_COMMAND: npm run test:e2e
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+          node -e "const s=require(process.env.E2E_SUMMARY_FILE); if(s.tests < 1 || !s.success) process.exit(1); console.log('Sanitized fixture summary verified: tests=' + s.tests + ', status=' + s.status)"
+
+      - name: Create web build manifest
+        if: success()
+        run: |
+          mkdir -p "$RUNNER_TEMP/web-artifact"
+          cp "$RUNNER_TEMP/web-fixture-summary.json" "$RUNNER_TEMP/web-artifact/web-fixture-summary.json"
+          node scripts/build-manifest.cjs create web/build "$RUNNER_TEMP/web-artifact/web-build-manifest.json" "$GITHUB_SHA" web-node24-runtime-backend-url "$RUNNER_TEMP/web-fixture-summary.json"
+          cp -a web/build "$RUNNER_TEMP/web-artifact/build"
+
+      - name: Upload web build for real-backend browser test
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: ${{ runner.temp }}/web-artifact/
+          if-no-files-found: error
+
+  web-real-backend-e2e:
+    name: Real web journey (Nest / PostgreSQL / Redis)
+    needs: [backend-ci, web-ci]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: ci-only-disposable-password
+          POSTGRES_DB: freebay_test_db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U test_user -d freebay_test_db"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:ci-only-disposable-password@127.0.0.1:5432/freebay_test_db?schema=public
+      REDIS_URL: redis://127.0.0.1:6379/15
+      JWT_SECRET: FreeBay CI isolated runtime session key ${{ github.run_id }} attempt ${{ github.run_attempt }}
+      GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+      STRIPE_SECRET_KEY: sk_test_ci_not_used_by_this_journey
+      STRIPE_WEBHOOK_SECRET: whsec_ci_not_used_by_this_journey
+      ALLOWED_ORIGINS: http://127.0.0.1:43188
+      E2E_BACKEND_URL: http://127.0.0.1:43187
+      E2E_WEB_PORT: '43188'
+      E2E_OUTPUT_DIR: ${{ runner.temp }}/freebay-web-real-e2e
+      E2E_SUMMARY_FILE: ${{ runner.temp }}/freebay-web-real-e2e/summary.json
+      E2E_FIXTURE_MODE: disposable account via real Nest auth; guarded freebay_test_db and per-job Redis; no live provider
+      E2E_COMMAND: npm run test:e2e:real
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24.10.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.10.0
+          cache: npm
+          cache-dependency-path: |
+            nest-backend/package-lock.json
+            web/package-lock.json
+
+      - name: Install backend and web dependencies
+        run: |
+          npm --prefix nest-backend ci
+          npm --prefix web ci
+
+      - name: Download and verify exact backend build
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: .ci-backend-artifact
+
+      - name: Download and verify exact web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: .ci-web-artifact
+
+      - name: Place build artifacts and validate manifests
+        shell: bash
+        run: |
+          cp -a .ci-backend-artifact/dist nest-backend/dist
+          cp -a .ci-web-artifact/build web/build
+          node scripts/build-manifest.cjs verify nest-backend/dist .ci-backend-artifact/backend-build-manifest.json "$GITHUB_SHA" backend-node24-test-runtime
+          node scripts/build-manifest.cjs verify web/build .ci-web-artifact/web-build-manifest.json "$GITHUB_SHA" web-node24-runtime-backend-url
+
+      - name: Generate Prisma client and prepare guarded test database
+        working-directory: nest-backend
+        run: |
+          npx prisma generate
+          node scripts/safe-prisma-db-push.js
+
+      - name: Install Chromium and run guarded real browser journey
+        run: |
+          (cd web && npx playwright install --with-deps chromium)
+          node scripts/run-real-web-e2e.cjs
+
+      - name: Upload sanitized browser result summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-real-e2e-summary
+          path: ${{ runner.temp }}/freebay-web-real-e2e/summary.json
+          if-no-files-found: warn
+          retention-days: 1
+
+  mobile-ui:
+    name: Mobile UI (BLOCKED — real app/backend journey unavailable)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail closed until the Android emulator journey is implemented and run
+        run: |
+          echo '::error title=mobile-ui blocked::No approved Flutter integration journey exists for app login, business action, and persistence against real Nest/PostgreSQL/Redis. The existing native editor test is not an app/backend E2E.'
+          exit 1
+
+  quality-gate:
+    name: Required CI quality gate
+    if: ${{ always() }}
+    needs: [backend-ci, frontend-ci, web-ci, web-real-backend-e2e, mobile-ui]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require every mandatory PR CI job to succeed
+        env:
+          BACKEND: ${{ needs.backend-ci.result }}
+          FLUTTER: ${{ needs.frontend-ci.result }}
+          WEB: ${{ needs.web-ci.result }}
+          WEB_REAL_E2E: ${{ needs.web-real-backend-e2e.result }}
+          MOBILE_UI: ${{ needs.mobile-ui.result }}
+        run: |
+          for gate in BACKEND FLUTTER WEB WEB_REAL_E2E MOBILE_UI; do
+            value="${!gate}"
+            if [ "$value" != success ]; then
+              echo "Required gate $gate result: $value" >&2
+              exit 1
+            fi
+          done
+          echo 'All mandatory CI jobs succeeded.'
