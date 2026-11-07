@@ -9,12 +9,13 @@ import { ConversationPreferenceDatabaseRepository } from '../data/repositories/c
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { SendMessageInput, SendMessageInternalOutput, SendMessageOutput } from '../dtos/chat.dto';
 import { Prisma, DirectMessage, ChatMessage, MessageType, ChatThreadType } from '@prisma/client';
-import { DirectMessageWithSender, ChatMessageWithSender } from '../data/repositories/conversation/payloads';
+import { DirectMessageWithSender, ChatMessageWithSender } from '../types/conversation-payloads';
 import {
   readCanonicalLocationMetadata,
   validateLocationMetadata,
 } from './location-message-metadata';
 import { isOwnedUpload } from '@/shared/utils/file.utils';
+import { withoutPinMetadata } from './message-pin-metadata';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -289,6 +290,6 @@ export class SendMessageUseCase {
       base = { ...(base ?? {}), durationMs: input.durationMs };
     }
 
-    return base;
+    return withoutPinMetadata(base);
   }
 }

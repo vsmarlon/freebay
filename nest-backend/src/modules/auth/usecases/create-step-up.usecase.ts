@@ -8,7 +8,7 @@ import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { UserDatabaseRepository } from '@/modules/users';
 import { StepUpDTO } from '../dtos/auth.dto';
 import { StepUpService } from '@/shared/auth/step-up.service';
-import { BiometricCredentialService } from '@/shared/auth/biometric-credential.service';
+import { BiometricCredentialService, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 import { AppleProviderService } from '@/shared/auth/apple-provider.service';
 import { GoogleAuthUseCase } from './google-auth.usecase';
@@ -61,7 +61,7 @@ export class CreateStepUpUseCase {
         return left(new InvalidCredentialsError());
       }
       const verified = await this.credentials.verifyAndConsume(token, proof.challengeId, proof.signature, {
-        purpose: 'step_up', stepUpPurpose: input.purpose, ...(input.resourceId ? { resourceId: input.resourceId } : {}),
+        purpose: BiometricChallengePurpose.STEP_UP, stepUpPurpose: input.purpose, ...(input.resourceId ? { resourceId: input.resourceId } : {}),
       });
       return token.userId === user.userId && verified ? right(undefined) : left(new InvalidCredentialsError());
     }

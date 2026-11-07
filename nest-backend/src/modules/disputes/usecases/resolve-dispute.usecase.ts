@@ -7,6 +7,7 @@ import { DisputeDatabaseRepository } from '../data/repositories/dispute-database
 import { DisputeTransitionPolicy } from '../services/dispute-transition.policy';
 import { DisputeResolutionExecutionService } from '../services/dispute-resolution-execution.service';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
+import { RefundStatus } from '@/modules/payments/types/payment-provider.types';
 import { DisputeWinner } from '../dispute.constants';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
 import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
@@ -80,7 +81,7 @@ export class ResolveDisputeUseCase {
       const recorded = await this.transactionRepo.recordRefundProviderId(dispute.orderId, reserved.value.operationId, refund.value.id);
       if (recorded.isLeft()) return left(recorded.value);
       if (!recorded.value) return left(new ConflictError('Refund identity requires manual reconciliation'));
-      if (refund.value.status !== 'succeeded') {
+      if (refund.value.status !== RefundStatus.SUCCEEDED) {
         return left(new PaymentProviderError('Refund remains pending; dispute is held for reconciliation'));
       }
 

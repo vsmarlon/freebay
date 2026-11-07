@@ -10,7 +10,7 @@ import {
   DirectMessageWithSender,
   ReplyToSummary,
   messageWithSenderInclude,
-} from './payloads';
+} from '../../../types/conversation-payloads';
 import { USER_SELECT_MINIMAL } from '@/shared/utils/prisma-selects';
 
 const REPLY_TO_SELECT = {
@@ -188,16 +188,62 @@ export async function softDeleteDirectMessage(prisma: PrismaService, id: string)
   deleteUpload(deleted.attachmentUrl);
 }
 
-export function findDirectMessagesByType(prisma: PrismaService, conversationId: string, type: MessageType, limit: number, cursor?: string): Promise<DirectMessageWithSender[]> {
+export async function softDeleteMessage(prisma: PrismaService, id: string, threadId: string, senderId: string, model: ChatThreadType): Promise<boolean> {
+  const where = model === ChatThreadType.ORDER
+    ? { id, orderId: threadId, senderId, deletedAt: null }
+    : { id, conversationId: threadId, senderId, deletedAt: null };
+  const message = model === ChatThreadType.ORDER
+    ? await prisma.chatMessage.findFirst({ where, select: { attachmentUrl: true } })
+    : await prisma.directMessage.findFirst({ where, select: { attachmentUrl: true } });
+  const deleted = model === ChatThreadType.ORDER
+    ? await prisma.chatMessage.updateMany({ where, data: { deletedAt: new Date() } })
+    : await prisma.directMessage.updateMany({ where, data: { deletedAt: new Date() } });
+  if (deleted.count === 1) deleteUpload(message?.attachmentUrl);
+  return deleted.count === 1;
+}
+
+export async function setMessagePinned(prisma: PrismaService, id: string, threadId: string, model: ChatThreadType, pinned: boolean, userId: string): Promise<boolean> {
+  const table = model === ChatThreadType.ORDER ? Prisma.sql`"ChatMessage"` : Prisma.sql`"DirectMessage"`;
+  const threadColumn = model === ChatThreadType.ORDER ? Prisma.sql`"orderId"` : Prisma.sql`"conversationId"`;
+  const patch = JSON.stringify({ pinned, pinnedBy: pinned ? userId : null, pinnedAt: pinned ? new Date().toISOString() : null });
+  const count = await prisma.$executeRaw(Prisma.sql`
+    UPDATE ${table}
+    SET "metadata" = (CASE WHEN jsonb_typeof("metadata") = 'object' THEN "metadata" ELSE '{}'::jsonb END) || ${patch}::jsonb
+    WHERE "id" = ${id} AND ${threadColumn} = ${threadId} AND "deletedAt" IS NULL AND "viewOnce" = false
+  `);
+  return count === 1;
+}
+
+export function findDirectMessagesByType(prisma: PrismaService, conversationId: string, type: MessageType | 'LINK', limit: number, cursor?: string): Promise<DirectMessageWithSender[]> {
   return prisma.directMessage.findMany({
-    where: { conversationId, type }, orderBy: { createdAt: 'desc' }, take: limit + 1,
+    where: {
+      conversationId,
+      deletedAt: null,
+      viewOnce: false,
+      ...(type === 'LINK'
+        ? { type: MessageType.TEXT, OR: [
+            { metadata: { path: ['url'], string_starts_with: 'http://' } },
+            { metadata: { path: ['url'], string_starts_with: 'https://' } },
+          ] }
+        : { type }),
+    }, orderBy: { createdAt: 'desc' }, take: limit + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), ...DIRECT_MESSAGE_WITH_SENDER_ARGS,
   });
 }
 
-export function findChatMessagesByType(prisma: PrismaService, orderId: string, type: MessageType, limit: number, cursor?: string): Promise<ChatMessageWithSender[]> {
+export function findChatMessagesByType(prisma: PrismaService, orderId: string, type: MessageType | 'LINK', limit: number, cursor?: string): Promise<ChatMessageWithSender[]> {
   return prisma.chatMessage.findMany({
-    where: { orderId, type }, orderBy: { createdAt: 'desc' }, take: limit + 1,
+    where: {
+      orderId,
+      deletedAt: null,
+      viewOnce: false,
+      ...(type === 'LINK'
+        ? { type: MessageType.TEXT, OR: [
+            { metadata: { path: ['url'], string_starts_with: 'http://' } },
+            { metadata: { path: ['url'], string_starts_with: 'https://' } },
+          ] }
+        : { type }),
+    }, orderBy: { createdAt: 'desc' }, take: limit + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}), ...CHAT_MESSAGE_WITH_SENDER_ARGS,
   });
 }

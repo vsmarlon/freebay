@@ -50,7 +50,7 @@ export class FavoriteDatabaseRepository {
         product: {
           include: {
             seller: { select: SELLER_SELECT_FULL },
-            images: { orderBy: { order: 'asc' }, take: 1 },
+            media: { orderBy: { order: 'asc' }, take: 1 },
           },
         },
       },

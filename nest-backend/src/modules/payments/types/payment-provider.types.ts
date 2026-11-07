@@ -57,7 +57,14 @@ export interface PaymentIntentResult {
   clientSecret: string;
 }
 
-export type RefundStatus = 'pending' | 'requires_action' | 'succeeded' | 'failed' | 'canceled' | 'unknown';
+export enum RefundStatus {
+  PENDING = 'pending',
+  REQUIRES_ACTION = 'requires_action',
+  SUCCEEDED = 'succeeded',
+  FAILED = 'failed',
+  CANCELED = 'canceled',
+  UNKNOWN = 'unknown',
+}
 
 export interface RefundSnapshot {
   id: string;

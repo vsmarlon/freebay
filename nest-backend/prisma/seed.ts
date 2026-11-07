@@ -297,13 +297,14 @@ async function main() {
         })
       : await prisma.product.create({ data: productData });
 
-    await prisma.productImage.deleteMany({
+    await prisma.productMedia.deleteMany({
       where: { productId: createdProduct.id },
     });
-    await prisma.productImage.createMany({
+    await prisma.productMedia.createMany({
       data: prod.images.map((url, idx) => ({
         productId: createdProduct.id,
         url,
+        type: 'IMAGE' as const,
         order: idx,
       })),
     });
@@ -313,7 +314,6 @@ async function main() {
       userId: prod.sellerId,
       type: PostType.PRODUCT,
       content: `Novo anúncio disponível: ${prod.title}! Garanta com proteção de custódia do FreeBay.`,
-      imageUrl: prod.images[0],
       deletedAt: null,
     };
     const post = createdProduct.postId

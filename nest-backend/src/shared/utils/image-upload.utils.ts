@@ -23,14 +23,22 @@ export const ALLOWED_VIDEO_MIMES = [
   "video/webm",
 ] as const;
 
+export const ALLOWED_DOCUMENT_MIMES = [
+  "application/pdf",
+  "text/plain",
+] as const;
+
 export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 export const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_VIDEO_SIZE = 25 * 1024 * 1024; // 25MB
+export const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024; // 10MB
 export const MAX_MEDIA_SIZE = MAX_VIDEO_SIZE; // 25MB overall upload limit
+
 const MEDIA_MIMES = new Set<string>([
   ...ALLOWED_IMAGE_MIMES,
   ...ALLOWED_AUDIO_MIMES,
   ...ALLOWED_VIDEO_MIMES,
+  ...ALLOWED_DOCUMENT_MIMES,
 ]);
 
 export const MIMETYPE_EXTENSIONS: Record<string, string> = {
@@ -50,6 +58,8 @@ export const MIMETYPE_EXTENSIONS: Record<string, string> = {
   "video/mp4": ".mp4",
   "video/quicktime": ".mov",
   "video/webm": ".webm",
+  "application/pdf": ".pdf",
+  "text/plain": ".txt",
 };
 
 export function validateMediaFile(
@@ -83,7 +93,16 @@ export function validateMediaFile(
       : `Conteúdo incompatível com o tipo informado: ${mime}.`;
   }
 
-  return `Tipo de arquivo não suportado: ${mime}. Aceitos: Imagens (JPEG, PNG, WebP, GIF), Áudio (MP3, M4A, AAC, OGG, WAV), Vídeo (MP4, MOV, WebM).`;
+  if (ALLOWED_DOCUMENT_MIMES.includes(mime as never)) {
+    if (file.size > MAX_DOCUMENT_SIZE) {
+      return `Documento muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 10MB.`;
+    }
+    return hasValidMagicBytes(file.buffer, mime)
+      ? null
+      : `Conteúdo incompatível com o tipo informado: ${mime}.`;
+  }
+
+  return `Tipo de arquivo não suportado: ${mime}. Aceitos: Imagens (JPEG, PNG, WebP, GIF), Áudio (MP3, M4A, AAC, OGG, WAV), Vídeo (MP4, MOV, WebM), Documentos (PDF, TXT).`;
 }
 
 export function validateImageFile(
@@ -155,6 +174,12 @@ export function hasValidMagicBytes(
     mime === "audio/x-m4a"
   ) {
     return buffer.subarray(4, 8).toString("ascii") === "ftyp";
+  }
+  if (mime === "application/pdf") {
+    return buffer.subarray(0, 5).toString("ascii") === "%PDF-";
+  }
+  if (mime === "text/plain") {
+    return !buffer.includes(0);
   }
   return false;
 }

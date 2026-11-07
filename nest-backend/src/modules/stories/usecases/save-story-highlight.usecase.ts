@@ -2,14 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AppError, BadRequestError, ForbiddenError, NotFoundError } from '@/shared/core/errors';
 import { Either, left, right } from '@/shared/core/either';
 import { StoryHighlightDatabaseRepository } from '../data/repositories/story-highlight-database.repository';
-
-export interface SaveStoryHighlightInput {
-  id?: string;
-  userId: string;
-  title: string;
-  storyIds: string[];
-  coverStoryId: string;
-}
+import { SaveStoryHighlightInput } from '../dtos/stories.dto';
 
 @Injectable()
 export class SaveStoryHighlightUseCase {

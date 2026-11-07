@@ -3,7 +3,7 @@ import { AppError, InvalidCredentialsError } from '@/shared/core/errors';
 import { Either, left, right } from '@/shared/core/either';
 import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
-import { BiometricCredentialService, BiometricOperation, isStepUpPurpose } from '@/shared/auth/biometric-credential.service';
+import { BiometricCredentialService, BiometricOperation, isStepUpPurpose, StepUpPurpose, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 import { BiometricChallengeDTO } from '../dtos/auth.dto';
 
 @Injectable()
@@ -27,15 +27,15 @@ export class CreateBiometricChallengeUseCase {
   }
 
   private operation(input: BiometricChallengeDTO): BiometricOperation | null {
-    if (input.purpose === 'login') {
-      return input.stepUpPurpose === undefined && input.resourceId === undefined ? { purpose: 'login' } : null;
+    if (input.purpose === BiometricChallengePurpose.LOGIN) {
+      return input.stepUpPurpose === undefined && input.resourceId === undefined ? { purpose: BiometricChallengePurpose.LOGIN } : null;
     }
     if (!input.stepUpPurpose || !isStepUpPurpose(input.stepUpPurpose)) return null;
-    if (input.stepUpPurpose === 'cancel_order') {
-      return input.resourceId ? { purpose: 'step_up', stepUpPurpose: input.stepUpPurpose, resourceId: input.resourceId } : null;
+    if (input.stepUpPurpose === StepUpPurpose.CANCEL_ORDER) {
+      return input.resourceId ? { purpose: BiometricChallengePurpose.STEP_UP, stepUpPurpose: input.stepUpPurpose, resourceId: input.resourceId } : null;
     }
     return input.resourceId === undefined
-      ? { purpose: 'step_up', stepUpPurpose: input.stepUpPurpose }
+      ? { purpose: BiometricChallengePurpose.STEP_UP, stepUpPurpose: input.stepUpPurpose }
       : null;
   }
 }

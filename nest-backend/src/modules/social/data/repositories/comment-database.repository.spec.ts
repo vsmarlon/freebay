@@ -3,6 +3,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { PrismaService } from "@/shared/infra/prisma/prisma.service";
 import { CommentDatabaseRepository } from "./comment-database.repository";
+import { CommentSort, CommentCursorScope } from '../../types/comment-cursor';
 
 const comment = {
   id: "comment-1",
@@ -76,9 +77,9 @@ describe("CommentDatabaseRepository viewer interactions", () => {
     const repository = module.get(CommentDatabaseRepository);
 
     const result = await repository.findCommentContext(
-      "focus-1", "viewer-1", 20, "recent",
+      "focus-1", "viewer-1", 20, CommentSort.RECENT,
       undefined,
-      { scope: "context-ancestors", ownerId: "focus-1", viewerId: "viewer-1", sort: "recent", id: "pending-ancestor", createdAt: new Date().toISOString(), likesCount: 0 },
+      { scope: CommentCursorScope.CONTEXT_ANCESTORS, ownerId: "focus-1", viewerId: "viewer-1", sort: CommentSort.RECENT, id: "pending-ancestor", createdAt: new Date().toISOString(), likesCount: 0 },
     );
 
     expect(result.isRight()).toBe(true);

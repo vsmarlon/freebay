@@ -95,6 +95,14 @@ export interface CreateStoryOutput {
   };
 }
 
+export interface SaveStoryHighlightInput {
+  id?: string;
+  userId: string;
+  title: string;
+  storyIds: string[];
+  coverStoryId: string;
+}
+
 export interface GroupedStory {
   user: { id: string; displayName: string; avatarUrl: string | null };
   stories: {

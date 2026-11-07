@@ -37,7 +37,7 @@ export class CheckoutCartUseCase {
   }
 
   async execute(input: CheckoutCartInput): Promise<Either<AppError, CheckoutCartOutput>> {
-    const mode: CheckoutMode = input.mode ?? 'session';
+    const mode: CheckoutMode = input.mode ?? CheckoutMode.SESSION;
     const planResult = await this.planner.plan(input, mode);
     if (planResult.isLeft()) return left(planResult.value);
     const { cpf, planned, totalAmount } = planResult.value;

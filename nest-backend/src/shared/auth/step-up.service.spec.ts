@@ -1,3 +1,4 @@
+import { StepUpPurpose } from './biometric-credential.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
@@ -23,12 +24,12 @@ describe('StepUpService', () => {
       ],
     }).compile();
     const service = module.get(StepUpService);
-    const issued = await service.issue('user-1', 'cancel_order', 'order-1');
+    const issued = await service.issue('user-1', StepUpPurpose.CANCEL_ORDER, 'order-1');
 
-    expect(await service.consume(issued.stepUpToken, 'user-1', 'cancel_order', 'order-2')).toBe(false);
-    expect(await service.consume(issued.stepUpToken, 'user-2', 'cancel_order', 'order-1')).toBe(false);
-    expect(await service.consume(issued.stepUpToken, 'user-1', 'delete_account')).toBe(false);
-    expect(await service.consume(issued.stepUpToken, 'user-1', 'cancel_order', 'order-1')).toBe(true);
-    expect(await service.consume(issued.stepUpToken, 'user-1', 'cancel_order', 'order-1')).toBe(false);
+    expect(await service.consume(issued.stepUpToken, 'user-1', StepUpPurpose.CANCEL_ORDER, 'order-2')).toBe(false);
+    expect(await service.consume(issued.stepUpToken, 'user-2', StepUpPurpose.CANCEL_ORDER, 'order-1')).toBe(false);
+    expect(await service.consume(issued.stepUpToken, 'user-1', StepUpPurpose.DELETE_ACCOUNT)).toBe(false);
+    expect(await service.consume(issued.stepUpToken, 'user-1', StepUpPurpose.CANCEL_ORDER, 'order-1')).toBe(true);
+    expect(await service.consume(issued.stepUpToken, 'user-1', StepUpPurpose.CANCEL_ORDER, 'order-1')).toBe(false);
   });
 });

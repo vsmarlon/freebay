@@ -11,14 +11,26 @@ import {
   IsArray,
   IsIn,
   IsBoolean,
+  ValidateBy,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { CommentReplyPermission, PostType, ReportReason, StoryAudience } from "@prisma/client";
 import { SanitizeText } from "@/shared/utils/sanitize.decorator";
-import { COMMENT_MAX_LENGTH, ContentFilter, FeedType, ProfileTimelineKind, SEARCH_MAX_LENGTH, SearchFilter } from "../types/social.types";
+import { COMMENT_MAX_LENGTH, ContentFilter, FeedType, ProfileTimelineKind, QUOTE_MAX_LENGTH, SEARCH_MAX_LENGTH, SearchFilter } from "../types/social.types";
+import { PublicationMediaInput, PublicationMediaResponse } from '@/shared/media/publication-media';
+import { CommentSort } from '../types/comment-cursor';
+
+const commentGraphemeSegmenter = new Intl.Segmenter(undefined, {
+  granularity: 'grapheme',
+});
 
 export class CreatePostDTO {
+  @ApiPropertyOptional({ description: 'Ordered JSON media metadata matching multipart files' })
+  @IsOptional()
+  @IsString()
+  readonly mediaMetadata?: string;
+
   @ApiPropertyOptional({ enum: StoryAudience, default: StoryAudience.EVERYONE })
   @IsOptional()
   @IsEnum(StoryAudience)
@@ -48,7 +60,21 @@ export class CreateCommentDTO {
   @ApiProperty({ example: "Great post!", minLength: 1, maxLength: COMMENT_MAX_LENGTH })
   @IsString()
   @MinLength(1)
-  @MaxLength(COMMENT_MAX_LENGTH)
+  @ValidateBy({
+    name: 'maxCommentGraphemeLength',
+    validator: {
+      validate(value: unknown) {
+        if (typeof value !== 'string') return false;
+        let count = 0;
+        for (const _segment of commentGraphemeSegmenter.segment(value)) {
+          if (++count > COMMENT_MAX_LENGTH) return false;
+        }
+        return true;
+      },
+      defaultMessage: () =>
+        `content must be shorter than or equal to ${COMMENT_MAX_LENGTH} characters`,
+    },
+  })
   @SanitizeText()
   readonly content: string;
 
@@ -82,8 +108,8 @@ export class CreateQuoteDTO {
   @IsOptional() @IsUUID()
   readonly sourceCommentId?: string;
 
-  @ApiProperty({ minLength: 1, maxLength: COMMENT_MAX_LENGTH })
-  @IsString() @MinLength(1) @MaxLength(COMMENT_MAX_LENGTH) @SanitizeText()
+  @ApiProperty({ minLength: 1, maxLength: QUOTE_MAX_LENGTH })
+  @IsString() @MinLength(1) @MaxLength(QUOTE_MAX_LENGTH) @SanitizeText()
   readonly content!: string;
 
   @ApiPropertyOptional({ type: [String], example: ['uuid'] })
@@ -102,9 +128,9 @@ export class ConversationQueryDTO {
   @ApiPropertyOptional({ description: 'Opaque keyset cursor' })
   @IsOptional() @IsString() @MaxLength(4096)
   readonly cursor?: string;
-  @ApiPropertyOptional({ enum: ['recent', 'likes'] })
-  @IsOptional() @IsIn(['recent', 'likes'])
-  readonly sort?: 'recent' | 'likes';
+  @ApiPropertyOptional({ enum: CommentSort })
+  @IsOptional() @IsIn(Object.values(CommentSort))
+  readonly sort?: CommentSort;
 }
 
 export class CommentContextQueryDTO {
@@ -114,9 +140,9 @@ export class CommentContextQueryDTO {
   @ApiPropertyOptional({ description: 'Opaque direct-reply cursor' })
   @IsOptional() @IsString() @MaxLength(4096)
   readonly replyCursor?: string;
-  @ApiPropertyOptional({ enum: ['recent', 'likes'] })
-  @IsOptional() @IsIn(['recent', 'likes'])
-  readonly replySort?: 'recent' | 'likes';
+  @ApiPropertyOptional({ enum: CommentSort })
+  @IsOptional() @IsIn(Object.values(CommentSort))
+  readonly replySort?: CommentSort;
   @ApiPropertyOptional({ description: 'Opaque ancestor continuation cursor' })
   @IsOptional() @IsString() @MaxLength(4096)
   readonly ancestorCursor?: string;
@@ -263,8 +289,7 @@ export class SearchPostsQueryDTO {
 export interface CreatePostInput {
   userId: string;
   content?: string;
-  imageUrl?: string;
-  imageBlurHash?: string;
+  media?: PublicationMediaInput[];
   type: PostType;
   audience?: StoryAudience;
   mentionIds?: string[];
@@ -274,8 +299,7 @@ export interface CreatePostOutput {
   id: string;
   isQuote: false;
   content: string | null;
-  imageUrl: string | null;
-  imageBlurHash?: string;
+  media: PublicationMediaResponse[];
   type: PostType;
   audience: StoryAudience;
   userId: string;
@@ -313,4 +337,25 @@ export interface CreateCommentOutput {
   content: string;
   createdAt: Date;
   media?: Array<{ id: string; url: string; mimeType: string; size: number }>;
+}
+
+export interface CreateQuoteInput {
+  userId: string;
+  content: string;
+  sourcePostId?: string;
+  sourceCommentId?: string;
+  mentionIds?: string[];
+  clientRequestId?: string;
+  image?: Express.Multer.File;
+  imageBlurHash?: string;
+}
+
+export interface DeletePostInput {
+  postId: string;
+  userId: string;
+}
+
+export interface DeleteCommentInput {
+  commentId: string;
+  userId: string;
 }

@@ -1,8 +1,9 @@
-export type ConnectStatus =
-  | 'onboarding-required'
-  | 'requirements-due'
-  | 'restricted'
-  | 'transfer-ready';
+export enum ConnectStatus {
+  ONBOARDING_REQUIRED = 'onboarding-required',
+  REQUIREMENTS_DUE = 'requirements-due',
+  RESTRICTED = 'restricted',
+  TRANSFER_READY = 'transfer-ready',
+}
 
 export interface ConnectAccountSnapshot {
   stripeAccountId: string;

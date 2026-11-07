@@ -21,16 +21,19 @@ export class UpdateCartItemDTO {
   readonly quantity!: number;
 }
 
-export type CheckoutMode = 'session' | 'intent';
+export enum CheckoutMode {
+  SESSION = 'session',
+  INTENT = 'intent',
+}
 
 export class CheckoutCartDTO {
   @ApiPropertyOptional({
-    enum: ['session', 'intent'],
+    enum: CheckoutMode,
     description:
       'session = hosted Stripe Checkout (web, PIX auto-offer, requires CPF). intent = PaymentSheet (mobile). Defaults to session.',
   })
   @IsOptional()
-  @IsIn(['session', 'intent'])
+  @IsIn([CheckoutMode.SESSION, CheckoutMode.INTENT])
   readonly mode?: CheckoutMode;
 }
 
@@ -40,8 +43,8 @@ export interface CheckoutCartInput {
 }
 
 export class CheckoutRecoveryQueryDTO {
-  @ApiProperty({ enum: ['session', 'intent'] })
-  @IsIn(['session', 'intent'])
+  @ApiProperty({ enum: CheckoutMode })
+  @IsIn([CheckoutMode.SESSION, CheckoutMode.INTENT])
   readonly mode!: CheckoutMode;
 }
 
@@ -142,7 +145,7 @@ export interface CartItemProduct {
   title: string;
   price: number;
   sellerId: string;
-  images: { id: string; url: string }[];
+  media: { id: string; url: string }[];
   seller: { id: string; displayName: string; avatarUrl: string | null; isVerified: boolean };
 }
 

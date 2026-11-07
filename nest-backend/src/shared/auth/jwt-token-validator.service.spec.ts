@@ -87,11 +87,16 @@ describe('JwtTokenValidatorService session revocation', () => {
     await expect(validator.verifyAndValidate('token')).rejects.toThrow('Sessão expirada');
   });
 
-  it('rejects every token type in a reused refresh-token family', async () => {
-    const validator = await createValidator({
-      userId: 'user-1', role: UserRole.USER, type: JwtTokenType.ACCESS, sid: 'family-1', iat: 1_700_000_001,
-    }, true);
+  it.each([JwtTokenType.ACCESS, JwtTokenType.BIOMETRIC, JwtTokenType.REFRESH])(
+    'rejects %s tokens from a revoked refresh-token family',
+    async (type) => {
+      const validator = await createValidator({
+        userId: 'user-1', role: UserRole.USER, type, sid: 'family-1', iat: 1_700_000_001,
+      }, true);
 
-    await expect(validator.verifyAndValidate('token')).rejects.toThrow(new UnauthorizedException('Família de sessão revogada'));
-  });
+      await expect(validator.verifyAndValidate('token', [type])).rejects.toThrow(
+        new UnauthorizedException('Família de sessão revogada'),
+      );
+    },
+  );
 });

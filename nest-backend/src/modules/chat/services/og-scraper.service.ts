@@ -5,14 +5,7 @@ import type { RequestOptions } from 'node:http';
 import { isIP } from 'node:net';
 import ogs from 'open-graph-scraper';
 import { UrlSafetyService } from './url-safety.service';
-
-export interface OgMetadata {
-  title: string | null;
-  description: string | null;
-  imageUrl: string | null;
-  siteName: string | null;
-  url: string;
-}
+import { OgMetadata } from '../types/chat.types';
 
 const URL_REGEX = /https?:\/\/[^\s]+/;
 const SCRAPE_TIMEOUT_MS = 3000;

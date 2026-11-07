@@ -4,13 +4,26 @@ import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { RedisService } from '@/shared/infra/redis/redis.service';
 
 export const BIOMETRIC_CREDENTIAL_TTL_SECONDS = 30 * 24 * 60 * 60;
-export type StepUpPurpose = 'biometric_enroll' | 'delete_account' | 'export_data' | 'connect_dashboard' | 'cancel_order';
+export enum StepUpPurpose {
+  BIOMETRIC_ENROLL = 'biometric_enroll',
+  DELETE_ACCOUNT = 'delete_account',
+  EXPORT_DATA = 'export_data',
+  CONNECT_DASHBOARD = 'connect_dashboard',
+  CANCEL_ORDER = 'cancel_order',
+}
+
+export enum BiometricChallengePurpose {
+  LOGIN = 'login',
+  STEP_UP = 'step_up',
+}
+
 export type BiometricOperation =
-  | { purpose: 'login' }
-  | { purpose: 'step_up'; stepUpPurpose: StepUpPurpose; resourceId?: string };
+  | { purpose: BiometricChallengePurpose.LOGIN }
+  | { purpose: BiometricChallengePurpose.STEP_UP; stepUpPurpose: StepUpPurpose; resourceId?: string };
 
 type KeyBinding = { userId: string; credentialId: string; publicKey: string; thumbprint: string };
 type Challenge = KeyBinding & { sid: string; challenge: string; operation: BiometricOperation };
+type EnrollmentChallenge = { userId: string; sid: string; sessionStartedAtMs: number; thumbprint: string; challenge: string };
 
 export class InvalidBiometricPublicKeyError extends Error {}
 
@@ -33,6 +46,36 @@ export class BiometricCredentialService {
     await this.redis.del(this.bindingKey(sid));
   }
 
+  async createEnrollmentChallenge(user: AuthUser, publicKey: string): Promise<{ challengeId: string; challenge: string } | null> {
+    if (!isEnrollmentSession(user) || !hasRecentEnrollmentAuthentication(user)) return null;
+    const thumbprint = createHash('sha256').update(this.decodePublicKey(publicKey)).digest('hex');
+    const challengeId = randomUUID();
+    const challenge = `freebay:v1:biometric_enroll:${randomBytes(32).toString('base64url')}`;
+    const entry: EnrollmentChallenge = {
+      userId: user.userId, sid: user.sid, sessionStartedAtMs: user.sessionStartedAtMs, thumbprint, challenge,
+    };
+    await this.redis.add(`biometric:enroll-challenge:${challengeId}`, JSON.stringify(entry), 60);
+    return { challengeId, challenge };
+  }
+
+  async verifyEnrollmentAndConsume(user: AuthUser, publicKey: string, challengeId: string, signature: string): Promise<boolean> {
+    if (!isEnrollmentSession(user) || !hasRecentEnrollmentAuthentication(user) || !isBase64(signature)) return false;
+    const raw = await this.redis.get(`biometric:enroll-challenge:${challengeId}`);
+    if (!raw) return false;
+    try {
+      const entry: unknown = JSON.parse(raw);
+      const der = this.decodePublicKey(publicKey);
+      if (!isRecord(entry) || entry.userId !== user.userId || entry.sid !== user.sid ||
+        entry.sessionStartedAtMs !== user.sessionStartedAtMs || typeof entry.challenge !== 'string' ||
+        entry.thumbprint !== createHash('sha256').update(der).digest('hex')) return false;
+      const key = createPublicKey({ key: der, format: 'der', type: 'spki' });
+      if (!verify('sha256', Buffer.from(entry.challenge, 'utf8'), key, Buffer.from(signature, 'base64'))) return false;
+      return this.redis.setIfAbsent(`biometric:enroll-consumed:${challengeId}`, '1', 60);
+    } catch {
+      return false;
+    }
+  }
+
   async createChallenge(user: AuthUser, operation: BiometricOperation): Promise<{ challengeId: string; challenge: string } | null> {
     if (user.type !== JwtTokenType.BIOMETRIC || !user.userId || !user.sid) return null;
     const raw = await this.redis.get(this.bindingKey(user.sid));
@@ -40,8 +83,8 @@ export class BiometricCredentialService {
     const binding = this.parseBinding(raw);
     if (!binding || binding.userId !== user.userId) return null;
     const challengeId = randomUUID();
-    const resource = operation.purpose === 'step_up' ? operation.resourceId ?? '-' : '-';
-    const challenge = `freebay:v1:${operation.purpose}:${operation.purpose === 'step_up' ? operation.stepUpPurpose : 'login'}:${resource}:${randomBytes(32).toString('base64url')}`;
+    const resource = operation.purpose === BiometricChallengePurpose.STEP_UP ? operation.resourceId ?? '-' : '-';
+    const challenge = `freebay:v1:${operation.purpose}:${operation.purpose === BiometricChallengePurpose.STEP_UP ? operation.stepUpPurpose : BiometricChallengePurpose.LOGIN}:${resource}:${randomBytes(32).toString('base64url')}`;
     const entry: Challenge = { ...binding, sid: user.sid, challenge, operation };
     await this.redis.add(`biometric:challenge:${challengeId}`, JSON.stringify(entry), 60);
     await this.redis.add(this.bindingKey(user.sid), JSON.stringify(binding), BIOMETRIC_CREDENTIAL_TTL_SECONDS);
@@ -122,26 +165,47 @@ function isChallenge(value: unknown): value is Challenge {
 function isOperation(value: unknown): value is BiometricOperation {
   if (!isRecord(value)) return false;
   const item = value;
-  if (item.purpose === 'login') return true;
-  return item.purpose === 'step_up' && isStepUpPurpose(item.stepUpPurpose) &&
+  if (item.purpose === BiometricChallengePurpose.LOGIN) return true;
+  return item.purpose === BiometricChallengePurpose.STEP_UP && isStepUpPurpose(item.stepUpPurpose) &&
     (item.resourceId === undefined || typeof item.resourceId === 'string');
 }
 
 function sameOperation(left: BiometricOperation, right: BiometricOperation): boolean {
   if (left.purpose !== right.purpose) return false;
-  return left.purpose === 'login' || (right.purpose === 'step_up' &&
+  return left.purpose === BiometricChallengePurpose.LOGIN || (right.purpose === BiometricChallengePurpose.STEP_UP &&
     left.stepUpPurpose === right.stepUpPurpose && left.resourceId === right.resourceId);
 }
 
 export function isStepUpPurpose(value: unknown): value is StepUpPurpose {
-  return value === 'biometric_enroll' || value === 'delete_account' || value === 'export_data' ||
-    value === 'connect_dashboard' || value === 'cancel_order';
+  if (typeof value !== 'string') return false;
+  switch (value) {
+    case StepUpPurpose.BIOMETRIC_ENROLL:
+    case StepUpPurpose.DELETE_ACCOUNT:
+    case StepUpPurpose.EXPORT_DATA:
+    case StepUpPurpose.CONNECT_DASHBOARD:
+    case StepUpPurpose.CANCEL_ORDER:
+      return true;
+    default:
+      return false;
+  }
 }
 
 function isBase64(value: string): boolean {
-  return value.length > 0 && value.length % 4 === 0 && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value);
+  return value.length > 0 && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/.test(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasRecentEnrollmentAuthentication(user: AuthUser): boolean {
+  const authenticatedAtMs = user.authenticatedAtMs;
+  const now = Date.now();
+  return typeof authenticatedAtMs === 'number' && Number.isSafeInteger(authenticatedAtMs) && authenticatedAtMs > 0 &&
+    authenticatedAtMs <= now && now - authenticatedAtMs <= 5 * 60 * 1000;
+}
+
+export function isEnrollmentSession(user: AuthUser): user is AuthUser & { sid: string; sessionStartedAtMs: number } {
+  return user.type === JwtTokenType.ACCESS && !!user.userId && !!user.sid &&
+    typeof user.sessionStartedAtMs === 'number' && Number.isSafeInteger(user.sessionStartedAtMs) && user.sessionStartedAtMs > 0;
 }

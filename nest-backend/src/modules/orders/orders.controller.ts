@@ -1,3 +1,4 @@
+import { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import {
   Controller,
   Body,
@@ -17,6 +18,7 @@ import {
   PAGINATION_QUERIES,
 } from "@/shared/decorators";
 import { PageQuery } from "@/shared/core/pagination";
+import { THROTTLE_TTL_MINUTE_MS } from "@/shared/http/throttle.constants";
 import { OrderDatabaseRepository } from "./data/repositories/order-database.repository";
 import { OrderStatus } from "@prisma/client";
 import { CreateOrderUseCase } from "./usecases/create-order.usecase";
@@ -52,6 +54,7 @@ export class OrdersController {
     bodyType: CreateOrderDTO,
     responseStatus: 201,
     httpCode: HttpStatus.CREATED,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS } },
     errors: [{ status: 404, description: "Product not found" }],
   })
   async create(@CurrentUserId() buyerId: string, @Body() body: CreateOrderDTO) {
@@ -154,7 +157,7 @@ export class OrdersController {
     bodyType: CancelOrderDTO,
     errors: [{ status: 404, description: "Order not found" }],
   })
-  @RequireStepUp('cancel_order', 'id')
+  @RequireStepUp(StepUpPurpose.CANCEL_ORDER, 'id')
   async cancel(
     @Param("id", ParseUUIDPipe) id: string,
     @CurrentUserId() userId: string,

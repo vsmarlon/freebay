@@ -1,18 +1,7 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
-
-export type UrlRiskLevel = 'SAFE' | 'SUSPICIOUS' | 'DANGEROUS';
-
-export interface UrlSafetyVerification {
-  url: string;
-  normalizedUrl: string;
-  host: string;
-  isSafe: boolean;
-  riskLevel: UrlRiskLevel;
-  riskReasons: string[];
-  destinationDomain: string;
-}
+import { UrlRiskLevel, UrlSafetyVerification } from '../types/chat.types';
 
 const ALLOWED_SCHEMES = new Set(['http:', 'https:']);
 export const URL_DNS_RESOLVER = Symbol('URL_DNS_RESOLVER');
@@ -92,7 +81,7 @@ export class UrlSafetyService {
     const normalized = this.normalizeUrl(rawUrl);
     const reasons: string[] = [];
     let isBlocked = false;
-    let riskLevel: UrlRiskLevel = 'SAFE';
+    let riskLevel: UrlRiskLevel = UrlRiskLevel.SAFE;
 
     let parsedUrl: URL;
     try {
@@ -103,7 +92,7 @@ export class UrlSafetyService {
         normalizedUrl: normalized,
         host: 'invalid-url',
         isSafe: false,
-        riskLevel: 'DANGEROUS',
+        riskLevel: UrlRiskLevel.DANGEROUS,
         riskReasons: ['URL inválida ou malformada.'],
         destinationDomain: 'invalid-url',
       };
@@ -118,25 +107,25 @@ export class UrlSafetyService {
     if (parsedUrl.username || parsedUrl.password || invalidPort) {
       reasons.push('Credenciais ou porta não permitida.');
       isBlocked = true;
-      riskLevel = 'DANGEROUS';
+      riskLevel = UrlRiskLevel.DANGEROUS;
     }
 
     // 1. Protocol validation
     if (DANGEROUS_SCHEMES.has(scheme)) {
       reasons.push(`Protocolo potencialmente perigoso detectado (${scheme}).`);
       isBlocked = true;
-      riskLevel = 'DANGEROUS';
+      riskLevel = UrlRiskLevel.DANGEROUS;
     } else if (!ALLOWED_SCHEMES.has(scheme)) {
       reasons.push(`Protocolo não suportado (${scheme}).`);
       isBlocked = true;
-      riskLevel = 'DANGEROUS';
+      riskLevel = UrlRiskLevel.DANGEROUS;
     }
 
     // 2. Private IP / SSRF
     if (this.isPrivateOrLocalHost(host)) {
       reasons.push('Endereço de rede local ou IP privado não permitido.');
       isBlocked = true;
-      riskLevel = 'DANGEROUS';
+      riskLevel = UrlRiskLevel.DANGEROUS;
     }
 
     // 3. Executable / Dangerous payload extensions
@@ -144,7 +133,7 @@ export class UrlSafetyService {
       if (pathname.endsWith(ext)) {
         reasons.push(`Arquivo executável perigoso detectado (${ext}).`);
         isBlocked = true;
-        riskLevel = 'DANGEROUS';
+        riskLevel = UrlRiskLevel.DANGEROUS;
         break;
       }
     }
@@ -153,7 +142,7 @@ export class UrlSafetyService {
     for (const kw of PHISHING_KEYWORDS) {
       if (host.includes(kw)) {
         reasons.push('Possível tentativa de phishing ou falsificação de marca.');
-        riskLevel = 'DANGEROUS';
+        riskLevel = UrlRiskLevel.DANGEROUS;
         break;
       }
     }
@@ -161,29 +150,29 @@ export class UrlSafetyService {
     // 5. Punycode / Homograph attack detection
     if (host.startsWith('xn--') || host.includes('.xn--')) {
       reasons.push('Domínio com caracteres internacionais codificados (punycode).');
-      if (riskLevel !== 'DANGEROUS') {
-        riskLevel = 'SUSPICIOUS';
+      if (riskLevel !== UrlRiskLevel.DANGEROUS) {
+        riskLevel = UrlRiskLevel.SUSPICIOUS;
       }
     }
 
     // 6. Plain HTTP
     if (scheme === 'http:' && !this.isLocalHost(host)) {
       reasons.push('Conexão HTTP não criptografada.');
-      if (riskLevel === 'SAFE') {
-        riskLevel = 'SUSPICIOUS';
+      if (riskLevel === UrlRiskLevel.SAFE) {
+        riskLevel = UrlRiskLevel.SUSPICIOUS;
       }
     }
 
     // 7. Unusual Port Check
     if (parsedUrl.port && parsedUrl.port !== '80' && parsedUrl.port !== '443' && parsedUrl.port !== '8080') {
       reasons.push(`Porta de conexão incomum (${parsedUrl.port}).`);
-      if (riskLevel === 'SAFE') {
-        riskLevel = 'SUSPICIOUS';
+      if (riskLevel === UrlRiskLevel.SAFE) {
+        riskLevel = UrlRiskLevel.SUSPICIOUS;
       }
     }
 
     // 8. Whitelist override for safe domains
-    if (this.isTrusted(host) && riskLevel === 'SAFE') {
+    if (this.isTrusted(host) && riskLevel === UrlRiskLevel.SAFE) {
       // verified safe
     }
 
@@ -191,7 +180,7 @@ export class UrlSafetyService {
       url: rawUrl,
       normalizedUrl: normalized,
       host,
-      isSafe: !isBlocked && riskLevel !== 'DANGEROUS',
+      isSafe: !isBlocked && riskLevel !== UrlRiskLevel.DANGEROUS,
       riskLevel,
       riskReasons: reasons,
       destinationDomain: host,
@@ -288,7 +277,7 @@ export class UrlSafetyService {
   }
 
   private markUnsafe(result: UrlSafetyVerification): UrlSafetyVerification {
-    return { ...result, isSafe: false, riskLevel: 'DANGEROUS', riskReasons: [...result.riskReasons, 'Resolved destination is not public.'] };
+    return { ...result, isSafe: false, riskLevel: UrlRiskLevel.DANGEROUS, riskReasons: [...result.riskReasons, 'Resolved destination is not public.'] };
   }
 
   private isTrusted(host: string): boolean {

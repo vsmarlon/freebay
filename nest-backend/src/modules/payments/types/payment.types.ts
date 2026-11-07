@@ -41,3 +41,10 @@ export interface PaymentSessionAttemptData {
   readonly idempotencyKey: string;
   readonly expiresAt: Date;
 }
+
+export interface RefundReservation {
+  operationId: string;
+  idempotencyKey: string;
+  providerId: string | null;
+  created: boolean;
+}

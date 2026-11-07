@@ -7,7 +7,7 @@ import {
   OrderWithChatRecord,
   ProductConversationSummaryRecord,
   productConversationSummaryValidator,
-} from './payloads';
+} from '../../../types/conversation-payloads';
 import { ConversationStartRecord, toProductConversationSummary } from '../../../dtos/conversation-response';
 import { USER_SELECT_BASIC } from '@/shared/utils/prisma-selects';
 
@@ -64,7 +64,10 @@ export function findDirectConversationBetweenUsers(
 }
 
 export function findProductSummary(prisma: PrismaService, productId: string): Promise<ProductConversationSummaryRecord | null> {
-  return prisma.product.findUnique({ where: { id: productId }, ...productConversationSummaryValidator });
+  return prisma.product.findUnique({
+    where: { id: productId },
+    ...productConversationSummaryValidator,
+  });
 }
 
 export async function createDirectConversation(
@@ -138,5 +141,5 @@ export async function countUnreadChatMessages(prisma: PrismaService, orderIds: s
 }
 
 export function findPreferencesByUser(prisma: PrismaService, userId: string): Promise<ConversationPreference[]> {
-  return prisma.conversationPreference.findMany({ where: { userId, isDeleted: false } });
+  return prisma.conversationPreference.findMany({ where: { userId } });
 }

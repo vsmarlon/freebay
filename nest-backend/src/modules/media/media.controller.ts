@@ -19,18 +19,7 @@ import {
   mimeForFilename,
 } from '@/shared/utils/file.utils';
 import { MediaAccessService } from './services/media-access.service';
-
-export interface MediaRequest {
-  headers?: {
-    range?: string;
-    'x-view-once-opening'?: string;
-  };
-}
-
-export interface MediaResponse {
-  setHeader?(name: string, value: string): void;
-  status?(code: number): void;
-}
+import { MediaRequest, MediaResponse } from './types/media.types';
 
 @ApiTags('Media')
 @Controller('media')

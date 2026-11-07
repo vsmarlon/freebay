@@ -1,3 +1,4 @@
+﻿import { StepUpPurpose, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 import { IsString, MinLength, MaxLength, IsEmail, IsOptional, Matches, IsIn, IsObject, IsUUID, ValidateNested } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -46,8 +47,15 @@ export class RegisterDTO {
 }
 
 export class LoginDTO {
-  @ApiProperty({ example: 'john@example.com' })
-  @IsEmail()
+  @ApiProperty({ example: 'john@example.com', description: 'Account identifier: email or unique @username' })
+  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase().trim() : value))
+  @MinLength(3)
+  @MaxLength(254)
+  // Identificador = e-mail OU @username único. Usernames: [a-z0-9_]{3,20} (o @ é opcional na digitação).
+  @Matches(/^@?[a-z0-9_]{3,20}$|^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+    message: 'Informe um e-mail válido ou @username (3-20 caracteres: letras minúsculas, números ou _)',
+  })
   readonly email: string;
 
   @ApiProperty({ example: '********', minLength: 8 })
@@ -68,8 +76,9 @@ export class BiometricLoginDTO {
 
   @ApiProperty({ description: 'Base64 DER ECDSA signature over the exact challenge UTF-8 bytes' })
   @IsString()
+  @MinLength(4)
   @MaxLength(1024)
-  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/)
   readonly signature: string;
 }
 
@@ -86,14 +95,14 @@ export class BiometricChallengeDTO {
   @MaxLength(2048)
   readonly biometricToken: string;
 
-  @ApiProperty({ enum: ['login', 'step_up'] })
-  @IsIn(['login', 'step_up'])
-  readonly purpose: 'login' | 'step_up';
+  @ApiPropertyOptional({ enum: Object.values(BiometricChallengePurpose) })
+  @IsIn(Object.values(BiometricChallengePurpose))
+  readonly purpose: BiometricChallengePurpose;
 
-  @ApiPropertyOptional({ enum: ['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'] })
+  @ApiPropertyOptional({ enum: StepUpPurpose })
   @IsOptional()
-  @IsIn(['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'])
-  readonly stepUpPurpose?: 'biometric_enroll' | 'delete_account' | 'export_data' | 'connect_dashboard' | 'cancel_order';
+  @IsIn(Object.values(StepUpPurpose))
+  readonly stepUpPurpose?: StepUpPurpose;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
@@ -101,17 +110,33 @@ export class BiometricChallengeDTO {
   readonly resourceId?: string;
 }
 
-export class BiometricEnrollmentDTO {
-  @ApiProperty({ maxLength: 4096 })
-  @IsString()
-  @MaxLength(4096)
-  readonly stepUpToken: string;
-
+export class BiometricEnrollmentChallengeDTO {
   @ApiProperty({ description: 'Base64 DER SubjectPublicKeyInfo for a P-256 key', maxLength: 1024 })
   @IsString()
   @MaxLength(1024)
   @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/)
   readonly publicKey: string;
+}
+
+export class BiometricEnrollmentDTO extends BiometricEnrollmentChallengeDTO {
+  @ApiPropertyOptional({ maxLength: 4096 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
+  readonly stepUpToken?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID('4')
+  readonly challengeId?: string;
+
+  @ApiPropertyOptional({ description: 'Base64 DER ECDSA signature of the enrollment challenge' })
+  @IsOptional()
+  @IsString()
+  @MinLength(4)
+  @MaxLength(1024)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/)
+  readonly signature?: string;
 }
 
 export class StepUpProofDTO {
@@ -157,8 +182,9 @@ export class StepUpProofDTO {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MinLength(4)
   @MaxLength(1024)
-  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)$/)
+  @Matches(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/)
   readonly signature?: string;
 
   @ApiPropertyOptional({ description: 'Single-use action-confirmation link token; accepted only by web step-up.' })
@@ -175,9 +201,9 @@ export class StepUpProofDTO {
 }
 
 export class StepUpDTO {
-  @ApiProperty({ enum: ['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'] })
-  @IsIn(['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'])
-  readonly purpose: 'biometric_enroll' | 'delete_account' | 'export_data' | 'connect_dashboard' | 'cancel_order';
+  @ApiProperty({ enum: StepUpPurpose })
+  @IsIn(Object.values(StepUpPurpose))
+  readonly purpose: StepUpPurpose;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()
@@ -266,4 +292,13 @@ export class UsernameAvailabilityQueryDTO {
   @MinLength(1)
   @MaxLength(20)
   readonly u: string;
+}
+
+export interface CheckUsernameAvailabilityInput {
+  username: string;
+}
+
+export interface CheckUsernameAvailabilityOutput {
+  available: boolean;
+  suggestions: string[];
 }

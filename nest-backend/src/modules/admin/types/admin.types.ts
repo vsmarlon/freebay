@@ -52,3 +52,20 @@ export interface CreateModerationActionInput {
   reason?: string | null;
   reportId?: string | null;
 }
+
+export interface TransferFailureRow {
+  transactionId: string;
+  orderId: string;
+  sellerId: string;
+  sellerAmount: number;
+  transferState: string;
+  transferAttempts: number;
+  transferProcessingAt: Date | null;
+  transferId: string | null;
+  transferLastError: string | null;
+  reversalState: string;
+  reversalAttempts: number;
+  reversalProcessingAt: Date | null;
+  reversalId: string | null;
+  reversalLastError: string | null;
+}

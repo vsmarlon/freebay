@@ -24,9 +24,11 @@ import { VerifyUrlSafetyUseCase } from './verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './forward-messages.usecase';
 import { MarkAsReadUseCase } from './mark-as-read.usecase';
 import { ViewOnceUseCase } from './view-once.usecase';
+import { SetMessagePinUseCase } from './set-message-pin.usecase';
 
 @Module({
   providers: [
+    SetMessagePinUseCase,
     MarkAsReadUseCase,
     ViewOnceUseCase,
     ConversationDatabaseRepository,
@@ -54,6 +56,7 @@ import { ViewOnceUseCase } from './view-once.usecase';
     ForwardMessagesUseCase,
   ],
   exports: [
+    SetMessagePinUseCase,
     MarkAsReadUseCase,
     ViewOnceUseCase,
     ConversationDatabaseRepository,

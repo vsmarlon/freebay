@@ -87,24 +87,24 @@ export class AccountLifecycleDatabaseRepository {
             bannerUrl: true,
           },
         });
-        if (!user) return 'canceled';
+        if (!user) return PersonalPurgeStatus.CANCELED;
         if (user.deletedAt) {
-          if (user.personalPurgeCompletedAt) return 'completed';
-          if (user.personalPurgePendingMedia.length) return 'pending-media';
-          if (await this.hasPersonalRetentionGate(tx, userId)) return 'pending-review';
-          return 'pending-verification';
+          if (user.personalPurgeCompletedAt) return PersonalPurgeStatus.COMPLETED;
+          if (user.personalPurgePendingMedia.length) return PersonalPurgeStatus.PENDING_MEDIA;
+          if (await this.hasPersonalRetentionGate(tx, userId)) return PersonalPurgeStatus.PENDING_REVIEW;
+          return PersonalPurgeStatus.PENDING_VERIFICATION;
         }
-        if (!user.deletionRequestedAt || user.deletionRequestedAt > purgeBefore) return 'canceled';
+        if (!user.deletionRequestedAt || user.deletionRequestedAt > purgeBefore) return PersonalPurgeStatus.CANCELED;
 
         const [posts, stories, directMessages, chatMessages, preferences, unlinkedProductIds] = await Promise.all([
-          tx.post.findMany({ where: { userId, imageUrl: { not: null } }, select: { imageUrl: true } }),
+          tx.post.findMany({ where: { userId }, select: { media: { select: { url: true, thumbnailUrl: true } } } }),
           tx.story.findMany({ where: { userId }, select: { imageUrl: true } }),
           tx.directMessage.findMany({ where: { senderId: userId, attachmentUrl: { not: null } }, select: { attachmentUrl: true } }),
           tx.chatMessage.findMany({ where: { senderId: userId, attachmentUrl: { not: null } }, select: { attachmentUrl: true } }),
           tx.conversationPreference.findMany({ where: { userId, backgroundUrl: { not: null } }, select: { backgroundUrl: true } }),
           tx.product.findMany({ where: { sellerId: userId, deletedAt: null, orders: { none: {} } }, select: { id: true } }),
         ]);
-        const unlinkedProducts: Array<{ id: string; images: Array<{ url: string }>; hasPreservedReference: boolean }> = [];
+        const unlinkedProducts: Array<{ id: string; media: Array<{ url: string; thumbnailUrl: string | null }>; hasPreservedReference: boolean }> = [];
         let hasUnresolvedProductReference = false;
         for (const { id } of unlinkedProductIds) {
           await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "Product" WHERE "id" = ${id} FOR UPDATE`);
@@ -114,7 +114,7 @@ export class AccountLifecycleDatabaseRepository {
               sellerId: true,
               deletedAt: true,
               orders: { take: 1, select: { id: true } },
-              images: { select: { url: true } },
+              media: { select: { url: true, thumbnailUrl: true } },
               directConversations: { take: 1, select: { id: true } },
               favorites: { where: { userId: { not: userId } }, take: 1, select: { id: true } },
               cartItems: { where: { userId: { not: userId } }, take: 1, select: { id: true } },
@@ -137,7 +137,7 @@ export class AccountLifecycleDatabaseRepository {
                 sellerId: true,
                 deletedAt: true,
                 orders: { take: 1, select: { id: true } },
-                images: { select: { url: true } },
+                media: { select: { url: true, thumbnailUrl: true } },
                 directConversations: { take: 1, select: { id: true } },
                 favorites: { where: { userId: { not: userId } }, take: 1, select: { id: true } },
                 cartItems: { where: { userId: { not: userId } }, take: 1, select: { id: true } },
@@ -167,19 +167,19 @@ export class AccountLifecycleDatabaseRepository {
               || product.post.reportedPostReports.length > 0
             ))
             || moderationReferences > 0;
-          unlinkedProducts.push({ id, images: product.images, hasPreservedReference });
+          unlinkedProducts.push({ id, media: product.media, hasPreservedReference });
           hasUnresolvedProductReference ||= hasPreservedReference;
         }
         const pendingMedia = [...new Set([
           ...user.personalPurgePendingMedia,
           user.avatarUrl,
           user.bannerUrl,
-          ...posts.map(({ imageUrl }) => imageUrl),
+          ...posts.flatMap(({ media }) => media.flatMap(({ url, thumbnailUrl }) => [url, thumbnailUrl])),
           ...stories.map(({ imageUrl }) => imageUrl),
           ...directMessages.map(({ attachmentUrl }) => attachmentUrl),
           ...chatMessages.map(({ attachmentUrl }) => attachmentUrl),
           ...preferences.map(({ backgroundUrl }) => backgroundUrl),
-          ...unlinkedProducts.filter(({ hasPreservedReference }) => !hasPreservedReference).flatMap(({ images }) => images.map(({ url }) => url)),
+          ...unlinkedProducts.filter(({ hasPreservedReference }) => !hasPreservedReference).flatMap(({ media }) => media.flatMap(({ url, thumbnailUrl }) => [url, thumbnailUrl])),
         ].filter((url): url is string => Boolean(url)))];
         const reviewGate = await this.hasPersonalRetentionGate(tx, userId);
 
@@ -217,7 +217,7 @@ export class AccountLifecycleDatabaseRepository {
             personalPurgeCompletedAt: pendingMedia.length || reviewGate || hasUnresolvedProductReference ? null : purgedAt,
           },
         });
-        if (claimed.count === 0) return 'canceled';
+        if (claimed.count === 0) return PersonalPurgeStatus.CANCELED;
 
         await tx.pushDevice.deleteMany({ where: { userId } });
         await tx.notification.deleteMany({ where: { userId } });
@@ -266,7 +266,11 @@ export class AccountLifecycleDatabaseRepository {
         await tx.storyHighlight.deleteMany({ where: { userId } });
         await tx.storyView.deleteMany({ where: { viewerId: userId } });
         await tx.story.updateMany({ where: { userId, deletedAt: null }, data: { deletedAt: purgedAt, imageUrl: '', caption: null, textBlocks: Prisma.DbNull } });
-        await tx.post.updateMany({ where: { userId, deletedAt: null }, data: { deletedAt: purgedAt, content: null, imageUrl: null, imageBlurHash: null } });
+        await tx.post.updateMany({ where: { userId, deletedAt: null }, data: { deletedAt: purgedAt, content: null } });
+        await tx.postMedia.updateMany({
+          where: { post: { userId } },
+          data: { url: '', thumbnailUrl: null, blurHash: null, altText: null, hotspots: Prisma.DbNull },
+        });
         const authoredComments = await tx.comment.findMany({ where: { userId, deletedAt: null }, select: { id: true } });
         for (const { id } of authoredComments) {
           await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "Comment" WHERE "id" = ${id} FOR UPDATE`);
@@ -314,9 +318,9 @@ export class AccountLifecycleDatabaseRepository {
             continue;
           }
           if (!product.hasPreservedReference) {
-            await tx.productImage.updateMany({
+            await tx.productMedia.updateMany({
               where: { productId: product.id },
-              data: { url: '', blurHash: null },
+              data: { url: '', thumbnailUrl: null, blurHash: null, altText: null, hotspots: Prisma.DbNull },
             });
           }
         }
@@ -324,9 +328,9 @@ export class AccountLifecycleDatabaseRepository {
           await tx.user.updateMany({ where: { id: userId, deletedAt: purgedAt }, data: { personalPurgeCompletedAt: null } });
         }
 
-        if (pendingMedia.length) return 'pending-media';
-        if (reviewGate) return 'pending-review';
-        return hasUnresolvedProductReference ? 'pending-verification' : 'completed';
+        if (pendingMedia.length) return PersonalPurgeStatus.PENDING_MEDIA;
+        if (reviewGate) return PersonalPurgeStatus.PENDING_REVIEW;
+        return hasUnresolvedProductReference ? PersonalPurgeStatus.PENDING_VERIFICATION : PersonalPurgeStatus.COMPLETED;
       });
     }, 'Erro ao excluir dados da conta');
   }

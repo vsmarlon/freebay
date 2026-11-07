@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleAuthUseCase } from './google-auth.usecase';
 import { UserRole } from '@prisma/client';
@@ -107,6 +108,26 @@ describe('GoogleAuthUseCase', () => {
     }
   });
 
+  it('does not log Google token errors, claims, or audience values', async () => {
+    const errorLog = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    const unsafeError = 'private-user@example.test bearer=sentinel-secret';
+    const unsafeAudience = 'sentinel-client-secret';
+    mockVerifyIdToken.mockRejectedValue(new Error(unsafeError));
+    const idToken = `header.${Buffer.from(
+      JSON.stringify({ aud: unsafeAudience, azp: unsafeAudience }),
+    ).toString('base64url')}.signature`;
+
+    await sut.execute(idToken);
+
+    const logged = errorLog.mock.calls.flat().join(' ');
+    expect(logged).toContain('Falha na validação do token Google');
+    expect(logged).not.toContain(unsafeError);
+    expect(logged).not.toContain('private-user@example.test');
+    expect(logged).not.toContain(unsafeAudience);
+  });
+
   it('verifies fresh Google step-up proof without linking by email', async () => {
     const now = Math.floor(Date.now() / 1000);
     const token = `header.${Buffer.from(JSON.stringify({ iat: now })).toString('base64url')}.signature`;
@@ -132,7 +153,7 @@ describe('GoogleAuthUseCase', () => {
     expect(await sut.verifyForStepUp('malformed')).toBeNull();
   });
 
-  it('links Google account when user exists with matching email', async () => {
+  it('links Google account when user exists with matching email and the local account is verified', async () => {
     mockVerifyIdToken.mockResolvedValue({
       getPayload: () => ({
         sub: 'google-sub-456',
@@ -150,7 +171,7 @@ describe('GoogleAuthUseCase', () => {
       email: 'email-user@gmail.com',
       passwordHash: 'some-hash',
       googleId: null,
-      emailVerified: false,
+      emailVerified: true,
       cpfHash: null,
       phone: null,
       phoneVerified: false,
@@ -172,7 +193,6 @@ describe('GoogleAuthUseCase', () => {
     mockUserRepository.update.mockResolvedValue(right({
       ...existingEmailUser,
       googleId: 'google-sub-456',
-      emailVerified: true,
       avatarUrl: 'https://avatar.com/new.png',
     }));
 
@@ -181,9 +201,32 @@ describe('GoogleAuthUseCase', () => {
     expect(result.isRight()).toBe(true);
     expect(mockUserRepository.update).toHaveBeenCalledWith('user-email-1', {
       googleId: 'google-sub-456',
-      emailVerified: true,
       avatarUrl: 'https://avatar.com/new.png',
     });
+  });
+
+  it('refuses to link a verified Google email to a local account whose email is unverified', async () => {
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'attacker-sub',
+        email: 'victim@gmail.com',
+        name: 'Victim',
+        email_verified: true,
+      }),
+    });
+
+    mockUserRepository.findByGoogleId.mockResolvedValue(right(null));
+    mockUserRepository.findByEmail.mockResolvedValue(
+      right({ id: 'victim-id', email: 'victim@gmail.com', googleId: null, emailVerified: false }),
+    );
+
+    const result = await sut.execute('attacker-google-id-token');
+
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) {
+      expect(result.value.code).toBe('EMAIL_VERIFICATION_REQUIRED');
+    }
+    expect(mockUserRepository.update).not.toHaveBeenCalled();
   });
 
   it('creates a new user with username: null when user does not exist', async () => {

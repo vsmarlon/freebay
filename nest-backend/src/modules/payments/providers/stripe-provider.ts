@@ -30,11 +30,17 @@ import {
 
 export { StripeWebhookEvent, VerifiedV2AccountWebhookEvent } from './stripe-webhook-verifier';
 
+/** Stripe refund status → domain value set; anything unrecognized falls back to UNKNOWN. */
+const KNOWN_REFUND_STATUSES = new Map<string, RefundStatus>([
+  [RefundStatus.PENDING, RefundStatus.PENDING],
+  [RefundStatus.REQUIRES_ACTION, RefundStatus.REQUIRES_ACTION],
+  [RefundStatus.SUCCEEDED, RefundStatus.SUCCEEDED],
+  [RefundStatus.FAILED, RefundStatus.FAILED],
+  [RefundStatus.CANCELED, RefundStatus.CANCELED],
+]);
+
 function mapRefund(refund: Stripe.Refund): RefundSnapshot {
-  const knownStatus: RefundStatus = refund.status === 'pending' || refund.status === 'requires_action' ||
-    refund.status === 'succeeded' || refund.status === 'failed' || refund.status === 'canceled'
-    ? refund.status
-    : 'unknown';
+  const knownStatus = KNOWN_REFUND_STATUSES.get(refund.status ?? '') ?? RefundStatus.UNKNOWN;
   return {
     id: refund.id,
     chargeId: typeof refund.charge === 'string' ? refund.charge : refund.charge?.id ?? null,

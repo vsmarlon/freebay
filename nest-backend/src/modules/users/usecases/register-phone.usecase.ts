@@ -6,11 +6,7 @@ import { AppError, InvalidPhoneError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/users';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { SmsService } from '../services/sms.service';
-
-export interface RegisterPhoneInput {
-  userId: string;
-  phone: string;
-}
+import { RegisterPhoneInput } from '../dtos/user.dto';
 
 @Injectable()
 export class RegisterPhoneUseCase {

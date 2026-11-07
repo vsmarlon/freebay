@@ -6,14 +6,14 @@ import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, PaymentProviderError } from '@/shared/core/errors';
-import { RefundSnapshot } from '@/modules/payments/types/payment-provider.types';
+import { RefundSnapshot, RefundStatus } from '@/modules/payments/types/payment-provider.types';
 import { ChargeRefundSnapshot } from '@/modules/payments/types/payment-provider.types';
 import { CancelOrderUseCase } from './cancel-order.usecase';
 
 describe('CancelOrderUseCase money claims', () => {
   async function setup(
     refundResult: Either<AppError, RefundSnapshot> = right({
-      id: 're_1', chargeId: 'ch_1', amount: 10000, status: 'succeeded', orderId: 'order-1', operationId: 'refund-op-1',
+      id: 're_1', chargeId: 'ch_1', amount: 10000, status: RefundStatus.SUCCEEDED, orderId: 'order-1', operationId: 'refund-op-1',
     }),
     claimResult: Either<AppError, boolean> = right(true),
   ) {
@@ -98,7 +98,7 @@ describe('CancelOrderUseCase money claims', () => {
 
   it('does not call Stripe or report cancellation when the conditional claim is lost', async () => {
     const { sut, orderRepository, stripe } = await setup(right({
-      id: 're_1', chargeId: 'ch_1', amount: 10000, status: 'succeeded', orderId: 'order-1', operationId: 'refund-op-1',
+      id: 're_1', chargeId: 'ch_1', amount: 10000, status: RefundStatus.SUCCEEDED, orderId: 'order-1', operationId: 'refund-op-1',
     }), right(false));
 
     const result = await sut.execute({ orderId: 'order-1', userId: 'buyer-1', reason: 'Changed mind' });

@@ -1,21 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { RepositoryResponse } from '@/shared/core/either';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
+import { HighlightPayload, highlightPayload } from '../../types/story.types';
 import { storyAudienceWhere } from './story-database.repository';
-
-const highlightPayload = Prisma.validator<Prisma.StoryHighlightDefaultArgs>()({
-  include: {
-    user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
-    stories: {
-      orderBy: { position: 'asc' },
-      include: { story: true },
-    },
-  },
-});
-
-export type HighlightPayload = Prisma.StoryHighlightGetPayload<typeof highlightPayload>;
 
 @Injectable()
 export class StoryHighlightDatabaseRepository {

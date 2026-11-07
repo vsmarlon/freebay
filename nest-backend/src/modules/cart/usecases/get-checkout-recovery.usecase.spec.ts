@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { right } from '@/shared/core/either';
 import { PaymentGroupDatabaseRepository } from '@/modules/payments/data/repositories/payment-group-database.repository';
 import { GetCheckoutRecoveryUseCase } from './get-checkout-recovery.usecase';
+import { CheckoutMode } from '../dtos/cart.dto';
 
 describe('GetCheckoutRecoveryUseCase', () => {
   const group = {
@@ -14,7 +15,7 @@ describe('GetCheckoutRecoveryUseCase', () => {
   };
 
   it('returns the same live attempt references for cross-client recovery', async () => {
-    const findLatestOpenForBuyer = jest.fn().mockResolvedValue(right({ group, mode: 'intent' }));
+    const findLatestOpenForBuyer = jest.fn().mockResolvedValue(right({ group, mode: CheckoutMode.INTENT }));
     const module = await Test.createTestingModule({
       providers: [GetCheckoutRecoveryUseCase, {
         provide: PaymentGroupDatabaseRepository, useValue: { findLatestOpenForBuyer },
@@ -22,11 +23,11 @@ describe('GetCheckoutRecoveryUseCase', () => {
     }).compile();
     const useCase = module.get(GetCheckoutRecoveryUseCase);
 
-    await expect(useCase.execute({ userId: 'buyer-1', mode: 'intent' })).resolves.toEqual(right({
+    await expect(useCase.execute({ userId: 'buyer-1', mode: CheckoutMode.INTENT })).resolves.toEqual(right({
       status: 'CHECKING', paymentGroupId: 'group-1', orderIds: ['order-1'], totalAmount: 12500,
       checkoutUrl: null, paymentIntentClientSecret: 'pi_1_secret_value', expiresAt: group.expiresAt,
     }));
-    await expect(useCase.execute({ userId: 'buyer-1', mode: 'session' })).resolves.toEqual(right({
+    await expect(useCase.execute({ userId: 'buyer-1', mode: CheckoutMode.SESSION })).resolves.toEqual(right({
       status: 'CHECKING', paymentGroupId: 'group-1', orderIds: ['order-1'], totalAmount: 12500,
       checkoutUrl: null, paymentIntentClientSecret: 'pi_1_secret_value', expiresAt: group.expiresAt,
     }));
@@ -38,12 +39,12 @@ describe('GetCheckoutRecoveryUseCase', () => {
     const module = await Test.createTestingModule({
       providers: [GetCheckoutRecoveryUseCase, {
         provide: PaymentGroupDatabaseRepository,
-        useValue: { findLatestOpenForBuyer: jest.fn().mockResolvedValue(right({ group: expired, mode: 'intent' })) },
+        useValue: { findLatestOpenForBuyer: jest.fn().mockResolvedValue(right({ group: expired, mode: CheckoutMode.INTENT })) },
       }],
     }).compile();
     const useCase = module.get(GetCheckoutRecoveryUseCase);
 
-    const result = await useCase.execute({ userId: 'buyer-1', mode: 'intent' });
+    const result = await useCase.execute({ userId: 'buyer-1', mode: CheckoutMode.INTENT });
 
     expect(result.isRight() && result.value).toMatchObject({
       status: 'CHECKING', paymentGroupId: 'group-1', paymentIntentClientSecret: null,
@@ -55,11 +56,11 @@ describe('GetCheckoutRecoveryUseCase', () => {
     const module = await Test.createTestingModule({
       providers: [GetCheckoutRecoveryUseCase, {
         provide: PaymentGroupDatabaseRepository,
-        useValue: { findLatestOpenForBuyer: jest.fn().mockResolvedValue(right({ group: paid, mode: 'intent' })) },
+        useValue: { findLatestOpenForBuyer: jest.fn().mockResolvedValue(right({ group: paid, mode: CheckoutMode.INTENT })) },
       }],
     }).compile();
 
-    await expect(module.get(GetCheckoutRecoveryUseCase).execute({ userId: 'buyer-1', mode: 'session' }))
+    await expect(module.get(GetCheckoutRecoveryUseCase).execute({ userId: 'buyer-1', mode: CheckoutMode.SESSION }))
       .resolves.toEqual(right({
         status: 'PAID', paymentGroupId: 'group-1', orderIds: ['order-1'], totalAmount: 12500,
         checkoutUrl: null, paymentIntentClientSecret: null, expiresAt: group.expiresAt,

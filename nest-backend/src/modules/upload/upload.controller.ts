@@ -9,6 +9,7 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { BoundedMultipartInterceptor } from '@/shared/interceptors/bounded-multipart.interceptor';
 import { CurrentUserId, PostAuth } from '@/shared/decorators';
+import { THROTTLE_TTL_MINUTE_MS } from '@/shared/http/throttle.constants';
 import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
 import {
   MAX_MEDIA_SIZE,
@@ -36,7 +37,12 @@ export function isValidContext(context: unknown): context is (typeof VALID_CONTE
 @ApiTags('Upload')
 @Controller('uploads')
 export class UploadController {
-  @PostAuth({ summary: 'Upload a file (image, audio, video)', responseStatus: 201, httpCode: HttpStatus.CREATED })
+  @PostAuth({
+    summary: 'Upload a file (image, audio, video)',
+    responseStatus: 201,
+    httpCode: HttpStatus.CREATED,
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
   @UseInterceptors(
     BoundedMultipartInterceptor('file', 1, MAX_MEDIA_SIZE + 512 * 1024, 4 * 1024, MAX_MEDIA_SIZE),
   )
@@ -47,7 +53,7 @@ export class UploadController {
   ): Promise<{ url: string; blurHash?: string }> {
     if (!file) {
       throw new BadRequestException(
-        'Arquivo ausente ou formato não suportado (aceitos: JPEG, PNG, GIF, WebP, MP3, M4A, AAC, OGG, WAV, MP4, MOV, WebM)',
+        'Arquivo ausente ou formato não suportado (aceitos: JPEG, PNG, GIF, WebP, MP3, M4A, AAC, OGG, WAV, MP4, MOV, WebM, PDF, TXT)',
       );
     }
     if (!isValidContext(context)) {

@@ -8,7 +8,7 @@ type DelegateName =
   | 'passwordRecoveryCode' | 'savedPost' | 'favorite' | 'cartItem' | 'conversationPreference'
   | 'follow' | 'block' | 'closeFriend' | 'restriction' | 'like' | 'share' | 'commentLike' | 'webMagicLink'
   | 'messageReaction' | 'starredMessage' | 'phoneVerificationCode' | 'storyHighlight' | 'storyView'
-  | 'comment' | 'product' | 'productImage' | 'like' | 'share' | 'commentLike' | 'report' | 'bugReport' | 'moderationAction';
+  | 'comment' | 'product' | 'productMedia' | 'postMedia' | 'like' | 'share' | 'commentLike' | 'report' | 'bugReport' | 'moderationAction';
 
 describe('AccountLifecycleDatabaseRepository personal purge', () => {
   const cutoff = new Date('2026-09-09T00:00:00.000Z');
@@ -22,7 +22,7 @@ describe('AccountLifecycleDatabaseRepository personal purge', () => {
       'passwordRecoveryCode', 'savedPost', 'favorite', 'cartItem', 'conversationPreference',
       'follow', 'block', 'closeFriend', 'restriction', 'like', 'share', 'commentLike', 'webMagicLink',
       'messageReaction', 'starredMessage', 'phoneVerificationCode', 'storyHighlight', 'storyView',
-      'comment', 'product', 'productImage', 'like', 'share', 'commentLike', 'report', 'bugReport', 'moderationAction',
+      'comment', 'product', 'productMedia', 'postMedia', 'like', 'share', 'commentLike', 'report', 'bugReport', 'moderationAction',
     ];
     for (const delegate of names) {
       delegates.set(delegate, {
@@ -103,7 +103,7 @@ describe('AccountLifecycleDatabaseRepository personal purge', () => {
       avatarUrl: '/uploads/avatar.png',
       bannerUrl: '/uploads/banner.png',
     });
-    delegates.get('post')?.findMany.mockResolvedValue([{ imageUrl: '/uploads/post.png' }]);
+    delegates.get('post')?.findMany.mockResolvedValue([{ media: [{ url: '/uploads/post.png', thumbnailUrl: null }] }]);
     delegates.get('story')?.findMany.mockResolvedValue([{ imageUrl: '/uploads/story.png' }]);
     delegates.get('directMessage')?.findMany.mockResolvedValue([{ attachmentUrl: '/uploads/direct.png' }]);
     delegates.get('chatMessage')?.findMany.mockResolvedValue([{ attachmentUrl: '/uploads/order-chat.png' }]);
@@ -142,10 +142,10 @@ describe('AccountLifecycleDatabaseRepository personal purge', () => {
       bannerUrl: null,
     });
     delegates.get('product')?.findMany
-      .mockResolvedValueOnce([{ id: 'listing-1', images: [{ url: '/uploads/listing.png' }], directConversations: [] }])
+      .mockResolvedValueOnce([{ id: 'listing-1' }])
       .mockResolvedValueOnce([]);
     delegates.get('product')?.findUnique.mockResolvedValue({
-      sellerId: 'user-1', deletedAt: null, orders: [], images: [{ url: '/uploads/listing.png' }],
+      sellerId: 'user-1', deletedAt: null, orders: [], media: [{ url: '/uploads/listing.png', thumbnailUrl: null }],
       directConversations: [], favorites: [], cartItems: [], post: null,
     });
     const repository = await repositoryFor(prisma);
@@ -160,8 +160,8 @@ describe('AccountLifecycleDatabaseRepository personal purge', () => {
       where: { id: 'listing-1', orders: { none: {} }, directConversations: { none: {} } },
       data: { title: 'Anúncio removido', description: '', status: 'PAUSED' },
     });
-    expect(calls.find(({ delegate, method }) => delegate === 'productImage' && method === 'updateMany')?.args[0]).toMatchObject({
-      where: { productId: 'listing-1' }, data: { url: '', blurHash: null },
+    expect(calls.find(({ delegate, method }) => delegate === 'productMedia' && method === 'updateMany')?.args[0]).toMatchObject({
+      where: { productId: 'listing-1' }, data: { url: '', thumbnailUrl: null, blurHash: null },
     });
   });
 

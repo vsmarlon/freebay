@@ -6,7 +6,7 @@ import { TransactionDatabaseRepository } from '../data/repositories/transaction-
 import { OrderDatabaseRepository } from '../../orders/data/repositories/order-database.repository';
 import { SellerPayoutService } from '../services/seller-payout.service';
 import { StripeProvider } from '../providers/stripe-provider';
-import { RefundSnapshot } from '../types/payment-provider.types';
+import { RefundSnapshot, RefundStatus } from '../types/payment-provider.types';
 
 @Injectable()
 export class ProcessRefundUseCase {
@@ -71,14 +71,14 @@ export class ProcessRefundUseCase {
     if (recorded.isLeft()) return left(recorded.value);
     if (!recorded.value) return left(new ConflictError('Refund operation identity changed'));
 
-    if (refund.status === 'pending' || refund.status === 'requires_action' ||
-        refund.status === 'failed' || refund.status === 'canceled') {
-      if (refund.status === 'failed' || refund.status === 'canceled') {
+    if (refund.status === RefundStatus.PENDING || refund.status === RefundStatus.REQUIRES_ACTION ||
+        refund.status === RefundStatus.FAILED || refund.status === RefundStatus.CANCELED) {
+      if (refund.status === RefundStatus.FAILED || refund.status === RefundStatus.CANCELED) {
         this.logger.error(`Stripe refund ${refund.id} is ${refund.status}; order ${refund.orderId} remains held for manual review`);
       }
       return right(undefined);
     }
-    if (refund.status !== 'succeeded') {
+    if (refund.status !== RefundStatus.SUCCEEDED) {
       return left(new PaymentProviderError('Estado de reembolso exige reconciliação'));
     }
 

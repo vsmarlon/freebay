@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { CommentDatabaseRepository } from '../data/repositories/comment-database.repository';
-
-export interface DeleteCommentInput {
-  commentId: string;
-  userId: string;
-}
+import { DeleteCommentInput } from '../dtos/social.dto';
 
 @Injectable()
 export class DeleteCommentUseCase {

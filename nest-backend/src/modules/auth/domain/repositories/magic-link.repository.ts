@@ -1,7 +1,6 @@
-import { Prisma, User, WebMagicLink } from '@prisma/client';
+import { Prisma, WebMagicLink } from '@prisma/client';
 import { RepositoryResponse } from '@/shared/core/either';
-
-export type ConsumedMagicLink = { user: User; sessionStartedAtMs: number };
+import { ConsumedMagicLink } from '../../types/auth.types';
 
 export abstract class MagicLinkRepository {
   abstract create(data: Prisma.WebMagicLinkCreateInput): RepositoryResponse<WebMagicLink>;

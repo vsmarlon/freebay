@@ -28,11 +28,11 @@ describe('AccountLifecycleDatabaseRepository personal purge integration', () => 
     const product = await prisma.product.create({ data: {
       sellerId: seller.id, title: 'Synthetic preserved listing', description: 'Financial reference', price: 12345, condition: 'NEW',
     } });
-    const productImage = await prisma.productImage.create({ data: { productId: product.id, url: '/synthetic/order-product.png' } });
+    const productImage = await prisma.productMedia.create({ data: { productId: product.id, url: '/synthetic/order-product.png', type: 'IMAGE' } });
     const personalListing = await prisma.product.create({ data: {
       sellerId: seller.id, title: 'Personal listing title', description: 'Personal listing description', price: 54321, condition: 'USED', quantity: 4, soldCount: 1,
     } });
-    const personalListingImage = await prisma.productImage.create({ data: { productId: personalListing.id, url: '/synthetic/personal-listing.png', blurHash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' } });
+    const personalListingImage = await prisma.productMedia.create({ data: { productId: personalListing.id, url: '/synthetic/personal-listing.png', type: 'IMAGE', blurHash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' } });
     const order = await prisma.order.create({ data: {
       buyerId: buyer.id, sellerId: seller.id, productId: product.id, quantity: 1, amount: 12345, platformFee: 1234, sellerAmount: 11111,
     } });
@@ -50,7 +50,7 @@ describe('AccountLifecycleDatabaseRepository personal purge integration', () => 
       reviewerId: seller.id, reviewedId: buyer.id, orderId: order.id, type: 'SELLER_REVIEWING_BUYER', score: 5, comment: 'preserve financial evidence',
     } });
     const reviewImage = await prisma.reviewImage.create({ data: { reviewId: review.id, url: '/synthetic/review.png' } });
-    const post = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: 'private authored text', imageUrl: '/synthetic/post.png' } });
+    const post = await prisma.post.create({ data: { userId: seller.id, type: 'REGULAR', content: 'private authored text', media: { create: { url: '/synthetic/post.png', type: 'IMAGE' } } } });
     const parentComment = await prisma.comment.create({ data: { userId: seller.id, postId: post.id, content: 'authored comment' } });
     const reply = await prisma.comment.create({ data: { userId: buyer.id, postId: post.id, parentId: parentComment.id, content: 'third-party reply' } });
     const socialPost = await prisma.post.create({ data: { userId: buyer.id, type: 'REGULAR', content: 'counter regression', likesCount: 2, sharesCount: 2, commentsCount: 4 } });
@@ -74,7 +74,7 @@ describe('AccountLifecycleDatabaseRepository personal purge integration', () => 
       review: await prisma.review.findUniqueOrThrow({ where: { id: review.id } }),
       reviewImage: await prisma.reviewImage.findUniqueOrThrow({ where: { id: reviewImage.id } }),
       product: await prisma.product.findUniqueOrThrow({ where: { id: product.id } }),
-      productImage: await prisma.productImage.findUniqueOrThrow({ where: { id: productImage.id } }),
+      productImage: await prisma.productMedia.findUniqueOrThrow({ where: { id: productImage.id } }),
     };
     const cutoff = new Date('2026-02-01T00:00:00.000Z');
 
@@ -111,7 +111,7 @@ describe('AccountLifecycleDatabaseRepository personal purge integration', () => 
     expect(await prisma.product.findUniqueOrThrow({ where: { id: personalListing.id } })).toEqual(expect.objectContaining({
       title: 'Anúncio removido', description: '', price: 54321, quantity: 4, soldCount: 1,
     }));
-    expect(await prisma.productImage.findUniqueOrThrow({ where: { id: personalListingImage.id } })).toEqual(expect.objectContaining({ url: '', blurHash: null }));
+    expect(await prisma.productMedia.findUniqueOrThrow({ where: { id: personalListingImage.id } })).toEqual(expect.objectContaining({ url: '', blurHash: null }));
     expect(await prisma.chatMessage.findUniqueOrThrow({ where: { id: message.id } })).toEqual(expect.objectContaining({ content: null, attachmentUrl: null, deletedAt: expect.any(Date) }));
     expect(await prisma.story.findUniqueOrThrow({ where: { id: media.id } })).toEqual(expect.objectContaining({ imageUrl: '', caption: null, deletedAt: expect.any(Date) }));
     expect({
@@ -123,7 +123,7 @@ describe('AccountLifecycleDatabaseRepository personal purge integration', () => 
       review: await prisma.review.findUniqueOrThrow({ where: { id: review.id } }),
       reviewImage: await prisma.reviewImage.findUniqueOrThrow({ where: { id: reviewImage.id } }),
       product: await prisma.product.findUniqueOrThrow({ where: { id: product.id } }),
-      productImage: await prisma.productImage.findUniqueOrThrow({ where: { id: productImage.id } }),
+      productImage: await prisma.productMedia.findUniqueOrThrow({ where: { id: productImage.id } }),
     }).toEqual(preservedBefore);
 
     const countsBeforeRetry = {
@@ -147,7 +147,7 @@ describe('AccountLifecycleDatabaseRepository personal purge integration', () => 
     const product = await prisma.product.create({ data: {
       sellerId: seller.id, title: 'Inquiry context title', description: 'Keep for third-party conversation', price: 9000, condition: 'USED',
     } });
-    const image = await prisma.productImage.create({ data: { productId: product.id, url: '/synthetic/inquiry.png' } });
+    const image = await prisma.productMedia.create({ data: { productId: product.id, url: '/synthetic/inquiry.png', type: 'IMAGE' } });
     await prisma.directConversation.create({ data: { user1Id: buyer.id, user2Id: seller.id, productId: product.id } });
 
     const result = await repository.purge(seller.id, new Date('2026-02-01T00:00:00.000Z'), new Date('2026-02-02T00:00:00.000Z'));
@@ -157,6 +157,6 @@ describe('AccountLifecycleDatabaseRepository personal purge integration', () => 
     expect(await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).toEqual(expect.objectContaining({
       title: 'Inquiry context title', description: 'Keep for third-party conversation', price: 9000,
     }));
-    expect(await prisma.productImage.findUniqueOrThrow({ where: { id: image.id } })).toEqual(expect.objectContaining({ url: '/synthetic/inquiry.png' }));
+    expect(await prisma.productMedia.findUniqueOrThrow({ where: { id: image.id } })).toEqual(expect.objectContaining({ url: '/synthetic/inquiry.png' }));
   });
 });

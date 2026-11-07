@@ -72,7 +72,10 @@ export class ReviewsController {
     summary: 'Upload review image',
     params: [{ name: 'orderId', description: 'Order UUID' }],
     responseStatus: 201,
-    errors: [{ status: 404, description: 'Image not found' }],
+    errors: [
+      { status: 403, description: 'Caller cannot review this order' },
+      { status: 404, description: 'Image not found' },
+    ],
     httpCode: HttpStatus.CREATED,
   })
   @UseInterceptors(
@@ -81,8 +84,9 @@ export class ReviewsController {
   async uploadImage(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @UploadedFile() file: Express.Multer.File | undefined,
+    @CurrentUserId() userId: string,
   ) {
-    return this.reviewsService.uploadImage(orderId, file);
+    return this.reviewsService.uploadImage(orderId, file, userId);
   }
 
   @GetPublic('users/:userId', {

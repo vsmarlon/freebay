@@ -8,7 +8,7 @@ const post = (id: string, userId: string, createdAt: Date, likesCount: number) =
   userId,
   type: 'REGULAR',
   content: id,
-  imageUrl: null,
+  media: [],
   productId: null,
   deletedAt: null,
   createdAt,

@@ -1,7 +1,16 @@
-export type CommentSort = 'recent' | 'likes';
+export enum CommentCursorScope {
+  CONVERSATION = 'conversation',
+  CONTEXT_REPLIES = 'context-replies',
+  CONTEXT_ANCESTORS = 'context-ancestors',
+}
+
+export enum CommentSort {
+  RECENT = 'recent',
+  LIKES = 'likes',
+}
 
 export interface CommentCursor {
-  scope: 'conversation' | 'context-replies' | 'context-ancestors';
+  scope: CommentCursorScope;
   ownerId: string;
   viewerId: string;
   sort: CommentSort;
@@ -20,9 +29,9 @@ export function decodeCommentCursor(value: string): CommentCursor | null {
     const parsed: unknown = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
     const data = parsed as Record<string, unknown>;
-    if ((data.scope !== 'conversation' && data.scope !== 'context-replies' && data.scope !== 'context-ancestors') ||
+    if ((data.scope !== CommentCursorScope.CONVERSATION && data.scope !== CommentCursorScope.CONTEXT_REPLIES && data.scope !== CommentCursorScope.CONTEXT_ANCESTORS) ||
       typeof data.ownerId !== 'string' || typeof data.viewerId !== 'string' ||
-      (data.sort !== 'recent' && data.sort !== 'likes') || typeof data.id !== 'string' ||
+      (data.sort !== CommentSort.RECENT && data.sort !== CommentSort.LIKES) || typeof data.id !== 'string' ||
       typeof data.createdAt !== 'string' || Number.isNaN(Date.parse(data.createdAt)) ||
       typeof data.likesCount !== 'number' || !Number.isInteger(data.likesCount) || data.likesCount < 0) return null;
     return {

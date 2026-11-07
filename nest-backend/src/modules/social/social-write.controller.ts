@@ -4,7 +4,6 @@ import {
   Param,
   HttpStatus,
   UseInterceptors,
-  UploadedFile,
   ParseUUIDPipe,
   Headers,
   Put,
@@ -20,7 +19,7 @@ import {
   SetConversationPreferenceDTO,
   ReportCommentDTO,
 } from "./dtos/social.dto";
-import { validateImageFile } from "@/shared/utils/image-upload.utils";
+import { validateMediaFile, MAX_MEDIA_SIZE } from "@/shared/utils/image-upload.utils";
 import {
   PostAuth,
   PatchAuth,
@@ -33,6 +32,11 @@ import { StoryAudience } from '@prisma/client';
 import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
 import { ALLOWED_IMAGE_MIMES, ALLOWED_VIDEO_MIMES, hasValidMagicBytes } from '@/shared/utils/image-upload.utils';
 import { BoundedMultipartInterceptor } from '@/shared/interceptors/bounded-multipart.interceptor';
+import { parsePublicationMedia, PublicationMediaDescriptor, validatePublicationMediaFiles } from '@/shared/media/publication-media';
+import { THROTTLE_TTL_MINUTE_MS } from '@/shared/http/throttle.constants';
+
+const PUBLICATION_UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
+const PUBLICATION_METADATA_MAX_BYTES = 256 * 1024;
 
 // Direct UseCases
 import { CreatePostUseCase } from "./usecases/create-post.usecase";
@@ -77,41 +81,60 @@ export class SocialWriteController {
 
   @PostAuth("posts", {
     summary: "Create a post",
-    description: "Creates a new social post with optional image upload",
+    description: "Creates a social post with an optional collection of up to 10 ordered images or videos",
     bodyType: CreatePostDTO,
     responseStatus: 201,
     httpCode: HttpStatus.CREATED,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS } },
   })
   @UseInterceptors(
-    BoundedMultipartInterceptor("image", 1, 5 * 1024 * 1024 + 512 * 1024, 64 * 1024, 5 * 1024 * 1024),
+    BoundedMultipartInterceptor("files", 20, PUBLICATION_UPLOAD_MAX_BYTES, PUBLICATION_METADATA_MAX_BYTES, MAX_MEDIA_SIZE),
   )
   async createPost(
     @CurrentUserId() userId: string,
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFiles() files: Express.Multer.File[] = [],
     @Body() body: CreatePostDTO,
   ) {
-    if (file) {
-      const mimeError = validateImageFile(file);
+    for (const file of files) {
+      const mimeError = validateMediaFile(file);
       if (mimeError) return left(new BadRequestError(mimeError));
     }
-    const closeFriends = body.audience === StoryAudience.CLOSE_FRIENDS;
-    const imageUrl = file
-      ? saveUpload(file, closeFriends ? 'privatepost' : 'post')
-      : undefined;
-    const imageBlurHash = file
-      ? closeFriends ? undefined : await generateImageBlurHash(file.buffer)
-      : undefined;
+    let descriptors: PublicationMediaDescriptor[] = [];
     try {
+      if (files.length > 0 || body.mediaMetadata != null) {
+        descriptors = parsePublicationMedia(body.mediaMetadata, files.length);
+        validatePublicationMediaFiles(descriptors, files);
+      }
+    } catch (error) {
+      return left(new BadRequestError(error instanceof Error ? error.message : 'Metadados de mídia inválidos'));
+    }
+    const closeFriends = body.audience === StoryAudience.CLOSE_FRIENDS;
+    const savedUrls: string[] = [];
+    try {
+      for (const file of files) savedUrls.push(saveUpload(file, closeFriends ? 'privatepost' : 'post'));
+      const media = await Promise.all(descriptors.map(async (descriptor) => {
+        const blurFile = files[descriptor.thumbnailFileIndex ?? descriptor.fileIndex];
+        return {
+          url: savedUrls[descriptor.fileIndex],
+          ...(descriptor.thumbnailFileIndex == null ? {} : { thumbnailUrl: savedUrls[descriptor.thumbnailFileIndex] }),
+          type: descriptor.type,
+          blurHash: closeFriends ? undefined : await generateImageBlurHash(blurFile.buffer),
+          altText: descriptor.altText,
+          durationMs: descriptor.durationMs,
+          coverTimestampMs: descriptor.coverTimestampMs,
+          hotspots: descriptor.hotspots,
+        };
+      }));
+      const { mediaMetadata: _mediaMetadata, ...post } = body;
       const result = await this.createPostUseCase.execute({
         userId,
-        ...body,
-        imageUrl,
-        imageBlurHash,
+        ...post,
+        media: media.length ? media : undefined,
       });
-      if (result.isLeft() && file && imageUrl) deleteUpload(imageUrl);
+      if (result.isLeft()) savedUrls.forEach(deleteUpload);
       return result;
     } catch (error) {
-      if (file && imageUrl) deleteUpload(imageUrl);
+      savedUrls.forEach(deleteUpload);
       throw error;
     }
   }

@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ConnectStatus } from '../types/connect.types';
 
 export class ConnectStatusOutput {
-  @ApiProperty({ enum: ['onboarding-required', 'requirements-due', 'restricted', 'transfer-ready'] })
+  @ApiProperty({ enum: ConnectStatus })
   readonly status: ConnectStatus;
 
   @ApiProperty({ example: [], type: [String] })

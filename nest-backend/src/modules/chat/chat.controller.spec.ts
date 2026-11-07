@@ -13,6 +13,7 @@ import { DeleteConversationUseCase } from './usecases/delete-conversation.usecas
 import { SetConversationThemeUseCase } from './usecases/set-conversation-theme.usecase';
 import { SetConversationBackgroundUseCase } from './usecases/set-conversation-background.usecase';
 import { DeleteMessageUseCase } from './usecases/delete-message.usecase';
+import { SetMessagePinUseCase } from './usecases/set-message-pin.usecase';
 import { ToggleReactionUseCase } from './usecases/toggle-reaction.usecase';
 import { ToggleStarUseCase } from './usecases/toggle-star.usecase';
 import { GetStarredMessagesUseCase } from './usecases/get-starred-messages.usecase';
@@ -54,6 +55,7 @@ describe('ChatController.startConversation', () => {
         { provide: SetConversationThemeUseCase, useValue: {} },
         { provide: SetConversationBackgroundUseCase, useValue: {} },
         { provide: DeleteMessageUseCase, useValue: {} },
+        { provide: SetMessagePinUseCase, useValue: {} },
         { provide: ToggleReactionUseCase, useValue: {} },
         { provide: ToggleStarUseCase, useValue: {} },
         { provide: GetStarredMessagesUseCase, useValue: {} },
@@ -125,6 +127,7 @@ describe('ChatController.sendMessage', () => {
         { provide: SetConversationThemeUseCase, useValue: {} },
         { provide: SetConversationBackgroundUseCase, useValue: {} },
         { provide: DeleteMessageUseCase, useValue: {} },
+        { provide: SetMessagePinUseCase, useValue: {} },
         { provide: ToggleReactionUseCase, useValue: {} },
         { provide: ToggleStarUseCase, useValue: {} },
         { provide: GetStarredMessagesUseCase, useValue: {} },

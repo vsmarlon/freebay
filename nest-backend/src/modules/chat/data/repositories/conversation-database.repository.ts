@@ -4,7 +4,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { RepositoryResponse } from '@/shared/core/either';
 import { CursorPage, PageQuery } from '@/shared/core/pagination';
-import { DirectConversationWithDetails, OrderWithChatRecord, DirectMessageWithSender, ChatMessageWithSender, ReplyToSummary, ProductConversationSummaryRecord } from './conversation/payloads';
+import { DirectConversationWithDetails, OrderWithChatRecord, DirectMessageWithSender, ChatMessageWithSender, ReplyToSummary, ProductConversationSummaryRecord } from '../../types/conversation-payloads';
 import { ConversationStartRecord } from '../../dtos/conversation-response';
 import * as lookups from './conversation/lookups';
 import * as messages from './conversation/messages';
@@ -43,6 +43,8 @@ export class ConversationDatabaseRepository {
 
   findDirectMessageById(id: string): RepositoryResponse<DirectMessage | null> { return repositoryResponse(() => messages.findDirectMessageById(this.prisma, id), 'Erro ao buscar mensagem'); }
   softDeleteDirectMessage(id: string): RepositoryResponse<void> { return repositoryResponse(() => messages.softDeleteDirectMessage(this.prisma, id), 'Erro ao apagar mensagem'); }
+  softDeleteMessage(id: string, threadId: string, senderId: string, model: ChatThreadType): RepositoryResponse<boolean> { return repositoryResponse(() => messages.softDeleteMessage(this.prisma, id, threadId, senderId, model), 'Erro ao apagar mensagem'); }
+  setMessagePinned(id: string, threadId: string, model: ChatThreadType, pinned: boolean, userId: string): RepositoryResponse<boolean> { return repositoryResponse(() => messages.setMessagePinned(this.prisma, id, threadId, model, pinned, userId), 'Erro ao fixar mensagem'); }
   findReactionByUserAndMessage(userId: string, messageId: string, model: ChatThreadType): RepositoryResponse<MessageReaction | null> { return repositoryResponse(() => reactions.findReactionByUserAndMessage(this.prisma, userId, messageId, model), 'Erro ao buscar reação'); }
   upsertReaction(data: { userId: string; messageId: string; emoji: string; model: ChatThreadType }): RepositoryResponse<void> { return repositoryResponse(() => reactions.upsertReaction(this.prisma, data), 'Erro ao registrar reação'); }
   deleteReaction(reactionId: string): RepositoryResponse<void> { return repositoryResponse(async () => { await reactions.deleteReaction(this.prisma, reactionId); }, 'Erro ao remover reação'); }
@@ -52,8 +54,8 @@ export class ConversationDatabaseRepository {
   deleteStar(starId: string): RepositoryResponse<void> { return repositoryResponse(async () => { await reactions.deleteStar(this.prisma, starId); }, 'Erro ao desfavoritar mensagem'); }
   findStarredMessages(userId: string, threadId: string, model: ChatThreadType): RepositoryResponse<(DirectMessageWithSender | ChatMessageWithSender)[]> { return repositoryResponse(() => reactions.findStarredMessages(this.prisma, userId, threadId, model), 'Erro ao buscar favoritas'); }
 
-  findDirectMessagesByType(conversationId: string, type: MessageType, limit: number, cursor?: string): RepositoryResponse<DirectMessageWithSender[]> { return repositoryResponse(() => messages.findDirectMessagesByType(this.prisma, conversationId, type, limit, cursor), 'Erro ao buscar mensagens'); }
-  findChatMessagesByType(orderId: string, type: MessageType, limit: number, cursor?: string): RepositoryResponse<ChatMessageWithSender[]> { return repositoryResponse(() => messages.findChatMessagesByType(this.prisma, orderId, type, limit, cursor), 'Erro ao buscar mensagens'); }
+  findDirectMessagesByType(conversationId: string, type: MessageType | 'LINK', limit: number, cursor?: string): RepositoryResponse<DirectMessageWithSender[]> { return repositoryResponse(() => messages.findDirectMessagesByType(this.prisma, conversationId, type, limit, cursor), 'Erro ao buscar mensagens'); }
+  findChatMessagesByType(orderId: string, type: MessageType | 'LINK', limit: number, cursor?: string): RepositoryResponse<ChatMessageWithSender[]> { return repositoryResponse(() => messages.findChatMessagesByType(this.prisma, orderId, type, limit, cursor), 'Erro ao buscar mensagens'); }
   messageBelongsToThread(messageId: string, threadId: string, model: ChatThreadType): RepositoryResponse<boolean> { return repositoryResponse(() => messages.messageBelongsToThread(this.prisma, messageId, threadId, model), 'Erro ao verificar mensagem da conversa'); }
   findReplyToSummary(id: string): RepositoryResponse<ReplyToSummary | null> { return repositoryResponse(() => messages.findReplyToSummary(this.prisma, id), 'Erro ao buscar mensagem referenciada'); }
 }

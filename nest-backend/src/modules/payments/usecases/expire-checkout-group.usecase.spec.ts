@@ -26,6 +26,8 @@ const mockProductRepository = {
 
 const mockOrderRepository = {
   cancel: jest.fn(),
+  findStaleUnpaidOrders: jest.fn(),
+  claimCheckoutAbandoned: jest.fn(),
 };
 
 const mockPrisma = {
@@ -90,6 +92,8 @@ describe('ExpireCheckoutGroupUseCase', () => {
     mockTransactionRepository.markAsFailed.mockResolvedValue(right({ count: 1 }));
     mockProductRepository.restoreInventoryOnExpiry.mockResolvedValue(right(undefined));
     mockOrderRepository.cancel.mockResolvedValue(right(undefined));
+    mockOrderRepository.findStaleUnpaidOrders.mockResolvedValue(right([]));
+    mockOrderRepository.claimCheckoutAbandoned.mockResolvedValue(right(true));
     mockStripe.cancelPendingPayment.mockResolvedValue(right(undefined));
     mockPrisma.$transaction.mockImplementation((callback: (tx: unknown) => unknown) =>
       Promise.resolve(callback({})),
@@ -225,5 +229,69 @@ describe('ExpireCheckoutGroupUseCase', () => {
     expect(result.isRight()).toBe(true);
     expect(mockOrderRepository.cancel).toHaveBeenCalledTimes(1);
     expect(mockPaymentGroupRepository.markTerminal).toHaveBeenCalledWith('group-1', 'EXPIRED', {});
+  });
+
+  describe('stale unpaid orders without a transaction', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('claims the abandoned order and restores inventory without calling the provider', async () => {
+      mockOrderRepository.findStaleUnpaidOrders.mockResolvedValue(
+        right([{ id: 'order-stale', productId: 'product-stale', quantity: 1 }]),
+      );
+
+      const result = await sut.execute();
+
+      expect(result.isRight()).toBe(true);
+      expect(mockOrderRepository.claimCheckoutAbandoned).toHaveBeenCalledWith('order-stale', {});
+      expect(mockProductRepository.restoreInventoryOnExpiry).toHaveBeenCalledWith(
+        'product-stale',
+        1,
+        {},
+      );
+      expect(mockStripe.cancelPendingPayment).not.toHaveBeenCalled();
+    });
+
+    it('does not restore inventory when the claim updated no rows', async () => {
+      mockOrderRepository.findStaleUnpaidOrders.mockResolvedValue(
+        right([{ id: 'order-stale', productId: 'product-stale', quantity: 1 }]),
+      );
+      mockOrderRepository.claimCheckoutAbandoned.mockResolvedValue(right(false));
+
+      await sut.execute();
+
+      expect(mockOrderRepository.claimCheckoutAbandoned).toHaveBeenCalledWith('order-stale', {});
+      expect(mockProductRepository.restoreInventoryOnExpiry).not.toHaveBeenCalled();
+    });
+
+    it('claims nothing when there are no stale orders', async () => {
+      mockOrderRepository.findStaleUnpaidOrders.mockResolvedValue(right([]));
+
+      await sut.execute();
+
+      expect(mockOrderRepository.claimCheckoutAbandoned).not.toHaveBeenCalled();
+      expect(mockProductRepository.restoreInventoryOnExpiry).not.toHaveBeenCalled();
+    });
+
+    it('only fetches orders created more than 30 minutes ago', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-11-06T12:00:00.000Z'));
+
+      await sut.execute();
+
+      expect(mockOrderRepository.findStaleUnpaidOrders).toHaveBeenCalledWith(
+        new Date('2026-11-06T11:30:00.000Z'),
+      );
+    });
+
+    it('propagates the failure when the stale-order lookup fails', async () => {
+      mockOrderRepository.findStaleUnpaidOrders.mockResolvedValue(
+        left(new DatabaseError('boom')),
+      );
+
+      const result = await sut.execute();
+
+      expect(result.isLeft()).toBe(true);
+    });
   });
 });

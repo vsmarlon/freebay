@@ -10,7 +10,7 @@ export const directConversationWithDetailsValidator = Prisma.validator<Prisma.Di
         id: true,
         title: true,
         status: true,
-        images: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 },
+        media: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 },
       },
     },
     messages: {
@@ -32,7 +32,7 @@ export const productConversationSummaryValidator = Prisma.validator<Prisma.Produ
     title: true,
     sellerId: true,
     status: true,
-    images: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 },
+    media: { select: { url: true }, orderBy: { order: 'asc' }, take: 1 },
   },
 });
 

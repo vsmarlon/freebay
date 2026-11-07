@@ -4,7 +4,7 @@ export const CART_ITEM_INCLUDE = {
   product: {
     include: {
       seller: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
-      images: { orderBy: { order: 'asc' as const }, take: 1 },
+      media: { orderBy: { order: 'asc' as const }, take: 1 },
     },
   },
 } satisfies Prisma.CartItemInclude;
@@ -16,6 +16,8 @@ export interface ProductBrief {
   sellerId: string;
   status: ProductStatus;
   price: number;
+  quantity: number;
+  soldCount: number;
 }
 
 export interface ReserveOrderInput {

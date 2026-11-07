@@ -5,17 +5,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { QuoteDatabaseRepository } from '../data/repositories/quote-database.repository';
 import { PostResponse } from '../types/social.types';
-
-export interface CreateQuoteInput {
-  userId: string;
-  content: string;
-  sourcePostId?: string;
-  sourceCommentId?: string;
-  mentionIds?: string[];
-  clientRequestId?: string;
-  image?: Express.Multer.File;
-  imageBlurHash?: string;
-}
+import { CreateQuoteInput } from '../dtos/social.dto';
 
 @Injectable()
 export class CreateQuoteUseCase {

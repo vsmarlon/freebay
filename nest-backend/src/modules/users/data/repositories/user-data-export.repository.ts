@@ -19,12 +19,13 @@ const USER_PROFILE_SELECT = {
 const PRODUCT_SELECT = {
   id: true, title: true, description: true, price: true, condition: true, categoryId: true,
   status: true, quantity: true, soldCount: true, postId: true, createdAt: true, updatedAt: true, deletedAt: true,
-  images: { select: { id: true, url: true, blurHash: true, order: true } },
+  media: { select: { id: true, url: true, thumbnailUrl: true, type: true, blurHash: true, altText: true, hotspots: true, durationMs: true, coverTimestampMs: true, order: true } },
 } satisfies Prisma.ProductSelect;
 
 const POST_SELECT = {
-  id: true, content: true, imageUrl: true, imageBlurHash: true, type: true, audience: true,
+  id: true, content: true, type: true, audience: true,
   likesCount: true, commentsCount: true, sharesCount: true, createdAt: true, updatedAt: true, deletedAt: true,
+  media: { select: { id: true, url: true, thumbnailUrl: true, type: true, blurHash: true, altText: true, hotspots: true, durationMs: true, coverTimestampMs: true, order: true } },
 } satisfies Prisma.PostSelect;
 
 const COMMENT_SELECT = {

@@ -9,6 +9,7 @@ import { NotificationService } from '@/modules/notifications/services/notificati
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
 import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
+import { RefundStatus } from '@/modules/payments/types/payment-provider.types';
 
 @Injectable()
 export class CancelOrderUseCase {
@@ -107,7 +108,7 @@ export class CancelOrderUseCase {
         providerId: refund.value.id,
         amount: refund.value.amount,
       };
-      if (refund.value.status !== 'succeeded') {
+      if (refund.value.status !== RefundStatus.SUCCEEDED) {
         if (refund.value.status === 'failed' || refund.value.status === 'canceled') {
           return left(new PaymentProviderError('Reembolso não concluído; pedido permanece retido para revisão'));
         }

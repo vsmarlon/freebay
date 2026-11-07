@@ -1,3 +1,4 @@
+import { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
@@ -36,7 +37,7 @@ describe('RequestWebStepUpMagicLinkUseCase', () => {
 
     const result = await module.get(RequestWebStepUpMagicLinkUseCase).execute({
       user: { userId: activeUser.id, role: UserRole.USER, sessionStartedAtMs: 1_700_000_000_000 },
-      body: { purpose: 'cancel_order', resourceId: '550e8400-e29b-41d4-a716-446655440000', locale: 'en', consent: true },
+      body: { purpose: StepUpPurpose.CANCEL_ORDER, resourceId: '550e8400-e29b-41d4-a716-446655440000', locale: 'en', consent: true },
       ip: '192.0.2.10', userAgent: 'test-agent',
     });
 
@@ -51,7 +52,7 @@ describe('RequestWebStepUpMagicLinkUseCase', () => {
     expect(verifyStepUpMagicContext(secret, {
       userId: activeUser.id, purpose, resourceId, tokenHash: created.tokenHash,
     }, signature)).toBe(true);
-    expect([purpose, resourceId, locale]).toEqual(['cancel_order', '550e8400-e29b-41d4-a716-446655440000', 'en']);
+    expect([purpose, resourceId, locale]).toEqual([StepUpPurpose.CANCEL_ORDER, '550e8400-e29b-41d4-a716-446655440000', 'en']);
     expect(redis.incrementWithExpiry).toHaveBeenCalledTimes(2);
   });
 
@@ -71,7 +72,7 @@ describe('RequestWebStepUpMagicLinkUseCase', () => {
 
     const result = await module.get(RequestWebStepUpMagicLinkUseCase).execute({
       user: { userId: 'user-1', role: UserRole.USER, sessionStartedAtMs: 1_700_000_000_000 },
-      body: { purpose: 'cancel_order', resourceId: 'not-a-uuid', locale: 'en', consent: true },
+      body: { purpose: StepUpPurpose.CANCEL_ORDER, resourceId: 'not-a-uuid', locale: 'en', consent: true },
       ip: '192.0.2.10',
     });
 

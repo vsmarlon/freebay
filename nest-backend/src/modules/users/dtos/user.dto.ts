@@ -206,6 +206,13 @@ export class SuggestionsQueryDTO {
   @Min(1)
   @Max(50)
   readonly limit?: number;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  readonly offset?: number;
 }
 
 export interface GetProfileInput {
@@ -247,4 +254,15 @@ export interface SearchUsersInput {
 export interface GetSuggestionsInput {
   userId: string;
   limit: number;
+  offset: number;
+}
+
+export interface RegisterPhoneInput {
+  userId: string;
+  phone: string;
+}
+
+export interface VerifyPhoneInput {
+  userId: string;
+  code: string;
 }

@@ -29,7 +29,7 @@ export class CartDatabaseRepository {
   async findProductById(productId: string): RepositoryResponse<ProductBrief | null> {
     return repositoryResponse(() => this.prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, sellerId: true, status: true, price: true },
+      select: { id: true, sellerId: true, status: true, price: true, quantity: true, soldCount: true },
     }), 'Erro ao buscar produto');
   }
 

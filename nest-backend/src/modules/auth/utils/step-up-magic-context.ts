@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { isStepUpPurpose, type StepUpPurpose } from '@/shared/auth/biometric-credential.service';
+import { isStepUpPurpose, StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 
 export type StepUpMagicContext = {
   userId: string;
@@ -12,7 +12,7 @@ const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f
 
 export function isValidStepUpResource(purpose: unknown, resourceId: unknown): purpose is StepUpPurpose {
   if (!isStepUpPurpose(purpose)) return false;
-  return purpose === 'cancel_order'
+  return purpose === StepUpPurpose.CANCEL_ORDER
     ? typeof resourceId === 'string' && UUID_V4.test(resourceId)
     : resourceId === undefined;
 }

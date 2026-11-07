@@ -9,7 +9,8 @@ import {
   PAGINATION_QUERIES,
 } from '@/shared/decorators';
 import { PageQuery } from '@/shared/core/pagination';
-import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO, VerifyUrlDTO, ForwardMessagesDTO, ViewOnceOpeningDTO } from './dtos/chat.dto';
+import { StartConversationDTO, SendMessageDTO, UpdatePreferenceDTO, VerifyUrlDTO, ForwardMessagesDTO, ViewOnceOpeningDTO, FilteredMessagesQueryDTO, SetMessagePinDTO } from './dtos/chat.dto';
+import { SetMessagePinUseCase } from './usecases/set-message-pin.usecase';
 import { GetUnifiedConversationsUseCase } from './usecases/get-unified-conversations.usecase';
 import { GetConversationsUseCase } from './usecases/get-conversations.usecase';
 import { StartConversationUseCase } from './usecases/start-conversation.usecase';
@@ -30,7 +31,6 @@ import { VerifyUrlSafetyUseCase } from './usecases/verify-url-safety.usecase';
 import { ForwardMessagesUseCase } from './usecases/forward-messages.usecase';
 import { MarkAsReadUseCase } from './usecases/mark-as-read.usecase';
 import { ChatGateway } from './chat.gateway';
-import { MessageType } from '@prisma/client';
 import { ViewOnceUseCase } from './usecases/view-once.usecase';
 import { right } from '@/shared/core/either';
 
@@ -50,6 +50,7 @@ export class ChatController {
     private readonly setThemeUseCase: SetConversationThemeUseCase,
     private readonly setBackgroundUseCase: SetConversationBackgroundUseCase,
     private readonly deleteMessageUseCase: DeleteMessageUseCase,
+    private readonly setMessagePinUseCase: SetMessagePinUseCase,
     private readonly toggleReactionUseCase: ToggleReactionUseCase,
     private readonly toggleStarUseCase: ToggleStarUseCase,
     private readonly getStarredMessagesUseCase: GetStarredMessagesUseCase,
@@ -128,16 +129,14 @@ export class ChatController {
   async getFilteredMessages(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUserId() userId: string,
-    @Query('type') type?: MessageType,
-    @Query('limit') limit?: string,
-    @Query('cursor') cursor?: string,
+    @Query() query: FilteredMessagesQueryDTO,
   ) {
     return this.getConversationMediaUseCase.execute({
       userId,
       conversationId: id,
-      type,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      cursor,
+      type: query.type,
+      limit: query.limit,
+      cursor: query.cursor,
     });
   }
 
@@ -235,6 +234,16 @@ export class ChatController {
       messageId: msgId,
       conversationId: convId,
     });
+  }
+
+  @PatchAuth('conversations/:convId/messages/:msgId/pin', { summary: 'Pin or unpin an ordinary message for this conversation', bodyType: SetMessagePinDTO })
+  async setMessagePin(
+    @Param('convId', ParseUUIDPipe) conversationId: string,
+    @Param('msgId', ParseUUIDPipe) messageId: string,
+    @Body() body: SetMessagePinDTO,
+    @CurrentUserId() userId: string,
+  ) {
+    return this.setMessagePinUseCase.execute({ userId, conversationId, messageId, pinned: body.pinned });
   }
 
   @PostAuth('conversations/:convId/messages/:msgId/react', {

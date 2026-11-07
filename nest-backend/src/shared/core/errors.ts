@@ -195,6 +195,24 @@ export class UnverifiedGoogleEmailError extends AppError {
   }
 }
 
+export class EmailVerificationRequiredError extends AppError {
+  constructor(message = 'Verifique seu e-mail para continuar') {
+    super('EMAIL_VERIFICATION_REQUIRED', message, 403);
+  }
+}
+
+export class EmailVerificationCodeNotFoundError extends AppError {
+  constructor() {
+    super('EMAIL_VERIFICATION_CODE_NOT_FOUND', 'Código de verificação de e-mail inválido ou expirado', 404);
+  }
+}
+
+export class EmailVerificationCodeAttemptsExceededError extends AppError {
+  constructor() {
+    super('EMAIL_VERIFICATION_CODE_ATTEMPTS_EXCEEDED', 'Limite de tentativas de verificação de e-mail excedido', 429);
+  }
+}
+
 export class UserNotFoundError extends AppError {
   constructor(message = 'Usuário não encontrado') {
     super('USER_NOT_FOUND', message, 404);

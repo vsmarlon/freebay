@@ -1,9 +1,9 @@
-import { Test } from '@nestjs/testing';
+﻿import { Test } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { Prisma, ConversationStatus, DirectMessage, MessageReaction, ChatThreadType } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ConversationDatabaseRepository } from './conversation-database.repository';
-import { DirectMessageWithSender, ProductConversationSummaryRecord, productConversationSummaryValidator } from './conversation/payloads';
+import { DirectMessageWithSender, ProductConversationSummaryRecord, productConversationSummaryValidator } from '../../types/conversation-payloads';
 
 type ConversationWithProduct = {
   id: string;
@@ -126,7 +126,7 @@ describe('ConversationDatabaseRepository', () => {
     const findFirst = jest.fn<Promise<MessageReaction | null>, [Prisma.MessageReactionFindFirstArgs]>();
     const create = jest.fn<Promise<MessageReaction>, [Prisma.MessageReactionCreateArgs]>();
     findFirst.mockResolvedValue(null);
-    create.mockResolvedValue({ id: 'reaction-1', emoji: '❤️', userId: 'user-1', directMessageId: 'message-1', chatMessageId: null, createdAt: new Date() });
+    create.mockResolvedValue({ id: 'reaction-1', emoji: 'â¤ï¸', userId: 'user-1', directMessageId: 'message-1', chatMessageId: null, createdAt: new Date() });
 
     const module = await Test.createTestingModule({
       providers: [
@@ -136,7 +136,7 @@ describe('ConversationDatabaseRepository', () => {
     }).compile();
     const repository = module.get(ConversationDatabaseRepository);
 
-    const result = await repository.upsertReaction({ userId: 'user-1', messageId: 'message-1', emoji: '❤️', model: ChatThreadType.DIRECT });
+    const result = await repository.upsertReaction({ userId: 'user-1', messageId: 'message-1', emoji: 'â¤ï¸', model: ChatThreadType.DIRECT });
 
     expect(result.isRight()).toBe(true);
     expect(create).toHaveBeenCalled();
@@ -145,9 +145,9 @@ describe('ConversationDatabaseRepository', () => {
   it('updates an existing reaction', async () => {
     const findFirst = jest.fn<Promise<MessageReaction | null>, [Prisma.MessageReactionFindFirstArgs]>();
     const update = jest.fn<Promise<MessageReaction>, [Prisma.MessageReactionUpdateArgs]>();
-    const existing = { id: 'reaction-1', emoji: '👍', userId: 'user-1', directMessageId: 'message-1', chatMessageId: null, createdAt: new Date() };
+    const existing = { id: 'reaction-1', emoji: 'Ã°Å¸â€˜Â', userId: 'user-1', directMessageId: 'message-1', chatMessageId: null, createdAt: new Date() };
     findFirst.mockResolvedValue(existing);
-    update.mockResolvedValue({ ...existing, emoji: '❤️' });
+    update.mockResolvedValue({ ...existing, emoji: 'â¤ï¸' });
 
     const module = await Test.createTestingModule({
       providers: [
@@ -157,10 +157,10 @@ describe('ConversationDatabaseRepository', () => {
     }).compile();
     const repository = module.get(ConversationDatabaseRepository);
 
-    const result = await repository.upsertReaction({ userId: 'user-1', messageId: 'message-1', emoji: '❤️', model: ChatThreadType.DIRECT });
+    const result = await repository.upsertReaction({ userId: 'user-1', messageId: 'message-1', emoji: 'â¤ï¸', model: ChatThreadType.DIRECT });
 
     expect(result.isRight()).toBe(true);
-    expect(update).toHaveBeenCalledWith({ where: { id: 'reaction-1' }, data: { emoji: '❤️' } });
+    expect(update).toHaveBeenCalledWith({ where: { id: 'reaction-1' }, data: { emoji: 'â¤ï¸' } });
   });
 
   it('does not create a reaction when the existence read fails', async () => {
@@ -176,7 +176,7 @@ describe('ConversationDatabaseRepository', () => {
     }).compile();
     const repository = module.get(ConversationDatabaseRepository);
 
-    const result = await repository.upsertReaction({ userId: 'user-1', messageId: 'message-1', emoji: '❤️', model: ChatThreadType.DIRECT });
+    const result = await repository.upsertReaction({ userId: 'user-1', messageId: 'message-1', emoji: 'â¤ï¸', model: ChatThreadType.DIRECT });
 
     expect(result.isLeft()).toBe(true);
     expect(create).not.toHaveBeenCalled();

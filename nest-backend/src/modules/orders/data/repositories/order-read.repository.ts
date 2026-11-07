@@ -11,6 +11,7 @@ import {
   ORDER_INCLUDE_PRODUCT,
   SalesOrderCursor,
   SalesOrderStatus,
+  StaleUnpaidOrder,
 } from "../../types/order.types";
 
 export class OrderReadRepository {
@@ -114,6 +115,21 @@ export class OrderReadRepository {
     return repositoryResponse(
       () => this.prisma.order.count({ where: { buyerId } }),
       "Erro ao contar pedidos",
+    );
+  }
+
+  async findStaleUnpaidOrders(cutoff: Date): RepositoryResponse<StaleUnpaidOrder[]> {
+    return repositoryResponse(
+      () =>
+        this.prisma.order.findMany({
+          where: {
+            status: OrderStatus.PENDING,
+            transaction: { is: null },
+            createdAt: { lt: cutoff },
+          },
+          select: { id: true, productId: true, quantity: true },
+        }),
+      "Erro ao buscar pedidos abandonados",
     );
   }
 

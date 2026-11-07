@@ -5,7 +5,7 @@ import { normalizePostsForViewer } from './post-query-helpers';
 
 function post(overrides: Partial<PostPayload> = {}): PostPayload {
   return {
-    id: 'post-id', content: 'commentary', imageUrl: null, imageBlurHash: null,
+    id: 'post-id', content: 'commentary', media: [],
     type: 'REGULAR', audience: 'EVERYONE', userId: 'author-id', likesCount: 0,
     commentsCount: 0, sharesCount: 0, createdAt: new Date('2026-10-15T00:00:00Z'),
     updatedAt: new Date('2026-10-15T00:00:00Z'), deletedAt: null,

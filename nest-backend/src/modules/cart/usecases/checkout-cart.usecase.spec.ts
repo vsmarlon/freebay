@@ -8,6 +8,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { left, right } from '@/shared/core/either';
 import { BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { PaymentSessionParams, PaymentSessionSnapshot } from '@/modules/payments/types/payment-provider.types';
+import { CheckoutMode } from '../dtos/cart.dto';
 
 const mockCartRepository = {
   findUserCpf: jest.fn(),
@@ -169,7 +170,7 @@ describe('CheckoutCartUseCase', () => {
   it('deve exigir CPF no modo session', async () => {
     mockCartRepository.findUserCpf.mockResolvedValue(right(null));
 
-    const result = await sut.execute({ userId: 'buyer-1', mode: 'session' });
+    const result = await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.SESSION });
 
     expect(result.isLeft()).toBe(true);
     expect((result.value as BadRequestError).message).toContain('CPF');
@@ -178,7 +179,7 @@ describe('CheckoutCartUseCase', () => {
   it('não deve exigir CPF no modo intent', async () => {
     mockCartRepository.findUserCpf.mockResolvedValue(right(null));
 
-    const result = await sut.execute({ userId: 'buyer-1', mode: 'intent' });
+    const result = await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.INTENT });
 
     expect(result.isRight()).toBe(true);
     expect(mockPaymentProvider.createPaymentIntent).toHaveBeenCalled();
@@ -251,11 +252,11 @@ describe('CheckoutCartUseCase', () => {
 
   it('does not reserve another order while the account has a pending attempt', async () => {
     mockPaymentGroupRepository.findLatestOpenForBuyer.mockResolvedValue(right({
-      mode: 'session',
+      mode: CheckoutMode.SESSION,
       group: { status: 'PENDING' },
     }));
 
-    const result = await sut.execute({ userId: 'buyer-1', mode: 'intent' });
+    const result = await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.INTENT });
 
     expect(result.isLeft()).toBe(true);
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
@@ -269,7 +270,7 @@ describe('CheckoutCartUseCase', () => {
       expiresAt: new Date(Date.now() + 60_000), orders: [],
     }));
 
-    const result = await sut.execute({ userId: 'buyer-1', mode: 'session' });
+    const result = await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.SESSION });
 
     expect(result.isLeft()).toBe(true);
     expect(mockPaymentProvider.createPaymentSession).not.toHaveBeenCalled();
@@ -349,7 +350,7 @@ describe('CheckoutCartUseCase', () => {
       expiresAt: new Date('2026-01-01T00:00:00.000Z'), orders: [],
     }));
 
-    const result = await sut.execute({ userId: 'buyer-1', mode: 'session' });
+    const result = await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.SESSION });
 
     expect(result.isRight()).toBe(true);
     expect(mockPaymentGroupRepository.create).toHaveBeenCalledWith(
@@ -402,7 +403,7 @@ describe('CheckoutCartUseCase', () => {
   });
 
   it('deve devolver o clientSecret no modo intent e nenhum checkoutUrl', async () => {
-    const result = await sut.execute({ userId: 'buyer-1', mode: 'intent' });
+    const result = await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.INTENT });
 
     const output = result.value as {
       paymentIntentClientSecret: string | null;
@@ -413,7 +414,7 @@ describe('CheckoutCartUseCase', () => {
   });
 
   it('deve devolver o checkoutUrl no modo session e nenhum clientSecret', async () => {
-    const result = await sut.execute({ userId: 'buyer-1', mode: 'session' });
+    const result = await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.SESSION });
 
     const output = result.value as {
       paymentIntentClientSecret: string | null;
@@ -431,7 +432,7 @@ describe('CheckoutCartUseCase', () => {
       ]),
     );
 
-    await sut.execute({ userId: 'buyer-1', mode: 'session' });
+    await sut.execute({ userId: 'buyer-1', mode: CheckoutMode.SESSION });
 
     const params = mockPaymentProvider.createPaymentSession.mock.calls[0][0];
     expect(params.lineItems).toEqual([

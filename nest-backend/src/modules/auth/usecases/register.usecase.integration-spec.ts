@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { right } from '@/shared/core/either';
 import { RegisterUseCase } from './register.usecase';
 import { UserDatabaseRepository } from '@/modules/users';
 import { prisma } from '../../../../test/setup-integration';
@@ -6,6 +7,7 @@ import { UserFactory } from '../../../../test/factories';
 import { RegisterDTO } from '../dtos/auth.dto';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { SessionTokenService } from '../services/session-token.service';
+import { RequestEmailVerificationUseCase } from './request-email-verification.usecase';
 import { CpfProtectionService } from '@/shared/utils/cpf-protection.service';
 import { ConfigService } from '@nestjs/config';
 
@@ -22,6 +24,7 @@ describe('RegisterUseCase Integration', () => {
         CpfProtectionService,
         { provide: ConfigService, useValue: { get: (key: string) => process.env[key] } },
         { provide: SessionTokenService, useValue: { generate: () => ({ token: 'access', refreshToken: 'refresh' }) } },
+        { provide: RequestEmailVerificationUseCase, useValue: { execute: jest.fn().mockResolvedValue(right(undefined)) } },
       ],
     }).compile();
 

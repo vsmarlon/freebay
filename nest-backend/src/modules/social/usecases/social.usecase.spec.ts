@@ -27,8 +27,16 @@ describe('CreatePostUseCase', () => {
       create: jest.fn().mockImplementation((data) => Promise.resolve(right({
         id: 'post-123',
         content: data.content ?? null,
-        imageUrl: data.imageUrl ?? null,
-        imageBlurHash: data.imageBlurHash ?? null,
+        media: (data.media?.create ?? []).map((item: Record<string, unknown>, order: number) => ({
+          id: `media-${order}`,
+          postId: 'post-123',
+          thumbnailUrl: null,
+          altText: null,
+          durationMs: null,
+          coverTimestampMs: null,
+          hotspots: null,
+          ...item,
+        })),
         type: data.type,
         userId: data.user?.connect?.id ?? 'user-123',
         likesCount: 0,
@@ -68,27 +76,31 @@ describe('CreatePostUseCase', () => {
 
   it('creates a post with image', async () => {
     const result = await sut.execute(createPostInput({
-      imageUrl: 'http://example.com/image.jpg',
+      media: [{ url: 'http://example.com/image.jpg', type: 'IMAGE', hotspots: [] }],
       type: 'PRODUCT',
     }));
     const post = expectRight(result);
 
-    expect(post.imageUrl).toBe('http://example.com/image.jpg');
+    expect(post.media[0]?.url).toBe('http://example.com/image.jpg');
     expect(post.type).toBe('PRODUCT');
   });
 
   it('does not persist or return image hashes for close-friends posts', async () => {
     const result = await sut.execute(createPostInput({
-      imageUrl: '/media/privatepost/123e4567-e89b-12d3-a456-426614174000.jpg',
-      imageBlurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
+      media: [{
+        url: '/media/privatepost/123e4567-e89b-12d3-a456-426614174000.jpg',
+        type: 'IMAGE',
+        blurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
+        hotspots: [],
+      }],
       audience: StoryAudience.CLOSE_FRIENDS,
     }));
 
     expect(mockPostRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-      imageBlurHash: null,
+      media: { create: [expect.objectContaining({ blurHash: null })] },
       audience: StoryAudience.CLOSE_FRIENDS,
     }));
-    expect(expectRight(result)).not.toHaveProperty('imageBlurHash');
+    expect(expectRight(result).media[0]).not.toHaveProperty('blurHash');
   });
 
   it('creates PostMention rows for each mentionId', async () => {

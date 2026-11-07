@@ -3,6 +3,7 @@ import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { repositoryResponse } from '@/shared/infra/prisma/repository-response';
 import { SafetyListRepository } from '../../domain/repositories/safety-list.repository';
 import { NotificationsGateway } from '@/modules/notifications/notifications.gateway';
+import { SafetyListKind } from '../../types/user.types';
 
 const userFields = { id: true, displayName: true, username: true, avatarUrl: true, avatarBlurHash: true, isVerified: true, reputationScore: true } as const;
 
@@ -41,9 +42,9 @@ export class SafetyListDatabaseRepository extends SafetyListRepository {
     }, 'Erro ao buscar seguidores para amigos próximos');
   }
 
-  list(ownerId: string, kind: 'closeFriends' | 'restricted', limit: number, offset: number) {
+  list(ownerId: string, kind: SafetyListKind, limit: number, offset: number) {
     return repositoryResponse(() => this.prisma.user.findMany({
-      where: kind === 'closeFriends'
+      where: kind === SafetyListKind.CLOSE_FRIENDS
         ? { closeFriendsReceived: { some: { ownerId } } }
         : { restrictionsReceived: { some: { ownerId } } },
       select: userFields,

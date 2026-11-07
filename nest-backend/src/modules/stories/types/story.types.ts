@@ -13,6 +13,18 @@ export type StoryWithViews = Prisma.StoryGetPayload<
   typeof storyWithViewsValidator
 >;
 
+export const highlightPayload = Prisma.validator<Prisma.StoryHighlightDefaultArgs>()({
+  include: {
+    user: { select: { id: true, displayName: true, avatarUrl: true, isVerified: true } },
+    stories: {
+      orderBy: { position: 'asc' },
+      include: { story: true },
+    },
+  },
+});
+
+export type HighlightPayload = Prisma.StoryHighlightGetPayload<typeof highlightPayload>;
+
 export const storyCreatePayloadValidator =
   Prisma.validator<Prisma.StoryDefaultArgs>()({
     include: {

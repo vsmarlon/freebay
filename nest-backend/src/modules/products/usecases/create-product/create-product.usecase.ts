@@ -2,22 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { ProductStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
+import { EmailVerificationGateService } from '@/modules/auth/services/email-verification-gate.service';
 import { ProductDatabaseRepository } from '../../data/repositories/product-database.repository';
 import { CreateProductInput, CreateProductOutput } from '../../dtos/product.dto';
-import { isValidBlurHash } from '@/shared/utils/blurhash.utils';
 
 @Injectable()
 export class CreateProductUseCase {
-  constructor(private readonly productRepository: ProductDatabaseRepository) {}
+  constructor(
+    private readonly productRepository: ProductDatabaseRepository,
+    private readonly emailVerification: EmailVerificationGateService,
+  ) {}
 
   async execute(input: CreateProductInput): Promise<Either<AppError, CreateProductOutput>> {
-    const imageUrls = input.images.map((url, i) => ({
-      url,
-      order: i,
-      blurHash: i === 0 && isValidBlurHash(input.imageBlurHash)
-        ? input.imageBlurHash
-        : null,
-    }));
+    const verified = await this.emailVerification.ensureVerified(input.sellerId);
+    if (verified.isLeft()) return left(verified.value);
 
     const result = await this.productRepository.create({
       title: input.title,
@@ -28,7 +26,19 @@ export class CreateProductUseCase {
       seller: { connect: { id: input.sellerId } },
       status: ProductStatus.ACTIVE,
       quantity: input.quantity ?? 1,
-      images: { create: imageUrls },
+      media: {
+        create: input.media.map((item, order) => ({
+          url: item.url,
+          thumbnailUrl: item.thumbnailUrl,
+          type: item.type,
+          blurHash: item.blurHash,
+          altText: item.altText,
+          durationMs: item.durationMs,
+          coverTimestampMs: item.coverTimestampMs,
+          hotspots: item.hotspots,
+          order,
+        })),
+      },
     });
 
     if (result.isLeft()) return left(result.value);
@@ -46,13 +56,7 @@ export class CreateProductUseCase {
       quantity: product.quantity,
       soldCount: product.soldCount,
       createdAt: product.createdAt,
-      images: product.images.map((image) => ({
-        id: image.id,
-        url: image.url,
-        order: image.order,
-        productId: image.productId,
-        ...(isValidBlurHash(image.blurHash) ? { blurHash: image.blurHash } : {}),
-      })),
+      media: product.media,
     });
   }
 }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '@/modules/auth/auth.module';
 import { ProductsController } from './products.controller';
 import { CreateProductUseCase } from './usecases/create-product/create-product.usecase';
 import { UpdateProductUseCase } from './usecases/update-product/update-product.usecase';
@@ -10,6 +11,7 @@ import { ProductDatabaseRepository } from './data/repositories/product-database.
 
 @Module({
   imports: [
+    AuthModule,
   ],
   controllers: [ProductsController],
   providers: [

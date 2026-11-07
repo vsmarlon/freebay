@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
-
-export interface DeletePostInput {
-  postId: string;
-  userId: string;
-}
+import { DeletePostInput } from '../dtos/social.dto';
 
 @Injectable()
 export class DeletePostUseCase {

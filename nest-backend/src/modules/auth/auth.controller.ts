@@ -1,3 +1,4 @@
+import { BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 import {
   Controller,
   Body,
@@ -24,8 +25,15 @@ import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
 import { EnrollBiometricUseCase } from './usecases/enroll-biometric.usecase';
 import { RevokeBiometricUseCase } from './usecases/revoke-biometric.usecase';
 import { CreateBiometricChallengeUseCase } from './usecases/create-biometric-challenge.usecase';
+import { CreateBiometricEnrollmentChallengeUseCase } from './usecases/create-biometric-enrollment-challenge.usecase';
 import { CreateStepUpUseCase } from './usecases/create-step-up.usecase';
-import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, BiometricTokenDTO, BiometricChallengeDTO, BiometricEnrollmentDTO, StepUpDTO, GoogleAuthDTO, AppleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
+import { RequestEmailVerificationUseCase } from './usecases/request-email-verification.usecase';
+import { ConfirmEmailVerificationUseCase } from './usecases/confirm-email-verification.usecase';
+import {
+  RequestEmailVerificationDTO,
+  ConfirmEmailVerificationDTO,
+} from './dtos/email-verification.dto';
+import { RegisterDTO, LoginDTO, UsernameAvailabilityQueryDTO, BiometricLoginDTO, BiometricTokenDTO, BiometricChallengeDTO, BiometricEnrollmentDTO, BiometricEnrollmentChallengeDTO, StepUpDTO, GoogleAuthDTO, AppleAuthDTO, CompleteProfileDTO } from './dtos/auth.dto';
 import {
   RequestPasswordRecoveryDTO,
   VerifyPasswordRecoveryCodeDTO,
@@ -79,6 +87,9 @@ export class AuthController {
     private readonly createBiometricChallengeUseCase: CreateBiometricChallengeUseCase,
     private readonly createStepUpUseCase: CreateStepUpUseCase,
     private readonly configService: ConfigService,
+    private readonly createBiometricEnrollmentChallengeUseCase: CreateBiometricEnrollmentChallengeUseCase,
+    private readonly requestEmailVerificationUseCase: RequestEmailVerificationUseCase,
+    private readonly confirmEmailVerificationUseCase: ConfirmEmailVerificationUseCase,
   ) {}
 
   @PostPublic('register', {
@@ -117,8 +128,8 @@ export class AuthController {
     return unwrap(await this.checkUsernameAvailabilityUseCase.execute({ username: query.u }));
   }
 
-  @PostPublic('login', {
-    summary: 'Login',
+  @PostPublic(BiometricChallengePurpose.LOGIN, {
+    summary: BiometricChallengePurpose.LOGIN,
     description: 'Authenticate with email and password',
     bodyType: LoginDTO,
     responseType: AuthSessionResponse,
@@ -313,15 +324,52 @@ export class AuthController {
     return unwrap(await this.createStepUpUseCase.execute(user, body));
   }
 
+  @PostAuth('biometric-token/enroll/challenge', {
+    summary: 'Create a session-bound biometric enrollment signature challenge',
+    bodyType: BiometricEnrollmentChallengeDTO,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 15, ttl: THROTTLE_TTL_MINUTE_MS } },
+    httpCode: HttpStatus.OK,
+  })
+  @AllowTokenTypes(JwtTokenType.ACCESS)
+  async biometricEnrollmentChallenge(@CurrentUser() user: AuthUser, @Body() body: BiometricEnrollmentChallengeDTO) {
+    return unwrap(await this.createBiometricEnrollmentChallengeUseCase.execute(user, body.publicKey));
+  }
+
   @PostAuth('biometric-token/enroll', {
     summary: 'Enroll biometric login',
-    description: 'Registers a P-256 public key after consuming biometric_enroll step-up proof and issues a bound biometric token.',
+    description: 'Registers a P-256 public key after a session-bound signature challenge or legacy biometric_enroll step-up proof and issues a bound biometric token.',
     bodyType: BiometricEnrollmentDTO,
     responseType: BiometricEnrollmentResponse,
   })
   @AllowTokenTypes(JwtTokenType.ACCESS)
   async enrollBiometricToken(@CurrentUser() user: AuthUser, @Body() body: BiometricEnrollmentDTO) {
-    return unwrap(await this.enrollBiometricUseCase.execute(user, body.stepUpToken, body.publicKey));
+    return unwrap(await this.enrollBiometricUseCase.execute(user, body.stepUpToken, body.publicKey, body.challengeId, body.signature));
+  }
+
+  @PostAuth('verify-email/request', {
+    summary: 'Request email verification',
+    description: 'Sends the email verification link to the current account',
+    bodyType: RequestEmailVerificationDTO,
+    httpCode: HttpStatus.OK,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 15, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
+  async requestEmailVerification(@CurrentUserId() userId: string, @Body() body: RequestEmailVerificationDTO) {
+    return unwrap(await this.requestEmailVerificationUseCase.execute(userId, body.locale ?? 'pt-BR'));
+  }
+
+  @PostAuth('verify-email/confirm', {
+    summary: 'Confirm email verification',
+    description: 'Consumes the email verification token and marks the account email as verified',
+    bodyType: ConfirmEmailVerificationDTO,
+    httpCode: HttpStatus.OK,
+    errors: [
+      { status: 404, description: 'Invalid, expired or replayed verification token' },
+      { status: 429, description: 'Verification attempts exceeded' },
+    ],
+    throttle: { short: { limit: 10, ttl: THROTTLE_TTL_MINUTE_MS }, medium: { limit: 30, ttl: THROTTLE_TTL_MINUTE_MS } },
+  })
+  async confirmEmailVerification(@CurrentUserId() userId: string, @Body() body: ConfirmEmailVerificationDTO) {
+    return unwrap(await this.confirmEmailVerificationUseCase.execute(userId, body.token));
   }
 
   @PatchAuth('biometric-token/revoke', {

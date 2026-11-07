@@ -12,6 +12,7 @@ import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 import { UserDatabaseRepository } from '@/modules/users';
 import { PaymentProviderError } from '@/shared/core/errors';
 import { GetCheckoutRecoveryUseCase } from '../../usecases/get-checkout-recovery.usecase';
+import { CheckoutMode } from '../../dtos/cart.dto';
 
 describe('CartDatabaseRepository reservations Integration', () => {
   let sut: CartDatabaseRepository;
@@ -219,8 +220,8 @@ describe('CartDatabaseRepository reservations Integration', () => {
     const checkoutUseCase = checkoutModule.get(CheckoutCartUseCase);
 
     const results = await Promise.all([
-      checkoutUseCase.execute({ userId: buyer.id, mode: 'session' }),
-      checkoutUseCase.execute({ userId: buyer.id, mode: 'intent' }),
+      checkoutUseCase.execute({ userId: buyer.id, mode: CheckoutMode.SESSION }),
+      checkoutUseCase.execute({ userId: buyer.id, mode: CheckoutMode.INTENT }),
     ]);
 
     expect(results.filter((result) => result.isRight())).toHaveLength(1);
@@ -238,7 +239,7 @@ describe('CartDatabaseRepository reservations Integration', () => {
     const recoveryModule = await Test.createTestingModule({
       providers: [GetCheckoutRecoveryUseCase, { provide: PaymentGroupDatabaseRepository, useValue: paymentGroups }],
     }).compile();
-    const recovery = await recoveryModule.get(GetCheckoutRecoveryUseCase).execute({ userId: buyer.id, mode: 'intent' });
+    const recovery = await recoveryModule.get(GetCheckoutRecoveryUseCase).execute({ userId: buyer.id, mode: CheckoutMode.INTENT });
     expect(recovery.isRight()).toBe(true);
     expect(recovery.value).toMatchObject({ status: 'CHECKING', paymentGroupId: expect.any(String), totalAmount: 10000 });
   });

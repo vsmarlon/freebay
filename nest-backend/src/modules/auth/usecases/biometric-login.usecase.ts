@@ -8,7 +8,7 @@ import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { SessionTokenService } from '../services/session-token.service';
 import { issueSession } from '../utils/session-policy';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
-import { BiometricCredentialService } from '@/shared/auth/biometric-credential.service';
+import { BiometricCredentialService, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 
 @Injectable()
 export class BiometricLoginUseCase {
@@ -28,7 +28,7 @@ export class BiometricLoginUseCase {
     }
     if (!payload.jti || !payload.exp || !payload.sid || !payload.userId) return left(new InvalidCredentialsError());
 
-    const proofValid = await this.credentials.verifyAndConsume(payload, input.challengeId, input.signature, { purpose: 'login' });
+    const proofValid = await this.credentials.verifyAndConsume(payload, input.challengeId, input.signature, { purpose: BiometricChallengePurpose.LOGIN });
     if (!proofValid) return left(new InvalidCredentialsError());
 
     const userResult = await this.users.findById(payload.userId);

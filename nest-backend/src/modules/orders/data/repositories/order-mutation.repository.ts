@@ -15,6 +15,7 @@ import {
   ConfirmDeliveryData,
   RefundOrderTxData,
   CancellationClaimOwner,
+  CHECKOUT_ABANDONED_REASON,
 } from "../../types/order.types";
 import { OrderReservationRepository } from "./order-reservation.repository";
 
@@ -220,5 +221,16 @@ export class OrderMutationRepository {
       });
       return claimed.count > 0;
     }, "Failed to cancel order");
+  }
+
+  claimCheckoutAbandoned(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<boolean> {
+    return repositoryResponse(async () => {
+      const client = tx ?? this.prisma;
+      const claimed = await client.order.updateMany({
+        where: { id: orderId, status: OrderStatus.PENDING, transaction: { is: null } },
+        data: { status: OrderStatus.CANCELLED, cancellationReason: CHECKOUT_ABANDONED_REASON },
+      });
+      return claimed.count > 0;
+    }, "Failed to claim abandoned checkout");
   }
 }

@@ -2,13 +2,13 @@ import { EscrowStatus, OrderStatus, Prisma } from "@prisma/client";
 import { USER_SELECT_MINIMAL } from "@/shared/utils/prisma-selects";
 
 export const ORDER_INCLUDE_FULL = {
-  product: { include: { images: true } },
+  product: { include: { media: true } },
   buyer: { select: USER_SELECT_MINIMAL },
   seller: { select: USER_SELECT_MINIMAL },
 } satisfies Prisma.OrderInclude;
 
 export const ORDER_INCLUDE_PRODUCT = {
-  product: { include: { images: true } },
+  product: { include: { media: true } },
 } satisfies Prisma.OrderInclude;
 
 export const ORDER_SELECT_CREATE = {
@@ -63,6 +63,14 @@ export interface CreateOrderTxData {
   productId: string;
   platformFeePercent?: number;
 }
+
+export interface StaleUnpaidOrder {
+  id: string;
+  productId: string;
+  quantity: number;
+}
+
+export const CHECKOUT_ABANDONED_REASON = "CHECKOUT_ABANDONED";
 
 export interface ConfirmDeliveryData {
   orderId: string;

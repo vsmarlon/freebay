@@ -3,7 +3,7 @@ import { NotificationService } from '@/modules/notifications/services/notificati
 import { SellerPayoutService } from '@/modules/payments/services/seller-payout.service';
 import { StripeProvider } from '@/modules/payments/providers/stripe-provider';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
-import { RefundSnapshot } from '@/modules/payments/types/payment-provider.types';
+import { RefundSnapshot, RefundStatus } from '@/modules/payments/types/payment-provider.types';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, DatabaseError } from '@/shared/core/errors';
 import { DisputeDatabaseRepository } from '../data/repositories/dispute-database.repository';
@@ -46,7 +46,7 @@ describe('ResolveDisputeUseCase buyer refunds', () => {
   };
 
   async function setup(refundResult: Either<AppError, RefundSnapshot> = right({
-    id: 're_1', chargeId: 'ch_1', amount: 10000, status: 'succeeded', orderId: 'order-1', operationId: 'refund-op-1',
+    id: 're_1', chargeId: 'ch_1', amount: 10000, status: RefundStatus.SUCCEEDED, orderId: 'order-1', operationId: 'refund-op-1',
   })) {
     const events: string[] = [];
     const transaction = {

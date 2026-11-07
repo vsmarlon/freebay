@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, NotFoundError } from '@/shared/core/errors';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
+import { ProductStatus } from '@prisma/client';
 
 import { UpdateCartItemInput, UpdateCartItemOutput } from '../dtos/cart.dto';
 
@@ -17,6 +18,16 @@ export class UpdateCartItemUseCase {
     const existingResult = await this.cartRepository.findItem(input.userId, input.productId);
     if (existingResult.isLeft()) return left(existingResult.value);
     if (!existingResult.value) return left(new NotFoundError('Item no carrinho'));
+
+    const productResult = await this.cartRepository.findProductById(input.productId);
+    if (productResult.isLeft()) return left(productResult.value);
+    if (!productResult.value || productResult.value.status !== ProductStatus.ACTIVE) {
+      return left(new NotFoundError('Produto'));
+    }
+    const availableStock = Math.max(productResult.value.quantity - productResult.value.soldCount, 0);
+    if (input.quantity > availableStock) {
+      return left(new BadRequestError('Quantidade indisponível em estoque'));
+    }
 
     const itemResult = await this.cartRepository.updateQuantity(input.userId, input.productId, input.quantity);
     if (itemResult.isLeft()) return left(itemResult.value);

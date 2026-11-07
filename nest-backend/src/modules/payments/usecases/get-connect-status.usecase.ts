@@ -4,6 +4,7 @@ import { AppError } from '@/shared/core/errors';
 import { StripeProvider } from '../providers/stripe-provider';
 import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
 import { ConnectStatusOutput } from '../dtos/connect.dto';
+import { ConnectStatus } from '../types/connect.types';
 
 @Injectable()
 export class GetConnectStatusUseCase {
@@ -18,7 +19,7 @@ export class GetConnectStatusUseCase {
 
     if (!stored.value) {
       return right({
-        status: 'onboarding-required',
+        status: ConnectStatus.ONBOARDING_REQUIRED,
         requirementsDue: [],
       });
     }

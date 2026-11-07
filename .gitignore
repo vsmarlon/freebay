@@ -15,6 +15,12 @@
 *.credentials.json
 session-*.md
 
+
+/web/e2e/real-backend.config.ts
+/web/e2e/real-backend/
+/docs/superpowers/
+/web/e2e/*.log
+
 # Dependencies
 node_modules/
 web/.react-router/
@@ -47,6 +53,7 @@ dist/
 !.vscode/
 .vscode/*
 !.vscode/launch.json
+!.vscode/tasks.json
 *.iml
 
 # OS
@@ -72,3 +79,7 @@ e2e/artifacts/
 
 # Logs (all tools, all dirs)
 *.log
+
+# Runtime uploads (saveUpload writes under the process cwd; nest-backend/.gitignore covers its own roots)
+/uploads/
+/private-uploads/

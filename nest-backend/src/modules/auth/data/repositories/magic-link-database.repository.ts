@@ -3,7 +3,8 @@ import { Prisma, WebMagicLink } from '@prisma/client';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { DatabaseError } from '@/shared/core/errors';
 import { Either, left, right } from '@/shared/core/either';
-import { ConsumedMagicLink, MagicLinkRepository } from '../../domain/repositories/magic-link.repository';
+import { MagicLinkRepository } from '../../domain/repositories/magic-link.repository';
+import { ConsumedMagicLink } from '../../types/auth.types';
 
 @Injectable()
 export class MagicLinkDatabaseRepository implements MagicLinkRepository {

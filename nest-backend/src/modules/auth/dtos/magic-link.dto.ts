@@ -1,3 +1,4 @@
+import { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Equals, IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, Length } from 'class-validator';
 
@@ -29,9 +30,9 @@ export class ConsumeMagicLinkDTO {
 }
 
 export class RequestStepUpMagicLinkDTO {
-  @ApiProperty({ enum: ['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'] })
-  @IsIn(['biometric_enroll', 'delete_account', 'export_data', 'connect_dashboard', 'cancel_order'])
-  purpose: 'biometric_enroll' | 'delete_account' | 'export_data' | 'connect_dashboard' | 'cancel_order';
+  @ApiProperty({ enum: StepUpPurpose })
+  @IsIn(Object.values(StepUpPurpose))
+  purpose: StepUpPurpose;
 
   @ApiPropertyOptional({ format: 'uuid' })
   @IsOptional()

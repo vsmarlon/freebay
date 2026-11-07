@@ -35,7 +35,11 @@ export class MediaAccessService {
 
     if (context === 'privatepost') {
       const post = await this.prisma.post.findFirst({
-        where: { imageUrl: url, deletedAt: null, AND: [postVisibilityWhere(userId)] },
+        where: {
+          media: { some: { OR: [{ url }, { thumbnailUrl: url }] } },
+          deletedAt: null,
+          AND: [postVisibilityWhere(userId)],
+        },
         select: { id: true },
       });
       return post !== null;

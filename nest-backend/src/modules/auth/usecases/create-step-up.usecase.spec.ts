@@ -5,7 +5,7 @@ import { UserRole } from '@prisma/client';
 import { right } from '@/shared/core/either';
 import { JwtTokenType } from '@/shared/core/types';
 import { StepUpService } from '@/shared/auth/step-up.service';
-import { BiometricCredentialService } from '@/shared/auth/biometric-credential.service';
+import { BiometricCredentialService, StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
 import { AppleProviderService } from '@/shared/auth/apple-provider.service';
 import { UserDatabaseRepository } from '@/modules/users';
@@ -36,12 +36,12 @@ describe('CreateStepUpUseCase provider proof', () => {
     }).compile();
 
     const result = await module.get(CreateStepUpUseCase).execute(user, {
-      purpose: 'export_data', proof: { kind: 'google', idToken: 'verified-token' },
+      purpose: StepUpPurpose.EXPORT_DATA, proof: { kind: 'google', idToken: 'verified-token' },
     });
 
     expect(result.isRight()).toBe(true);
     expect(users.findByGoogleId).toHaveBeenCalledWith('google-sub');
-    expect(stepUp.issue).toHaveBeenCalledWith('user-1', 'export_data', undefined);
+    expect(stepUp.issue).toHaveBeenCalledWith('user-1', StepUpPurpose.EXPORT_DATA, undefined);
   });
 
   it('rejects stale/unlinked Google proof without email-based account matching', async () => {
@@ -63,7 +63,7 @@ describe('CreateStepUpUseCase provider proof', () => {
     }).compile();
 
     const result = await module.get(CreateStepUpUseCase).execute(user, {
-      purpose: 'delete_account', proof: { kind: 'google', idToken: 'stale-token' },
+      purpose: StepUpPurpose.DELETE_ACCOUNT, proof: { kind: 'google', idToken: 'stale-token' },
     });
 
     expect(result.isLeft()).toBe(true);
@@ -91,10 +91,10 @@ describe('CreateStepUpUseCase provider proof', () => {
     const sut = module.get(CreateStepUpUseCase);
 
     const unrelatedResource = await sut.execute(user, {
-      purpose: 'export_data', resourceId: '550e8400-e29b-41d4-a716-446655440000', proof: { kind: 'password', password: 'x' },
+      purpose: StepUpPurpose.EXPORT_DATA, resourceId: '550e8400-e29b-41d4-a716-446655440000', proof: { kind: 'password', password: 'x' },
     });
     const missingResource = await sut.execute(user, {
-      purpose: 'cancel_order', proof: { kind: 'password', password: 'x' },
+      purpose: StepUpPurpose.CANCEL_ORDER, proof: { kind: 'password', password: 'x' },
     });
 
     expect(unrelatedResource.isLeft()).toBe(true);
@@ -121,7 +121,7 @@ describe('CreateStepUpUseCase provider proof', () => {
     }).compile();
 
     const result = await module.get(CreateStepUpUseCase).execute(user, {
-      purpose: 'cancel_order', resourceId: 'order-123', proof: { kind: 'google', idToken: 'fresh-token' },
+      purpose: StepUpPurpose.CANCEL_ORDER, resourceId: 'order-123', proof: { kind: 'google', idToken: 'fresh-token' },
     });
 
     expect(result.isLeft()).toBe(true);
@@ -133,7 +133,7 @@ describe('CreateStepUpUseCase provider proof', () => {
     const rawToken = `stepup.${'r'.repeat(43)}`;
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
     const resourceId = '550e8400-e29b-41d4-a716-446655440000';
-    const contextSignature = signStepUpMagicContext('test-secret', { userId: 'user-1', purpose: 'cancel_order', resourceId, tokenHash });
+    const contextSignature = signStepUpMagicContext('test-secret', { userId: 'user-1', purpose: StepUpPurpose.CANCEL_ORDER, resourceId, tokenHash });
     const magicLinks = { consumeStepUpProof: jest.fn().mockResolvedValue(right(true)) };
     const stepUp = { issue: jest.fn().mockResolvedValue({ stepUpToken: 'issued-step-up', expiresAt: new Date().toISOString() }) };
     const module = await Test.createTestingModule({
@@ -152,25 +152,25 @@ describe('CreateStepUpUseCase provider proof', () => {
     const webUser = { ...user, sessionStartedAtMs: 1_700_000_000_000 };
 
     const result = await module.get(CreateStepUpUseCase).execute(webUser, {
-      purpose: 'cancel_order', resourceId,
+      purpose: StepUpPurpose.CANCEL_ORDER, resourceId,
       proof: { kind: 'magic_link', token: rawToken, contextSignature },
     }, { web: true });
 
     expect(result.isRight()).toBe(true);
     expect(magicLinks.consumeStepUpProof).toHaveBeenCalledWith(tokenHash, 'user-1', webUser.sessionStartedAtMs, expect.any(Date));
-    expect(stepUp.issue).toHaveBeenCalledWith('user-1', 'cancel_order', resourceId);
+    expect(stepUp.issue).toHaveBeenCalledWith('user-1', StepUpPurpose.CANCEL_ORDER, resourceId);
   });
 
   it.each([
-    ['another user', 'user-2', 'cancel_order', '550e8400-e29b-41d4-a716-446655440000'],
-    ['another purpose', 'user-1', 'delete_account', undefined],
-    ['another resource', 'user-1', 'cancel_order', '550e8400-e29b-41d4-a716-446655440001'],
+    ['another user', 'user-2', StepUpPurpose.CANCEL_ORDER, '550e8400-e29b-41d4-a716-446655440000'],
+    ['another purpose', 'user-1', StepUpPurpose.DELETE_ACCOUNT, undefined],
+    ['another resource', 'user-1', StepUpPurpose.CANCEL_ORDER, '550e8400-e29b-41d4-a716-446655440001'],
   ] as const)('does not consume an email proof bound to %s', async (_label, userId, purpose, resourceId) => {
     const rawToken = `stepup.${'x'.repeat(43)}`;
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
     const originalResource = '550e8400-e29b-41d4-a716-446655440000';
     const contextSignature = signStepUpMagicContext('test-secret', {
-      userId: 'user-1', purpose: 'cancel_order', resourceId: originalResource, tokenHash,
+      userId: 'user-1', purpose: StepUpPurpose.CANCEL_ORDER, resourceId: originalResource, tokenHash,
     });
     const magicLinks = { consumeStepUpProof: jest.fn().mockResolvedValue(right(true)) };
     const stepUp = { issue: jest.fn() };
@@ -215,14 +215,14 @@ describe('CreateStepUpUseCase provider proof', () => {
       ],
     }).compile();
     const contextSignature = signStepUpMagicContext('test-secret', {
-      userId: 'user-1', purpose: 'export_data', tokenHash: '00'.repeat(32),
+      userId: 'user-1', purpose: StepUpPurpose.EXPORT_DATA, tokenHash: '00'.repeat(32),
     });
 
     const native = await module.get(CreateStepUpUseCase).execute(user, {
-      purpose: 'export_data', proof: { kind: 'magic_link', token: `stepup.${'a'.repeat(43)}`, contextSignature },
+      purpose: StepUpPurpose.EXPORT_DATA, proof: { kind: 'magic_link', token: `stepup.${'a'.repeat(43)}`, contextSignature },
     });
     const wrongPrefix = await module.get(CreateStepUpUseCase).execute({ ...user, sessionStartedAtMs: 1_700_000_000_000 }, {
-      purpose: 'export_data', proof: { kind: 'magic_link', token: `delete.${'a'.repeat(43)}`, contextSignature },
+      purpose: StepUpPurpose.EXPORT_DATA, proof: { kind: 'magic_link', token: `delete.${'a'.repeat(43)}`, contextSignature },
     }, { web: true });
 
     expect(native.isLeft()).toBe(true);
@@ -252,14 +252,14 @@ describe('CreateStepUpUseCase provider proof', () => {
     }).compile();
 
     const result = await module.get(CreateStepUpUseCase).execute(user, {
-      purpose: 'delete_account',
+      purpose: StepUpPurpose.DELETE_ACCOUNT,
       proof: { kind: 'apple', identityToken, rawNonce: 'nonce-that-was-validated' },
     });
 
     expect(result.isRight()).toBe(true);
     expect(apple.verifyIdentityToken).toHaveBeenCalledWith(identityToken, 'nonce-that-was-validated');
     expect(users.findByAppleId).toHaveBeenCalledWith('apple-sub');
-    expect(stepUp.issue).toHaveBeenCalledWith('user-1', 'delete_account', undefined);
+    expect(stepUp.issue).toHaveBeenCalledWith('user-1', StepUpPurpose.DELETE_ACCOUNT, undefined);
   });
 
   it('validates web Apple step-up against the server-configured Services ID', async () => {
@@ -282,7 +282,7 @@ describe('CreateStepUpUseCase provider proof', () => {
     }).compile();
 
     const result = await module.get(CreateStepUpUseCase).execute(user, {
-      purpose: 'export_data', proof: { kind: 'apple', identityToken, rawNonce: 'raw-nonce' },
+      purpose: StepUpPurpose.EXPORT_DATA, proof: { kind: 'apple', identityToken, rawNonce: 'raw-nonce' },
     }, { web: true });
 
     expect(result.isRight()).toBe(true);

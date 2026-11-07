@@ -24,10 +24,14 @@ import { RevokeBiometricUseCase } from './revoke-biometric.usecase';
 import { SessionTokenService } from '../services/session-token.service';
 import { AppleAuthUseCase } from './apple-auth.usecase';
 import { CreateBiometricChallengeUseCase } from './create-biometric-challenge.usecase';
+import { CreateBiometricEnrollmentChallengeUseCase } from './create-biometric-enrollment-challenge.usecase';
 import { CreateStepUpUseCase } from './create-step-up.usecase';
 import { RequestWebStepUpMagicLinkUseCase } from './request-web-step-up-magic-link.usecase';
 import { RequestWebPasswordResetUseCase } from './request-web-password-reset.usecase';
 import { ResetWebPasswordUseCase } from './reset-web-password.usecase';
+import { RequestEmailVerificationUseCase } from './request-email-verification.usecase';
+import { ConfirmEmailVerificationUseCase } from './confirm-email-verification.usecase';
+import { EmailVerificationGateService } from '../services/email-verification-gate.service';
 
 @Module({
   providers: [
@@ -56,10 +60,14 @@ import { ResetWebPasswordUseCase } from './reset-web-password.usecase';
     EnrollBiometricUseCase,
     RevokeBiometricUseCase,
     CreateBiometricChallengeUseCase,
+    CreateBiometricEnrollmentChallengeUseCase,
     CreateStepUpUseCase,
     RequestWebStepUpMagicLinkUseCase,
     RequestWebPasswordResetUseCase,
     ResetWebPasswordUseCase,
+    RequestEmailVerificationUseCase,
+    ConfirmEmailVerificationUseCase,
+    EmailVerificationGateService,
   ],
   exports: [
     UserDatabaseRepository,
@@ -84,10 +92,14 @@ import { ResetWebPasswordUseCase } from './reset-web-password.usecase';
     RevokeBiometricUseCase,
     SessionTokenService,
     CreateBiometricChallengeUseCase,
+    CreateBiometricEnrollmentChallengeUseCase,
     CreateStepUpUseCase,
     RequestWebStepUpMagicLinkUseCase,
     RequestWebPasswordResetUseCase,
     ResetWebPasswordUseCase,
+    RequestEmailVerificationUseCase,
+    ConfirmEmailVerificationUseCase,
+    EmailVerificationGateService,
   ],
 })
 export class AuthUseCasesModule {}

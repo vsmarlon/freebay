@@ -8,7 +8,7 @@ const post = {
   userId: "owner-1",
   type: "REGULAR",
   content: "post",
-  imageUrl: null,
+  media: [],
   productId: null,
   deletedAt: null,
   createdAt: new Date(),

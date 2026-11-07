@@ -143,6 +143,11 @@ enum CommentReplyPermission {
   CLOSED
 }
 
+enum PublicationMediaType {
+  IMAGE
+  VIDEO
+}
+
 enum ReportTargetType {
   USER
   POST
@@ -373,7 +378,7 @@ model Product {
   seller    User           @relation(fields: [sellerId], references: [id])
   post      Post?          @relation(fields: [postId], references: [id])
   category  Category?      @relation(fields: [categoryId], references: [id])
-  images    ProductImage[]
+  media     ProductMedia[]
   orders    Order[]
   favorites Favorite[]
   cartItems CartItem[]
@@ -386,23 +391,28 @@ model Product {
   @@index([categoryId, status])
 }
 
-model ProductImage {
-  id        String @id @default(uuid())
-  url       String
-  blurHash  String? @db.VarChar(166)
-  order     Int    @default(0)
-  productId String
+model ProductMedia {
+  id               String               @id @default(uuid())
+  url              String
+  thumbnailUrl     String?
+  type             PublicationMediaType
+  blurHash         String?              @db.VarChar(166)
+  altText          String?              @db.VarChar(500)
+  hotspots         Json?
+  durationMs       Int?
+  coverTimestampMs Int?
+  order            Int                  @default(0)
+  productId        String
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@unique([productId, order])
   @@index([productId])
 }
 
 model Post {
   id            String    @id @default(uuid())
   content       String?
-  imageUrl      String?
-  imageBlurHash String?   @db.VarChar(166)
   type          PostType
   audience      StoryAudience @default(EVERYONE)
   userId        String
@@ -425,6 +435,7 @@ model Post {
   likes               Like[]
   shares              Share[]
   savedBy             SavedPost[]
+  media               PostMedia[]
   mentions            PostMention[]
   reportedPostReports Report[]      @relation("ReportedPostReports")
   quoteSourcePost Post? @relation("PostQuoteSource", fields: [quoteSourcePostId], references: [id], onDelete: SetNull)
@@ -594,6 +605,7 @@ model Order {
   @@index([sellerId, createdAt])
   @@index([status])
   @@index([productId, status])
+  @@index([status, deliveryConfirmedAt])
 }
 
 model Transaction {
@@ -641,6 +653,8 @@ model Transaction {
   @@index([status, checkoutExpiresAt])
   @@index([transferState, transferProcessingAt])
   @@index([reversalState, reversalProcessingAt])
+  @@index([chargeId])
+  @@index([externalId])
 }
 
 enum PaymentGroupStatus {
@@ -735,6 +749,8 @@ model Dispute {
   order      Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   openedBy   User  @relation(fields: [openedById], references: [id], onDelete: Cascade)
   resolvedBy User? @relation("ResolvedDisputes", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, expiresAt])
 }
 
 model Review {
@@ -883,6 +899,7 @@ enum MessageType {
   GIF
   LOCATION
   PRODUCT_CARD
+  DOCUMENT
 }
 
 model CloseFriend {
@@ -1196,6 +1213,25 @@ model Notification {
   @@index([userId, createdAt])
   @@unique([userId, dedupeKey])
   @@index([commentId])
+}
+
+model PostMedia {
+  id               String               @id @default(uuid())
+  url              String
+  thumbnailUrl     String?
+  type             PublicationMediaType
+  blurHash         String?              @db.VarChar(166)
+  altText          String?              @db.VarChar(500)
+  hotspots         Json?
+  durationMs       Int?
+  coverTimestampMs Int?
+  order            Int                  @default(0)
+  postId           String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, order])
+  @@index([postId])
 }
 
 model CommentMedia {

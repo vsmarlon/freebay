@@ -2,16 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/users';
-import { USERNAME_REGEX } from '../dtos/auth.dto';
-
-export interface CheckUsernameAvailabilityInput {
-  username: string;
-}
-
-export interface CheckUsernameAvailabilityOutput {
-  available: boolean;
-  suggestions: string[];
-}
+import { USERNAME_REGEX, CheckUsernameAvailabilityInput, CheckUsernameAvailabilityOutput } from '../dtos/auth.dto';
 
 @Injectable()
 export class CheckUsernameAvailabilityUseCase {
@@ -30,7 +21,7 @@ export class CheckUsernameAvailabilityUseCase {
 
     if (!existingResult.value) return right({ available: true, suggestions: [] });
 
-    const candidates = Array.from({ length: 12 }, (_, index) => {
+    const candidates = Array.from({ length: 100 }, (_, index) => {
       const suffix = `_${index + 1}`;
       return `${username.slice(0, 20 - suffix.length)}${suffix}`;
     });
@@ -40,7 +31,7 @@ export class CheckUsernameAvailabilityUseCase {
     const unavailable = new Set(taken.value);
     return right({
       available: false,
-      suggestions: candidates.filter((candidate) => !unavailable.has(candidate)).slice(0, 3),
+      suggestions: candidates.filter((candidate) => !unavailable.has(candidate)).slice(0, 20),
     });
   }
 }

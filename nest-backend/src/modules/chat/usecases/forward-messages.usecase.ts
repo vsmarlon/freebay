@@ -3,11 +3,13 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, ForbiddenError, InternalServerError, NotFoundError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { BlockDatabaseRepository } from '@/modules/users/data/repositories/block-database.repository';
-import { ChatThreadAccessService, ResolvedChatThread } from '../services/chat-thread-access.service';
+import { ChatThreadAccessService } from '../services/chat-thread-access.service';
+import { ResolvedChatThread } from '../types/chat.types';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { ForwardMessagesInput, ForwardMessagesOutput, SendMessageOutput } from '../dtos/chat.dto';
 import { Prisma, MessageType } from '@prisma/client';
 import { copyOwnedChatUpload, deleteUpload, isOwnedUpload } from '@/shared/utils/file.utils';
+import { withoutPinMetadata } from './message-pin-metadata';
 
 @Injectable()
 export class ForwardMessagesUseCase {
@@ -113,7 +115,9 @@ export class ForwardMessagesUseCase {
             return left(new ForbiddenError('Anexo de origem inválido ou sem comprovação de propriedade'));
           }
         }
-        const originalMetadata = (sourceMsg.metadata as Record<string, unknown>) ?? {};
+        const originalMetadata = sourceMsg.metadata !== null && typeof sourceMsg.metadata === 'object' && !Array.isArray(sourceMsg.metadata)
+          ? withoutPinMetadata(sourceMsg.metadata)
+          : null;
         const forwardedMetadata: Record<string, unknown> = {
           ...originalMetadata,
           isForwarded: true,

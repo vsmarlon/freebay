@@ -278,17 +278,14 @@ export function postVisibilityWhere(viewerId?: string): Prisma.PostWhereInput {
 
 export function normalizePost(post: PostPayload): PostResponse {
   const { likes, savedBy, shares, clientRequestId: _requestId, clientRequestHash: _requestHash,
-    quoteSourcePostId: _sourcePostId, quoteSourceCommentId: _sourceCommentId, ...response } = post;
-  const { imageBlurHash, ...publicFields } = response;
-  const visibleImageHash = post.imageUrl == null
-    ? imageBlurHash ?? post.product?.images[0]?.blurHash
-    : imageBlurHash;
+    quoteSourcePostId: _sourcePostId, quoteSourceCommentId: _sourceCommentId, media: postMedia, ...response } = post;
+  const media = (postMedia.length > 0 ? postMedia : post.product?.media ?? []).map(({ blurHash, ...item }) => ({
+    ...item,
+    ...(post.audience === 'EVERYONE' && isValidBlurHash(blurHash) ? { blurHash } : {}),
+  }));
   return {
-    ...publicFields,
-    ...(post.audience === 'EVERYONE' && isValidBlurHash(visibleImageHash)
-      ? { imageBlurHash: visibleImageHash }
-      : {}),
-    imageUrl: post.imageUrl ?? post.product?.images[0]?.url ?? null,
+    ...response,
+    media,
     likesCount: post._count.likes,
     commentsCount: post._count.comments,
     sharesCount: post._count.shares,
@@ -324,8 +321,7 @@ export async function normalizePostsForViewer(posts: readonly PostPayload[], vie
     if (post.quoteSourcePostId) {
       const source = sourcePosts.get(post.quoteSourcePostId);
       if (source) response.quoteSource = { kind: 'post', id: source.id, post: {
-        id: source.id, content: source.content, imageUrl: source.imageUrl,
-        ...(source.imageBlurHash ? { imageBlurHash: source.imageBlurHash } : {}),
+        id: source.id, content: source.content, media: source.media,
         type: source.type, audience: source.audience, userId: source.userId, createdAt: source.createdAt,
         user: source.user, likesCount: source.likesCount, commentsCount: source.commentsCount, sharesCount: source.sharesCount,
       } };

@@ -16,6 +16,7 @@ import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { Condition, ProductStatus } from '@prisma/client';
 import { EDITABLE_PRODUCT_STATUSES, ProductSort } from '../types/product.types';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/shared/core/pagination';
+import { PublicationMediaInput } from '@/shared/media/publication-media';
 
 export const PRODUCT_TITLE_MIN_LENGTH = 3;
 export const PRODUCT_TITLE_MAX_LENGTH = 100;
@@ -25,6 +26,10 @@ export const PRODUCT_QUANTITY_MIN = 1;
 export const PRODUCT_SEARCH_MAX_LENGTH = 200;
 
 export class CreateProductDTO {
+  @ApiProperty({ description: 'Ordered JSON media metadata matching multipart files' })
+  @IsString()
+  readonly mediaMetadata: string;
+
   @ApiProperty({ example: 'iPhone 12', minLength: 3, maxLength: 100 })
   @IsString()
   @MinLength(PRODUCT_TITLE_MIN_LENGTH)
@@ -165,8 +170,7 @@ export interface CreateProductInput {
   price: number;
   condition: Condition;
   categoryId: string;
-  images: string[];
-  imageBlurHash?: string;
+  media: PublicationMediaInput[];
   quantity?: number;
 }
 
@@ -182,7 +186,19 @@ export interface CreateProductOutput {
   quantity: number;
   soldCount: number;
   createdAt: Date;
-  images: { id: string; url: string; order: number; productId: string; blurHash?: string }[];
+  media: {
+    id: string;
+    url: string;
+    thumbnailUrl: string | null;
+    type: 'IMAGE' | 'VIDEO';
+    blurHash: string | null;
+    altText: string | null;
+    hotspots: unknown;
+    durationMs: number | null;
+    coverTimestampMs: number | null;
+    order: number;
+    productId: string;
+  }[];
 }
 
 export interface DeleteProductInput {

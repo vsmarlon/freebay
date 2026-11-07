@@ -8,6 +8,7 @@ import { AuthSessionResponse } from '../dtos/auth-response.class';
 import { normalizeEmail } from '@/shared/utils/normalize-email';
 import { SessionTokenService } from '../services/session-token.service';
 import { issueSession } from '../utils/session-policy';
+import { RequestEmailVerificationUseCase } from './request-email-verification.usecase';
 import { UserRole } from '@prisma/client';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class RegisterUseCase {
   constructor(
     private readonly userRepository: UserDatabaseRepository,
     private readonly sessionTokens: SessionTokenService,
+    private readonly requestEmailVerification: RequestEmailVerificationUseCase,
   ) {}
 
   async execute(input: RegisterDTO): Promise<Either<AppError, AuthSessionResponse>> {
@@ -54,6 +56,9 @@ export class RegisterUseCase {
       totalReviews: 0,
     });
     if (createResult.isLeft()) return left(createResult.value);
+
+    // Session behavior is unchanged: the account can browse while unverified.
+    void this.requestEmailVerification.execute(createResult.value.id).catch(() => undefined);
 
     return issueSession(createResult.value, this.sessionTokens, sessionStartedAtMs);
   }

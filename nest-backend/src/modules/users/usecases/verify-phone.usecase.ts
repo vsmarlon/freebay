@@ -11,11 +11,7 @@ import {
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { PhoneVerificationDatabaseRepository } from '../data/repositories/phone-verification-database.repository';
 import { UserResponse, toUserResponse } from '../dtos/user-response.class';
-
-export interface VerifyPhoneInput {
-  userId: string;
-  code: string;
-}
+import { VerifyPhoneInput } from '../dtos/user.dto';
 
 @Injectable()
 export class VerifyPhoneUseCase {

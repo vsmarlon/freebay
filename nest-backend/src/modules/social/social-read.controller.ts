@@ -32,6 +32,7 @@ import { GetCommentsUseCase } from "./usecases/get-comments.usecase";
 import { GetLikedPostsUseCase } from "./usecases/get-liked-posts.usecase";
 import { GetSavedPostsUseCase } from "./usecases/get-saved-posts.usecase";
 import { FeedType } from "./types/social.types";
+import { CommentSort } from './types/comment-cursor';
 import { GetConversationUseCase } from './usecases/get-conversation.usecase';
 import { ManageCommentInteractionsUseCase } from './usecases/manage-comment-interactions.usecase';
 
@@ -54,12 +55,12 @@ export class SocialReadController {
 
   @GetPublic('posts/:id/conversation', { summary: 'Get keyset-paged conversation roots' })
   async getConversation(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string, @Query() query: ConversationQueryDTO) {
-    return this.getConversationUseCase.roots({ postId: id, viewerId: viewerId || undefined, limit: query.limit ?? 20, sort: query.sort ?? 'recent', cursor: query.cursor });
+    return this.getConversationUseCase.roots({ postId: id, viewerId: viewerId || undefined, limit: query.limit ?? 20, sort: query.sort ?? CommentSort.RECENT, cursor: query.cursor });
   }
 
   @GetPublic('comments/:id/context', { summary: 'Get a comment with paged ancestors and direct replies' })
   async getCommentContext(@Param('id', ParseUUIDPipe) id: string, @CurrentUserId() viewerId: string, @Query() query: CommentContextQueryDTO) {
-    return this.getConversationUseCase.context({ commentId: id, viewerId: viewerId || undefined, limit: query.replyLimit ?? 20, sort: query.replySort ?? 'recent', replyCursor: query.replyCursor, ancestorCursor: query.ancestorCursor });
+    return this.getConversationUseCase.context({ commentId: id, viewerId: viewerId || undefined, limit: query.replyLimit ?? 20, sort: query.replySort ?? CommentSort.RECENT, replyCursor: query.replyCursor, ancestorCursor: query.ancestorCursor });
   }
 
   @GetPublic('posts/:id/hidden-replies', { summary: 'List author-hidden replies visible to this viewer' })

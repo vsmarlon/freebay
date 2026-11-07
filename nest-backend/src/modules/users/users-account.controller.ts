@@ -1,3 +1,4 @@
+import { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import {
   Controller,
   Body,
@@ -35,6 +36,7 @@ import {
 } from "@/shared/decorators";
 import { AuthUser, JwtTokenType } from '@/shared/core/types';
 import { AllowTokenTypes } from '@/modules/auth/guards/token-types.decorator';
+import { SafetyListKind } from './types/user.types';
 import { WebCookieAuth } from '@/modules/auth/guards/web-cookie-auth.decorator';
 import {
   UpdateProfileDTO,
@@ -82,32 +84,32 @@ export class UsersAccountController {
 
   @GetAuth('me/close-friends', 'List my close friends')
   getCloseFriends(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO) {
-    return this.safetyLists.list(userId, 'closeFriends', query.limit ?? 20, query.offset ?? 0);
+    return this.safetyLists.list(userId, SafetyListKind.CLOSE_FRIENDS, query.limit ?? 20, query.offset ?? 0);
   }
 
   @PostAuth('me/close-friends/:memberId', { summary: 'Add a follower to close friends', responseStatus: 201 })
   addCloseFriend(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
-    return this.safetyLists.change(userId, memberId, 'closeFriends', true);
+    return this.safetyLists.change(userId, memberId, SafetyListKind.CLOSE_FRIENDS, true);
   }
 
   @PatchAuth('me/close-friends/:memberId/remove', 'Remove a close friend')
   removeCloseFriend(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
-    return this.safetyLists.change(userId, memberId, 'closeFriends', false);
+    return this.safetyLists.change(userId, memberId, SafetyListKind.CLOSE_FRIENDS, false);
   }
 
   @GetAuth('me/restricted', 'List my restricted users')
   getRestricted(@CurrentUserId() userId: string, @Query() query: OffsetPaginationQueryDTO) {
-    return this.safetyLists.list(userId, 'restricted', query.limit ?? 20, query.offset ?? 0);
+    return this.safetyLists.list(userId, SafetyListKind.RESTRICTED, query.limit ?? 20, query.offset ?? 0);
   }
 
   @PostAuth('me/restricted/:memberId', { summary: 'Restrict a user', responseStatus: 201 })
   restrict(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
-    return this.safetyLists.change(userId, memberId, 'restricted', true);
+    return this.safetyLists.change(userId, memberId, SafetyListKind.RESTRICTED, true);
   }
 
   @PatchAuth('me/restricted/:memberId/remove', 'Remove a restriction')
   unrestrict(@CurrentUserId() userId: string, @Param('memberId', ParseUUIDPipe) memberId: string) {
-    return this.safetyLists.change(userId, memberId, 'restricted', false);
+    return this.safetyLists.change(userId, memberId, SafetyListKind.RESTRICTED, false);
   }
 
   @GetAuth("me", {
@@ -134,7 +136,7 @@ export class UsersAccountController {
     throttle: { limit: 3, ttl: 3600000 },
     errors: [{ status: 404, description: "User not found" }],
   })
-  @RequireStepUp('export_data')
+  @RequireStepUp(StepUpPurpose.EXPORT_DATA)
   async exportMyData(@CurrentUserId() userId: string) {
     return this.exportUserDataUseCase.execute({ userId });
   }
@@ -153,7 +155,7 @@ export class UsersAccountController {
       },
     ],
   })
-  @RequireStepUp('delete_account')
+  @RequireStepUp(StepUpPurpose.DELETE_ACCOUNT)
   async requestAccountDeletion(@CurrentUserId() userId: string) {
     return this.requestAccountDeletionUseCase.execute({ userId });
   }
@@ -166,7 +168,7 @@ export class UsersAccountController {
   @AllowTokenTypes(JwtTokenType.ACCESS)
   @WebCookieAuth()
   @StrictOrigin()
-  @RequireStepUp('delete_account')
+  @RequireStepUp(StepUpPurpose.DELETE_ACCOUNT)
   async requestWebAccountDeletion(@CurrentUser() user: AuthUser) {
     return this.requestAccountDeletionUseCase.execute({ userId: user.userId });
   }

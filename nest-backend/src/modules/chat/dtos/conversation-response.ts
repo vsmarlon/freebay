@@ -6,10 +6,10 @@ import {
   OrderWithChat,
   ProductConversationSummaryRecord,
   ReplyToSummary,
-} from '../data/repositories/conversation/payloads';
+} from '../types/conversation-payloads';
 
 export function toProductConversationSummary(product: ProductConversationSummaryRecord): ProductConversationSummary {
-  return { id: product.id, title: product.title, imageUrl: product.images[0]?.url ?? null, status: product.status };
+  return { id: product.id, title: product.title, imageUrl: product.media[0]?.url ?? null, status: product.status };
 }
 
 export type ConversationStartRecord = {
@@ -77,7 +77,7 @@ export function toUnifiedDirect(conv: DirectConversationWithDetails, userId: str
   return {
     id: conv.id,
     threadType: ChatThreadType.DIRECT,
-    ...(conv.product ? { product: { id: conv.product.id, title: conv.product.title, imageUrl: conv.product.images[0]?.url ?? null, status: conv.product.status } } : {}),
+    ...(conv.product ? { product: { id: conv.product.id, title: conv.product.title, imageUrl: conv.product.media[0]?.url ?? null, status: conv.product.status } } : {}),
     ...unifiedConversationFields(otherUser, lastMsg, unreadCount, conv.status, conv.createdAt, preference),
   };
 }

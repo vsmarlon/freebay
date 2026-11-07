@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ProductStatus } from '@prisma/client';
 import { Either, left, right } from '@/shared/core/either';
-import { AppError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
+import { AppError, BadRequestError, NotFoundError, ForbiddenError } from '@/shared/core/errors';
 import { CartDatabaseRepository } from '../data/repositories/cart-database.repository';
 
 import { AddToCartInput, AddToCartOutput } from '../dtos/cart.dto';
@@ -20,6 +20,14 @@ export class AddToCartUseCase {
     }
     if (productResult.value.sellerId === input.userId) {
       return left(new ForbiddenError('Você não pode adicionar seu próprio produto ao carrinho'));
+    }
+
+    const existingResult = await this.cartRepository.findItem(input.userId, input.productId);
+    if (existingResult.isLeft()) return left(existingResult.value);
+    const resultingQuantity = (existingResult.value?.quantity ?? 0) + quantity;
+    const availableStock = Math.max(productResult.value.quantity - productResult.value.soldCount, 0);
+    if (resultingQuantity > availableStock) {
+      return left(new BadRequestError('Quantidade indisponível em estoque'));
     }
 
     const itemResult = await this.cartRepository.addOrIncrement(input.userId, input.productId, quantity);

@@ -1,8 +1,31 @@
 import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
-import { BiometricLoginDTO, RegisterDTO, CompleteProfileDTO } from './auth.dto';
+import { BiometricLoginDTO, BiometricEnrollmentDTO, StepUpProofDTO, RegisterDTO, CompleteProfileDTO } from './auth.dto';
 
 describe('BiometricLoginDTO', () => {
+  it.each([70, 71, 72])('accepts all native ECDSA DER base64 lengths: %i bytes', async (length) => {
+    const encoded = Buffer.alloc(length, 1).toString('base64');
+    for (const signature of [encoded, encoded.replace(/=+$/, '')]) {
+      for (const dto of [
+        plainToClass(BiometricLoginDTO, { biometricToken: 'token', challengeId: '550e8400-e29b-41d4-a716-446655440000', signature }),
+        plainToClass(BiometricEnrollmentDTO, { publicKey: 'a2V5', signature }),
+        plainToClass(StepUpProofDTO, { kind: 'biometric', signature }),
+      ]) {
+        expect((await validate(dto)).filter((error) => error.property === 'signature')).toEqual([]);
+      }
+    }
+  });
+
+  it.each(['', '%%%%', 'YWJj=', 'AAAAA', 'AA=', 'AA===', 'AA==AA==', 'AAAA\n'])('rejects malformed signature encoding: %p', async (signature) => {
+    for (const dto of [
+      plainToClass(BiometricLoginDTO, { biometricToken: 'token', challengeId: '550e8400-e29b-41d4-a716-446655440000', signature }),
+      plainToClass(BiometricEnrollmentDTO, { publicKey: 'a2V5', signature }),
+      plainToClass(StepUpProofDTO, { kind: 'biometric', signature }),
+    ]) {
+      expect((await validate(dto)).find((error) => error.property === 'signature')).toBeDefined();
+    }
+  });
+
   it('rejects oversized biometric tokens', async () => {
     const dto = plainToClass(BiometricLoginDTO, { biometricToken: 'a'.repeat(2049) });
 

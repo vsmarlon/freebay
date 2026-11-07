@@ -9,6 +9,10 @@ import { PaymentGroupDatabaseRepository } from '../data/repositories/payment-gro
 import { StripeProvider } from '../providers/stripe-provider';
 
 const GROUP_RACE_SKIP = 'GROUP_RACE_SKIP';
+// Ceiling: an unpaid order older than this loses its product reservation. The window
+// covers a checkout started right after order creation; a payment that settles later is
+// refused by the webhook because the order is no longer PENDING.
+const STALE_UNPAID_ORDER_CUTOFF_MS = 30 * 60 * 1000;
 
 @Injectable()
 export class ExpireCheckoutGroupUseCase {
@@ -117,6 +121,36 @@ export class ExpireCheckoutGroupUseCase {
       } catch (error) {
         this.logger.error(
           `Failed to expire transaction ${transaction.id}: ${error instanceof Error ? error.message : String(error)}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      }
+    }
+
+    const staleResult = await this.orderRepo.findStaleUnpaidOrders(
+      new Date(now.getTime() - STALE_UNPAID_ORDER_CUTOFF_MS),
+    );
+    if (staleResult.isLeft()) return left(staleResult.value);
+
+    for (const order of staleResult.value) {
+      try {
+        const reclaimed = await this.prisma.$transaction(async (tx) => {
+          const claimed = await this.orderRepo.claimCheckoutAbandoned(order.id, tx);
+          if (claimed.isLeft()) throw new Error(claimed.value.message);
+          if (!claimed.value) return 0;
+
+          const restored = await this.productRepo.restoreInventoryOnExpiry(
+            order.productId,
+            order.quantity,
+            tx,
+          );
+          if (restored.isLeft()) throw new Error(restored.value.message);
+          return 1;
+        });
+
+        ordersReclaimed += reclaimed;
+      } catch (error) {
+        this.logger.error(
+          `Failed to reclaim abandoned order ${order.id}: ${error instanceof Error ? error.message : String(error)}`,
           error instanceof Error ? error.stack : undefined,
         );
       }

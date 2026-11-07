@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserRole } from '@prisma/client';
 import { Either, left } from '@/shared/core/either';
-import { AppleEmailCollisionError, AppError, AppleUnavailableError, InvalidAppleTokenError } from '@/shared/core/errors';
+import { AppError, AppleUnavailableError, EmailVerificationRequiredError, InvalidAppleTokenError } from '@/shared/core/errors';
 import { AppleConfigurationError, AppleProviderService } from '@/shared/auth/apple-provider.service';
 import { UserDatabaseRepository } from '@/modules/users';
 import { AuthSessionResponse } from '../dtos/auth-response.class';
@@ -48,7 +48,18 @@ export class AppleAuthUseCase {
       const email = normalizeEmail(exchanged.identity.email);
       const byEmail = await this.users.findByEmail(email);
       if (byEmail.isLeft()) return left(byEmail.value);
-      if (byEmail.value) return left(new AppleEmailCollisionError());
+      if (byEmail.value) {
+        if (byEmail.value.deletedAt) return left(new InvalidAppleTokenError('Esta conta foi removida'));
+        if (byEmail.value.emailVerified !== true) {
+          return left(new EmailVerificationRequiredError('Verifique seu e-mail antes de vincular sua conta Apple'));
+        }
+        const linked = await this.users.update(byEmail.value.id, {
+          appleId: exchanged.identity.sub,
+          appleRefreshTokenEncrypted: exchanged.encryptedRefreshToken,
+        });
+        if (linked.isLeft()) return left(linked.value);
+        return issueSession(linked.value, this.sessionTokens, sessionStartedAtMs);
+      }
 
       const created = await this.users.create({
         displayName: input.fullName ?? email.split('@')[0],

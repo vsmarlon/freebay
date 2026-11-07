@@ -1,4 +1,4 @@
-import type { CartItem, ChatMessage, Comment, ConnectAccount, DirectMessage, Dispute, Favorite, Like, Notification, Order, Post, Product, ProductImage, Report, Review, ReviewImage, SavedPost, Share, Story, Transaction, User, Wallet, WalletEntry } from '@prisma/client';
+import type { CartItem, ChatMessage, Comment, ConnectAccount, DirectMessage, Dispute, Favorite, Like, Notification, Order, Post, PostMedia, Product, ProductMedia, Report, Review, ReviewImage, SavedPost, Share, Story, Transaction, User, Wallet, WalletEntry } from '@prisma/client';
 
 export interface AccountDeletionBlockers {
   openOrdersAsBuyer: number;
@@ -16,14 +16,20 @@ export interface PurgeCandidate {
   id: string;
 }
 
-export type PersonalPurgeStatus = 'canceled' | 'completed' | 'pending-media' | 'pending-review' | 'pending-verification';
+export enum PersonalPurgeStatus {
+  CANCELED = 'canceled',
+  COMPLETED = 'completed',
+  PENDING_MEDIA = 'pending-media',
+  PENDING_REVIEW = 'pending-review',
+  PENDING_VERIFICATION = 'pending-verification',
+}
 
 export interface UserDataExport {
   exportedAt: string;
   scope: { included: string[]; excluded: string[] };
   profile: Pick<User, 'id' | 'displayName' | 'username' | 'email' | 'emailVerified' | 'cpf' | 'phone' | 'phoneVerified' | 'city' | 'state' | 'avatarUrl' | 'avatarBlurHash' | 'bannerUrl' | 'bio' | 'isVerified' | 'role' | 'reputationScore' | 'totalReviews' | 'notificationPrefs' | 'webConsentGrantedAt' | 'webConsentIp' | 'webConsentUserAgent' | 'createdAt' | 'updatedAt' | 'lastSeenAt' | 'deletionRequestedAt'>;
-  products: Array<Pick<Product, 'id' | 'title' | 'description' | 'price' | 'condition' | 'categoryId' | 'status' | 'quantity' | 'soldCount' | 'postId' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { images: Array<Pick<ProductImage, 'id' | 'url' | 'blurHash' | 'order'>> }>;
-  posts: Array<Pick<Post, 'id' | 'content' | 'imageUrl' | 'imageBlurHash' | 'type' | 'audience' | 'likesCount' | 'commentsCount' | 'sharesCount' | 'createdAt' | 'updatedAt' | 'deletedAt'>>;
+  products: Array<Pick<Product, 'id' | 'title' | 'description' | 'price' | 'condition' | 'categoryId' | 'status' | 'quantity' | 'soldCount' | 'postId' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { media: Array<Pick<ProductMedia, 'id' | 'url' | 'thumbnailUrl' | 'type' | 'blurHash' | 'altText' | 'hotspots' | 'durationMs' | 'coverTimestampMs' | 'order'>> }>;
+  posts: Array<Pick<Post, 'id' | 'content' | 'type' | 'audience' | 'likesCount' | 'commentsCount' | 'sharesCount' | 'createdAt' | 'updatedAt' | 'deletedAt'> & { media: Array<Pick<PostMedia, 'id' | 'url' | 'thumbnailUrl' | 'type' | 'blurHash' | 'altText' | 'hotspots' | 'durationMs' | 'coverTimestampMs' | 'order'>> }>;
   comments: Array<Pick<Comment, 'id' | 'content' | 'postId' | 'parentId' | 'likesCount' | 'createdAt' | 'deletedAt'>>;
   orders: { asBuyer: Array<Pick<Order, 'id' | 'productId' | 'quantity' | 'amount' | 'platformFee' | 'sellerAmount' | 'status' | 'escrowStatus' | 'meetingScheduledAt' | 'deliveryConfirmedAt' | 'cancellationReason' | 'createdAt' | 'updatedAt'>>; asSeller: Array<Pick<Order, 'id' | 'productId' | 'quantity' | 'amount' | 'platformFee' | 'sellerAmount' | 'status' | 'escrowStatus' | 'meetingScheduledAt' | 'deliveryConfirmedAt' | 'cancellationReason' | 'createdAt' | 'updatedAt'>> };
   transactions: Array<Pick<Transaction, 'id' | 'orderId' | 'amount' | 'platformFee' | 'sellerAmount' | 'paymentMethod' | 'status' | 'paidAt' | 'releasedAt' | 'createdAt' | 'updatedAt'>>;

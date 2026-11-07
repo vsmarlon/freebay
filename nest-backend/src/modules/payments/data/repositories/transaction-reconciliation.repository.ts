@@ -8,15 +8,9 @@ import { CursorPage, encodeCursor, MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from '@/sh
 import {
   TransactionWithOrder,
   TRANSACTION_WITH_ORDER_INCLUDE,
+  RefundReservation,
 } from '../../types/payment.types';
 import { ChargeRefundSnapshot } from '../../types/payment-provider.types';
-
-export interface RefundReservation {
-  operationId: string;
-  idempotencyKey: string;
-  providerId: string | null;
-  created: boolean;
-}
 
 export class TransactionReconciliationRepository {
   constructor(private readonly prisma: PrismaService) {

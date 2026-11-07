@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { UserRole } from '@prisma/client';
 import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
-import { BiometricCredentialService } from '@/shared/auth/biometric-credential.service';
+import { BiometricCredentialService, StepUpPurpose, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 import { CreateBiometricChallengeUseCase } from './create-biometric-challenge.usecase';
 
 describe('CreateBiometricChallengeUseCase', () => {
@@ -20,10 +20,10 @@ describe('CreateBiometricChallengeUseCase', () => {
     }).compile();
     const sut = module.get(CreateBiometricChallengeUseCase);
 
-    const noPurpose = await sut.execute({ biometricToken: 'token', purpose: 'step_up' });
-    const extraOnLogin = await sut.execute({ biometricToken: 'token', purpose: 'login', stepUpPurpose: 'export_data' });
-    const missingOrder = await sut.execute({ biometricToken: 'token', purpose: 'step_up', stepUpPurpose: 'cancel_order' });
-    const extraResource = await sut.execute({ biometricToken: 'token', purpose: 'step_up', stepUpPurpose: 'export_data', resourceId: 'order-1' });
+    const noPurpose = await sut.execute({ biometricToken: 'token', purpose: BiometricChallengePurpose.STEP_UP });
+    const extraOnLogin = await sut.execute({ biometricToken: 'token', purpose: BiometricChallengePurpose.LOGIN, stepUpPurpose: StepUpPurpose.EXPORT_DATA });
+    const missingOrder = await sut.execute({ biometricToken: 'token', purpose: BiometricChallengePurpose.STEP_UP, stepUpPurpose: StepUpPurpose.CANCEL_ORDER });
+    const extraResource = await sut.execute({ biometricToken: 'token', purpose: BiometricChallengePurpose.STEP_UP, stepUpPurpose: StepUpPurpose.EXPORT_DATA, resourceId: 'order-1' });
 
     expect([noPurpose, extraOnLogin, missingOrder, extraResource].every((result) => result.isLeft())).toBe(true);
     expect(credentials.createChallenge).not.toHaveBeenCalled();
@@ -43,12 +43,12 @@ describe('CreateBiometricChallengeUseCase', () => {
     }).compile();
 
     const result = await module.get(CreateBiometricChallengeUseCase).execute({
-      biometricToken: 'token', purpose: 'step_up', stepUpPurpose: 'cancel_order', resourceId: '550e8400-e29b-41d4-a716-446655440000',
+      biometricToken: 'token', purpose: BiometricChallengePurpose.STEP_UP, stepUpPurpose: StepUpPurpose.CANCEL_ORDER, resourceId: '550e8400-e29b-41d4-a716-446655440000',
     });
 
     expect(result.isRight()).toBe(true);
     expect(credentials.createChallenge).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }), {
-      purpose: 'step_up', stepUpPurpose: 'cancel_order', resourceId: '550e8400-e29b-41d4-a716-446655440000',
+      purpose: BiometricChallengePurpose.STEP_UP, stepUpPurpose: StepUpPurpose.CANCEL_ORDER, resourceId: '550e8400-e29b-41d4-a716-446655440000',
     });
   });
 });

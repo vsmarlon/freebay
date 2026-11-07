@@ -9,7 +9,7 @@ import { redactReplySummary } from '../dtos/conversation-response';
 import {
   ChatMessageWithSender,
   DirectMessageWithSender,
-} from '../data/repositories/conversation/payloads';
+} from '../types/conversation-payloads';
 
 @Injectable()
 export class GetStarredMessagesUseCase {

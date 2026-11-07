@@ -9,12 +9,13 @@ import { GetSuggestionsInput } from '../dtos/user.dto';
 export class GetSuggestionsUseCase {
   constructor(private readonly userRepository: UserDatabaseRepository) {}
 
-  async execute(input: GetSuggestionsInput): Promise<Either<AppError, SuggestionResponse[]>> {
-    const result = await this.userRepository.getSuggestions(input.userId, input.limit);
+  async execute(input: GetSuggestionsInput): Promise<Either<AppError, { users: SuggestionResponse[]; hasMore: boolean; nextOffset: number | null }>> {
+    const result = await this.userRepository.getSuggestions(input.userId, input.limit, input.offset);
     if (result.isLeft()) {
       return left(result.value);
     }
-    return right(result.value.map((u) => ({
+    const hasMore = result.value.length > input.limit;
+    const users = result.value.slice(0, input.limit).map((u) => ({
       id: u.id,
       displayName: u.displayName,
       username: u.username,
@@ -27,6 +28,7 @@ export class GetSuggestionsUseCase {
       followersCount: u.followersCount,
       followingCount: u.followingCount,
       mutualCount: u.mutualCount,
-    })));
+    }));
+    return right({ users, hasMore, nextOffset: hasMore ? input.offset + input.limit : null });
   }
 }

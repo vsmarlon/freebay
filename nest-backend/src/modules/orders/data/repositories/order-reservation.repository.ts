@@ -17,9 +17,20 @@ export class OrderReservationRepository {
     const OUT_OF_STOCK = "OUT_OF_STOCK";
     const PRODUCT_UNAVAILABLE = "PRODUCT_UNAVAILABLE";
     const OWN_PRODUCT = "OWN_PRODUCT";
+    const TOO_MANY_PENDING_ORDERS = "TOO_MANY_PENDING_ORDERS";
+    const MAX_PENDING_UNPAID_ORDERS = 10;
 
     try {
       const order = await this.prisma.$transaction(async (tx) => {
+        const pendingOrders = await tx.order.count({
+          where: {
+            buyerId: data.buyerId,
+            status: OrderStatus.PENDING,
+            transaction: { is: null },
+          },
+        });
+        if (pendingOrders >= MAX_PENDING_UNPAID_ORDERS) throw new Error(TOO_MANY_PENDING_ORDERS);
+
         const products = await tx.$queryRaw<Product[]>`
           SELECT * FROM "Product" WHERE id = ${data.productId} FOR UPDATE
         `;
@@ -82,6 +93,7 @@ export class OrderReservationRepository {
         if (e.message === OWN_PRODUCT) return left(new BadRequestError("Cannot buy your own product"));
         if (e.message === OUT_OF_STOCK) return left(new BadRequestError("Produto sem estoque"));
         if (e.message === PRODUCT_UNAVAILABLE) return left(new BadRequestError("Produto não está mais disponível"));
+        if (e.message === TOO_MANY_PENDING_ORDERS) return left(new BadRequestError("Muitos pedidos aguardando pagamento"));
       }
       return left(new DatabaseError("Erro ao criar pedido"));
     }

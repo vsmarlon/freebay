@@ -15,6 +15,7 @@ import {
   CreateOrderPayload,
   SalesOrderCursor,
   SalesOrderStatus,
+  StaleUnpaidOrder,
 } from "../../types/order.types";
 import { OrderReadRepository } from "./order-read.repository";
 import { OrderReservationRepository } from "./order-reservation.repository";
@@ -60,6 +61,10 @@ export class OrderDatabaseRepository {
     return this.reads.countByBuyerId(buyerId);
   }
 
+  async findStaleUnpaidOrders(cutoff: Date): RepositoryResponse<StaleUnpaidOrder[]> {
+    return this.reads.findStaleUnpaidOrders(cutoff);
+  }
+
   async update(id: string, data: Record<string, unknown>): RepositoryResponse<unknown> {
     return repositoryResponse(
       () => this.prisma.order.update({ where: { id }, data }),
@@ -90,6 +95,10 @@ export class OrderDatabaseRepository {
     owner?: Parameters<OrderMutationRepository['claimCancellation']>[3],
   ): RepositoryResponse<boolean> {
     return this.mutations.claimCancellation(orderId, status, reason, owner);
+  }
+
+  claimCheckoutAbandoned(orderId: string, tx?: Prisma.TransactionClient): RepositoryResponse<boolean> {
+    return this.mutations.claimCheckoutAbandoned(orderId, tx);
   }
 
   markRefundPending(orderId: string, reason: string): RepositoryResponse<void> {

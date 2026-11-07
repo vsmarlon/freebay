@@ -13,7 +13,7 @@ import {
   commentVisibilityWhere,
 } from "../../types/social.types";
 import { postVisibilityWhere } from './post-query-helpers';
-import { CommentCursor, CommentSort, encodeCommentCursor } from '../../types/comment-cursor';
+import { CommentCursor, CommentSort, encodeCommentCursor, CommentCursorScope } from '../../types/comment-cursor';
 import { left, right } from '@/shared/core/either';
 import { ConflictError, ForbiddenError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { CommentReplyPermission, NotificationType } from '@prisma/client';
@@ -149,10 +149,10 @@ export class CommentDatabaseRepository {
 
   async findConversationPage(postId: string, viewerId: string, limit: number, sort: CommentSort, cursor?: CommentCursor) {
     return repositoryResponse(async () => {
-      const orderBy: Prisma.CommentOrderByWithRelationInput[] = sort === 'recent'
+      const orderBy: Prisma.CommentOrderByWithRelationInput[] = sort === CommentSort.RECENT
         ? [{ createdAt: 'desc' }, { id: 'desc' }]
         : [{ likesCount: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }];
-      const after = cursor ? sort === 'recent' ? {
+      const after = cursor ? sort === CommentSort.RECENT ? {
         OR: [{ createdAt: { lt: new Date(cursor.createdAt) } }, { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } }],
       } : {
         OR: [
@@ -187,7 +187,7 @@ export class CommentDatabaseRepository {
           }),
         }; }),
         nextCursor: hasMore && last ? encodeCommentCursor({
-          scope: 'conversation', ownerId: postId, viewerId, sort, id: last.id,
+          scope: CommentCursorScope.CONVERSATION, ownerId: postId, viewerId, sort, id: last.id,
           createdAt: last.createdAt.toISOString(), likesCount: last.likesCount,
         }) : null,
       };
@@ -259,10 +259,10 @@ export class CommentDatabaseRepository {
         include: { ...commentFlatIncludeForViewer(viewerId), post: { select: { id: true } } },
       });
       if (!focus) return null;
-      const orderBy: Prisma.CommentOrderByWithRelationInput[] = sort === 'recent'
+      const orderBy: Prisma.CommentOrderByWithRelationInput[] = sort === CommentSort.RECENT
         ? [{ createdAt: 'desc' }, { id: 'desc' }]
         : [{ likesCount: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }];
-      const after = replyCursor ? sort === 'recent' ? {
+      const after = replyCursor ? sort === CommentSort.RECENT ? {
         OR: [{ createdAt: { lt: new Date(replyCursor.createdAt) } }, { createdAt: new Date(replyCursor.createdAt), id: { lt: replyCursor.id } }],
       } : {
         OR: [
@@ -331,11 +331,11 @@ export class CommentDatabaseRepository {
           return { ...(reply.deletedAt ? tombstone : publicReply), isLiked: !reply.deletedAt && commentLikes.length > 0, content: reply.deletedAt ? null : reply.content, user: reply.deletedAt ? null : reply.user, likesCount: reply.deletedAt ? 0 : reply.likesCount, media: reply.deletedAt ? [] : reply.media };
         }),
         nextReplyCursor: hasMoreReplies && lastReply ? encodeCommentCursor({
-          scope: 'context-replies', ownerId: commentId, viewerId, sort, id: lastReply.id,
+          scope: CommentCursorScope.CONTEXT_REPLIES, ownerId: commentId, viewerId, sort, id: lastReply.id,
           createdAt: lastReply.createdAt.toISOString(), likesCount: lastReply.likesCount,
         }) : null,
         nextAncestorCursor: nextAncestorId ? encodeCommentCursor({
-          scope: 'context-ancestors', ownerId: commentId, viewerId, sort: 'recent', id: nextAncestorId,
+          scope: CommentCursorScope.CONTEXT_ANCESTORS, ownerId: commentId, viewerId, sort: CommentSort.RECENT, id: nextAncestorId,
           createdAt: ancestorPage[31]?.createdAt instanceof Date ? ancestorPage[31].createdAt.toISOString() : '',
           likesCount: 0,
         }) : null,

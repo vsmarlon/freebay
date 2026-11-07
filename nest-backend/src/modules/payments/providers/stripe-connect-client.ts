@@ -208,15 +208,15 @@ export class StripeConnectClient {
     const hasRecipient =
       account.configuration?.recipient !== undefined &&
       account.applied_configurations.includes('recipient');
-    let status: ConnectStatus = 'onboarding-required';
+    let status: ConnectStatus = ConnectStatus.ONBOARDING_REQUIRED;
     if (account.closed || transferStatus === 'restricted' || transferStatus === 'unsupported') {
-      status = 'restricted';
+      status = ConnectStatus.RESTRICTED;
     } else if (!hasRecipient) {
-      status = 'onboarding-required';
+      status = ConnectStatus.ONBOARDING_REQUIRED;
     } else if (transferStatus === 'active') {
-      status = 'transfer-ready';
+      status = ConnectStatus.TRANSFER_READY;
     } else if (transferStatus === 'pending' && hasDueRequirements) {
-      status = 'requirements-due';
+      status = ConnectStatus.REQUIREMENTS_DUE;
     }
 
     return {

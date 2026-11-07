@@ -3,7 +3,7 @@ import { UserRole } from '@prisma/client';
 import { right } from '@/shared/core/either';
 import { JwtTokenType } from '@/shared/core/types';
 import { JwtTokenValidatorService } from '@/shared/auth/jwt-token-validator.service';
-import { BiometricCredentialService } from '@/shared/auth/biometric-credential.service';
+import { BiometricCredentialService, BiometricChallengePurpose } from '@/shared/auth/biometric-credential.service';
 import { UserDatabaseRepository } from '@/modules/users';
 import { SessionTokenService } from '../services/session-token.service';
 import { BiometricLoginUseCase } from './biometric-login.usecase';
@@ -45,7 +45,7 @@ describe('BiometricLoginUseCase', () => {
 
     expect(result.isRight()).toBe(true);
     expect(validator.verifyAndValidate).toHaveBeenCalledWith('bound-token', [JwtTokenType.BIOMETRIC]);
-    expect(credentials.verifyAndConsume).toHaveBeenCalledWith(payload, 'challenge-id', 'c2ln', { purpose: 'login' });
+    expect(credentials.verifyAndConsume).toHaveBeenCalledWith(payload, 'challenge-id', 'c2ln', { purpose: BiometricChallengePurpose.LOGIN });
     expect(tokens.generate).toHaveBeenCalledWith('u1', UserRole.USER, null, 'family-1', 123456789);
     expect(tokens.generateBiometric).toHaveBeenCalledWith('u1', UserRole.USER, 'family-1', 123456789);
   });

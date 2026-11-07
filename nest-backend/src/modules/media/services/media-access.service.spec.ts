@@ -30,4 +30,21 @@ describe('MediaAccessService view-once authorization', () => {
     closedAt = new Date();
     expect(await service.canRead('recipient-1', 'chat', 'media.jpg', openingKey)).toBe(false);
   });
+
+  it('authorizes private post thumbnails through the same visible post boundary', async () => {
+    const findFirst = jest.fn().mockResolvedValue({ id: 'post-1' });
+    const module = await Test.createTestingModule({
+      providers: [MediaAccessService, { provide: PrismaService, useValue: { post: { findFirst } } }],
+    }).compile();
+
+    await expect(module.get(MediaAccessService).canRead('viewer-1', 'privatepost', 'thumb.jpg')).resolves.toBe(true);
+    expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        media: { some: { OR: [
+          { url: '/media/privatepost/thumb.jpg' },
+          { thumbnailUrl: '/media/privatepost/thumb.jpg' },
+        ] } },
+      }),
+    }));
+  });
 });

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { DEFAULT_PAGE_SIZE } from '@/shared/core/pagination';
+import { PublicationMediaResponse } from '@/shared/media/publication-media';
 
 export enum FeedType {
   EXPLORE = "explore",
@@ -18,7 +19,8 @@ export enum SearchFilter {
   FOLLOWERS = "followers",
 }
 
-export const COMMENT_MAX_LENGTH = 1000;
+export const COMMENT_MAX_LENGTH = 280;
+export const QUOTE_MAX_LENGTH = 1000;
 export const SEARCH_MAX_LENGTH = 200;
 export const COMMENT_REPLY_MAX_COUNT = 50;
 export const EXPLORE_CANDIDATE_WINDOW = 60;
@@ -38,6 +40,7 @@ export const POST_INCLUDE = {
   likes: { take: 1, select: { userId: true } },
   shares: { take: 1, select: { userId: true } },
   savedBy: { take: 1, select: { userId: true } },
+  media: { orderBy: { order: 'asc' as const } },
   _count: { select: { likes: true, comments: { where: { deletedAt: null, isHidden: false, authorHiddenAt: null } }, shares: true } },
   product: {
     select: {
@@ -46,7 +49,7 @@ export const POST_INCLUDE = {
       description: true,
       price: true,
       condition: true,
-      images: { take: 1, orderBy: { order: "asc" } },
+      media: { orderBy: { order: "asc" as const } },
     },
   },
 } satisfies Prisma.PostInclude;
@@ -75,9 +78,9 @@ export type PostPayload = Prisma.PostGetPayload<{
 }>;
 
 export type QuotePostView = Pick<PostPayload,
-  'id' | 'content' | 'imageUrl' | 'type' | 'audience' | 'userId' | 'createdAt' | 'user' |
+  'id' | 'content' | 'type' | 'audience' | 'userId' | 'createdAt' | 'user' |
   'likesCount' | 'commentsCount' | 'sharesCount'
-> & { imageBlurHash?: string };
+> & { media: PublicationMediaResponse[] };
 
 export type QuoteCommentView = Pick<CommentFlatPayload,
   'id' | 'postId' | 'parentId' | 'userId' | 'content' | 'createdAt' | 'deletedAt' | 'likesCount' | 'user'
@@ -87,8 +90,8 @@ export type QuoteSourceView =
   | { kind: 'post'; id: string; post: QuotePostView }
   | { kind: 'comment'; id: string; postId: string; comment: QuoteCommentView };
 
-export type PostResponse = Omit<PostPayload, "likes" | "shares" | "savedBy" | "imageBlurHash" | "clientRequestId" | "clientRequestHash" | "quoteSourcePostId" | "quoteSourceCommentId"> & {
-  imageBlurHash?: string;
+export type PostResponse = Omit<PostPayload, "likes" | "shares" | "savedBy" | "media" | "clientRequestId" | "clientRequestHash" | "quoteSourcePostId" | "quoteSourceCommentId"> & {
+  media: PublicationMediaResponse[];
   isLiked: boolean;
   isSaved: boolean;
   hasReposted: boolean;

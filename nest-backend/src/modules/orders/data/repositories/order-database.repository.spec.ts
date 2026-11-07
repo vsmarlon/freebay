@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '@/shared/infra/prisma/prisma.service';
 import { decodeCursor } from '@/shared/core/pagination';
+import { BadRequestError } from '@/shared/core/errors';
 import { OrderDatabaseRepository } from './order-database.repository';
 
 describe('OrderDatabaseRepository.findSellerSales', () => {
@@ -123,5 +124,95 @@ describe('OrderDatabaseRepository.claimCancellation', () => {
         transaction: { is: { refundOperationId: 'refund-op-2' } },
       }),
     }));
+  });
+});
+
+describe('OrderDatabaseRepository.findStaleUnpaidOrders', () => {
+  it('only selects PENDING orders that have no transaction older than the cutoff', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const module = await Test.createTestingModule({
+      providers: [
+        OrderDatabaseRepository,
+        { provide: PrismaService, useValue: { order: { findMany } } },
+      ],
+    }).compile();
+    const repository = module.get(OrderDatabaseRepository);
+    const cutoff = new Date('2026-11-06T11:30:00.000Z');
+
+    const result = await repository.findStaleUnpaidOrders(cutoff);
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: { status: 'PENDING', transaction: { is: null }, createdAt: { lt: cutoff } },
+      select: { id: true, productId: true, quantity: true },
+    });
+    expect(result.isRight()).toBe(true);
+  });
+});
+
+describe('OrderDatabaseRepository.claimCheckoutAbandoned', () => {
+  const buildRepository = async (updateMany: jest.Mock) => {
+    const module = await Test.createTestingModule({
+      providers: [
+        OrderDatabaseRepository,
+        { provide: PrismaService, useValue: { order: { updateMany } } },
+      ],
+    }).compile();
+    return module.get(OrderDatabaseRepository);
+  };
+
+  it('claims only a PENDING order that still has no transaction', async () => {
+    const updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const repository = await buildRepository(updateMany);
+
+    const claimed = await repository.claimCheckoutAbandoned('order-1');
+
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { id: 'order-1', status: 'PENDING', transaction: { is: null } },
+      data: { status: 'CANCELLED', cancellationReason: 'CHECKOUT_ABANDONED' },
+    });
+    expect(claimed.isRight() && claimed.value).toBe(true);
+  });
+
+  it('reports no claim when the order moved on', async () => {
+    const updateMany = jest.fn().mockResolvedValue({ count: 0 });
+    const repository = await buildRepository(updateMany);
+
+    const claimed = await repository.claimCheckoutAbandoned('order-1');
+
+    expect(claimed.isRight() && claimed.value).toBe(false);
+  });
+});
+
+describe('OrderDatabaseRepository.createOrderWithReservation', () => {
+  it('rejects a new order when the buyer already holds the unpaid-order cap', async () => {
+    const count = jest.fn().mockResolvedValue(10);
+    const module = await Test.createTestingModule({
+      providers: [
+        OrderDatabaseRepository,
+        {
+          provide: PrismaService,
+          useValue: {
+            $transaction: jest.fn(async (callback: (tx: unknown) => unknown) =>
+              callback({ order: { count } }),
+            ),
+          },
+        },
+      ],
+    }).compile();
+    const repository = module.get(OrderDatabaseRepository);
+
+    const result = await repository.createOrderWithReservation({
+      buyerId: 'buyer-1',
+      productId: 'product-1',
+    });
+
+    expect(count).toHaveBeenCalledWith({
+      where: { buyerId: 'buyer-1', status: 'PENDING', transaction: { is: null } },
+    });
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) {
+      expect(result.value).toBeInstanceOf(BadRequestError);
+      expect(result.value.message).toBe('Muitos pedidos aguardando pagamento');
+    }
   });
 });

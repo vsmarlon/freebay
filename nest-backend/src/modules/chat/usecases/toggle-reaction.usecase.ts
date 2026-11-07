@@ -4,14 +4,9 @@ import { AppError, BadRequestError } from '@/shared/core/errors';
 import { ConversationDatabaseRepository } from '../data/repositories/conversation-database.repository';
 import { ChatThreadAccessService } from '../services/chat-thread-access.service';
 import { ChatThreadType } from '@prisma/client';
+import { ReactionSummary } from '../types/chat.types';
 
 const VALID_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍'];
-
-export interface ReactionSummary {
-  emoji: string;
-  count: number;
-  userIds: string[];
-}
 
 @Injectable()
 export class ToggleReactionUseCase {

@@ -97,6 +97,7 @@ export class UsersDiscoveryController {
         required: false,
         description: "Number of suggestions (default 10)",
       },
+      { name: "offset", required: false, description: "Page offset (default 0)" },
     ],
   })
   async getSuggestions(
@@ -106,8 +107,15 @@ export class UsersDiscoveryController {
     const suggestionsResult = await this.getSuggestionsUseCase.execute({
       userId,
       limit: query.limit ?? 10,
+      offset: query.offset ?? 0,
     });
     if (suggestionsResult.isLeft()) return suggestionsResult;
-    return { users: suggestionsResult.value };
+    return {
+      users: suggestionsResult.value.users,
+      meta: {
+        hasMore: suggestionsResult.value.hasMore,
+        nextOffset: suggestionsResult.value.nextOffset,
+      },
+    };
   }
 }

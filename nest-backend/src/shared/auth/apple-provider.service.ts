@@ -1,18 +1,12 @@
 import { createCipheriv, createDecipheriv, createHash, createPublicKey, createSign, JsonWebKey, KeyObject, randomBytes, verify } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AppleIdentity } from './apple.types';
 
 const APPLE_ISSUER = 'https://appleid.apple.com';
 const APPLE_KEYS_URL = 'https://appleid.apple.com/auth/keys';
 const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
 const APPLE_JWKS_TTL_MS = 60 * 60 * 1000;
-
-export interface AppleIdentity {
-  sub: string;
-  email?: string;
-  emailVerified?: boolean;
-  nonce: string;
-}
 
 export class AppleConfigurationError extends Error {}
 

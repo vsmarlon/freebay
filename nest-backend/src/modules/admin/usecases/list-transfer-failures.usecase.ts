@@ -3,23 +3,7 @@ import { Either, left, right } from '@/shared/core/either';
 import { AppError, BadRequestError, DatabaseError } from '@/shared/core/errors';
 import { TransactionDatabaseRepository } from '@/modules/payments/data/repositories/transaction-database.repository';
 import { CursorPage, decodeCursor, clampLimit } from '@/shared/core/pagination';
-
-export interface TransferFailureRow {
-  transactionId: string;
-  orderId: string;
-  sellerId: string;
-  sellerAmount: number;
-  transferState: string;
-  transferAttempts: number;
-  transferProcessingAt: Date | null;
-  transferId: string | null;
-  transferLastError: string | null;
-  reversalState: string;
-  reversalAttempts: number;
-  reversalProcessingAt: Date | null;
-  reversalId: string | null;
-  reversalLastError: string | null;
-}
+import { TransferFailureRow } from '../types/admin.types';
 
 @Injectable()
 export class ListTransferFailuresUseCase {

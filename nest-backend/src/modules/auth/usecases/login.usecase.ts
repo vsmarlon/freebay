@@ -17,7 +17,11 @@ export class LoginUseCase {
 
   async execute(input: LoginDTO): Promise<Either<AppError, AuthSessionResponse>> {
     const sessionStartedAtMs = Date.now();
-    const userResult = await this.userRepository.findByEmail(input.email);
+    // Login aceita e-mail ou @username único (usernames são [a-z0-9_]; o @ é só prefixo de digitação).
+    const identifier = input.email.trim().toLowerCase().replace(/^@+/, '');
+    const userResult = identifier.includes('@')
+      ? await this.userRepository.findByEmail(identifier)
+      : await this.userRepository.findByUsername(identifier);
     if (userResult.isLeft()) return left(userResult.value);
     const user = userResult.value;
 

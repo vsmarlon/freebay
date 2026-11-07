@@ -8,6 +8,7 @@ import {
   ArrayMaxSize,
   Matches,
   IsEnum,
+  IsIn,
   IsInt,
   Max,
   Min,
@@ -16,7 +17,8 @@ import {
   ValidatorConstraintInterface,
   ValidationArguments,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import { SanitizeText } from '@/shared/utils/sanitize.decorator';
 import { STORED_MEDIA_PATH } from '@/shared/utils/file.utils';
 import { ChatTheme, ChatThreadType, ConversationStatus, MessageType } from '@prisma/client';
@@ -29,6 +31,13 @@ export class VerifyUrlDTO {
   @ApiProperty({ example: 'https://google.com' })
   @IsString()
   readonly url: string;
+}
+
+export class SetMessagePinDTO {
+  @ApiProperty({ description: 'Whether the message is pinned for this conversation' })
+  @Transform(({ obj }: { obj: Record<string, unknown> }) => obj.pinned, { toClassOnly: true })
+  @IsBoolean()
+  readonly pinned: boolean;
 }
 
 export class ForwardMessagesDTO {
@@ -236,9 +245,29 @@ export interface GetMessagesOutput {
 export interface GetFilteredMessagesInput {
   conversationId: string;
   userId: string;
-  type?: MessageType;
+  type?: MessageType | 'LINK';
   limit?: number;
   cursor?: string;
+}
+
+export class FilteredMessagesQueryDTO {
+  @ApiPropertyOptional({ enum: ['IMAGE', 'GIF', 'VIDEO', 'LINK'] })
+  @IsOptional()
+  @IsIn(['IMAGE', 'GIF', 'VIDEO', 'LINK'])
+  readonly type?: MessageType | 'LINK';
+
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  readonly limit?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  readonly cursor?: string;
 }
 
 export interface GetFilteredMessagesResult {

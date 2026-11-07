@@ -8,6 +8,7 @@ import { applyWalletDelta } from '@/shared/wallet/wallet-mutation';
 import { StripeProvider } from '../providers/stripe-provider';
 import { TransactionDatabaseRepository } from '../data/repositories/transaction-database.repository';
 import { ConnectAccountDatabaseRepository } from '../data/repositories/connect-account-database.repository';
+import { ConnectStatus } from '../types/connect.types';
 
 @Injectable()
 export class SellerPayoutService {
@@ -35,7 +36,7 @@ export class SellerPayoutService {
     if (claimed.isLeft() || claimed.value.count === 0) return;
 
     const refreshed = await this.stripe.refreshConnectAccount(account.value.stripeAccountId);
-    if (refreshed.isLeft() || refreshed.value.status !== 'transfer-ready') {
+    if (refreshed.isLeft() || refreshed.value.status !== ConnectStatus.TRANSFER_READY) {
       await this.transactionRepo.markTransferFailure(
         transaction.id,
         this.failureState(refreshed.isLeft() ? refreshed.value : undefined),

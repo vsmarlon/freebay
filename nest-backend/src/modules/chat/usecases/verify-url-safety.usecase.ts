@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Either, right } from '@/shared/core/either';
 import { AppError } from '@/shared/core/errors';
-import { UrlSafetyService, UrlSafetyVerification } from '../services/url-safety.service';
+import { UrlSafetyService } from '../services/url-safety.service';
+import { UrlSafetyVerification } from '../types/chat.types';
 
 @Injectable()
 export class VerifyUrlSafetyUseCase {

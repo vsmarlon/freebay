@@ -16,9 +16,6 @@ import { storyAudienceWhere } from '@/modules/stories/data/repositories/story-da
 import { CpfProtectionService } from '@/shared/utils/cpf-protection.service';
 import { ConflictError } from '@/shared/core/errors';
 
-/// Over-fetch mutual-follow candidates so the in-memory ranking has room to sort.
-const SUGGESTION_CANDIDATE_MULTIPLIER = 3;
-
 @Injectable()
 export class UserDatabaseRepository {
   constructor(
@@ -162,7 +159,10 @@ export class UserDatabaseRepository {
 
   async searchUsers(query: string, limit: number, offset: number, viewerId?: string): RepositoryResponse<UserSearchResult[]> {
     return repositoryResponse(async () => {
-      const q = query.trim();
+      const trimmedQuery = query.trim();
+      const handleOnly = trimmedQuery.startsWith('@');
+      const q = handleOnly ? trimmedQuery.slice(1) : trimmedQuery;
+      if (handleOnly && !q) return [];
       const escapeLike = (value: string) => value.replace(/[\\%_]/g, '\\$&');
       const escapedQuery = escapeLike(q);
       const prefixLike = `${escapedQuery}%`;
@@ -202,7 +202,7 @@ export class UserDatabaseRepository {
           (SELECT COUNT(*) FROM "Follow" f WHERE f."followingId" = u.id) AS "followersCount",
           (SELECT COUNT(*) FROM "Follow" f WHERE f."followerId" = u.id) AS "followingCount"
         FROM "User" u
-        WHERE (u.username ILIKE ${prefixLike} ESCAPE CHR(92) OR ${displayNameFilter})
+        WHERE (${handleOnly ? Prisma.sql`u.username ILIKE ${prefixLike} ESCAPE CHR(92)` : Prisma.sql`(u.username ILIKE ${prefixLike} ESCAPE CHR(92) OR ${displayNameFilter})`})
         ${blockFilter}
         ORDER BY
           CASE
@@ -221,7 +221,7 @@ export class UserDatabaseRepository {
     }, 'Erro ao pesquisar usuários');
   }
 
-  async getSuggestions(userId: string, limit: number): RepositoryResponse<UserSuggestionResult[]> {
+  async getSuggestions(userId: string, limit: number, offset: number): RepositoryResponse<UserSuggestionResult[]> {
     return repositoryResponse(async () => {
       const following = await this.prisma.follow.findMany({
         where: { followerId: userId },
@@ -255,7 +255,6 @@ export class UserDatabaseRepository {
               NOT: { followers: { some: { followerId: userId } } },
               ...notBlocked,
             },
-            take: limit * SUGGESTION_CANDIDATE_MULTIPLIER,
             select: {
               ...baseSelect,
               followers: {
@@ -282,7 +281,7 @@ export class UserDatabaseRepository {
                ? b.followersCount - a.followersCount
                : a.id.localeCompare(b.id),
         )
-        .slice(0, limit + 1);
+        .slice(offset, offset + limit + 1);
 
       return ranked;
     }, 'Erro ao buscar sugestões');

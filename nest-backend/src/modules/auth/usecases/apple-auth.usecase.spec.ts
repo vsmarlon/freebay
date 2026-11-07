@@ -89,13 +89,36 @@ describe('AppleAuthUseCase', () => {
     expect(tokens.generate).not.toHaveBeenCalled();
   });
 
-  it('does not silently link a verified Apple email to an existing password account', async () => {
-    users.findByEmail.mockResolvedValue(right({ id: 'password-user', email: 'person@example.com' }));
+  it('does not link an Apple email to an existing password account whose email is unverified', async () => {
+    users.findByEmail.mockResolvedValue(right({ id: 'password-user', email: 'person@example.com', emailVerified: false }));
     const result = await sut.execute(input);
     expect(result.isLeft()).toBe(true);
-    if (result.isLeft()) expect(result.value.code).toBe('APPLE_EMAIL_COLLISION');
+    if (result.isLeft()) expect(result.value.code).toBe('EMAIL_VERIFICATION_REQUIRED');
     expect(users.update).not.toHaveBeenCalled();
     expect(users.create).not.toHaveBeenCalled();
+    expect(tokens.generate).not.toHaveBeenCalled();
+  });
+
+  it('links a verified Apple email to an existing verified password account and starts a session', async () => {
+    users.findByEmail.mockResolvedValue(right({ id: 'password-user', email: 'person@example.com', emailVerified: true }));
+    users.update.mockResolvedValue(right({ ...profile, id: 'password-user', appleId: identity.sub }));
+
+    const result = await sut.execute(input);
+
+    expect(result.isRight()).toBe(true);
+    expect(users.update).toHaveBeenCalledWith('password-user', {
+      appleId: identity.sub,
+      appleRefreshTokenEncrypted: encrypted,
+    });
+    expect(tokens.generate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not link a verified Apple email to a removed password account', async () => {
+    users.findByEmail.mockResolvedValue(right({ id: 'password-user', email: 'person@example.com', emailVerified: true, deletedAt: new Date() }));
+    const result = await sut.execute(input);
+    expect(result.isLeft()).toBe(true);
+    if (result.isLeft()) expect(result.value.code).toBe('INVALID_APPLE_TOKEN');
+    expect(users.update).not.toHaveBeenCalled();
     expect(tokens.generate).not.toHaveBeenCalled();
   });
 

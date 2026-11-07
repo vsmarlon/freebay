@@ -4,13 +4,14 @@ import {
   Param,
   Query,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
   HttpStatus,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { BoundedMultipartInterceptor } from '@/shared/interceptors/bounded-multipart.interceptor';
-import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO, PRODUCT_DESCRIPTION_MAX_LENGTH } from './dtos/product.dto';
+import { THROTTLE_TTL_MINUTE_MS } from '@/shared/http/throttle.constants';
+import { CreateProductDTO, UpdateProductDTO, ProductQueryDTO } from './dtos/product.dto';
 import {
   GetAuth,
   GetPublic,
@@ -18,11 +19,15 @@ import {
   PatchAuth,
   CurrentUserId,
 } from '@/shared/decorators';
-import { validateImageFile, MAX_IMAGE_SIZE } from '@/shared/utils/image-upload.utils';
+import { validateMediaFile, MAX_MEDIA_SIZE } from '@/shared/utils/image-upload.utils';
 import { deleteUpload, saveUpload } from '@/shared/utils/file.utils';
 import { generateImageBlurHash } from '@/shared/utils/blurhash.utils';
 import { left } from '@/shared/core/either';
 import { BadRequestError } from '@/shared/core/errors';
+import { parsePublicationMedia, validatePublicationMediaFiles } from '@/shared/media/publication-media';
+
+const PUBLICATION_UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
+const PUBLICATION_METADATA_MAX_BYTES = 256 * 1024;
 import { CreateProductUseCase } from './usecases/create-product/create-product.usecase';
 import { UpdateProductUseCase } from './usecases/update-product/update-product.usecase';
 import { DeleteProductUseCase } from './usecases/delete-product/delete-product.usecase';
@@ -76,41 +81,58 @@ export class ProductsController {
 
   @PostAuth({
     summary: 'Create a product',
-    description: 'Creates a new product listing with image',
+    description: 'Creates a product listing with 1 to 10 ordered images or videos',
     bodyType: CreateProductDTO,
     responseStatus: 201,
     httpCode: HttpStatus.CREATED,
+    throttle: { short: { limit: 5, ttl: THROTTLE_TTL_MINUTE_MS } },
   })
   @UseInterceptors(
-    BoundedMultipartInterceptor('image', 1, MAX_IMAGE_SIZE + 512 * 1024, PRODUCT_DESCRIPTION_MAX_LENGTH * 4, MAX_IMAGE_SIZE),
+    BoundedMultipartInterceptor('files', 20, PUBLICATION_UPLOAD_MAX_BYTES, PUBLICATION_METADATA_MAX_BYTES, MAX_MEDIA_SIZE),
   )
   async create(
     @CurrentUserId() sellerId: string,
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFiles() files: Express.Multer.File[] = [],
     @Body() body: CreateProductDTO,
   ) {
-    if (!file) {
-      return left(new BadRequestError('Imagem do produto é obrigatória'));
-    }
-
-    if (file) {
-      const mimeError = validateImageFile(file);
+    if (files.length === 0) return left(new BadRequestError('Ao menos uma mídia do produto é obrigatória'));
+    for (const file of files) {
+      const mimeError = validateMediaFile(file);
       if (mimeError) return left(new BadRequestError(mimeError));
     }
-
-    const imageUrl = saveUpload(file, 'product');
-    const imageBlurHash = await generateImageBlurHash(file.buffer);
+    let descriptors;
     try {
+      descriptors = parsePublicationMedia(body.mediaMetadata, files.length);
+      validatePublicationMediaFiles(descriptors, files);
+    } catch (error) {
+      return left(new BadRequestError(error instanceof Error ? error.message : 'Metadados de mídia inválidos'));
+    }
+    const savedUrls: string[] = [];
+    try {
+      for (const file of files) savedUrls.push(saveUpload(file, 'product'));
+      const media = await Promise.all(descriptors.map(async (descriptor) => {
+        const blurFile = files[descriptor.thumbnailFileIndex ?? descriptor.fileIndex];
+        return {
+          url: savedUrls[descriptor.fileIndex],
+          ...(descriptor.thumbnailFileIndex == null ? {} : { thumbnailUrl: savedUrls[descriptor.thumbnailFileIndex] }),
+          type: descriptor.type,
+          blurHash: await generateImageBlurHash(blurFile.buffer),
+          altText: descriptor.altText,
+          durationMs: descriptor.durationMs,
+          coverTimestampMs: descriptor.coverTimestampMs,
+          hotspots: descriptor.hotspots,
+        };
+      }));
+      const { mediaMetadata: _mediaMetadata, ...product } = body;
       const result = await this.createProductUseCase.execute({
         sellerId,
-        ...body,
-        images: [imageUrl],
-        imageBlurHash,
+        ...product,
+        media,
       });
-      if (result.isLeft()) deleteUpload(imageUrl);
+      if (result.isLeft()) savedUrls.forEach(deleteUpload);
       return result;
     } catch (error) {
-      deleteUpload(imageUrl);
+      savedUrls.forEach(deleteUpload);
       throw error;
     }
   }

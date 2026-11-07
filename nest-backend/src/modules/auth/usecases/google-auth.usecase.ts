@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { Either, left } from '@/shared/core/either';
-import { AppError, InvalidGoogleTokenError, UnverifiedGoogleEmailError } from '@/shared/core/errors';
+import { AppError, EmailVerificationRequiredError, InvalidGoogleTokenError, UnverifiedGoogleEmailError } from '@/shared/core/errors';
 import { UserDatabaseRepository } from '@/modules/users';
 import { AuthSessionResponse } from '../dtos/auth-response.class';
 import { normalizeEmail } from '@/shared/utils/normalize-email';
@@ -16,18 +16,6 @@ interface GooglePayload {
   name?: string;
   picture?: string;
   email_verified?: boolean;
-}
-
-function decodeUnverifiedAudience(idToken: string): string {
-  try {
-    const segment = idToken.split('.')[1] ?? '';
-    const payload = JSON.parse(
-      Buffer.from(segment, 'base64url').toString('utf8'),
-    ) as { aud?: unknown; azp?: unknown };
-    return `aud=${String(payload.aud)} azp=${String(payload.azp)}`;
-  } catch {
-    return 'aud=<indecifrável>';
-  }
 }
 
 @Injectable()
@@ -68,16 +56,13 @@ export class GoogleAuthUseCase {
         audience: this.audiences.length === 1 ? this.audiences[0] : this.audiences,
       });
       payload = ticket.getPayload() as GooglePayload;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(
-        `Falha na validação do token Google: ${message} (${decodeUnverifiedAudience(idToken)} <> [${this.audiences.join(', ')}])`,
-      );
+    } catch {
+      this.logger.error('Falha na validação do token Google');
       return left(new InvalidGoogleTokenError('Token Google inválido ou expirado'));
     }
 
     if (!payload || !payload.email) {
-      this.logger.warn(`Token Google válido mas sem e-mail retornado: sub=${payload?.sub}`);
+      this.logger.warn('Token Google válido sem e-mail retornado');
       return left(new InvalidGoogleTokenError('Token Google sem email associado'));
     }
 
@@ -86,7 +71,7 @@ export class GoogleAuthUseCase {
     const byGoogleId = await this.userRepository.findByGoogleId(payload.sub);
     if (byGoogleId.isLeft()) return left(byGoogleId.value);
     if (byGoogleId.value) {
-      this.logger.log(`Login Google bem-sucedido para usuário existente: ${byGoogleId.value.id}`);
+      this.logger.log('Login Google bem-sucedido para usuário existente');
       return issueSession(byGoogleId.value, this.sessionTokens, sessionStartedAtMs);
     }
 
@@ -95,18 +80,21 @@ export class GoogleAuthUseCase {
     if (byEmail.isLeft()) return left(byEmail.value);
     if (byEmail.value) {
       if (payload.email_verified !== true) {
-        this.logger.warn(`Recusando vínculo Google não verificado ao usuário existente: ${byEmail.value.id}`);
+          this.logger.warn('Recusando vínculo Google não verificado');
         return left(new UnverifiedGoogleEmailError());
       }
+      if (byEmail.value.emailVerified !== true) {
+        this.logger.warn('Recusando vínculo Google: conta local sem e-mail verificado');
+        return left(new EmailVerificationRequiredError('Verifique seu e-mail antes de vincular sua conta Google'));
+      }
 
-      this.logger.log(`Vinculando conta Google ao usuário existente: ${byEmail.value.id}`);
+      this.logger.log('Vinculando conta Google ao usuário existente');
       const updated = await this.userRepository.update(byEmail.value.id, {
         googleId: payload.sub,
-        emailVerified: true,
         avatarUrl: byEmail.value.avatarUrl ?? payload.picture ?? null,
       });
       if (updated.isLeft()) {
-        this.logger.error(`Erro ao atualizar vínculo Google do usuário: ${updated.value.message}`);
+        this.logger.error('Erro ao atualizar vínculo Google');
         return left(updated.value);
       }
       return issueSession(updated.value, this.sessionTokens, sessionStartedAtMs);
@@ -136,11 +124,11 @@ export class GoogleAuthUseCase {
       wallet: { create: {} },
     });
     if (created.isLeft()) {
-      this.logger.error(`Erro ao criar novo usuário no banco: ${created.value.message}`);
+      this.logger.error('Erro ao criar novo usuário Google');
       return left(created.value);
     }
 
-    this.logger.log(`Novo usuário criado com sucesso: ${created.value.id}`);
+    this.logger.log('Novo usuário criado com sucesso via Google');
     return issueSession(created.value, this.sessionTokens, sessionStartedAtMs);
   }
 

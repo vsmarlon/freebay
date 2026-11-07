@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
 import { Either, left, right } from '@/shared/core/either';
 import { AppError, UnauthorizedError } from '@/shared/core/errors';
-import { AuthUser, JwtTokenType } from '@/shared/core/types';
+import { AuthUser } from '@/shared/core/types';
 import { SessionTokenService } from '../services/session-token.service';
-import { BiometricCredentialService, InvalidBiometricPublicKeyError } from '@/shared/auth/biometric-credential.service';
+import { BiometricCredentialService, InvalidBiometricPublicKeyError, isEnrollmentSession, StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import { StepUpService } from '@/shared/auth/step-up.service';
 
 @Injectable()
@@ -15,13 +14,15 @@ export class EnrollBiometricUseCase {
     private readonly stepUp: StepUpService,
   ) {}
 
-  async execute(user: AuthUser, stepUpToken: string, publicKey: string): Promise<Either<AppError, { biometricToken: string }>> {
-    if (!user.userId || !user.role || user.type !== JwtTokenType.ACCESS ||
-      typeof user.sessionStartedAtMs !== 'number' || !Number.isSafeInteger(user.sessionStartedAtMs) ||
-      !await this.stepUp.consume(stepUpToken, user.userId, 'biometric_enroll')) {
-      return left(new UnauthorizedError('Fresh step-up proof required'));
+  async execute(user: AuthUser, stepUpToken: string | undefined, publicKey: string, challengeId?: string, signature?: string): Promise<Either<AppError, { biometricToken: string }>> {
+    if (!isEnrollmentSession(user) || !user.role) return left(new UnauthorizedError('Authenticated session required'));
+    const verified = challengeId && signature
+      ? await this.credentials.verifyEnrollmentAndConsume(user, publicKey, challengeId, signature)
+      : !!stepUpToken && await this.stepUp.consume(stepUpToken, user.userId, StepUpPurpose.BIOMETRIC_ENROLL);
+    if (!verified) {
+      return left(new UnauthorizedError('Biometric enrollment proof required'));
     }
-    const sid = user.sid ?? randomUUID();
+    const sid = user.sid;
     try {
       await this.credentials.register(user.userId, sid, publicKey);
     } catch (error: unknown) {

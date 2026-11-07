@@ -1,3 +1,4 @@
+import { StepUpPurpose } from '@/shared/auth/biometric-credential.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthUser, JwtPayload, JwtTokenType } from '@/shared/core/types';
 import { JwtService } from '@nestjs/jwt';
@@ -21,6 +22,7 @@ import { BiometricLoginUseCase } from './usecases/biometric-login.usecase';
 import { EnrollBiometricUseCase } from './usecases/enroll-biometric.usecase';
 import { RevokeBiometricUseCase } from './usecases/revoke-biometric.usecase';
 import { CreateBiometricChallengeUseCase } from './usecases/create-biometric-challenge.usecase';
+import { CreateBiometricEnrollmentChallengeUseCase } from './usecases/create-biometric-enrollment-challenge.usecase';
 import { CreateStepUpUseCase } from './usecases/create-step-up.usecase';
 import { RequestWebStepUpMagicLinkUseCase } from './usecases/request-web-step-up-magic-link.usecase';
 import { RequestMagicLinkUseCase } from './usecases/request-magic-link.usecase';
@@ -29,6 +31,8 @@ import { RefreshWebSessionUseCase } from './usecases/refresh-web-session.usecase
 import { LogoutWebSessionUseCase } from './usecases/logout-web-session.usecase';
 import { RequestWebPasswordResetUseCase } from './usecases/request-web-password-reset.usecase';
 import { ResetWebPasswordUseCase } from './usecases/reset-web-password.usecase';
+import { RequestEmailVerificationUseCase } from './usecases/request-email-verification.usecase';
+import { ConfirmEmailVerificationUseCase } from './usecases/confirm-email-verification.usecase';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { OriginGuard } from '@/shared/guards/origin.guard';
 import { APP_GUARD } from '@nestjs/core';
@@ -145,10 +149,13 @@ describe('AuthController web session endpoints', () => {
         { provide: EnrollBiometricUseCase, useValue: { execute: authService.enrollBiometricToken } },
         { provide: RevokeBiometricUseCase, useValue: { execute: jest.fn() } },
         { provide: CreateBiometricChallengeUseCase, useValue: { execute: jest.fn().mockResolvedValue(right({ challengeId: 'challenge-1', challenge: 'freebay:v1:login:login:-:nonce' })) } },
+        { provide: CreateBiometricEnrollmentChallengeUseCase, useValue: { execute: jest.fn().mockResolvedValue(right({ challengeId: 'enrollment-1', challenge: 'freebay:v1:biometric_enroll:nonce' })) } },
         { provide: CreateStepUpUseCase, useValue: createStepUp },
         { provide: RequestWebStepUpMagicLinkUseCase, useValue: requestStepUpMagicLink },
         { provide: RequestWebPasswordResetUseCase, useValue: requestWebPasswordReset },
         { provide: ResetWebPasswordUseCase, useValue: resetWebPassword },
+        { provide: RequestEmailVerificationUseCase, useValue: { execute: jest.fn().mockResolvedValue(right({ sent: true })) } },
+        { provide: ConfirmEmailVerificationUseCase, useValue: { execute: jest.fn().mockResolvedValue(right({ user: { id: 'user-1', email: 'user@example.com' }, emailVerified: true })) } },
         { provide: RequestMagicLinkUseCase, useValue: { execute: authService.requestMagicLink } },
         { provide: ConsumeMagicLinkUseCase, useValue: { execute: authService.consumeMagicLink } },
         { provide: RefreshWebSessionUseCase, useValue: { execute: authService.refreshWebSession } },
@@ -285,24 +292,32 @@ describe('AuthController web session endpoints', () => {
 
     expect(response.statusCode).toBe(201);
     expect(JSON.parse(response.body)).toEqual({ biometricToken: 'enrolled-token' });
-    expect(authService.enrollBiometricToken).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }), 'step-up-proof', Buffer.from('public-key').toString('base64'));
+    expect(authService.enrollBiometricToken).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }), 'step-up-proof', Buffer.from('public-key').toString('base64'), undefined, undefined);
+  });
+
+  it('offers the native enrollment challenge only to access tokens', async () => {
+    const response = await post({ method: 'POST', path: '/auth/biometric-token/enroll/challenge', authorization: 'Bearer access-token', body: { publicKey: 'public-key' } });
+    expect(response.statusCode).toBe(200);
+    expect(tokenValidator.verifyAndValidate).toHaveBeenLastCalledWith('access-token', [JwtTokenType.ACCESS]);
+    const rejected = await post({ method: 'POST', path: '/auth/biometric-token/enroll/challenge', body: { publicKey: 'public-key' } });
+    expect(rejected.statusCode).toBe(401);
   });
 
   it('offers fresh proof through the same-origin web session cookie route', async () => {
     const response = await post({
       method: 'POST', path: '/auth/web/step-up', origin: 'https://app.example.com', cookie: 'freebay_access=access-cookie',
-      body: { purpose: 'export_data', proof: { kind: 'password', password: 'secret' } },
+      body: { purpose: StepUpPurpose.EXPORT_DATA, proof: { kind: 'password', password: 'secret' } },
     });
 
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(response.body)).toEqual(expect.objectContaining({ stepUpToken: 'step-up' }));
-    expect(createStepUp.execute).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }), expect.objectContaining({ purpose: 'export_data' }), { web: true });
+    expect(createStepUp.execute).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-1' }), expect.objectContaining({ purpose: StepUpPurpose.EXPORT_DATA }), { web: true });
   });
 
   it('requests action-bound email proof only with a trusted origin and the current cookie identity', async () => {
     const response = await post({
       method: 'POST', path: '/auth/web/step-up/magic-link/request', origin: 'https://app.example.com', cookie: 'freebay_access=access-cookie',
-      body: { purpose: 'cancel_order', resourceId: '550e8400-e29b-41d4-a716-446655440000', locale: 'en', consent: true },
+      body: { purpose: StepUpPurpose.CANCEL_ORDER, resourceId: '550e8400-e29b-41d4-a716-446655440000', locale: 'en', consent: true },
     });
 
     expect(response.statusCode).toBe(200);
@@ -311,7 +326,7 @@ describe('AuthController web session endpoints', () => {
     expect(JSON.parse(response.body)).not.toHaveProperty('stepUpToken');
     expect(requestStepUpMagicLink.execute).toHaveBeenCalledWith(expect.objectContaining({
       user: expect.objectContaining({ userId: 'user-1' }),
-      body: expect.objectContaining({ purpose: 'cancel_order', resourceId: '550e8400-e29b-41d4-a716-446655440000' }),
+      body: expect.objectContaining({ purpose: StepUpPurpose.CANCEL_ORDER, resourceId: '550e8400-e29b-41d4-a716-446655440000' }),
       ip: expect.any(String),
     }));
   });
@@ -320,7 +335,7 @@ describe('AuthController web session endpoints', () => {
     requestStepUpMagicLink.execute.mockClear();
     const response = await post({
       method: 'POST', path: '/auth/web/step-up/magic-link/request', origin, cookie: 'freebay_access=access-cookie',
-      body: { purpose: 'export_data', locale: 'en', consent: true },
+      body: { purpose: StepUpPurpose.EXPORT_DATA, locale: 'en', consent: true },
     });
 
     expect(response.statusCode).toBe(401);
@@ -419,5 +434,24 @@ describe('AuthController web session endpoints', () => {
   it('rejects malformed session cookie encoding without a server error', async () => {
     const response = await post({ method: 'POST', path: '/auth/web/session/refresh', origin: 'https://app.example.com', cookie: 'freebay_refresh=%' });
     expect(response.statusCode).toBe(401);
+  });
+
+  it('serves the email-verification request only to an authenticated access-token user', async () => {
+    const accepted = await post({
+      method: 'POST', path: '/auth/verify-email/request', authorization: 'Bearer access-token', body: { locale: 'en' },
+    });
+    expect(accepted.statusCode).toBe(200);
+    expect(JSON.parse(accepted.body)).toEqual({ sent: true });
+
+    const rejected = await post({ method: 'POST', path: '/auth/verify-email/request', body: { locale: 'en' } });
+    expect(rejected.statusCode).toBe(401);
+  });
+
+  it('consumes the emailed token with the authenticated identity and returns the verified projection', async () => {
+    const response = await post({
+      method: 'POST', path: '/auth/verify-email/confirm', authorization: 'Bearer access-token', body: { token: 'token-from-email' },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ user: { id: 'user-1', email: 'user@example.com' }, emailVerified: true });
   });
 });

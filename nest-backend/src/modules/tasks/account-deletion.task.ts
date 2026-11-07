@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AccountLifecycleDatabaseRepository } from '@/modules/users/data/repositories/account-lifecycle-database.repository';
 import { ACCOUNT_DELETION_GRACE_DAYS } from '@/modules/users/usecases/request-account-deletion.usecase';
+import { PersonalPurgeStatus } from '@/modules/users/types/account.types';
 
 @Injectable()
 export class AccountDeletionTask {
@@ -27,13 +28,13 @@ export class AccountDeletionTask {
         continue;
       }
 
-      if (purgeResult.value === 'pending-media') {
+      if (purgeResult.value === PersonalPurgeStatus.PENDING_MEDIA) {
         this.logger.warn(`Personal purge for account ${candidate.id} remains pending media cleanup; storage ownership/reference safety is unverified`);
-      } else if (purgeResult.value === 'pending-review') {
+      } else if (purgeResult.value === PersonalPurgeStatus.PENDING_REVIEW) {
         this.logger.warn(`Personal purge for account ${candidate.id} remains pending report/moderation retention review`);
-      } else if (purgeResult.value === 'pending-verification') {
+      } else if (purgeResult.value === PersonalPurgeStatus.PENDING_VERIFICATION) {
         this.logger.warn(`Personal purge for account ${candidate.id} has no completion evidence; manual verification is required`);
-      } else if (purgeResult.value === 'completed') {
+      } else if (purgeResult.value === PersonalPurgeStatus.COMPLETED) {
         this.logger.log(`Approved personal purge scope completed for account ${candidate.id}`);
       }
     }

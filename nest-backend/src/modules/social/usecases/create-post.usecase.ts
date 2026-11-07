@@ -5,7 +5,6 @@ import { PostType, StoryAudience } from '@prisma/client';
 import { PostDatabaseRepository } from '../data/repositories/post-database.repository';
 import { CreatePostInput, CreatePostOutput } from '../dtos/social.dto';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
-import { isValidBlurHash } from '@/shared/utils/blurhash.utils';
 
 @Injectable()
 export class CreatePostUseCase {
@@ -17,21 +16,28 @@ export class CreatePostUseCase {
   async execute(input: CreatePostInput): Promise<Either<AppError, CreatePostOutput>> {
     if (input.audience === StoryAudience.CLOSE_FRIENDS &&
         (input.type !== PostType.REGULAR ||
-         (input.imageUrl != null && !input.imageUrl.startsWith('/media/privatepost/')) ||
+         (input.media?.some((item) => !item.url.startsWith('/media/privatepost/')) ?? false) ||
          (input.mentionIds?.length ?? 0) > 0)) {
-      return left(new BadRequestError('Posts para amigos próximos aceitam apenas texto e imagem enviada pelo app, sem menções ou produto'));
+      return left(new BadRequestError('Posts para amigos próximos aceitam apenas texto e mídia enviada pelo app, sem menções ou produto'));
     }
     const result = await this.postRepository.create({
       content: input.content ?? null,
-      imageUrl: input.imageUrl ?? null,
-      imageBlurHash: input.imageUrl != null &&
-          input.audience !== StoryAudience.CLOSE_FRIENDS &&
-          isValidBlurHash(input.imageBlurHash)
-        ? input.imageBlurHash
-        : null,
       type: input.type,
       audience: input.audience ?? StoryAudience.EVERYONE,
       user: { connect: { id: input.userId } },
+      media: input.media?.length ? {
+        create: input.media.map((item, order) => ({
+          url: item.url,
+          thumbnailUrl: item.thumbnailUrl,
+          type: item.type,
+          blurHash: input.audience === StoryAudience.CLOSE_FRIENDS ? null : item.blurHash,
+          altText: item.altText,
+          hotspots: item.hotspots,
+          durationMs: item.durationMs,
+          coverTimestampMs: item.coverTimestampMs,
+          order,
+        })),
+      } : undefined,
     });
     if (result.isLeft()) return left(result.value);
 
@@ -55,10 +61,10 @@ export class CreatePostUseCase {
       id: post.id,
       isQuote: false,
       content: post.content,
-      imageUrl: post.imageUrl,
-      ...(post.audience !== StoryAudience.CLOSE_FRIENDS && isValidBlurHash(post.imageBlurHash)
-        ? { imageBlurHash: post.imageBlurHash }
-        : {}),
+      media: post.media.map(({ blurHash, ...item }) => ({
+        ...item,
+        ...(post.audience !== StoryAudience.CLOSE_FRIENDS && blurHash ? { blurHash } : {}),
+      })),
       type: post.type,
       audience: post.audience,
       userId: post.userId,

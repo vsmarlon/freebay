@@ -60,7 +60,7 @@ export class QuoteDatabaseRepository {
         const quotePostAuthor = await tx.user.findUniqueOrThrow({ where: { id: options.userId }, select: { displayName: true } });
         let post = await tx.post.create({
           data: {
-            content: options.content, imageUrl: null, imageBlurHash: null,
+            content: options.content,
             type: PostType.REGULAR, audience: StoryAudience.EVERYONE, isQuote: true,
             clientRequestId: options.requestId, clientRequestHash: options.digest,
             ...(options.sourcePostId ? { quoteSourcePost: { connect: { id: options.sourcePostId } } } : {}),
@@ -72,7 +72,16 @@ export class QuoteDatabaseRepository {
           imageUrl = saveUpload({ mimetype: options.image.mimeType, buffer: options.image.buffer }, 'post');
           post = await tx.post.update({
             where: { id: post.id },
-            data: { imageUrl, imageBlurHash: options.imageBlurHash ?? null },
+            data: {
+              media: {
+                create: {
+                  url: imageUrl,
+                  type: 'IMAGE',
+                  blurHash: options.imageBlurHash ?? null,
+                  order: 0,
+                },
+              },
+            },
             include: POST_INCLUDE,
           });
         }
