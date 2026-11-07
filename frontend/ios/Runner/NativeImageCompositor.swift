@@ -60,6 +60,8 @@ enum NativeImageCompositor {
   private static func compose(_ args: [String: Any]) throws -> Data {
     guard let typedBytes = args["bytes"] as? FlutterStandardTypedData else { throw CompositionError.invalid }
     let bytes = typedBytes.data
+    let finalOverlayData = (args["overlayBytes"] as? FlutterStandardTypedData)?.data
+    if args["overlayBytes"] != nil && finalOverlayData == nil { throw CompositionError.invalid }
     guard !bytes.isEmpty, bytes.count <= maxBytes,
       let imageSource = CGImageSourceCreateWithData(bytes as CFData, nil),
       let thumbnail = CGImageSourceCreateThumbnailAtIndex(imageSource, 0, [
@@ -79,6 +81,11 @@ enum NativeImageCompositor {
       let strokes = args["strokes"] as? [[String: Any]], strokes.count <= 1000,
       let textItems = args["text"] as? [[String: Any]], textItems.count <= 100
     else { throw CompositionError.invalid }
+    if let finalOverlayData {
+      guard finalOverlayData.count <= maxBytes,
+        finalOverlayData.starts(with: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+      else { throw CompositionError.invalid }
+    }
 
     let inputImage = UIImage(cgImage: thumbnail)
     let rawWidth = inputImage.size.width * inputImage.scale
@@ -103,7 +110,7 @@ enum NativeImageCompositor {
     filter.setValue(CIVector(x: matrixValues[5], y: matrixValues[6], z: matrixValues[7], w: matrixValues[8]), forKey: "inputGVector")
     filter.setValue(CIVector(x: matrixValues[10], y: matrixValues[11], z: matrixValues[12], w: matrixValues[13]), forKey: "inputBVector")
     filter.setValue(CIVector(x: matrixValues[15], y: matrixValues[16], z: matrixValues[17], w: matrixValues[18]), forKey: "inputAVector")
-    filter.setValue(CIVector(x: matrixValues[4] / 255, y: matrixValues[9] / 255, z: matrixValues[14] / 255, w: matrixValues[19]), forKey: "inputBiasVector")
+    filter.setValue(CIVector(x: matrixValues[4] / 255, y: matrixValues[9] / 255, z: matrixValues[14] / 255, w: matrixValues[19] / 255), forKey: "inputBiasVector")
     guard let filtered = filter.outputImage,
       let filteredCG = CIContext(options: nil).createCGImage(filtered, from: filtered.extent)
     else { throw CompositionError.invalid }
@@ -171,6 +178,17 @@ enum NativeImageCompositor {
     let rotatedHeight = abs(CGFloat(width) * sin(radians)) + abs(CGFloat(height) * cos(radians))
     let outputScale = min(1, CGFloat(max(1, min(maxDimension, Int(maxDimensionValue)))) / max(rotatedWidth, rotatedHeight))
     let outputSize = CGSize(width: max(1, (rotatedWidth * outputScale).rounded()), height: max(1, (rotatedHeight * outputScale).rounded()))
+    let finalOverlayCG: CGImage?
+    if let finalOverlayData {
+      guard let overlaySource = CGImageSourceCreateWithData(finalOverlayData as CFData, nil),
+        let overlayType = CGImageSourceGetType(overlaySource) as String?, overlayType == "public.png",
+        let overlayCG = CGImageSourceCreateImageAtIndex(overlaySource, 0, nil),
+        overlayCG.width == Int(outputSize.width), overlayCG.height == Int(outputSize.height)
+      else { throw CompositionError.invalid }
+      finalOverlayCG = overlayCG
+    } else {
+      finalOverlayCG = nil
+    }
     let outputRenderer = UIGraphicsImageRenderer(size: outputSize, format: rendererFormat())
     let outputImage = outputRenderer.image { context in
       let cg = context.cgContext
@@ -183,7 +201,7 @@ enum NativeImageCompositor {
       cg.draw(overlayCG, in: CGRect(origin: .zero, size: size))
       cg.restoreGState()
 
-      for item in parsedTexts {
+      if finalOverlayCG == nil { for item in parsedTexts {
         let point = CGPoint(
           x: outputSize.width / 2 + (item.point.x - CGFloat(width) / 2) * outputScale,
           y: outputSize.height / 2 + (item.point.y - CGFloat(height) / 2) * outputScale
@@ -193,6 +211,9 @@ enum NativeImageCompositor {
           .font: editorFont(size: size),
           .foregroundColor: item.color,
         ])
+      } }
+      if let finalOverlayCG {
+        cg.draw(finalOverlayCG, in: CGRect(origin: .zero, size: outputSize))
       }
     }
     guard let png = outputImage.pngData() else { throw CompositionError.invalid }

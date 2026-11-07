@@ -40,6 +40,12 @@ internal object NativeImageCompositor {
         require(canvasWidth > 0 && canvasHeight > 0 && canvasWidth.isFinite() && canvasHeight.isFinite()) { "Invalid preview canvas" }
         val rotation = args.number("rotationRadians").toFloat()
         require(rotation.isFinite()) { "Invalid rotation" }
+        val finalOverlayBytes = if (args.containsKey("overlayBytes")) {
+            args["overlayBytes"] as? ByteArray ?: invalid("Invalid final overlay PNG")
+        } else null
+        require(finalOverlayBytes == null || (finalOverlayBytes.size in 1..MAX_BYTES && isPng(finalOverlayBytes))) {
+            "Invalid final overlay PNG"
+        }
 
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
@@ -53,6 +59,7 @@ internal object NativeImageCompositor {
         }) ?: invalid("Cannot decode image")
         var oriented: Bitmap? = null
         var overlay: Bitmap? = null
+        var finalOverlay: Bitmap? = null
         var output: Bitmap? = null
         try {
         val source = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -81,6 +88,15 @@ internal object NativeImageCompositor {
         val outputScale = min(1f, maxDimension / max(rotatedWidth, rotatedHeight))
         val outputWidth = max(1, (rotatedWidth * outputScale).roundToInt())
         val outputHeight = max(1, (rotatedHeight * outputScale).roundToInt())
+        if (finalOverlayBytes != null) {
+            val overlayBounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(finalOverlayBytes, 0, finalOverlayBytes.size, overlayBounds)
+            require(overlayBounds.outWidth == outputWidth && overlayBounds.outHeight == outputHeight) {
+                "Final overlay dimensions do not match image output"
+            }
+            finalOverlay = BitmapFactory.decodeByteArray(finalOverlayBytes, 0, finalOverlayBytes.size)
+                ?: invalid("Cannot decode final overlay PNG")
+        }
         val outputBitmap = Bitmap.createBitmap(outputWidth, outputHeight, Bitmap.Config.ARGB_8888)
         output = outputBitmap
         val outputCanvas = Canvas(outputBitmap)
@@ -103,7 +119,7 @@ internal object NativeImageCompositor {
         val strokeList = args["strokes"] as? List<*> ?: invalid("Invalid strokes")
         require(strokeList.size <= 1000) { "Too many strokes" }
         var totalPoints = 0
-        for (item in strokeList) {
+        if (finalOverlay == null) for (item in strokeList) {
             val stroke = item as? Map<*, *> ?: invalid("Invalid stroke")
             val points = stroke["points"] as? List<*> ?: invalid("Missing stroke points")
             require(points.size <= MAX_POINTS) { "Too many points in stroke" }
@@ -167,7 +183,7 @@ internal object NativeImageCompositor {
                 android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
             }
         }
-        for (item in texts) {
+        if (finalOverlay == null) for (item in texts) {
             val text = item as? Map<*, *> ?: invalid("Invalid text overlay")
             val value = text["text"] as? String ?: invalid("Invalid overlay text")
             require(value.length <= 2000)
@@ -194,11 +210,16 @@ internal object NativeImageCompositor {
             outputCanvas.restore()
         }
 
+        finalOverlay?.let {
+            outputCanvas.drawBitmap(it, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
+        }
+
         val stream = ByteArrayOutputStream()
         require(outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)) { "Cannot encode image" }
         return stream.toByteArray()
         } finally {
             overlay?.recycle()
+            finalOverlay?.recycle()
             output?.recycle()
             oriented?.recycle()
             decoded.recycle()
@@ -210,6 +231,12 @@ internal object NativeImageCompositor {
         val s = kotlin.math.abs(sin(angle))
         return if (horizontal) width * c + height * s else width * s + height * c
     }
+
+    private fun isPng(bytes: ByteArray): Boolean =
+        bytes.size >= 8 && bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() &&
+            bytes[2] == 0x4e.toByte() && bytes[3] == 0x47.toByte() &&
+            bytes[4] == 0x0d.toByte() && bytes[5] == 0x0a.toByte() &&
+            bytes[6] == 0x1a.toByte() && bytes[7] == 0x0a.toByte()
 
     private fun Map<*, *>.number(key: String): Double =
         (this[key] as? Number)?.toDouble()?.takeIf(Double::isFinite) ?: invalid("Invalid $key")

@@ -20,6 +20,7 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         biometricKey.register(flutterEngine.dartExecutor.binaryMessenger)
+        NativeVideoEditor(this).register(flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.freebay.app/image_compositor")
             .setMethodCallHandler { call, result ->
                 if (call.method != "compose") {
